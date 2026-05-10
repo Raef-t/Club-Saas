@@ -1,18 +1,30 @@
 <?php
 
-namespace Modules\Authentication\app\Http\Controllers\Api;
+namespace Modules\Authentication\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Modules\Authentication\Models\User;
-use Modules\Core\app\Http\Controllers\Api\BaseController;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Support\Facades\Auth;
+use OpenApi\Attributes as OA;
 
 class AuthController extends BaseController
 {
-    /**
-     * Login API
-     */
+    #[OA\Post(path: '/v1/auth/login', summary: 'User Login', tags: ['Authentication'])]
+    #[OA\Parameter(name: 'X-Tenant-ID', in: 'header', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['username', 'password'],
+            properties: [
+                new OA\Property(property: 'username', type: 'string', example: 'admin'),
+                new OA\Property(property: 'password', type: 'string', example: 'password123'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Successful login')]
+    #[OA\Response(response: 401, description: 'Invalid credentials')]
     public function login(Request $request)
     {
         $request->validate([
@@ -44,9 +56,9 @@ class AuthController extends BaseController
         ], __('Logged in successfully'));
     }
 
-    /**
-     * Logout API
-     */
+    #[OA\Post(path: '/v1/auth/logout', summary: 'User Logout', security: [['bearerAuth' => []]], tags: ['Authentication'])]
+    #[OA\Parameter(name: 'X-Tenant-ID', in: 'header', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: 'Logged out successfully')]
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

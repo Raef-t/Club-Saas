@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Core\app\Http\Middleware;
+namespace Modules\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Modules\TenantManager\app\Models\Tenant;
+use Modules\TenantManager\Models\Tenant;
 
 class TenantMiddleware
 {
