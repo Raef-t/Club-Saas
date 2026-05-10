@@ -4,7 +4,7 @@ namespace Modules\Sports\app\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Core\app\Traits\BelongsToTenant;
+use Modules\Core\Traits\BelongsToTenant;
 use Spatie\Translatable\HasTranslations;
 
 class Activity extends Model

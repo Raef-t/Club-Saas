@@ -1,8 +1,8 @@
 <?php
 
-namespace Modules\Core\app\Traits;
+namespace Modules\Core\Traits;
 
-use Modules\Core\app\Models\Scopes\TenantScope;
+use Modules\Core\Models\Scopes\TenantScope;
 
 trait BelongsToTenant
 {

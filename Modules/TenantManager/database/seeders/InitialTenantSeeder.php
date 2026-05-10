@@ -4,6 +4,9 @@ namespace Modules\TenantManager\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\TenantManager\Models\Tenant;
+use Modules\Authentication\Models\Person;
+use Modules\Authentication\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class InitialTenantSeeder extends Seeder
 {
@@ -12,7 +15,8 @@ class InitialTenantSeeder extends Seeder
      */
     public function run(): void
     {
-        Tenant::updateOrCreate(
+        // 1. Create Tenant
+        $tenant = Tenant::updateOrCreate(
             ['domain_prefix' => 'gold_gym'],
             [
                 'name' => 'Gold Gym Club',
@@ -25,7 +29,27 @@ class InitialTenantSeeder extends Seeder
                 'status' => 'active'
             ]
         );
+
+        // 2. Create Person
+        $person = Person::updateOrCreate(
+            ['email' => 'admin@goldgym.com', 'tenant_id' => $tenant->id],
+            [
+                'full_name' => 'Admin User',
+                'mobile_1' => '0500000000',
+                'gender' => 'male',
+            ]
+        );
+
+        // 3. Create User
+        User::updateOrCreate(
+            ['username' => 'admin', 'tenant_id' => $tenant->id],
+            [
+                'person_id' => $person->id,
+                'password' => Hash::make('password123'),
+                'is_active' => true,
+            ]
+        );
         
-        $this->command->info('Initial test tenant [Gold Gym Club] created!');
+        $this->command->info('Initial test tenant [Gold Gym Club] and User [admin/password123] created!');
     }
 }
