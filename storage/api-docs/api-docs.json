@@ -17,12 +17,14 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User Login",
+                "summary": "🔐 User Login & Token Generation",
+                "description": "Authenticate a user and return a Bearer Token. Requires a valid Username, Password, and the Tenant (Club) ID in the headers.",
                 "operationId": "9d2e018daa68436007e395ec397ef681",
                 "parameters": [
                     {
                         "name": "X-Tenant-ID",
                         "in": "header",
+                        "description": "The unique ID of the Club/Tenant",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -31,6 +33,7 @@
                     }
                 ],
                 "requestBody": {
+                    "description": "User credentials",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -41,10 +44,12 @@
                                 ],
                                 "properties": {
                                     "username": {
+                                        "description": "Unique username of the staff or admin",
                                         "type": "string",
                                         "example": "admin"
                                     },
                                     "password": {
+                                        "description": "User password",
                                         "type": "string",
                                         "example": "password123"
                                     }
@@ -56,10 +61,74 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successful login"
+                        "description": "✅ Successfully Authenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logged in successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "1|abc123token..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "username": {
+                                                            "type": "string",
+                                                            "example": "admin"
+                                                        },
+                                                        "full_name": {
+                                                            "type": "string",
+                                                            "example": "Admin User"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
-                        "description": "Invalid credentials"
+                        "description": "❌ Invalid Credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 Account Inactive",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -69,7 +138,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User Logout",
+                "summary": "🚪 User Logout",
+                "description": "Revoke the current user access token and end the session.",
                 "operationId": "2ea5ac67a96e6907b1497e57d34b9dae",
                 "parameters": [
                     {
@@ -84,7 +154,187 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Logged out successfully"
+                        "description": "✅ Logged out successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/people": {
+            "post": {
+                "tags": [
+                    "People Management"
+                ],
+                "summary": "👥 Smart Registration for Club Members & Staff",
+                "description": "Creates a Person, their specialized Profile (Player, Coach, or Staff), and an Inactive User account in a single atomic transaction.",
+                "operationId": "08188bcdbe14024a6f5819a2bbedc5fa",
+                "parameters": [
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "description": "ID of the Club",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Detailed info for the person and their profile",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "full_name",
+                                    "type",
+                                    "mobile_1"
+                                ],
+                                "properties": {
+                                    "full_name": {
+                                        "description": "Full name of the person",
+                                        "type": "string",
+                                        "example": "Mohamed Ahmed"
+                                    },
+                                    "type": {
+                                        "description": "Role type",
+                                        "type": "string",
+                                        "example": "player",
+                                        "enum": [
+                                            "player",
+                                            "coach",
+                                            "staff"
+                                        ]
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "example": "male",
+                                        "enum": [
+                                            "male",
+                                            "female"
+                                        ]
+                                    },
+                                    "dob": {
+                                        "description": "Date of Birth (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2005-06-15"
+                                    },
+                                    "mobile_1": {
+                                        "description": "Primary mobile number",
+                                        "type": "string",
+                                        "example": "0512345678"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "player@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Password for the new account (default: 123456)",
+                                        "type": "string",
+                                        "example": "pass123"
+                                    },
+                                    "profile_data": {
+                                        "description": "Specific data based on the \"type\" field",
+                                        "properties": {
+                                            "blood_type": {
+                                                "description": "[Player Only] Blood type",
+                                                "type": "string",
+                                                "example": "A+"
+                                            },
+                                            "specialization": {
+                                                "description": "[Coach Only] Main sport",
+                                                "type": "string",
+                                                "example": "Swimming"
+                                            },
+                                            "job_title": {
+                                                "description": "[Staff Only] Position",
+                                                "type": "string",
+                                                "example": "Receptionist"
+                                            },
+                                            "medical_conditions": {
+                                                "description": "[Player Only] Array of health issues",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "example": [
+                                                    "Asthma"
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ Person & Profile Created Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "person_id": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "mohamed50"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "player"
+                                                },
+                                                "qr_code": {
+                                                    "description": "Generated QR code for players",
+                                                    "type": "string",
+                                                    "example": "QR-X1Y2Z3"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -96,6 +346,42 @@
         }
     },
     "components": {
+        "schemas": {
+            "ApiResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Operation successful"
+                    },
+                    "data": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ApiErrorResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "error"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Something went wrong"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -108,6 +394,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "People Management",
+            "description": "People Management"
         }
     ]
 }
