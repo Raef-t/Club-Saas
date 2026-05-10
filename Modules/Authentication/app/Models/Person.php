@@ -12,13 +12,11 @@ class Person extends Model
 
     protected $table = 'people';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'tenant_id',
         'full_name',
         'gender',
+        'type',
         'dob',
         'national_id',
         'social_status',
@@ -30,14 +28,42 @@ class Person extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'email',
-        'chronic_diseases',
+        'chronic_diseases'
     ];
 
     /**
-     * Relationship to User
+     * Relationships
      */
+    public function playerProfile()
+    {
+        return $this->hasOne(PlayerProfile::class);
+    }
+
+    public function coachProfile()
+    {
+        return $this->hasOne(CoachProfile::class);
+    }
+
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
     public function user()
     {
-        return $this->hasOne(User::class, 'person_id');
+        return $this->hasOne(User::class);
+    }
+
+    /**
+     * Get the active profile based on type
+     */
+    public function getProfileAttribute()
+    {
+        return match ($this->type) {
+            'player' => $this->playerProfile,
+            'coach' => $this->coachProfile,
+            'staff', 'admin' => $this->staffProfile,
+            default => null,
+        };
     }
 }

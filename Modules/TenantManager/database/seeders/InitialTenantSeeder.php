@@ -37,6 +37,7 @@ class InitialTenantSeeder extends Seeder
                 'full_name' => 'Admin User',
                 'mobile_1' => '0500000000',
                 'gender' => 'male',
+                'type' => 'admin',
             ]
         );
 

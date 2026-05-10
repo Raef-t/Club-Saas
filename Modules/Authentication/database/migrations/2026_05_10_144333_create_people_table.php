@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tenant_id');
             $table->string('full_name');
             $table->string('gender', 10)->nullable();
+            $table->enum('type', ['player', 'coach', 'staff', 'admin'])->default('player');
             $table->date('dob')->nullable();
             $table->string('national_id', 50)->nullable();
             $table->string('social_status', 50)->nullable();
