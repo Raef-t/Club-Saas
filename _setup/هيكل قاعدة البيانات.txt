@@ -1,0 +1,417 @@
+// ==========================================
+// PRO SaaS CLUB MANAGEMENT SYSTEM - MASTER DATABASE SCHEMA
+// ==========================================
+
+// 1. SAAS & MULTI-TENANCY CORE
+// ==========================================
+
+Table tenants {
+  id bigint [primary key]
+  name varchar(255)
+  domain_prefix varchar(100) [unique]
+  branding_config json // Colors, logo_url, theme
+  supported_languages json // NEW: e.g. ["ar"] or ["ar", "en"]
+  default_language varchar(10) [default: 'ar'] // NEW: e.g. 'ar' or 'en'
+  status varchar(50) [default: 'active']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table tenant_features {
+  id bigint [primary key]
+  tenant_id bigint
+  feature_name varchar(100)
+  is_enabled boolean [default: true]
+  limit_value int 
+}
+
+Table saas_subscriptions {
+  id bigint [primary key]
+  tenant_id bigint
+  plan_type varchar(50)
+  start_date date
+  end_date date
+  is_active boolean [default: true]
+  status varchar(50)
+}
+
+// 2. BRANCHES & SHIFT MANAGEMENT
+// ==========================================
+
+Table branches {
+  id bigint [primary key]
+  tenant_id bigint
+  name json // Translatable: {"ar": "الفرع الرئيسي", "en": "Main Branch"}
+  address text
+  location_lat_long varchar(100)
+  phone varchar(20)
+  is_active boolean [default: true]
+  created_at timestamp
+}
+
+Table branch_shifts {
+  id bigint [primary key]
+  branch_id bigint
+  day_of_week int // 1-7
+  start_time time
+  end_time time
+  gender_allowed varchar(20) // 'male', 'female', 'mixed'
+}
+
+// 3. IDENTITY & AUTHENTICATION (Unified)
+// ==========================================
+
+Table people {
+  id bigint [primary key]
+  tenant_id bigint
+  full_name varchar(255)
+  gender varchar(10)
+  dob date
+  national_id varchar(50)
+  social_status varchar(50)
+  address text
+  photo_url varchar(255)
+  mobile_1 varchar(20)
+  mobile_2 varchar(20)
+  landline varchar(20)
+  emergency_contact_name varchar(100)
+  emergency_contact_phone varchar(20)
+  email varchar(255)
+  chronic_diseases text
+  created_at timestamp
+}
+
+Table users {
+  id bigint [primary key]
+  person_id bigint
+  tenant_id bigint
+  username varchar(100) [unique]
+  password_hash varchar(255)
+  is_active boolean [default: true]
+  last_login timestamp
+}
+
+Table user_push_tokens {
+  id bigint [primary key]
+  user_id bigint
+  device_token text
+  device_type varchar(50)
+  last_used_at timestamp
+}
+
+// Role-Based Access Control (RBAC)
+Table roles {
+  id bigint [primary key]
+  tenant_id bigint
+  name varchar(100) 
+  guard_name varchar(50)
+}
+
+Table permissions {
+  id bigint [primary key]
+  name varchar(100) [unique]
+  guard_name varchar(50)
+  module varchar(50)
+}
+
+Table role_permissions {
+  role_id bigint
+  permission_id bigint
+}
+
+Table user_roles {
+  user_id bigint
+  role_id bigint
+}
+
+// 4. HUMAN RESOURCES & PAYROLL
+// ==========================================
+
+Table employees {
+  id bigint [primary key]
+  person_id bigint
+  branch_id bigint 
+  job_title_id bigint
+  hiring_date date
+  contract_end_date date
+  contract_type varchar(50)
+  duty_type varchar(50)
+  work_status varchar(50)
+  base_salary decimal(12,2)
+  salary_period varchar(20) // monthly, weekly
+}
+
+Table job_titles {
+  id bigint [primary key]
+  tenant_id bigint
+  title_name json // Translatable: {"ar": "مدرب", "en": "Coach"}
+}
+
+Table payroll_runs {
+  id bigint [primary key]
+  tenant_id bigint
+  month int
+  year int
+  status varchar(50)
+}
+
+Table employee_payslips {
+  id bigint [primary key]
+  payroll_run_id bigint
+  employee_id bigint
+  base_pay decimal(12,2)
+  commissions decimal(12,2)
+  deductions decimal(12,2)
+  net_pay decimal(12,2)
+}
+
+Table coaches {
+  id bigint [primary key]
+  person_id bigint
+  tenant_id bigint
+  certificates text
+  bio text
+  is_pt boolean [default: false] 
+}
+
+Table coach_commission_rules {
+  id bigint [primary key]
+  tenant_id bigint
+  coach_id bigint
+  activity_id bigint
+  rule_type varchar(50)
+  value decimal(12,2)
+}
+
+// 5. PLAYERS & HEALTH TRACKING
+// ==========================================
+
+Table players {
+  id bigint [primary key]
+  person_id bigint
+  branch_id bigint
+  qr_code_token varchar(255) [unique]
+  lead_source varchar(100)
+  children_count int [default: 0]
+  status varchar(50) [default: 'active']
+}
+
+Table player_medical_info {
+  id bigint [primary key]
+  player_id bigint
+  organic_diseases text
+  previous_injuries text
+  allergies text
+  fitness_goal varchar(255)
+}
+
+Table player_measurements {
+  id bigint [primary key]
+  player_id bigint
+  recorded_at timestamp
+  weight decimal(5,2)
+  height decimal(5,2)
+  body_fat decimal(5,2)
+  muscle_mass decimal(5,2)
+  neck_cm decimal(5,2)
+  chest_cm decimal(5,2)
+  waist_cm decimal(5,2)
+  hips_cm decimal(5,2)
+  thigh_cm decimal(5,2)
+  arm_cm decimal(5,2)
+  recorded_by_user_id bigint
+}
+
+// 6. SUBSCRIPTIONS & DYNAMIC LOGS
+// ==========================================
+
+Table activities {
+  id bigint [primary key]
+  tenant_id bigint
+  name json // Translatable: {"ar": "سباحة", "en": "Swimming"}
+  gender_allowed varchar(20)
+  is_active boolean
+}
+
+Table subscription_plans {
+  id bigint [primary key]
+  tenant_id bigint
+  name json // Translatable: {"ar": "باقة شهرية", "en": "Monthly Plan"}
+  plan_type varchar(50) // monthly, daily, offer, annual, vip
+  base_price decimal(12,2)
+  duration_days int
+  total_sessions int 
+}
+
+Table plan_activities {
+  plan_id bigint
+  activity_id bigint
+}
+
+Table player_subscriptions {
+  id bigint [primary key]
+  player_id bigint
+  plan_id bigint
+  branch_id bigint
+  start_date date
+  end_date date
+  remaining_sessions int
+  status varchar(50)
+}
+
+Table subscription_logs {
+  id bigint [primary key]
+  tenant_id bigint
+  player_subscription_id bigint
+  action_type varchar(50) // transfer, switch, freeze
+  from_player_id bigint
+  to_player_id bigint
+  reason text
+  performed_by_user_id bigint
+  created_at timestamp
+}
+
+Table subscription_freezes {
+  id bigint [primary key]
+  player_subscription_id bigint
+  start_date date
+  end_date date
+  reason text
+}
+
+// 7. FACILITIES & OPERATIONS
+// ==========================================
+
+Table facilities {
+  id bigint [primary key]
+  branch_id bigint
+  name varchar(100)
+  capacity int
+}
+
+Table lockers {
+  id bigint [primary key]
+  facility_id bigint
+  locker_number varchar(50)
+  status varchar(20)
+}
+
+Table locker_rentals {
+  id bigint [primary key]
+  locker_id bigint
+  player_id bigint
+  start_date date
+  end_date date
+  rental_fee decimal(10,2)
+}
+
+Table sessions_schedule {
+  id bigint [primary key]
+  branch_id bigint
+  activity_id bigint
+  coach_id bigint
+  facility_id bigint
+  day_of_week int
+  start_time time
+  end_time time
+}
+
+Table attendances {
+  id bigint [primary key]
+  tenant_id bigint
+  branch_id bigint
+  person_id bigint 
+  check_in timestamp
+  check_out timestamp
+  duration_minutes int
+  status varchar(50)
+}
+
+// 8. FINANCIAL & ACCOUNTING
+// ==========================================
+
+Table chart_of_accounts {
+  id bigint [primary key]
+  tenant_id bigint
+  account_code varchar(50)
+  account_name varchar(255)
+  account_type varchar(50)
+}
+
+Table cash_registers {
+  id bigint [primary key]
+  branch_id bigint
+  name varchar(100)
+  current_balance decimal(15,2)
+}
+
+Table invoices {
+  id bigint [primary key]
+  tenant_id bigint
+  branch_id bigint
+  player_id bigint
+  total_amount decimal(12,2)
+  status varchar(50)
+  created_at timestamp
+}
+
+Table payments {
+  id bigint [primary key]
+  invoice_id bigint
+  cash_register_id bigint
+  amount decimal(12,2)
+  payment_method varchar(50)
+  created_at timestamp
+}
+
+// 9. DYNAMIC SYSTEM TABLES (AUDIT, NOTIFS, CUSTOM FIELDS)
+// ==========================================
+
+Table audit_logs {
+  id bigint [primary key]
+  tenant_id bigint
+  user_id bigint
+  event varchar(50) 
+  auditable_type varchar(100)
+  auditable_id bigint
+  old_values json
+  new_values json
+  created_at timestamp
+}
+
+Table notifications {
+  id bigint [primary key]
+  tenant_id bigint
+  receiver_id bigint
+  title varchar(255)
+  message text
+  type varchar(50)
+  is_read boolean [default: false]
+  sent_at timestamp
+}
+
+Table custom_fields {
+  id bigint [primary key]
+  tenant_id bigint
+  entity_type varchar(50)
+  field_name varchar(100)
+  field_type varchar(50)
+}
+
+Table custom_field_values {
+  id bigint [primary key]
+  field_id bigint
+  entity_id bigint
+  value_text text
+}
+
+// 10. CRM
+// ==========================================
+
+Table leads {
+  id bigint [primary key]
+  tenant_id bigint
+  person_id bigint
+  status varchar(50)
+  assigned_to_user_id bigint
+}

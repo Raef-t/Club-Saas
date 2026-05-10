@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/sports",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Sports\\": "app/",
+            "Modules\\Sports\\Database\\Factories\\": "database/factories/",
+            "Modules\\Sports\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Sports\\Tests\\": "tests/"
+        }
+    }
+}
