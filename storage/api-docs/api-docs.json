@@ -179,14 +179,14 @@
                 "tags": [
                     "People Management"
                 ],
-                "summary": "👥 Smart Registration for Club Members & Staff",
-                "description": "Creates a Person, their specialized Profile (Player, Coach, or Staff), and an Inactive User account in a single atomic transaction.",
+                "summary": "👥 Universal Registration: Players, Coaches, & Staff",
+                "description": "## 📘 Overview\nThis is a highly dynamic and intelligent endpoint designed to manage the entire human resource registration of a club. It handles the creation of three distinct entities in a single atomic database transaction:\n\n1. **The Person Entity**: Basic personal information (Name, Mobile, Gender, DOB) stored in the central `people` table.\n2. **The Specialized Profile**: Depending on the `type` provided, it creates a specific record in either `player_profiles`, `coach_profiles`, or `staff_profiles` with unique metadata.\n3. **The User Account**: Automatically provisions a system account (linked to the person) with a generated username and an 'Inactive' status, ensuring no one can log in until administrative activation.\n\n### 🛠 Dynamic Logic by Type:\n- **Player**: Generates a unique, permanent **QR Code** for attendance and assigns medical/emergency data.\n- **Coach**: Captures specialization (e.g., 'Karate', 'Swimming') and experience level.\n- **Staff**: Registers the administrative job title (e.g., 'Accountant', 'Manager').\n\n### 🛡 Security & Tenancy:\nEvery registration is strictly scoped to the `X-Tenant-ID` provided in the header. This ensures that even if two clubs register the same person, their profiles and user accounts remain completely isolated in their respective club contexts.",
                 "operationId": "08188bcdbe14024a6f5819a2bbedc5fa",
                 "parameters": [
                     {
                         "name": "X-Tenant-ID",
                         "in": "header",
-                        "description": "ID of the Club",
+                        "description": "CRITICAL: The unique identifier for the club. All created data will be locked to this tenant.",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -195,7 +195,7 @@
                     }
                 ],
                 "requestBody": {
-                    "description": "Detailed info for the person and their profile",
+                    "description": "Comprehensive registration payload. Note that the structure of \"profile_data\" must align with the \"type\" field.",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -207,12 +207,12 @@
                                 ],
                                 "properties": {
                                     "full_name": {
-                                        "description": "Full name of the person",
+                                        "description": "Full legal name (e.g., Ahmed Mohamed Ali)",
                                         "type": "string",
                                         "example": "Mohamed Ahmed"
                                     },
                                     "type": {
-                                        "description": "Role type",
+                                        "description": "Determines which specialized profile table will be populated.",
                                         "type": "string",
                                         "example": "player",
                                         "enum": [
@@ -230,46 +230,47 @@
                                         ]
                                     },
                                     "dob": {
-                                        "description": "Date of Birth (YYYY-MM-DD)",
+                                        "description": "Date of Birth (YYYY-MM-DD). Used for age-based group assignment.",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2005-06-15"
                                     },
                                     "mobile_1": {
-                                        "description": "Primary mobile number",
+                                        "description": "Primary contact number (Primary identifier in many systems).",
                                         "type": "string",
                                         "example": "0512345678"
                                     },
                                     "email": {
+                                        "description": "Optional contact email.",
                                         "type": "string",
                                         "format": "email",
                                         "example": "player@example.com"
                                     },
                                     "password": {
-                                        "description": "Password for the new account (default: 123456)",
+                                        "description": "Initial login password. If omitted, it defaults to \"123456\".",
                                         "type": "string",
-                                        "example": "pass123"
+                                        "example": "password123"
                                     },
                                     "profile_data": {
-                                        "description": "Specific data based on the \"type\" field",
+                                        "description": "Schema-less object for specialized metadata.",
                                         "properties": {
                                             "blood_type": {
-                                                "description": "[Player Only] Blood type",
+                                                "description": "[For Players] Critical for medical safety.",
                                                 "type": "string",
                                                 "example": "A+"
                                             },
                                             "specialization": {
-                                                "description": "[Coach Only] Main sport",
+                                                "description": "[For Coaches] The primary sport or skill they teach.",
                                                 "type": "string",
                                                 "example": "Swimming"
                                             },
                                             "job_title": {
-                                                "description": "[Staff Only] Position",
+                                                "description": "[For Staff] Official administrative title.",
                                                 "type": "string",
-                                                "example": "Receptionist"
+                                                "example": "Accountant"
                                             },
                                             "medical_conditions": {
-                                                "description": "[Player Only] Array of health issues",
+                                                "description": "[For Players] List of allergies or chronic conditions.",
                                                 "type": "array",
                                                 "items": {
                                                     "type": "string"

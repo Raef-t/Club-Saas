@@ -15,40 +15,40 @@ class PeopleController extends BaseController
 {
     #[OA\Post(
         path: '/v1/people',
-        summary: '👥 Smart Registration for Club Members & Staff',
-        description: 'Creates a Person, their specialized Profile (Player, Coach, or Staff), and an Inactive User account in a single atomic transaction.',
+        summary: '👥 Universal Registration: Players, Coaches, & Staff',
+        description: "## 📘 Overview\nThis is a highly dynamic and intelligent endpoint designed to manage the entire human resource registration of a club. It handles the creation of three distinct entities in a single atomic database transaction:\n\n1. **The Person Entity**: Basic personal information (Name, Mobile, Gender, DOB) stored in the central `people` table.\n2. **The Specialized Profile**: Depending on the `type` provided, it creates a specific record in either `player_profiles`, `coach_profiles`, or `staff_profiles` with unique metadata.\n3. **The User Account**: Automatically provisions a system account (linked to the person) with a generated username and an 'Inactive' status, ensuring no one can log in until administrative activation.\n\n### 🛠 Dynamic Logic by Type:\n- **Player**: Generates a unique, permanent **QR Code** for attendance and assigns medical/emergency data.\n- **Coach**: Captures specialization (e.g., 'Karate', 'Swimming') and experience level.\n- **Staff**: Registers the administrative job title (e.g., 'Accountant', 'Manager').\n\n### 🛡 Security & Tenancy:\nEvery registration is strictly scoped to the `X-Tenant-ID` provided in the header. This ensures that even if two clubs register the same person, their profiles and user accounts remain completely isolated in their respective club contexts.",
         tags: ['People Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(
         name: 'X-Tenant-ID',
         in: 'header',
-        description: 'ID of the Club',
+        description: 'CRITICAL: The unique identifier for the club. All created data will be locked to this tenant.',
         required: true,
         schema: new OA\Schema(type: 'integer', example: 1)
     )]
     #[OA\RequestBody(
         required: true,
-        description: 'Detailed info for the person and their profile',
+        description: 'Comprehensive registration payload. Note that the structure of "profile_data" must align with the "type" field.',
         content: new OA\JsonContent(
             required: ['full_name', 'type', 'mobile_1'],
             properties: [
-                new OA\Property(property: 'full_name', type: 'string', description: 'Full name of the person', example: 'Mohamed Ahmed'),
-                new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], description: 'Role type', example: 'player'),
+                new OA\Property(property: 'full_name', type: 'string', description: 'Full legal name (e.g., Ahmed Mohamed Ali)', example: 'Mohamed Ahmed'),
+                new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], description: 'Determines which specialized profile table will be populated.', example: 'player'),
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
-                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'Date of Birth (YYYY-MM-DD)', example: '2005-06-15'),
-                new OA\Property(property: 'mobile_1', type: 'string', description: 'Primary mobile number', example: '0512345678'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'player@example.com'),
-                new OA\Property(property: 'password', type: 'string', description: 'Password for the new account (default: 123456)', example: 'pass123'),
+                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'Date of Birth (YYYY-MM-DD). Used for age-based group assignment.', example: '2005-06-15'),
+                new OA\Property(property: 'mobile_1', type: 'string', description: 'Primary contact number (Primary identifier in many systems).', example: '0512345678'),
+                new OA\Property(property: 'email', type: 'string', format: 'email', description: 'Optional contact email.', example: 'player@example.com'),
+                new OA\Property(property: 'password', type: 'string', description: 'Initial login password. If omitted, it defaults to "123456".', example: 'password123'),
                 new OA\Property(
                     property: 'profile_data',
                     type: 'object',
-                    description: 'Specific data based on the "type" field',
+                    description: 'Schema-less object for specialized metadata.',
                     properties: [
-                        new OA\Property(property: 'blood_type', type: 'string', description: '[Player Only] Blood type', example: 'A+'),
-                        new OA\Property(property: 'specialization', type: 'string', description: '[Coach Only] Main sport', example: 'Swimming'),
-                        new OA\Property(property: 'job_title', type: 'string', description: '[Staff Only] Position', example: 'Receptionist'),
-                        new OA\Property(property: 'medical_conditions', type: 'array', items: new OA\Items(type: 'string'), description: '[Player Only] Array of health issues', example: ["Asthma"]),
+                        new OA\Property(property: 'blood_type', type: 'string', description: '[For Players] Critical for medical safety.', example: 'A+'),
+                        new OA\Property(property: 'specialization', type: 'string', description: '[For Coaches] The primary sport or skill they teach.', example: 'Swimming'),
+                        new OA\Property(property: 'job_title', type: 'string', description: '[For Staff] Official administrative title.', example: 'Accountant'),
+                        new OA\Property(property: 'medical_conditions', type: 'array', items: new OA\Items(type: 'string'), description: '[For Players] List of allergies or chronic conditions.', example: ["Asthma"]),
                     ]
                 )
             ]
