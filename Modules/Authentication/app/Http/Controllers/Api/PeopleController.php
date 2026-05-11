@@ -16,39 +16,39 @@ class PeopleController extends BaseController
     #[OA\Post(
         path: '/v1/people',
         summary: '👥 التسجيل الشامل: لاعبين، مدربين، وموظفين',
-        description: "## 📘 نظرة عامة\nهذا المسار (Endpoint) ديناميكي وذكي جداً، مصمم لإدارة تسجيل الموارد البشرية بالكامل في النادي. يقوم بمعالجة إنشاء ثلاث كيانات مختلفة في عملية قاعدة بيانات واحدة (Atomic Transaction):\n\n1. **كيان الشخص (Person)**: البيانات الشخصية الأساسية (الاسم، الجوال، النوع، تاريخ الميلاد) وتخزن في جدول `people` المركزي.\n2. **الملف الشخصي المتخصص (Profile)**: بناءً على النوع (`type`) المختار، يتم إنشاء سجل متخصص في جداول (لاعبين، مدربين، أو موظفين) مع بيانات وصفية فريدة.\n3. **حساب المستخدم (User)**: يتم إنشاء حساب نظام تلقائياً مرتبط بالشخص، مع اسم مستخدم مولد آلياً وحالة 'غير نشط'، لضمان عدم الدخول إلا بعد تفعيل الإدارة.\n\n### 🛠 المنطق الديناميكي حسب النوع:\n- **لاعب (Player)**: يولّد نظامنا **QR Code** دائم وفريد لكل لاعب لاستخدامه في الحضور والانصراف، مع تسجيل البيانات الطبية وحالات الطوارئ.\n- **مدرب (Coach)**: يسجل التخصص الرياضي (مثلاً: كاراتيه، سباحة) وسنوات الخبرة.\n- **موظف (Staff)**: يسجل المسمى الوظيفي الإداري (مثلاً: محاسب، مدير فرع).\n\n### 🛡 الأمان وتعدد الأندية (Tenancy):\nكل عملية تسجيل محصورة بدقة داخل معرف النادي (`X-Tenant-ID`) المرسل في الهيدر. هذا يضمن عزل بيانات كل نادي تماماً عن الآخر حتى لو تكررت بيانات الأشخاص.",
+        description: "## 📘 نظرة عامة\nهذا المسار (Endpoint) ديناميكي وذكي جداً، مصمم لإدارة تسجيل الموارد البشرية بالكامل في النادي. يقوم بمعالجة إنشاء ثلاث كيانات مختلفة في عملية قاعدة بيانات واحدة:\n\n1. **كيان الشخص (Person)**: البيانات الشخصية الأساسية وتخزن في جدول `people` المركزي.\n2. **الملف الشخصي المتخصص (Profile)**: يتم إنشاء سجل متخصص بناءً على القيمة المرسلة في حقل النوع (`type`).\n3. **حساب المستخدم (User)**: يتم إنشاء حساب نظام تلقائياً مرتبط بالشخص.\n\n### 🛠 تحديد الأنواع (Types) والمنطق البرمجي:\nيجب إرسال إحدى القيم التالية بالإنجليزية حصراً في حقل `type`:\n\n- **`player`**: عند تسجيل (لاعب) جديد؛ سيقوم النظام بتوليد **QR Code** فريد وتسجيل بيانات طبية.\n- **`coach`**: عند تسجيل (مدرب)؛ سيقوم النظام بتسجيل التخصص الرياضي وسنوات الخبرة.\n- **`staff`**: عند تسجيل (موظف إداري)؛ سيقوم النظام بتسجيل المسمى الوظيفي الإداري.\n\n### 🛡 الأمان وتعدد الأندية (Tenancy):\nكل عملية تسجيل محصورة بدقة داخل معرف النادي (`X-Tenant-ID`) المرسل في الهيدر لضمان عزل البيانات.",
         tags: ['People Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(
         name: 'X-Tenant-ID',
         in: 'header',
-        description: 'هام جداً: المعرف الفريد للنادي. كل البيانات المنشأة سيتم ربطها بهذا النادي فقط.',
+        description: 'المعرف الفريد للنادي. هام جداً لعزل البيانات.',
         required: true,
         schema: new OA\Schema(type: 'integer', example: 1)
     )]
     #[OA\RequestBody(
         required: true,
-        description: 'بيانات التسجيل الكاملة. ملاحظة: هيكلية "profile_data" يجب أن تتوافق مع نوع الشخص المختير.',
+        description: 'بيانات التسجيل الكاملة. القيم التقنية (مثل player, coach) يجب أن ترسل بالإنجليزية كما هي موضح أدناه.',
         content: new OA\JsonContent(
             required: ['full_name', 'type', 'mobile_1'],
             properties: [
-                new OA\Property(property: 'full_name', type: 'string', description: 'الاسم الكامل الرسمي (مثال: أحمد محمد علي)', example: 'Mohamed Ahmed'),
-                new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], description: 'يحدد الجدول الذي سيتم ملء البيانات الشخصية فيه.', example: 'player'),
+                new OA\Property(property: 'full_name', type: 'string', description: 'الاسم الكامل الرسمي', example: 'Mohamed Ahmed'),
+                new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], description: 'نوع الشخص: (player) للاعب، (coach) للمدرب، (staff) للموظف.', example: 'player'),
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
-                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'تاريخ الميلاد (YYYY-MM-DD). يستخدم لتوزيع الفئات العمرية.', example: '2005-06-15'),
-                new OA\Property(property: 'mobile_1', type: 'string', description: 'رقم الجوال الأساسي (المعرف الرئيسي في أغلب العمليات).', example: '0512345678'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', description: 'البريد الإلكتروني (اختياري).', example: 'player@example.com'),
-                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور الأولية. إذا تركت فارغة ستكون الافتراضية 123456.', example: 'password123'),
+                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'تاريخ الميلاد (YYYY-MM-DD)', example: '2005-06-15'),
+                new OA\Property(property: 'mobile_1', type: 'string', description: 'رقم الجوال الأساسي', example: '0512345678'),
+                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'player@example.com'),
+                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور (الافتراضية: 123456)', example: 'password123'),
                 new OA\Property(
                     property: 'profile_data',
                     type: 'object',
-                    description: 'كائن يحتوي على البيانات المتخصصة بناءً على نوع الشخص.',
+                    description: 'بيانات الملف الشخصي (تعتمد على القيمة المرسلة في type)',
                     properties: [
-                        new OA\Property(property: 'blood_type', type: 'string', description: '[للاعبين] فصيلة الدم لضمان السلامة الطبية.', example: 'A+'),
-                        new OA\Property(property: 'specialization', type: 'string', description: '[للمدربين] الرياضة أو المهارة الأساسية التي يدربها.', example: 'Swimming'),
-                        new OA\Property(property: 'job_title', type: 'string', description: '[للموظفين] المسمى الوظيفي الإداري الرسمي.', example: 'Accountant'),
-                        new OA\Property(property: 'medical_conditions', type: 'array', items: new OA\Items(type: 'string'), description: '[للاعبين] قائمة بالأمراض المزمنة أو الحساسية.', example: ["Asthma"]),
+                        new OA\Property(property: 'blood_type', type: 'string', description: '[للنوع player] فصيلة الدم', example: 'A+'),
+                        new OA\Property(property: 'specialization', type: 'string', description: '[للنوع coach] التخصص الرياضي', example: 'Swimming'),
+                        new OA\Property(property: 'job_title', type: 'string', description: '[للنوع staff] المسمى الوظيفي', example: 'Accountant'),
+                        new OA\Property(property: 'medical_conditions', type: 'array', items: new OA\Items(type: 'string'), description: '[للنوع player] الحالات الطبية', example: ["Asthma"]),
                     ]
                 )
             ]
