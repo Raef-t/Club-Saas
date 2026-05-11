@@ -343,10 +343,539 @@
                     }
                 ]
             }
+        },
+        "/v1/branches": {
+            "get": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "🏢 List all branches",
+                "operationId": "361d33fac0d0725df8d6e9bfb5d036b4",
+                "responses": {
+                    "200": {
+                        "description": "✅ List of branches"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "➕ Create a new branch",
+                "operationId": "a2fc0f8d8688289463740f8903553116",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreBranchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ Branch created"
+                    },
+                    "422": {
+                        "description": "❌ Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/branches/{id}": {
+            "get": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "🔍 Get branch details",
+                "operationId": "acdf1cdd08615490a691977ad53df303",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Branch details"
+                    },
+                    "404": {
+                        "description": "❌ Branch not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "📝 Update branch",
+                "operationId": "fb265ebcf7afadc3b8400ba12eb9ebf7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Branch updated"
+                    },
+                    "404": {
+                        "description": "❌ Branch not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "🗑️ Delete branch",
+                "operationId": "5b8ddc9f012ca2db78247fade0459fe3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Branch deleted"
+                    },
+                    "404": {
+                        "description": "❌ Branch not found"
+                    }
+                }
+            }
+        },
+        "/v1/branches/{id}/toggle-status": {
+            "patch": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "🔄 Toggle branch active status",
+                "operationId": "ae3a2cfc98e37e09ebd42e7fa0be5177",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Branch status updated"
+                    }
+                }
+            }
+        },
+        "/v1/facilities": {
+            "get": {
+                "tags": [
+                    "Facility Management"
+                ],
+                "summary": "🏊 List all facilities",
+                "operationId": "9bc369f8c9cb1fdfef784c5ebdf04df9",
+                "responses": {
+                    "200": {
+                        "description": "✅ List of facilities"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Facility Management"
+                ],
+                "summary": "➕ Create a new facility",
+                "operationId": "eb74e4fbb02148f2a4d99c4578d34aba",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreFacilityRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ Facility created"
+                    },
+                    "422": {
+                        "description": "❌ Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/facilities/{id}": {
+            "get": {
+                "tags": [
+                    "Facility Management"
+                ],
+                "summary": "🔍 Get facility details",
+                "operationId": "46940c1bfd20e15bd757ecd3abf2b41b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Facility details"
+                    },
+                    "404": {
+                        "description": "❌ Facility not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Facility Management"
+                ],
+                "summary": "📝 Update facility",
+                "operationId": "c13c28f49fc3ea43773204212eb80953",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Facility updated"
+                    },
+                    "404": {
+                        "description": "❌ Facility not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Facility Management"
+                ],
+                "summary": "🗑️ Delete facility",
+                "operationId": "4a6a1be2e027240cb7bb94ec61965db9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Facility deleted"
+                    },
+                    "404": {
+                        "description": "❌ Facility not found"
+                    }
+                }
+            }
+        },
+        "/v1/facilities/{id}/toggle-status": {
+            "patch": {
+                "tags": [
+                    "Facility Management"
+                ],
+                "summary": "🔄 Toggle facility active status",
+                "operationId": "dd5b11454c7242ce09425deef3a8db4b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Facility status updated"
+                    }
+                }
+            }
+        },
+        "/v1/lockers": {
+            "get": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🔐 List all lockers",
+                "operationId": "4e2e2abd408b815b7af09eba0f662ca6",
+                "responses": {
+                    "200": {
+                        "description": "✅ List of lockers"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "➕ Create a new locker",
+                "operationId": "3cff094eb9545ff19c3f7c7d1e313e11",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreLockerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ Locker created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/{id}": {
+            "delete": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🗑️ Delete locker",
+                "operationId": "5bd5d06c0a865ba909c14a11f0ca52bd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Locker deleted"
+                    }
+                }
+            }
+        },
+        "/v1/lockers/{id}/toggle-status": {
+            "patch": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🔄 Toggle locker active status",
+                "operationId": "768e19262e7627ade962d8f4bbb2bff2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ Locker status updated"
+                    }
+                }
+            }
         }
     },
     "components": {
         "schemas": {
+            "StoreBranchRequest": {
+                "title": "StoreBranchRequest",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "object",
+                        "example": "{\"ar\": \"فرع دبي\", \"en\": \"Dubai Branch\"}"
+                    },
+                    "gender_restriction": {
+                        "type": "string",
+                        "example": "mixed",
+                        "enum": [
+                            "male",
+                            "female",
+                            "mixed"
+                        ]
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Street 10, Dubai"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "0501234567"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreFacilityRequest": {
+                "title": "StoreFacilityRequest",
+                "required": [
+                    "branch_id",
+                    "name"
+                ],
+                "properties": {
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "object",
+                        "example": "{\"ar\": \"صالة الملاكمة\", \"en\": \"Boxing Hall\"}"
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "gender_restriction": {
+                        "type": "string",
+                        "example": "male",
+                        "enum": [
+                            "male",
+                            "female",
+                            "mixed"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "StoreLockerRequest": {
+                "title": "StoreLockerRequest",
+                "required": [
+                    "branch_id",
+                    "facility_id",
+                    "locker_number"
+                ],
+                "properties": {
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "facility_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "locker_number": {
+                        "type": "string",
+                        "example": "L-101"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateBranchRequest": {
+                "title": "UpdateBranchRequest",
+                "properties": {
+                    "name": {
+                        "type": "object",
+                        "example": "{\"ar\": \"فرع دبي المحدث\", \"en\": \"Updated Dubai Branch\"}"
+                    },
+                    "gender_restriction": {
+                        "type": "string",
+                        "enum": [
+                            "male",
+                            "female",
+                            "mixed"
+                        ]
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateFacilityRequest": {
+                "title": "UpdateFacilityRequest",
+                "properties": {
+                    "name": {
+                        "type": "object",
+                        "example": "{\"ar\": \"الصالة المحدثة\", \"en\": \"Updated Hall\"}"
+                    },
+                    "capacity": {
+                        "type": "integer"
+                    },
+                    "gender_restriction": {
+                        "type": "string",
+                        "enum": [
+                            "male",
+                            "female",
+                            "mixed"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
             "ApiResponse": {
                 "properties": {
                     "status": {
@@ -398,6 +927,18 @@
         {
             "name": "People Management",
             "description": "People Management"
+        },
+        {
+            "name": "Branch Management",
+            "description": "Branch Management"
+        },
+        {
+            "name": "Facility Management",
+            "description": "Facility Management"
+        },
+        {
+            "name": "Locker Management",
+            "description": "Locker Management"
         }
     ]
 }
