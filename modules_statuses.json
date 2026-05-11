@@ -2,5 +2,6 @@
     "Core": true,
     "TenantManager": true,
     "Sports": true,
-    "Authentication": true
+    "Authentication": true,
+    "BranchManager": true
 }

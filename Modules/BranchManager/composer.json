@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/branchmanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\BranchManager\\": "app/",
+            "Modules\\BranchManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\BranchManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\BranchManager\\Tests\\": "tests/"
+        }
+    }
+}
