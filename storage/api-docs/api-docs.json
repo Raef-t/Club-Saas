@@ -344,6 +344,115 @@
                 ]
             }
         },
+        "/v1/users": {
+            "get": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "📋 عرض قائمة المستخدمين",
+                "description": "يسمح للإدارة بعرض جميع حسابات المستخدمين المسجلة في النادي مع حالاتهم (نشط/غير نشط).",
+                "operationId": "5d6ff9d5ddf189f7f69a88bb401aa1a4",
+                "parameters": [
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}/activate": {
+            "patch": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "✅ تفعيل حساب مستخدم (Activate)",
+                "description": "يستخدم لتحويل حالة الحساب إلى **نشط**، مما يسمح للمستخدم بتسجيل الدخول للنظام.",
+                "operationId": "3cf7e07fd448ce338dc382ac65ee785d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User activated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}/deactivate": {
+            "patch": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "🚫 إيقاف حساب مستخدم (Deactivate)",
+                "description": "يستخدم لتحويل حالة الحساب إلى **غير نشط**، مما يمنع المستخدم من الدخول للنظام فوراً.",
+                "operationId": "c14ca550cb84ae57c4d5b9e6e5bac036",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deactivated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/branches": {
             "get": {
                 "tags": [
@@ -927,6 +1036,10 @@
         {
             "name": "People Management",
             "description": "People Management"
+        },
+        {
+            "name": "User Management",
+            "description": "User Management"
         },
         {
             "name": "Branch Management",

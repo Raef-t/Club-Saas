@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Authentication\Http\Controllers\Api\AuthController;
 use Modules\Authentication\Http\Controllers\Api\PeopleController;
+use Modules\Authentication\Http\Controllers\Api\UserController;
 
 Route::prefix('v1/auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -14,4 +15,9 @@ Route::prefix('v1/auth')->group(function () {
 
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('people', [PeopleController::class, 'store']);
+    
+    // User Account Management
+    Route::get('users', [UserController::class, 'index']);
+    Route::patch('users/{id}/activate', [UserController::class, 'activate']);
+    Route::patch('users/{id}/deactivate', [UserController::class, 'deactivate']);
 });
