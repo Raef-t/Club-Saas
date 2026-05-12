@@ -15,7 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('person_id');
             $table->unsignedBigInteger('branch_id');
             
-            $table->enum('role', ['admin', 'receptionist', 'coach', 'cleaner', 'manager'])->default('staff');
+            $table->enum('role', ['admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'])->default('staff');
             $table->enum('employment_type', ['fixed_salary', 'commission_based', 'hybrid'])->default('fixed_salary');
             
             $table->decimal('base_salary', 12, 2)->default(0);

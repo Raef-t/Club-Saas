@@ -8,6 +8,19 @@ use Laravel\Sanctum\HasApiTokens;
 use Modules\Core\Traits\BelongsToTenant;
 use Spatie\Permission\Traits\HasRoles;
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(
+    schema: 'User',
+    title: 'User',
+    description: 'User authentication account',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'username', type: 'string', example: 'admin'),
+        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+        new OA\Property(property: 'person', ref: '#/components/schemas/Person'),
+    ]
+)]
 class User extends Authenticatable
 {
     use HasFactory, HasApiTokens, BelongsToTenant, HasRoles;
