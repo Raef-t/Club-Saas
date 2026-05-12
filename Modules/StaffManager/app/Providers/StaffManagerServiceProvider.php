@@ -2,29 +2,24 @@
 
 namespace Modules\StaffManager\Providers;
 
-use Nwidart\Modules\Support\ModuleServiceProvider;
+use Illuminate\Support\ServiceProvider;
+use Modules\Core\Providers\RouteServiceProvider;
 use Modules\StaffManager\Repositories\StaffRepositoryInterface;
 use Modules\StaffManager\Repositories\EloquentStaffRepository;
 
-class StaffManagerServiceProvider extends ModuleServiceProvider
+class StaffManagerServiceProvider extends ServiceProvider
 {
-    protected string $name = 'StaffManager';
-    protected string $nameLower = 'staffmanager';
-
-    protected array $providers = [
-        RouteServiceProvider::class,
-    ];
+    protected string $moduleName = 'StaffManager';
 
     public function register(): void
     {
-        parent::register();
-        
+        $this->app->register(RouteServiceProvider::class);
+
         $this->app->bind(StaffRepositoryInterface::class, EloquentStaffRepository::class);
     }
 
     public function boot(): void
     {
-        parent::boot();
-        $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
+        $this->loadMigrationsFrom(module_path($this->moduleName, 'database/migrations'));
     }
 }
