@@ -1,21 +1,21 @@
 <?php
 
-namespace Modules\Authentication\Providers;
+namespace Modules\NotificationManager\Providers;
 
 use Nwidart\Modules\Support\ModuleServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
 
-class AuthenticationServiceProvider extends ModuleServiceProvider
+class NotificationManagerServiceProvider extends ModuleServiceProvider
 {
     /**
      * The name of the module.
      */
-    protected string $name = 'Authentication';
+    protected string $name = 'NotificationManager';
 
     /**
      * The lowercase version of the module name.
      */
-    protected string $nameLower = 'authentication';
+    protected string $nameLower = 'notificationmanager';
 
     /**
      * Command classes to register.
@@ -34,6 +34,16 @@ class AuthenticationServiceProvider extends ModuleServiceProvider
         RouteServiceProvider::class,
     ];
 
+    public function register(): void
+    {
+        parent::register();
+        
+        $this->app->bind(
+            \Modules\NotificationManager\Repositories\NotificationTemplateRepositoryInterface::class,
+            \Modules\NotificationManager\Repositories\EloquentNotificationTemplateRepository::class
+        );
+    }
+
     /**
      * Define module schedules.
      * 
@@ -42,13 +52,5 @@ class AuthenticationServiceProvider extends ModuleServiceProvider
     // protected function configureSchedules(Schedule $schedule): void
     // {
     //     $schedule->command('inspire')->hourly();
-    public function register(): void
-    {
-        parent::register();
-
-        $this->app->bind(
-            \Modules\Authentication\Services\PersonServiceInterface::class,
-            \Modules\Authentication\Services\PersonService::class
-        );
-    }
+    // }
 }

@@ -1,21 +1,21 @@
 <?php
 
-namespace Modules\Authentication\Providers;
+namespace Modules\SubscriptionManager\Providers;
 
 use Nwidart\Modules\Support\ModuleServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
 
-class AuthenticationServiceProvider extends ModuleServiceProvider
+class SubscriptionManagerServiceProvider extends ModuleServiceProvider
 {
     /**
      * The name of the module.
      */
-    protected string $name = 'Authentication';
+    protected string $name = 'SubscriptionManager';
 
     /**
      * The lowercase version of the module name.
      */
-    protected string $nameLower = 'authentication';
+    protected string $nameLower = 'subscriptionmanager';
 
     /**
      * Command classes to register.
@@ -36,19 +36,24 @@ class AuthenticationServiceProvider extends ModuleServiceProvider
 
     /**
      * Define module schedules.
-     * 
-     * @param $schedule
      */
     // protected function configureSchedules(Schedule $schedule): void
     // {
     //     $schedule->command('inspire')->hourly();
+    // }
+
     public function register(): void
     {
         parent::register();
 
         $this->app->bind(
-            \Modules\Authentication\Services\PersonServiceInterface::class,
-            \Modules\Authentication\Services\PersonService::class
+            \Modules\SubscriptionManager\Repositories\SubscriptionPlanRepositoryInterface::class,
+            \Modules\SubscriptionManager\Repositories\EloquentSubscriptionPlanRepository::class
+        );
+
+        $this->app->bind(
+            \Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface::class,
+            \Modules\SubscriptionManager\Repositories\EloquentPlayerSubscriptionRepository::class
         );
     }
 }
