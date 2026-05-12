@@ -104,7 +104,7 @@ class PlayerSubscriptionController extends BaseController
         );
 
         return $this->successResponse(
-            new PlayerSubscriptionResource($subscription),
+            new PlayerSubscriptionResource($subscription->load(['member', 'plan'])),
             __('Subscription frozen successfully')
         );
     }

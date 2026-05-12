@@ -14,12 +14,16 @@ class PlayerSubscription extends Model
     protected $fillable = [
         'tenant_id',
         'member_id',
+        'coach_id',
         'plan_id',
+        'total_amount',
+        'paid_amount',
+        'remaining_amount',
         'start_date',
         'end_date',
         'status',
         'remaining_sessions',
-        'paid_amount',
+        'notes',
     ];
 
     protected $casts = [
