@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('end_date')->nullable();
             
             $table->enum('status', ['active', 'expired', 'frozen', 'cancelled'])->default('active');
+            $table->decimal('paid_amount', 12, 2)->default(0);
             $table->integer('remaining_sessions')->nullable();
             
             $table->timestamps();

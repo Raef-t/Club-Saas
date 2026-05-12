@@ -18,6 +18,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     
     // User Account Management
     Route::get('users', [UserController::class, 'index']);
+    Route::post('users/create-account', [UserController::class, 'createAccount']);
     Route::patch('users/{id}/activate', [UserController::class, 'activate']);
     Route::patch('users/{id}/deactivate', [UserController::class, 'deactivate']);
 });

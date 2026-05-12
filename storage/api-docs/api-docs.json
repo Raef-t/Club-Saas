@@ -61,7 +61,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "✅ Successfully Authenticated",
+                        "description": "Login successful",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -72,34 +72,16 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Logged in successfully"
+                                            "example": "Login successful"
                                         },
                                         "data": {
                                             "properties": {
-                                                "access_token": {
-                                                    "type": "string",
-                                                    "example": "1|abc123token..."
-                                                },
-                                                "token_type": {
-                                                    "type": "string",
-                                                    "example": "Bearer"
-                                                },
                                                 "user": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        },
-                                                        "username": {
-                                                            "type": "string",
-                                                            "example": "admin"
-                                                        },
-                                                        "full_name": {
-                                                            "type": "string",
-                                                            "example": "Admin User"
-                                                        }
-                                                    },
-                                                    "type": "object"
+                                                    "$ref": "#/components/schemas/User"
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|abcde..."
                                                 }
                                             },
                                             "type": "object"
@@ -111,24 +93,10 @@
                         }
                     },
                     "401": {
-                        "description": "❌ Invalid Credentials",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
+                        "description": "Invalid credentials"
                     },
                     "403": {
-                        "description": "🚫 Account Inactive",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
+                        "description": "Account inactive"
                     }
                 }
             }
@@ -139,32 +107,11 @@
                     "Authentication"
                 ],
                 "summary": "🚪 User Logout",
-                "description": "Revoke the current user access token and end the session.",
+                "description": "Revoke the current user session and destroy the token.",
                 "operationId": "2ea5ac67a96e6907b1497e57d34b9dae",
-                "parameters": [
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "✅ Logged out successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
+                        "description": "Logged out successfully"
                     }
                 },
                 "security": [
@@ -179,14 +126,14 @@
                 "tags": [
                     "People Management"
                 ],
-                "summary": "👥 التسجيل الشامل: لاعبين، مدربين، وموظفين",
-                "description": "## 📘 نظرة عامة\nهذا المسار (Endpoint) ديناميكي وذكي جداً، مصمم لإدارة تسجيل الموارد البشرية بالكامل في النادي. يقوم بمعالجة إنشاء ثلاث كيانات مختلفة في عملية قاعدة بيانات واحدة:\n\n1. **كيان الشخص (Person)**: البيانات الشخصية الأساسية وتخزن في جدول `people` المركزي.\n2. **الملف الشخصي المتخصص (Profile)**: يتم إنشاء سجل متخصص بناءً على القيمة المرسلة في حقل النوع (`type`).\n3. **حساب المستخدم (User)**: يتم إنشاء حساب نظام تلقائياً مرتبط بالشخص.\n\n### 🛠 تحديد الأنواع (Types) والمنطق البرمجي:\nيجب إرسال إحدى القيم التالية بالإنجليزية حصراً في حقل `type`:\n\n- **`player`**: عند تسجيل (لاعب) جديد؛ سيقوم النظام بتوليد **QR Code** فريد وتسجيل بيانات طبية.\n- **`coach`**: عند تسجيل (مدرب)؛ سيقوم النظام بتسجيل التخصص الرياضي وسنوات الخبرة.\n- **`staff`**: عند تسجيل (موظف إداري)؛ سيقوم النظام بتسجيل المسمى الوظيفي الإداري.\n\n### 🛡 الأمان وتعدد الأندية (Tenancy):\nكل عملية تسجيل محصورة بدقة داخل معرف النادي (`X-Tenant-ID`) المرسل في الهيدر لضمان عزل البيانات.",
+                "summary": "👥 Register Person (Identity Only)",
+                "description": "## 📘 نظرة عامة\nهذا المسار مخصص لتسجيل الهوية الأساسية للأشخاص في النظام (لاعبين، مدربين، موظفين).\n\n### 🛡 المعمارية الجديدة:\nوظيفته تقتصر على إنشاء سجل الشخص (`Person`) فقط. العمليات التشغيلية اللاحقة (مثل إضافة بيانات طبية أو تعيين فرع) تتم عبر الموديولات المخصصة لها مثل `MemberManager`.",
                 "operationId": "08188bcdbe14024a6f5819a2bbedc5fa",
                 "parameters": [
                     {
                         "name": "X-Tenant-ID",
                         "in": "header",
-                        "description": "المعرف الفريد للنادي. هام جداً لعزل البيانات.",
+                        "description": "المعرف الفريد للنادي.",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -195,7 +142,7 @@
                     }
                 ],
                 "requestBody": {
-                    "description": "بيانات التسجيل الكاملة. القيم التقنية (مثل player, coach) يجب أن ترسل بالإنجليزية كما هي موضح أدناه.",
+                    "description": "البيانات الشخصية الأساسية.",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -207,12 +154,10 @@
                                 ],
                                 "properties": {
                                     "full_name": {
-                                        "description": "الاسم الكامل الرسمي",
                                         "type": "string",
                                         "example": "Mohamed Ahmed"
                                     },
                                     "type": {
-                                        "description": "نوع الشخص: (player) للاعب، (coach) للمدرب، (staff) للموظف.",
                                         "type": "string",
                                         "example": "player",
                                         "enum": [
@@ -230,13 +175,11 @@
                                         ]
                                     },
                                     "dob": {
-                                        "description": "تاريخ الميلاد (YYYY-MM-DD)",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2005-06-15"
                                     },
                                     "mobile_1": {
-                                        "description": "رقم الجوال الأساسي",
                                         "type": "string",
                                         "example": "0512345678"
                                     },
@@ -244,42 +187,6 @@
                                         "type": "string",
                                         "format": "email",
                                         "example": "player@example.com"
-                                    },
-                                    "password": {
-                                        "description": "كلمة المرور (الافتراضية: 123456)",
-                                        "type": "string",
-                                        "example": "password123"
-                                    },
-                                    "profile_data": {
-                                        "description": "بيانات الملف الشخصي (تعتمد على القيمة المرسلة في type)",
-                                        "properties": {
-                                            "blood_type": {
-                                                "description": "[للنوع player] فصيلة الدم",
-                                                "type": "string",
-                                                "example": "A+"
-                                            },
-                                            "specialization": {
-                                                "description": "[للنوع coach] التخصص الرياضي",
-                                                "type": "string",
-                                                "example": "Swimming"
-                                            },
-                                            "job_title": {
-                                                "description": "[للنوع staff] المسمى الوظيفي",
-                                                "type": "string",
-                                                "example": "Accountant"
-                                            },
-                                            "medical_conditions": {
-                                                "description": "[للنوع player] الحالات الطبية",
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "string"
-                                                },
-                                                "example": [
-                                                    "Asthma"
-                                                ]
-                                            }
-                                        },
-                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -289,7 +196,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "✅ Person & Profile Created Successfully",
+                        "description": "Person registered successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -299,39 +206,10 @@
                                             "example": "success"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "person_id": {
-                                                    "type": "integer",
-                                                    "example": 50
-                                                },
-                                                "username": {
-                                                    "type": "string",
-                                                    "example": "mohamed50"
-                                                },
-                                                "type": {
-                                                    "type": "string",
-                                                    "example": "player"
-                                                },
-                                                "qr_code": {
-                                                    "description": "Generated QR code for players",
-                                                    "type": "string",
-                                                    "example": "QR-X1Y2Z3"
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/Person"
                                         }
                                     },
                                     "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
                                 }
                             }
                         }
@@ -344,28 +222,62 @@
                 ]
             }
         },
-        "/v1/users": {
-            "get": {
+        "/v1/users/create-account": {
+            "post": {
                 "tags": [
                     "User Management"
                 ],
-                "summary": "📋 عرض قائمة المستخدمين",
-                "description": "يسمح للإدارة بعرض جميع حسابات المستخدمين المسجلة في النادي مع حالاتهم (نشط/غير نشط).",
-                "operationId": "5d6ff9d5ddf189f7f69a88bb401aa1a4",
-                "parameters": [
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
+                "summary": "🔑 Create User Account for Existing Person",
+                "description": "Provision a new authentication account for a previously registered person (Player, Coach, or Staff).",
+                "operationId": "af6c1e73abfd3c6c8bb62a2cd0ffc3b4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "person_id",
+                                    "username",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "person_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "mohamed_gym"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "secure_password"
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
-                    "200": {
-                        "description": "Success"
+                    "201": {
+                        "description": "User account created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -376,35 +288,15 @@
             }
         },
         "/v1/users/{id}/activate": {
-            "patch": {
+            "post": {
                 "tags": [
                     "User Management"
                 ],
-                "summary": "✅ تفعيل حساب مستخدم (Activate)",
-                "description": "يستخدم لتحويل حالة الحساب إلى **نشط**، مما يسمح للمستخدم بتسجيل الدخول للنظام.",
-                "operationId": "3cf7e07fd448ce338dc382ac65ee785d",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
+                "summary": "✅ Activate User Account",
+                "operationId": "9ed20f17795eb2599657bfc8b4e357aa",
                 "responses": {
                     "200": {
-                        "description": "User activated successfully"
+                        "description": "User activated"
                     }
                 },
                 "security": [
@@ -415,35 +307,15 @@
             }
         },
         "/v1/users/{id}/deactivate": {
-            "patch": {
+            "post": {
                 "tags": [
                     "User Management"
                 ],
-                "summary": "🚫 إيقاف حساب مستخدم (Deactivate)",
-                "description": "يستخدم لتحويل حالة الحساب إلى **غير نشط**، مما يمنع المستخدم من الدخول للنظام فوراً.",
-                "operationId": "c14ca550cb84ae57c4d5b9e6e5bac036",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
+                "summary": "🚫 Deactivate User Account",
+                "operationId": "c688a12a2725a8f0416810d42b70e946",
                 "responses": {
                     "200": {
-                        "description": "User deactivated successfully"
+                        "description": "User deactivated"
                     }
                 },
                 "security": [
@@ -1479,6 +1351,74 @@
     },
     "components": {
         "schemas": {
+            "Person": {
+                "title": "Person",
+                "description": "Central person entity representing players, coaches, or staff",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "full_name": {
+                        "type": "string",
+                        "example": "Mohamed Ahmed"
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "player",
+                        "enum": [
+                            "player",
+                            "coach",
+                            "staff"
+                        ]
+                    },
+                    "gender": {
+                        "type": "string",
+                        "example": "male",
+                        "enum": [
+                            "male",
+                            "female"
+                        ]
+                    },
+                    "dob": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2005-06-15"
+                    },
+                    "mobile_1": {
+                        "type": "string",
+                        "example": "0512345678"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "player@example.com"
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "title": "User",
+                "description": "User authentication account",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "admin"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "person": {
+                        "$ref": "#/components/schemas/Person"
+                    }
+                },
+                "type": "object"
+            },
             "StoreBranchRequest": {
                 "title": "StoreBranchRequest",
                 "required": [

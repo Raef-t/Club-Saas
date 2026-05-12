@@ -29,7 +29,14 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Modules\\BranchManager\\": "Modules/BranchManager/app/"
+            "Modules\\Authentication\\": "Modules/Authentication/app/",
+            "Modules\\Core\\": "Modules/Core/app/",
+            "Modules\\BranchManager\\": "Modules/BranchManager/app/",
+            "Modules\\MemberManager\\": "Modules/MemberManager/app/",
+            "Modules\\SubscriptionManager\\": "Modules/SubscriptionManager/app/",
+            "Modules\\StaffManager\\": "Modules/StaffManager/app/",
+            "Modules\\Sports\\": "Modules/Sports/app/",
+            "Modules\\TenantManager\\": "Modules/TenantManager/app/"
         }
     },
     "autoload-dev": {

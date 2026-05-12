@@ -3,64 +3,92 @@
 namespace Modules\Authentication\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\Authentication\Models\User;
+use Modules\Authentication\Models\Person;
+use Modules\Authentication\Http\Resources\UserResource;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use OpenApi\Attributes as OA;
 
 class UserController extends BaseController
 {
-    #[OA\Get(
-        path: '/v1/users',
-        summary: '📋 عرض قائمة المستخدمين',
-        description: 'يسمح للإدارة بعرض جميع حسابات المستخدمين المسجلة في النادي مع حالاتهم (نشط/غير نشط).',
+    #[OA\Post(
+        path: '/v1/users/create-account',
+        summary: '🔑 Create User Account for Existing Person',
+        description: 'Provision a new authentication account for a previously registered person (Player, Coach, or Staff).',
         tags: ['User Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'X-Tenant-ID', in: 'header', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: 'Success')]
-    public function index()
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['person_id', 'username', 'password'],
+            properties: [
+                new OA\Property(property: 'person_id', type: 'integer', example: 1),
+                new OA\Property(property: 'username', type: 'string', example: 'mohamed_gym'),
+                new OA\Property(property: 'password', type: 'string', example: 'secure_password'),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'User account created successfully',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'status', type: 'string', example: 'success'),
+            new OA\Property(property: 'data', ref: '#/components/schemas/User')
+        ])
+    )]
+    public function createAccount(Request $request)
     {
-        $users = User::with('person')->get();
-        return $this->successResponse($users);
+        $request->validate([
+            'person_id' => 'required|exists:people,id',
+            'username' => 'required|string|unique:users,username',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $user = User::create([
+            'tenant_id' => session('tenant_id'),
+            'person_id' => $request->person_id,
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+            'is_active' => false, // Created as inactive by default
+        ]);
+
+        return $this->successResponse(
+            new UserResource($user),
+            __('User account created successfully for the selected person'),
+            201
+        );
     }
 
-    #[OA\Patch(
+    #[OA\Post(
         path: '/v1/users/{id}/activate',
-        summary: '✅ تفعيل حساب مستخدم (Activate)',
-        description: "يستخدم لتحويل حالة الحساب إلى **نشط**، مما يسمح للمستخدم بتسجيل الدخول للنظام.",
+        summary: '✅ Activate User Account',
         tags: ['User Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'X-Tenant-ID', in: 'header', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: 'User activated successfully')]
+    #[OA\Response(response: 200, description: 'User activated')]
     public function activate($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::where('id', $id)->where('tenant_id', session('tenant_id'))->firstOrFail();
         $user->update(['is_active' => true]);
 
-        return $this->successResponse(null, __('User account activated successfully'));
+        return $this->successResponse(new UserResource($user), __('User account activated successfully'));
     }
 
-    #[OA\Patch(
+    #[OA\Post(
         path: '/v1/users/{id}/deactivate',
-        summary: '🚫 إيقاف حساب مستخدم (Deactivate)',
-        description: "يستخدم لتحويل حالة الحساب إلى **غير نشط**، مما يمنع المستخدم من الدخول للنظام فوراً.",
+        summary: '🚫 Deactivate User Account',
         tags: ['User Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'X-Tenant-ID', in: 'header', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: 'User deactivated successfully')]
+    #[OA\Response(response: 200, description: 'User deactivated')]
     public function deactivate($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::where('id', $id)->where('tenant_id', session('tenant_id'))->firstOrFail();
         $user->update(['is_active' => false]);
 
-        return $this->successResponse(null, __('User account deactivated successfully'));
+        return $this->successResponse(new UserResource($user), __('User account deactivated successfully'));
     }
 }

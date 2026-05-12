@@ -6,6 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Core\Traits\BelongsToTenant;
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(
+    schema: 'Person',
+    title: 'Person',
+    description: 'Central person entity representing players, coaches, or staff',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'full_name', type: 'string', example: 'Mohamed Ahmed'),
+        new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], example: 'player'),
+        new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
+        new OA\Property(property: 'dob', type: 'string', format: 'date', example: '2005-06-15'),
+        new OA\Property(property: 'mobile_1', type: 'string', example: '0512345678'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'player@example.com'),
+    ]
+)]
 class Person extends Model
 {
     use HasFactory, BelongsToTenant;
