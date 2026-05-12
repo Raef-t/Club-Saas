@@ -179,14 +179,14 @@
                 "tags": [
                     "People Management"
                 ],
-                "summary": "👥 Smart Registration for Club Members & Staff",
-                "description": "Creates a Person, their specialized Profile (Player, Coach, or Staff), and an Inactive User account in a single atomic transaction.",
+                "summary": "👥 التسجيل الشامل: لاعبين، مدربين، وموظفين",
+                "description": "## 📘 نظرة عامة\nهذا المسار (Endpoint) ديناميكي وذكي جداً، مصمم لإدارة تسجيل الموارد البشرية بالكامل في النادي. يقوم بمعالجة إنشاء ثلاث كيانات مختلفة في عملية قاعدة بيانات واحدة:\n\n1. **كيان الشخص (Person)**: البيانات الشخصية الأساسية وتخزن في جدول `people` المركزي.\n2. **الملف الشخصي المتخصص (Profile)**: يتم إنشاء سجل متخصص بناءً على القيمة المرسلة في حقل النوع (`type`).\n3. **حساب المستخدم (User)**: يتم إنشاء حساب نظام تلقائياً مرتبط بالشخص.\n\n### 🛠 تحديد الأنواع (Types) والمنطق البرمجي:\nيجب إرسال إحدى القيم التالية بالإنجليزية حصراً في حقل `type`:\n\n- **`player`**: عند تسجيل (لاعب) جديد؛ سيقوم النظام بتوليد **QR Code** فريد وتسجيل بيانات طبية.\n- **`coach`**: عند تسجيل (مدرب)؛ سيقوم النظام بتسجيل التخصص الرياضي وسنوات الخبرة.\n- **`staff`**: عند تسجيل (موظف إداري)؛ سيقوم النظام بتسجيل المسمى الوظيفي الإداري.\n\n### 🛡 الأمان وتعدد الأندية (Tenancy):\nكل عملية تسجيل محصورة بدقة داخل معرف النادي (`X-Tenant-ID`) المرسل في الهيدر لضمان عزل البيانات.",
                 "operationId": "08188bcdbe14024a6f5819a2bbedc5fa",
                 "parameters": [
                     {
                         "name": "X-Tenant-ID",
                         "in": "header",
-                        "description": "ID of the Club",
+                        "description": "المعرف الفريد للنادي. هام جداً لعزل البيانات.",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -195,7 +195,7 @@
                     }
                 ],
                 "requestBody": {
-                    "description": "Detailed info for the person and their profile",
+                    "description": "بيانات التسجيل الكاملة. القيم التقنية (مثل player, coach) يجب أن ترسل بالإنجليزية كما هي موضح أدناه.",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -207,12 +207,12 @@
                                 ],
                                 "properties": {
                                     "full_name": {
-                                        "description": "Full name of the person",
+                                        "description": "الاسم الكامل الرسمي",
                                         "type": "string",
                                         "example": "Mohamed Ahmed"
                                     },
                                     "type": {
-                                        "description": "Role type",
+                                        "description": "نوع الشخص: (player) للاعب، (coach) للمدرب، (staff) للموظف.",
                                         "type": "string",
                                         "example": "player",
                                         "enum": [
@@ -230,13 +230,13 @@
                                         ]
                                     },
                                     "dob": {
-                                        "description": "Date of Birth (YYYY-MM-DD)",
+                                        "description": "تاريخ الميلاد (YYYY-MM-DD)",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2005-06-15"
                                     },
                                     "mobile_1": {
-                                        "description": "Primary mobile number",
+                                        "description": "رقم الجوال الأساسي",
                                         "type": "string",
                                         "example": "0512345678"
                                     },
@@ -246,30 +246,30 @@
                                         "example": "player@example.com"
                                     },
                                     "password": {
-                                        "description": "Password for the new account (default: 123456)",
+                                        "description": "كلمة المرور (الافتراضية: 123456)",
                                         "type": "string",
-                                        "example": "pass123"
+                                        "example": "password123"
                                     },
                                     "profile_data": {
-                                        "description": "Specific data based on the \"type\" field",
+                                        "description": "بيانات الملف الشخصي (تعتمد على القيمة المرسلة في type)",
                                         "properties": {
                                             "blood_type": {
-                                                "description": "[Player Only] Blood type",
+                                                "description": "[للنوع player] فصيلة الدم",
                                                 "type": "string",
                                                 "example": "A+"
                                             },
                                             "specialization": {
-                                                "description": "[Coach Only] Main sport",
+                                                "description": "[للنوع coach] التخصص الرياضي",
                                                 "type": "string",
                                                 "example": "Swimming"
                                             },
                                             "job_title": {
-                                                "description": "[Staff Only] Position",
+                                                "description": "[للنوع staff] المسمى الوظيفي",
                                                 "type": "string",
-                                                "example": "Receptionist"
+                                                "example": "Accountant"
                                             },
                                             "medical_conditions": {
-                                                "description": "[Player Only] Array of health issues",
+                                                "description": "[للنوع player] الحالات الطبية",
                                                 "type": "array",
                                                 "items": {
                                                     "type": "string"
@@ -335,6 +335,115 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users": {
+            "get": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "📋 عرض قائمة المستخدمين",
+                "description": "يسمح للإدارة بعرض جميع حسابات المستخدمين المسجلة في النادي مع حالاتهم (نشط/غير نشط).",
+                "operationId": "5d6ff9d5ddf189f7f69a88bb401aa1a4",
+                "parameters": [
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}/activate": {
+            "patch": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "✅ تفعيل حساب مستخدم (Activate)",
+                "description": "يستخدم لتحويل حالة الحساب إلى **نشط**، مما يسمح للمستخدم بتسجيل الدخول للنظام.",
+                "operationId": "3cf7e07fd448ce338dc382ac65ee785d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User activated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}/deactivate": {
+            "patch": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "🚫 إيقاف حساب مستخدم (Deactivate)",
+                "description": "يستخدم لتحويل حالة الحساب إلى **غير نشط**، مما يمنع المستخدم من الدخول للنظام فوراً.",
+                "operationId": "c14ca550cb84ae57c4d5b9e6e5bac036",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Tenant-ID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deactivated successfully"
                     }
                 },
                 "security": [
@@ -927,6 +1036,10 @@
         {
             "name": "People Management",
             "description": "People Management"
+        },
+        {
+            "name": "User Management",
+            "description": "User Management"
         },
         {
             "name": "Branch Management",
