@@ -1,0 +1,11 @@
+{
+    "name": "MemberManager",
+    "alias": "membermanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\MemberManager\\Providers\\MemberManagerServiceProvider"
+    ],
+    "files": []
+}

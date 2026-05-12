@@ -737,6 +737,635 @@
                     }
                 }
             }
+        },
+        "/v1/members": {
+            "get": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "👥 List all members",
+                "operationId": "055d61d21c1c945ae641beb1dcc647ab",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "➕ Register a new member",
+                "operationId": "048941ce8fdfea6c899e59a249e72549",
+                "responses": {
+                    "201": {
+                        "description": "Member registered"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/{id}": {
+            "get": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "🔍 Get member details",
+                "operationId": "3f92f2cd4f41b7224c4ce0d9ea4d1cae",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Member not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "📝 Update member info",
+                "operationId": "4ed81070dd85a56a3172ddc22e45c63b",
+                "responses": {
+                    "200": {
+                        "description": "Member updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "🗑️ Delete member",
+                "operationId": "c14780dac4283e362a1f2fd0802c4c00",
+                "responses": {
+                    "200": {
+                        "description": "Member deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/{id}/health-profile": {
+            "get": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "🏥 Get member health profile",
+                "operationId": "cf52995d4458d6a710b2ecf8b3c9359d",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/{id}/measurements": {
+            "get": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "📏 List member measurements",
+                "operationId": "445550a07f01c38c18bfe2888c2d359b",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "⚖️ Record new measurement",
+                "operationId": "4f46d4316053afde52269d8af4b0ee9b",
+                "responses": {
+                    "201": {
+                        "description": "Measurement recorded"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-logs": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "📜 View notification history",
+                "operationId": "d72e0f2f9d91c446c4eec0013cdd3a87",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-logs/{id}": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🔍 View single log detail",
+                "operationId": "5342553fcc980d241790c5e9ab869a62",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🗑 Delete a log entry",
+                "operationId": "6ded746a8e12806c20e4a8ba2bc02df7",
+                "responses": {
+                    "200": {
+                        "description": "Log deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-stats": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "📊 Notification delivery statistics",
+                "operationId": "32d5544daf0d3717cb2f4936063dfd26",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-templates": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "📋 List notification templates",
+                "operationId": "4dcfe778ed07a46185452dddc88bef96",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "➕ Create template",
+                "operationId": "9b988eb8fe57b6f6ad112e5a6c3f1244",
+                "responses": {
+                    "201": {
+                        "description": "Template created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-templates/{id}": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🔍 View template details",
+                "operationId": "f5430ebf7b74e3bd4a421f3b32fddfb7",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "Edit a template",
+                "operationId": "9e29121b7c0097105646fe7a6d6507eb",
+                "responses": {
+                    "200": {
+                        "description": "Template updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🗑 Delete a template",
+                "operationId": "b8c13243ea54d8f12ff0ddfa8fecbf2f",
+                "responses": {
+                    "200": {
+                        "description": "Template deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-templates/{id}/toggle": {
+            "post": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🔘 Enable or disable a template",
+                "operationId": "264cfcb9cb6de83ab8eb372f9fa87b59",
+                "responses": {
+                    "200": {
+                        "description": "Status toggled"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notification-templates/{slug}/test": {
+            "post": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🧪 Send a test notification",
+                "operationId": "c589672df25790303d66e83849aa048a",
+                "responses": {
+                    "200": {
+                        "description": "Test sent"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff": {
+            "get": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "👥 List all staff and coaches",
+                "operationId": "38db582bc7fab639cc88c4c4f9df2c2c",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "➕ Onboard a new staff member",
+                "operationId": "d9c544ebcfbbc6077d35711e4060448d",
+                "responses": {
+                    "201": {
+                        "description": "Staff onboarded"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff/{id}/schedule": {
+            "post": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "📅 Set staff weekly schedule",
+                "operationId": "447bba7e0c60e3c4aba9352ef908da95",
+                "responses": {
+                    "200": {
+                        "description": "Schedule updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff/{id}/check-in": {
+            "post": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "🕒 Staff check-in",
+                "operationId": "6fd74244a3e90fbb1bae00d92e5e8468",
+                "responses": {
+                    "200": {
+                        "description": "Check-in successful"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/attendance/check-in": {
+            "post": {
+                "tags": [
+                    "Attendance Management"
+                ],
+                "summary": "📡 Check-in a member by barcode",
+                "operationId": "812434b90a0827fe3aca7720052ac524",
+                "responses": {
+                    "200": {
+                        "description": "Check-in successful"
+                    },
+                    "422": {
+                        "description": "Validation or business logic error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/attendance/check-out/{id}": {
+            "post": {
+                "tags": [
+                    "Attendance Management"
+                ],
+                "summary": "👋 Check-out a member",
+                "operationId": "320197f0444ac968616ee89c17b05032",
+                "responses": {
+                    "200": {
+                        "description": "Check-out successful"
+                    },
+                    "422": {
+                        "description": "Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "👥 List all player subscriptions",
+                "operationId": "078e2cb73b70d3a434d3424d990aec51",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "➕ Subscribe a member to a plan",
+                "operationId": "eda32873f1191700b574fa617b5080fd",
+                "responses": {
+                    "201": {
+                        "description": "Subscription created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🔍 Get subscription details",
+                "operationId": "8a9b280572c05b196fa3a2805e94eac7",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/freeze": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "❄️ Freeze a subscription",
+                "operationId": "31e46dfe8b6d3d1ec5b1b87e0bf4ee11",
+                "responses": {
+                    "200": {
+                        "description": "Subscription frozen"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "📋 List all subscription plans",
+                "operationId": "d777883f9934526c98bba1e8b8912722",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "➕ Create a new plan",
+                "operationId": "d30a88fbdf1b0755a4820d63d239814a",
+                "responses": {
+                    "201": {
+                        "description": "Plan created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans/{id}": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🔍 Get plan details",
+                "operationId": "e24d7c05878abe2afc0ac3932f9d872a",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "📝 Update plan",
+                "operationId": "1f405e846e1f12740ba00fd943caf15a",
+                "responses": {
+                    "200": {
+                        "description": "Plan updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🗑️ Delete plan",
+                "operationId": "4d39b9cd9a51b2220ec1907ebdf76e6f",
+                "responses": {
+                    "200": {
+                        "description": "Plan deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -876,6 +1505,42 @@
                 },
                 "type": "object"
             },
+            "StoreMemberRequest": {
+                "title": "StoreMemberRequest",
+                "required": [
+                    "person_id",
+                    "branch_id",
+                    "member_number"
+                ],
+                "properties": {
+                    "person_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "member_number": {
+                        "type": "string",
+                        "example": "MEM-2026-001"
+                    },
+                    "membership_status": {
+                        "type": "string",
+                        "default": "active",
+                        "enum": [
+                            "active",
+                            "frozen"
+                        ]
+                    },
+                    "join_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-05-11"
+                    }
+                },
+                "type": "object"
+            },
             "ApiResponse": {
                 "properties": {
                     "status": {
@@ -939,6 +1604,26 @@
         {
             "name": "Locker Management",
             "description": "Locker Management"
+        },
+        {
+            "name": "Member Management",
+            "description": "Member Management"
+        },
+        {
+            "name": "Notification Management",
+            "description": "Notification Management"
+        },
+        {
+            "name": "Staff Management",
+            "description": "Staff Management"
+        },
+        {
+            "name": "Attendance Management",
+            "description": "Attendance Management"
+        },
+        {
+            "name": "Subscription Management",
+            "description": "Subscription Management"
         }
     ]
 }
