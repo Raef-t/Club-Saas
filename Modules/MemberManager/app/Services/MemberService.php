@@ -5,27 +5,35 @@ namespace Modules\MemberManager\Services;
 use Modules\MemberManager\Repositories\MemberRepositoryInterface;
 use Modules\MemberManager\Domain\Rules\MemberGenderMatchRule;
 use Illuminate\Support\Facades\DB;
-use Modules\Authentication\Services\PersonServiceInterface;
+use Modules\Core\Contracts\PersonSharedServiceInterface;
+use Modules\Core\Contracts\BranchSharedServiceInterface;
 
 class MemberService
 {
     protected $repository;
     protected $genderRule;
     protected $personService;
+    protected $branchService;
 
     public function __construct(
         MemberRepositoryInterface $repository,
         MemberGenderMatchRule $genderRule,
-        PersonServiceInterface $personService
+        PersonSharedServiceInterface $personService,
+        BranchSharedServiceInterface $branchService
     ) {
         $this->repository = $repository;
         $this->genderRule = $genderRule;
         $this->personService = $personService;
+        $this->branchService = $branchService;
     }
 
     public function getAllMembers()
     {
-        return $this->repository->all();
+        $members = $this->repository->all();
+        foreach ($members as $member) {
+            $this->attachSharedDTOs($member);
+        }
+        return $members;
     }
 
     /**
@@ -38,14 +46,14 @@ class MemberService
             $personId = $data['person_id'] ?? null;
 
             if (!$personId) {
-                $person = $this->personService->createPerson([
-                    'full_name' => $data['full_name'],
-                    'mobile_1' => $data['mobile_1'],
-                    'gender' => $data['gender'],
-                    'dob' => $data['dob'] ?? null,
-                    'type' => 'player',
-                    'tenant_id' => $data['tenant_id'] ?? session()->get('tenant_id'),
-                ]);
+                $personDto = new \Modules\Core\DTOs\CreatePersonDTO(
+                    fullName: $data['full_name'],
+                    mobile1: $data['mobile_1'],
+                    gender: isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
+                    dob: $data['dob'] ?? null,
+                    type: 'player',
+                );
+                $person = $this->personService->createPerson($personDto);
                 $personId = $person->id;
             }
 
@@ -61,13 +69,14 @@ class MemberService
                 $member->healthProfile()->create($data['health_profile']);
             }
 
-            return $member;
+            return $this->attachSharedDTOs($member);
         });
     }
 
     public function getMemberById($id)
     {
-        return $this->repository->find($id);
+        $member = $this->repository->find($id);
+        return $this->attachSharedDTOs($member);
     }
 
     public function updateMember($id, array $data)
@@ -77,12 +86,17 @@ class MemberService
 
             // 1. Update Person Info if provided
             if ($member->person_id) {
-                $this->personService->updatePerson($member->person_id, [
-                    'full_name' => $data['full_name'] ?? null,
-                    'mobile_1' => $data['mobile_1'] ?? null,
-                    'gender' => $data['gender'] ?? null,
+                $personData = array_filter([
+                    'fullName' => $data['full_name'] ?? null,
+                    'mobile1' => $data['mobile_1'] ?? null,
+                    'gender' => isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
                     'dob' => $data['dob'] ?? null,
-                ]);
+                ], fn($value) => !is_null($value));
+
+                if (!empty($personData)) {
+                    $updateDto = new \Modules\Core\DTOs\UpdatePersonDTO(...$personData);
+                    $this->personService->updatePerson($member->person_id, $updateDto);
+                }
             }
 
             // 2. Update Member Info
@@ -92,11 +106,12 @@ class MemberService
             if (isset($data['health_profile'])) {
                 $member->healthProfile()->updateOrCreate(
                     ['member_id' => $member->id],
-                    array_merge($data['health_profile'], ['tenant_id' => $member->tenant_id])
+                    $data['health_profile']
                 );
             }
 
-            return $member->load(['person', 'healthProfile']);
+            $member->load(['healthProfile']);
+            return $this->attachSharedDTOs($member);
         });
     }
 
@@ -121,5 +136,17 @@ class MemberService
     {
         $member = $this->getMemberById($memberId);
         return $member->measurements()->create($data);
+    }
+
+    /**
+     * Helper to resolve and attach Person and Branch DTOs
+     */
+    protected function attachSharedDTOs($member)
+    {
+        if ($member) {
+            $member->person = $member->person_id ? $this->personService->getPersonById($member->person_id) : null;
+            $member->branch = $member->branch_id ? $this->branchService->getBranchById($member->branch_id) : null;
+        }
+        return $member;
     }
 }

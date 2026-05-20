@@ -2,21 +2,21 @@
 
 namespace Modules\SubscriptionManager\Services;
 
-use Modules\MemberManager\Repositories\MemberRepositoryInterface;
+use Modules\Core\Contracts\MemberSharedServiceInterface;
 use Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface;
 use Modules\SubscriptionManager\Models\PlayerAttendance;
 use Exception;
 
 class AttendanceService
 {
-    protected $memberRepository;
+    protected $memberSharedService;
     protected $subscriptionRepository;
 
     public function __construct(
-        MemberRepositoryInterface $memberRepository,
+        MemberSharedServiceInterface $memberSharedService,
         PlayerSubscriptionRepositoryInterface $subscriptionRepository
     ) {
-        $this->memberRepository = $memberRepository;
+        $this->memberSharedService = $memberSharedService;
         $this->subscriptionRepository = $subscriptionRepository;
     }
 
@@ -26,12 +26,17 @@ class AttendanceService
     public function processCheckIn(string $barcode, $activityId = null)
     {
         // 1. Find member by barcode
-        $member = $this->memberRepository->findByBarcode($barcode);
+        $member = $this->memberSharedService->getMemberByBarcode($barcode);
         if (!$member) {
             throw new Exception(__('Member not found with this barcode.'));
         }
 
-        // 2. Find active subscription
+        // 2. Validate member eligibility (Administrative Status)
+        if (!$member->isActive) {
+            throw new Exception(__('Member is not administratively active.'));
+        }
+
+        // 3. Find active subscription
         $subscription = $this->subscriptionRepository->findActiveByMember($member->id);
         if (!$subscription) {
             throw new Exception(__('No active subscription found for this member.'));
@@ -53,9 +58,9 @@ class AttendanceService
         }
 
         // 6. Record Attendance
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($subscription, $activityId) {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($subscription, $activityId, $member) {
             $attendance = PlayerAttendance::create([
-                'tenant_id' => $subscription->tenant_id,
+                'member_id' => $subscription->member_id,
                 'player_subscription_id' => $subscription->id,
                 'activity_id' => $activityId,
                 'check_in' => now(),
@@ -65,6 +70,8 @@ class AttendanceService
             if ($subscription->remaining_sessions !== null) {
                 $subscription->decrement('remaining_sessions');
             }
+
+            $attendance->member = $member;
 
             return $attendance;
         });
@@ -84,6 +91,8 @@ class AttendanceService
             'check_out' => $checkOutTime,
             'duration_minutes' => $duration
         ]);
+
+        $attendance->member = $this->memberSharedService->getMemberById($attendance->member_id);
 
         return $attendance;
     }

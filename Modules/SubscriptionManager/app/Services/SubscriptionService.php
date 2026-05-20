@@ -4,6 +4,7 @@ namespace Modules\SubscriptionManager\Services;
 
 use Modules\SubscriptionManager\Repositories\SubscriptionPlanRepositoryInterface;
 use Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface;
+use Modules\Core\Contracts\MemberSharedServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -12,13 +13,40 @@ class SubscriptionService
 {
     protected $planRepository;
     protected $subscriptionRepository;
+    protected $memberSharedService;
 
     public function __construct(
         SubscriptionPlanRepositoryInterface $planRepository,
-        PlayerSubscriptionRepositoryInterface $subscriptionRepository
+        PlayerSubscriptionRepositoryInterface $subscriptionRepository,
+        MemberSharedServiceInterface $memberSharedService
     ) {
         $this->planRepository = $planRepository;
         $this->subscriptionRepository = $subscriptionRepository;
+        $this->memberSharedService = $memberSharedService;
+    }
+
+    /**
+     * Get all player subscriptions with resolved Member DTOs.
+     */
+    public function getAllSubscriptions()
+    {
+        $subscriptions = $this->subscriptionRepository->all();
+        foreach ($subscriptions as $subscription) {
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+        }
+        return $subscriptions;
+    }
+
+    /**
+     * Get a single subscription with resolved Member DTO.
+     */
+    public function getSubscriptionById($id)
+    {
+        $subscription = $this->subscriptionRepository->find($id);
+        if ($subscription) {
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+        }
+        return $subscription;
     }
 
     /**
@@ -28,7 +56,7 @@ class SubscriptionService
     {
         // 1. Load plan with activities and ensure it exists
         $plan = $this->planRepository->find($planId);
-        $plan->load('activities');
+        $plan->load('planActivities');
         
         return DB::transaction(function () use ($memberId, $plan, $options) {
             // 2. Dates Calculation
@@ -46,7 +74,6 @@ class SubscriptionService
 
             // 4. Create Subscription
             $subscription = $this->subscriptionRepository->create([
-                'tenant_id' => Auth::check() ? Auth::user()->tenant_id : ($options['tenant_id'] ?? 1),
                 'member_id' => $memberId,
                 'coach_id' => $options['coach_id'] ?? null,
                 'plan_id' => $plan->id,
@@ -61,14 +88,15 @@ class SubscriptionService
             ]);
 
             // 5. Create Subscription Items
-            foreach ($plan->activities as $activity) {
+            foreach ($plan->planActivities as $planActivity) {
                 $subscription->items()->create([
-                    'tenant_id' => $subscription->tenant_id,
-                    'activity_id' => $activity->id,
-                    'sessions_allocated' => $activity->pivot->sessions_count,
-                    'is_unlimited' => $activity->pivot->is_unlimited,
+                    'activity_id' => $planActivity->activity_id,
+                    'sessions_allocated' => $planActivity->sessions_count,
+                    'is_unlimited' => $planActivity->is_unlimited,
                 ]);
             }
+
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
             return $subscription;
         });
@@ -83,13 +111,14 @@ class SubscriptionService
 
         return DB::transaction(function () use ($subscription, $startDate, $endDate, $reason) {
             $subscription->freezes()->create([
-                'tenant_id' => $subscription->tenant_id,
                 'freeze_start_date' => $startDate,
                 'freeze_end_date' => $endDate,
                 'reason' => $reason,
             ]);
 
             $subscription->update(['status' => 'frozen']);
+
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
             return $subscription;
         });
@@ -138,6 +167,8 @@ class SubscriptionService
             'paid_amount' => $newPaidAmount,
             'remaining_amount' => $newRemainingAmount
         ]);
+
+        $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
         return $subscription;
     }

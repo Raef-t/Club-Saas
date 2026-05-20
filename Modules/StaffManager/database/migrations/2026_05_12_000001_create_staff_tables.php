@@ -11,7 +11,7 @@ return new class extends Migration
         // 1. Staff table
         Schema::create('staff', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('person_id');
             $table->unsignedBigInteger('branch_id');
             
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('person_id')->references('id')->on('people')->onDelete('cascade');
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
         });
@@ -34,7 +34,7 @@ return new class extends Migration
         // 2. Staff Shifts (Schedules)
         Schema::create('staff_shifts', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('staff_id');
             
             $table->tinyInteger('day_of_week'); // 0 (Sunday) to 6 (Saturday)
@@ -43,7 +43,7 @@ return new class extends Migration
             
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('staff_id')->references('id')->on('staff')->onDelete('cascade');
         });
     }

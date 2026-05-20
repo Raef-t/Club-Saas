@@ -8,12 +8,12 @@ class EloquentMemberRepository implements MemberRepositoryInterface
 {
     public function all()
     {
-        return Member::with(['person', 'branch'])->get();
+        return Member::all();
     }
 
     public function find($id)
     {
-        return Member::with(['person', 'branch', 'healthProfile', 'measurements'])->findOrFail($id);
+        return Member::with(['healthProfile', 'measurements'])->findOrFail($id);
     }
 
     public function create(array $data)

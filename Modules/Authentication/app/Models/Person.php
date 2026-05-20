@@ -4,16 +4,13 @@ namespace Modules\Authentication\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Core\Traits\BelongsToTenant;
-
 class Person extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $table = 'people';
 
     protected $fillable = [
-        'tenant_id',
         'full_name',
         'gender',
         'type',

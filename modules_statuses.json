@@ -1,6 +1,6 @@
 {
     "Core": true,
-    "TenantManager": true,
+    "TenantManager": false,
     "Sports": true,
     "Authentication": true,
     "BranchManager": true,

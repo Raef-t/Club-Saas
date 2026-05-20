@@ -14,15 +14,8 @@ class AuthController extends BaseController
     #[OA\Post(
         path: '/v1/auth/login',
         summary: '🔐 User Login & Token Generation',
-        description: 'Authenticate a user and return a Bearer Token. Requires a valid Username, Password, and the Tenant (Club) ID in the headers.',
+        description: 'Authenticate a user and return a Bearer Token.',
         tags: ['Authentication']
-    )]
-    #[OA\Parameter(
-        name: 'X-Tenant-ID',
-        in: 'header',
-        description: 'The unique ID of the Club/Tenant',
-        required: true,
-        schema: new OA\Schema(type: 'integer', example: 1)
     )]
     #[OA\RequestBody(
         required: true,
@@ -109,12 +102,6 @@ class AuthController extends BaseController
         description: 'Revoke the current user access token and end the session.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(
-        name: 'X-Tenant-ID',
-        in: 'header',
-        required: true,
-        schema: new OA\Schema(type: 'integer', example: 1)
     )]
     #[OA\Response(
         response: 200,

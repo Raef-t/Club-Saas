@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('notification_templates', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->string('slug')->unique();
             $table->json('subject')->nullable(); 
             $table->json('content'); 
@@ -18,12 +18,12 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
         });
 
         Schema::create('notification_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('recipient_id');
             $table->string('recipient_type');
             $table->string('channel');
@@ -33,7 +33,7 @@ return new class extends Migration
             $table->text('error_message')->nullable();
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
         });
     }
 

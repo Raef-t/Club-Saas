@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('plan_activities', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('plan_id');
             $table->unsignedBigInteger('activity_id'); // From Sports Module
             
@@ -19,7 +19,7 @@ return new class extends Migration
             
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('plan_id')->references('id')->on('subscription_plans')->onDelete('cascade');
             // Note: activity_id is cross-module, we don't always add hard foreign key in multi-db setup, 
             // but in modular monolith same db, it's fine.

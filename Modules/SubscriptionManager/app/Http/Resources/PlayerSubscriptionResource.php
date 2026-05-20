@@ -3,7 +3,6 @@
 namespace Modules\SubscriptionManager\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\MemberManager\Http\Resources\MemberResource;
 
 class PlayerSubscriptionResource extends JsonResource
 {
@@ -11,7 +10,16 @@ class PlayerSubscriptionResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'member' => new MemberResource($this->whenLoaded('member')),
+            'member' => $this->member ? [
+                'id' => $this->member->id,
+                'member_number' => $this->member->memberNumber,
+                'membership_status' => $this->member->status,
+                'person' => $this->member->person ? [
+                    'full_name' => $this->member->person->fullName,
+                    'email' => $this->member->person->email,
+                    'phone' => $this->member->person->mobile1,
+                ] : null,
+            ] : null,
             'plan' => new SubscriptionPlanResource($this->whenLoaded('plan')),
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,

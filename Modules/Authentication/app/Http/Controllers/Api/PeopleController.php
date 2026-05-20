@@ -20,13 +20,6 @@ class PeopleController extends BaseController
         tags: ['People Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(
-        name: 'X-Tenant-ID',
-        in: 'header',
-        description: 'ID of the Club',
-        required: true,
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\RequestBody(
         required: true,
         description: 'Detailed info for the person and their profile',
@@ -121,7 +114,6 @@ class PeopleController extends BaseController
         switch ($person->type) {
             case 'player':
                 return $person->playerProfile()->create([
-                    'tenant_id' => $person->tenant_id,
                     'qr_code' => 'QR-' . strtoupper(Str::random(10)),
                     'blood_type' => $data['blood_type'] ?? null,
                     'medical_conditions' => $data['medical_conditions'] ?? [],
@@ -129,13 +121,11 @@ class PeopleController extends BaseController
                 ]);
             case 'coach':
                 return $person->coachProfile()->create([
-                    'tenant_id' => $person->tenant_id,
                     'specialization' => $data['specialization'] ?? 'General',
                     'experience_years' => $data['experience_years'] ?? 0,
                 ]);
             case 'staff':
                 return $person->staffProfile()->create([
-                    'tenant_id' => $person->tenant_id,
                     'job_title' => $data['job_title'] ?? 'Employee',
                 ]);
         }

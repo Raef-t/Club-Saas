@@ -4,18 +4,13 @@ namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\BelongsToTenant;
-use Modules\Authentication\Models\Person;
-use Modules\BranchManager\Models\Branch;
-
 class Staff extends Model
 {
-    use SoftDeletes, BelongsToTenant;
+    use SoftDeletes;
 
     protected $table = 'staff';
 
     protected $fillable = [
-        'tenant_id',
         'person_id',
         'branch_id',
         'role',
@@ -26,15 +21,8 @@ class Staff extends Model
         'is_active',
     ];
 
-    public function person()
-    {
-        return $this->belongsTo(Person::class);
-    }
-
-    public function branch()
-    {
-        return $this->belongsTo(Branch::class);
-    }
+    public ?\Modules\Core\DTOs\PersonDTO $person = null;
+    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
 
     public function shifts()
     {

@@ -39,7 +39,6 @@ class NotificationService
     protected function logAndDispatch($recipient, string $channel, $subject, $content)
     {
         $log = NotificationLog::create([
-            'tenant_id' => $recipient->tenant_id ?? 1,
             'recipient_id' => $recipient->id,
             'recipient_type' => get_class($recipient),
             'channel' => $channel,

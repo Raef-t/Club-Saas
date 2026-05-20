@@ -8,12 +8,12 @@ class EloquentPlayerSubscriptionRepository implements PlayerSubscriptionReposito
 {
     public function all()
     {
-        return PlayerSubscription::with(['member.person', 'plan'])->get();
+        return PlayerSubscription::with(['plan'])->get();
     }
 
     public function find(int $id)
     {
-        return PlayerSubscription::with(['member.person', 'plan', 'freezes'])->findOrFail($id);
+        return PlayerSubscription::with(['plan', 'freezes'])->findOrFail($id);
     }
 
     public function create(array $data)

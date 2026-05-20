@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('lockers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('facility_id');
             $table->string('locker_number');
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->softDeletes();
 
             // Constraints
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('facility_id')->references('id')->on('facilities')->onDelete('cascade');
             

@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('activities', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->json('name'); // Translatable: {"ar": "...", "en": "..."}
+            $table->text('description')->nullable();
+            $table->boolean('is_private_equipment')->default(false);
             $table->string('gender_allowed')->default('mixed'); // male, female, mixed
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
         });
     }
 

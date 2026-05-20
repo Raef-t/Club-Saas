@@ -33,7 +33,7 @@ class StaffController extends BaseController
     )]
     public function index()
     {
-        $staff = $this->staffRepository->all();
+        $staff = $this->staffService->getAllStaff();
         return $this->successResponse(StaffResource::collection($staff), __('Staff retrieved successfully'));
     }
 

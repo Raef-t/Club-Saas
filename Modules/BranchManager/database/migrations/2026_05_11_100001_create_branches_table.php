@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('branches', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->json('name'); // Supports multi-language {"ar": "...", "en": "..."}
             $table->string('gender_restriction', 20)->default('mixed')->index();
             $table->string('type', 50)->nullable()->comment('e.g. gym, pool, classroom');
@@ -23,9 +23,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Foreign Key and Composite Index for performance
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
-            $table->index(['tenant_id', 'is_active']);
+
         });
     }
 

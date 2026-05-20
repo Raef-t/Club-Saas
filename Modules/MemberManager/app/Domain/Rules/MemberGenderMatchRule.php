@@ -2,17 +2,21 @@
 
 namespace Modules\MemberManager\Domain\Rules;
 
-use Modules\BranchManager\Models\Branch;
-use Modules\Authentication\Services\PersonServiceInterface;
+use Modules\Core\Contracts\BranchSharedServiceInterface;
+use Modules\Core\Contracts\PersonSharedServiceInterface;
 use Exception;
 
 class MemberGenderMatchRule
 {
-    protected $personService;
+    protected $branchSharedService;
+    protected $personSharedService;
 
-    public function __construct(PersonServiceInterface $personService)
-    {
-        $this->personService = $personService;
+    public function __construct(
+        BranchSharedServiceInterface $branchSharedService,
+        PersonSharedServiceInterface $personSharedService
+    ) {
+        $this->branchSharedService = $branchSharedService;
+        $this->personSharedService = $personSharedService;
     }
 
     /**
@@ -20,15 +24,18 @@ class MemberGenderMatchRule
      */
     public function validate($branchId, $personId)
     {
-        $branch = Branch::findOrFail($branchId);
-        $person = $this->personService->findPersonById($personId);
+        $branch = $this->branchSharedService->getBranchById($branchId);
+        if (!$branch) {
+            throw new Exception(__('Branch not found.'));
+        }
 
+        $person = $this->personSharedService->getPersonById($personId);
         if (!$person) {
             throw new Exception(__('Person not found.'));
         }
 
-        if ($branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $person->gender) {
-            throw new Exception(__('This branch is for :gender only.', ['gender' => $branch->gender_restriction]));
+        if ($branch->genderRestriction !== \Modules\Core\Enums\Gender::MIXED && $branch->genderRestriction !== $person->gender) {
+            throw new Exception(__('This branch is for :gender only.', ['gender' => $branch->genderRestriction->value]));
         }
     }
 }

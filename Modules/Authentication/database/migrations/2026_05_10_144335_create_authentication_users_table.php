@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('authentication_users', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('person_id');
-            $table->unsignedBigInteger('tenant_id');
+
             $table->string('username')->unique();
             $table->string('password');
             $table->boolean('is_active')->default(true);
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('person_id')->references('id')->on('people')->onDelete('cascade');
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
         });
     }
 

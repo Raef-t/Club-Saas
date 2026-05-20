@@ -5,12 +5,11 @@ namespace Modules\Authentication\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Sanctum\HasApiTokens;
-use Modules\Core\Traits\BelongsToTenant;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, HasApiTokens, BelongsToTenant, HasRoles;
+    use HasFactory, HasApiTokens, HasRoles;
 
     protected $table = 'authentication_users';
 
@@ -19,7 +18,6 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'person_id',
-        'tenant_id',
         'username',
         'password',
         'is_active',

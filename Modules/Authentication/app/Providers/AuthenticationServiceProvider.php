@@ -50,5 +50,10 @@ class AuthenticationServiceProvider extends ModuleServiceProvider
             \Modules\Authentication\Services\PersonServiceInterface::class,
             \Modules\Authentication\Services\PersonService::class
         );
+
+        $this->app->bind(
+            \Modules\Core\Contracts\PersonSharedServiceInterface::class,
+            \Modules\Authentication\Services\PersonService::class
+        );
     }
 }

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('member_health_profiles', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('member_id');
             $table->text('allergies')->nullable();
             $table->text('organic_diseases')->nullable(); // medical conditions
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('emergency_contact_phone', 20)->nullable();
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('member_id')->references('id')->on('members')->onDelete('cascade');
         });
     }

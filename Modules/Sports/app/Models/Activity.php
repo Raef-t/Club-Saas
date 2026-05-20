@@ -4,18 +4,16 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Core\Traits\BelongsToTenant;
 use Spatie\Translatable\HasTranslations;
 
 class Activity extends Model
 {
-    use HasFactory, BelongsToTenant, HasTranslations;
+    use HasFactory, HasTranslations;
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'tenant_id',
         'name',
         'gender_allowed',
         'is_active',

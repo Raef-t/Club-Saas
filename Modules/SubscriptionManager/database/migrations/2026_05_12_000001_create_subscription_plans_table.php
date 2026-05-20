@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('subscription_plans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->json('name'); // Translatable
             $table->string('type'); // fixed_period, session_based
             $table->integer('duration_days')->nullable();
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
         });
     }
 

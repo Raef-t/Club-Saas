@@ -140,7 +140,12 @@ class NotificationTemplateController extends BaseController
             'data' => 'nullable|array',
         ]);
 
-        $person = \Modules\Authentication\Models\Person::findOrFail($request->person_id);
+        $personService = app(\Modules\Core\Contracts\PersonSharedServiceInterface::class);
+        $person = $personService->getPersonById($request->person_id);
+        if (!$person) {
+            return $this->errorResponse(__('Person not found'), 404);
+        }
+
         $log = $service->sendFromTemplate($person, $slug, $request->data ?? [
             'name' => 'Test User',
             'expiry_date' => now()->addDays(7)->toDateString(),

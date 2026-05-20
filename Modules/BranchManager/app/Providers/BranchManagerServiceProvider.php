@@ -55,5 +55,10 @@ class BranchManagerServiceProvider extends ModuleServiceProvider
             \Modules\BranchManager\Repositories\LockerRepositoryInterface::class,
             \Modules\BranchManager\Repositories\EloquentLockerRepository::class
         );
+
+        $this->app->bind(
+            \Modules\Core\Contracts\BranchSharedServiceInterface::class,
+            \Modules\BranchManager\Services\BranchSharedService::class
+        );
     }
 }

@@ -34,7 +34,7 @@ class PlayerSubscriptionController extends BaseController
     )]
     public function index()
     {
-        $subscriptions = $this->subscriptionRepository->all();
+        $subscriptions = $this->subscriptionService->getAllSubscriptions();
         return $this->successResponse(
             PlayerSubscriptionResource::collection($subscriptions),
             __('Subscriptions retrieved successfully')
@@ -60,7 +60,7 @@ class PlayerSubscriptionController extends BaseController
         );
 
         return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['member', 'plan'])),
+            new PlayerSubscriptionResource($subscription->load(['plan'])),
             __('Member subscribed successfully'),
             201
         );
@@ -77,7 +77,7 @@ class PlayerSubscriptionController extends BaseController
     )]
     public function show($id)
     {
-        $subscription = $this->subscriptionRepository->find($id);
+        $subscription = $this->subscriptionService->getSubscriptionById($id);
         return $this->successResponse(
             new PlayerSubscriptionResource($subscription),
             __('Subscription retrieved successfully')
@@ -104,7 +104,7 @@ class PlayerSubscriptionController extends BaseController
         );
 
         return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['member', 'plan'])),
+            new PlayerSubscriptionResource($subscription->load(['plan'])),
             __('Subscription frozen successfully')
         );
     }

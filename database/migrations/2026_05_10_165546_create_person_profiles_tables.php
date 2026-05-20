@@ -15,7 +15,6 @@ return new class extends Migration
         Schema::create('player_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('person_id')->constrained('people')->onDelete('cascade');
-            $table->foreignId('tenant_id')->constrained('tenants')->onDelete('cascade');
             $table->string('qr_code')->unique();
             $table->string('blood_type')->nullable();
             $table->json('medical_conditions')->nullable();
@@ -27,7 +26,6 @@ return new class extends Migration
         Schema::create('coach_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('person_id')->constrained('people')->onDelete('cascade');
-            $table->foreignId('tenant_id')->constrained('tenants')->onDelete('cascade');
             $table->string('specialization');
             $table->text('bio')->nullable();
             $table->integer('experience_years')->default(0);
@@ -38,7 +36,6 @@ return new class extends Migration
         Schema::create('staff_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('person_id')->constrained('people')->onDelete('cascade');
-            $table->foreignId('tenant_id')->constrained('tenants')->onDelete('cascade');
             $table->string('job_title');
             $table->timestamps();
         });

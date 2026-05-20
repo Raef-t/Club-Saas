@@ -5,14 +5,11 @@ namespace Modules\BranchManager\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\BelongsToTenant;
-
 class Facility extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToTenant;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'branch_id',
         'name',
         'capacity',

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('members', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('person_id');
             $table->string('member_number')->index();
@@ -21,13 +21,13 @@ return new class extends Migration
             $table->softDeletes();
 
             // Constraints
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('person_id')->references('id')->on('people')->onDelete('cascade');
             
-            // Unique member number and barcode per tenant
-            $table->unique(['tenant_id', 'member_number']);
-            $table->unique(['tenant_id', 'barcode_qr_code']);
+            // Unique member number and barcode globally (since it is single-tenant)
+            $table->unique('member_number');
+            $table->unique('barcode_qr_code');
         });
     }
 

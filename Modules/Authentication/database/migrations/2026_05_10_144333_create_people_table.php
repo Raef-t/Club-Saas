@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('people', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->string('full_name');
             $table->string('gender', 10)->nullable();
             $table->enum('type', ['player', 'coach', 'staff', 'admin'])->default('player');
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->text('chronic_diseases')->nullable();
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
         });
     }
 

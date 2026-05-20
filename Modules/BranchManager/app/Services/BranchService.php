@@ -14,7 +14,7 @@ class BranchService
     }
 
     /**
-     * Get all branches for the current tenant.
+     * Get all branches.
      */
     public function getAllBranches()
     {

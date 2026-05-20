@@ -4,16 +4,11 @@ namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\BelongsToTenant;
-use Modules\Authentication\Models\Person;
-use Modules\BranchManager\Models\Branch;
-
 class Member extends Model
 {
-    use SoftDeletes, BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'branch_id',
         'person_id',
         'member_number',
@@ -26,18 +21,8 @@ class Member extends Model
         'join_date' => 'date',
     ];
 
-    /**
-     * Relationships
-     */
-    public function person()
-    {
-        return $this->belongsTo(Person::class);
-    }
-
-    public function branch()
-    {
-        return $this->belongsTo(Branch::class);
-    }
+    public ?\Modules\Core\DTOs\PersonDTO $person = null;
+    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
 
     public function healthProfile()
     {

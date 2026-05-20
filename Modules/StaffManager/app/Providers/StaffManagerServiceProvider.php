@@ -16,6 +16,11 @@ class StaffManagerServiceProvider extends ServiceProvider
         $this->app->register(RouteServiceProvider::class);
 
         $this->app->bind(StaffRepositoryInterface::class, EloquentStaffRepository::class);
+
+        $this->app->bind(
+            \Modules\Core\Contracts\StaffSharedServiceInterface::class,
+            \Modules\StaffManager\Services\StaffSharedService::class
+        );
     }
 
     public function boot(): void

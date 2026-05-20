@@ -13,35 +13,34 @@ class MemberObserver
     public function creating(Member $member): void
     {
         if (empty($member->member_number)) {
-            $member->member_number = $this->generateUniqueMemberNumber($member->tenant_id);
+            $member->member_number = $this->generateUniqueMemberNumber();
         }
 
         if (empty($member->barcode_qr_code)) {
-            $member->barcode_qr_code = $this->generateUniqueBarcode($member->tenant_id, $member->member_number);
+            $member->barcode_qr_code = $this->generateUniqueBarcode($member->member_number);
         }
     }
 
     /**
-     * Generate a unique barcode based on member number and tenant.
+     * Generate a unique barcode based on member number.
      */
-    protected function generateUniqueBarcode($tenantId, $memberNumber): string
+    protected function generateUniqueBarcode($memberNumber): string
     {
-        // Simple professional format: T{ID}-MEM-RAND
+        // Simple professional format: MEM-RAND
         $random = strtoupper(Str::random(6));
         return "{$memberNumber}-{$random}";
     }
 
     /**
-     * Generate a unique member number for the tenant.
+     * Generate a unique member number.
      * Example format: MEM-2024-0001
      */
-    protected function generateUniqueMemberNumber($tenantId): string
+    protected function generateUniqueMemberNumber(): string
     {
         $year = date('Y');
         $prefix = "MEM-{$year}-";
         
         $lastMember = Member::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
             ->where('member_number', 'like', "{$prefix}%")
             ->orderBy('member_number', 'desc')
             ->first();

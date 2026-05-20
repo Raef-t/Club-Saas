@@ -4,15 +4,11 @@ namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\BelongsToTenant;
-use Modules\MemberManager\Models\Member;
-
 class PlayerSubscription extends Model
 {
-    use SoftDeletes, BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'member_id',
         'coach_id',
         'plan_id',
@@ -32,10 +28,7 @@ class PlayerSubscription extends Model
         'paid_amount' => 'decimal:2',
     ];
 
-    public function member()
-    {
-        return $this->belongsTo(Member::class);
-    }
+    public ?\Modules\Core\DTOs\MemberDTO $member = null;
 
     public function plan()
     {

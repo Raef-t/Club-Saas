@@ -2,24 +2,38 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Modules\Authentication\Models\Person;
+use Modules\Authentication\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Create Admin Person Profile
+        $adminPerson = Person::create([
+            'full_name' => 'Club Administrator',
+            'gender' => 'male',
+            'type' => 'staff',
+            'mobile_1' => '0500000000',
+            'email' => 'admin@clubsaas.com',
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // 2. Create Admin Staff Profile
+        $adminPerson->staffProfile()->create([
+            'job_title' => 'System Administrator',
+        ]);
+
+        // 3. Create Admin User Account
+        User::create([
+            'person_id' => $adminPerson->id,
+            'username' => 'admin',
+            'password' => Hash::make('password'),
+            'is_active' => true,
         ]);
     }
 }

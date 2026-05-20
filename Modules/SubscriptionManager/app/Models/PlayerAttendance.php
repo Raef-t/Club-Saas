@@ -3,15 +3,9 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Core\Traits\BelongsToTenant;
-use Modules\MemberManager\Models\Member;
-
 class PlayerAttendance extends Model
 {
-    use BelongsToTenant;
-
     protected $fillable = [
-        'tenant_id',
         'member_id',
         'player_subscription_id',
         'activity_id',
@@ -25,10 +19,7 @@ class PlayerAttendance extends Model
         'check_out' => 'datetime',
     ];
 
-    public function member()
-    {
-        return $this->belongsTo(Member::class);
-    }
+    public ?\Modules\Core\DTOs\MemberDTO $member = null;
 
     public function subscription()
     {

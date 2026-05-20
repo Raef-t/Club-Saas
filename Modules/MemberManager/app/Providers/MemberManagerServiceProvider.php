@@ -52,5 +52,10 @@ class MemberManagerServiceProvider extends ModuleServiceProvider
             \Modules\MemberManager\Repositories\MemberRepositoryInterface::class,
             \Modules\MemberManager\Repositories\EloquentMemberRepository::class
         );
+
+        $this->app->bind(
+            \Modules\Core\Contracts\MemberSharedServiceInterface::class,
+            \Modules\MemberManager\Services\MemberSharedService::class
+        );
     }
 }

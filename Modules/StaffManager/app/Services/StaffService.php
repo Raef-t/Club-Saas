@@ -3,7 +3,8 @@
 namespace Modules\StaffManager\Services;
 
 use Modules\StaffManager\Repositories\StaffRepositoryInterface;
-use Modules\Authentication\Services\PersonServiceInterface;
+use Modules\Core\Contracts\PersonSharedServiceInterface;
+use Modules\Core\Contracts\BranchSharedServiceInterface;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -11,13 +12,37 @@ class StaffService
 {
     protected $staffRepository;
     protected $personService;
+    protected $branchService;
 
     public function __construct(
         StaffRepositoryInterface $staffRepository,
-        PersonServiceInterface $personService
+        PersonSharedServiceInterface $personService,
+        BranchSharedServiceInterface $branchService
     ) {
         $this->staffRepository = $staffRepository;
         $this->personService = $personService;
+        $this->branchService = $branchService;
+    }
+
+    /**
+     * Get all staff and coaches with resolved person/branch DTOs.
+     */
+    public function getAllStaff()
+    {
+        $staffMembers = $this->staffRepository->all();
+        foreach ($staffMembers as $staff) {
+            $this->attachSharedDTOs($staff);
+        }
+        return $staffMembers;
+    }
+
+    /**
+     * Get staff member by ID with resolved person/branch DTOs.
+     */
+    public function getStaffById($id)
+    {
+        $staff = $this->staffRepository->find($id);
+        return $this->attachSharedDTOs($staff);
     }
 
     /**
@@ -27,13 +52,22 @@ class StaffService
     {
         return DB::transaction(function () use ($data) {
             // 1. Create the person profile in Authentication module
-            $personData = array_merge($data, ['type' => 'staff']);
-            $person = $this->personService->createPerson($personData);
+            $personDto = new \Modules\Core\DTOs\CreatePersonDTO(
+                fullName: $data['full_name'],
+                mobile1: $data['mobile_1'],
+                type: 'staff',
+                gender: null,
+                dob: null,
+                email: $data['email'] ?? null,
+            );
+            $person = $this->personService->createPerson($personDto);
 
             // 2. Create the staff record
-            return $this->staffRepository->create(array_merge($data, [
+            $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
             ]));
+
+            return $this->attachSharedDTOs($staff);
         });
     }
 
@@ -50,12 +84,11 @@ class StaffService
 
             // Add new shifts
             foreach ($shifts as $shift) {
-                $staff->shifts()->create(array_merge($shift, [
-                    'tenant_id' => $staff->tenant_id
-                ]));
+                $staff->shifts()->create($shift);
             }
 
-            return $staff->load('shifts');
+            $staff->load('shifts');
+            return $this->attachSharedDTOs($staff);
         });
     }
 
@@ -66,10 +99,11 @@ class StaffService
     {
         $staff = $this->staffRepository->find($staffId);
         
-        return $staff->attendances()->create([
-            'tenant_id' => $staff->tenant_id,
+        $attendance = $staff->attendances()->create([
             'check_in' => now(),
         ]);
+
+        return $attendance;
     }
 
     /**
@@ -88,5 +122,17 @@ class StaffService
         ]);
 
         return $attendance;
+    }
+
+    /**
+     * Helper to resolve and attach Person and Branch DTOs
+     */
+    protected function attachSharedDTOs($staff)
+    {
+        if ($staff) {
+            $staff->person = $staff->person_id ? $this->personService->getPersonById($staff->person_id) : null;
+            $staff->branch = $staff->branch_id ? $this->branchService->getBranchById($staff->branch_id) : null;
+        }
+        return $staff;
     }
 }

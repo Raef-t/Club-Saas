@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('staff_attendances', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('staff_id');
             
             $table->dateTime('check_in');
@@ -19,7 +19,7 @@ return new class extends Migration
             
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('staff_id')->references('id')->on('staff')->onDelete('cascade');
         });
     }

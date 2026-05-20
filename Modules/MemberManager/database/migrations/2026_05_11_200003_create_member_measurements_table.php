@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('member_measurements', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('member_id');
             $table->date('measurement_date')->index();
             $table->decimal('weight', 5, 2)->nullable(); // kg
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('waist_circumference', 5, 2)->nullable();
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('member_id')->references('id')->on('members')->onDelete('cascade');
         });
     }

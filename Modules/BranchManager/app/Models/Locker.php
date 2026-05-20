@@ -4,14 +4,11 @@ namespace Modules\BranchManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\BelongsToTenant;
-
 class Locker extends Model
 {
-    use SoftDeletes, BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'branch_id',
         'facility_id',
         'locker_number',

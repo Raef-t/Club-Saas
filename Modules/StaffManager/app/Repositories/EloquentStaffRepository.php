@@ -8,12 +8,12 @@ class EloquentStaffRepository implements StaffRepositoryInterface
 {
     public function all()
     {
-        return Staff::with(['person', 'branch'])->get();
+        return Staff::all();
     }
 
     public function find($id)
     {
-        return Staff::with(['person', 'branch', 'shifts', 'attendances'])->findOrFail($id);
+        return Staff::with(['shifts', 'attendances'])->findOrFail($id);
     }
 
     public function create(array $data)
@@ -36,6 +36,6 @@ class EloquentStaffRepository implements StaffRepositoryInterface
 
     public function getCoaches()
     {
-        return Staff::where('role', 'coach')->with('person')->get();
+        return Staff::where('role', 'coach')->get();
     }
 }

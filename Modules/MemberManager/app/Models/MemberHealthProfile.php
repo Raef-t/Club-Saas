@@ -3,14 +3,9 @@
 namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Core\Traits\BelongsToTenant;
-
 class MemberHealthProfile extends Model
 {
-    use BelongsToTenant;
-
     protected $fillable = [
-        'tenant_id',
         'member_id',
         'allergies',
         'organic_diseases',

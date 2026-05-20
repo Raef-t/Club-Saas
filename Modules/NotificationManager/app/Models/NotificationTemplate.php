@@ -3,15 +3,13 @@
 namespace Modules\NotificationManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Core\Traits\BelongsToTenant;
 use Spatie\Translatable\HasTranslations;
 
 class NotificationTemplate extends Model
 {
-    use BelongsToTenant, HasTranslations;
+    use HasTranslations;
 
     protected $fillable = [
-        'tenant_id',
         'slug',
         'subject',
         'content',

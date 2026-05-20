@@ -4,15 +4,12 @@ namespace Modules\Authentication\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Core\Traits\BelongsToTenant;
-
 class PlayerProfile extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'person_id',
-        'tenant_id',
         'qr_code',
         'blood_type',
         'medical_conditions',

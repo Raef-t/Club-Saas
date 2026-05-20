@@ -15,10 +15,10 @@ class CheckBranchLimitRule
     }
 
     /**
-     * Rule: A tenant cannot exceed the branch limit allowed in their plan.
-     * (Assume for now limit is 5, but this could come from Tenant settings)
+     * Rule: The club cannot exceed the branch limit.
+     * (Assume for now limit is 5, but this could come from a config or database setting)
      */
-    public function validate($tenantId)
+    public function validate()
     {
         $currentCount = count($this->repository->all());
         $limit = 5; // This could be dynamic

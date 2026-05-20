@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('player_subscription_items', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+
             $table->unsignedBigInteger('player_subscription_id');
             $table->unsignedBigInteger('activity_id');
             
@@ -20,7 +20,7 @@ return new class extends Migration
             
             $table->timestamps();
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+
             $table->foreign('player_subscription_id')->references('id')->on('player_subscriptions')->onDelete('cascade');
             $table->foreign('activity_id')->references('id')->on('activities')->onDelete('cascade');
         });
