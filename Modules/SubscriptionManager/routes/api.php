@@ -13,7 +13,13 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Subscription Plans CRUD
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
 
-    // Player Subscriptions
+    // Player Subscriptions — Actions
     Route::post('player-subscriptions/{id}/freeze', [PlayerSubscriptionController::class, 'freeze']);
+    Route::post('player-subscriptions/{id}/unfreeze', [PlayerSubscriptionController::class, 'unfreeze']);
+    Route::post('player-subscriptions/{id}/renew', [PlayerSubscriptionController::class, 'renew']);
+    Route::post('player-subscriptions/{id}/cancel', [PlayerSubscriptionController::class, 'cancel']);
+    Route::post('player-subscriptions/{id}/payment', [PlayerSubscriptionController::class, 'recordPayment']);
+
+    // Player Subscriptions CRUD
     Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update', 'destroy']);
 });

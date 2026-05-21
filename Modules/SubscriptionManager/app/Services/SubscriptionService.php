@@ -4,10 +4,11 @@ namespace Modules\SubscriptionManager\Services;
 
 use Modules\SubscriptionManager\Repositories\SubscriptionPlanRepositoryInterface;
 use Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface;
+use Modules\SubscriptionManager\Models\PlayerSubscription;
 use Modules\Core\Contracts\MemberSharedServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use Exception;
 
 class SubscriptionService
 {
@@ -171,5 +172,79 @@ class SubscriptionService
         $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
         return $subscription;
+    }
+
+    /**
+     * Cancel a subscription.
+     */
+    public function cancelSubscription($subscriptionId, $reason = null)
+    {
+        $subscription = $this->subscriptionRepository->find($subscriptionId);
+
+        if ($subscription->status === 'cancelled') {
+            throw new Exception(__('Subscription is already cancelled.'));
+        }
+
+        return DB::transaction(function () use ($subscription, $reason) {
+            $subscription->update([
+                'status' => 'cancelled',
+                'notes' => $subscription->notes
+                    ? $subscription->notes . "\n" . __('Cancellation reason: ') . $reason
+                    : __('Cancellation reason: ') . $reason,
+            ]);
+
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            return $subscription;
+        });
+    }
+
+    /**
+     * Unfreeze a frozen subscription and extend end_date by freeze duration.
+     */
+    public function unfreezeSubscription($subscriptionId)
+    {
+        $subscription = $this->subscriptionRepository->find($subscriptionId);
+
+        if ($subscription->status !== 'frozen') {
+            throw new Exception(__('Subscription is not frozen.'));
+        }
+
+        return DB::transaction(function () use ($subscription) {
+            // Find the active freeze
+            $activeFreeze = $subscription->freezes()
+                ->whereNull('actual_end_date')
+                ->latest()
+                ->first();
+
+            if ($activeFreeze) {
+                $freezeDays = Carbon::parse($activeFreeze->freeze_start_date)->diffInDays(now());
+                $activeFreeze->update(['actual_end_date' => now()]);
+
+                // Extend end_date by freeze duration
+                if ($subscription->end_date) {
+                    $subscription->update([
+                        'end_date' => Carbon::parse($subscription->end_date)->addDays($freezeDays),
+                    ]);
+                }
+            }
+
+            $subscription->update(['status' => 'active']);
+
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            return $subscription;
+        });
+    }
+
+    /**
+     * Get subscriptions expiring within the given number of days.
+     */
+    public function getExpiringSoon(int $days = 7)
+    {
+        return PlayerSubscription::where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [now(), now()->addDays($days)])
+            ->get();
     }
 }

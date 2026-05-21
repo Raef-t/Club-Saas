@@ -38,4 +38,9 @@ class BranchSharedService implements BranchSharedServiceInterface
             isActive: (bool)$branch->is_active
         );
     }
+
+    public function facilityExists(int $facilityId): bool
+    {
+        return \Modules\ClubManager\Models\Facility::where('id', $facilityId)->exists();
+    }
 }

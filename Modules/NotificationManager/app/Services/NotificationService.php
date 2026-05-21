@@ -52,4 +52,36 @@ class NotificationService
         
         return $log;
     }
+
+    /**
+     * Send notification for subscription expiring soon.
+     */
+    public function notifySubscriptionExpiring($recipient, array $subscriptionData)
+    {
+        return $this->sendFromTemplate($recipient, 'subscription_expiring', $subscriptionData);
+    }
+
+    /**
+     * Send notification for subscription expired.
+     */
+    public function notifySubscriptionExpired($recipient, array $subscriptionData)
+    {
+        return $this->sendFromTemplate($recipient, 'subscription_expired', $subscriptionData);
+    }
+
+    /**
+     * Send notification for payment due.
+     */
+    public function notifyPaymentDue($recipient, array $paymentData)
+    {
+        return $this->sendFromTemplate($recipient, 'payment_due', $paymentData);
+    }
+
+    /**
+     * Send notification for new member welcome.
+     */
+    public function notifyWelcome($recipient, array $memberData)
+    {
+        return $this->sendFromTemplate($recipient, 'welcome', $memberData);
+    }
 }

@@ -18,13 +18,6 @@ class SportsServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'sports';
 
     /**
-     * Command classes to register.
-     *
-     * @var string[]
-     */
-    // protected array $commands = [];
-
-    /**
      * Provider classes to register.
      *
      * @var string[]
@@ -35,12 +28,15 @@ class SportsServiceProvider extends ModuleServiceProvider
     ];
 
     /**
-     * Define module schedules.
-     * 
-     * @param $schedule
+     * Register the service provider.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->bind(
+            \Modules\Sports\Repositories\SessionRepositoryInterface::class,
+            \Modules\Sports\Repositories\EloquentSessionRepository::class
+        );
+    }
 }

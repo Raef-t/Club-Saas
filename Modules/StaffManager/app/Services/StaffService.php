@@ -135,4 +135,76 @@ class StaffService
         }
         return $staff;
     }
+
+    /**
+     * Update staff member data.
+     */
+    public function updateStaff($id, array $data)
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $staff = $this->staffRepository->find($id);
+
+            // Update Person data via Core contract if provided
+            if ($staff->person_id) {
+                $personData = array_filter([
+                    'fullName' => $data['full_name'] ?? null,
+                    'mobile1' => $data['mobile_1'] ?? null,
+                    'email' => $data['email'] ?? null,
+                ], fn($value) => !is_null($value));
+
+                if (!empty($personData)) {
+                    $updateDto = new \Modules\Core\DTOs\UpdatePersonDTO(...$personData);
+                    $this->personService->updatePerson($staff->person_id, $updateDto);
+                }
+            }
+
+            // Update Staff record
+            $staff->update($data);
+
+            return $this->attachSharedDTOs($staff->fresh());
+        });
+    }
+
+    /**
+     * Toggle staff active status.
+     */
+    public function toggleStatus($id)
+    {
+        $staff = $this->staffRepository->find($id);
+        $staff->update(['is_active' => !$staff->is_active]);
+        return $this->attachSharedDTOs($staff->fresh());
+    }
+
+    /**
+     * Get attendance history for a staff member.
+     */
+    public function getAttendanceHistory($staffId, $from = null, $to = null)
+    {
+        $staff = $this->staffRepository->find($staffId);
+
+        $query = $staff->attendances()->orderBy('check_in', 'desc');
+
+        if ($from) {
+            $query->where('check_in', '>=', $from);
+        }
+        if ($to) {
+            $query->where('check_in', '<=', $to);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Calculate total working hours for a staff member in a period.
+     */
+    public function calculateWorkingHours($staffId, $from, $to)
+    {
+        $staff = $this->staffRepository->find($staffId);
+
+        return $staff->attendances()
+            ->whereNotNull('total_hours')
+            ->where('check_in', '>=', $from)
+            ->where('check_in', '<=', $to)
+            ->sum('total_hours');
+    }
 }

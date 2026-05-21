@@ -13,6 +13,8 @@ class MemberMeasurement extends Model
         'body_fat_percentage',
         'muscle_mass',
         'waist_circumference',
+        'activity_level',
+        'bmi',
     ];
 
     protected $casts = [

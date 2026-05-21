@@ -25,7 +25,10 @@ class Person extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'email',
-        'chronic_diseases'
+        'chronic_diseases',
+        'children_count',
+        'how_did_you_hear',
+        'notes',
     ];
 
     /**

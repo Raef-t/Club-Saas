@@ -19,6 +19,23 @@ class Staff extends Model
         'commission_rate',
         'specialization',
         'is_active',
+        'start_date',
+        'end_date',
+        'contract_type',
+        'work_type',
+        'work_status',
+        'salary_type',
+        'employee_type',
+        'other_tasks',
+        'gym_type',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'base_salary' => 'decimal:2',
+        'commission_rate' => 'decimal:2',
     ];
 
     public ?\Modules\Core\DTOs\PersonDTO $person = null;
