@@ -3,9 +3,10 @@
     "TenantManager": false,
     "Sports": true,
     "Authentication": true,
-    "BranchManager": true,
+    "BranchManager": false,
     "MemberManager": true,
     "SubscriptionManager": true,
     "StaffManager": true,
-    "NotificationManager": true
+    "NotificationManager": true,
+    "ClubManager": true
 }

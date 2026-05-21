@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/clubmanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\ClubManager\\": "app/",
+            "Modules\\ClubManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\ClubManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\ClubManager\\Tests\\": "tests/"
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ClubManager",
+    "alias": "clubmanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\ClubManager\\Providers\\ClubManagerServiceProvider"
+    ],
+    "files": []
+}

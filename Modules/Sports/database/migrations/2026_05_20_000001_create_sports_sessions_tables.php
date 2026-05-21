@@ -33,7 +33,7 @@ return new class extends Migration
         });
 
         // Sessions
-        Schema::create('sessions', function (Blueprint $table) {
+        Schema::create('sports_sessions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('activity_id');
@@ -57,7 +57,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('sports_sessions');
         Schema::dropIfExists('staff_commission_rules');
         Schema::dropIfExists('staff_activities');
     }
