@@ -1,12 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\ExtraServiceController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionFreezeController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanActivityController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemController;
-
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionServiceController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
@@ -30,6 +31,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('player-subscription-items', PlayerSubscriptionItemController::class);
 
     // Extra Services
-    Route::apiResource('extra-services', \Modules\SubscriptionManager\Http\Controllers\Api\V1\ExtraServiceController::class);
-    Route::apiResource('player-subscription-services', \Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionServiceController::class);
+    Route::apiResource('extra-services', ExtraServiceController::class);
+    Route::apiResource('player-subscription-services', PlayerSubscriptionServiceController::class);
 });
