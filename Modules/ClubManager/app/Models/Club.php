@@ -9,4 +9,5 @@ class Club extends Model {
     protected $fillable = ['name', 'logo_url', 'is_active'];
     protected $casts = ['is_active' => 'boolean'];
     public function branches(): HasMany { return $this->hasMany(Branch::class); }
+    public function settings() { return $this->hasOne(ClubSetting::class); }
 }

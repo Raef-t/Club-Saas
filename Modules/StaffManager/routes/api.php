@@ -12,8 +12,13 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Staff Actions
     Route::post('staff/{id}/schedule', [StaffController::class, 'setSchedule']);
-
     Route::patch('staff/{id}/toggle-status', [StaffController::class, 'toggleStatus']);
+    Route::post('staff/{id}/sync-branches', [StaffController::class, 'syncBranches']);
+
+    // Staff Unavailabilities
+    Route::get('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'index']);
+    Route::post('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'store']);
+    Route::delete('staff/{staff}/unavailabilities/{unavailability}', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'destroy']);
 
 
     // Payroll & Payslips

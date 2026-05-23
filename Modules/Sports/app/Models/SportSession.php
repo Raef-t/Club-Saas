@@ -19,6 +19,7 @@ class SportSession extends Model
         'start_time',
         'end_time',
         'max_players',
+        'gender_allowed',
         'status',
         'booked_count',
     ];

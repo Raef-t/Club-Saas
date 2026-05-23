@@ -4,6 +4,7 @@ namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Staff extends Model
 {
     use SoftDeletes;
@@ -28,6 +29,8 @@ class Staff extends Model
         'employee_type',
         'other_tasks',
         'gym_type',
+        'shift_type',
+        'certificates_held',
     ];
 
     protected $casts = [
@@ -36,6 +39,7 @@ class Staff extends Model
         'end_date' => 'date',
         'base_salary' => 'decimal:2',
         'commission_rate' => 'decimal:2',
+        'certificates_held' => 'array',
     ];
 
     public ?\Modules\Core\DTOs\PersonDTO $person = null;
@@ -46,4 +50,13 @@ class Staff extends Model
         return $this->hasMany(StaffShift::class);
     }
 
+    public function branches()
+    {
+        return $this->hasMany(StaffBranch::class);
+    }
+
+    public function unavailabilities()
+    {
+        return $this->hasMany(StaffUnavailability::class);
+    }
 }

@@ -13,6 +13,9 @@ class MemberMeasurement extends Model
         'body_fat_percentage',
         'muscle_mass',
         'waist_circumference',
+        'chest_circumference',
+        'thigh_circumference',
+        'arm_circumference',
         'activity_level',
         'bmi',
     ];

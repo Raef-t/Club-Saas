@@ -44,4 +44,9 @@ class PlayerSubscription extends Model
     {
         return $this->hasMany(PlayerSubscriptionItem::class);
     }
+
+    public function services()
+    {
+        return $this->hasMany(PlayerSubscriptionService::class);
+    }
 }

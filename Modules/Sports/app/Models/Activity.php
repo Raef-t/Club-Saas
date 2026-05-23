@@ -16,6 +16,8 @@ class Activity extends Model
     protected $fillable = [
         'name',
         'description',
+        'type',
+        'default_capacity',
         'is_private_equipment',
         'gender_allowed',
         'is_active',

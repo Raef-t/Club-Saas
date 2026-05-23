@@ -9,4 +9,5 @@ class Facility extends Model {
     protected $fillable = ['branch_id', 'name', 'capacity', 'gender_restriction'];
     protected $casts = ['capacity' => 'integer'];
     public function branch(): BelongsTo { return $this->belongsTo(Branch::class); }
+    public function workingHours() { return $this->hasMany(FacilityWorkingHour::class); }
 }

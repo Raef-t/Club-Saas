@@ -81,6 +81,7 @@ class SessionController extends BaseController
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
             'max_players' => 'nullable|integer|min:1',
+            'gender_allowed' => 'nullable|in:male,female,mixed',
             'status' => 'nullable|in:scheduled,cancelled,completed',
         ]);
 

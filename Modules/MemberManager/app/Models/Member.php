@@ -15,6 +15,7 @@ class Member extends Model
         'barcode_qr_code',
         'membership_status',
         'join_date',
+        'how_heard_about_us',
     ];
 
     protected $casts = [
@@ -53,5 +54,10 @@ class Member extends Model
     public function getIsActiveAttribute(): bool
     {
         return $this->membership_status === 'active';
+    }
+
+    public function unavailabilities()
+    {
+        return $this->hasMany(PlayerUnavailability::class);
     }
 }

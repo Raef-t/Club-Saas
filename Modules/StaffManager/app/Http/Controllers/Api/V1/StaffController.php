@@ -120,6 +120,8 @@ class StaffController extends BaseController
             'employee_type' => 'nullable|in:receptionist,equipment_coach,cleaner,accountant,manager,supervisor,nursery',
             'other_tasks' => 'nullable|string|max:500',
             'gym_type' => 'nullable|in:male,female,mixed',
+            'shift_type' => 'nullable|in:part_time,full_time',
+            'certificates_held' => 'nullable|array',
         ]);
 
         $staff = $this->staffService->updateStaff($id, $data);
@@ -140,6 +142,41 @@ class StaffController extends BaseController
     {
         $staff = $this->staffService->toggleStatus($id);
         return $this->successResponse(new StaffResource($staff), __('Status toggled successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/staff/{id}/sync-branches',
+        summary: '🔄 Sync multiple branches for staff',
+        tags: ['Staff Management'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Branches synced')
+        ]
+    )]
+    public function syncBranches(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'branch_ids' => 'required|array',
+            'branch_ids.*' => 'integer',
+        ]);
+
+        $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
+        
+        // Zero code-coupling: Delete existing and insert new instead of relying on Eloquent relationships with foreign modules
+        \Modules\StaffManager\Models\StaffBranch::where('staff_id', $staff->id)->delete();
+        
+        $inserts = array_map(function($branchId) use ($staff) {
+            return [
+                'staff_id' => $staff->id,
+                'branch_id' => $branchId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }, $validated['branch_ids']);
+        
+        \Modules\StaffManager\Models\StaffBranch::insert($inserts);
+
+        return $this->successResponse(null, __('Branches synced successfully'));
     }
 
 
