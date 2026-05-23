@@ -74,20 +74,6 @@ class StaffController extends BaseController
         return $this->successResponse(new StaffResource($staff), __('Schedule updated successfully'));
     }
 
-    #[OA\Post(
-        path: '/v1/staff/{id}/check-in',
-        summary: '🕒 Staff check-in',
-        tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Check-in successful')
-        ]
-    )]
-    public function checkIn($id)
-    {
-        $attendance = $this->staffService->checkIn($id);
-        return $this->successResponse($attendance, __('Check-in successful'));
-    }
 
     #[OA\Get(
         path: '/v1/staff/{id}',
@@ -140,30 +126,6 @@ class StaffController extends BaseController
         return $this->successResponse(new StaffResource($staff), __('Staff updated successfully'));
     }
 
-    #[OA\Post(
-        path: '/v1/staff/{id}/check-out',
-        summary: '🕐 Staff check-out',
-        tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Check-out successful')
-        ]
-    )]
-    public function checkOut(Request $request, $id)
-    {
-        // Find the latest open attendance for this staff
-        $attendance = \Modules\StaffManager\Models\StaffAttendance::where('staff_id', $id)
-            ->whereNull('check_out')
-            ->latest('check_in')
-            ->first();
-
-        if (!$attendance) {
-            return $this->errorResponse(__('No open check-in found for this staff member.'), 404);
-        }
-
-        $result = $this->staffService->checkOut($attendance->id);
-        return $this->successResponse($result, __('Check-out successful'));
-    }
 
     #[OA\Patch(
         path: '/v1/staff/{id}/toggle-status',
@@ -180,30 +142,6 @@ class StaffController extends BaseController
         return $this->successResponse(new StaffResource($staff), __('Status toggled successfully'));
     }
 
-    #[OA\Get(
-        path: '/v1/staff/{id}/attendance',
-        summary: '📊 Get staff attendance history',
-        tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Attendance retrieved')
-        ]
-    )]
-    public function getAttendance(Request $request, $id)
-    {
-        $data = $request->validate([
-            'from' => 'nullable|date',
-            'to' => 'nullable|date|after_or_equal:from',
-        ]);
-
-        $attendance = $this->staffService->getAttendanceHistory(
-            $id,
-            $data['from'] ?? null,
-            $data['to'] ?? null
-        );
-
-        return $this->successResponse($attendance, __('Attendance retrieved'));
-    }
 
     #[OA\Delete(
         path: '/v1/staff/{id}',

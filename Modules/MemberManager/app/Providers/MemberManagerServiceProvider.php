@@ -57,5 +57,15 @@ class MemberManagerServiceProvider extends ModuleServiceProvider
             \Modules\Core\Contracts\MemberSharedServiceInterface::class,
             \Modules\MemberManager\Services\MemberSharedService::class
         );
+
+        $this->app->bind(
+            \Modules\MemberManager\Repositories\MemberHealthProfileRepositoryInterface::class,
+            \Modules\MemberManager\Repositories\EloquentMemberHealthProfileRepository::class
+        );
+
+        $this->app->bind(
+            \Modules\MemberManager\Repositories\MemberMeasurementRepositoryInterface::class,
+            \Modules\MemberManager\Repositories\EloquentMemberMeasurementRepository::class
+        );
     }
 }

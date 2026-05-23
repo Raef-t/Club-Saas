@@ -21,6 +21,16 @@ class StaffManagerServiceProvider extends ServiceProvider
             \Modules\Core\Contracts\StaffSharedServiceInterface::class,
             \Modules\StaffManager\Services\StaffSharedService::class
         );
+
+        $this->app->bind(
+            \Modules\StaffManager\Repositories\PayslipRepositoryInterface::class,
+            \Modules\StaffManager\Repositories\EloquentPayslipRepository::class
+        );
+
+        $this->app->bind(
+            \Modules\StaffManager\Repositories\StaffShiftRepositoryInterface::class,
+            \Modules\StaffManager\Repositories\EloquentStaffShiftRepository::class
+        );
     }
 
     public function boot(): void

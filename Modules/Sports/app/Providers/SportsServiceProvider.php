@@ -38,5 +38,15 @@ class SportsServiceProvider extends ModuleServiceProvider
             \Modules\Sports\Repositories\SessionRepositoryInterface::class,
             \Modules\Sports\Repositories\EloquentSessionRepository::class
         );
+
+        $this->app->bind(
+            \Modules\Sports\Repositories\StaffCommissionRuleRepositoryInterface::class,
+            \Modules\Sports\Repositories\EloquentStaffCommissionRuleRepository::class
+        );
+
+        $this->app->bind(
+            \Modules\Sports\Repositories\StaffActivityRepositoryInterface::class,
+            \Modules\Sports\Repositories\EloquentStaffActivityRepository::class
+        );
     }
 }

@@ -4,8 +4,11 @@ use Illuminate\Support\Facades\Route;
 use Modules\ClubManager\Http\Controllers\Api\V1\BranchController;
 use Modules\ClubManager\Http\Controllers\Api\V1\FacilityController;
 use Modules\ClubManager\Http\Controllers\Api\V1\LockerController;
+use Modules\ClubManager\Http\Controllers\Api\V1\ClubController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    Route::apiResource('clubs', ClubController::class);
+
     Route::apiResource('branches', BranchController::class);
     Route::patch('branches/{id}/toggle-status', [BranchController::class, 'toggleStatus']);
     

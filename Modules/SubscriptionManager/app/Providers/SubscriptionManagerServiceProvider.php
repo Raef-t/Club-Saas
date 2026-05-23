@@ -55,5 +55,20 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
             \Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface::class,
             \Modules\SubscriptionManager\Repositories\EloquentPlayerSubscriptionRepository::class
         );
+
+        $this->app->bind(
+            \Modules\SubscriptionManager\Repositories\SubscriptionFreezeRepositoryInterface::class,
+            \Modules\SubscriptionManager\Repositories\EloquentSubscriptionFreezeRepository::class
+        );
+
+        $this->app->bind(
+            \Modules\SubscriptionManager\Repositories\SubscriptionPlanActivityRepositoryInterface::class,
+            \Modules\SubscriptionManager\Repositories\EloquentSubscriptionPlanActivityRepository::class
+        );
+
+        $this->app->bind(
+            \Modules\SubscriptionManager\Repositories\PlayerSubscriptionItemRepositoryInterface::class,
+            \Modules\SubscriptionManager\Repositories\EloquentPlayerSubscriptionItemRepository::class
+        );
     }
 }

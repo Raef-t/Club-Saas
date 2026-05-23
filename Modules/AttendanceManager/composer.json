@@ -1,0 +1,23 @@
+{
+    "name": "nwidart/attendancemanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AttendanceManager\\": "app/",
+            "Modules\\AttendanceManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\AttendanceManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}

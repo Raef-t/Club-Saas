@@ -60,5 +60,10 @@ class ClubManagerServiceProvider extends ModuleServiceProvider
             \Modules\Core\Contracts\BranchSharedServiceInterface::class,
             \Modules\ClubManager\Services\BranchSharedService::class
         );
+
+        $this->app->bind(
+            \Modules\ClubManager\Repositories\ClubRepositoryInterface::class,
+            \Modules\ClubManager\Repositories\EloquentClubRepository::class
+        );
     }
 }

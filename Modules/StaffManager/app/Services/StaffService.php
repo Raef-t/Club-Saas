@@ -92,37 +92,6 @@ class StaffService
         });
     }
 
-    /**
-     * Staff Check-in
-     */
-    public function checkIn($staffId)
-    {
-        $staff = $this->staffRepository->find($staffId);
-        
-        $attendance = $staff->attendances()->create([
-            'check_in' => now(),
-        ]);
-
-        return $attendance;
-    }
-
-    /**
-     * Staff Check-out
-     */
-    public function checkOut($attendanceId)
-    {
-        $attendance = \Modules\StaffManager\Models\StaffAttendance::findOrFail($attendanceId);
-        $checkOutTime = now();
-        
-        $duration = $attendance->check_in->diffInHours($checkOutTime);
-
-        $attendance->update([
-            'check_out' => $checkOutTime,
-            'total_hours' => $duration
-        ]);
-
-        return $attendance;
-    }
 
     /**
      * Helper to resolve and attach Person and Branch DTOs
@@ -175,36 +144,4 @@ class StaffService
         return $this->attachSharedDTOs($staff->fresh());
     }
 
-    /**
-     * Get attendance history for a staff member.
-     */
-    public function getAttendanceHistory($staffId, $from = null, $to = null)
-    {
-        $staff = $this->staffRepository->find($staffId);
-
-        $query = $staff->attendances()->orderBy('check_in', 'desc');
-
-        if ($from) {
-            $query->where('check_in', '>=', $from);
-        }
-        if ($to) {
-            $query->where('check_in', '<=', $to);
-        }
-
-        return $query->get();
-    }
-
-    /**
-     * Calculate total working hours for a staff member in a period.
-     */
-    public function calculateWorkingHours($staffId, $from, $to)
-    {
-        $staff = $this->staffRepository->find($staffId);
-
-        return $staff->attendances()
-            ->whereNotNull('total_hours')
-            ->where('check_in', '>=', $from)
-            ->where('check_in', '<=', $to)
-            ->sum('total_hours');
-    }
 }

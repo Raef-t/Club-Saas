@@ -1,0 +1,14 @@
+{
+    "name": "AttendanceManager",
+    "alias": "attendancemanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AttendanceManager\\Providers\\AttendanceManagerServiceProvider",
+        "Modules\\AttendanceManager\\Providers\\RouteServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
