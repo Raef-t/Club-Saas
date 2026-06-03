@@ -2,21 +2,21 @@
 
 namespace Modules\ClubManager\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\ClubManager\Models\ClubSetting;
+use Illuminate\Http\Request;
 
-class ClubSettingController extends Controller
+class ClubSettingController extends BaseController
 {
     public function index()
     {
-        return response()->json(ClubSetting::all());
+        return $this->successResponse(ClubSetting::all(), __('Club settings retrieved'));
     }
 
     public function show($id)
     {
         $setting = ClubSetting::where('club_id', $id)->firstOrFail();
-        return response()->json($setting);
+        return $this->successResponse($setting, __('Club setting retrieved'));
     }
 
     public function update(Request $request, $id)
@@ -32,6 +32,6 @@ class ClubSettingController extends Controller
 
         $setting->update($validated);
 
-        return response()->json($setting);
+        return $this->successResponse($setting, __('Club setting updated'));
     }
 }

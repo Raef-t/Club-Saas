@@ -27,4 +27,12 @@ class EloquentPlayerSubscriptionRepository implements PlayerSubscriptionReposito
             ->where('status', 'active')
             ->first();
     }
+
+    public function findActiveByMemberAndPlan(int $memberId, int $planId)
+    {
+        return PlayerSubscription::where('member_id', $memberId)
+            ->where('plan_id', $planId)
+            ->where('status', 'active')
+            ->first();
+    }
 }

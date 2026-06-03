@@ -33,11 +33,11 @@ class PlayerSubscriptionController extends BaseController
             new OA\Response(response: 200, description: 'Successful operation')
         ]
     )]
-    public function index()
+    public function index(Request $request)
     {
-        $subscriptions = $this->subscriptionService->getAllSubscriptions();
+        $subscriptions = $this->subscriptionService->getAllSubscriptions($request->all());
         return $this->successResponse(
-            PlayerSubscriptionResource::collection($subscriptions),
+            PlayerSubscriptionResource::collection($subscriptions)->response()->getData(true),
             __('Subscriptions retrieved successfully')
         );
     }

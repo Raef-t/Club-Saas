@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 class PlayerSubscription extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
 
     protected $fillable = [
         'member_id',

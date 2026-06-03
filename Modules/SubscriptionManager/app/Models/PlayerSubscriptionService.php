@@ -14,6 +14,7 @@ class PlayerSubscriptionService extends Model
         'price_charged',
         'start_date',
         'end_date',
+        'locker_id',
     ];
 
     protected $casts = [

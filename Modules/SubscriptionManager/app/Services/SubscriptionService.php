@@ -29,12 +29,41 @@ class SubscriptionService
     /**
      * Get all player subscriptions with resolved Member DTOs.
      */
-    public function getAllSubscriptions()
+    public function getAllSubscriptions(array $filters = [])
     {
-        $subscriptions = $this->subscriptionRepository->all();
+        $query = PlayerSubscription::query()->with(['plan']);
+
+        if (!empty($filters['member_id'])) {
+            $query->where('member_id', $filters['member_id']);
+        }
+
+        if (!empty($filters['plan_id'])) {
+            $query->where('plan_id', $filters['plan_id']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['coach_id'])) {
+            $query->where('coach_id', $filters['coach_id']);
+        }
+
+        if (!empty($filters['start_date'])) {
+            $query->where('start_date', '>=', $filters['start_date']);
+        }
+
+        if (!empty($filters['end_date'])) {
+            $query->where('end_date', '<=', $filters['end_date']);
+        }
+
+        $perPage = $filters['per_page'] ?? 15;
+        $subscriptions = $query->latest()->paginate($perPage);
+
         foreach ($subscriptions as $subscription) {
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
         }
+
         return $subscriptions;
     }
 
@@ -97,6 +126,81 @@ class SubscriptionService
                 ]);
             }
 
+            // 6. Create Invoice
+            $memberDTO = $this->memberSharedService->getMemberById($memberId);
+            $branchId = $memberDTO->branch_id ?? 1;
+
+            $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
+                'member_id' => $memberId,
+                'branch_id' => $branchId,
+                'player_subscription_id' => $subscription->id,
+                'total' => $totalAmount,
+                'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
+            ]);
+
+            // 7. Create Payment if paid_amount > 0
+            if ($paidAmount > 0) {
+                $cashRegister = \Illuminate\Support\Facades\DB::table('cash_registers')
+                    ->where('branch_id', $branchId)
+                    ->first();
+                
+                if (!$cashRegister) {
+                    $cashRegisterId = \Illuminate\Support\Facades\DB::table('cash_registers')->insertGetId([
+                        'branch_id' => $branchId,
+                        'name' => 'Default Register',
+                        'type' => 'online',
+                        'balance' => 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $cashRegisterId = $cashRegister->id;
+                }
+
+                \Modules\SubscriptionManager\Models\Payment::create([
+                    'invoice_id' => $invoice->id,
+                    'cash_register_id' => $cashRegisterId,
+                    'amount' => $paidAmount,
+                    'payment_method' => $options['payment_method'] ?? 'cash',
+                    'status' => 'completed',
+                ]);
+
+                \Illuminate\Support\Facades\DB::table('cash_registers')
+                    ->where('id', $cashRegisterId)
+                    ->increment('balance', $paidAmount);
+            }
+
+            // 8. Create Extra Services (including Lockers)
+            if (!empty($options['extra_services']) && is_array($options['extra_services'])) {
+                foreach ($options['extra_services'] as $serviceData) {
+                    $priceCharged = $serviceData['price_charged'] ?? 0;
+                    $lockerId = $serviceData['locker_id'] ?? null;
+                    
+                    if ($lockerId) {
+                        $locker = \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->first();
+                        if (!$locker) {
+                            throw new Exception(__('Selected locker not found.'));
+                        }
+                        if ($locker->status !== 'available') {
+                            throw new Exception(__('Locker :number is already rented.', ['number' => $locker->locker_number]));
+                        }
+                        
+                        \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->update([
+                            'status' => 'rented',
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    $subscription->services()->create([
+                        'extra_service_id' => $serviceData['extra_service_id'],
+                        'price_charged' => $priceCharged,
+                        'start_date' => $startDate->toDateString(),
+                        'end_date' => $endDate ? $endDate->toDateString() : null,
+                        'locker_id' => $lockerId,
+                    ]);
+                }
+            }
+
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
             return $subscription;
@@ -155,23 +259,73 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
         
-        $newPaidAmount = $subscription->paid_amount + $amount;
-        
-        // Ensure we don't pay more than total
-        if ($newPaidAmount > $subscription->total_amount) {
-            $newPaidAmount = $subscription->total_amount;
-        }
+        return DB::transaction(function () use ($subscription, $amount) {
+            $newPaidAmount = $subscription->paid_amount + $amount;
+            
+            if ($newPaidAmount > $subscription->total_amount) {
+                $amount = max(0, $subscription->total_amount - $subscription->paid_amount);
+                $newPaidAmount = $subscription->total_amount;
+            }
 
-        $newRemainingAmount = max(0, $subscription->total_amount - $newPaidAmount);
+            $newRemainingAmount = max(0, $subscription->total_amount - $newPaidAmount);
 
-        $subscription->update([
-            'paid_amount' => $newPaidAmount,
-            'remaining_amount' => $newRemainingAmount
-        ]);
+            $subscription->update([
+                'paid_amount' => $newPaidAmount,
+                'remaining_amount' => $newRemainingAmount
+            ]);
 
-        $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+            $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
+            $branchId = $memberDTO->branch_id ?? 1;
 
-        return $subscription;
+            $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
+                ['player_subscription_id' => $subscription->id],
+                [
+                    'member_id' => $subscription->member_id,
+                    'branch_id' => $branchId,
+                    'total' => $subscription->total_amount,
+                    'status' => 'unpaid',
+                ]
+            );
+
+            $cashRegister = \Illuminate\Support\Facades\DB::table('cash_registers')
+                ->where('branch_id', $branchId)
+                ->first();
+            
+            if (!$cashRegister) {
+                $cashRegisterId = \Illuminate\Support\Facades\DB::table('cash_registers')->insertGetId([
+                    'branch_id' => $branchId,
+                    'name' => 'Default Register',
+                    'type' => 'online',
+                    'balance' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $cashRegisterId = $cashRegister->id;
+            }
+
+            if ($amount > 0) {
+                \Modules\SubscriptionManager\Models\Payment::create([
+                    'invoice_id' => $invoice->id,
+                    'cash_register_id' => $cashRegisterId,
+                    'amount' => $amount,
+                    'payment_method' => 'cash',
+                    'status' => 'completed',
+                ]);
+
+                \Illuminate\Support\Facades\DB::table('cash_registers')
+                    ->where('id', $cashRegisterId)
+                    ->increment('balance', $amount);
+            }
+
+            $invoice->update([
+                'status' => $newRemainingAmount <= 0 ? 'paid' : 'partially_paid',
+            ]);
+
+            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            return $subscription;
+        });
     }
 
     /**
@@ -192,6 +346,21 @@ class SubscriptionService
                     ? $subscription->notes . "\n" . __('Cancellation reason: ') . $reason
                     : __('Cancellation reason: ') . $reason,
             ]);
+
+            // Release any rented lockers tied to this subscription
+            $rentedLockerIds = $subscription->services()
+                ->whereNotNull('locker_id')
+                ->pluck('locker_id')
+                ->toArray();
+
+            if (!empty($rentedLockerIds)) {
+                \Illuminate\Support\Facades\DB::table('lockers')
+                    ->whereIn('id', $rentedLockerIds)
+                    ->update([
+                        'status' => 'available',
+                        'updated_at' => now(),
+                    ]);
+            }
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 

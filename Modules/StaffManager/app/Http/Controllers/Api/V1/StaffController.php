@@ -31,10 +31,13 @@ class StaffController extends BaseController
             new OA\Response(response: 200, description: 'Successful operation')
         ]
     )]
-    public function index()
+    public function index(Request $request)
     {
-        $staff = $this->staffService->getAllStaff();
-        return $this->successResponse(StaffResource::collection($staff), __('Staff retrieved successfully'));
+        $staff = $this->staffService->getAllStaff($request->all());
+        return $this->successResponse(
+            StaffResource::collection($staff)->response()->getData(true),
+            __('Staff retrieved successfully')
+        );
     }
 
     #[OA\Post(

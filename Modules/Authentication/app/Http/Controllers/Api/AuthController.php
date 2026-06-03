@@ -114,4 +114,30 @@ class AuthController extends BaseController
         $request->user()->currentAccessToken()->delete();
         return $this->successResponse(null, __('Logged out successfully'));
     }
+
+    #[OA\Get(
+        path: '/v1/auth/me',
+        summary: '👤 Get Authenticated User Profile',
+        description: 'Returns the currently authenticated user with their associated profiles (Player/Staff).',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ Successfully Retrieved Profile',
+        content: new OA\JsonContent(ref: '#/components/schemas/ApiResponse')
+    )]
+    #[OA\Response(response: 401, description: 'Unauthenticated')]
+    public function me(Request $request)
+    {
+        $user = clone $request->user();
+        $user->load('person.member', 'person.staff');
+
+        return $this->successResponse([
+            'id' => $user->id,
+            'username' => $user->username,
+            'is_active' => $user->is_active,
+            'person' => $user->person,
+        ], __('Profile retrieved successfully'));
+    }
 }

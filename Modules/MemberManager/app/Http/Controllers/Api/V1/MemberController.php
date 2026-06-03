@@ -27,10 +27,13 @@ class MemberController extends BaseController
             new OA\Response(response: 200, description: 'Successful operation')
         ]
     )]
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $members = $this->memberService->getAllMembers();
-        return $this->successResponse(MemberResource::collection($members), __('Members retrieved successfully'));
+        $members = $this->memberService->getAllMembers($request->all());
+        return $this->successResponse(
+            MemberResource::collection($members)->response()->getData(true),
+            __('Members retrieved successfully')
+        );
     }
 
     #[OA\Post(

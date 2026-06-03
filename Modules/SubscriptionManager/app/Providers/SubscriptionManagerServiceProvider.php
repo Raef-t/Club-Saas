@@ -22,7 +22,9 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
      *
      * @var string[]
      */
-    // protected array $commands = [];
+    protected array $commands = [
+        \Modules\SubscriptionManager\Console\CheckSubscriptionStatus::class,
+    ];
 
     /**
      * Provider classes to register.
@@ -37,10 +39,10 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
     /**
      * Define module schedules.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        $schedule->command('subscriptions:check-status')->daily();
+    }
 
     public function register(): void
     {

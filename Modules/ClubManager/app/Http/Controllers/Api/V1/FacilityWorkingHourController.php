@@ -2,16 +2,16 @@
 
 namespace Modules\ClubManager\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Modules\ClubManager\Models\FacilityWorkingHour;
 
-class FacilityWorkingHourController extends Controller
+class FacilityWorkingHourController extends BaseController
 {
     public function index($facilityId)
     {
         $hours = FacilityWorkingHour::where('facility_id', $facilityId)->get();
-        return response()->json($hours);
+        return $this->successResponse($hours, __('Facility working hours retrieved'));
     }
 
     public function store(Request $request, $facilityId)
@@ -29,7 +29,7 @@ class FacilityWorkingHourController extends Controller
             $validated
         );
 
-        return response()->json($workingHour, 201);
+        return $this->successResponse($workingHour, __('Facility working hours updated'), 201);
     }
 
     public function destroy($facilityId, $id)
@@ -37,6 +37,6 @@ class FacilityWorkingHourController extends Controller
         $workingHour = FacilityWorkingHour::where('facility_id', $facilityId)->findOrFail($id);
         $workingHour->delete();
 
-        return response()->json(null, 204);
+        return $this->successResponse(null, __('Facility working hour deleted'), 200);
     }
 }

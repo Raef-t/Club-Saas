@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
 
     protected $table = 'staff';
 

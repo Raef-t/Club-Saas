@@ -14,8 +14,26 @@ class StoreStaffRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Personal Details (people table)
             'full_name' => 'required|string|max:200',
             'mobile_1' => 'required|string',
+            'gender' => 'nullable|in:male,female',
+            'dob' => 'nullable|date',
+            'email' => 'nullable|email',
+            'national_id' => 'nullable|string|max:50',
+            'social_status' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
+            'photo_url' => 'nullable|string|max:255',
+            'mobile_2' => 'nullable|string|max:20',
+            'landline' => 'nullable|string|max:20',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'chronic_diseases' => 'nullable|string',
+            'children_count' => 'nullable|integer|min:0',
+            'how_did_you_hear' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+
+            // Staff/Trainer Details (staff table)
             'role' => 'required|in:admin,receptionist,coach,cleaner,manager',
             'employment_type' => 'required|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
@@ -31,7 +49,13 @@ class StoreStaffRequest extends FormRequest
             'employee_type' => 'nullable|in:receptionist,equipment_coach,cleaner,accountant,manager,supervisor,nursery',
             'other_tasks' => 'nullable|string|max:500',
             'gym_type' => 'nullable|in:male,female,mixed',
-            'email' => 'nullable|email',
+            'shift_type' => 'nullable|string|max:50',
+            'certificates_held' => 'nullable|array',
+            'certificates_held.*' => 'string',
+
+            // User login account info
+            'username' => 'nullable|string|max:100|unique:authentication_users,username',
+            'password' => 'nullable|string|min:6',
         ];
     }
 }

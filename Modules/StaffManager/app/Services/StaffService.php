@@ -27,12 +27,50 @@ class StaffService
     /**
      * Get all staff and coaches with resolved person/branch DTOs.
      */
-    public function getAllStaff()
+    public function getAllStaff(array $filters = [])
     {
-        $staffMembers = $this->staffRepository->all();
+        $query = \Modules\StaffManager\Models\Staff::query();
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
+        }
+
+        if (!empty($filters['role'])) {
+            $query->where('role', $filters['role']);
+        }
+
+        if (isset($filters['is_active'])) {
+            $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if (!empty($filters['gender']) || !empty($filters['search'])) {
+            $peopleQuery = \Illuminate\Support\Facades\DB::table('people');
+            
+            if (!empty($filters['gender'])) {
+                $peopleQuery->where('gender', $filters['gender']);
+            }
+            
+            if (!empty($filters['search'])) {
+                $search = $filters['search'];
+                $peopleQuery->where(function($sq) use ($search) {
+                    $sq->where('full_name', 'like', "%{$search}%")
+                       ->orWhere('mobile_1', 'like', "%{$search}%")
+                       ->orWhere('email', 'like', "%{$search}%")
+                       ->orWhere('national_id', 'like', "%{$search}%");
+                });
+            }
+
+            $personIds = $peopleQuery->pluck('id')->toArray();
+            $query->whereIn('person_id', $personIds);
+        }
+
+        $perPage = $filters['per_page'] ?? 15;
+        $staffMembers = $query->latest()->paginate($perPage);
+
         foreach ($staffMembers as $staff) {
             $this->attachSharedDTOs($staff);
         }
+
         return $staffMembers;
     }
 
@@ -55,10 +93,22 @@ class StaffService
             $personDto = new \Modules\Core\DTOs\CreatePersonDTO(
                 fullName: $data['full_name'],
                 mobile1: $data['mobile_1'],
+                gender: isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
+                dob: $data['dob'] ?? null,
                 type: 'staff',
-                gender: null,
-                dob: null,
                 email: $data['email'] ?? null,
+                nationalId: $data['national_id'] ?? null,
+                socialStatus: $data['social_status'] ?? null,
+                address: $data['address'] ?? null,
+                photoUrl: $data['photo_url'] ?? null,
+                mobile2: $data['mobile_2'] ?? null,
+                landline: $data['landline'] ?? null,
+                emergencyContactName: $data['emergency_contact_name'] ?? null,
+                emergencyContactPhone: $data['emergency_contact_phone'] ?? null,
+                chronicDiseases: $data['chronic_diseases'] ?? null,
+                childrenCount: isset($data['children_count']) ? (int)$data['children_count'] : null,
+                howDidYouHear: $data['how_did_you_hear'] ?? null,
+                notes: $data['notes'] ?? null
             );
             $person = $this->personService->createPerson($personDto);
 
@@ -66,6 +116,25 @@ class StaffService
             $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
             ]));
+
+            // 3. Create active User Account so they can login to the Employee/Trainer App
+            $username = $data['username'] ?? ('staff_' . $person->id . '_' . \Illuminate\Support\Str::random(4));
+            $password = $data['password'] ?? \Illuminate\Support\Str::random(8);
+            
+            $user = \Modules\Authentication\Models\User::create([
+                'username' => $username,
+                'password' => \Illuminate\Support\Facades\Hash::make($password),
+                'person_id' => $person->id,
+                'is_active' => true,
+            ]);
+
+            // Assign matching role (admin, receptionist, coach, cleaner, manager)
+            $roleName = $data['role'] ?? 'staff';
+            $user->assignRole($roleName);
+
+            // Expose credentials temporarily
+            $staff->generated_username = $username;
+            $staff->generated_password = $password;
 
             return $this->attachSharedDTOs($staff);
         });
@@ -119,6 +188,20 @@ class StaffService
                     'fullName' => $data['full_name'] ?? null,
                     'mobile1' => $data['mobile_1'] ?? null,
                     'email' => $data['email'] ?? null,
+                    'gender' => isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
+                    'dob' => $data['dob'] ?? null,
+                    'nationalId' => $data['national_id'] ?? null,
+                    'socialStatus' => $data['social_status'] ?? null,
+                    'address' => $data['address'] ?? null,
+                    'photoUrl' => $data['photo_url'] ?? null,
+                    'mobile2' => $data['mobile_2'] ?? null,
+                    'landline' => $data['landline'] ?? null,
+                    'emergencyContactName' => $data['emergency_contact_name'] ?? null,
+                    'emergencyContactPhone' => $data['emergency_contact_phone'] ?? null,
+                    'chronicDiseases' => $data['chronic_diseases'] ?? null,
+                    'childrenCount' => isset($data['children_count']) ? (int)$data['children_count'] : null,
+                    'howDidYouHear' => $data['how_did_you_hear'] ?? null,
+                    'notes' => $data['notes'] ?? null,
                 ], fn($value) => !is_null($value));
 
                 if (!empty($personData)) {

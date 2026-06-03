@@ -10,11 +10,13 @@ class NoActiveSubscriptionRule implements ValidationRule
 {
     protected $repository;
     protected $memberId;
+    protected $planId;
 
-    public function __construct(PlayerSubscriptionRepositoryInterface $repository, $memberId)
+    public function __construct(PlayerSubscriptionRepositoryInterface $repository, $memberId, $planId = null)
     {
         $this->repository = $repository;
         $this->memberId = $memberId;
+        $this->planId = $planId;
     }
 
     /**
@@ -22,14 +24,14 @@ class NoActiveSubscriptionRule implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!$this->memberId) {
+        if (!$this->memberId || !$this->planId) {
             return;
         }
 
-        $activeSubscription = $this->repository->findActiveByMember($this->memberId);
+        $activeSubscription = $this->repository->findActiveByMemberAndPlan($this->memberId, $this->planId);
 
         if ($activeSubscription) {
-            $fail(__('The member already has an active subscription.'));
+            $fail(__('The member already has an active subscription to this plan.'));
         }
     }
 }

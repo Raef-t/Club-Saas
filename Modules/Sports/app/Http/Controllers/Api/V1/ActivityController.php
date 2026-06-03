@@ -4,6 +4,7 @@ namespace Modules\Sports\Http\Controllers\Api\V1;
 
 use Modules\Sports\Models\Activity;
 use Modules\Sports\Http\Resources\ActivityResource;
+use Modules\ClubManager\Models\Facility;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -19,9 +20,20 @@ class ActivityController extends BaseController
             new OA\Response(response: 200, description: 'Successful operation')
         ]
     )]
-    public function index()
+    public function index(Request $request)
     {
-        $activities = Activity::orderBy('id')->get();
+        $query = Activity::query();
+
+        if ($request->has('facility_id')) {
+            $facility = Facility::find($request->facility_id);
+            if ($facility && $facility->gender_restriction !== 'mixed') {
+                $query->whereIn('gender_allowed', [$facility->gender_restriction, 'mixed']);
+            }
+        } elseif ($request->has('gender_allowed')) {
+            $query->where('gender_allowed', $request->gender_allowed);
+        }
+
+        $activities = $query->orderBy('id')->get();
         return $this->successResponse(ActivityResource::collection($activities), __('Activities retrieved successfully'));
     }
 

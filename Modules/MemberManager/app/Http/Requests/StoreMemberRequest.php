@@ -32,12 +32,26 @@ class StoreMemberRequest extends FormRequest
             'mobile_1' => 'required_without:person_id|string|max:20',
             'gender' => 'required_without:person_id|in:male,female',
             'dob' => 'nullable|date',
+            'email' => 'nullable|email',
+            'national_id' => 'nullable|string|max:50',
+            'social_status' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
+            'photo_url' => 'nullable|string|max:255',
+            'mobile_2' => 'nullable|string|max:20',
+            'landline' => 'nullable|string|max:20',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'chronic_diseases' => 'nullable|string',
+            'children_count' => 'nullable|integer|min:0',
+            'how_did_you_hear' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
 
             // Member Info
             'branch_id' => 'required|exists:branches,id',
             'member_number' => 'nullable|string|unique:members,member_number',
             'membership_status' => 'nullable|string|in:active,inactive,frozen,expired',
             'join_date' => 'nullable|date',
+            'how_heard_about_us' => 'nullable|string|max:255',
 
             // Health Info (Optional)
             'health_profile' => 'nullable|array',
