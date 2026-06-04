@@ -31,10 +31,21 @@ class StaffManagerServiceProvider extends ServiceProvider
             \Modules\StaffManager\Repositories\StaffShiftRepositoryInterface::class,
             \Modules\StaffManager\Repositories\EloquentStaffShiftRepository::class
         );
+
+        // Bind the staff attendance policy to the service container
+        $this->app->singleton(
+            'attendance.policy.staff',
+            \Modules\StaffManager\Policies\StaffAttendancePolicy::class
+        );
     }
 
     public function boot(): void
     {
         $this->loadMigrationsFrom(module_path($this->moduleName, 'database/migrations'));
+
+        // Register the polymorphic alias in Eloquent morphMap
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'staff' => \Modules\StaffManager\Models\Staff::class,
+        ]);
     }
 }

@@ -6,12 +6,11 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 
 class EventServiceProvider extends ServiceProvider
 {
-    /**
-     * The event handler mappings for the application.
-     *
-     * @var array<string, array<int, string>>
-     */
-    protected $listen = [];
+    protected $listen = [
+        \Modules\AttendanceManager\Events\CheckInRecorded::class => [
+            \Modules\SubscriptionManager\Listeners\DecrementSessionCredits::class,
+        ],
+    ];
 
     /**
      * Indicates if events should be discovered.

@@ -72,5 +72,21 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
             \Modules\SubscriptionManager\Repositories\PlayerSubscriptionItemRepositoryInterface::class,
             \Modules\SubscriptionManager\Repositories\EloquentPlayerSubscriptionItemRepository::class
         );
+
+        // Bind the subscription attendance policy to the service container
+        $this->app->singleton(
+            'attendance.policy.player_subscription',
+            \Modules\SubscriptionManager\Policies\SubscriptionAttendancePolicy::class
+        );
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // Register the polymorphic alias in Eloquent morphMap
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'player_subscription' => \Modules\SubscriptionManager\Models\PlayerSubscription::class,
+        ]);
     }
 }
