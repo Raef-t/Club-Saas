@@ -2,29 +2,74 @@
 
 namespace Modules\AttendanceManager\Repositories;
 
-use Modules\AttendanceManager\Models\MemberAttendance;
+use Modules\AttendanceManager\Models\Attendance;
+use Illuminate\Support\Facades\DB;
 
 class EloquentMemberAttendanceRepository implements MemberAttendanceRepositoryInterface
 {
     public function all()
     {
-        return MemberAttendance::all();
+        return Attendance::where('attendable_type', 'player_subscription')->get();
     }
 
     public function find($id)
     {
-        return MemberAttendance::findOrFail($id);
+        return Attendance::where('attendable_type', 'player_subscription')->findOrFail($id);
     }
 
     public function create(array $data)
     {
-        return MemberAttendance::create($data);
+        $attendableId = $data['subscription_id'] ?? $data['attendable_id'] ?? null;
+        $branchId = $data['branch_id'] ?? $data['facility_id'] ?? null;
+        $clubId = $data['club_id'] ?? null;
+        $checkInAt = $data['check_in'] ?? $data['check_in_at'] ?? now();
+        $checkOutAt = $data['check_out'] ?? $data['check_out_at'] ?? null;
+        $status = $data['status'] ?? 'checked_in';
+        $metadata = $data['metadata'] ?? [];
+
+        if (isset($data['notes'])) {
+            $metadata['notes'] = $data['notes'];
+        }
+
+        return Attendance::create([
+            'club_id' => $clubId,
+            'attendable_type' => 'player_subscription',
+            'attendable_id' => $attendableId,
+            'branch_id' => $branchId,
+            'check_in_at' => $checkInAt,
+            'check_out_at' => $checkOutAt,
+            'status' => $status,
+            'metadata' => $metadata,
+        ]);
     }
 
     public function update($id, array $data)
     {
         $attendance = $this->find($id);
-        $attendance->update($data);
+        $updateData = [];
+
+        if (isset($data['subscription_id'])) $updateData['attendable_id'] = $data['subscription_id'];
+        if (isset($data['attendable_id'])) $updateData['attendable_id'] = $data['attendable_id'];
+        if (isset($data['branch_id'])) $updateData['branch_id'] = $data['branch_id'];
+        if (isset($data['facility_id'])) $updateData['branch_id'] = $data['facility_id'];
+        if (isset($data['club_id'])) $updateData['club_id'] = $data['club_id'];
+        if (isset($data['check_in'])) $updateData['check_in_at'] = $data['check_in'];
+        if (isset($data['check_in_at'])) $updateData['check_in_at'] = $data['check_in_at'];
+        if (isset($data['check_out'])) $updateData['check_out_at'] = $data['check_out'];
+        if (isset($data['check_out_at'])) $updateData['check_out_at'] = $data['check_out_at'];
+        if (isset($data['status'])) $updateData['status'] = $data['status'];
+        
+        if (isset($data['notes'])) {
+            $metadata = $attendance->metadata ?? [];
+            $metadata['notes'] = $data['notes'];
+            $updateData['metadata'] = $metadata;
+        }
+
+        if (isset($data['metadata'])) {
+            $updateData['metadata'] = $data['metadata'];
+        }
+
+        $attendance->update($updateData);
         return $attendance;
     }
 
@@ -36,22 +81,33 @@ class EloquentMemberAttendanceRepository implements MemberAttendanceRepositoryIn
 
     public function findOpenAttendance($memberId)
     {
-        return MemberAttendance::where('member_id', $memberId)
-            ->whereNull('check_out')
+        $subscriptionIds = DB::table('player_subscriptions')
+            ->where('member_id', $memberId)
+            ->pluck('id');
+
+        return Attendance::where('attendable_type', 'player_subscription')
+            ->whereIn('attendable_id', $subscriptionIds)
+            ->whereNull('check_out_at')
             ->first();
     }
 
     public function getHistory($memberId, $from = null, $to = null)
     {
-        $query = MemberAttendance::where('member_id', $memberId)->orderBy('check_in', 'desc');
+        $subscriptionIds = DB::table('player_subscriptions')
+            ->where('member_id', $memberId)
+            ->pluck('id');
+
+        $query = Attendance::where('attendable_type', 'player_subscription')
+            ->whereIn('attendable_id', $subscriptionIds)
+            ->orderBy('check_in_at', 'desc');
 
         if ($from) {
-            $query->whereDate('check_in', '>=', $from);
+            $query->whereDate('check_in_at', '>=', $from);
         }
         if ($to) {
-            $query->whereDate('check_in', '<=', $to);
+            $query->whereDate('check_in_at', '<=', $to);
         }
 
-        return $query->get();
+        return $query;
     }
 }

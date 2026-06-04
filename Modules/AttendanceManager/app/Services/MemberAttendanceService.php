@@ -3,16 +3,20 @@
 namespace Modules\AttendanceManager\Services;
 
 use Modules\AttendanceManager\Repositories\MemberAttendanceRepositoryInterface;
+use Modules\AttendanceManager\Services\AttendanceRecorder;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class MemberAttendanceService
 {
     protected $repository;
+    protected $recorder;
 
-    public function __construct(MemberAttendanceRepositoryInterface $repository)
+    public function __construct(MemberAttendanceRepositoryInterface $repository, AttendanceRecorder $recorder)
     {
         $this->repository = $repository;
+        $this->recorder = $recorder;
     }
 
     public function getAll() { return $this->repository->all(); }
@@ -21,7 +25,7 @@ class MemberAttendanceService
     public function update($id, array $data) { return $this->repository->update($id, $data); }
     public function delete($id) { return $this->repository->delete($id); }
 
-    public function checkIn(int $memberId, ?int $facilityId = null)
+    public function checkIn(int $memberId, int $clubId, int $branchId, ?int $facilityId = null)
     {
         $openAttendance = $this->repository->findOpenAttendance($memberId);
 
@@ -31,13 +35,13 @@ class MemberAttendanceService
 
         // 1. Verify Member Gender against Facility gender restriction
         if ($facilityId) {
-            $member = \Illuminate\Support\Facades\DB::table('members')
+            $member = DB::table('members')
                 ->join('people', 'members.person_id', '=', 'people.id')
                 ->where('members.id', $memberId)
                 ->select('people.gender')
                 ->first();
 
-            $facility = \Illuminate\Support\Facades\DB::table('facilities')
+            $facility = DB::table('facilities')
                 ->where('id', $facilityId)
                 ->first();
 
@@ -49,7 +53,7 @@ class MemberAttendanceService
         }
 
         // 2. Verify Member has an Active Subscription
-        $activeSubscription = \Illuminate\Support\Facades\DB::table('player_subscriptions')
+        $activeSubscription = DB::table('player_subscriptions')
             ->where('member_id', $memberId)
             ->where('status', 'active')
             ->first();
@@ -58,24 +62,46 @@ class MemberAttendanceService
             throw new Exception(__("Member does not have an active subscription."));
         }
 
-        return $this->repository->create([
-            'member_id' => $memberId,
-            'facility_id' => $facilityId,
-            'check_in' => Carbon::now(),
-            'status' => 'present'
-        ]);
+        // 3. Dispatch check-in to policy-driven engine
+        $attempt = new \Modules\AttendanceManager\DTOs\CheckInAttempt(
+            attendableType: 'player_subscription',
+            attendableId: $activeSubscription->id,
+            clubId: $clubId,
+            branchId: $branchId,
+            timestamp: new \DateTimeImmutable(),
+            metadata: array_filter([
+                'member_id' => $memberId,
+                'facility_id' => $facilityId,
+            ])
+        );
+
+        $decision = $this->recorder->record($attempt);
+
+        if (!$decision->isAllowed) {
+            throw new Exception($decision->rejectionReason);
+        }
+
+        // Decrement remaining sessions if subscription is session-based
+        if ($activeSubscription->remaining_sessions !== null) {
+            DB::table('player_subscriptions')
+                ->where('id', $activeSubscription->id)
+                ->decrement('remaining_sessions');
+        }
+
+        return $this->repository->findOpenAttendance($memberId);
     }
 
     public function checkOut(int $attendanceId)
     {
         $attendance = $this->repository->find($attendanceId);
 
-        if ($attendance->check_out) {
+        if ($attendance->check_out_at) {
             throw new Exception("Already checked out.");
         }
 
         return $this->repository->update($attendanceId, [
-            'check_out' => Carbon::now()
+            'check_out_at' => Carbon::now(),
+            'status' => 'checked_out'
         ]);
     }
 
