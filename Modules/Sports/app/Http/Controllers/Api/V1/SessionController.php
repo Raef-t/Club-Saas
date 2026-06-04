@@ -5,6 +5,8 @@ namespace Modules\Sports\Http\Controllers\Api\V1;
 use Modules\Sports\Services\SessionService;
 use Modules\Sports\Http\Resources\SessionResource;
 use Modules\Sports\Http\Requests\StoreSessionRequest;
+use Modules\Sports\Http\Requests\UpdateSessionRequest;
+use Modules\Sports\Http\Requests\GetWeeklyScheduleRequest;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -72,18 +74,9 @@ class SessionController extends BaseController
             new OA\Response(response: 200, description: 'Session updated')
         ]
     )]
-    public function update(Request $request, int $id)
+    public function update(UpdateSessionRequest $request, int $id)
     {
-        $data = $request->validate([
-            'activity_id' => 'nullable|exists:activities,id',
-            'staff_id' => 'nullable|integer',
-            'facility_id' => 'nullable|integer',
-            'start_time' => 'nullable|date',
-            'end_time' => 'nullable|date|after:start_time',
-            'max_players' => 'nullable|integer|min:1',
-            'gender_allowed' => 'nullable|in:male,female,mixed',
-            'status' => 'nullable|in:scheduled,cancelled,completed',
-        ]);
+        $data = $request->validated();
 
         $session = $this->sessionService->updateSession($id, $data);
         return $this->successResponse(new SessionResource($session), __('Session updated successfully'));
@@ -113,12 +106,9 @@ class SessionController extends BaseController
             new OA\Response(response: 200, description: 'Successful operation')
         ]
     )]
-    public function weeklySchedule(Request $request)
+    public function weeklySchedule(GetWeeklyScheduleRequest $request)
     {
-        $data = $request->validate([
-            'branch_id' => 'required|integer',
-            'start_date' => 'nullable|date',
-        ]);
+        $data = $request->validated();
 
         $sessions = $this->sessionService->getWeeklySchedule(
             $data['branch_id'],

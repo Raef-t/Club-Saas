@@ -7,6 +7,9 @@ use Modules\SubscriptionManager\Http\Resources\PlayerSubscriptionResource;
 use Modules\SubscriptionManager\Services\SubscriptionService;
 use Modules\SubscriptionManager\Http\Requests\SubscribeMemberRequest;
 use Modules\SubscriptionManager\Http\Requests\FreezeSubscriptionRequest;
+use Modules\SubscriptionManager\Http\Requests\RenewSubscriptionRequest;
+use Modules\SubscriptionManager\Http\Requests\CancelSubscriptionRequest;
+use Modules\SubscriptionManager\Http\Requests\RecordPaymentRequest;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -137,13 +140,9 @@ class PlayerSubscriptionController extends BaseController
             new OA\Response(response: 201, description: 'Subscription renewed')
         ]
     )]
-    public function renew(Request $request, int $id)
+    public function renew(RenewSubscriptionRequest $request, int $id)
     {
-        $options = $request->validate([
-            'coach_id' => 'nullable|integer',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string|max:500',
-        ]);
+        $options = $request->validated();
 
         $subscription = $this->subscriptionService->renewSubscription($id, $options);
         return $this->successResponse(
@@ -162,11 +161,9 @@ class PlayerSubscriptionController extends BaseController
             new OA\Response(response: 200, description: 'Subscription cancelled')
         ]
     )]
-    public function cancel(Request $request, int $id)
+    public function cancel(CancelSubscriptionRequest $request, int $id)
     {
-        $data = $request->validate([
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $data = $request->validated();
 
         $subscription = $this->subscriptionService->cancelSubscription($id, $data['reason'] ?? null);
         return $this->successResponse(
@@ -184,11 +181,9 @@ class PlayerSubscriptionController extends BaseController
             new OA\Response(response: 200, description: 'Payment recorded')
         ]
     )]
-    public function recordPayment(Request $request, int $id)
+    public function recordPayment(RecordPaymentRequest $request, int $id)
     {
-        $data = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-        ]);
+        $data = $request->validated();
 
         $subscription = $this->subscriptionService->recordPayment($id, $data['amount']);
         return $this->successResponse(

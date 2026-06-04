@@ -8,6 +8,7 @@ use Modules\Authentication\Models\User;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
+use Modules\Authentication\Http\Requests\LoginRequest;
 
 class AuthController extends BaseController
 {
@@ -65,14 +66,11 @@ class AuthController extends BaseController
         description: '🚫 Account Inactive',
         content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
     )]
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
-        $user = User::where('username', $request->username)->first();
+        $user = User::where('username', $validated['username'])->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return $this->errorResponse(__('Invalid credentials'), 401);

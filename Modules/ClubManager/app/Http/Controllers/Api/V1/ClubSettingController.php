@@ -5,6 +5,7 @@ namespace Modules\ClubManager\Http\Controllers\Api\V1;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\ClubManager\Models\ClubSetting;
 use Illuminate\Http\Request;
+use Modules\ClubManager\Http\Requests\UpdateClubSettingRequest;
 
 class ClubSettingController extends BaseController
 {
@@ -19,16 +20,11 @@ class ClubSettingController extends BaseController
         return $this->successResponse($setting, __('Club setting retrieved'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateClubSettingRequest $request, $id)
     {
         $setting = ClubSetting::firstOrCreate(['club_id' => $id]);
         
-        $validated = $request->validate([
-            'theme_colors' => 'sometimes|array',
-            'language' => 'sometimes|string|in:ar,en,all',
-            'enabled_features' => 'sometimes|array',
-            'bg_image_url' => 'sometimes|string|nullable'
-        ]);
+        $validated = $request->validated();
 
         $setting->update($validated);
 

@@ -3,49 +3,36 @@
 namespace Modules\SubscriptionManager\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\SubscriptionManager\Models\PlayerSubscriptionService;
+use Modules\SubscriptionManager\Http\Requests\StorePlayerSubscriptionServiceRequest;
+use Modules\SubscriptionManager\Http\Requests\UpdatePlayerSubscriptionServiceRequest;
+use Modules\SubscriptionManager\Http\Resources\PlayerSubscriptionServiceResource;
 
 class PlayerSubscriptionServiceController extends Controller
 {
     public function index()
     {
         $services = PlayerSubscriptionService::all();
-        return response()->json($services);
+        return PlayerSubscriptionServiceResource::collection($services);
     }
 
-    public function store(Request $request)
+    public function store(StorePlayerSubscriptionServiceRequest $request)
     {
-        $validated = $request->validate([
-            'player_subscription_id' => 'required|exists:player_subscriptions,id',
-            'extra_service_id' => 'required|exists:extra_services,id',
-            'price_charged' => 'required|numeric|min:0',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
-
-        $service = PlayerSubscriptionService::create($validated);
-        return response()->json($service, 201);
+        $service = PlayerSubscriptionService::create($request->validated());
+        return new PlayerSubscriptionServiceResource($service);
     }
 
     public function show($id)
     {
         $service = PlayerSubscriptionService::findOrFail($id);
-        return response()->json($service);
+        return new PlayerSubscriptionServiceResource($service);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePlayerSubscriptionServiceRequest $request, $id)
     {
         $service = PlayerSubscriptionService::findOrFail($id);
-
-        $validated = $request->validate([
-            'price_charged' => 'sometimes|required|numeric|min:0',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
-
-        $service->update($validated);
-        return response()->json($service);
+        $service->update($request->validated());
+        return new PlayerSubscriptionServiceResource($service);
     }
 
     public function destroy($id)
@@ -55,3 +42,4 @@ class PlayerSubscriptionServiceController extends Controller
         return response()->json(null, 204);
     }
 }
+

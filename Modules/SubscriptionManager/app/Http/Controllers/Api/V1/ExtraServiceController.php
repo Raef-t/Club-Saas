@@ -3,49 +3,36 @@
 namespace Modules\SubscriptionManager\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Modules\SubscriptionManager\Models\ExtraService;
+use Modules\SubscriptionManager\Http\Requests\StoreExtraServiceRequest;
+use Modules\SubscriptionManager\Http\Requests\UpdateExtraServiceRequest;
+use Modules\SubscriptionManager\Http\Resources\ExtraServiceResource;
 
 class ExtraServiceController extends Controller
 {
     public function index()
     {
         $services = ExtraService::all();
-        return response()->json($services);
+        return ExtraServiceResource::collection($services);
     }
 
-    public function store(Request $request)
+    public function store(StoreExtraServiceRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'default_price' => 'required|numeric|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        $service = ExtraService::create($validated);
-        return response()->json($service, 201);
+        $service = ExtraService::create($request->validated());
+        return new ExtraServiceResource($service);
     }
 
     public function show($id)
     {
         $service = ExtraService::findOrFail($id);
-        return response()->json($service);
+        return new ExtraServiceResource($service);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateExtraServiceRequest $request, $id)
     {
         $service = ExtraService::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'default_price' => 'sometimes|required|numeric|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        $service->update($validated);
-        return response()->json($service);
+        $service->update($request->validated());
+        return new ExtraServiceResource($service);
     }
 
     public function destroy($id)
@@ -55,3 +42,4 @@ class ExtraServiceController extends Controller
         return response()->json(null, 204);
     }
 }
+

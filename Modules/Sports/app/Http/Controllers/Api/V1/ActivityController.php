@@ -8,6 +8,8 @@ use Modules\ClubManager\Models\Facility;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Modules\Sports\Http\Requests\StoreActivityRequest;
+use Modules\Sports\Http\Requests\UpdateActivityRequest;
 
 class ActivityController extends BaseController
 {
@@ -46,18 +48,9 @@ class ActivityController extends BaseController
             new OA\Response(response: 201, description: 'Activity created')
         ]
     )]
-    public function store(Request $request)
+    public function store(StoreActivityRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|array',
-            'name.ar' => 'required|string|max:150',
-            'name.en' => 'nullable|string|max:150',
-            'description' => 'nullable|string',
-            'type' => 'nullable|in:open_gym,group_class,personal_training',
-            'default_capacity' => 'nullable|integer|min:1',
-            'is_private_equipment' => 'nullable|boolean',
-            'gender_allowed' => 'nullable|in:male,female,mixed',
-        ]);
+        $data = $request->validated();
 
         $activity = Activity::create($data);
         return $this->successResponse(new ActivityResource($activity), __('Activity created successfully'), 201);
@@ -87,19 +80,9 @@ class ActivityController extends BaseController
             new OA\Response(response: 200, description: 'Activity updated')
         ]
     )]
-    public function update(Request $request, int $id)
+    public function update(UpdateActivityRequest $request, int $id)
     {
-        $data = $request->validate([
-            'name' => 'nullable|array',
-            'name.ar' => 'nullable|string|max:150',
-            'name.en' => 'nullable|string|max:150',
-            'description' => 'nullable|string',
-            'type' => 'nullable|in:open_gym,group_class,personal_training',
-            'default_capacity' => 'nullable|integer|min:1',
-            'is_private_equipment' => 'nullable|boolean',
-            'gender_allowed' => 'nullable|in:male,female,mixed',
-            'is_active' => 'nullable|boolean',
-        ]);
+        $data = $request->validated();
 
         $activity = Activity::findOrFail($id);
         $activity->update($data);

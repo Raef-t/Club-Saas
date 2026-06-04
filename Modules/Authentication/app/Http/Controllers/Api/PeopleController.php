@@ -10,6 +10,7 @@ use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\User;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use OpenApi\Attributes as OA;
+use Modules\Authentication\Http\Requests\RegisterPersonRequest;
 
 class PeopleController extends BaseController
 {
@@ -67,15 +68,9 @@ class PeopleController extends BaseController
         )
     )]
     #[OA\Response(response: 422, description: '⚠️ Validation Error', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
-    public function store(Request $request)
+    public function store(RegisterPersonRequest $request)
     {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'type' => 'required|in:player,coach,staff',
-            'mobile_1' => 'required|string|max:20',
-            'email' => 'nullable|email',
-            'username' => 'nullable|string|unique:authentication_users,username',
-        ]);
+        $validated = $request->validated();
 
         try {
             return DB::transaction(function () use ($request) {

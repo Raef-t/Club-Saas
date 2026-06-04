@@ -5,6 +5,7 @@ namespace Modules\ClubManager\Http\Controllers\Api\V1;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Modules\ClubManager\Models\FacilityWorkingHour;
+use Modules\ClubManager\Http\Requests\StoreFacilityWorkingHourRequest;
 
 class FacilityWorkingHourController extends BaseController
 {
@@ -14,13 +15,9 @@ class FacilityWorkingHourController extends BaseController
         return $this->successResponse($hours, __('Facility working hours retrieved'));
     }
 
-    public function store(Request $request, $facilityId)
+    public function store(StoreFacilityWorkingHourRequest $request, $facilityId)
     {
-        $validated = $request->validate([
-            'day_of_week' => 'required|integer|min:0|max:6',
-            'open_time' => 'required|date_format:H:i',
-            'close_time' => 'required|date_format:H:i|after:open_time',
-        ]);
+        $validated = $request->validated();
 
         $validated['facility_id'] = $facilityId;
 

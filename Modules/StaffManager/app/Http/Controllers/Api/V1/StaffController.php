@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 use Modules\StaffManager\Http\Requests\StoreStaffRequest;
+use Modules\StaffManager\Http\Requests\UpdateStaffRequest;
+use Modules\StaffManager\Http\Requests\SetStaffScheduleRequest;
+use Modules\StaffManager\Http\Requests\SyncStaffBranchesRequest;
 
 class StaffController extends BaseController
 {
@@ -64,14 +67,9 @@ class StaffController extends BaseController
             new OA\Response(response: 200, description: 'Schedule updated')
         ]
     )]
-    public function setSchedule(Request $request, $id)
+    public function setSchedule(SetStaffScheduleRequest $request, $id)
     {
-        $data = $request->validate([
-            'shifts' => 'required|array',
-            'shifts.*.day_of_week' => 'required|integer|min:0|max:6',
-            'shifts.*.start_time' => 'required|date_format:H:i',
-            'shifts.*.end_time' => 'required|date_format:H:i|after:shifts.*.start_time',
-        ]);
+        $data = $request->validated();
 
         $staff = $this->staffService->setStaffSchedule($id, $data['shifts']);
         return $this->successResponse(new StaffResource($staff), __('Schedule updated successfully'));
@@ -102,30 +100,9 @@ class StaffController extends BaseController
             new OA\Response(response: 200, description: 'Staff updated')
         ]
     )]
-    public function update(Request $request, $id)
+    public function update(UpdateStaffRequest $request, $id)
     {
-        $data = $request->validate([
-            'full_name' => 'nullable|string|max:200',
-            'mobile_1' => 'nullable|string',
-            'email' => 'nullable|email',
-            'role' => 'nullable|in:admin,receptionist,coach,cleaner,manager',
-            'employment_type' => 'nullable|in:fixed_salary,commission_based,hybrid',
-            'base_salary' => 'nullable|numeric|min:0',
-            'commission_rate' => 'nullable|numeric|min:0|max:100',
-            'branch_id' => 'nullable|exists:branches,id',
-            'specialization' => 'nullable|string|max:100',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'contract_type' => 'nullable|in:probation,permanent',
-            'work_type' => 'nullable|in:part_time,full_time',
-            'work_status' => 'nullable|in:active,suspended,on_leave',
-            'salary_type' => 'nullable|in:monthly,commission,weekly',
-            'employee_type' => 'nullable|in:receptionist,equipment_coach,cleaner,accountant,manager,supervisor,nursery',
-            'other_tasks' => 'nullable|string|max:500',
-            'gym_type' => 'nullable|in:male,female,mixed',
-            'shift_type' => 'nullable|in:part_time,full_time',
-            'certificates_held' => 'nullable|array',
-        ]);
+        $data = $request->validated();
 
         $staff = $this->staffService->updateStaff($id, $data);
         return $this->successResponse(new StaffResource($staff), __('Staff updated successfully'));
@@ -156,12 +133,9 @@ class StaffController extends BaseController
             new OA\Response(response: 200, description: 'Branches synced')
         ]
     )]
-    public function syncBranches(Request $request, $id)
+    public function syncBranches(SyncStaffBranchesRequest $request, $id)
     {
-        $validated = $request->validate([
-            'branch_ids' => 'required|array',
-            'branch_ids.*' => 'integer',
-        ]);
+        $validated = $request->validated();
 
         $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
         

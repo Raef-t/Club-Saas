@@ -7,6 +7,9 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Modules\NotificationManager\Models\NotificationTemplate;
+use Modules\NotificationManager\Http\Requests\StoreNotificationTemplateRequest;
+use Modules\NotificationManager\Http\Requests\UpdateNotificationTemplateRequest;
+use Modules\NotificationManager\Http\Requests\TestSendNotificationRequest;
 
 class NotificationTemplateController extends BaseController
 {
@@ -40,14 +43,9 @@ class NotificationTemplateController extends BaseController
             new OA\Response(response: 201, description: 'Template created')
         ]
     )]
-    public function store(Request $request)
+    public function store(StoreNotificationTemplateRequest $request)
     {
-        $data = $request->validate([
-            'slug' => 'required|string|unique:notification_templates,slug',
-            'subject' => 'required|array',
-            'content' => 'required|array',
-            'channel' => 'required|in:sms,email,whatsapp,push',
-        ]);
+        $data = $request->validated();
 
         $template = $this->templateRepository->create($data);
         return $this->successResponse($template, __('Template created'), 201);
@@ -77,15 +75,10 @@ class NotificationTemplateController extends BaseController
             new OA\Response(response: 200, description: 'Template updated')
         ]
     )]
-    public function update(Request $request, $id)
+    public function update(UpdateNotificationTemplateRequest $request, $id)
     {
         $template = NotificationTemplate::findOrFail($id);
-        $data = $request->validate([
-            'subject' => 'nullable|array',
-            'content' => 'nullable|array',
-            'channel' => 'nullable|in:sms,email,whatsapp,push',
-            'is_active' => 'nullable|boolean',
-        ]);
+        $data = $request->validated();
 
         $template->update($data);
         return $this->successResponse($template, __('Template updated'));
@@ -133,20 +126,17 @@ class NotificationTemplateController extends BaseController
             new OA\Response(response: 200, description: 'Test sent')
         ]
     )]
-    public function testSend(Request $request, $slug, \Modules\NotificationManager\Services\NotificationService $service)
+    public function testSend(TestSendNotificationRequest $request, $slug, \Modules\NotificationManager\Services\NotificationService $service)
     {
-        $request->validate([
-            'person_id' => 'required|exists:people,id',
-            'data' => 'nullable|array',
-        ]);
+        $data = $request->validated();
 
         $personService = app(\Modules\Core\Contracts\PersonSharedServiceInterface::class);
-        $person = $personService->getPersonById($request->person_id);
+        $person = $personService->getPersonById($data['person_id']);
         if (!$person) {
             return $this->errorResponse(__('Person not found'), 404);
         }
 
-        $log = $service->sendFromTemplate($person, $slug, $request->data ?? [
+        $log = $service->sendFromTemplate($person, $slug, $data['data'] ?? [
             'name' => 'Test User',
             'expiry_date' => now()->addDays(7)->toDateString(),
             'plan_name' => 'Premium Plan'

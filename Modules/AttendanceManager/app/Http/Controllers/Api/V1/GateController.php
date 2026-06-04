@@ -10,6 +10,7 @@ use Modules\AttendanceManager\Models\GateDevice;
 use Modules\AttendanceManager\Services\QRSecurityService;
 use Modules\AttendanceManager\Services\AttendanceRecorder;
 use Modules\AttendanceManager\DTOs\CheckInAttempt;
+use Modules\AttendanceManager\Http\Requests\GateScanRequest;
 
 class GateController extends BaseController
 {
@@ -21,12 +22,9 @@ class GateController extends BaseController
     /**
      * Process a QR scan from a hardware gate device.
      */
-    public function scan(Request $request)
+    public function scan(GateScanRequest $request)
     {
-        $request->validate([
-            'qr_token' => 'required|string',
-            'scan_timestamp' => 'sometimes|integer',
-        ]);
+        $validated = $request->validated();
 
         // 1. Authenticate the Gate Device via Bearer Token
         $token = $request->bearerToken();
@@ -45,7 +43,7 @@ class GateController extends BaseController
 
         try {
             // 2. Validate QR Token (Fast, Cache-First Validation inside QRSecurityService)
-            $memberId = $this->qrService->validateToken($request->qr_token);
+            $memberId = $this->qrService->validateToken($validated['qr_token']);
             
             // 3. Concurrency Protection (Redis Atomic Lock)
             // Lock for 2 seconds to prevent double scans from bouncing signals

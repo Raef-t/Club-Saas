@@ -8,6 +8,8 @@ use Modules\AttendanceManager\Services\QRSecurityService;
 use Modules\AttendanceManager\Services\AttendanceRecorder;
 use Modules\AttendanceManager\DTOs\CheckInAttempt;
 use Modules\AttendanceManager\DTOs\CheckOutAttempt;
+use Modules\AttendanceManager\Http\Requests\QRCheckInRequest;
+use Modules\AttendanceManager\Http\Requests\QRCheckOutRequest;
 
 class QRController extends BaseController
 {
@@ -33,22 +35,18 @@ class QRController extends BaseController
         ], 'QR code generated successfully.');
     }
 
-    public function checkIn(Request $request)
+    public function checkIn(QRCheckInRequest $request)
     {
-        $request->validate([
-            'qr_token' => 'required|string',
-            'club_id' => 'required|integer',
-            'branch_id' => 'required|integer',
-        ]);
+        $validated = $request->validated();
 
         try {
-            $memberId = $this->qrService->validateToken($request->qr_token);
+            $memberId = $this->qrService->validateToken($validated['qr_token']);
             
             $attempt = new CheckInAttempt(
-                clubId: $request->club_id,
+                clubId: $validated['club_id'],
                 attendableType: 'member',
                 attendableId: $memberId,
-                branchId: $request->branch_id,
+                branchId: $validated['branch_id'],
                 timestamp: now()->toDateTimeImmutable(),
                 metadata: ['source' => 'qr_scan']
             );
@@ -66,22 +64,18 @@ class QRController extends BaseController
         }
     }
 
-    public function checkOut(Request $request)
+    public function checkOut(QRCheckOutRequest $request)
     {
-        $request->validate([
-            'qr_token' => 'required|string',
-            'club_id' => 'required|integer',
-            'branch_id' => 'required|integer',
-        ]);
+        $validated = $request->validated();
 
         try {
-            $memberId = $this->qrService->validateToken($request->qr_token);
+            $memberId = $this->qrService->validateToken($validated['qr_token']);
             
             $attempt = new CheckOutAttempt(
-                clubId: $request->club_id,
+                clubId: $validated['club_id'],
                 attendableType: 'member',
                 attendableId: $memberId,
-                branchId: $request->branch_id,
+                branchId: $validated['branch_id'],
                 timestamp: now(),
                 metadata: ['source' => 'qr_scan']
             );
