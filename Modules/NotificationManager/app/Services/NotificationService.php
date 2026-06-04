@@ -47,8 +47,8 @@ class NotificationService
             'status' => 'pending',
         ]);
 
-        // Logic for actual sending (integration with SMS/Email APIs) would go here
-        // For now, it stays in pending or 'logged' status
+        // Dispatch event for background queued processing
+        event(new \Modules\NotificationManager\Events\NotificationLogged($log));
         
         return $log;
     }
