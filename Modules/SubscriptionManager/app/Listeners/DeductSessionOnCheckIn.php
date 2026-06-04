@@ -6,8 +6,9 @@ use Modules\AttendanceManager\Events\CheckInRecorded;
 use Modules\SubscriptionManager\Models\PlayerSubscription;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class DeductSessionOnCheckIn
+class DeductSessionOnCheckIn implements ShouldQueue
 {
     /**
      * Handle the event.
