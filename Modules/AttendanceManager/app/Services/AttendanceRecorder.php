@@ -3,6 +3,7 @@
 namespace Modules\AttendanceManager\Services;
 
 use Modules\AttendanceManager\DTOs\CheckInAttempt;
+use Modules\AttendanceManager\DTOs\CheckOutAttempt;
 use Modules\AttendanceManager\DTOs\AttendanceDecision;
 use Modules\AttendanceManager\Models\Attendance;
 use Modules\AttendanceManager\Events\CheckInRecorded;
@@ -60,6 +61,38 @@ class AttendanceRecorder
             event(new CheckInRecorded($attendance));
 
             return $decision;
+        });
+    }
+
+    /**
+     * Record a check-out attempt.
+     */
+    public function recordCheckOut(CheckOutAttempt $attempt): ?Attendance
+    {
+        return DB::transaction(function () use ($attempt) {
+            $attendance = Attendance::where('club_id', $attempt->clubId)
+                ->where('attendable_type', $attempt->attendableType)
+                ->where('attendable_id', $attempt->attendableId)
+                ->where('status', 'checked_in')
+                ->latest('check_in_at')
+                ->first();
+
+            if (!$attendance) {
+                return null;
+            }
+
+            $checkOutTime = $attempt->timestamp;
+            $checkInTime = \Carbon\Carbon::parse($attendance->check_in_at);
+            
+            $durationMinutes = $checkInTime->diffInMinutes($checkOutTime);
+
+            $attendance->update([
+                'check_out_at' => $checkOutTime,
+                'duration_minutes' => $durationMinutes,
+                'status' => 'completed'
+            ]);
+
+            return $attendance;
         });
     }
 }

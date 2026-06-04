@@ -14,4 +14,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('members/{member}/unavailabilities', [\Modules\MemberManager\Http\Controllers\Api\V1\PlayerUnavailabilityController::class, 'index']);
     Route::post('members/{member}/unavailabilities', [\Modules\MemberManager\Http\Controllers\Api\V1\PlayerUnavailabilityController::class, 'store']);
     Route::delete('members/{member}/unavailabilities/{unavailability}', [\Modules\MemberManager\Http\Controllers\Api\V1\PlayerUnavailabilityController::class, 'destroy']);
+
+    // Member Dashboard
+    Route::get('member/dashboard', [\Modules\MemberManager\Http\Controllers\Api\V1\MemberDashboardController::class, 'index']);
 });

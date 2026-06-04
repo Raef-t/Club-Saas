@@ -17,5 +17,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1/attendance')->group(function () 
     Route::post('members/check-in', [MemberAttendanceController::class, 'checkIn']);
     Route::post('members/check-out/{attendanceId}', [MemberAttendanceController::class, 'checkOut']);
     Route::get('members/{memberId}/history', [MemberAttendanceController::class, 'history']);
+    
+    // QR Attendance Endpoints
+    Route::post('qr/generate', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'generate']);
+    Route::post('qr/check-in', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'checkIn']);
+    Route::post('qr/check-out', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'checkOut']);
 
 });

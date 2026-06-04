@@ -9,6 +9,7 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         \Modules\AttendanceManager\Events\CheckInRecorded::class => [
             \Modules\SubscriptionManager\Listeners\DecrementSessionCredits::class,
+            \Modules\SubscriptionManager\Listeners\DeductSessionOnCheckIn::class,
         ],
     ];
 
