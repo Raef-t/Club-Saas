@@ -14,4 +14,5 @@ class Branch extends Model {
     public function club(): BelongsTo { return $this->belongsTo(Club::class); }
     public function facilities(): HasMany { return $this->hasMany(Facility::class); }
     public function lockers(): HasMany { return $this->hasMany(Locker::class); }
+    public function shifts(): HasMany { return $this->hasMany(BranchShift::class); }
 }

@@ -20,6 +20,11 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('facilities/{facility}/working-hours', [\Modules\ClubManager\Http\Controllers\Api\V1\FacilityWorkingHourController::class, 'store']);
     Route::delete('facilities/{facility}/working-hours/{working_hour}', [\Modules\ClubManager\Http\Controllers\Api\V1\FacilityWorkingHourController::class, 'destroy']);
     
+    // Branch Shifts
+    Route::get('branches/{branch}/shifts', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'index']);
+    Route::post('branches/{branch}/shifts', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'store']);
+    Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
+
     Route::apiResource('lockers', LockerController::class);
     Route::patch('lockers/{id}/toggle-status', [LockerController::class, 'toggleStatus']);
 
