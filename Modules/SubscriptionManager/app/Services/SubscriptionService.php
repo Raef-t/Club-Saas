@@ -215,6 +215,33 @@ class SubscriptionService
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
         return DB::transaction(function () use ($subscription, $startDate, $endDate, $reason) {
+            $plan = $subscription->plan;
+
+            if ($plan) {
+                // Validate max freeze count
+                if ($plan->max_freeze_count !== null) {
+                    $freezeCount = $subscription->freezes()->count();
+                    if ($freezeCount >= $plan->max_freeze_count) {
+                        throw new Exception(__('Freezing limit exceeded. This subscription plan allows at most :count freeze(s).', ['count' => $plan->max_freeze_count]));
+                    }
+                }
+
+                // Validate max freeze days
+                if ($plan->max_freeze_days !== null) {
+                    $requestedDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+                    
+                    $previousFreezeDays = 0;
+                    foreach ($subscription->freezes as $freeze) {
+                        $end = $freeze->actual_end_date ?? $freeze->freeze_end_date;
+                        $previousFreezeDays += Carbon::parse($freeze->freeze_start_date)->diffInDays(Carbon::parse($end)) + 1;
+                    }
+
+                    if ($previousFreezeDays + $requestedDays > $plan->max_freeze_days) {
+                        throw new Exception(__('Total freezing days limit exceeded. This subscription plan allows at most :days days of freezing.', ['days' => $plan->max_freeze_days]));
+                    }
+                }
+            }
+
             $subscription->freezes()->create([
                 'freeze_start_date' => $startDate,
                 'freeze_end_date' => $endDate,

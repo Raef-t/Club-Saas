@@ -9,12 +9,14 @@ class SubscriptionFreeze extends Model
         'player_subscription_id',
         'freeze_start_date',
         'freeze_end_date',
+        'actual_end_date',
         'reason',
     ];
 
     protected $casts = [
         'freeze_start_date' => 'date',
         'freeze_end_date' => 'date',
+        'actual_end_date' => 'date',
     ];
 
     public function subscription()

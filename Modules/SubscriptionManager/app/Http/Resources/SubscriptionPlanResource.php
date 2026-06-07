@@ -14,6 +14,8 @@ class SubscriptionPlanResource extends JsonResource
             'type' => $this->type,
             'duration_days' => $this->duration_days,
             'session_count' => $this->session_count,
+            'max_freeze_count' => $this->max_freeze_count,
+            'max_freeze_days' => $this->max_freeze_days,
             'base_price' => $this->base_price,
             'is_active' => $this->is_active,
         ];

@@ -21,6 +21,8 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'duration_days' => 'required_if:type,fixed_period|nullable|integer|min:1',
             'session_count' => 'required_if:type,session_based|nullable|integer|min:1',
             'base_price' => 'required|numeric|min:0',
+            'max_freeze_count' => 'nullable|integer|min:0',
+            'max_freeze_days' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ];
     }

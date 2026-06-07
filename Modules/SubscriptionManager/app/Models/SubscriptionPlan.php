@@ -13,6 +13,8 @@ class SubscriptionPlan extends Model
         'type',
         'duration_days',
         'session_count',
+        'max_freeze_count',
+        'max_freeze_days',
         'base_price',
         'is_active',
     ];
@@ -21,6 +23,8 @@ class SubscriptionPlan extends Model
         'name' => 'json',
         'is_active' => 'boolean',
         'base_price' => 'decimal:2',
+        'max_freeze_count' => 'integer',
+        'max_freeze_days' => 'integer',
     ];
 
     /**

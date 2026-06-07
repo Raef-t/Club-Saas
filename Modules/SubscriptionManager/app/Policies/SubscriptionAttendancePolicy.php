@@ -66,6 +66,21 @@ class SubscriptionAttendancePolicy implements AttendancePolicy
             return AttendanceDecision::deny("No remaining sessions left on this subscription.");
         }
 
+        // Verify remaining amount (debt) and grace period
+        if ($subscription->remaining_amount > 0) {
+            $settings = \Illuminate\Support\Facades\DB::table('club_settings')->where('club_id', $attempt->clubId)->first();
+            $allowedDebtLimit = $settings ? ($settings->allowed_debt_limit ?? 0) : 0;
+            $gracePeriodDays = $settings ? ($settings->grace_period_days ?? 0) : 0;
+
+            if ($subscription->remaining_amount > $allowedDebtLimit) {
+                return AttendanceDecision::deny("Outstanding debt ({$subscription->remaining_amount}) exceeds the allowed limit ({$allowedDebtLimit}).");
+            }
+
+            if ($subscription->start_date && now()->diffInDays($subscription->start_date) > $gracePeriodDays) {
+                return AttendanceDecision::deny("Grace period for payment has expired. Outstanding balance: {$subscription->remaining_amount}.");
+            }
+        }
+
         return AttendanceDecision::allow([
             'member_id' => $subscription->member_id,
             'plan_id' => $subscription->plan_id,

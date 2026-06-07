@@ -62,6 +62,27 @@ class MemberAttendanceService
             throw new Exception(__("Member does not have an active subscription."));
         }
 
+        // Verify remaining amount (debt) and grace period
+        if ($activeSubscription->remaining_amount > 0) {
+            $settings = DB::table('club_settings')->where('club_id', $clubId)->first();
+            $allowedDebtLimit = $settings ? ($settings->allowed_debt_limit ?? 0) : 0;
+            $gracePeriodDays = $settings ? ($settings->grace_period_days ?? 0) : 0;
+
+            if ($activeSubscription->remaining_amount > $allowedDebtLimit) {
+                throw new Exception(__("Access denied: Outstanding debt (:amount) exceeds the allowed limit (:limit).", [
+                    'amount' => $activeSubscription->remaining_amount,
+                    'limit' => $allowedDebtLimit
+                ]));
+            }
+
+            $startDate = Carbon::parse($activeSubscription->start_date);
+            if (now()->diffInDays($startDate) > $gracePeriodDays) {
+                throw new Exception(__("Access denied: Grace period for payment has expired. Outstanding balance: :amount.", [
+                    'amount' => $activeSubscription->remaining_amount
+                ]));
+            }
+        }
+
         // 3. Dispatch check-in to policy-driven engine
         $attempt = new \Modules\AttendanceManager\DTOs\CheckInAttempt(
             attendableType: 'player_subscription',

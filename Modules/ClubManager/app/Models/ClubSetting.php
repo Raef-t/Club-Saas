@@ -14,6 +14,8 @@ class ClubSetting extends Model
         'club_id',
         'theme_colors',
         'language',
+        'allowed_debt_limit',
+        'grace_period_days',
         'enabled_features',
         'bg_image_url',
     ];
@@ -21,6 +23,8 @@ class ClubSetting extends Model
     protected $casts = [
         'theme_colors' => 'array',
         'enabled_features' => 'array',
+        'allowed_debt_limit' => 'decimal:2',
+        'grace_period_days' => 'integer',
     ];
 
     public function club(): BelongsTo
