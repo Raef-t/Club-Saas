@@ -34,7 +34,7 @@ class StoreStaffRequest extends FormRequest
             'notes' => 'nullable|string',
 
             // Staff/Trainer Details (staff table)
-            'role' => 'required|in:admin,receptionist,coach,cleaner,manager',
+            'role' => 'required|in:admin,receptionist,coach,cleaner,manager,staff',
             'employment_type' => 'required|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
             'commission_rate' => 'nullable|numeric|min:0|max:100',

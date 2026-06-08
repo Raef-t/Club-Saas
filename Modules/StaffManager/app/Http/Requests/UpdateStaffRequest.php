@@ -17,7 +17,7 @@ class UpdateStaffRequest extends FormRequest
             'full_name' => 'nullable|string|max:200',
             'mobile_1' => 'nullable|string',
             'email' => 'nullable|email',
-            'role' => 'nullable|in:admin,receptionist,coach,cleaner,manager',
+            'role' => 'nullable|in:admin,receptionist,coach,cleaner,manager,staff',
             'employment_type' => 'nullable|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
             'commission_rate' => 'nullable|numeric|min:0|max:100',

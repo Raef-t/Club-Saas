@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('player_subscriptions', function (Blueprint $table) {
             $table->decimal('total_amount', 12, 2)->after('plan_id')->default(0);
+            $table->decimal('paid_amount', 12, 2)->after('total_amount')->default(0);
             $table->decimal('remaining_amount', 12, 2)->after('paid_amount')->default(0);
             $table->unsignedBigInteger('coach_id')->nullable()->after('member_id');
             $table->text('notes')->nullable();
@@ -19,7 +20,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('player_subscriptions', function (Blueprint $table) {
-            $table->dropColumn(['total_amount', 'remaining_amount', 'coach_id', 'notes']);
+            $table->dropColumn(['total_amount', 'paid_amount', 'remaining_amount', 'coach_id', 'notes']);
         });
     }
 };
