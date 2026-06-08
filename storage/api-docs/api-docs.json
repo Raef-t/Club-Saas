@@ -18,20 +18,8 @@
                     "Authentication"
                 ],
                 "summary": "🔐 User Login & Token Generation",
-                "description": "Authenticate a user and return a Bearer Token. Requires a valid Username, Password, and the Tenant (Club) ID in the headers.",
+                "description": "Authenticate a user and return a Bearer Token.",
                 "operationId": "9d2e018daa68436007e395ec397ef681",
-                "parameters": [
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "description": "The unique ID of the Club/Tenant",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
                 "requestBody": {
                     "description": "User credentials",
                     "required": true,
@@ -141,20 +129,39 @@
                 "summary": "🚪 User Logout",
                 "description": "Revoke the current user access token and end the session.",
                 "operationId": "2ea5ac67a96e6907b1497e57d34b9dae",
-                "parameters": [
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "✅ Logged out successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "👤 Get Authenticated User Profile",
+                "description": "Returns the currently authenticated user with their associated profiles (Player/Staff).",
+                "operationId": "ab8051e82315647b561f2a21b4c68135",
+                "responses": {
+                    "200": {
+                        "description": "✅ Successfully Retrieved Profile",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -182,18 +189,6 @@
                 "summary": "👥 Smart Registration for Club Members & Staff",
                 "description": "Creates a Person, their specialized Profile (Player, Coach, or Staff), and an Inactive User account in a single atomic transaction.",
                 "operationId": "08188bcdbe14024a6f5819a2bbedc5fa",
-                "parameters": [
-                    {
-                        "name": "X-Tenant-ID",
-                        "in": "header",
-                        "description": "ID of the Club",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
                 "requestBody": {
                     "description": "Detailed info for the person and their profile",
                     "required": true,
@@ -350,7 +345,7 @@
                     "Branch Management"
                 ],
                 "summary": "🏢 List all branches",
-                "operationId": "361d33fac0d0725df8d6e9bfb5d036b4",
+                "operationId": "958cc958d808a4d1e94e1a79bb86aeca",
                 "responses": {
                     "200": {
                         "description": "✅ List of branches"
@@ -367,7 +362,7 @@
                     "Branch Management"
                 ],
                 "summary": "➕ Create a new branch",
-                "operationId": "a2fc0f8d8688289463740f8903553116",
+                "operationId": "5185979901c00ab45af2ecd9647d1cfa",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -399,7 +394,7 @@
                     "Branch Management"
                 ],
                 "summary": "🔍 Get branch details",
-                "operationId": "acdf1cdd08615490a691977ad53df303",
+                "operationId": "177933157d912c5bf27ddc48a3b63b71",
                 "parameters": [
                     {
                         "name": "id",
@@ -424,7 +419,7 @@
                     "Branch Management"
                 ],
                 "summary": "📝 Update branch",
-                "operationId": "fb265ebcf7afadc3b8400ba12eb9ebf7",
+                "operationId": "3e41dc74e7dc3821d07cb2dbd332d5cd",
                 "parameters": [
                     {
                         "name": "id",
@@ -449,7 +444,7 @@
                     "Branch Management"
                 ],
                 "summary": "🗑️ Delete branch",
-                "operationId": "5b8ddc9f012ca2db78247fade0459fe3",
+                "operationId": "daeac13363de4fbc6e23805455b0d108",
                 "parameters": [
                     {
                         "name": "id",
@@ -476,7 +471,7 @@
                     "Branch Management"
                 ],
                 "summary": "🔄 Toggle branch active status",
-                "operationId": "ae3a2cfc98e37e09ebd42e7fa0be5177",
+                "operationId": "9d5e756d6be5ef7e1db17f716810f17a",
                 "parameters": [
                     {
                         "name": "id",
@@ -500,7 +495,7 @@
                     "Facility Management"
                 ],
                 "summary": "🏊 List all facilities",
-                "operationId": "9bc369f8c9cb1fdfef784c5ebdf04df9",
+                "operationId": "3fc7578b764098b72d173a71bb07579e",
                 "responses": {
                     "200": {
                         "description": "✅ List of facilities"
@@ -517,7 +512,7 @@
                     "Facility Management"
                 ],
                 "summary": "➕ Create a new facility",
-                "operationId": "eb74e4fbb02148f2a4d99c4578d34aba",
+                "operationId": "c443ac62b0419be0f6ec2221451684ad",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -549,7 +544,7 @@
                     "Facility Management"
                 ],
                 "summary": "🔍 Get facility details",
-                "operationId": "46940c1bfd20e15bd757ecd3abf2b41b",
+                "operationId": "40988a064d833997c2377da67000821a",
                 "parameters": [
                     {
                         "name": "id",
@@ -574,7 +569,7 @@
                     "Facility Management"
                 ],
                 "summary": "📝 Update facility",
-                "operationId": "c13c28f49fc3ea43773204212eb80953",
+                "operationId": "6e4b02deaf832dad85cbca5257094235",
                 "parameters": [
                     {
                         "name": "id",
@@ -599,7 +594,7 @@
                     "Facility Management"
                 ],
                 "summary": "🗑️ Delete facility",
-                "operationId": "4a6a1be2e027240cb7bb94ec61965db9",
+                "operationId": "199631ddb2686412617ea2981ac15d98",
                 "parameters": [
                     {
                         "name": "id",
@@ -626,7 +621,7 @@
                     "Facility Management"
                 ],
                 "summary": "🔄 Toggle facility active status",
-                "operationId": "dd5b11454c7242ce09425deef3a8db4b",
+                "operationId": "6cd919326db6600e26edd8e6b66e805e",
                 "parameters": [
                     {
                         "name": "id",
@@ -650,7 +645,7 @@
                     "Locker Management"
                 ],
                 "summary": "🔐 List all lockers",
-                "operationId": "4e2e2abd408b815b7af09eba0f662ca6",
+                "operationId": "2b37bdb8c411391596e6ab9e7422f380",
                 "responses": {
                     "200": {
                         "description": "✅ List of lockers"
@@ -667,7 +662,7 @@
                     "Locker Management"
                 ],
                 "summary": "➕ Create a new locker",
-                "operationId": "3cff094eb9545ff19c3f7c7d1e313e11",
+                "operationId": "582bd0a2c4a7c33eb2fa4ffb26b6b133",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -696,7 +691,7 @@
                     "Locker Management"
                 ],
                 "summary": "🗑️ Delete locker",
-                "operationId": "5bd5d06c0a865ba909c14a11f0ca52bd",
+                "operationId": "849979252fdb3ee314725226a799e838",
                 "parameters": [
                     {
                         "name": "id",
@@ -720,7 +715,7 @@
                     "Locker Management"
                 ],
                 "summary": "🔄 Toggle locker active status",
-                "operationId": "768e19262e7627ade962d8f4bbb2bff2",
+                "operationId": "ac371f3a735961982e6114f3120b35c4",
                 "parameters": [
                     {
                         "name": "id",
@@ -736,6 +731,29 @@
                         "description": "✅ Locker status updated"
                     }
                 }
+            }
+        },
+        "/v1/upload": {
+            "post": {
+                "tags": [
+                    "Core Utilities"
+                ],
+                "summary": "📤 Upload file (Photo, Certificate, background image)",
+                "description": "Uploads a file to the public disk and returns its URL.",
+                "operationId": "d69d09cadaf684ff2895da32de25d2ce",
+                "responses": {
+                    "201": {
+                        "description": "File uploaded successfully"
+                    },
+                    "400": {
+                        "description": "Invalid file upload"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/members": {
@@ -876,6 +894,64 @@
                 "responses": {
                     "201": {
                         "description": "Measurement recorded"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/{member}/unavailabilities": {
+            "get": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "🗓️ List Player Unavailabilities",
+                "operationId": "df056be21e14b8dec6c2343668c32475",
+                "responses": {
+                    "200": {
+                        "description": "Player unavailabilities retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "➕ Add Player Unavailability",
+                "operationId": "fd53d3433a6875902ddd2ec89d17cf80",
+                "responses": {
+                    "201": {
+                        "description": "Player unavailability created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/{member}/unavailabilities/{unavailability}": {
+            "delete": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "🗑️ Delete Player Unavailability",
+                "operationId": "f089f6f0ba944c6135f87aa1a6ce7f33",
+                "responses": {
+                    "200": {
+                        "description": "Player unavailability deleted successfully"
+                    },
+                    "403": {
+                        "description": "Unavailability does not belong to this member"
                     }
                 },
                 "security": [
@@ -1086,6 +1162,353 @@
                 ]
             }
         },
+        "/v1/activities": {
+            "get": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "🏋️ List all activities",
+                "operationId": "add003712eaa331f776f15d1feaed965",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "➕ Create a new activity",
+                "operationId": "4596eb41efd759a317bbab5f479627be",
+                "responses": {
+                    "201": {
+                        "description": "Activity created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activities/{id}": {
+            "get": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "🔍 Get activity details",
+                "operationId": "ac203ce6c950a29890c4691b4b527c70",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "✏️ Update an activity",
+                "operationId": "32dff7e4c6c866b17bbc2eb62de89af7",
+                "responses": {
+                    "200": {
+                        "description": "Activity updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "🗑 Delete an activity",
+                "operationId": "882eae4a3a2505043d92da3bd7a2b045",
+                "responses": {
+                    "200": {
+                        "description": "Activity deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/sessions/{id}/book": {
+            "post": {
+                "tags": [
+                    "Session Bookings"
+                ],
+                "summary": "🎟️ Book a session for a member",
+                "operationId": "769de141d5677391301b0b310bbd3550",
+                "responses": {
+                    "201": {
+                        "description": "Session booked successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/bookings/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Session Bookings"
+                ],
+                "summary": "❌ Cancel a session booking",
+                "operationId": "cc80bcdf64e8532a21dabb1dffce09d0",
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/bookings": {
+            "get": {
+                "tags": [
+                    "Session Bookings"
+                ],
+                "summary": "📋 List bookings with optional filters",
+                "operationId": "09c6870517166ae243347ffcd28fbb2d",
+                "responses": {
+                    "200": {
+                        "description": "Bookings retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/sessions": {
+            "get": {
+                "tags": [
+                    "Session Management"
+                ],
+                "summary": "📅 List all sessions",
+                "operationId": "5afe0c13c2d4e65ba002dc0b0ec767dd",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Session Management"
+                ],
+                "summary": "➕ Create a new session",
+                "operationId": "f47d6481dd29a7ba8346ca494cb2093c",
+                "responses": {
+                    "201": {
+                        "description": "Session created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/sessions/{id}": {
+            "get": {
+                "tags": [
+                    "Session Management"
+                ],
+                "summary": "🔍 Get session details",
+                "operationId": "87f0e9fbda7b897e43cc282e4df02efe",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Session Management"
+                ],
+                "summary": "✏️ Update a session",
+                "operationId": "b63efeb13393fde72d87d4953aa311cd",
+                "responses": {
+                    "200": {
+                        "description": "Session updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Session Management"
+                ],
+                "summary": "🗑 Delete a session",
+                "operationId": "cc5dcfbed74976bc378d8112201b3a6b",
+                "responses": {
+                    "200": {
+                        "description": "Session deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/sessions/weekly-schedule": {
+            "get": {
+                "tags": [
+                    "Session Management"
+                ],
+                "summary": "📆 Get weekly schedule for a branch",
+                "operationId": "a8a47cde78a89f0c1d7717d3829dd814",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/payroll-runs": {
+            "get": {
+                "tags": [
+                    "Payroll Management"
+                ],
+                "summary": "💰 List all payroll runs",
+                "operationId": "e1f0685500ef39d9d498eecefe623385",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Payroll Management"
+                ],
+                "summary": "➕ Create a new payroll run",
+                "operationId": "ba3eae229956c3037b150a6d5eeb6824",
+                "responses": {
+                    "201": {
+                        "description": "Payroll run created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/payroll-runs/{id}": {
+            "get": {
+                "tags": [
+                    "Payroll Management"
+                ],
+                "summary": "🔍 Get payroll run details with payslips",
+                "operationId": "7d8f19f840d3d14eb8a83afbdaac34f5",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/payroll-runs/{id}/generate-payslips": {
+            "post": {
+                "tags": [
+                    "Payroll Management"
+                ],
+                "summary": "⚙️ Generate payslips for a payroll run",
+                "operationId": "322def99f1977fd1105b99900481679b",
+                "responses": {
+                    "200": {
+                        "description": "Payslips generated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/payroll-runs/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Payroll Management"
+                ],
+                "summary": "✅ Approve a payroll run",
+                "operationId": "9182f7dd9b4eb5f99b2d77d8935d56ff",
+                "responses": {
+                    "200": {
+                        "description": "Payroll run approved"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/staff": {
             "get": {
                 "tags": [
@@ -1141,60 +1564,88 @@
                 ]
             }
         },
-        "/v1/staff/{id}/check-in": {
+        "/v1/staff/{id}": {
+            "get": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "🔍 Get staff member details",
+                "operationId": "ea51f5dca987dc6d0eee0afaf7538e06",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "✏️ Update a staff member",
+                "operationId": "3ec83e4f69b9b598de9c52a013cdde06",
+                "responses": {
+                    "200": {
+                        "description": "Staff updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "🗑 Soft delete a staff member",
+                "operationId": "115327a921aedc0c27cce6afcf5a2a1c",
+                "responses": {
+                    "200": {
+                        "description": "Staff deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff/{id}/toggle-status": {
+            "patch": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "🔄 Toggle staff active/inactive status",
+                "operationId": "96712bd8381f268e3aa1bd37b704d3f0",
+                "responses": {
+                    "200": {
+                        "description": "Status toggled"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff/{id}/sync-branches": {
             "post": {
                 "tags": [
                     "Staff Management"
                 ],
-                "summary": "🕒 Staff check-in",
-                "operationId": "6fd74244a3e90fbb1bae00d92e5e8468",
+                "summary": "🔄 Sync multiple branches for staff",
+                "operationId": "95de8e7a027ed58fb0da457e3d62b550",
                 "responses": {
                     "200": {
-                        "description": "Check-in successful"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/attendance/check-in": {
-            "post": {
-                "tags": [
-                    "Attendance Management"
-                ],
-                "summary": "📡 Check-in a member by barcode",
-                "operationId": "812434b90a0827fe3aca7720052ac524",
-                "responses": {
-                    "200": {
-                        "description": "Check-in successful"
-                    },
-                    "422": {
-                        "description": "Validation or business logic error"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/attendance/check-out/{id}": {
-            "post": {
-                "tags": [
-                    "Attendance Management"
-                ],
-                "summary": "👋 Check-out a member",
-                "operationId": "320197f0444ac968616ee89c17b05032",
-                "responses": {
-                    "200": {
-                        "description": "Check-out successful"
-                    },
-                    "422": {
-                        "description": "Error"
+                        "description": "Branches synced"
                     }
                 },
                 "security": [
@@ -1269,6 +1720,82 @@
                 "responses": {
                     "200": {
                         "description": "Subscription frozen"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/unfreeze": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🔓 Unfreeze a subscription",
+                "operationId": "cfc671ce5a88aca883fe50fd0a9e333a",
+                "responses": {
+                    "200": {
+                        "description": "Subscription unfrozen"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/renew": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🔄 Renew a subscription",
+                "operationId": "83a38848999cb2cb06bb3884b74fcd00",
+                "responses": {
+                    "201": {
+                        "description": "Subscription renewed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "❌ Cancel a subscription",
+                "operationId": "dd99802490ffb3626a3a550aeefaa238",
+                "responses": {
+                    "200": {
+                        "description": "Subscription cancelled"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/payment": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "💳 Record a payment for a subscription",
+                "operationId": "d79acb2dccb15cc0f8932e344fa3eed4",
+                "responses": {
+                    "200": {
+                        "description": "Payment recorded"
                     }
                 },
                 "security": [
@@ -1541,6 +2068,32 @@
                 },
                 "type": "object"
             },
+            "StorePlayerUnavailabilityRequest": {
+                "title": "StorePlayerUnavailabilityRequest",
+                "required": [
+                    "day_of_week",
+                    "start_time",
+                    "end_time"
+                ],
+                "properties": {
+                    "day_of_week": {
+                        "description": "0 for Sunday, 6 for Saturday",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "09:00:00"
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "12:00:00"
+                    }
+                },
+                "type": "object"
+            },
             "ApiResponse": {
                 "properties": {
                     "status": {
@@ -1606,6 +2159,10 @@
             "description": "Locker Management"
         },
         {
+            "name": "Core Utilities",
+            "description": "Core Utilities"
+        },
+        {
             "name": "Member Management",
             "description": "Member Management"
         },
@@ -1614,12 +2171,24 @@
             "description": "Notification Management"
         },
         {
-            "name": "Staff Management",
-            "description": "Staff Management"
+            "name": "Sports & Activities",
+            "description": "Sports & Activities"
         },
         {
-            "name": "Attendance Management",
-            "description": "Attendance Management"
+            "name": "Session Bookings",
+            "description": "Session Bookings"
+        },
+        {
+            "name": "Session Management",
+            "description": "Session Management"
+        },
+        {
+            "name": "Payroll Management",
+            "description": "Payroll Management"
+        },
+        {
+            "name": "Staff Management",
+            "description": "Staff Management"
         },
         {
             "name": "Subscription Management",

@@ -14,7 +14,11 @@ class UploadController extends BaseController
         summary: '📤 Upload file (Photo, Certificate, background image)',
         description: 'Uploads a file to the public disk and returns its URL.',
         tags: ['Core Utilities'],
-        security: [['bearerAuth' => []]]
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 201, description: 'File uploaded successfully'),
+            new OA\Response(response: 400, description: 'Invalid file upload')
+        ]
     )]
     public function upload(Request $request)
     {

@@ -14,7 +14,10 @@ class PlayerUnavailabilityController extends BaseController
         path: '/v1/members/{member}/unavailabilities',
         summary: '🗓️ List Player Unavailabilities',
         tags: ['Member Management'],
-        security: [['bearerAuth' => []]]
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Player unavailabilities retrieved successfully')
+        ]
     )]
     public function index(Member $member)
     {
@@ -26,7 +29,10 @@ class PlayerUnavailabilityController extends BaseController
         path: '/v1/members/{member}/unavailabilities',
         summary: '➕ Add Player Unavailability',
         tags: ['Member Management'],
-        security: [['bearerAuth' => []]]
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 201, description: 'Player unavailability created successfully')
+        ]
     )]
     public function store(StorePlayerUnavailabilityRequest $request, Member $member)
     {
@@ -38,7 +44,11 @@ class PlayerUnavailabilityController extends BaseController
         path: '/v1/members/{member}/unavailabilities/{unavailability}',
         summary: '🗑️ Delete Player Unavailability',
         tags: ['Member Management'],
-        security: [['bearerAuth' => []]]
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Player unavailability deleted successfully'),
+            new OA\Response(response: 403, description: 'Unavailability does not belong to this member')
+        ]
     )]
     public function destroy(Member $member, PlayerUnavailability $unavailability)
     {
