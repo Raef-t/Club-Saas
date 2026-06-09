@@ -24,3 +24,6 @@ Homestead.yaml
 Thumbs.db
 *.pdf
 database.dbml
+deploy.zip
+*.zip
+_laravel_base.zip
