@@ -13,12 +13,14 @@ class PlayerProfile extends Model
         'qr_code',
         'blood_type',
         'medical_conditions',
-        'emergency_contact'
+        'emergency_contact',
+        'preferences'
     ];
 
     protected $casts = [
         'medical_conditions' => 'array',
-        'emergency_contact' => 'array'
+        'emergency_contact' => 'array',
+        'preferences' => 'array'
     ];
 
     public function person()

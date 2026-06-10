@@ -13,6 +13,11 @@ class NotificationLog extends Model
         'content',
         'status',
         'error_message',
+        'read_at',
+    ];
+
+    protected $casts = [
+        'read_at' => 'datetime',
     ];
 
     /**

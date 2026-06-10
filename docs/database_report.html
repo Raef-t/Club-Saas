@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير قاعدة البيانات الشامل - نظام إدارة الأندية</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --accent: #10b981;
+            --border: #334155;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+            --cyan: #22d3ee;
+            --orange: #fb923c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .module-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+        .module-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        .module-title {
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+        }
+        .module-desc {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+        /* Table-specific card inside module */
+        .table-section {
+            background-color: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .table-section:last-child {
+            margin-bottom: 0;
+        }
+        .table-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.5rem;
+        }
+        .table-name {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.15rem;
+            color: var(--cyan);
+            background: rgba(34, 211, 238, 0.1);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .table-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-core { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+        .badge-pivot { background: rgba(244, 114, 182, 0.2); color: var(--pink); }
+        .badge-log { background: rgba(251, 146, 60, 0.2); color: var(--orange); }
+        .badge-config { background: rgba(167, 139, 250, 0.2); color: var(--purple); }
+        .badge-framework { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+        .table-purpose {
+            color: var(--text-main);
+            margin: 0.75rem 0;
+            line-height: 1.8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        th, td {
+            text-align: right;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+        .field-name {
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #fca5a5;
+            background: rgba(252, 165, 165, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        .field-type {
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: var(--purple);
+            font-size: 0.8em;
+        }
+        .field-pk {
+            color: var(--warning);
+            font-weight: bold;
+            font-size: 0.75em;
+        }
+        .field-fk {
+            color: var(--cyan);
+            font-size: 0.75em;
+        }
+        .field-nullable {
+            color: var(--text-muted);
+            font-size: 0.75em;
+        }
+        .field-unique {
+            color: var(--accent);
+            font-size: 0.75em;
+        }
+        .note {
+            background-color: rgba(245, 158, 11, 0.1);
+            border-right: 4px solid var(--warning);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+            line-height: 1.8;
+        }
+        .note-info {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-right: 4px solid var(--primary);
+        }
+        .note-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-right: 4px solid var(--accent);
+        }
+        .relation-list {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+        .relation-list li {
+            padding: 4px 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .relation-list li::before {
+            content: "🔗 ";
+        }
+        .toc {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .toc h2 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .toc-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .toc-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--primary);
+            transform: translateX(-4px);
+        }
+        .toc-item .toc-num {
+            color: var(--accent);
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .toc-item .toc-count {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1rem 0;
+        }
+        .soft-delete-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+        .timestamps-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-muted);
+        }
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 3rem 0 1rem;
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 التقرير الشامل لقاعدة البيانات</h1>
+        <p class="subtitle">تحليل وتوثيق تفصيلي لجميع الجداول المستخدمة في نظام إدارة الأندية الرياضية — بنية Modular Monolith</p>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">جدول في النظام</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">9</div>
+                <div class="stat-label">وحدات (Modules)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">12</div>
+                <div class="stat-label">قسم وظيفي</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">300+</div>
+                <div class="stat-label">حقل بيانات</div>
+            </div>
+        </div>
+
+        <!-- Structural Note -->
+        <div class="note">
+            <strong>⚠️ ملاحظة هيكلية هامة:</strong> يعتمد النظام على بنية الوحدات المستقلة (Modular Monolith)، حيث يتكون من 9 وحدات (Modules) مستقلة: Authentication, ClubManager, MemberManager, StaffManager, SubscriptionManager, Sports, AttendanceManager, NotificationManager, Core. الجدول المركزي هو <span class="field-name">people</span> والذي تتفرع منه جميع الكيانات البشرية (أعضاء، موظفين، مدربين، مسؤولين). كل جدول يحتوي تلقائياً على حقول <span class="field-name">created_at</span> و <span class="field-name">updated_at</span> ما لم يُذكر خلاف ذلك.
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h2>📋 فهرس الأقسام</h2>
+            <div class="toc-grid">
+                <a href="#sec1" class="toc-item"><span class="toc-num">1</span> الكيانات الأساسية والمصادقة <span class="toc-count">(4 جداول)</span></a>
+                <a href="#sec2" class="toc-item"><span class="toc-num">2</span> البنية التحتية للنادي <span class="toc-count">(5 جداول)</span></a>
+                <a href="#sec3" class="toc-item"><span class="toc-num">3</span> إدارة الأعضاء <span class="toc-count">(4 جداول)</span></a>
+                <a href="#sec4" class="toc-item"><span class="toc-num">4</span> إدارة الموظفين <span class="toc-count">(7 جداول)</span></a>
+                <a href="#sec5" class="toc-item"><span class="toc-num">5</span> الملفات الشخصية المتخصصة <span class="toc-count">(3 جداول)</span></a>
+                <a href="#sec6" class="toc-item"><span class="toc-num">6</span> الاشتراكات والباقات <span class="toc-count">(7 جداول)</span></a>
+                <a href="#sec7" class="toc-item"><span class="toc-num">7</span> الأنشطة والجلسات الرياضية <span class="toc-count">(5 جداول)</span></a>
+                <a href="#sec8" class="toc-item"><span class="toc-num">8</span> المالية والمحاسبة <span class="toc-count">(7 جداول)</span></a>
+                <a href="#sec9" class="toc-item"><span class="toc-num">9</span> الحضور والبوابات <span class="toc-count">(5 جداول)</span></a>
+                <a href="#sec10" class="toc-item"><span class="toc-num">10</span> إدارة العلاقات (CRM) <span class="toc-count">(2 جداول)</span></a>
+                <a href="#sec11" class="toc-item"><span class="toc-num">11</span> الإشعارات <span class="toc-count">(2 جداول)</span></a>
+                <a href="#sec12" class="toc-item"><span class="toc-num">12</span> الصلاحيات والأدوار <span class="toc-count">(5 جداول)</span></a>
+                <a href="#sec13" class="toc-item"><span class="toc-num">13</span> البنية التحتية التقنية <span class="toc-count">(10 جداول)</span></a>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 1: Core Entities & Authentication -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec1">
+            <h2 class="module-title">🏛️ 1. الكيانات الأساسية والمصادقة (Core Entities & Authentication)</h2>
+            <p class="module-desc">
+                الجداول الأساسية التي تُشكّل العمود الفقري لكامل النظام. تُعرّف الأندية والفروع وتدير هويات الأشخاص وحسابات الدخول.
+                <strong>الوحدة المسؤولة:</strong> Authentication + ClubManager
+            </p>
+
+            <!-- clubs -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">clubs</span>
+                    <span class="table-badge badge-core">جدول جذري</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                    <span class="timestamps-badge">⏱️ Timestamps</span>
+                </div>
+                <p class="table-purpose">
+                    الجدول الجذري الأعلى في هرم النظام. يُعرّف الأندية المشتركة في المنصة (SaaS Multi-tenant). كل عمليات النظام تنتمي في النهاية إلى نادٍ واحد. يُمكن تعطيل نادٍ كامل عبر حقل <span class="field-name">is_active</span> مما يُوقف كل فروعه وأعضائه دفعة واحدة. يدعم الحذف الناعم (Soft Delete) لمنع فقدان البيانات التاريخية عند إلغاء اشتراك نادٍ.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>المعرّف الفريد للنادي (Auto Increment)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">name</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td>مطلوب</td>
+                        <td>اسم النادي التجاري المعروض في الواجهة</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">logo_url</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>رابط صورة شعار النادي المستخدم في الطباعة والواجهات</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">is_active</span></td>
+                        <td><span class="field-type">boolean</span></td>
+                        <td>افتراضي: true، مفهرس</td>
+                        <td>مفتاح التحكم الرئيسي — عند تعطيله يتوقف النادي بالكامل مع جميع فروعه</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">deleted_at</span></td>
+                        <td><span class="field-type">timestamp</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>علامة الحذف الناعم (Soft Delete) — يبقى السجل للتقارير التاريخية</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- branches -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">branches</span>
+                    <span class="table-badge badge-core">جدول جذري</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                    <span class="timestamps-badge">⏱️ Timestamps</span>
+                </div>
+                <p class="table-purpose">
+                    فروع الأندية المادية. يمكن أن يمتلك النادي الواحد عدة فروع مستقلة مكانياً (فرع رجالي، فرع نسائي، فرع أطفال، الخ). كل الأعضاء والموظفين والاشتراكات ينتمون لفرع محدد. يدعم تقييد الجنس (رجالي/نسائي/مختلط) وأنواع مختلفة من الفروع (صالة رياضية، مسبح، قاعة تدريب).
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>المعرّف الفريد للفرع</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">club_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → clubs.id</span></td>
+                        <td>يربط الفرع بالنادي الأب — عند حذف النادي تُحذف كل فروعه تلقائياً (CASCADE)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">name</span></td>
+                        <td><span class="field-type">json</span></td>
+                        <td>مطلوب</td>
+                        <td>اسم الفرع بصيغة JSON متعددة اللغات: {"ar": "الفرع الرئيسي", "en": "Main Branch"}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">gender_restriction</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td>افتراضي: mixed، مفهرس</td>
+                        <td>تقييد الجنس: male (رجالي)، female (نسائي)، mixed (مختلط)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">type</span></td>
+                        <td><span class="field-type">varchar(50)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>نوع الفرع: gym (صالة رياضية)، pool (مسبح)، classroom (قاعة صفية)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">address</span></td>
+                        <td><span class="field-type">text</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>العنوان الفعلي الكامل للفرع</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">phone</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>رقم هاتف الفرع للتواصل</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">is_active</span></td>
+                        <td><span class="field-type">boolean</span></td>
+                        <td>افتراضي: true، مفهرس</td>
+                        <td>تفعيل/تعطيل الفرع بشكل مستقل عن النادي</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">deleted_at</span></td>
+                        <td><span class="field-type">timestamp</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>الحذف الناعم</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- people -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">people</span>
+                    <span class="table-badge badge-core">جدول مركزي</span>
+                    <span class="timestamps-badge">⏱️ Timestamps</span>
+                </div>
+                <p class="table-purpose">
+                    <strong>القلب النابض للنظام.</strong> يحتوي على البيانات الشخصية والبيولوجية لأي إنسان مُسجّل في النظام (لاعب، مدرب، موظف، مسؤول). الفكرة الجوهرية: شخص واحد يمكن أن يكون عضواً في فرع وموظفاً في فرع آخر، لكن بياناته الأساسية تُخزّن مرة واحدة فقط هنا. يمنع التكرار ويوحّد البيانات عبر كامل النظام. يُعتبر جدول الحقيقة الوحيد (Single Source of Truth) لبيانات الهوية.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>المعرّف الفريد العالمي للشخص</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">full_name</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td>مطلوب، مفهرس</td>
+                        <td>الاسم الكامل (رباعي عادة)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">gender</span></td>
+                        <td><span class="field-type">varchar(10)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>الجنس: male أو female — يُستخدم مع gender_restriction للفروع</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">type</span></td>
+                        <td><span class="field-type">enum</span></td>
+                        <td>افتراضي: player</td>
+                        <td>النوع الأساسي: player (لاعب)، coach (مدرب)، staff (موظف)، admin (مسؤول)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">dob</span></td>
+                        <td><span class="field-type">date</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>تاريخ الميلاد — يُستخدم لحساب العمر والتحقق من الفئات العمرية</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">national_id</span></td>
+                        <td><span class="field-type">varchar(50)</span></td>
+                        <td><span class="field-nullable">nullable</span>، مفهرس</td>
+                        <td>رقم الهوية الوطنية — يُستخدم لمنع تكرار تسجيل نفس الشخص</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">social_status</span></td>
+                        <td><span class="field-type">varchar(50)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>الحالة الاجتماعية (أعزب، متزوج، الخ)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">children_count</span></td>
+                        <td><span class="field-type">integer</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>عدد الأطفال — معلومة إحصائية للتسويق والعروض العائلية</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">address</span></td>
+                        <td><span class="field-type">text</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>عنوان السكن</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">photo_url</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>رابط الصورة الشخصية — تُعرض في بطاقة العضوية وملف الموظف</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">mobile_1</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td>مطلوب، مفهرس</td>
+                        <td>رقم الجوال الأساسي (إلزامي) — يُستخدم لإرسال الإشعارات والرسائل</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">mobile_2</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>رقم جوال احتياطي</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">landline</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>رقم الهاتف الأرضي</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">emergency_contact_name</span></td>
+                        <td><span class="field-type">varchar(100)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>اسم شخص للتواصل في حالات الطوارئ</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">emergency_contact_phone</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>هاتف شخص الطوارئ</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">email</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-nullable">nullable</span>، مفهرس</td>
+                        <td>البريد الإلكتروني — يُستخدم لإرسال الإشعارات والفواتير</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">chronic_diseases</span></td>
+                        <td><span class="field-type">text</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>الأمراض المزمنة — معلومة طبية مهمة للسلامة أثناء التمرين</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">how_did_you_hear</span></td>
+                        <td><span class="field-type">varchar(100)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>كيف سمعت عنا؟ — للتحليل التسويقي ومعرفة القنوات الأكثر فعالية</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">notes</span></td>
+                        <td><span class="field-type">text</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>ملاحظات حرة عن الشخص</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- authentication_users -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">authentication_users</span>
+                    <span class="table-badge badge-core">جدول مصادقة</span>
+                    <span class="timestamps-badge">⏱️ Timestamps</span>
+                </div>
+                <p class="table-purpose">
+                    يفصل بيانات تسجيل الدخول (اسم المستخدم وكلمة المرور) عن البيانات الشخصية الموجودة في جدول <span class="field-name">people</span>. هذا الفصل مبدأ أمني أساسي: ليس كل شخص في النظام يحتاج حساب دخول (مثلاً: اللاعبون المسجلون عبر الاستقبال لا يحتاجون تسجيل دخول). يدعم تعليق الحساب دون حذفه عبر <span class="field-name">is_active</span>. يُتتبع آخر دخول عبر <span class="field-name">last_login</span>.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>المعرّف الفريد لحساب الدخول</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">person_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → people.id</span> CASCADE</td>
+                        <td>يربط حساب الدخول بالشخص الحقيقي — علاقة واحد لواحد</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">username</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-unique">🔒 UNIQUE</span></td>
+                        <td>اسم المستخدم للدخول — فريد عبر كامل النظام</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">password</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td>مطلوب</td>
+                        <td>كلمة المرور المشفرة (Hashed) — لا تُخزّن بنص صريح أبداً</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">is_active</span></td>
+                        <td><span class="field-type">boolean</span></td>
+                        <td>افتراضي: true</td>
+                        <td>لتعليق حساب المستخدم مؤقتاً دون حذفه</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">last_login</span></td>
+                        <td><span class="field-type">timestamp</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>تاريخ ووقت آخر عملية دخول ناجحة — للرقابة الأمنية</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 2: Club Infrastructure -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec2">
+            <h2 class="module-title">🏗️ 2. البنية التحتية للنادي (Club Infrastructure)</h2>
+            <p class="module-desc">
+                الجداول التي تُعرّف المرافق المادية داخل كل فرع (صالات، مسابح)، والخزائن، وساعات العمل، وإعدادات النادي العامة.
+                <strong>الوحدة المسؤولة:</strong> ClubManager
+            </p>
+
+            <!-- facilities -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">facilities</span>
+                    <span class="table-badge badge-core">بنية تحتية</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">
+                    المرافق المادية داخل الفرع (صالة الأوزان، قاعة الإيروبيكس، المسبح، الساونا). لكل مرفق سعة محددة وتقييد جنس. يُستخدم لربط الجلسات الرياضية بمكان محدد ولمنع الحجز الزائد عن السعة.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف المرفق</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">branch_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → branches.id</span></td>
+                        <td>الفرع التابع له المرفق</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">name</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td>مطلوب</td>
+                        <td>اسم المرفق (مثل: صالة الحديد، قاعة اليوجا)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">capacity</span></td>
+                        <td><span class="field-type">integer</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>السعة القصوى للمرفق — يمنع الحجز الزائد</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">gender_restriction</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td>افتراضي: mixed، مفهرس</td>
+                        <td>تقييد الجنس للمرفق (male, female, mixed)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- lockers -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">lockers</span>
+                    <span class="table-badge badge-core">بنية تحتية</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">
+                    الخزائن (اللوكرات) المتوفرة في كل فرع. يمكن حجز الخزائن كخدمة إضافية مع الاشتراك. كل خزانة لها حالة (متاحة، محجوزة، معطلة) يتم تحديثها تلقائياً عند ربطها باشتراك لاعب عبر جدول <span class="field-name">player_subscription_services</span>.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف الخزانة</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">branch_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → branches.id</span></td>
+                        <td>الفرع الذي توجد فيه الخزانة</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">locker_number</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td>مطلوب</td>
+                        <td>رقم أو رمز الخزانة المكتوب عليها فعلياً</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">status</span></td>
+                        <td><span class="field-type">varchar(50)</span></td>
+                        <td>افتراضي: available</td>
+                        <td>حالة الخزانة: available (متاحة)، occupied (محجوزة)، maintenance (صيانة)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- club_settings -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">club_settings</span>
+                    <span class="table-badge badge-config">إعدادات</span>
+                </div>
+                <p class="table-purpose">
+                    إعدادات النادي القابلة للتخصيص. يحتوي على ألوان الثيم، اللغة المفضلة، الميزات المُفعّلة، وحدود الديون المسموحة. كل نادٍ له سجل إعدادات واحد. يتحكم بالمظهر العام للوحة التحكم وسياسات العمل المالية.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف سجل الإعدادات</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">club_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → clubs.id</span></td>
+                        <td>النادي صاحب هذه الإعدادات</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">theme_colors</span></td>
+                        <td><span class="field-type">json</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>ألوان الواجهة بصيغة JSON: {"primary": "#3b82f6", "secondary": "#10b981"}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">language</span></td>
+                        <td><span class="field-type">varchar(10)</span></td>
+                        <td>افتراضي: all</td>
+                        <td>لغة الواجهة: ar (عربي)، en (إنجليزي)، all (الكل)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">allowed_debt_limit</span></td>
+                        <td><span class="field-type">decimal(12,2)</span></td>
+                        <td>افتراضي: 0.00</td>
+                        <td>الحد الأقصى المسموح للدين على العضو — يمنع الاشتراك الجديد عند تجاوزه</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">grace_period_days</span></td>
+                        <td><span class="field-type">integer</span></td>
+                        <td>افتراضي: 0</td>
+                        <td>فترة السماح بالأيام بعد انتهاء الاشتراك قبل الحظر التلقائي</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">enabled_features</span></td>
+                        <td><span class="field-type">json</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>الميزات المُفعّلة للنادي (مثل: CRM، الحضور الآلي، الإشعارات)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">bg_image_url</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>صورة خلفية لوحة التحكم</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- facility_working_hours -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">facility_working_hours</span>
+                    <span class="table-badge badge-config">جدولة</span>
+                </div>
+                <p class="table-purpose">
+                    ساعات عمل كل مرفق لكل يوم من أيام الأسبوع. يسمح بتحديد أوقات فتح وإغلاق مختلفة لكل مرفق في كل يوم. يُستخدم لمنع حجز جلسات خارج ساعات العمل والتحقق من التوافر عند الجدولة.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف السجل</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">facility_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → facilities.id</span></td>
+                        <td>المرفق المرتبط</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">day_of_week</span></td>
+                        <td><span class="field-type">integer</span></td>
+                        <td>مطلوب</td>
+                        <td>رقم اليوم: 0=الأحد، 1=الاثنين، ... 6=السبت</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">open_time</span></td>
+                        <td><span class="field-type">time</span></td>
+                        <td>مطلوب</td>
+                        <td>وقت فتح المرفق</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">close_time</span></td>
+                        <td><span class="field-type">time</span></td>
+                        <td>مطلوب</td>
+                        <td>وقت إغلاق المرفق</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- branch_shifts -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">branch_shifts</span>
+                    <span class="table-badge badge-config">جدولة</span>
+                </div>
+                <p class="table-purpose">
+                    فترات العمل (الشيفتات) لكل فرع مع دعم تقييد الجنس لكل فترة. يسمح بتقسيم اليوم إلى فترات مختلفة (صباحية للنساء، مسائية للرجال مثلاً). أساسي للفروع التي تعمل بنظام الفترات المختلطة.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف الشيفت</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">branch_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → branches.id</span></td>
+                        <td>الفرع المرتبط</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">day_of_week</span></td>
+                        <td><span class="field-type">integer</span></td>
+                        <td>مطلوب</td>
+                        <td>رقم اليوم (0-6)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">start_time</span></td>
+                        <td><span class="field-type">time</span></td>
+                        <td>مطلوب</td>
+                        <td>وقت بداية الشيفت</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">end_time</span></td>
+                        <td><span class="field-type">time</span></td>
+                        <td>مطلوب</td>
+                        <td>وقت نهاية الشيفت</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">gender_allowed</span></td>
+                        <td><span class="field-type">varchar(20)</span></td>
+                        <td>افتراضي: mixed</td>
+                        <td>الجنس المسموح خلال هذا الشيفت: male, female, mixed</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 3: Members Management -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec3">
+            <h2 class="module-title">👥 3. إدارة الأعضاء (Member Management)</h2>
+            <p class="module-desc">
+                الجداول الخاصة بعضويات اللاعبين: تسجيل العضوية، الملف الصحي، القياسات البدنية، وأوقات عدم التوافر.
+                <strong>الوحدة المسؤولة:</strong> MemberManager
+            </p>
+
+            <!-- members -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">members</span>
+                    <span class="table-badge badge-core">جدول محوري</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">
+                    يربط الشخص (<span class="field-name">people</span>) بفرع محدد كـ "عضو/لاعب". الشخص الواحد يمكن أن يكون عضواً في أكثر من فرع (سجل منفصل لكل فرع). يحتوي على رقم العضوية الفريد والباركود المستخدم في البوابات. حالة العضوية (<span class="field-name">membership_status</span>) تتحكم بإمكانية الدخول للنادي. يدعم Soft Delete.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف العضوية</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">created_by</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>الموظف الذي أنشأ هذا السجل (references authentication_users.id)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">branch_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → branches.id</span></td>
+                        <td>الفرع الذي ينتمي إليه العضو</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">person_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → people.id</span></td>
+                        <td>الشخص المرتبط — يربط العضوية ببيانات الهوية</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">member_number</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-unique">🔒 UNIQUE</span>، مفهرس</td>
+                        <td>رقم العضوية الفريد — يُستخدم كمرجع في الفواتير والتقارير</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">barcode_qr_code</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-unique">🔒 UNIQUE</span>، مفهرس</td>
+                        <td>كود الباركود/QR للدخول عبر البوابات الإلكترونية</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">membership_status</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td>افتراضي: active، مفهرس</td>
+                        <td>حالة العضوية: active (نشط)، inactive (غير نشط)، frozen (مجمد)، expired (منتهي)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">join_date</span></td>
+                        <td><span class="field-type">date</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>تاريخ الانضمام — لحساب عمر العضوية والتقارير</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">how_heard_about_us</span></td>
+                        <td><span class="field-type">varchar(255)</span></td>
+                        <td><span class="field-nullable">nullable</span></td>
+                        <td>مصدر معرفة العضو بالنادي (على مستوى العضوية)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- member_health_profiles -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">member_health_profiles</span>
+                    <span class="table-badge badge-core">ملف صحي</span>
+                </div>
+                <p class="table-purpose">
+                    الملف الصحي التفصيلي لكل عضو. يحتوي على الحساسيات، الأمراض، الإصابات البدنية، الأدوية، فصيلة الدم، وبيانات الطوارئ. يشمل أيضاً الهدف الرياضي ومستوى اللياقة. ضروري لسلامة اللاعب وتصميم برنامج تمرين مناسب. علاقة واحد لواحد مع <span class="field-name">members</span>.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr>
+                        <td><span class="field-name">id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-pk">🔑 PK</span></td>
+                        <td>معرّف الملف الصحي</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">member_id</span></td>
+                        <td><span class="field-type">bigint</span></td>
+                        <td><span class="field-fk">🔗 FK → members.id</span></td>
+                        <td>العضو صاحب الملف الصحي</td>
+                    </tr>
+                    <tr><td><span class="field-name">allergies</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>الحساسيات المعروفة</td></tr>
+                    <tr><td><span class="field-name">organic_diseases</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>الأمراض العضوية والحالات الطبية</td></tr>
+                    <tr><td><span class="field-name">physical_injuries</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>الإصابات الجسدية السابقة أو الحالية</td></tr>
+                    <tr><td><span class="field-name">medications</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>الأدوية التي يتناولها حالياً</td></tr>
+                    <tr><td><span class="field-name">blood_type</span></td><td><span class="field-type">varchar(5)</span></td><td><span class="field-nullable">nullable</span></td><td>فصيلة الدم (A+, O-, AB+, الخ)</td></tr>
+                    <tr><td><span class="field-name">emergency_contact_name</span></td><td><span class="field-type">varchar(100)</span></td><td><span class="field-nullable">nullable</span></td><td>اسم شخص الطوارئ (على مستوى العضوية)</td></tr>
+                    <tr><td><span class="field-name">emergency_contact_phone</span></td><td><span class="field-type">varchar(20)</span></td><td><span class="field-nullable">nullable</span></td><td>هاتف شخص الطوارئ</td></tr>
+                    <tr><td><span class="field-name">sport_goal</span></td><td><span class="field-type">varchar(100)</span></td><td><span class="field-nullable">nullable</span></td><td>الهدف الرياضي: تخسيس، بناء عضلات، لياقة عامة</td></tr>
+                    <tr><td><span class="field-name">fitness_level</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>مستوى اللياقة: مبتدئ، متوسط، متقدم</td></tr>
+                </table>
+            </div>
+
+            <!-- member_measurements -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">member_measurements</span>
+                    <span class="table-badge badge-log">سجل تتبع</span>
+                </div>
+                <p class="table-purpose">
+                    سجل القياسات البدنية للأعضاء عبر الزمن. كل سجل يمثل قياساً في تاريخ محدد، مما يسمح بتتبع التقدم (الوزن، الطول، نسبة الدهون، الكتلة العضلية، محيط الخصر/الصدر/الفخذ/الذراع). علاقة واحد لكثير مع <span class="field-name">members</span> — عضو واحد يمكن أن يكون له عشرات القياسات.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف القياس</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → members.id</span></td><td>العضو صاحب القياس</td></tr>
+                    <tr><td><span class="field-name">measurement_date</span></td><td><span class="field-type">date</span></td><td>مطلوب، مفهرس</td><td>تاريخ أخذ القياس</td></tr>
+                    <tr><td><span class="field-name">weight</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>الوزن بالكيلوغرام</td></tr>
+                    <tr><td><span class="field-name">height</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>الطول بالسنتيمتر</td></tr>
+                    <tr><td><span class="field-name">body_fat_percentage</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>نسبة الدهون في الجسم (%)</td></tr>
+                    <tr><td><span class="field-name">muscle_mass</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>الكتلة العضلية (كجم)</td></tr>
+                    <tr><td><span class="field-name">waist_circumference</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>محيط الخصر (سم)</td></tr>
+                    <tr><td><span class="field-name">chest_circumference</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>محيط الصدر (سم)</td></tr>
+                    <tr><td><span class="field-name">thigh_circumference</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>محيط الفخذ (سم)</td></tr>
+                    <tr><td><span class="field-name">arm_circumference</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>محيط الذراع (سم)</td></tr>
+                    <tr><td><span class="field-name">activity_level</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>مستوى النشاط البدني: sedentary, moderate, active</td></tr>
+                    <tr><td><span class="field-name">bmi</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>مؤشر كتلة الجسم (BMI) — يُحسب من الوزن والطول</td></tr>
+                </table>
+            </div>
+
+            <!-- player_unavailabilities -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">player_unavailabilities</span>
+                    <span class="table-badge badge-config">جدولة</span>
+                </div>
+                <p class="table-purpose">
+                    أوقات عدم توافر العضو خلال الأسبوع. يُستخدم عند جدولة الحصص الخاصة أو التدريب الشخصي لتجنب الأوقات التي لا يستطيع فيها العضو الحضور. كل سجل يمثل فترة عدم توافر في يوم محدد من الأسبوع.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → members.id</span></td><td>العضو المعني</td></tr>
+                    <tr><td><span class="field-name">day_of_week</span></td><td><span class="field-type">tinyint</span></td><td>مطلوب</td><td>يوم الأسبوع (0=الأحد إلى 6=السبت)</td></tr>
+                    <tr><td><span class="field-name">start_time</span></td><td><span class="field-type">time</span></td><td>مطلوب</td><td>بداية فترة عدم التوافر</td></tr>
+                    <tr><td><span class="field-name">end_time</span></td><td><span class="field-type">time</span></td><td>مطلوب</td><td>نهاية فترة عدم التوافر</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 4: Staff Management -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec4">
+            <h2 class="module-title">💼 4. إدارة الموظفين (Staff Management)</h2>
+            <p class="module-desc">
+                الجداول الخاصة بالموظفين: بياناتهم الوظيفية، جداول العمل، الحضور، الفروع المتعددة، أوقات عدم التوافر، والرواتب.
+                <strong>الوحدة المسؤولة:</strong> StaffManager
+            </p>
+
+            <!-- staff -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff</span>
+                    <span class="table-badge badge-core">جدول محوري</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">
+                    يربط الشخص (<span class="field-name">people</span>) بفرع محدد كـ "موظف" ويحدد دوره الوظيفي ونوع التوظيف والراتب. يدعم أنواع رواتب متعددة (ثابت، عمولة، مختلط). يحتوي على حقول إدارية شاملة مثل نوع العقد ونوع الشيفت والتخصص والشهادات. يُعتبر المرجع الأساسي لكل العمليات المتعلقة بالموظفين.
+                </p>
+                <table>
+                    <tr><th style="width:25%">الحقل</th><th style="width:15%">النوع</th><th style="width:15%">القيود</th><th style="width:45%">الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الموظف</td></tr>
+                    <tr><td><span class="field-name">created_by</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>المستخدم الذي أنشأ هذا السجل</td></tr>
+                    <tr><td><span class="field-name">person_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → people.id</span></td><td>الشخص المرتبط</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → branches.id</span></td><td>الفرع الأساسي للموظف</td></tr>
+                    <tr><td><span class="field-name">role</span></td><td><span class="field-type">enum</span></td><td>افتراضي: staff</td><td>الدور: admin, receptionist, coach, cleaner, manager, staff</td></tr>
+                    <tr><td><span class="field-name">employment_type</span></td><td><span class="field-type">enum</span></td><td>افتراضي: fixed_salary</td><td>نوع التوظيف: fixed_salary (ثابت)، commission_based (عمولة)، hybrid (مختلط)</td></tr>
+                    <tr><td><span class="field-name">base_salary</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>الراتب الأساسي الشهري</td></tr>
+                    <tr><td><span class="field-name">commission_rate</span></td><td><span class="field-type">decimal(5,2)</span></td><td>افتراضي: 0</td><td>نسبة العمولة (%) — للمدربين الذين يعملون بنظام العمولة</td></tr>
+                    <tr><td><span class="field-name">specialization</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>التخصص (يوجا، كمال أجسام، سباحة)</td></tr>
+                    <tr><td><span class="field-name">certificates_held</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>الشهادات المهنية بصيغة JSON</td></tr>
+                    <tr><td><span class="field-name">start_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>تاريخ بداية العمل</td></tr>
+                    <tr><td><span class="field-name">end_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>تاريخ نهاية العقد (إن وجد)</td></tr>
+                    <tr><td><span class="field-name">contract_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع العقد: full_time, part_time, freelance</td></tr>
+                    <tr><td><span class="field-name">shift_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع الشيفت: morning, evening, full_day</td></tr>
+                    <tr><td><span class="field-name">work_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع العمل: on_site, remote, hybrid</td></tr>
+                    <tr><td><span class="field-name">work_status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: active</td><td>حالة العمل: active, on_leave, terminated</td></tr>
+                    <tr><td><span class="field-name">salary_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع الراتب</td></tr>
+                    <tr><td><span class="field-name">employee_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>تصنيف الموظف</td></tr>
+                    <tr><td><span class="field-name">other_tasks</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>مهام إضافية أخرى مكلف بها</td></tr>
+                    <tr><td><span class="field-name">gym_type</span></td><td><span class="field-type">varchar(20)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع الجيم المرتبط (رجالي/نسائي)</td></tr>
+                    <tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true، مفهرس</td><td>هل الموظف نشط حالياً؟</td></tr>
+                </table>
+            </div>
+
+            <!-- staff_shifts -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_shifts</span>
+                    <span class="table-badge badge-config">جدولة</span>
+                </div>
+                <p class="table-purpose">جدول دوامات الموظف الأسبوعية. يحدد أيام وساعات عمل كل موظف. يُستخدم لحساب ساعات العمل المتوقعة ومقارنتها بسجلات الحضور الفعلية.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الشيفت</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span></td><td>الموظف المرتبط</td></tr>
+                    <tr><td><span class="field-name">day_of_week</span></td><td><span class="field-type">tinyint</span></td><td>مطلوب</td><td>يوم الأسبوع (0-6)</td></tr>
+                    <tr><td><span class="field-name">start_time</span></td><td><span class="field-type">time</span></td><td>مطلوب</td><td>بداية الدوام</td></tr>
+                    <tr><td><span class="field-name">end_time</span></td><td><span class="field-type">time</span></td><td>مطلوب</td><td>نهاية الدوام</td></tr>
+                </table>
+            </div>
+
+            <!-- staff_branches -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_branches</span>
+                    <span class="table-badge badge-pivot">جدول ربط Pivot</span>
+                </div>
+                <p class="table-purpose">يدعم عمل الموظف في أكثر من فرع (Multi-branch). بينما <span class="field-name">staff.branch_id</span> يحدد الفرع الأساسي، هذا الجدول يربط الموظف بفروع إضافية يعمل فيها. مصمم بدون Foreign Key على branches لتجنب التقارن بين الوحدات (Cross-module coupling).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الربط</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span></td><td>الموظف</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td>مطلوب</td><td>الفرع الإضافي (بدون FK لمنع التقارن)</td></tr>
+                </table>
+            </div>
+
+            <!-- staff_unavailabilities -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_unavailabilities</span>
+                    <span class="table-badge badge-config">جدولة</span>
+                </div>
+                <p class="table-purpose">فترات عدم توافر الموظف (إجازات، مرض، التزامات شخصية). يختلف عن <span class="field-name">player_unavailabilities</span> بأنه يدعم تواريخ محددة وليس أيام أسبوعية متكررة. يُستخدم عند جدولة الحصص لتجنب تكليف المدرب في أوقات غيابه.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span></td><td>الموظف</td></tr>
+                    <tr><td><span class="field-name">start_datetime</span></td><td><span class="field-type">datetime</span></td><td>مطلوب</td><td>بداية فترة عدم التوافر</td></tr>
+                    <tr><td><span class="field-name">end_datetime</span></td><td><span class="field-type">datetime</span></td><td>مطلوب</td><td>نهاية فترة عدم التوافر</td></tr>
+                    <tr><td><span class="field-name">reason</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>سبب الغياب</td></tr>
+                </table>
+            </div>
+
+            <!-- payroll_runs -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">payroll_runs</span>
+                    <span class="table-badge badge-core">رواتب</span>
+                </div>
+                <p class="table-purpose">دورات صرف الرواتب. كل سجل يمثل دورة رواتب واحدة (مثلاً: رواتب شهر يونيو 2026). يحتوي على فترة الرواتب وحالة الصرف (مسودة، مُعتمد، مدفوع). يُولّد القيود المحاسبية تلقائياً عند الاعتماد.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف دورة الرواتب</td></tr>
+                    <tr><td><span class="field-name">period_start</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>بداية فترة الرواتب</td></tr>
+                    <tr><td><span class="field-name">period_end</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>نهاية فترة الرواتب</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: draft</td><td>الحالة: draft (مسودة)، approved (معتمد)، paid (مدفوع)</td></tr>
+                </table>
+            </div>
+
+            <!-- payslips -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">payslips</span>
+                    <span class="table-badge badge-core">رواتب</span>
+                </div>
+                <p class="table-purpose">كشوف رواتب الموظفين الفردية. لكل دورة رواتب يُنشأ كشف راتب لكل موظف يحتوي على الراتب الأساسي والعمولة وصافي الراتب. يُحسب تلقائياً بناءً على بيانات الموظف وسجلات العمولة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف كشف الراتب</td></tr>
+                    <tr><td><span class="field-name">payroll_run_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → payroll_runs.id</span></td><td>دورة الرواتب</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span></td><td>الموظف</td></tr>
+                    <tr><td><span class="field-name">base_pay</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>الراتب الأساسي المستحق</td></tr>
+                    <tr><td><span class="field-name">commission_pay</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>مبلغ العمولات المستحقة</td></tr>
+                    <tr><td><span class="field-name">net_pay</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>صافي المبلغ المستحق (الأساسي + العمولة)</td></tr>
+                </table>
+            </div>
+
+            <!-- staff_attendances -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_attendances</span>
+                    <span class="table-badge badge-log">سجل حضور</span>
+                </div>
+                <p class="table-purpose">سجل حضور وانصراف الموظفين. يُسجّل وقت الحضور والانصراف لكل موظف في كل يوم عمل. يُستخدم لحساب ساعات العمل الفعلية ومقارنتها بالمتوقعة في <span class="field-name">staff_shifts</span>. يدعم الربط بالمرفق الذي حضر فيه الموظف.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>الموظف (بدون FK لاستقلالية الوحدات)</td></tr>
+                    <tr><td><span class="field-name">facility_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>المرفق الذي حضر فيه</td></tr>
+                    <tr><td><span class="field-name">check_in</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>وقت الحضور</td></tr>
+                    <tr><td><span class="field-name">check_out</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>وقت الانصراف</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(255)</span></td><td>افتراضي: present</td><td>الحالة: present (حاضر)، absent (غائب)، late (متأخر)</td></tr>
+                    <tr><td><span class="field-name">notes</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>ملاحظات</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 5: Specialized Profiles -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec5">
+            <h2 class="module-title">📋 5. الملفات الشخصية المتخصصة (Specialized Profiles)</h2>
+            <p class="module-desc">
+                ملفات تعريف إضافية لأنواع محددة من الأشخاص (لاعبين، مدربين، موظفين). كل ملف يحمل بيانات خاصة بنوع الشخص ولا يحتاجها بقية الأنواع.
+                <strong>الوحدة المسؤولة:</strong> Authentication (global profiles)
+            </p>
+
+            <!-- player_profiles -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">player_profiles</span>
+                    <span class="table-badge badge-core">ملف شخصي</span>
+                </div>
+                <p class="table-purpose">ملف اللاعب المتقدم. يحتوي على كود QR خاص، فصيلة الدم، الحالات الطبية بصيغة JSON مرنة، وبيانات جهة اتصال الطوارئ. يختلف عن <span class="field-name">member_health_profiles</span> بأنه مربوط بالشخص (person) وليس بالعضوية (member).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الملف</td></tr>
+                    <tr><td><span class="field-name">person_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → people.id</span></td><td>الشخص المرتبط</td></tr>
+                    <tr><td><span class="field-name">qr_code</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-unique">🔒 UNIQUE</span></td><td>كود QR خاص باللاعب</td></tr>
+                    <tr><td><span class="field-name">blood_type</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>فصيلة الدم</td></tr>
+                    <tr><td><span class="field-name">medical_conditions</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>الحالات الطبية بصيغة JSON مرنة</td></tr>
+                    <tr><td><span class="field-name">emergency_contact</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>بيانات جهة اتصال الطوارئ بصيغة JSON</td></tr>
+                </table>
+            </div>
+
+            <!-- coach_profiles -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">coach_profiles</span>
+                    <span class="table-badge badge-core">ملف شخصي</span>
+                </div>
+                <p class="table-purpose">ملف المدرب التفصيلي. يحتوي على التخصص، السيرة الذاتية، سنوات الخبرة، نوع العمل، تواريخ العقد، نظام الدفع والعمولة، الراتب، ساعات العمل، أوقات عدم التوافر، والشهادات. جدول شامل يغطي كل الجوانب الإدارية والفنية للمدرب.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف ملف المدرب</td></tr>
+                    <tr><td><span class="field-name">person_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → people.id</span></td><td>الشخص المرتبط</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>الفرع الأساسي للمدرب</td></tr>
+                    <tr><td><span class="field-name">specialization</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>تخصص المدرب (كمال أجسام، يوجا، زومبا)</td></tr>
+                    <tr><td><span class="field-name">bio</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>نبذة تعريفية / سيرة ذاتية</td></tr>
+                    <tr><td><span class="field-name">experience_years</span></td><td><span class="field-type">integer</span></td><td>افتراضي: 0</td><td>عدد سنوات الخبرة</td></tr>
+                    <tr><td><span class="field-name">work_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع العمل</td></tr>
+                    <tr><td><span class="field-name">start_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>تاريخ بداية العقد</td></tr>
+                    <tr><td><span class="field-name">end_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>تاريخ نهاية العقد</td></tr>
+                    <tr><td><span class="field-name">certificates</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>الشهادات المهنية</td></tr>
+                    <tr><td><span class="field-name">payment_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نظام الدفع</td></tr>
+                    <tr><td><span class="field-name">commission_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع العمولة (نسبة مئوية، مبلغ ثابت)</td></tr>
+                    <tr><td><span class="field-name">commission_rate</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>نسبة أو قيمة العمولة</td></tr>
+                    <tr><td><span class="field-name">salary</span></td><td><span class="field-type">decimal(12,2)</span></td><td><span class="field-nullable">nullable</span></td><td>الراتب</td></tr>
+                    <tr><td><span class="field-name">working_hours</span></td><td><span class="field-type">decimal(5,2)</span></td><td><span class="field-nullable">nullable</span></td><td>ساعات العمل الأسبوعية</td></tr>
+                    <tr><td><span class="field-name">unavailable_times</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>أوقات عدم التوافر بصيغة JSON</td></tr>
+                    <tr><td><span class="field-name">gym_type</span></td><td><span class="field-type">varchar(20)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع الجيم (رجالي/نسائي)</td></tr>
+                </table>
+            </div>
+
+            <!-- staff_profiles -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_profiles</span>
+                    <span class="table-badge badge-core">ملف شخصي</span>
+                </div>
+                <p class="table-purpose">ملف إضافي للموظفين غير المدربين (استقبال، نظافة، إدارة). بسيط ويحتوي أساساً على المسمى الوظيفي. يُكمّل بيانات جدول <span class="field-name">staff</span> بمعلومات إضافية.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الملف</td></tr>
+                    <tr><td><span class="field-name">person_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → people.id</span></td><td>الشخص المرتبط</td></tr>
+                    <tr><td><span class="field-name">job_title</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>المسمى الوظيفي</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 6: Subscriptions -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec6">
+            <h2 class="module-title">📦 6. الاشتراكات والباقات (Subscriptions & Plans)</h2>
+            <p class="module-desc">
+                نظام الاشتراكات الكامل: تعريف الباقات، شراء الاشتراكات، تجميد الاشتراكات، ربط الأنشطة بالباقات، الخدمات الإضافية، وتتبع الجلسات.
+                <strong>الوحدة المسؤولة:</strong> SubscriptionManager
+            </p>
+
+            <!-- subscription_plans -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">subscription_plans</span>
+                    <span class="table-badge badge-core">كتالوج</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">كتالوج الباقات المتاحة للبيع. يدعم نوعين: باقات بمدة زمنية (<span class="field-name">duration_days</span>) أو باقات بعدد جلسات (<span class="field-name">session_count</span>). يتحكم بسياسة التجميد (عدد مرات التجميد المسموحة وأقصى أيام). يدعم التعطيل والحذف الناعم.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الباقة</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">json</span></td><td>مطلوب</td><td>اسم الباقة (متعدد اللغات): {"ar": "شهري", "en": "Monthly"}</td></tr>
+                    <tr><td><span class="field-name">type</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>نوع الباقة: fixed_period (مدة محددة)، session_based (عدد جلسات)</td></tr>
+                    <tr><td><span class="field-name">duration_days</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>مدة الاشتراك بالأيام (للباقات الزمنية)</td></tr>
+                    <tr><td><span class="field-name">session_count</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>عدد الجلسات المتاحة (لباقات الجلسات)</td></tr>
+                    <tr><td><span class="field-name">max_freeze_count</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>أقصى عدد مرات تجميد مسموح بها</td></tr>
+                    <tr><td><span class="field-name">max_freeze_days</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>أقصى عدد أيام تجميد إجمالية</td></tr>
+                    <tr><td><span class="field-name">base_price</span></td><td><span class="field-type">decimal(12,2)</span></td><td>مطلوب</td><td>السعر الأساسي للباقة</td></tr>
+                    <tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true</td><td>هل الباقة معروضة للبيع حالياً؟</td></tr>
+                </table>
+            </div>
+
+            <!-- player_subscriptions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">player_subscriptions</span>
+                    <span class="table-badge badge-core">جدول محوري</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">الاشتراكات الفعلية المُباعة للأعضاء. يمثل عملية شراء باقة محددة من قبل عضو. يحتوي على تواريخ الصلاحية، الحالة (نشط/منتهي/مجمد/ملغي)، المبالغ المالية (الإجمالي/المدفوع/المتبقي)، والمدرب المرتبط. هذا الجدول هو الأساس الذي يُحدد من خلاله صلاحية دخول العضو.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الاشتراك</td></tr>
+                    <tr><td><span class="field-name">created_by</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>الموظف الذي أنشأ الاشتراك</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → members.id</span></td><td>العضو المشترك</td></tr>
+                    <tr><td><span class="field-name">coach_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>المدرب المُعيّن للاشتراك (إن وجد)</td></tr>
+                    <tr><td><span class="field-name">plan_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → subscription_plans.id</span></td><td>الباقة المشتراة</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>الفرع الذي تم فيه الاشتراك</td></tr>
+                    <tr><td><span class="field-name">total_amount</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>المبلغ الإجمالي المطلوب</td></tr>
+                    <tr><td><span class="field-name">paid_amount</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>المبلغ المدفوع فعلياً</td></tr>
+                    <tr><td><span class="field-name">remaining_amount</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>المبلغ المتبقي (الدين)</td></tr>
+                    <tr><td><span class="field-name">start_date</span></td><td><span class="field-type">date</span></td><td>مطلوب، مفهرس</td><td>تاريخ بداية الاشتراك</td></tr>
+                    <tr><td><span class="field-name">end_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>تاريخ انتهاء الاشتراك (يُحسب تلقائياً)</td></tr>
+                    <tr><td><span class="field-name">last_used_at</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>آخر استخدام (آخر حضور)</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">enum</span></td><td>افتراضي: active، مفهرس</td><td>الحالة: active, expired, frozen, cancelled</td></tr>
+                    <tr><td><span class="field-name">remaining_sessions</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>الجلسات المتبقية (لباقات الجلسات)</td></tr>
+                    <tr><td><span class="field-name">notes</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>ملاحظات على الاشتراك</td></tr>
+                </table>
+            </div>
+
+            <!-- subscription_freezes -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">subscription_freezes</span>
+                    <span class="table-badge badge-log">سجل</span>
+                </div>
+                <p class="table-purpose">سجل تجميد الاشتراكات. عند تجميد اشتراك، يتم تسجيل فترة التجميد هنا وتُضاف المدة المجمدة إلى تاريخ انتهاء الاشتراك. يُتحقق من عدد مرات التجميد والأيام المسموحة حسب الباقة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف التجميد</td></tr>
+                    <tr><td><span class="field-name">player_subscription_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → player_subscriptions.id</span></td><td>الاشتراك المُجمّد</td></tr>
+                    <tr><td><span class="field-name">freeze_start_date</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>تاريخ بداية التجميد</td></tr>
+                    <tr><td><span class="field-name">freeze_end_date</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>تاريخ نهاية التجميد المتوقع</td></tr>
+                    <tr><td><span class="field-name">actual_end_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>تاريخ فك التجميد الفعلي (قد يختلف عن المتوقع)</td></tr>
+                    <tr><td><span class="field-name">reason</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>سبب التجميد (سفر، مرض، الخ)</td></tr>
+                </table>
+            </div>
+
+            <!-- plan_activities -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">plan_activities</span>
+                    <span class="table-badge badge-pivot">جدول ربط Pivot</span>
+                </div>
+                <p class="table-purpose">يربط الباقة بالأنشطة المتاحة فيها. باقة واحدة يمكن أن تشمل عدة أنشطة (مثلاً: باقة VIP تشمل حديد + يوجا + سباحة). لكل نشاط في الباقة عدد جلسات مخصص أو وصول غير محدود.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الربط</td></tr>
+                    <tr><td><span class="field-name">plan_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → subscription_plans.id</span></td><td>الباقة</td></tr>
+                    <tr><td><span class="field-name">activity_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → activities.id</span></td><td>النشاط الرياضي</td></tr>
+                    <tr><td><span class="field-name">sessions_count</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>عدد الجلسات المخصصة (null = غير محدود)</td></tr>
+                    <tr><td><span class="field-name">is_unlimited</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: false</td><td>هل الوصول غير محدود لهذا النشاط؟</td></tr>
+                </table>
+            </div>
+
+            <!-- player_subscription_items -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">player_subscription_items</span>
+                    <span class="table-badge badge-pivot">تتبع استهلاك</span>
+                </div>
+                <p class="table-purpose">يتتبع استهلاك كل نشاط في اشتراك محدد. عندما يشتري عضو باقة تحتوي على 3 أنشطة، يُنشأ 3 سجلات هنا. كل سجل يتتبع عدد الجلسات المخصصة والمستهلكة لكل نشاط على حدة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">player_subscription_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → player_subscriptions.id</span></td><td>الاشتراك</td></tr>
+                    <tr><td><span class="field-name">activity_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → activities.id</span></td><td>النشاط</td></tr>
+                    <tr><td><span class="field-name">sessions_allocated</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>الجلسات المخصصة</td></tr>
+                    <tr><td><span class="field-name">sessions_consumed</span></td><td><span class="field-type">integer</span></td><td>افتراضي: 0</td><td>الجلسات المستهلكة حتى الآن</td></tr>
+                    <tr><td><span class="field-name">is_unlimited</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: false</td><td>وصول غير محدود</td></tr>
+                </table>
+            </div>
+
+            <!-- extra_services -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">extra_services</span>
+                    <span class="table-badge badge-core">كتالوج</span>
+                </div>
+                <p class="table-purpose">كتالوج الخدمات الإضافية التي يمكن إضافتها للاشتراكات (إيجار خزانة، خدمة مناشف، جلسات ساونا). كل خدمة لها سعر افتراضي ويمكن تعديله عند الربط بالاشتراك.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الخدمة</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>اسم الخدمة</td></tr>
+                    <tr><td><span class="field-name">description</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>وصف الخدمة</td></tr>
+                    <tr><td><span class="field-name">default_price</span></td><td><span class="field-type">decimal(10,2)</span></td><td>افتراضي: 0</td><td>السعر الافتراضي</td></tr>
+                    <tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true</td><td>هل الخدمة متاحة حالياً؟</td></tr>
+                </table>
+            </div>
+
+            <!-- player_subscription_services -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">player_subscription_services</span>
+                    <span class="table-badge badge-pivot">جدول ربط Pivot</span>
+                </div>
+                <p class="table-purpose">يربط الخدمات الإضافية بالاشتراكات الفعلية. عند إضافة خدمة خزانة لاشتراك عضو مثلاً، يُنشأ سجل هنا مع السعر الفعلي المحصّل وفترة الخدمة ورقم الخزانة المرتبطة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الربط</td></tr>
+                    <tr><td><span class="field-name">player_subscription_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → player_subscriptions.id</span></td><td>الاشتراك</td></tr>
+                    <tr><td><span class="field-name">extra_service_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → extra_services.id</span></td><td>الخدمة الإضافية</td></tr>
+                    <tr><td><span class="field-name">locker_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>الخزانة المرتبطة (لخدمة الخزائن)</td></tr>
+                    <tr><td><span class="field-name">price_charged</span></td><td><span class="field-type">decimal(10,2)</span></td><td>افتراضي: 0</td><td>السعر الفعلي المحصّل</td></tr>
+                    <tr><td><span class="field-name">start_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>بداية فترة الخدمة</td></tr>
+                    <tr><td><span class="field-name">end_date</span></td><td><span class="field-type">date</span></td><td><span class="field-nullable">nullable</span></td><td>نهاية فترة الخدمة</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 7: Sports & Sessions -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec7">
+            <h2 class="module-title">🏋️ 7. الأنشطة والجلسات الرياضية (Sports & Sessions)</h2>
+            <p class="module-desc">
+                إدارة الأنشطة الرياضية، جدولة الحصص، حجوزات الأعضاء، ربط المدربين بالأنشطة، وقواعد العمولات.
+                <strong>الوحدة المسؤولة:</strong> Sports
+            </p>
+
+            <!-- activities -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">activities</span>
+                    <span class="table-badge badge-core">كتالوج</span>
+                </div>
+                <p class="table-purpose">قائمة الأنشطة الرياضية المتوفرة (يوجا، زومبا، كروس فيت، تمارين حديد، سباحة). يدعم أنواع مختلفة (حصة جماعية، تدريب شخصي، صالة حرة)، تقييد الجنس، والسعة الافتراضية. الأسماء متعددة اللغات (JSON).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف النشاط</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">json</span></td><td>مطلوب</td><td>اسم النشاط (متعدد اللغات)</td></tr>
+                    <tr><td><span class="field-name">description</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>وصف النشاط</td></tr>
+                    <tr><td><span class="field-name">type</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: group_class</td><td>النوع: open_gym, group_class, personal_training</td></tr>
+                    <tr><td><span class="field-name">default_capacity</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>السعة الافتراضية للحصة</td></tr>
+                    <tr><td><span class="field-name">is_private_equipment</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: false</td><td>هل يتطلب معدات خاصة؟</td></tr>
+                    <tr><td><span class="field-name">gender_allowed</span></td><td><span class="field-type">varchar(255)</span></td><td>افتراضي: mixed</td><td>الجنس المسموح: male, female, mixed</td></tr>
+                    <tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true</td><td>هل النشاط متاح حالياً؟</td></tr>
+                </table>
+            </div>
+
+            <!-- sports_sessions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">sports_sessions</span>
+                    <span class="table-badge badge-core">جدولة</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">الحصص الرياضية المجدولة فعلياً. كل سجل يمثل حصة في وقت محدد، بفرع ومرفق ومدرب ونشاط محدد. يتتبع السعة القصوى وعدد الحجوزات الحالية والحالة (مجدولة/جارية/منتهية/ملغاة).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الحصة</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → branches.id</span></td><td>الفرع</td></tr>
+                    <tr><td><span class="field-name">activity_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → activities.id</span></td><td>النشاط الرياضي</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span> nullable</td><td>المدرب المسؤول</td></tr>
+                    <tr><td><span class="field-name">facility_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>المرفق/القاعة</td></tr>
+                    <tr><td><span class="field-name">start_time</span></td><td><span class="field-type">datetime</span></td><td>مطلوب</td><td>وقت البداية</td></tr>
+                    <tr><td><span class="field-name">end_time</span></td><td><span class="field-type">datetime</span></td><td>مطلوب</td><td>وقت النهاية</td></tr>
+                    <tr><td><span class="field-name">max_players</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>السعة القصوى</td></tr>
+                    <tr><td><span class="field-name">gender_allowed</span></td><td><span class="field-type">varchar(20)</span></td><td><span class="field-nullable">nullable</span></td><td>تقييد الجنس (يمكن أن يختلف عن النشاط)</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: scheduled</td><td>الحالة: scheduled, in_progress, completed, cancelled</td></tr>
+                    <tr><td><span class="field-name">booked_count</span></td><td><span class="field-type">integer</span></td><td>افتراضي: 0</td><td>عدد الحجوزات الحالية (يُحدّث تلقائياً)</td></tr>
+                </table>
+            </div>
+
+            <!-- sports_session_bookings -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">sports_session_bookings</span>
+                    <span class="table-badge badge-log">سجل حجوزات</span>
+                    <span class="soft-delete-badge">🗑️ Soft Delete</span>
+                </div>
+                <p class="table-purpose">حجوزات الأعضاء في الحصص الرياضية. يمنع الحجز المكرر (UNIQUE constraint على session+member). يتتبع حالة الحجز (محجوز/حضر/ملغي).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الحجز</td></tr>
+                    <tr><td><span class="field-name">sports_session_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → sports_sessions.id</span></td><td>الحصة</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → members.id</span></td><td>العضو</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: booked</td><td>الحالة: booked (محجوز)، attended (حضر)، cancelled (ملغي)</td></tr>
+                </table>
+                <div class="note note-info">
+                    <strong>📌 قيد فريد:</strong> (sports_session_id, member_id) — يمنع نفس العضو من حجز نفس الحصة مرتين.
+                </div>
+            </div>
+
+            <!-- staff_activities -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_activities</span>
+                    <span class="table-badge badge-pivot">جدول ربط Pivot</span>
+                </div>
+                <p class="table-purpose">يربط المدربين بالأنشطة التي يستطيعون تدريبها. مدرب واحد يمكن أن يُدرّب عدة أنشطة (يوجا + بيلاتس مثلاً). يُستخدم عند جدولة الحصص لعرض المدربين المؤهلين فقط.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الربط</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span></td><td>المدرب</td></tr>
+                    <tr><td><span class="field-name">activity_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → activities.id</span></td><td>النشاط</td></tr>
+                </table>
+            </div>
+
+            <!-- staff_commission_rules -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">staff_commission_rules</span>
+                    <span class="table-badge badge-config">قواعد مالية</span>
+                </div>
+                <p class="table-purpose">قواعد العمولات لكل مدرب حسب النشاط. يسمح بتحديد عمولة مختلفة لكل نشاط (مثلاً: 15% على اليوجا، 50 ريال ثابت على التدريب الشخصي). يُستخدم لحساب العمولات عند إصدار كشوف الرواتب.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف القاعدة</td></tr>
+                    <tr><td><span class="field-name">staff_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → staff.id</span></td><td>المدرب</td></tr>
+                    <tr><td><span class="field-name">activity_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → activities.id</span></td><td>النشاط</td></tr>
+                    <tr><td><span class="field-name">calculation_type</span></td><td><span class="field-type">varchar(50)</span></td><td>مطلوب</td><td>نوع الحساب: percentage (نسبة)، fixed_amount (مبلغ ثابت)</td></tr>
+                    <tr><td><span class="field-name">rate_value</span></td><td><span class="field-type">decimal(8,2)</span></td><td>مطلوب</td><td>قيمة العمولة (نسبة أو مبلغ حسب النوع)</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 8: Finance & Accounting -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec8">
+            <h2 class="module-title">💰 8. المالية والمحاسبة (Finance & Accounting)</h2>
+            <p class="module-desc">
+                نظام محاسبي كامل يشمل: شجرة الحسابات، الصناديق، القيود اليومية، الفترات المحاسبية، الفواتير والمدفوعات.
+                <strong>الوحدة المسؤولة:</strong> Accounting (Global)
+            </p>
+
+            <!-- chart_of_accounts -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">chart_of_accounts</span>
+                    <span class="table-badge badge-core">محاسبة</span>
+                </div>
+                <p class="table-purpose">شجرة الحسابات (دليل الحسابات). تُعرّف جميع الحسابات المالية المستخدمة في النظام مع تصنيفها (أصول، خصوم، حقوق ملكية، إيرادات، مصاريف). كل قيد محاسبي يُسجّل على حسابات من هذه الشجرة. أساس نظام القيد المزدوج (Double-entry).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الحساب</td></tr>
+                    <tr><td><span class="field-name">code</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-unique">🔒 UNIQUE</span></td><td>رمز الحساب (مثل: 1001, 4001, 5001)</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">varchar(150)</span></td><td>مطلوب</td><td>اسم الحساب (الصندوق، إيرادات الاشتراكات، مصاريف الرواتب)</td></tr>
+                    <tr><td><span class="field-name">type</span></td><td><span class="field-type">varchar(50)</span></td><td>مطلوب</td><td>النوع: asset (أصل)، liability (خصم)، equity (حقوق ملكية)، revenue (إيراد)، expense (مصروف)</td></tr>
+                </table>
+            </div>
+
+            <!-- cash_registers -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">cash_registers</span>
+                    <span class="table-badge badge-core">محاسبة</span>
+                </div>
+                <p class="table-purpose">الصناديق والحسابات النقدية. كل فرع يمكن أن يمتلك عدة صناديق (صندوق فعلي، حساب بنكي، محفظة إلكترونية). يتتبع الرصيد الحالي لكل صندوق. كل دفعة يجب أن تُسجّل على صندوق محدد.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الصندوق</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → branches.id</span></td><td>الفرع</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">varchar(100)</span></td><td>مطلوب</td><td>اسم الصندوق (الصندوق الرئيسي، حساب البنك)</td></tr>
+                    <tr><td><span class="field-name">type</span></td><td><span class="field-type">varchar(50)</span></td><td>مطلوب</td><td>النوع: physical (فعلي)، bank (بنكي)، online (إلكتروني)</td></tr>
+                    <tr><td><span class="field-name">balance</span></td><td><span class="field-type">decimal(14,2)</span></td><td>افتراضي: 0</td><td>الرصيد الحالي</td></tr>
+                </table>
+            </div>
+
+            <!-- journal_entries -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">journal_entries</span>
+                    <span class="table-badge badge-core">محاسبة</span>
+                </div>
+                <p class="table-purpose">القيود المحاسبية اليومية (رأس القيد). كل عملية مالية (دفعة، فاتورة، راتب) تُولّد قيد محاسبي. يحتوي على تاريخ القيد ووصفه ومرجعه (نوع ومعرّف المستند المصدر) والصندوق المرتبط. يدعم أحوال مختلفة (مُرحّل، مسودة).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف القيد</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → branches.id</span></td><td>الفرع</td></tr>
+                    <tr><td><span class="field-name">cash_register_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → cash_registers.id</span> nullable</td><td>الصندوق المرتبط</td></tr>
+                    <tr><td><span class="field-name">date</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>تاريخ القيد</td></tr>
+                    <tr><td><span class="field-name">description</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>وصف القيد</td></tr>
+                    <tr><td><span class="field-name">reference_type</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع المرجع: invoice, payment, payroll</td></tr>
+                    <tr><td><span class="field-name">reference_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>معرّف المستند المصدر</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: posted</td><td>الحالة: posted (مُرحّل)، draft (مسودة)</td></tr>
+                </table>
+            </div>
+
+            <!-- journal_lines -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">journal_lines</span>
+                    <span class="table-badge badge-core">محاسبة</span>
+                </div>
+                <p class="table-purpose">بنود القيد المحاسبي (أسطر القيد). كل قيد يتكون من بندين على الأقل: مدين ودائن. يحقق مبدأ القيد المزدوج حيث مجموع المدين = مجموع الدائن. كل بند مربوط بحساب من شجرة الحسابات.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف البند</td></tr>
+                    <tr><td><span class="field-name">journal_entry_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → journal_entries.id</span></td><td>القيد الأب</td></tr>
+                    <tr><td><span class="field-name">account_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → chart_of_accounts.id</span></td><td>الحساب المحاسبي</td></tr>
+                    <tr><td><span class="field-name">debit_amount</span></td><td><span class="field-type">decimal(14,2)</span></td><td>افتراضي: 0</td><td>المبلغ المدين</td></tr>
+                    <tr><td><span class="field-name">credit_amount</span></td><td><span class="field-type">decimal(14,2)</span></td><td>افتراضي: 0</td><td>المبلغ الدائن</td></tr>
+                </table>
+            </div>
+
+            <!-- accounting_periods -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">accounting_periods</span>
+                    <span class="table-badge badge-config">محاسبة</span>
+                </div>
+                <p class="table-purpose">الفترات المحاسبية (شهرية أو ربع سنوية). تُتحكم بإمكانية تسجيل قيود في تواريخ محددة. عند إغلاق فترة، لا يمكن تعديل القيود المُرحّلة فيها. أساسي لإعداد التقارير المالية الدورية.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الفترة</td></tr>
+                    <tr><td><span class="field-name">start_date</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>بداية الفترة</td></tr>
+                    <tr><td><span class="field-name">end_date</span></td><td><span class="field-type">date</span></td><td>مطلوب</td><td>نهاية الفترة</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: open</td><td>الحالة: open (مفتوحة)، closed (مغلقة)</td></tr>
+                </table>
+            </div>
+
+            <!-- invoices -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">invoices</span>
+                    <span class="table-badge badge-core">مالية</span>
+                </div>
+                <p class="table-purpose">الفواتير الصادرة للأعضاء. تُنشأ تلقائياً عند بيع اشتراك أو يدوياً لخدمات أخرى. تحتوي على المبلغ الإجمالي والحالة (غير مدفوعة/مدفوعة جزئياً/مدفوعة). مربوطة بالاشتراك المصدر (إن وجد) وبالفرع والعضو.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الفاتورة</td></tr>
+                    <tr><td><span class="field-name">created_by</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>الموظف الذي أصدر الفاتورة</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → members.id</span></td><td>العضو صاحب الفاتورة</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → branches.id</span></td><td>الفرع</td></tr>
+                    <tr><td><span class="field-name">player_subscription_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → player_subscriptions.id</span> nullable</td><td>الاشتراك المرتبط (إن وجد)</td></tr>
+                    <tr><td><span class="field-name">total</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>إجمالي مبلغ الفاتورة</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: unpaid</td><td>حالة السداد: unpaid, partial, paid</td></tr>
+                </table>
+            </div>
+
+            <!-- payments -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">payments</span>
+                    <span class="table-badge badge-core">مالية</span>
+                </div>
+                <p class="table-purpose">الدفعات الفعلية (السدادات). يفصل الدفعات عن الفواتير لدعم السداد الجزئي والدفع على أقساط. كل دفعة مربوطة بفاتورة وصندوق نقدي وطريقة دفع. تُولّد قيود محاسبية تلقائياً.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الدفعة</td></tr>
+                    <tr><td><span class="field-name">created_by</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>الموظف الذي سجّل الدفعة</td></tr>
+                    <tr><td><span class="field-name">invoice_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → invoices.id</span></td><td>الفاتورة المسدّدة</td></tr>
+                    <tr><td><span class="field-name">cash_register_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → cash_registers.id</span></td><td>الصندوق الذي وُضعت فيه الدفعة</td></tr>
+                    <tr><td><span class="field-name">amount</span></td><td><span class="field-type">decimal(12,2)</span></td><td>افتراضي: 0</td><td>مبلغ الدفعة</td></tr>
+                    <tr><td><span class="field-name">payment_method</span></td><td><span class="field-type">varchar(50)</span></td><td>مطلوب</td><td>طريقة الدفع: cash (نقد)، card (بطاقة)، transfer (تحويل)</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: completed</td><td>حالة الدفعة: completed, refunded, pending</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 9: Attendance -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec9">
+            <h2 class="module-title">🚪 9. الحضور والبوابات (Attendance & Access Control)</h2>
+            <p class="module-desc">
+                نظام الحضور والانصراف الشامل: الحضور العام (Polymorphic)، حضور الأعضاء والموظفين، سجلات QR، وأجهزة البوابات.
+                <strong>الوحدة المسؤولة:</strong> AttendanceManager
+            </p>
+
+            <!-- attendances (polymorphic) -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">attendances</span>
+                    <span class="table-badge badge-core">جدول متعدد الأشكال</span>
+                </div>
+                <p class="table-purpose">جدول الحضور العام (Polymorphic). يدعم تسجيل حضور أي نوع كيان (عضو أو موظف) عبر نمط Morph. يحتوي على وقت الدخول والخروج ومدة البقاء. يُستخدم لإنشاء تقارير موحدة للحضور عبر كل أنواع الكيانات. مفهرس بشكل مكثف لأداء التقارير.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الحضور</td></tr>
+                    <tr><td><span class="field-name">club_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>النادي</td></tr>
+                    <tr><td><span class="field-name">attendable_type</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>نوع الكيان الحاضر (Model class name)</td></tr>
+                    <tr><td><span class="field-name">attendable_id</span></td><td><span class="field-type">bigint</span></td><td>مطلوب</td><td>معرّف الكيان الحاضر</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>الفرع</td></tr>
+                    <tr><td><span class="field-name">check_in_at</span></td><td><span class="field-type">timestamp</span></td><td>مطلوب</td><td>وقت الدخول</td></tr>
+                    <tr><td><span class="field-name">check_out_at</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>وقت الخروج</td></tr>
+                    <tr><td><span class="field-name">duration_minutes</span></td><td><span class="field-type">integer</span></td><td><span class="field-nullable">nullable</span></td><td>مدة البقاء بالدقائق (يُحسب عند الخروج)</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: checked_in</td><td>الحالة: checked_in, checked_out</td></tr>
+                    <tr><td><span class="field-name">metadata</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>بيانات إضافية (طريقة الدخول، الجهاز المستخدم)</td></tr>
+                </table>
+            </div>
+
+            <!-- member_attendances -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">member_attendances</span>
+                    <span class="table-badge badge-log">سجل حضور</span>
+                </div>
+                <p class="table-purpose">سجل حضور الأعضاء المخصص. مشابه لـ <span class="field-name">attendances</span> لكن مخصص للأعضاء فقط مع حقول إضافية مثل المرفق والملاحظات. يُستخدم بالتوازي مع الجدول العام لدعم استعلامات أسرع خاصة بالأعضاء.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>العضو</td></tr>
+                    <tr><td><span class="field-name">facility_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span></td><td>المرفق</td></tr>
+                    <tr><td><span class="field-name">check_in</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>وقت الدخول</td></tr>
+                    <tr><td><span class="field-name">check_out</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>وقت الخروج</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(255)</span></td><td>افتراضي: present</td><td>الحالة</td></tr>
+                    <tr><td><span class="field-name">notes</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>ملاحظات</td></tr>
+                </table>
+            </div>
+
+            <!-- qr_access_logs -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">qr_access_logs</span>
+                    <span class="table-badge badge-log">سجل أمني</span>
+                </div>
+                <p class="table-purpose">سجل محاولات الدخول عبر QR. يُسجّل كل مسحة QR سواء كانت ناجحة أو فاشلة مع بصمة التوكن (token signature) لمنع إعادة الاستخدام (Replay Attack). مهم للأمان والتدقيق.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">member_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>العضو الذي حاول الدخول</td></tr>
+                    <tr><td><span class="field-name">token_signature</span></td><td><span class="field-type">varchar(255)</span></td><td>مفهرس</td><td>بصمة التوكن المُستخدم (Hash لمنع Replay)</td></tr>
+                    <tr><td><span class="field-name">used_at</span></td><td><span class="field-type">timestamp</span></td><td>مطلوب</td><td>وقت المحاولة</td></tr>
+                    <tr><td><span class="field-name">is_successful</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true</td><td>هل نجحت المحاولة؟</td></tr>
+                    <tr><td><span class="field-name">failure_reason</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>سبب الفشل (اشتراك منتهي، توكن مستخدم سابقاً)</td></tr>
+                </table>
+            </div>
+
+            <!-- gate_devices -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">gate_devices</span>
+                    <span class="table-badge badge-config">أجهزة</span>
+                </div>
+                <p class="table-purpose">أجهزة البوابات الإلكترونية المُركّبة في الفروع. كل جهاز له اسم وعنوان MAC وتوكن API فريد للمصادقة. يمكن تعطيل أو تفعيل كل جهاز بشكل مستقل. يُستخدم للتحقق من أن طلبات الحضور قادمة من أجهزة مُعتمدة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الجهاز</td></tr>
+                    <tr><td><span class="field-name">club_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>النادي</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td>مفهرس</td><td>الفرع</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>اسم الجهاز (بوابة الدخول الرئيسية)</td></tr>
+                    <tr><td><span class="field-name">mac_address</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>عنوان MAC للجهاز</td></tr>
+                    <tr><td><span class="field-name">api_token</span></td><td><span class="field-type">varchar(80)</span></td><td><span class="field-unique">🔒 UNIQUE</span> nullable</td><td>توكن API فريد لمصادقة الجهاز</td></tr>
+                    <tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true</td><td>هل الجهاز مُفعّل؟</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 10: CRM -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec10">
+            <h2 class="module-title">📞 10. إدارة العلاقات (CRM)</h2>
+            <p class="module-desc">
+                نظام إدارة العملاء المحتملين (Leads) ومتابعة التواصل معهم حتى تحويلهم لأعضاء.
+                <strong>الوحدة المسؤولة:</strong> CRM (Global)
+            </p>
+
+            <!-- leads -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">leads</span>
+                    <span class="table-badge badge-core">CRM</span>
+                </div>
+                <p class="table-purpose">العملاء المحتملون (Leads). أي شخص أبدى اهتماماً بالنادي لكنه لم يشترك بعد. يحتوي على بياناته الأساسية ومصدر الاستفسار وحالته في خط الأنابيب (Pipeline) والموظف المكلف بمتابعته. يُتحوّل إلى عضو عند الاشتراك.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف العميل المحتمل</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → branches.id</span></td><td>الفرع المهتم به</td></tr>
+                    <tr><td><span class="field-name">full_name</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>اسم العميل المحتمل</td></tr>
+                    <tr><td><span class="field-name">phone</span></td><td><span class="field-type">varchar(20)</span></td><td><span class="field-nullable">nullable</span></td><td>رقم الهاتف</td></tr>
+                    <tr><td><span class="field-name">email</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>البريد الإلكتروني</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: new</td><td>الحالة: new (جديد)، contacted (تم التواصل)، qualified (مؤهل)، converted (تم التحويل)، lost (خسارة)</td></tr>
+                    <tr><td><span class="field-name">source</span></td><td><span class="field-type">varchar(100)</span></td><td><span class="field-nullable">nullable</span></td><td>مصدر العميل: instagram, walk_in, referral, google</td></tr>
+                    <tr><td><span class="field-name">assigned_to_user_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → authentication_users.id</span> nullable</td><td>الموظف المكلف بالمتابعة</td></tr>
+                    <tr><td><span class="field-name">pipeline_stage</span></td><td><span class="field-type">varchar(50)</span></td><td><span class="field-nullable">nullable</span></td><td>المرحلة في خط الأنابيب</td></tr>
+                </table>
+            </div>
+
+            <!-- lead_interactions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">lead_interactions</span>
+                    <span class="table-badge badge-log">سجل تواصل</span>
+                </div>
+                <p class="table-purpose">سجل التفاعلات والتواصل مع العملاء المحتملين. كل مكالمة أو رسالة أو زيارة تُسجّل هنا مع ملاحظات وموعد المتابعة القادم. يُساعد في تتبع جودة المتابعة وأداء فريق المبيعات.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف التفاعل</td></tr>
+                    <tr><td><span class="field-name">lead_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → leads.id</span></td><td>العميل المحتمل</td></tr>
+                    <tr><td><span class="field-name">user_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-fk">🔗 FK → authentication_users.id</span> nullable</td><td>الموظف الذي قام بالتفاعل</td></tr>
+                    <tr><td><span class="field-name">interaction_type</span></td><td><span class="field-type">varchar(50)</span></td><td>مطلوب</td><td>نوع التفاعل: call (مكالمة)، sms (رسالة)، visit (زيارة)، whatsapp</td></tr>
+                    <tr><td><span class="field-name">notes</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>ملاحظات عن التفاعل</td></tr>
+                    <tr><td><span class="field-name">next_follow_up</span></td><td><span class="field-type">datetime</span></td><td><span class="field-nullable">nullable</span></td><td>موعد المتابعة القادمة</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 11: Notifications -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec11">
+            <h2 class="module-title">🔔 11. الإشعارات (Notifications)</h2>
+            <p class="module-desc">
+                نظام الإشعارات: قوالب الرسائل وسجل الإرسال عبر قنوات متعددة (SMS، بريد، واتساب، إشعارات فورية).
+                <strong>الوحدة المسؤولة:</strong> NotificationManager
+            </p>
+
+            <!-- notification_templates -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">notification_templates</span>
+                    <span class="table-badge badge-config">قوالب</span>
+                </div>
+                <p class="table-purpose">قوالب الرسائل المُعدّة مسبقاً. كل قالب له معرّف نصي فريد (slug) ومحتوى متعدد اللغات وقناة إرسال محددة. يدعم المتغيرات الديناميكية ({member_name}, {end_date}) التي تُستبدل عند الإرسال. يمكن تفعيل/تعطيل كل قالب.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف القالب</td></tr>
+                    <tr><td><span class="field-name">slug</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-unique">🔒 UNIQUE</span></td><td>معرّف نصي فريد (subscription_expiry, welcome_message)</td></tr>
+                    <tr><td><span class="field-name">subject</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>عنوان الرسالة (متعدد اللغات، للبريد الإلكتروني)</td></tr>
+                    <tr><td><span class="field-name">content</span></td><td><span class="field-type">json</span></td><td>مطلوب</td><td>محتوى الرسالة (متعدد اللغات مع متغيرات ديناميكية)</td></tr>
+                    <tr><td><span class="field-name">channel</span></td><td><span class="field-type">enum</span></td><td>افتراضي: sms</td><td>قناة الإرسال: sms, email, whatsapp, push</td></tr>
+                    <tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td>افتراضي: true</td><td>هل القالب مُفعّل للإرسال؟</td></tr>
+                </table>
+            </div>
+
+            <!-- notification_logs -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">notification_logs</span>
+                    <span class="table-badge badge-log">سجل إرسال</span>
+                </div>
+                <p class="table-purpose">سجل جميع الإشعارات المُرسلة مع حالة كل إشعار (معلق/مُرسل/فشل). يدعم المستقبلين من أنواع مختلفة (Polymorphic) ويحتفظ بنسخة من المحتوى المُرسل فعلياً ورسالة الخطأ في حالة الفشل. أساسي لتتبع كفاءة نظام الإشعارات.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">recipient_id</span></td><td><span class="field-type">bigint</span></td><td>مطلوب</td><td>معرّف المستقبل</td></tr>
+                    <tr><td><span class="field-name">recipient_type</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>نوع المستقبل (Member, Staff, Lead)</td></tr>
+                    <tr><td><span class="field-name">channel</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>قناة الإرسال المستخدمة</td></tr>
+                    <tr><td><span class="field-name">subject</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>عنوان الرسالة المُرسلة</td></tr>
+                    <tr><td><span class="field-name">content</span></td><td><span class="field-type">text</span></td><td>مطلوب</td><td>المحتوى الفعلي الذي تم إرساله</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">enum</span></td><td>افتراضي: pending</td><td>الحالة: pending (معلق)، sent (مُرسل)، failed (فشل)</td></tr>
+                    <tr><td><span class="field-name">error_message</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>رسالة الخطأ في حالة الفشل</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 12: Permissions -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec12">
+            <h2 class="module-title">🔐 12. الصلاحيات والأدوار (Permissions & Roles)</h2>
+            <p class="module-desc">
+                نظام الصلاحيات المبني على حزمة Spatie Permission. يدعم الأدوار (Roles) والصلاحيات (Permissions) مع إمكانية تعيينها لأي نوع من المستخدمين (Polymorphic). يدعم نظام الفرق (Teams) للفصل بين صلاحيات الأندية المختلفة.
+            </p>
+
+            <!-- permissions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">permissions</span>
+                    <span class="table-badge badge-core">صلاحيات</span>
+                </div>
+                <p class="table-purpose">قائمة الصلاحيات المتاحة في النظام (مثل: create_member, delete_invoice, view_reports). كل صلاحية مربوطة بـ guard_name لدعم أنظمة مصادقة متعددة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الصلاحية</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">varchar(255)</span></td><td>UNIQUE(name, guard)</td><td>اسم الصلاحية (create_member)</td></tr>
+                    <tr><td><span class="field-name">guard_name</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>اسم الحارس (web, api)</td></tr>
+                </table>
+            </div>
+
+            <!-- roles -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">roles</span>
+                    <span class="table-badge badge-core">أدوار</span>
+                </div>
+                <p class="table-purpose">الأدوار (مثل: super_admin, branch_manager, receptionist). كل دور يمثل مجموعة من الصلاحيات. يدعم نظام الفرق (team_foreign_key) للفصل بين أدوار الأندية المختلفة.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الدور</td></tr>
+                    <tr><td><span class="field-name">team_foreign_key</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>معرّف الفريق/النادي (لدعم Multi-tenancy)</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>اسم الدور</td></tr>
+                    <tr><td><span class="field-name">guard_name</span></td><td><span class="field-type">varchar(255)</span></td><td>مطلوب</td><td>اسم الحارس</td></tr>
+                </table>
+            </div>
+
+            <!-- model_has_permissions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">model_has_permissions</span>
+                    <span class="table-badge badge-pivot">Pivot</span>
+                </div>
+                <p class="table-purpose">يربط الصلاحيات مباشرة بالمستخدمين (بدون دور وسيط). يدعم Polymorphic لتعيين صلاحيات لأي نوع Model.</p>
+            </div>
+
+            <!-- model_has_roles -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">model_has_roles</span>
+                    <span class="table-badge badge-pivot">Pivot</span>
+                </div>
+                <p class="table-purpose">يربط الأدوار بالمستخدمين. يُعيّن دور واحد أو أكثر لكل مستخدم. يدعم Polymorphic ونظام الفرق.</p>
+            </div>
+
+            <!-- role_has_permissions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">role_has_permissions</span>
+                    <span class="table-badge badge-pivot">Pivot</span>
+                </div>
+                <p class="table-purpose">يربط الصلاحيات بالأدوار. يُحدد أي صلاحيات يمتلكها كل دور. عند تعيين دور لمستخدم، يحصل تلقائياً على جميع صلاحيات هذا الدور.</p>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 13: Technical Infrastructure -->
+        <!-- ============================================================ -->
+        <div class="module-card" id="sec13">
+            <h2 class="module-title">⚙️ 13. البنية التحتية التقنية (Technical Infrastructure)</h2>
+            <p class="module-desc">
+                جداول إطار العمل Laravel والحزم المساعدة: جلسات المستخدمين، ذاكرة التخزين المؤقت، قائمة المهام، سجل النشاط، أحداث النطاق، والتوكنات.
+            </p>
+
+            <!-- domain_events -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">domain_events</span>
+                    <span class="table-badge badge-core">Core</span>
+                </div>
+                <p class="table-purpose">أحداث النطاق (Domain Events). نمط Event Sourcing مبسط لتسجيل الأحداث المهمة في النظام (مثل: member_created, subscription_expired). يحتوي على نوع الحدث والكيان المرتبط به وبيانات إضافية (payload) وحالة المعالجة. يُستخدم للتكامل بين الوحدات بشكل فضفاض (Loose Coupling).</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الحدث</td></tr>
+                    <tr><td><span class="field-name">event_type</span></td><td><span class="field-type">varchar(100)</span></td><td>مطلوب</td><td>نوع الحدث (member_created)</td></tr>
+                    <tr><td><span class="field-name">aggregate_type</span></td><td><span class="field-type">varchar(100)</span></td><td>مطلوب</td><td>نوع الكيان (Member, Subscription)</td></tr>
+                    <tr><td><span class="field-name">aggregate_id</span></td><td><span class="field-type">bigint</span></td><td>مطلوب</td><td>معرّف الكيان</td></tr>
+                    <tr><td><span class="field-name">payload</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>بيانات الحدث الإضافية</td></tr>
+                    <tr><td><span class="field-name">status</span></td><td><span class="field-type">varchar(50)</span></td><td>افتراضي: pending</td><td>حالة المعالجة: pending, processed, failed</td></tr>
+                </table>
+            </div>
+
+            <!-- activity_log -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">activity_log</span>
+                    <span class="table-badge badge-log">سجل نشاط</span>
+                </div>
+                <p class="table-purpose">سجل النشاط التفصيلي (Audit Log) من حزمة Spatie Activity Log. يُسجّل تلقائياً كل عملية إنشاء وتعديل وحذف على النماذج المُراقبة. يحتفظ بالقيم القديمة والجديدة، والمستخدم المسؤول، والفرع. أساسي للتدقيق والرقابة الأمنية.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف السجل</td></tr>
+                    <tr><td><span class="field-name">log_name</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>اسم السجل (default, auth, finance)</td></tr>
+                    <tr><td><span class="field-name">description</span></td><td><span class="field-type">text</span></td><td>مطلوب</td><td>وصف العملية</td></tr>
+                    <tr><td><span class="field-name">subject_type / subject_id</span></td><td><span class="field-type">morph</span></td><td><span class="field-nullable">nullable</span></td><td>الكيان الذي تمت عليه العملية (Polymorphic)</td></tr>
+                    <tr><td><span class="field-name">event</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-nullable">nullable</span></td><td>نوع الحدث: created, updated, deleted</td></tr>
+                    <tr><td><span class="field-name">causer_type / causer_id</span></td><td><span class="field-type">morph</span></td><td><span class="field-nullable">nullable</span></td><td>المستخدم الذي قام بالعملية (Polymorphic)</td></tr>
+                    <tr><td><span class="field-name">properties</span></td><td><span class="field-type">json</span></td><td><span class="field-nullable">nullable</span></td><td>القيم القديمة والجديدة: {"old": {...}, "attributes": {...}}</td></tr>
+                    <tr><td><span class="field-name">batch_uuid</span></td><td><span class="field-type">uuid</span></td><td><span class="field-nullable">nullable</span></td><td>معرّف الدفعة — لتجميع عدة سجلات مرتبطة بعملية واحدة</td></tr>
+                    <tr><td><span class="field-name">branch_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>الفرع الذي حدثت فيه العملية</td></tr>
+                    <tr><td><span class="field-name">user_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>المستخدم المسؤول</td></tr>
+                </table>
+            </div>
+
+            <!-- personal_access_tokens -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">personal_access_tokens</span>
+                    <span class="table-badge badge-framework">Laravel Sanctum</span>
+                </div>
+                <p class="table-purpose">توكنات الوصول الشخصية من حزمة Laravel Sanctum. تُستخدم لمصادقة API. كل توكن مربوط بمستخدم (Polymorphic) وله صلاحيات (abilities) محددة وتاريخ انتهاء اختياري.</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف التوكن</td></tr>
+                    <tr><td><span class="field-name">tokenable_type / tokenable_id</span></td><td><span class="field-type">morph</span></td><td>مطلوب</td><td>المستخدم صاحب التوكن (Polymorphic)</td></tr>
+                    <tr><td><span class="field-name">name</span></td><td><span class="field-type">text</span></td><td>مطلوب</td><td>اسم التوكن (mobile_app, gate_device)</td></tr>
+                    <tr><td><span class="field-name">token</span></td><td><span class="field-type">varchar(64)</span></td><td><span class="field-unique">🔒 UNIQUE</span></td><td>قيمة التوكن المشفرة (SHA-256)</td></tr>
+                    <tr><td><span class="field-name">abilities</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>الصلاحيات: ["*"] أو ["read", "create"]</td></tr>
+                    <tr><td><span class="field-name">last_used_at</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span></td><td>آخر استخدام</td></tr>
+                    <tr><td><span class="field-name">expires_at</span></td><td><span class="field-type">timestamp</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>تاريخ الانتهاء</td></tr>
+                </table>
+            </div>
+
+            <!-- sessions -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">sessions</span>
+                    <span class="table-badge badge-framework">Laravel</span>
+                </div>
+                <p class="table-purpose">جلسات المستخدمين المُخزّنة في قاعدة البيانات. تسمح بمعرفة المستخدمين المتصلين حالياً وعناوين IP الخاصة بهم ومتصفحاتهم. تُستخدم لميزة "تسجيل الخروج من كل الأجهزة".</p>
+                <table>
+                    <tr><th>الحقل</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+                    <tr><td><span class="field-name">id</span></td><td><span class="field-type">varchar(255)</span></td><td><span class="field-pk">🔑 PK</span></td><td>معرّف الجلسة (نصي)</td></tr>
+                    <tr><td><span class="field-name">user_id</span></td><td><span class="field-type">bigint</span></td><td><span class="field-nullable">nullable</span>، مفهرس</td><td>المستخدم (null للزوار)</td></tr>
+                    <tr><td><span class="field-name">ip_address</span></td><td><span class="field-type">varchar(45)</span></td><td><span class="field-nullable">nullable</span></td><td>عنوان IP</td></tr>
+                    <tr><td><span class="field-name">user_agent</span></td><td><span class="field-type">text</span></td><td><span class="field-nullable">nullable</span></td><td>معلومات المتصفح</td></tr>
+                    <tr><td><span class="field-name">payload</span></td><td><span class="field-type">longText</span></td><td>مطلوب</td><td>بيانات الجلسة المشفرة</td></tr>
+                    <tr><td><span class="field-name">last_activity</span></td><td><span class="field-type">integer</span></td><td>مفهرس</td><td>وقت آخر نشاط (UNIX Timestamp)</td></tr>
+                </table>
+            </div>
+
+            <!-- users -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">users</span>
+                    <span class="table-badge badge-framework">Laravel Default</span>
+                </div>
+                <p class="table-purpose">جدول المستخدمين الافتراضي من Laravel. موجود لأغراض التوافقية مع حزم Laravel الأساسية. النظام يعتمد بشكل أساسي على <span class="field-name">authentication_users</span> + <span class="field-name">people</span> بدلاً من هذا الجدول.</p>
+            </div>
+
+            <!-- password_reset_tokens -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">password_reset_tokens</span>
+                    <span class="table-badge badge-framework">Laravel</span>
+                </div>
+                <p class="table-purpose">توكنات إعادة تعيين كلمة المرور. تُنشأ عند طلب "نسيت كلمة المرور" وتنتهي صلاحيتها بعد فترة محددة. المفتاح الأساسي هو البريد الإلكتروني.</p>
+            </div>
+
+            <!-- cache + cache_locks -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">cache</span> &amp; <span class="table-name">cache_locks</span>
+                    <span class="table-badge badge-framework">Laravel</span>
+                </div>
+                <p class="table-purpose">ذاكرة التخزين المؤقت (Cache) وأقفال العمليات (Locks). تُستخدم لتسريع الاستعلامات المتكررة ومنع التنفيذ المتوازي للعمليات الحساسة (مثل: منع تسجيل دفعة مكررة). كل سجل له مفتاح فريد وقيمة ووقت انتهاء.</p>
+            </div>
+
+            <!-- jobs + job_batches + failed_jobs -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-name">jobs</span> &amp; <span class="table-name">job_batches</span> &amp; <span class="table-name">failed_jobs</span>
+                    <span class="table-badge badge-framework">Laravel Queue</span>
+                </div>
+                <p class="table-purpose">نظام قوائم الانتظار (Queue System) من Laravel. يُستخدم لتنفيذ المهام الثقيلة في الخلفية (إرسال إشعارات جماعية، حساب الرواتب، تحديث حالات الاشتراكات المنتهية). <span class="field-name">jobs</span> يحتوي المهام المنتظرة، <span class="field-name">job_batches</span> يُجمّع المهام المرتبطة، و<span class="field-name">failed_jobs</span> يحتفظ بالمهام الفاشلة لإعادة المحاولة.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>📄 تقرير قاعدة البيانات الشامل — نظام إدارة الأندية الرياضية (Club-SaaS)</p>
+            <p>تم إنشاؤه تلقائياً بناءً على ملفات الـ Migrations الفعلية في المشروع</p>
+            <p>الإصدار: 2.0 — التاريخ: يونيو 2026</p>
+        </footer>
+
+    </div>
+</body>
+</html>

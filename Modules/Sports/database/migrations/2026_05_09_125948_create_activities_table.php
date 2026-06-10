@@ -19,9 +19,9 @@ return new class extends Migration
             $table->boolean('is_private_equipment')->default(false);
             $table->string('gender_allowed')->default('mixed'); // male, female, mixed
             $table->boolean('is_active')->default(true);
+            $table->integer('exercises_count')->default(0);
+            $table->integer('estimated_calories')->default(0);
             $table->timestamps();
-
-
         });
     }
 

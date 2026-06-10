@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('blood_type')->nullable();
             $table->json('medical_conditions')->nullable();
             $table->json('emergency_contact')->nullable();
+            $table->json('preferences')->nullable();
             $table->timestamps();
         });
 

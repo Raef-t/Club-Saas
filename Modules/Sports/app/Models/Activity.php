@@ -21,6 +21,8 @@ class Activity extends Model
         'is_private_equipment',
         'gender_allowed',
         'is_active',
+        'exercises_count',
+        'estimated_calories',
     ];
 
     /**
