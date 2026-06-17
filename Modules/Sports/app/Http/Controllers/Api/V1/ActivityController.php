@@ -15,13 +15,23 @@ class ActivityController extends BaseController
 {
     #[OA\Get(
         path: '/v1/activities',
-        summary: '🏋️ List all activities',
+        summary: '🏋️ عرض جميع الأنشطة الرياضية',
+        description: 'استرجاع قائمة بجميع الأنشطة (مثال: سباحة، حديد، يوجا).',
         tags: ['Sports & Activities'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الأنشطة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activities retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
         $query = Activity::query();
@@ -41,13 +51,36 @@ class ActivityController extends BaseController
 
     #[OA\Post(
         path: '/v1/activities',
-        summary: '➕ Create a new activity',
+        summary: '➕ إضافة نشاط رياضي',
+        description: 'إنشاء نشاط رياضي جديد.',
         tags: ['Sports & Activities'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 201, description: 'Activity created')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['name_en', 'name_ar', 'type', 'gender_allowed'],
+            properties: [
+                new OA\Property(property: 'name_en', type: 'string', example: 'Swimming'),
+                new OA\Property(property: 'name_ar', type: 'string', example: 'سباحة'),
+                new OA\Property(property: 'type', type: 'string', example: 'Group'),
+                new OA\Property(property: 'gender_allowed', type: 'string', example: 'mixed')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم إنشاء النشاط بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity created successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreActivityRequest $request)
     {
         $data = $request->validated();
@@ -58,13 +91,25 @@ class ActivityController extends BaseController
 
     #[OA\Get(
         path: '/v1/activities/{id}',
-        summary: '🔍 Get activity details',
+        summary: '🔍 تفاصيل النشاط',
+        description: 'استرجاع تفاصيل نشاط رياضي محدد.',
         tags: ['Sports & Activities'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تفاصيل النشاط',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show(int $id)
     {
         $activity = Activity::findOrFail($id);
@@ -73,13 +118,34 @@ class ActivityController extends BaseController
 
     #[OA\Put(
         path: '/v1/activities/{id}',
-        summary: '✏️ Update an activity',
+        summary: '✏️ تعديل النشاط',
+        description: 'تحديث بيانات نشاط رياضي مسجل.',
         tags: ['Sports & Activities'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Activity updated')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'name_en', type: 'string', example: 'Advanced Swimming')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم التعديل بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdateActivityRequest $request, int $id)
     {
         $data = $request->validated();
@@ -91,13 +157,25 @@ class ActivityController extends BaseController
 
     #[OA\Delete(
         path: '/v1/activities/{id}',
-        summary: '🗑 Delete an activity',
+        summary: '🗑️ حذف النشاط',
+        description: 'إزالة نشاط رياضي من النظام.',
         tags: ['Sports & Activities'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Activity deleted')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الحذف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id)
     {
         $activity = Activity::findOrFail($id);

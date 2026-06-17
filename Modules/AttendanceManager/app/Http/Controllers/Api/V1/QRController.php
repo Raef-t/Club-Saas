@@ -12,6 +12,7 @@ use Modules\AttendanceManager\DTOs\CheckInAttempt;
 use Modules\AttendanceManager\DTOs\CheckOutAttempt;
 use Modules\AttendanceManager\Http\Requests\QRCheckInRequest;
 use Modules\AttendanceManager\Http\Requests\QRCheckOutRequest;
+use OpenApi\Attributes as OA;
 
 class QRController extends BaseController
 {
@@ -20,6 +21,29 @@ class QRController extends BaseController
         protected AttendanceRecorder $attendanceRecorder
     ) {}
 
+    #[OA\Post(
+        path: '/v1/qr/generate',
+        summary: 'توليد رمز QR الخاص بالعضو',
+        description: 'توليد رمز QR فريد وصالح لمدة قصيرة (30 ثانية) ليستخدمه العضو في تسجيل الدخول عبر البوابة.',
+        tags: ['Member App', 'QR Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم توليد الرمز بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'QR code generated successfully.'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'),
+                    new OA\Property(property: 'expires_in_seconds', type: 'integer', example: 30)
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 403, description: '🚫 غير مصرح أو نوع المستخدم غير صالح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Unauthorized or invalid user type.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function generate(Request $request)
     {
         // For security, only the authenticated member can generate their own QR
@@ -37,10 +61,34 @@ class QRController extends BaseController
         ], 'QR code generated successfully.');
     }
 
-    /**
-     * Show QR screen data for the authenticated member.
-     * Returns member info, QR code value, remaining sessions, check-in status.
-     */
+    #[OA\Get(
+        path: '/v1/qr/screen',
+        summary: '📱 عرض شاشة الـ QR',
+        description: 'استرجاع البيانات اللازمة لعرض شاشة مسح QR في تطبيق العضو (الاسم، الباقة، الصورة، رمز الـ QR، الرصيد، حالة الدخول).',
+        tags: ['Member App', 'QR Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع البيانات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'QR data retrieved successfully.'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'member_name', type: 'string', example: 'أحمد محمود'),
+                    new OA\Property(property: 'plan_name', type: 'string', example: 'باقة شهرية'),
+                    new OA\Property(property: 'avatar_url', type: 'string', nullable: true, example: 'https://example.com/avatar.jpg'),
+                    new OA\Property(property: 'qr_code_value', type: 'string', example: 'eyJ0eXAi...'),
+                    new OA\Property(property: 'expires_in_seconds', type: 'integer', example: 30),
+                    new OA\Property(property: 'remaining_sessions', type: 'integer', example: 12),
+                    new OA\Property(property: 'is_inside_facility', type: 'boolean', example: false)
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 403, description: '🚫 الملف الشخصي للعضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show(Request $request)
     {
         $user = $request->user();
@@ -91,6 +139,39 @@ class QRController extends BaseController
         ], __('QR data retrieved successfully.'));
     }
 
+    #[OA\Post(
+        path: '/v1/qr/check-in',
+        summary: '✅ تسجيل الدخول عبر مسح QR',
+        description: 'معالجة تسجيل الدخول (Check-In) باستخدام رمز QR من تطبيق الهاتف أو الموظف.',
+        tags: ['QR Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['qr_token', 'club_id', 'branch_id'],
+            properties: [
+                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAi...'),
+                new OA\Property(property: 'club_id', type: 'integer', example: 1),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الدخول بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Check-in successful.'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '⚠️ خطأ في الرمز أو المعالجة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Invalid token.')]))]
+    #[OA\Response(response: 403, description: '🚫 محظور (الدخول مرفوض)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Membership expired.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function checkIn(QRCheckInRequest $request)
     {
         $validated = $request->validated();
@@ -120,6 +201,41 @@ class QRController extends BaseController
         }
     }
 
+    #[OA\Post(
+        path: '/v1/qr/check-out',
+        summary: '🚪 تسجيل الانصراف عبر مسح QR',
+        description: 'معالجة تسجيل الانصراف (Check-Out) باستخدام رمز QR.',
+        tags: ['QR Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['qr_token', 'club_id', 'branch_id'],
+            properties: [
+                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAi...'),
+                new OA\Property(property: 'club_id', type: 'integer', example: 1),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الانصراف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Check-out successful.'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'duration_minutes', type: 'integer', example: 120)
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '⚠️ خطأ في الرمز أو المعالجة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Invalid token.')]))]
+    #[OA\Response(response: 404, description: '🚫 لا يوجد تسجيل دخول نشط', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'No active check-in found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function checkOut(QRCheckOutRequest $request)
     {
         $validated = $request->validated();

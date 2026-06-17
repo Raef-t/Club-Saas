@@ -21,11 +21,23 @@ class FacilityController extends BaseController
 
     #[OA\Get(
         path: '/v1/facilities',
-        summary: '🏊 List all facilities',
+        summary: '🏊 عرض جميع المرافق',
+        description: 'استرجاع قائمة بجميع المرافق (كالمسابح، الملاعب، الصالات الرياضية) المتاحة في النظام.',
         tags: ['Facility Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ List of facilities')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع المرافق بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Facilities retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index()
     {
         $facilities = $this->facilityService->getAllFacilities();
@@ -34,13 +46,34 @@ class FacilityController extends BaseController
 
     #[OA\Post(
         path: '/v1/facilities',
-        summary: '➕ Create a new facility',
+        summary: '➕ إضافة مرفق جديد',
+        description: 'إنشاء مرفق جديد داخل أحد فروع النادي.',
         tags: ['Facility Management'],
-        security: [['bearerAuth' => []]],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/StoreFacilityRequest'))
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 201, description: '✅ Facility created')]
-    #[OA\Response(response: 422, description: '❌ Validation error')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['name', 'branch_id'],
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'المسبح الأولمبي'),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم إنشاء المرفق بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Facility created successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreFacilityRequest $request)
     {
         $facility = $this->facilityService->createFacility($request->validated());
@@ -49,12 +82,25 @@ class FacilityController extends BaseController
 
     #[OA\Get(
         path: '/v1/facilities/{id}',
-        summary: '🔍 Get facility details',
+        summary: '🔍 تفاصيل المرفق',
+        description: 'استرجاع جميع تفاصيل مرفق معين.',
         tags: ['Facility Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Facility details')]
-    #[OA\Response(response: 404, description: '❌ Facility not found')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تفاصيل المرفق',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Facility details retrieved'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على المرفق', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Facility not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
         $facility = $this->facilityService->getFacilityById($id);
@@ -63,12 +109,34 @@ class FacilityController extends BaseController
 
     #[OA\Put(
         path: '/v1/facilities/{id}',
-        summary: '📝 Update facility',
+        summary: '📝 تعديل المرفق',
+        description: 'تحديث بيانات مرفق موجود مسبقًا.',
         tags: ['Facility Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Facility updated')]
-    #[OA\Response(response: 404, description: '❌ Facility not found')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'المسبح الرئيسي')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث المرفق بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Facility updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على المرفق', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Facility not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdateFacilityRequest $request, $id)
     {
         $facility = $this->facilityService->updateFacility($id, $request->validated());
@@ -77,12 +145,25 @@ class FacilityController extends BaseController
 
     #[OA\Delete(
         path: '/v1/facilities/{id}',
-        summary: '🗑️ Delete facility',
+        summary: '🗑️ حذف المرفق',
+        description: 'حذف مرفق بالكامل من النظام.',
         tags: ['Facility Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Facility deleted')]
-    #[OA\Response(response: 404, description: '❌ Facility not found')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف المرفق بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Facility deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على المرفق', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Facility not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
         $this->facilityService->deleteFacility($id);
@@ -91,11 +172,25 @@ class FacilityController extends BaseController
 
     #[OA\Patch(
         path: '/v1/facilities/{id}/toggle-status',
-        summary: '🔄 Toggle facility active status',
+        summary: '🔄 تفعيل / تعطيل المرفق',
+        description: 'تغيير حالة المرفق ليصبح متاحاً أو غير متاح.',
         tags: ['Facility Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Facility status updated')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث حالة المرفق',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Facility status updated'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على المرفق', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Facility not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function toggleStatus($id)
     {
         $facility = $this->facilityService->toggleStatus($id);

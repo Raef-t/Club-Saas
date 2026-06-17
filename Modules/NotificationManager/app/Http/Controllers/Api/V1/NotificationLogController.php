@@ -13,13 +13,25 @@ class NotificationLogController extends BaseController
 {
     #[OA\Get(
         path: '/v1/notification-logs',
-        summary: '📜 View notification history',
+        summary: '📜 عرض سجل الإشعارات',
+        description: 'استرجاع جميع الإشعارات المرسلة مع إمكانية الفلترة.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'channel', in: 'query', required: false, description: 'قناة الإرسال (مثال: email, sms)', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'حالة الإشعار (مثال: sent, failed)', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع السجل بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Logs retrieved'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
         $logs = NotificationLog::orderBy('created_at', 'desc')
@@ -32,13 +44,25 @@ class NotificationLogController extends BaseController
 
     #[OA\Get(
         path: '/v1/notification-logs/{id}',
-        summary: '🔍 View single log detail',
+        summary: '🔍 تفاصيل الإشعار',
+        description: 'استرجاع تفاصيل سجل إشعار محدد.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف السجل', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تفاصيل الإشعار',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Log retrieved'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 السجل غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
         $log = NotificationLog::findOrFail($id);
@@ -47,13 +71,25 @@ class NotificationLogController extends BaseController
 
     #[OA\Delete(
         path: '/v1/notification-logs/{id}',
-        summary: '🗑 Delete a log entry',
+        summary: '🗑️ حذف إشعار',
+        description: 'حذف سجل إشعار من النظام.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Log deleted')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف السجل', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الحذف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Log deleted'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 السجل غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
         $log = NotificationLog::findOrFail($id);
@@ -63,13 +99,23 @@ class NotificationLogController extends BaseController
 
     #[OA\Get(
         path: '/v1/notification-stats',
-        summary: '📊 Notification delivery statistics',
+        summary: '📊 إحصائيات الإشعارات',
+        description: 'عرض إحصائيات مفصلة عن حالة تسليم الإشعارات.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ الإحصائيات المسترجعة',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Stats retrieved'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function stats()
     {
         $stats = NotificationLog::selectRaw('status, count(*) as count')
@@ -84,13 +130,28 @@ class NotificationLogController extends BaseController
      */
     #[OA\Get(
         path: '/v1/my-notifications',
-        summary: '🔔 List authenticated member\'s notifications',
+        summary: '🔔 إشعاراتي',
+        description: 'استرجاع قائمة الإشعارات الخاصة بالعضو المسجل للدخول.',
         tags: ['Member Notifications'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Notifications retrieved')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الإشعارات',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Notifications retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
+                    new OA\Property(property: 'pagination', type: 'object')
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 403, description: '🚫 الملف الشخصي للعضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function myNotifications(Request $request)
     {
         $user = $request->user();
@@ -123,13 +184,26 @@ class NotificationLogController extends BaseController
      */
     #[OA\Post(
         path: '/v1/my-notifications/{id}/read',
-        summary: '✅ Mark notification as read',
+        summary: '✅ تحديد إشعار كمقروء',
+        description: 'تغيير حالة إشعار معين إلى مقروء.',
         tags: ['Member Notifications'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Notification marked as read')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الإشعار', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم التحديد كمقروء',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Notification marked as read'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الإشعار غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Notification not found.')]))]
+    #[OA\Response(response: 403, description: '🚫 الملف الشخصي للعضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function markAsRead(Request $request, $id)
     {
         $user = $request->user();
@@ -158,13 +232,24 @@ class NotificationLogController extends BaseController
      */
     #[OA\Post(
         path: '/v1/my-notifications/read-all',
-        summary: '✅ Mark all notifications as read',
+        summary: '✅ تحديد كل الإشعارات كمقروءة',
+        description: 'تغيير حالة جميع إشعارات العضو إلى مقروءة.',
         tags: ['Member Notifications'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'All notifications marked as read')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم التحديد بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'All notifications marked as read'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 403, description: '🚫 الملف الشخصي للعضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function markAllAsRead(Request $request)
     {
         $user = $request->user();

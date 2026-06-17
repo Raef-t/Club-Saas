@@ -12,6 +12,28 @@ class MePreferencesController extends BaseController
     /**
      * Get current preferences.
      */
+    #[OA\Get(
+        path: '/v1/me/preferences',
+        summary: '⚙️ عرض التفضيلات الشخصية',
+        description: 'استرجاع التفضيلات الحالية للمستخدم (مثل: لغة العرض، والإشعارات).',
+        tags: ['Member App'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع التفضيلات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Preferences retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'language', type: 'string', example: 'ar'),
+                    new OA\Property(property: 'notifications_enabled', type: 'boolean', example: true)
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show(Request $request)
     {
         $user = $request->user();
@@ -26,6 +48,36 @@ class MePreferencesController extends BaseController
     /**
      * Update member preferences (language, notifications).
      */
+    #[OA\Put(
+        path: '/v1/me/preferences',
+        summary: '✏️ تحديث التفضيلات',
+        description: 'تعديل تفضيلات المستخدم الخاصة بالتطبيق.',
+        tags: ['Member App'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'language', type: 'string', example: 'en'),
+                new OA\Property(property: 'notifications_enabled', type: 'boolean', example: false)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم التحديث بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Preferences updated successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 403, description: '🚫 الملف الشخصي غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdatePreferencesRequest $request)
     {
         $user = $request->user();

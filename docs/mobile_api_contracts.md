@@ -160,7 +160,7 @@ This document contains the backend API contracts implemented for the mobile appl
 *   **Route:** `Modules/SubscriptionManager/routes/api.php`
 *   **Controller:** `InvoiceController@myInvoices`
 *   **Resource:** `InvoiceResource`
-
+ 
 *   **Response Payload (`200 OK`):**
     ```json
     {

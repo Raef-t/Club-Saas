@@ -13,8 +13,13 @@ namespace App\Http\Controllers;
  * )
  * 
  * @OA\Server(
- *     url=L5_SWAGGER_CONST_HOST,
- *     description="Main API Server"
+ *     url="http://issgroup-001-site1.anytempurl.com/api",
+ *     description="Production API Server"
+ * )
+ * 
+ * @OA\Server(
+ *     url="http://localhost/api",
+ *     description="Local Development Server"
  * )
  * 
  * @OA\SecurityScheme(

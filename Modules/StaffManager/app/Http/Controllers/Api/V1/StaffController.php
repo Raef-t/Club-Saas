@@ -27,13 +27,23 @@ class StaffController extends BaseController
 
     #[OA\Get(
         path: '/v1/staff',
-        summary: '👥 List all staff and coaches',
+        summary: '👥 عرض جميع الموظفين والمدربين',
+        description: 'استرجاع قائمة بجميع الموظفين والمدربين المسجلين في النظام.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الموظفين بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
         $staff = $this->staffService->getAllStaff($request->all());
@@ -45,13 +55,36 @@ class StaffController extends BaseController
 
     #[OA\Post(
         path: '/v1/staff',
-        summary: '➕ Onboard a new staff member',
+        summary: '➕ تسجيل موظف جديد',
+        description: 'إضافة موظف جديد إلى النظام.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 201, description: 'Staff onboarded')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['first_name', 'last_name', 'role', 'email'],
+            properties: [
+                new OA\Property(property: 'first_name', type: 'string', example: 'John'),
+                new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
+                new OA\Property(property: 'role', type: 'string', example: 'Coach'),
+                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم التسجيل بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff onboarded successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreStaffRequest $request)
     {
         $staff = $this->staffService->onboardStaff($request->validated());
@@ -60,13 +93,35 @@ class StaffController extends BaseController
 
     #[OA\Post(
         path: '/v1/staff/{id}/schedule',
-        summary: '📅 Set staff weekly schedule',
+        summary: '📅 تعيين جدول الموظف',
+        description: 'تحديد جدول العمل الأسبوعي للموظف.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Schedule updated')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['shifts'],
+            properties: [
+                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'object', example: ['day' => 'Monday', 'start_time' => '09:00', 'end_time' => '17:00']))
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الجدول بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Schedule updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function setSchedule(SetStaffScheduleRequest $request, $id)
     {
         $data = $request->validated();
@@ -78,13 +133,25 @@ class StaffController extends BaseController
 
     #[OA\Get(
         path: '/v1/staff/{id}',
-        summary: '🔍 Get staff member details',
+        summary: '🔍 تفاصيل الموظف',
+        description: 'استرجاع كافة التفاصيل الخاصة بموظف محدد.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تفاصيل الموظف',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
         $staff = $this->staffService->getStaffById($id);
@@ -93,13 +160,35 @@ class StaffController extends BaseController
 
     #[OA\Put(
         path: '/v1/staff/{id}',
-        summary: '✏️ Update a staff member',
+        summary: '✏️ تحديث بيانات الموظف',
+        description: 'تعديل المعلومات الخاصة بموظف مسجل.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Staff updated')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'first_name', type: 'string', example: 'John'),
+                new OA\Property(property: 'last_name', type: 'string', example: 'Smith')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث بيانات الموظف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdateStaffRequest $request, $id)
     {
         $data = $request->validated();
@@ -111,13 +200,25 @@ class StaffController extends BaseController
 
     #[OA\Patch(
         path: '/v1/staff/{id}/toggle-status',
-        summary: '🔄 Toggle staff active/inactive status',
+        summary: '🔄 تبديل حالة الموظف',
+        description: 'تفعيل أو تعطيل حساب الموظف.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Status toggled')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تبديل الحالة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Status toggled successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function toggleStatus($id)
     {
         $staff = $this->staffService->toggleStatus($id);
@@ -126,13 +227,35 @@ class StaffController extends BaseController
 
     #[OA\Post(
         path: '/v1/staff/{id}/sync-branches',
-        summary: '🔄 Sync multiple branches for staff',
+        summary: '🔄 مزامنة الفروع للموظف',
+        description: 'ربط الموظف بمجموعة من الفروع.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Branches synced')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['branch_ids'],
+            properties: [
+                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تمت المزامنة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branches synced successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function syncBranches(SyncStaffBranchesRequest $request, $id)
     {
         $validated = $request->validated();
@@ -159,13 +282,25 @@ class StaffController extends BaseController
 
     #[OA\Delete(
         path: '/v1/staff/{id}',
-        summary: '🗑 Soft delete a staff member',
+        summary: '🗑️ حذف موظف',
+        description: 'حذف موظف (Soft Delete) من النظام.',
         tags: ['Staff Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Staff deleted')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الموظف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
         $this->staffRepository->delete($id);

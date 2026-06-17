@@ -21,11 +21,26 @@ class BranchController extends BaseController
 
     #[OA\Get(
         path: '/v1/branches',
-        summary: '🏢 List all branches',
+        summary: '🏢 عرض جميع الفروع',
+        description: 'استرجاع قائمة بجميع الفروع المتاحة في النظام.',
         tags: ['Branch Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ List of branches')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الفروع بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branches retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'name', type: 'string', example: 'فرع العليا')
+                ]))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index()
     {
         $branches = $this->branchService->getAllBranches();
@@ -34,13 +49,34 @@ class BranchController extends BaseController
 
     #[OA\Post(
         path: '/v1/branches',
-        summary: '➕ Create a new branch',
+        summary: '➕ إنشاء فرع جديد',
+        description: 'إضافة فرع جديد إلى النظام الخاص بالنادي.',
         tags: ['Branch Management'],
-        security: [['bearerAuth' => []]],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/StoreBranchRequest'))
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 201, description: '✅ Branch created')]
-    #[OA\Response(response: 422, description: '❌ Validation error')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['name', 'club_id'],
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'فرع الملز'),
+                new OA\Property(property: 'club_id', type: 'integer', example: 1)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم إنشاء الفرع بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch created successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreBranchRequest $request)
     {
         $branch = $this->branchService->createBranch($request->validated());
@@ -49,12 +85,25 @@ class BranchController extends BaseController
 
     #[OA\Get(
         path: '/v1/branches/{id}',
-        summary: '🔍 Get branch details',
+        summary: '🔍 تفاصيل الفرع',
+        description: 'استرجاع تفاصيل فرع محدد بواسطة المعرف الخاص به.',
         tags: ['Branch Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Branch details')]
-    #[OA\Response(response: 404, description: '❌ Branch not found')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع تفاصيل الفرع',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch details retrieved'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
         $branch = $this->branchService->getBranchById($id);
@@ -63,12 +112,34 @@ class BranchController extends BaseController
 
     #[OA\Put(
         path: '/v1/branches/{id}',
-        summary: '📝 Update branch',
+        summary: '📝 تحديث الفرع',
+        description: 'تعديل البيانات الخاصة بفرع موجود مسبقاً في النظام.',
         tags: ['Branch Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Branch updated')]
-    #[OA\Response(response: 404, description: '❌ Branch not found')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'فرع التخصصي')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الفرع بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdateBranchRequest $request, $id)
     {
         $branch = $this->branchService->updateBranch($id, $request->validated());
@@ -77,12 +148,25 @@ class BranchController extends BaseController
 
     #[OA\Delete(
         path: '/v1/branches/{id}',
-        summary: '🗑️ Delete branch',
+        summary: '🗑️ حذف الفرع',
+        description: 'إزالة الفرع المحدد من النظام.',
         tags: ['Branch Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Branch deleted')]
-    #[OA\Response(response: 404, description: '❌ Branch not found')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الفرع بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
         $this->branchService->deleteBranch($id);
@@ -91,11 +175,25 @@ class BranchController extends BaseController
 
     #[OA\Patch(
         path: '/v1/branches/{id}/toggle-status',
-        summary: '🔄 Toggle branch active status',
+        summary: '🔄 تفعيل / تعطيل الفرع',
+        description: 'تغيير حالة الفرع من نشط إلى غير نشط والعكس.',
         tags: ['Branch Management'],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+        security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: '✅ Branch status updated')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث حالة الفرع',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch status updated'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function toggleStatus($id)
     {
         $branch = $this->branchService->toggleStatus($id);

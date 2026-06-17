@@ -22,13 +22,23 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Get(
         path: '/v1/notification-templates',
-        summary: '📋 List notification templates',
+        summary: '📋 عرض قوالب الإشعارات',
+        description: 'استرجاع قائمة بجميع قوالب الإشعارات المتاحة في النظام.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع القوالب بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Templates retrieved'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index()
     {
         return $this->successResponse($this->templateRepository->all(), __('Templates retrieved'));
@@ -36,13 +46,36 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Post(
         path: '/v1/notification-templates',
-        summary: '➕ Create template',
+        summary: '➕ إضافة قالب جديد',
+        description: 'إنشاء قالب إشعار جديد.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 201, description: 'Template created')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['name', 'slug', 'content'],
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'Welcome Email'),
+                new OA\Property(property: 'slug', type: 'string', example: 'welcome_email'),
+                new OA\Property(property: 'content', type: 'string', example: 'Welcome to our club!'),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم إنشاء القالب بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Template created'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreNotificationTemplateRequest $request)
     {
         $data = $request->validated();
@@ -53,13 +86,25 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Get(
         path: '/v1/notification-templates/{id}',
-        summary: '🔍 View template details',
+        summary: '🔍 تفاصيل القالب',
+        description: 'استرجاع تفاصيل قالب إشعار محدد.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Successful operation')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تفاصيل القالب',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Template retrieved'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
         $template = NotificationTemplate::findOrFail($id);
@@ -68,13 +113,34 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Put(
         path: '/v1/notification-templates/{id}',
-        summary: 'Edit a template',
+        summary: '✏️ تعديل القالب',
+        description: 'تحديث بيانات ومحتوى قالب إشعار.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Template updated')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'content', type: 'string', example: 'Welcome back to our club!')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث القالب بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Template updated'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdateNotificationTemplateRequest $request, $id)
     {
         $template = NotificationTemplate::findOrFail($id);
@@ -86,13 +152,25 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Delete(
         path: '/v1/notification-templates/{id}',
-        summary: '🗑 Delete a template',
+        summary: '🗑️ حذف القالب',
+        description: 'حذف قالب إشعار من النظام.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Template deleted')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الحذف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Template deleted'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
         $template = NotificationTemplate::findOrFail($id);
@@ -102,13 +180,25 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Post(
         path: '/v1/notification-templates/{id}/toggle',
-        summary: '🔘 Enable or disable a template',
+        summary: '🔘 تفعيل/تعطيل القالب',
+        description: 'تبديل حالة القالب بين مفعل وغير مفعل.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Status toggled')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الحالة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Status updated'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function toggleStatus($id)
     {
         $template = NotificationTemplate::findOrFail($id);
@@ -119,13 +209,36 @@ class NotificationTemplateController extends BaseController
 
     #[OA\Post(
         path: '/v1/notification-templates/{slug}/test',
-        summary: '🧪 Send a test notification',
+        summary: '🧪 إرسال إشعار تجريبي',
+        description: 'إرسال إشعار اختباري باستخدام قالب محدد.',
         tags: ['Notification Management'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Test sent')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'slug', in: 'path', required: true, description: 'اسم القالب الفريد (Slug)', schema: new OA\Schema(type: 'string', example: 'welcome_email'))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['person_id'],
+            properties: [
+                new OA\Property(property: 'person_id', type: 'integer', example: 1),
+                new OA\Property(property: 'data', type: 'object', example: ['name' => 'Test', 'plan_name' => 'Premium'])
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الإرسال بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Test notification dispatched'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الشخص أو القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Person not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function testSend(TestSendNotificationRequest $request, $slug, \Modules\NotificationManager\Services\NotificationService $service)
     {
         $data = $request->validated();

@@ -21,13 +21,35 @@ class SessionBookingController extends BaseController
 
     #[OA\Post(
         path: '/v1/sessions/{id}/book',
-        summary: '🎟️ Book a session for a member',
+        summary: '🎟️ حجز جلسة للعضو',
+        description: 'تسجيل حجز جديد لعضو في جلسة رياضية محددة.',
         tags: ['Session Bookings'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 201, description: 'Session booked successfully')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['member_id'],
+            properties: [
+                new OA\Property(property: 'member_id', type: 'integer', example: 1)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم الحجز بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Session booked successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 404, description: '🚫 الجلسة أو العضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function book(BookSessionRequest $request, int $id)
     {
         $booking = $this->sessionService->bookSession($id, $request->validated()['member_id']);
@@ -40,13 +62,25 @@ class SessionBookingController extends BaseController
 
     #[OA\Post(
         path: '/v1/bookings/{id}/cancel',
-        summary: '❌ Cancel a session booking',
+        summary: '❌ إلغاء حجز الجلسة',
+        description: 'إلغاء حجز جلسة رياضية مسجل مسبقاً لعضو.',
         tags: ['Session Bookings'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Booking cancelled successfully')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الحجز', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم إلغاء الحجز بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Booking cancelled successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الحجز غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function cancel(int $id)
     {
         $booking = $this->sessionService->cancelBooking($id);
@@ -58,13 +92,26 @@ class SessionBookingController extends BaseController
 
     #[OA\Get(
         path: '/v1/bookings',
-        summary: '📋 List bookings with optional filters',
+        summary: '📋 عرض قائمة الحجوزات',
+        description: 'استرجاع جميع حجوزات الجلسات مع إمكانية الفلترة.',
         tags: ['Session Bookings'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Bookings retrieved successfully')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'member_id', in: 'query', required: false, description: 'معرف العضو', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'sports_session_id', in: 'query', required: false, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'حالة الحجز (مثال: confirmed, cancelled)', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الحجوزات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Bookings retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
         $query = SportSessionBooking::with('session');

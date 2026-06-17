@@ -11,6 +11,7 @@ use Modules\AttendanceManager\Services\QRSecurityService;
 use Modules\AttendanceManager\Services\AttendanceRecorder;
 use Modules\AttendanceManager\DTOs\CheckInAttempt;
 use Modules\AttendanceManager\Http\Requests\GateScanRequest;
+use OpenApi\Attributes as OA;
 
 class GateController extends BaseController
 {
@@ -19,9 +20,42 @@ class GateController extends BaseController
         protected AttendanceRecorder $attendanceRecorder
     ) {}
 
-    /**
-     * Process a QR scan from a hardware gate device.
-     */
+    #[OA\Post(
+        path: '/v1/gates/scan',
+        summary: '📲 تسجيل الدخول عبر البوابة',
+        description: 'معالجة مسح رمز QR من جهاز البوابة (Hardware Gate).',
+        tags: ['Gate Integration'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['qr_token'],
+            properties: [
+                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الدخول بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Check-in successful.'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'member_id', type: 'integer', example: 123),
+                    new OA\Property(property: 'action', type: 'string', example: 'unlock_door'),
+                    new OA\Property(property: 'display_message', type: 'string', example: 'Welcome!')
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '⚠️ خطأ في المعالجة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Invalid token.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح (جهاز البوابة غير صالح)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Unauthorized gate device.')]))]
+    #[OA\Response(response: 403, description: '🚫 محظور (الدخول مرفوض)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Membership expired.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 429, description: '⏳ طلبات متكررة جداً', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Scan already processing.')]))]
     public function scan(GateScanRequest $request)
     {
         $validated = $request->validated();

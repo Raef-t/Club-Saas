@@ -16,28 +16,28 @@ class AuthController extends BaseController
 {
     #[OA\Post(
         path: '/v1/auth/login',
-        summary: '🔐 User Login & Token Generation',
-        description: 'Authenticate a user and return a Bearer Token.',
+        summary: '🔐 تسجيل الدخول',
+        description: 'تسجيل دخول المستخدم وإنشاء رمز مرور (Bearer Token).',
         tags: ['Authentication']
     )]
     #[OA\RequestBody(
         required: true,
-        description: 'User credentials',
+        description: 'بيانات تسجيل الدخول',
         content: new OA\JsonContent(
             required: ['username', 'password'],
             properties: [
-                new OA\Property(property: 'username', type: 'string', description: 'Unique username of the staff or admin', example: 'admin'),
-                new OA\Property(property: 'password', type: 'string', description: 'User password', example: 'password123'),
+                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'admin'),
+                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
             ]
         )
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ Successfully Authenticated',
+        description: '✅ تم تسجيل الدخول بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Logged in successfully'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تسجيل الدخول بنجاح'),
                 new OA\Property(
                     property: 'data',
                     type: 'object',
@@ -50,7 +50,7 @@ class AuthController extends BaseController
                             properties: [
                                 new OA\Property(property: 'id', type: 'integer', example: 1),
                                 new OA\Property(property: 'username', type: 'string', example: 'admin'),
-                                new OA\Property(property: 'full_name', type: 'string', example: 'Admin User'),
+                                new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
                             ]
                         )
                     ]
@@ -60,14 +60,42 @@ class AuthController extends BaseController
     )]
     #[OA\Response(
         response: 401,
-        description: '❌ Invalid Credentials',
-        content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+        description: '❌ بيانات الدخول غير صحيحة',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'),
+                new OA\Property(property: 'message', type: 'string', example: 'بيانات الدخول غير صحيحة'),
+            ]
+        )
     )]
     #[OA\Response(
         response: 403,
-        description: '🚫 Account Inactive',
-        content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+        description: '🚫 الحساب غير مفعل',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'),
+                new OA\Property(property: 'message', type: 'string', example: 'حساب المستخدم غير مفعل'),
+            ]
+        )
     )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ خطأ في التحقق من صحة البيانات',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'),
+                new OA\Property(
+                    property: 'errors',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'username', type: 'array', items: new OA\Items(type: 'string', example: 'حقل اسم المستخدم مطلوب.')),
+                        new OA\Property(property: 'password', type: 'array', items: new OA\Items(type: 'string', example: 'حقل كلمة المرور مطلوب.'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function login(LoginRequest $request)
     {
         $validated = $request->validated();
@@ -98,17 +126,32 @@ class AuthController extends BaseController
 
     #[OA\Post(
         path: '/v1/auth/logout',
-        summary: '🚪 User Logout',
-        description: 'Revoke the current user access token and end the session.',
+        summary: '🚪 تسجيل الخروج',
+        description: 'إبطال رمز الوصول الحالي للمستخدم وإنهاء الجلسة.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ Logged out successfully',
-        content: new OA\JsonContent(ref: '#/components/schemas/ApiResponse')
+        description: '✅ تم تسجيل الخروج بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تسجيل الخروج بنجاح'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
     )]
-    #[OA\Response(response: 401, description: 'Unauthenticated')]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح (Unauthenticated)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -117,17 +160,74 @@ class AuthController extends BaseController
 
     #[OA\Get(
         path: '/v1/auth/me',
-        summary: '👤 Get Authenticated User Profile',
-        description: 'Returns the currently authenticated user with their associated profiles (Player/Staff).',
+        summary: '👤 الحصول على الملف الشخصي للمستخدم',
+        description: 'إرجاع بيانات المستخدم المصادق عليه مع ملفاته الشخصية المرتبطة (لاعب / موظف).',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ Successfully Retrieved Profile',
-        content: new OA\JsonContent(ref: '#/components/schemas/ApiResponse')
+        description: '✅ تم استرجاع الملف الشخصي بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم استرجاع الملف الشخصي بنجاح'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'username', type: 'string', example: 'admin'),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'person',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 5),
+                                new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
+                                new OA\Property(property: 'type', type: 'string', example: 'player'),
+                                new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-08-20')
+                            ]
+                        ),
+                        new OA\Property(
+                            property: 'member',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 10),
+                                new OA\Property(property: 'member_number', type: 'string', example: 'MEM-10023'),
+                                new OA\Property(property: 'membership_status', type: 'string', example: 'active'),
+                                new OA\Property(property: 'is_vip', type: 'boolean', example: true)
+                            ]
+                        ),
+                        new OA\Property(
+                            property: 'measurements',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'weight', type: 'number', format: 'float', example: 75.5),
+                                new OA\Property(property: 'height', type: 'number', format: 'float', example: 180.0),
+                                new OA\Property(property: 'bmi', type: 'number', format: 'float', example: 23.3),
+                                new OA\Property(property: 'measured_at', type: 'string', format: 'date-time', example: '2023-10-01 10:00:00')
+                            ]
+                        ),
+                        new OA\Property(property: 'age', type: 'integer', nullable: true, example: 28),
+                        new OA\Property(property: 'health_status', type: 'string', nullable: true, example: 'لا توجد أمراض مزمنة')
+                    ]
+                )
+            ]
+        )
     )]
-    #[OA\Response(response: 401, description: 'Unauthenticated')]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح (Unauthenticated)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function me(Request $request)
     {
         $user = clone $request->user();
@@ -180,24 +280,61 @@ class AuthController extends BaseController
 
     #[OA\Post(
         path: '/v1/auth/change-password',
-        summary: '🔑 Change Password',
-        description: 'Change the authenticated user\'s password.',
+        summary: '🔑 تغيير كلمة المرور',
+        description: 'تغيير كلمة المرور الخاصة بالمستخدم المصادق عليه حالياً.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
         required: true,
+        description: 'بيانات تغيير كلمة المرور',
         content: new OA\JsonContent(
             required: ['current_password', 'new_password', 'new_password_confirmation'],
             properties: [
-                new OA\Property(property: 'current_password', type: 'string'),
-                new OA\Property(property: 'new_password', type: 'string'),
-                new OA\Property(property: 'new_password_confirmation', type: 'string'),
+                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية', example: 'oldPassword123'),
+                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: 'newPassword123'),
+                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: 'newPassword123'),
             ]
         )
     )]
-    #[OA\Response(response: 200, description: 'Password changed successfully')]
-    #[OA\Response(response: 422, description: 'Validation error or incorrect current password')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تغيير كلمة المرور بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تغيير كلمة المرور بنجاح'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح (Unauthenticated)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ خطأ في التحقق من صحة البيانات أو كلمة المرور الحالية غير صحيحة',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'كلمة المرور الحالية غير صحيحة.'),
+                new OA\Property(
+                    property: 'errors',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'current_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الحالية غير مطابقة.')),
+                        new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف.'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function changePassword(ChangePasswordRequest $request)
     {
         $user = $request->user();

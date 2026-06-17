@@ -16,33 +16,33 @@ class PeopleController extends BaseController
 {
     #[OA\Post(
         path: '/v1/people',
-        summary: '👥 Smart Registration for Club Members & Staff',
-        description: 'Creates a Person, their specialized Profile (Player, Coach, or Staff), and an Inactive User account in a single atomic transaction.',
+        summary: '👥 التسجيل الذكي للأعضاء والموظفين',
+        description: 'إنشاء ملف شخصي (Person) وملف مخصص (لاعب، مدرب، أو موظف) وحساب مستخدم (غير مفعل) في عملية واحدة متكاملة.',
         tags: ['People Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
         required: true,
-        description: 'Detailed info for the person and their profile',
+        description: 'التفاصيل الخاصة بالشخص وملفه الشخصي',
         content: new OA\JsonContent(
             required: ['full_name', 'type', 'mobile_1'],
             properties: [
-                new OA\Property(property: 'full_name', type: 'string', description: 'Full name of the person', example: 'Mohamed Ahmed'),
-                new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], description: 'Role type', example: 'player'),
-                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
-                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'Date of Birth (YYYY-MM-DD)', example: '2005-06-15'),
-                new OA\Property(property: 'mobile_1', type: 'string', description: 'Primary mobile number', example: '0512345678'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'player@example.com'),
-                new OA\Property(property: 'password', type: 'string', description: 'Password for the new account (default: 123456)', example: 'pass123'),
+                new OA\Property(property: 'full_name', type: 'string', description: 'الاسم الكامل للشخص', example: 'محمد أحمد'),
+                new OA\Property(property: 'type', type: 'string', enum: ['player', 'coach', 'staff'], description: 'نوع الدور', example: 'player'),
+                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], description: 'الجنس', example: 'male'),
+                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'تاريخ الميلاد (YYYY-MM-DD)', example: '2005-06-15'),
+                new OA\Property(property: 'mobile_1', type: 'string', description: 'رقم الهاتف الأساسي', example: '0512345678'),
+                new OA\Property(property: 'email', type: 'string', format: 'email', description: 'البريد الإلكتروني', example: 'player@example.com'),
+                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور للحساب الجديد (الافتراضي: 123456)', example: 'pass123'),
                 new OA\Property(
                     property: 'profile_data',
                     type: 'object',
-                    description: 'Specific data based on the "type" field',
+                    description: 'بيانات محددة بناءً على حقل "النوع (type)"',
                     properties: [
-                        new OA\Property(property: 'blood_type', type: 'string', description: '[Player Only] Blood type', example: 'A+'),
-                        new OA\Property(property: 'specialization', type: 'string', description: '[Coach Only] Main sport', example: 'Swimming'),
-                        new OA\Property(property: 'job_title', type: 'string', description: '[Staff Only] Position', example: 'Receptionist'),
-                        new OA\Property(property: 'medical_conditions', type: 'array', items: new OA\Items(type: 'string'), description: '[Player Only] Array of health issues', example: ["Asthma"]),
+                        new OA\Property(property: 'blood_type', type: 'string', description: '[للاعبين فقط] فصيلة الدم', example: 'A+'),
+                        new OA\Property(property: 'specialization', type: 'string', description: '[للمدربين فقط] التخصص الرياضي', example: 'سباحة'),
+                        new OA\Property(property: 'job_title', type: 'string', description: '[للموظفين فقط] المسمى الوظيفي', example: 'موظف استقبال'),
+                        new OA\Property(property: 'medical_conditions', type: 'array', items: new OA\Items(type: 'string'), description: '[للاعبين فقط] قائمة بالمشاكل الصحية', example: ["ربو", "حساسية"]),
                     ]
                 )
             ]
@@ -50,10 +50,11 @@ class PeopleController extends BaseController
     )]
     #[OA\Response(
         response: 201,
-        description: '✅ Person & Profile Created Successfully',
+        description: '✅ تم إنشاء الشخص والملف بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تسجيل الشخص بنجاح'),
                 new OA\Property(
                     property: 'data',
                     type: 'object',
@@ -61,13 +62,49 @@ class PeopleController extends BaseController
                         new OA\Property(property: 'person_id', type: 'integer', example: 50),
                         new OA\Property(property: 'username', type: 'string', example: 'mohamed50'),
                         new OA\Property(property: 'type', type: 'string', example: 'player'),
-                        new OA\Property(property: 'qr_code', type: 'string', description: 'Generated QR code for players', example: 'QR-X1Y2Z3'),
+                        new OA\Property(property: 'qr_code', type: 'string', description: 'رمز الاستجابة السريعة (QR) للاعبين', example: 'QR-X1Y2Z3'),
                     ]
                 )
             ]
         )
     )]
-    #[OA\Response(response: 422, description: '⚠️ Validation Error', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح (Unauthenticated)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 403,
+        description: '🚫 لا تملك صلاحية للوصول (Forbidden)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.'),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ خطأ في التحقق من صحة البيانات',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'),
+                new OA\Property(
+                    property: 'errors',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'full_name', type: 'array', items: new OA\Items(type: 'string', example: 'الاسم الكامل مطلوب.')),
+                        new OA\Property(property: 'type', type: 'array', items: new OA\Items(type: 'string', example: 'يجب اختيار نوع صحيح.')),
+                        new OA\Property(property: 'mobile_1', type: 'array', items: new OA\Items(type: 'string', example: 'رقم الهاتف مطلوب.'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function store(RegisterPersonRequest $request)
     {
         $validated = $request->validated();

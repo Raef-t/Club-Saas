@@ -13,13 +13,29 @@ class InvoiceController extends BaseController
 {
     #[OA\Get(
         path: '/v1/my-invoices',
-        summary: '💳 List authenticated member\'s invoices',
+        summary: '💳 فواتيري',
+        description: 'استرجاع جميع فواتير العضو المصادق عليه مع تفاصيل المدفوعات.',
         tags: ['Invoices & Payments'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Invoices retrieved successfully')
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة', schema: new OA\Schema(type: 'integer', default: 15))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الفواتير بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Invoices retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'amount', type: 'number', format: 'float', example: 500.00),
+                    new OA\Property(property: 'status', type: 'string', example: 'paid')
+                ]))
+            ]
+        )
+    )]
+    #[OA\Response(response: 403, description: '🚫 الملف الشخصي غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function myInvoices(Request $request)
     {
         $user = $request->user();
