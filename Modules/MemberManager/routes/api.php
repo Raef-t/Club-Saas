@@ -17,4 +17,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Member Dashboard
     Route::get('member/dashboard', [\Modules\MemberManager\Http\Controllers\Api\V1\MemberDashboardController::class, 'index']);
+
+    // Me — Authenticated Member Endpoints
+    Route::prefix('me')->group(function () {
+        Route::get('preferences', [\Modules\MemberManager\Http\Controllers\Api\V1\Me\MePreferencesController::class, 'show']);
+        Route::put('preferences', [\Modules\MemberManager\Http\Controllers\Api\V1\Me\MePreferencesController::class, 'update']);
+    });
 });

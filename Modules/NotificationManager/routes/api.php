@@ -9,6 +9,11 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('notification-stats', [NotificationLogController::class, 'stats']);
     Route::get('notification-logs', [NotificationLogController::class, 'index']);
 
+    // Authenticated Member's Notifications
+    Route::get('my-notifications', [NotificationLogController::class, 'myNotifications']);
+    Route::post('my-notifications/read-all', [NotificationLogController::class, 'markAllAsRead']);
+    Route::post('my-notifications/{id}/read', [NotificationLogController::class, 'markAsRead']);
+
     // Templates
     Route::post('notification-templates/{id}/toggle', [NotificationTemplateController::class, 'toggleStatus']);
     Route::post('notification-templates/{slug}/test', [NotificationTemplateController::class, 'testSend']);

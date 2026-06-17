@@ -21,11 +21,26 @@ class PlayerSubscriptionResource extends JsonResource
                 ] : null,
             ] : null,
             'plan' => new SubscriptionPlanResource($this->whenLoaded('plan')),
+            'coach_id' => $this->coach_id,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
             'status' => $this->status,
             'remaining_sessions' => $this->remaining_sessions,
+            'total_amount' => $this->total_amount,
             'paid_amount' => $this->paid_amount,
+            'remaining_amount' => $this->remaining_amount,
+            'notes' => $this->notes,
+            'items' => $this->whenLoaded('items', function () {
+                return $this->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'activity_id' => $item->activity_id,
+                        'sessions_allocated' => $item->sessions_allocated,
+                        'sessions_consumed' => $item->sessions_consumed ?? 0,
+                        'is_unlimited' => (bool) $item->is_unlimited,
+                    ];
+                });
+            }),
             'freezes' => $this->whenLoaded('freezes'),
         ];
     }

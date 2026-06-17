@@ -1,0 +1,220 @@
+<?php
+
+namespace Modules\MemberManager\Services\Me;
+
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Modules\Core\Contracts\PersonSharedServiceInterface;
+use Modules\SubscriptionManager\Models\PlayerSubscription;
+use Modules\SubscriptionManager\Models\Invoice;
+use Modules\SubscriptionManager\Models\Payment;
+use Modules\AttendanceManager\Models\Attendance;
+
+class MemberDashboardService
+{
+    protected PersonSharedServiceInterface $personService;
+
+    public function __construct(PersonSharedServiceInterface $personService)
+    {
+        $this->personService = $personService;
+    }
+
+    /**
+     * Aggregate all dashboard data for a given member.
+     */
+    public function getDashboardData(int $memberId, int $personId): array
+    {
+        return [
+            'profile' => $this->getProfile($personId),
+            'subscription_card' => $this->getSubscriptionCard($memberId),
+            'stats' => $this->getStats($memberId),
+            'recent_activities' => $this->getRecentActivities($memberId),
+            'upcoming_events' => $this->getUpcomingEvents($memberId),
+        ];
+    }
+
+    /**
+     * Profile header: name, avatar.
+     */
+    protected function getProfile(int $personId): array
+    {
+        $person = $this->personService->getPersonById($personId);
+
+        if (!$person) {
+            return [
+                'first_name' => null,
+                'full_name' => null,
+                'avatar_url' => null,
+            ];
+        }
+
+        $nameParts = explode(' ', $person->fullName, 2);
+
+        return [
+            'first_name' => $nameParts[0] ?? $person->fullName,
+            'full_name' => $person->fullName,
+            'avatar_url' => $person->photoUrl,
+        ];
+    }
+
+    /**
+     * Subscription card: active subscription details.
+     */
+    protected function getSubscriptionCard(int $memberId): ?array
+    {
+        $subscription = PlayerSubscription::with('plan')
+            ->where('member_id', $memberId)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (!$subscription) {
+            return null;
+        }
+
+        $member = DB::table('members')->where('id', $memberId)->first();
+
+        return [
+            'status' => $subscription->status,
+            'plan_name' => $subscription->plan->name ?? null,
+            'end_date' => $subscription->end_date?->toDateString(),
+            'formatted_end_date' => $subscription->end_date?->format('d/m/Y'),
+            'membership_number' => $member->member_number ?? null,
+            'price' => (float) ($subscription->total_amount ?? $subscription->plan->base_price ?? 0),
+            'formatted_price' => ($subscription->total_amount ?? $subscription->plan->base_price ?? 0) . '$',
+        ];
+    }
+
+    /**
+     * Stats grid: sessions, attendance, training hours, last payment.
+     */
+    protected function getStats(int $memberId): array
+    {
+        // Remaining sessions from active subscription
+        $remainingSessions = PlayerSubscription::where('member_id', $memberId)
+            ->where('status', 'active')
+            ->sum('remaining_sessions');
+
+        // Total attendance count
+        $totalAttendance = Attendance::where('attendable_type', 'player_subscription')
+            ->whereIn('attendable_id', function ($query) use ($memberId) {
+                $query->select('id')
+                    ->from('player_subscriptions')
+                    ->where('member_id', $memberId);
+            })
+            ->count();
+
+        // Training hours (sum of durations)
+        $trainingMinutes = Attendance::where('attendable_type', 'player_subscription')
+            ->whereIn('attendable_id', function ($query) use ($memberId) {
+                $query->select('id')
+                    ->from('player_subscriptions')
+                    ->where('member_id', $memberId);
+            })
+            ->whereNotNull('check_out_at')
+            ->selectRaw('SUM(TIMESTAMPDIFF(MINUTE, check_in_at, check_out_at)) as total_minutes')
+            ->value('total_minutes') ?? 0;
+
+        $trainingHours = round($trainingMinutes / 60, 1);
+
+        // Last payment
+        $lastPayment = Payment::whereIn('invoice_id', function ($query) use ($memberId) {
+                $query->select('id')
+                    ->from('invoices')
+                    ->where('member_id', $memberId);
+            })
+            ->where('status', 'completed')
+            ->latest()
+            ->first();
+
+        return [
+            'remaining_sessions' => (int) $remainingSessions,
+            'total_attendance' => $totalAttendance,
+            'training_hours' => $trainingHours,
+            'last_payment' => $lastPayment ? (float) $lastPayment->amount : null,
+            'formatted_last_payment' => $lastPayment ? $lastPayment->amount . '$' : null,
+        ];
+    }
+
+    /**
+     * Recent activities: last 5 attendance records.
+     */
+    protected function getRecentActivities(int $memberId): array
+    {
+        $records = Attendance::where('attendable_type', 'player_subscription')
+            ->whereIn('attendable_id', function ($query) use ($memberId) {
+                $query->select('id')
+                    ->from('player_subscriptions')
+                    ->where('member_id', $memberId);
+            })
+            ->orderByDesc('check_in_at')
+            ->limit(5)
+            ->get();
+
+        return $records->map(function ($record) {
+            $durationHours = null;
+            if ($record->check_in_at && $record->check_out_at) {
+                $durationHours = round(
+                    Carbon::parse($record->check_in_at)->diffInMinutes(Carbon::parse($record->check_out_at)) / 60,
+                    1
+                );
+            }
+
+            return [
+                'id' => $record->id,
+                'title' => $record->metadata['activity_name'] ?? __('Training Session'),
+                'description' => $record->check_in_at
+                    ? Carbon::parse($record->check_in_at)->format('H:i')
+                    : null,
+                'duration' => $durationHours,
+                'duration_label' => $durationHours ? $durationHours . ' ' . __('hours') : null,
+                'created_at' => $record->check_in_at?->toIso8601String(),
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Upcoming events: next scheduled sessions.
+     */
+    protected function getUpcomingEvents(int $memberId): array
+    {
+        // Get upcoming sessions from sports_sessions with their activities
+        $sessions = DB::table('sports_sessions')
+            ->join('activities', 'sports_sessions.activity_id', '=', 'activities.id')
+            ->where('sports_sessions.start_time', '>', now())
+            ->where('sports_sessions.status', 'scheduled')
+            ->orderBy('sports_sessions.start_time')
+            ->limit(5)
+            ->select([
+                'sports_sessions.id',
+                'activities.name as activity_name',
+                'activities.exercises_count',
+                'activities.estimated_calories',
+                'sports_sessions.start_time',
+                'sports_sessions.end_time',
+                'sports_sessions.max_players',
+                'sports_sessions.booked_count',
+            ])
+            ->get();
+
+        return $sessions->map(function ($session) {
+            $durationMinutes = Carbon::parse($session->start_time)
+                ->diffInMinutes(Carbon::parse($session->end_time));
+
+            $activityName = $session->activity_name;
+            if (is_string($activityName) && json_decode($activityName)) {
+                $decoded = json_decode($activityName, true);
+                $activityName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $activityName;
+            }
+
+            return [
+                'id' => $session->id,
+                'title' => $activityName,
+                'exercises_count' => $session->exercises_count ?? 0,
+                'duration_minutes' => $durationMinutes,
+                'calories' => $session->estimated_calories ?? 0,
+                'available_spots' => max(0, ($session->max_players ?? 0) - ($session->booked_count ?? 0)),
+            ];
+        })->toArray();
+    }
+}

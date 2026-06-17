@@ -82,6 +82,7 @@ class PlayerSubscriptionController extends BaseController
     public function show($id)
     {
         $subscription = $this->subscriptionService->getSubscriptionById($id);
+        $subscription->load(['plan', 'items', 'freezes']);
         return $this->successResponse(
             new PlayerSubscriptionResource($subscription),
             __('Subscription retrieved successfully')

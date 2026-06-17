@@ -3,6 +3,8 @@
 namespace Modules\AttendanceManager\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Modules\AttendanceManager\Services\MemberAttendanceService;
 use Modules\AttendanceManager\Http\Requests\MemberCheckInRequest;
 use Modules\AttendanceManager\Http\Resources\AttendanceResource;
@@ -108,5 +110,129 @@ class MemberAttendanceController extends BaseController
         $history = $query->paginate($perPage);
 
         return $this->successResponse(AttendanceResource::collection($history), __('Member attendance history retrieved'));
+    }
+
+    /**
+     * Get the authenticated member's own activities with period filtering and stats.
+     */
+    public function myActivities(Request $request)
+    {
+        $user = $request->user();
+        $member = $this->resolveMember($user);
+
+        if (!$member) {
+            return $this->errorResponse(__('Member profile not found.'), 403);
+        }
+
+        $period = $request->input('period', 'weekly');
+        $perPage = $request->input('per_page', 15);
+
+        // Determine date range based on period
+        $dateRange = $this->getDateRange($period);
+
+        // Build base query for this member's attendance
+        $baseQuery = Attendance::where('attendable_type', 'player_subscription')
+            ->whereIn('attendable_id', function ($query) use ($member) {
+                $query->select('id')
+                    ->from('player_subscriptions')
+                    ->where('member_id', $member->id);
+            });
+
+        // Stats for the selected period
+        $statsQuery = (clone $baseQuery)
+            ->where('check_in_at', '>=', $dateRange['start'])
+            ->where('check_in_at', '<=', $dateRange['end']);
+
+        $totalAttendance = (clone $statsQuery)->count();
+
+        $trainingMinutes = (clone $statsQuery)
+            ->whereNotNull('check_out_at')
+            ->selectRaw('SUM(TIMESTAMPDIFF(MINUTE, check_in_at, check_out_at)) as total_minutes')
+            ->value('total_minutes') ?? 0;
+
+        $trainingHours = round($trainingMinutes / 60, 1);
+
+        // Paginated activity list for the period
+        $items = (clone $baseQuery)
+            ->where('check_in_at', '>=', $dateRange['start'])
+            ->where('check_in_at', '<=', $dateRange['end'])
+            ->orderByDesc('check_in_at')
+            ->paginate($perPage);
+
+        $formattedItems = $items->getCollection()->map(function ($record) {
+            $checkIn = Carbon::parse($record->check_in_at);
+            $durationHours = null;
+            if ($record->check_out_at) {
+                $durationHours = round(
+                    $checkIn->diffInMinutes(Carbon::parse($record->check_out_at)) / 60,
+                    1
+                );
+            }
+
+            return [
+                'id' => $record->id,
+                'title' => $record->metadata['activity_name'] ?? __('Training Session'),
+                'date' => $checkIn->toDateString(),
+                'day' => $checkIn->format('d'),
+                'month' => $checkIn->translatedFormat('F'),
+                'time_label' => $checkIn->format('h:i A'),
+                'duration_hours' => $durationHours,
+                'duration_label' => $durationHours ? $durationHours . ' ' . __('hours') : null,
+            ];
+        });
+
+        return $this->successResponse([
+            'stats' => [
+                'total_attendance' => $totalAttendance,
+                'training_hours' => $trainingHours,
+            ],
+            'items' => $formattedItems,
+            'pagination' => [
+                'total' => $items->total(),
+                'per_page' => $items->perPage(),
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+            ],
+        ], __('Activities retrieved successfully'));
+    }
+
+    /**
+     * Resolve date range from period string.
+     */
+    protected function getDateRange(string $period): array
+    {
+        return match ($period) {
+            'monthly' => [
+                'start' => Carbon::now()->startOfMonth(),
+                'end' => Carbon::now()->endOfMonth(),
+            ],
+            'yearly' => [
+                'start' => Carbon::now()->startOfYear(),
+                'end' => Carbon::now()->endOfYear(),
+            ],
+            default => [ // weekly
+                'start' => Carbon::now()->startOfWeek(),
+                'end' => Carbon::now()->endOfWeek(),
+            ],
+        };
+    }
+
+    /**
+     * Resolve the Member record from the authenticated user.
+     */
+    protected function resolveMember($user): ?object
+    {
+        if ($user instanceof \Modules\MemberManager\Models\Member) {
+            return $user;
+        }
+
+        if (isset($user->person_id)) {
+            return DB::table('members')
+                ->where('person_id', $user->person_id)
+                ->whereNull('deleted_at')
+                ->first();
+        }
+
+        return null;
     }
 }

@@ -8,8 +8,12 @@ use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionFreezeContro
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanActivityController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionServiceController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\InvoiceController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+
+    // Authenticated Member's Invoices
+    Route::get('my-invoices', [InvoiceController::class, 'myInvoices']);
 
 
     // Subscription Plans CRUD
