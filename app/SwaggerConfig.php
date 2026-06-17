@@ -5,7 +5,8 @@ namespace App;
 use OpenApi\Attributes as OA;
 
 #[OA\Info(title: "Clubs SaaS API", version: "1.0.0", description: "API documentation for Clubs SaaS")]
-#[OA\Server(url: "http://localhost/Clubs/public/api", description: "Local Server")]
+#[OA\Server(url: "http://issgroup-001-site1.anytempurl.com/api", description: "Production API Server")]
+#[OA\Server(url: "http://localhost/api", description: "Local Development Server")]
 #[OA\SecurityScheme(securityScheme: "bearerAuth", type: "http", scheme: "bearer", bearerFormat: "JWT")]
 
 #[OA\Schema(
