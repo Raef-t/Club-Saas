@@ -6,6 +6,7 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\MemberManager\Services\Me\MemberDashboardService;
+use OpenApi\Attributes as OA;
 
 class MemberDashboardController extends BaseController
 {

@@ -6309,6 +6309,187 @@
                 ]
             }
         },
+        "/v1/me/preferences": {
+            "get": {
+                "tags": [
+                    "Member App"
+                ],
+                "summary": "⚙️ عرض التفضيلات الشخصية",
+                "description": "استرجاع التفضيلات الحالية للمستخدم (مثل: لغة العرض، والإشعارات).",
+                "operationId": "c522a59c7b3dde934b851ff26f00d364",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع التفضيلات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Preferences retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "language": {
+                                                    "type": "string",
+                                                    "example": "ar"
+                                                },
+                                                "notifications_enabled": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Member App"
+                ],
+                "summary": "✏️ تحديث التفضيلات",
+                "description": "تعديل تفضيلات المستخدم الخاصة بالتطبيق.",
+                "operationId": "1452ba3afa7515ff00dfd45be1685106",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "language": {
+                                        "type": "string",
+                                        "example": "en"
+                                    },
+                                    "notifications_enabled": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التحديث بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Preferences updated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 الملف الشخصي غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Member profile not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/members": {
             "get": {
                 "tags": [
@@ -7208,6 +7389,156 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/dashboard": {
+            "get": {
+                "tags": [
+                    "Member App"
+                ],
+                "summary": "🏠 لوحة تحكم العضو (الرئيسية)",
+                "description": "إرجاع جميع البيانات الخاصة بلوحة تحكم العضو الحالي مثل الحصص القادمة، الاشتراكات الفعالة، الإحصائيات والفواتير غير المدفوعة.",
+                "operationId": "388f5613f3b83773342b77a2d2627b14",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع بيانات لوحة التحكم بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Dashboard data retrieved successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "profile_summary": {
+                                                    "properties": {
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "محمد أحمد"
+                                                        },
+                                                        "member_number": {
+                                                            "type": "string",
+                                                            "example": "MEM-10023"
+                                                        },
+                                                        "qr_code": {
+                                                            "type": "string",
+                                                            "example": "QR-X1Y2Z3"
+                                                        },
+                                                        "image_url": {
+                                                            "type": "string",
+                                                            "example": "https://club-saas.com/storage/profile.jpg",
+                                                            "nullable": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "active_subscriptions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "plan_name": {
+                                                                "type": "string",
+                                                                "example": "اشتراك ذهبي 3 شهور"
+                                                            },
+                                                            "remaining_days": {
+                                                                "type": "integer",
+                                                                "example": 45
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "upcoming_sessions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "unpaid_invoices_count": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح (Unauthenticated)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 لم يتم العثور على ملف العضو",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Member profile not found for this user."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "🔥 خطأ في الخادم",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "حدث خطأ داخلي في الخادم."
                                         }
                                     },
                                     "type": "object"

@@ -6,6 +6,7 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\MemberManager\Http\Requests\Api\V1\Me\UpdatePreferencesRequest;
+use OpenApi\Attributes as OA;
 
 class MePreferencesController extends BaseController
 {
