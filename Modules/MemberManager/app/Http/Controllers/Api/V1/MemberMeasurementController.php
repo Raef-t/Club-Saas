@@ -1,4 +1,5 @@
 <?php
+
 namespace Modules\MemberManager\Http\Controllers\Api\V1;
 
 use Modules\Core\Http\Controllers\Api\BaseController;
@@ -6,12 +7,14 @@ use Modules\MemberManager\Services\MemberMeasurementService;
 use Modules\MemberManager\Http\Requests\StoreMemberMeasurementRequest;
 use Modules\MemberManager\Http\Requests\UpdateMemberMeasurementRequest;
 use Modules\MemberManager\Http\Resources\MemberMeasurementResource;
+use OpenApi\Attributes as OA;
 
 class MemberMeasurementController extends BaseController
 {
     protected $service;
 
-    public function __construct(MemberMeasurementService $service) {
+    public function __construct(MemberMeasurementService $service)
+    {
         $this->service = $service;
     }
 
@@ -39,7 +42,8 @@ class MemberMeasurementController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index() {
+    public function index()
+    {
         return $this->successResponse(MemberMeasurementResource::collection($this->service->getAll()), 'Retrieved successfully');
     }
 
@@ -75,7 +79,8 @@ class MemberMeasurementController extends BaseController
     )]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function store(StoreMemberMeasurementRequest $request) {
+    public function store(StoreMemberMeasurementRequest $request)
+    {
         $record = $this->service->create($request->validated());
         return $this->successResponse(new MemberMeasurementResource($record), 'Created successfully', 201);
     }
@@ -101,7 +106,8 @@ class MemberMeasurementController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على القياس', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function show($id) {
+    public function show($id)
+    {
         return $this->successResponse(new MemberMeasurementResource($this->service->getById($id)), 'Retrieved successfully');
     }
 
@@ -135,7 +141,8 @@ class MemberMeasurementController extends BaseController
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على القياس', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function update(UpdateMemberMeasurementRequest $request, $id) {
+    public function update(UpdateMemberMeasurementRequest $request, $id)
+    {
         $record = $this->service->update($id, $request->validated());
         return $this->successResponse(new MemberMeasurementResource($record), 'Updated successfully');
     }
@@ -161,7 +168,8 @@ class MemberMeasurementController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على القياس', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy($id) {
+    public function destroy($id)
+    {
         $this->service->delete($id);
         return $this->successResponse(null, 'Deleted successfully');
     }
