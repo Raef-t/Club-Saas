@@ -11,7 +11,7 @@
             "description": "Production API Server"
         },
         {
-            "url": "http://localhost/api",
+            "url": "http://127.0.0.1:8000/api",
             "description": "Local Development Server"
         }
     ],
@@ -7404,14 +7404,14 @@
                 ]
             }
         },
-        "/v1/members/dashboard": {
+        "/v1/member/dashboard": {
             "get": {
                 "tags": [
                     "Member App"
                 ],
                 "summary": "🏠 لوحة تحكم العضو (الرئيسية)",
                 "description": "إرجاع جميع البيانات الخاصة بلوحة تحكم العضو الحالي مثل الحصص القادمة، الاشتراكات الفعالة، الإحصائيات والفواتير غير المدفوعة.",
-                "operationId": "388f5613f3b83773342b77a2d2627b14",
+                "operationId": "cd0e1b7580032746acccb615db73dcc4",
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع بيانات لوحة التحكم بنجاح",

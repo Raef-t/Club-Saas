@@ -18,7 +18,7 @@ class MemberDashboardController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/members/dashboard',
+        path: '/v1/member/dashboard',
         summary: '🏠 لوحة تحكم العضو (الرئيسية)',
         description: 'إرجاع جميع البيانات الخاصة بلوحة تحكم العضو الحالي مثل الحصص القادمة، الاشتراكات الفعالة، الإحصائيات والفواتير غير المدفوعة.',
         tags: ['Member App'],
@@ -71,10 +71,8 @@ class MemberDashboardController extends BaseController
         if (!$user) {
             return $this->errorResponse(__('Unauthorized'), 401);
         }
-
         // Resolve member from authenticated user (User → Person → Member)
         $member = $this->resolveMember($user);
-
         if (!$member) {
             return $this->errorResponse(__('Member profile not found for this user.'), 403);
         }

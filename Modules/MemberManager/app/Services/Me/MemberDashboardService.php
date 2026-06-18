@@ -24,13 +24,33 @@ class MemberDashboardService
      */
     public function getDashboardData(int $memberId, int $personId): array
     {
-        return [
-            'profile' => $this->getProfile($personId),
-            'subscription_card' => $this->getSubscriptionCard($memberId),
-            'stats' => $this->getStats($memberId),
-            'recent_activities' => $this->getRecentActivities($memberId),
-            'upcoming_events' => $this->getUpcomingEvents($memberId),
+        $steps = [
+            'profile' => fn() => $this->getProfile($personId),
+            'subscription_card' => fn() => $this->getSubscriptionCard($memberId),
+            'stats' => fn() => $this->getStats($memberId),
+            'recent_activities' => fn() => $this->getRecentActivities($memberId),
+            'upcoming_events' => fn() => $this->getUpcomingEvents($memberId),
         ];
+
+        $data = [];
+
+        foreach ($steps as $key => $step) {
+            try {
+                \Illuminate\Support\Facades\Log::info("Running step: {$key}");
+                $data[$key] = $step();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Error in Dashboard Step [{$key}]: " . $e->getMessage(), [
+                    'member_id' => $memberId,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+                $data[$key] = null;
+                // Uncomment to rethrow and see the 500 error in the API response:
+                throw $e;
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -119,10 +139,10 @@ class MemberDashboardService
 
         // Last payment
         $lastPayment = Payment::whereIn('invoice_id', function ($query) use ($memberId) {
-                $query->select('id')
-                    ->from('invoices')
-                    ->where('member_id', $memberId);
-            })
+            $query->select('id')
+                ->from('invoices')
+                ->where('member_id', $memberId);
+        })
             ->where('status', 'completed')
             ->latest()
             ->first();

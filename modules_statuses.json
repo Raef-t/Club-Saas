@@ -1,12 +1,11 @@
 {
     "Core": true,
-    "TenantManager": false,
     "Sports": true,
     "Authentication": true,
-    "BranchManager": false,
     "MemberManager": true,
     "SubscriptionManager": true,
     "StaffManager": true,
     "NotificationManager": true,
-    "ClubManager": true
+    "ClubManager": true,
+    "AttendanceManager": true
 }
