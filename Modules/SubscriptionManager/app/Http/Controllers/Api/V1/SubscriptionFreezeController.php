@@ -76,13 +76,13 @@ class SubscriptionFreezeController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/subscription-freezes/{id}',
+        path: '/v1/subscription-freezes/{subscription_freeze}',
         summary: '🔍 تفاصيل التجميد',
         description: 'استرجاع تفاصيل سجل تجميد محدد.',
         tags: ['Subscription Freezes'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف التجميد', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_freeze', in: 'path', required: true, description: 'معرف التجميد', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل التجميد',
@@ -101,13 +101,13 @@ class SubscriptionFreezeController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/subscription-freezes/{id}',
+        path: '/v1/subscription-freezes/{subscription_freeze}',
         summary: '📝 تعديل تجميد',
         description: 'تحديث بيانات تجميد لاشتراك.',
         tags: ['Subscription Freezes'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف التجميد', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_freeze', in: 'path', required: true, description: 'معرف التجميد', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -136,13 +136,13 @@ class SubscriptionFreezeController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/subscription-freezes/{id}',
+        path: '/v1/subscription-freezes/{subscription_freeze}',
         summary: '🗑️ حذف تجميد',
         description: 'حذف سجل تجميد لاشتراك.',
         tags: ['Subscription Freezes'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف التجميد', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_freeze', in: 'path', required: true, description: 'معرف التجميد', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف التجميد بنجاح',

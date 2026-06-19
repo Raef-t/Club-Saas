@@ -11,13 +11,13 @@ use OpenApi\Attributes as OA;
 class FacilityWorkingHourController extends BaseController
 {
     #[OA\Get(
-        path: '/v1/facilities/{facilityId}/working-hours',
+        path: '/v1/facilities/{facility}/working-hours',
         summary: '🕒 عرض أوقات عمل المرفق',
         description: 'استرجاع جميع أوقات العمل المسجلة لمرفق معين.',
         tags: ['Facility Working Hours'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'facilityId', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'facility', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع أوقات العمل بنجاح',
@@ -42,13 +42,13 @@ class FacilityWorkingHourController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/facilities/{facilityId}/working-hours',
+        path: '/v1/facilities/{facility}/working-hours',
         summary: '➕ إضافة وقت عمل للمرفق',
         description: 'إضافة أو تحديث وقت عمل المرفق ليوم معين في الأسبوع.',
         tags: ['Facility Working Hours'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'facilityId', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'facility', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -88,14 +88,14 @@ class FacilityWorkingHourController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/facilities/{facilityId}/working-hours/{id}',
+        path: '/v1/facilities/{facility}/working-hours/{working_hour}',
         summary: '🗑️ حذف وقت العمل للمرفق',
         description: 'إزالة وقت عمل مسجل مسبقاً لمرفق.',
         tags: ['Facility Working Hours'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'facilityId', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف وقت العمل', schema: new OA\Schema(type: 'integer', example: 10))]
+    #[OA\Parameter(name: 'facility', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'working_hour', in: 'path', required: true, description: 'معرف وقت العمل', schema: new OA\Schema(type: 'integer', example: 10))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

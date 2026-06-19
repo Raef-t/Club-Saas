@@ -76,13 +76,13 @@ class StaffShiftController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/staff-shifts/{id}',
+        path: '/v1/staff-shifts/{staff_shift}',
         summary: '🔍 تفاصيل مناوبة الموظف',
         description: 'استرجاع تفاصيل مناوبة محددة لموظف.',
         tags: ['Staff Shifts'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المناوبة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_shift', in: 'path', required: true, description: 'معرف المناوبة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل المناوبة',
@@ -101,13 +101,13 @@ class StaffShiftController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/staff-shifts/{id}',
+        path: '/v1/staff-shifts/{staff_shift}',
         summary: '📝 تعديل مناوبة الموظف',
         description: 'تحديث بيانات مناوبة عمل مخصصة لموظف.',
         tags: ['Staff Shifts'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المناوبة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_shift', in: 'path', required: true, description: 'معرف المناوبة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -136,13 +136,13 @@ class StaffShiftController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/staff-shifts/{id}',
+        path: '/v1/staff-shifts/{staff_shift}',
         summary: '🗑️ حذف مناوبة',
         description: 'حذف مناوبة عمل مسجلة لموظف.',
         tags: ['Staff Shifts'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المناوبة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_shift', in: 'path', required: true, description: 'معرف المناوبة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

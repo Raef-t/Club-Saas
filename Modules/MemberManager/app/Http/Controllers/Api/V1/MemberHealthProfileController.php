@@ -19,7 +19,7 @@ class MemberHealthProfileController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/member-health-profiles',
+        path: '/v1/health-profiles',
         summary: '🏥 عرض جميع الملفات الصحية',
         description: 'استرجاع جميع الملفات الصحية للأعضاء المدخلة في النظام.',
         tags: ['Member Health Profiles'],
@@ -48,7 +48,7 @@ class MemberHealthProfileController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/member-health-profiles',
+        path: '/v1/health-profiles',
         summary: '➕ إضافة ملف صحي جديد',
         description: 'إنشاء ملف صحي جديد لعضو.',
         tags: ['Member Health Profiles'],
@@ -85,13 +85,13 @@ class MemberHealthProfileController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/member-health-profiles/{id}',
+        path: '/v1/health-profiles/{health_profile}',
         summary: '🔍 تفاصيل الملف الصحي',
         description: 'استرجاع تفاصيل سجل صحي محدد عن طريق المعرف.',
         tags: ['Member Health Profiles'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الملف الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'health_profile', in: 'path', required: true, description: 'معرف الملف الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل الملف الصحي',
@@ -111,13 +111,13 @@ class MemberHealthProfileController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/member-health-profiles/{id}',
+        path: '/v1/health-profiles/{health_profile}',
         summary: '📝 تعديل الملف الصحي',
         description: 'تعديل تفاصيل سجل صحي موجود.',
         tags: ['Member Health Profiles'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الملف الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'health_profile', in: 'path', required: true, description: 'معرف الملف الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -147,13 +147,13 @@ class MemberHealthProfileController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/member-health-profiles/{id}',
+        path: '/v1/health-profiles/{health_profile}',
         summary: '🗑️ حذف الملف الصحي',
         description: 'حذف سجل صحي من النظام.',
         tags: ['Member Health Profiles'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الملف الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'health_profile', in: 'path', required: true, description: 'معرف الملف الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

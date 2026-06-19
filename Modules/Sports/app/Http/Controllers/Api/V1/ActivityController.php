@@ -90,13 +90,13 @@ class ActivityController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/activities/{id}',
+        path: '/v1/activities/{activity}',
         summary: '🔍 تفاصيل النشاط',
         description: 'استرجاع تفاصيل نشاط رياضي محدد.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل النشاط',
@@ -117,13 +117,13 @@ class ActivityController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/activities/{id}',
+        path: '/v1/activities/{activity}',
         summary: '✏️ تعديل النشاط',
         description: 'تحديث بيانات نشاط رياضي مسجل.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -156,13 +156,13 @@ class ActivityController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/activities/{id}',
+        path: '/v1/activities/{activity}',
         summary: '🗑️ حذف النشاط',
         description: 'إزالة نشاط رياضي من النظام.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

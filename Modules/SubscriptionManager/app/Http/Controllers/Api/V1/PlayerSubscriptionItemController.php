@@ -76,13 +76,13 @@ class PlayerSubscriptionItemController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/player-subscription-items/{id}',
+        path: '/v1/player-subscription-items/{player_subscription_item}',
         summary: '🔍 تفاصيل عنصر الاشتراك',
         description: 'استرجاع تفاصيل عنصر محدد باشتراك لاعب.',
         tags: ['Player Subscription Items'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العنصر', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'player_subscription_item', in: 'path', required: true, description: 'معرف العنصر', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل العنصر',
@@ -101,13 +101,13 @@ class PlayerSubscriptionItemController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/player-subscription-items/{id}',
+        path: '/v1/player-subscription-items/{player_subscription_item}',
         summary: '📝 تعديل عنصر الاشتراك',
         description: 'تحديث بيانات عنصر ضمن اشتراك لاعب.',
         tags: ['Player Subscription Items'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العنصر', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'player_subscription_item', in: 'path', required: true, description: 'معرف العنصر', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -136,13 +136,13 @@ class PlayerSubscriptionItemController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/player-subscription-items/{id}',
+        path: '/v1/player-subscription-items/{player_subscription_item}',
         summary: '🗑️ حذف عنصر الاشتراك',
         description: 'إزالة عنصر من اشتراك لاعب.',
         tags: ['Player Subscription Items'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العنصر', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'player_subscription_item', in: 'path', required: true, description: 'معرف العنصر', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

@@ -106,13 +106,13 @@ class MemberController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/members/{id}',
+        path: '/v1/members/{member}',
         summary: '🔍 تفاصيل العضو',
         description: 'استرجاع جميع تفاصيل عضو محدد عن طريق المعرف (ID).',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'member', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع العضو بنجاح',
@@ -141,13 +141,13 @@ class MemberController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/members/{id}',
+        path: '/v1/members/{member}',
         summary: '📝 تحديث بيانات العضو',
         description: 'تعديل البيانات الخاصة بعضو موجود في النظام.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'member', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -188,13 +188,13 @@ class MemberController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/members/{id}',
+        path: '/v1/members/{member}',
         summary: '🗑️ حذف عضو',
         description: 'حذف العضو نهائياً من النظام.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'member', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',
@@ -215,13 +215,13 @@ class MemberController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/members/{id}/health-profile',
+        path: '/v1/members/{member}/health-profile',
         summary: '🏥 الملف الصحي للعضو',
         description: 'استرجاع الملف الصحي للعضو (الأمراض، الإصابات، إلخ).',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'member', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الملف الصحي بنجاح',
@@ -245,13 +245,13 @@ class MemberController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/members/{id}/measurements',
+        path: '/v1/members/{member}/measurements',
         summary: '📏 قياسات العضو',
         description: 'استرجاع سجل جميع القياسات الحيوية (الوزن، الطول، نسبة الدهون) المرتبطة بالعضو.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'member', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع القياسات بنجاح',
@@ -277,13 +277,13 @@ class MemberController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/members/{id}/measurements',
+        path: '/v1/members/{member}/measurements',
         summary: '⚖️ إضافة قياس جديد',
         description: 'إضافة سجل قياسات حيوية جديد للعضو المختار.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'member', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(

@@ -84,13 +84,13 @@ class PayrollController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/payroll-runs/{id}',
+        path: '/v1/payroll-runs/{payroll_run}',
         summary: '🔍 تفاصيل مسير الرواتب',
         description: 'استرجاع تفاصيل مسير رواتب محدد مع إيصالات الدفع المرتبطة به.',
         tags: ['Payroll Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف مسير الرواتب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'payroll_run', in: 'path', required: true, description: 'معرف مسير الرواتب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل مسير الرواتب',

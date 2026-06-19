@@ -21,7 +21,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/staff-attendance',
+        path: '/v1/staff-attendances',
         summary: '📋 عرض حضور وانصراف الموظفين',
         description: 'استرجاع سجل حضور وانصراف جميع الموظفين.',
         tags: ['Staff Attendance'],
@@ -54,7 +54,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/staff-attendance/{id}',
+        path: '/v1/staff-attendances/{id}',
         summary: '🔍 تفاصيل الحضور والانصراف',
         description: 'استرجاع تفاصيل سجل حضور وانصراف محدد.',
         tags: ['Staff Attendance'],
@@ -85,7 +85,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/staff-attendance',
+        path: '/v1/staff-attendances',
         summary: '➕ إضافة سجل حضور',
         description: 'إضافة سجل حضور يدوياً للموظف.',
         tags: ['Staff Attendance'],
@@ -129,7 +129,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/staff-attendance/{id}',
+        path: '/v1/staff-attendances/{id}',
         summary: '✏️ تعديل سجل الحضور',
         description: 'تعديل بيانات سجل حضور وانصراف الموظف.',
         tags: ['Staff Attendance'],
@@ -170,7 +170,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/staff-attendance/{id}',
+        path: '/v1/staff-attendances/{id}',
         summary: '🗑️ حذف سجل الحضور',
         description: 'حذف سجل الحضور والانصراف من النظام.',
         tags: ['Staff Attendance'],
@@ -250,7 +250,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/staff-attendance/{attendanceId}/check-out',
+        path: '/v1/staff/check-out/{attendanceId}',
         summary: '🚪 تسجيل الانصراف',
         description: 'تسجيل خروج/انصراف الموظف.',
         tags: ['Staff Attendance'],
@@ -282,7 +282,7 @@ class StaffAttendanceController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/staff/{staffId}/attendance-history',
+        path: '/v1/staff/{staffId}/history',
         summary: '📆 سجل حضور وانصراف موظف',
         description: 'استرجاع تاريخ الحضور والانصراف لموظف محدد مع إمكانية الفلترة بالتواريخ.',
         tags: ['Staff Attendance'],

@@ -19,7 +19,7 @@ class MemberMeasurementController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/member-measurements',
+        path: '/v1/measurements',
         summary: '📏 عرض جميع القياسات',
         description: 'استرجاع جميع سجلات القياسات الحيوية للأعضاء المدخلة في النظام.',
         tags: ['Member Measurements'],
@@ -48,7 +48,7 @@ class MemberMeasurementController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/member-measurements',
+        path: '/v1/measurements',
         summary: '➕ إضافة قياس جديد',
         description: 'إضافة سجل قياسات حيوية جديد لعضو.',
         tags: ['Member Measurements'],
@@ -86,13 +86,13 @@ class MemberMeasurementController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/member-measurements/{id}',
+        path: '/v1/measurements/{measurement}',
         summary: '🔍 تفاصيل القياس',
         description: 'استرجاع تفاصيل سجل قياس محدد عن طريق المعرف.',
         tags: ['Member Measurements'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القياس', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'measurement', in: 'path', required: true, description: 'معرف القياس', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل القياس',
@@ -112,13 +112,13 @@ class MemberMeasurementController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/member-measurements/{id}',
+        path: '/v1/measurements/{measurement}',
         summary: '📝 تعديل القياس',
         description: 'تعديل تفاصيل سجل قياس موجود.',
         tags: ['Member Measurements'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القياس', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'measurement', in: 'path', required: true, description: 'معرف القياس', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -148,13 +148,13 @@ class MemberMeasurementController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/member-measurements/{id}',
+        path: '/v1/measurements/{measurement}',
         summary: '🗑️ حذف القياس',
         description: 'حذف سجل قياس من النظام.',
         tags: ['Member Measurements'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القياس', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'measurement', in: 'path', required: true, description: 'معرف القياس', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

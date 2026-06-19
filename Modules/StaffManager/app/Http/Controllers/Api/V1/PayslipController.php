@@ -77,13 +77,13 @@ class PayslipController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/payslips/{id}',
+        path: '/v1/payslips/{payslip}',
         summary: '🔍 تفاصيل إيصال الدفع',
         description: 'استرجاع تفاصيل إيصال الدفع مع الراتب والخصومات والمكافآت.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل الإيصال',
@@ -102,13 +102,13 @@ class PayslipController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/payslips/{id}',
+        path: '/v1/payslips/{payslip}',
         summary: '📝 تعديل إيصال دفع',
         description: 'تحديث بيانات إيصال دفع موجود.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -137,13 +137,13 @@ class PayslipController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/payslips/{id}',
+        path: '/v1/payslips/{payslip}',
         summary: '🗑️ حذف إيصال دفع',
         description: 'حذف إيصال دفع من النظام.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

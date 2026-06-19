@@ -75,13 +75,13 @@ class StaffActivityController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/staff-activities/{id}',
+        path: '/v1/staff-activities/{staff_activity}',
         summary: '🔍 تفاصيل الربط بين الموظف والنشاط',
         description: 'استرجاع تفاصيل العلاقة بين الموظف والنشاط الرياضي.',
         tags: ['Staff Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_activity', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ التفاصيل',
@@ -100,13 +100,13 @@ class StaffActivityController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/staff-activities/{id}',
+        path: '/v1/staff-activities/{staff_activity}',
         summary: '✏️ تعديل ربط الموظف بالنشاط',
         description: 'تحديث البيانات المتعلقة بنشاط الموظف.',
         tags: ['Staff Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_activity', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -135,13 +135,13 @@ class StaffActivityController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/staff-activities/{id}',
+        path: '/v1/staff-activities/{staff_activity}',
         summary: '🗑️ حذف العلاقة',
         description: 'إزالة العلاقة بين الموظف والنشاط الرياضي.',
         tags: ['Staff Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_activity', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

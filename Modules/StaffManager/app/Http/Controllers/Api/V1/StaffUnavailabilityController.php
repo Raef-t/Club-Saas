@@ -11,13 +11,13 @@ use OpenApi\Attributes as OA;
 class StaffUnavailabilityController extends Controller
 {
     #[OA\Get(
-        path: '/v1/staff/{staffId}/unavailabilities',
+        path: '/v1/staff/{staff}/unavailabilities',
         summary: '📅 عرض أوقات عدم توفر الموظف',
         description: 'استرجاع جميع فترات غياب وعدم توفر الموظف للعمل.',
         tags: ['Staff Unavailability'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'staffId', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الفترات بنجاح',
@@ -31,13 +31,13 @@ class StaffUnavailabilityController extends Controller
     }
 
     #[OA\Post(
-        path: '/v1/staff/{staffId}/unavailabilities',
+        path: '/v1/staff/{staff}/unavailabilities',
         summary: '➕ إضافة فترة عدم توفر',
         description: 'تسجيل فترة زمنية يكون فيها الموظف غير متاح للعمل.',
         tags: ['Staff Unavailability'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'staffId', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -71,14 +71,14 @@ class StaffUnavailabilityController extends Controller
     }
 
     #[OA\Delete(
-        path: '/v1/staff/{staffId}/unavailabilities/{id}',
+        path: '/v1/staff/{staff}/unavailabilities/{unavailability}',
         summary: '🗑️ حذف فترة عدم التوفر',
         description: 'إزالة فترة مسجلة لعدم توفر الموظف.',
         tags: ['Staff Unavailability'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'staffId', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفترة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'unavailability', in: 'path', required: true, description: 'معرف الفترة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 204,
         description: '✅ تم الحذف بنجاح'

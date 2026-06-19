@@ -85,13 +85,13 @@ class SessionController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/sessions/{id}',
+        path: '/v1/sessions/{session}',
         summary: '🔍 تفاصيل الجلسة',
         description: 'استرجاع كافة تفاصيل جلسة رياضية محددة.',
         tags: ['Session Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'session', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل الجلسة',
@@ -112,13 +112,13 @@ class SessionController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/sessions/{id}',
+        path: '/v1/sessions/{session}',
         summary: '✏️ تعديل الجلسة',
         description: 'تحديث بيانات جلسة رياضية مسجلة.',
         tags: ['Session Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'session', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -150,13 +150,13 @@ class SessionController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/sessions/{id}',
+        path: '/v1/sessions/{session}',
         summary: '🗑️ حذف الجلسة',
         description: 'إزالة الجلسة الرياضية من النظام.',
         tags: ['Session Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'session', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

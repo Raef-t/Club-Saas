@@ -35,13 +35,13 @@ class ClubSettingController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/club-settings/{id}',
+        path: '/v1/clubs/{club}/settings',
         summary: '🔍 إعدادات نادي محدد',
         description: 'استرجاع الإعدادات الخاصة بنادي محدد عن طريق معرف النادي.',
         tags: ['Club Settings'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'club', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل إعدادات النادي',
@@ -62,13 +62,13 @@ class ClubSettingController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/club-settings/{id}',
+        path: '/v1/clubs/{club}/settings',
         summary: '📝 تعديل إعدادات النادي',
         description: 'تحديث أو إنشاء الإعدادات الخاصة بنادي محدد.',
         tags: ['Club Settings'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'club', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(

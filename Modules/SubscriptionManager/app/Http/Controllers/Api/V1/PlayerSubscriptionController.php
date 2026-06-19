@@ -102,13 +102,13 @@ class PlayerSubscriptionController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/player-subscriptions/{id}',
+        path: '/v1/player-subscriptions/{player_subscription}',
         summary: '🔍 تفاصيل الاشتراك',
         description: 'استرجاع تفاصيل اشتراك عضو محدد مع تجميداته.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'player_subscription', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل الاشتراك',

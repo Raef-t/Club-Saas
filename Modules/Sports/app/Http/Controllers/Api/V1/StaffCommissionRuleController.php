@@ -76,13 +76,13 @@ class StaffCommissionRuleController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/staff-commission-rules/{id}',
+        path: '/v1/staff-commission-rules/{staff_commission_rule}',
         summary: '🔍 تفاصيل قاعدة العمولة',
         description: 'استرجاع تفاصيل قاعدة عمولة محددة.',
         tags: ['Staff Commission Rules'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_commission_rule', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ التفاصيل',
@@ -101,13 +101,13 @@ class StaffCommissionRuleController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/staff-commission-rules/{id}',
+        path: '/v1/staff-commission-rules/{staff_commission_rule}',
         summary: '✏️ تعديل قاعدة العمولة',
         description: 'تحديث بيانات قاعدة عمولة مسجلة.',
         tags: ['Staff Commission Rules'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_commission_rule', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -136,13 +136,13 @@ class StaffCommissionRuleController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/staff-commission-rules/{id}',
+        path: '/v1/staff-commission-rules/{staff_commission_rule}',
         summary: '🗑️ حذف قاعدة العمولة',
         description: 'حذف قاعدة العمولة من النظام.',
         tags: ['Staff Commission Rules'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff_commission_rule', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

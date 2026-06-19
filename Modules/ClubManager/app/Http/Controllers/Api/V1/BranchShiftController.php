@@ -11,13 +11,13 @@ use OpenApi\Attributes as OA;
 class BranchShiftController extends BaseController
 {
     #[OA\Get(
-        path: '/v1/branches/{branchId}/shifts',
+        path: '/v1/branches/{branch}/shifts',
         summary: '🕒 عرض ورديات الفرع',
         description: 'استرجاع جميع الورديات (Shifts) المسجلة لفرع معين.',
         tags: ['Branch Shifts'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branchId', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'branch', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الورديات بنجاح',
@@ -42,13 +42,13 @@ class BranchShiftController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/branches/{branchId}/shifts',
+        path: '/v1/branches/{branch}/shifts',
         summary: '➕ إضافة وردية جديدة',
         description: 'إضافة وردية عمل جديدة لفرع محدد.',
         tags: ['Branch Shifts'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branchId', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'branch', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -85,14 +85,14 @@ class BranchShiftController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/branches/{branchId}/shifts/{id}',
+        path: '/v1/branches/{branch}/shifts/{shift}',
         summary: '🗑️ حذف الوردية',
         description: 'إزالة وردية محددة من الفرع.',
         tags: ['Branch Shifts'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branchId', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الوردية', schema: new OA\Schema(type: 'integer', example: 10))]
+    #[OA\Parameter(name: 'branch', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'shift', in: 'path', required: true, description: 'معرف الوردية', schema: new OA\Schema(type: 'integer', example: 10))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

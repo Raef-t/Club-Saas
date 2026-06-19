@@ -64,13 +64,13 @@ class ExtraServiceController extends Controller
     }
 
     #[OA\Get(
-        path: '/v1/extra-services/{id}',
+        path: '/v1/extra-services/{extra_service}',
         summary: '🔍 تفاصيل الخدمة الإضافية',
         description: 'استرجاع تفاصيل خدمة إضافية معينة.',
         tags: ['Extra Services'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخدمة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'extra_service', in: 'path', required: true, description: 'معرف الخدمة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل الخدمة',
@@ -85,13 +85,13 @@ class ExtraServiceController extends Controller
     }
 
     #[OA\Put(
-        path: '/v1/extra-services/{id}',
+        path: '/v1/extra-services/{extra_service}',
         summary: '📝 تعديل الخدمة الإضافية',
         description: 'تحديث بيانات خدمة إضافية موجودة.',
         tags: ['Extra Services'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخدمة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'extra_service', in: 'path', required: true, description: 'معرف الخدمة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -116,13 +116,13 @@ class ExtraServiceController extends Controller
     }
 
     #[OA\Delete(
-        path: '/v1/extra-services/{id}',
+        path: '/v1/extra-services/{extra_service}',
         summary: '🗑️ حذف الخدمة الإضافية',
         description: 'حذف خدمة إضافية من النظام.',
         tags: ['Extra Services'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخدمة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'extra_service', in: 'path', required: true, description: 'معرف الخدمة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 204,
         description: '✅ تم حذف الخدمة بنجاح'

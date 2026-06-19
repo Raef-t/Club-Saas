@@ -22,7 +22,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('my-activities', [MemberAttendanceController::class, 'myActivities']);
 
     // QR Attendance Endpoints (Mobile App / General)
-    Route::get('qr', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'show']);
+    Route::get('qr/screen', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'show']);
     Route::post('qr/generate', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'generate']);
     Route::post('qr/check-in', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'checkIn']);
     Route::post('qr/check-out', [\Modules\AttendanceManager\Http\Controllers\Api\V1\QRController::class, 'checkOut']);

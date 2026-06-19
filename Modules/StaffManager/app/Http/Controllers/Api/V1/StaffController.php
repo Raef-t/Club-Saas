@@ -132,13 +132,13 @@ class StaffController extends BaseController
 
 
     #[OA\Get(
-        path: '/v1/staff/{id}',
+        path: '/v1/staff/{staff}',
         summary: '🔍 تفاصيل الموظف',
         description: 'استرجاع كافة التفاصيل الخاصة بموظف محدد.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل الموظف',
@@ -159,13 +159,13 @@ class StaffController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/staff/{id}',
+        path: '/v1/staff/{staff}',
         summary: '✏️ تحديث بيانات الموظف',
         description: 'تعديل المعلومات الخاصة بموظف مسجل.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -281,13 +281,13 @@ class StaffController extends BaseController
 
 
     #[OA\Delete(
-        path: '/v1/staff/{id}',
+        path: '/v1/staff/{staff}',
         summary: '🗑️ حذف موظف',
         description: 'حذف موظف (Soft Delete) من النظام.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف الموظف بنجاح',

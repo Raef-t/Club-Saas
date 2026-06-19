@@ -88,13 +88,13 @@ class SubscriptionPlanController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/subscription-plans/{id}',
+        path: '/v1/subscription-plans/{subscription_plan}',
         summary: '🔍 تفاصيل خطة الاشتراك',
         description: 'استرجاع تفاصيل خطة اشتراك محددة.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل خطة الاشتراك',
@@ -118,13 +118,13 @@ class SubscriptionPlanController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/subscription-plans/{id}',
+        path: '/v1/subscription-plans/{subscription_plan}',
         summary: '📝 تعديل خطة الاشتراك',
         description: 'تحديث بيانات ومميزات خطة اشتراك.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -157,13 +157,13 @@ class SubscriptionPlanController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/subscription-plans/{id}',
+        path: '/v1/subscription-plans/{subscription_plan}',
         summary: '🗑️ حذف خطة الاشتراك',
         description: 'إزالة خطة اشتراك من النظام.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف الخطة بنجاح',

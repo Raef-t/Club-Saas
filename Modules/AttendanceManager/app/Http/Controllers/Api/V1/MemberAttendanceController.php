@@ -23,7 +23,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/member-attendance',
+        path: '/v1/member-attendances',
         summary: '📋 عرض حضور وانصراف الأعضاء',
         description: 'استرجاع سجل حضور وانصراف جميع الأعضاء.',
         tags: ['Member Attendance'],
@@ -56,7 +56,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/member-attendance/{id}',
+        path: '/v1/member-attendances/{id}',
         summary: '🔍 تفاصيل الحضور والانصراف للعضو',
         description: 'استرجاع تفاصيل سجل حضور وانصراف محدد.',
         tags: ['Member Attendance'],
@@ -87,7 +87,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/member-attendance',
+        path: '/v1/member-attendances',
         summary: '➕ إضافة سجل حضور للعضو',
         description: 'إضافة سجل حضور يدوياً للعضو.',
         tags: ['Member Attendance'],
@@ -131,7 +131,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/member-attendance/{id}',
+        path: '/v1/member-attendances/{id}',
         summary: '✏️ تعديل سجل الحضور للعضو',
         description: 'تعديل بيانات سجل حضور وانصراف العضو.',
         tags: ['Member Attendance'],
@@ -172,7 +172,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/member-attendance/{id}',
+        path: '/v1/member-attendances/{id}',
         summary: '🗑️ حذف سجل الحضور للعضو',
         description: 'حذف سجل الحضور والانصراف للعضو من النظام.',
         tags: ['Member Attendance'],
@@ -253,7 +253,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/member-attendance/{attendanceId}/check-out',
+        path: '/v1/members/check-out/{attendanceId}',
         summary: '🚪 تسجيل الانصراف للعضو',
         description: 'تسجيل خروج العضو.',
         tags: ['Member Attendance'],
@@ -285,7 +285,7 @@ class MemberAttendanceController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/members/{memberId}/attendance-history',
+        path: '/v1/members/{memberId}/history',
         summary: '📆 سجل حضور وانصراف عضو',
         description: 'استرجاع تاريخ الحضور والانصراف لعضو محدد مع إمكانية الفلترة بالتواريخ.',
         tags: ['Member Attendance'],

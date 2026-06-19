@@ -85,13 +85,13 @@ class NotificationTemplateController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/notification-templates/{id}',
+        path: '/v1/notification-templates/{notification_template}',
         summary: '🔍 تفاصيل القالب',
         description: 'استرجاع تفاصيل قالب إشعار محدد.',
         tags: ['Notification Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'notification_template', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل القالب',
@@ -112,13 +112,13 @@ class NotificationTemplateController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/notification-templates/{id}',
+        path: '/v1/notification-templates/{notification_template}',
         summary: '✏️ تعديل القالب',
         description: 'تحديث بيانات ومحتوى قالب إشعار.',
         tags: ['Notification Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'notification_template', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -151,13 +151,13 @@ class NotificationTemplateController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/notification-templates/{id}',
+        path: '/v1/notification-templates/{notification_template}',
         summary: '🗑️ حذف القالب',
         description: 'حذف قالب إشعار من النظام.',
         tags: ['Notification Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'notification_template', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',

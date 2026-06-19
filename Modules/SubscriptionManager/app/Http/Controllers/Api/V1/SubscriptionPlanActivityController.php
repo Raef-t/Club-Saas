@@ -75,13 +75,13 @@ class SubscriptionPlanActivityController extends BaseController
     }
 
     #[OA\Get(
-        path: '/v1/subscription-plan-activities/{id}',
+        path: '/v1/subscription-plan-activities/{subscription_plan_activity}',
         summary: '🔍 تفاصيل نشاط الخطة',
         description: 'استرجاع تفاصيل ارتباط نشاط بخطة.',
         tags: ['Subscription Plan Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_plan_activity', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل النشاط',
@@ -100,13 +100,13 @@ class SubscriptionPlanActivityController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/subscription-plan-activities/{id}',
+        path: '/v1/subscription-plan-activities/{subscription_plan_activity}',
         summary: '📝 تعديل نشاط الخطة',
         description: 'تحديث بيانات ارتباط النشاط بالخطة.',
         tags: ['Subscription Plan Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_plan_activity', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -135,13 +135,13 @@ class SubscriptionPlanActivityController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/subscription-plan-activities/{id}',
+        path: '/v1/subscription-plan-activities/{subscription_plan_activity}',
         summary: '🗑️ حذف نشاط من الخطة',
         description: 'إزالة ارتباط نشاط بخطة اشتراك.',
         tags: ['Subscription Plan Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'subscription_plan_activity', in: 'path', required: true, description: 'المعرف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',
