@@ -22,5 +22,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::prefix('me')->group(function () {
         Route::get('preferences', [\Modules\MemberManager\Http\Controllers\Api\V1\Me\MePreferencesController::class, 'show']);
         Route::put('preferences', [\Modules\MemberManager\Http\Controllers\Api\V1\Me\MePreferencesController::class, 'update']);
+        Route::post('physical-stats', [\Modules\MemberManager\Http\Controllers\Api\V1\Me\MePhysicalStatsController::class, 'update']);
     });
 });

@@ -188,14 +188,14 @@
                 ]
             }
         },
-        "/v1/member-attendance": {
+        "/v1/member-attendances": {
             "get": {
                 "tags": [
                     "Member Attendance"
                 ],
                 "summary": "📋 عرض حضور وانصراف الأعضاء",
                 "description": "استرجاع سجل حضور وانصراف جميع الأعضاء.",
-                "operationId": "914dbc0a5cab850036a8cfc8149c9a26",
+                "operationId": "fe4c518bafd9673aa1eb1de690c36833",
                 "parameters": [
                     {
                         "name": "per_page",
@@ -264,7 +264,7 @@
                 ],
                 "summary": "➕ إضافة سجل حضور للعضو",
                 "description": "إضافة سجل حضور يدوياً للعضو.",
-                "operationId": "1dfd72100b3285ed6e44aea40608f103",
+                "operationId": "ee62f1514112e16ce25f89110809754b",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -390,14 +390,14 @@
                 ]
             }
         },
-        "/v1/member-attendance/{id}": {
+        "/v1/member-attendances/{id}": {
             "get": {
                 "tags": [
                     "Member Attendance"
                 ],
                 "summary": "🔍 تفاصيل الحضور والانصراف للعضو",
                 "description": "استرجاع تفاصيل سجل حضور وانصراف محدد.",
-                "operationId": "fca84b78cf366dea2b2e0e56da0bf446",
+                "operationId": "aa3cdef161bbf385a4b616c7d84d1e73",
                 "parameters": [
                     {
                         "name": "id",
@@ -483,7 +483,7 @@
                 ],
                 "summary": "✏️ تعديل سجل الحضور للعضو",
                 "description": "تعديل بيانات سجل حضور وانصراف العضو.",
-                "operationId": "1110641d4af6023ffb8472cb77d7f567",
+                "operationId": "e393bbea8487abbdeb52b7b0c220faaf",
                 "parameters": [
                     {
                         "name": "id",
@@ -625,7 +625,7 @@
                 ],
                 "summary": "🗑️ حذف سجل الحضور للعضو",
                 "description": "حذف سجل الحضور والانصراف للعضو من النظام.",
-                "operationId": "338a43a3ed3b81bffe54eeb2bb694108",
+                "operationId": "2b546f4f1f35b6e17bcf74eb7414c2f9",
                 "parameters": [
                     {
                         "name": "id",
@@ -856,14 +856,14 @@
                 ]
             }
         },
-        "/v1/member-attendance/{attendanceId}/check-out": {
+        "/v1/members/check-out/{attendanceId}": {
             "post": {
                 "tags": [
                     "Member Attendance"
                 ],
                 "summary": "🚪 تسجيل الانصراف للعضو",
                 "description": "تسجيل خروج العضو.",
-                "operationId": "f4b5db4b463696f122f9194182abb01d",
+                "operationId": "5fd598eb7a0ab3093318f72016722a16",
                 "parameters": [
                     {
                         "name": "attendanceId",
@@ -964,14 +964,14 @@
                 ]
             }
         },
-        "/v1/members/{memberId}/attendance-history": {
+        "/v1/members/{memberId}/history": {
             "get": {
                 "tags": [
                     "Member Attendance"
                 ],
                 "summary": "📆 سجل حضور وانصراف عضو",
                 "description": "استرجاع تاريخ الحضور والانصراف لعضو محدد مع إمكانية الفلترة بالتواريخ.",
-                "operationId": "297b97111a570f2fadbeae9208ab3cd6",
+                "operationId": "a53407d3d9f47c35d1ed1fc526c43a1d",
                 "parameters": [
                     {
                         "name": "memberId",
@@ -1680,14 +1680,14 @@
                 ]
             }
         },
-        "/v1/staff-attendance": {
+        "/v1/staff-attendances": {
             "get": {
                 "tags": [
                     "Staff Attendance"
                 ],
                 "summary": "📋 عرض حضور وانصراف الموظفين",
                 "description": "استرجاع سجل حضور وانصراف جميع الموظفين.",
-                "operationId": "b9df8b4b6ac401d0e26f3e19a6ec854d",
+                "operationId": "db40ffaa075469897ece37c4e6b4ffbb",
                 "parameters": [
                     {
                         "name": "per_page",
@@ -1756,7 +1756,7 @@
                 ],
                 "summary": "➕ إضافة سجل حضور",
                 "description": "إضافة سجل حضور يدوياً للموظف.",
-                "operationId": "35222d55feae62b4d3ab63eb6329e918",
+                "operationId": "e56436acdeeb5cf3202f867a3b3c0d3a",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1882,14 +1882,14 @@
                 ]
             }
         },
-        "/v1/staff-attendance/{id}": {
+        "/v1/staff-attendances/{id}": {
             "get": {
                 "tags": [
                     "Staff Attendance"
                 ],
                 "summary": "🔍 تفاصيل الحضور والانصراف",
                 "description": "استرجاع تفاصيل سجل حضور وانصراف محدد.",
-                "operationId": "222ce9f71091cdc7911519d46e5155e7",
+                "operationId": "b5a0c5ea38d012eb8826de9a2a77fe23",
                 "parameters": [
                     {
                         "name": "id",
@@ -1975,7 +1975,7 @@
                 ],
                 "summary": "✏️ تعديل سجل الحضور",
                 "description": "تعديل بيانات سجل حضور وانصراف الموظف.",
-                "operationId": "efef00a4f984b27caae3ed58c8272ed4",
+                "operationId": "0e5f7fc812ec1759305708948ac3bbaf",
                 "parameters": [
                     {
                         "name": "id",
@@ -2117,7 +2117,7 @@
                 ],
                 "summary": "🗑️ حذف سجل الحضور",
                 "description": "حذف سجل الحضور والانصراف من النظام.",
-                "operationId": "1df894ec49289bd974d97b4f3f2a970c",
+                "operationId": "c19129da1575b8c69b32d92f0d6e6cb6",
                 "parameters": [
                     {
                         "name": "id",
@@ -2355,14 +2355,14 @@
                 ]
             }
         },
-        "/v1/staff-attendance/{attendanceId}/check-out": {
+        "/v1/staff/check-out/{attendanceId}": {
             "post": {
                 "tags": [
                     "Staff Attendance"
                 ],
                 "summary": "🚪 تسجيل الانصراف",
                 "description": "تسجيل خروج/انصراف الموظف.",
-                "operationId": "50085314a1347ba8ce99303b2a9e8691",
+                "operationId": "f8582a48319c730770164b6602b2dbff",
                 "parameters": [
                     {
                         "name": "attendanceId",
@@ -2463,14 +2463,14 @@
                 ]
             }
         },
-        "/v1/staff/{staffId}/attendance-history": {
+        "/v1/staff/{staffId}/history": {
             "get": {
                 "tags": [
                     "Staff Attendance"
                 ],
                 "summary": "📆 سجل حضور وانصراف موظف",
                 "description": "استرجاع تاريخ الحضور والانصراف لموظف محدد مع إمكانية الفلترة بالتواريخ.",
-                "operationId": "1f1991396aa4db59a808fe0d3a46b0bf",
+                "operationId": "5958deaec0d3485dac3f507499c47e2e",
                 "parameters": [
                     {
                         "name": "staffId",
@@ -3944,17 +3944,17 @@
                 ]
             }
         },
-        "/v1/branches/{branchId}/shifts": {
+        "/v1/branches/{branch}/shifts": {
             "get": {
                 "tags": [
                     "Branch Shifts"
                 ],
                 "summary": "🕒 عرض ورديات الفرع",
                 "description": "استرجاع جميع الورديات (Shifts) المسجلة لفرع معين.",
-                "operationId": "441654cbd4c02eb3acad1bb6a0c7a08d",
+                "operationId": "587d1f8ce695931432f305880b803caf",
                 "parameters": [
                     {
-                        "name": "branchId",
+                        "name": "branch",
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
@@ -4038,10 +4038,10 @@
                 ],
                 "summary": "➕ إضافة وردية جديدة",
                 "description": "إضافة وردية عمل جديدة لفرع محدد.",
-                "operationId": "5615db7f135cea48cb0380a2b042dd57",
+                "operationId": "371e7ce3b8402f91c560eaf5cc066841",
                 "parameters": [
                     {
-                        "name": "branchId",
+                        "name": "branch",
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
@@ -4149,17 +4149,17 @@
                 ]
             }
         },
-        "/v1/branches/{branchId}/shifts/{id}": {
+        "/v1/branches/{branch}/shifts/{shift}": {
             "delete": {
                 "tags": [
                     "Branch Shifts"
                 ],
                 "summary": "🗑️ حذف الوردية",
                 "description": "إزالة وردية محددة من الفرع.",
-                "operationId": "1a616cc9eff2d8979b2d6f6491e29508",
+                "operationId": "1b8d3da3a26a82fbd48638c38879b70c",
                 "parameters": [
                     {
-                        "name": "branchId",
+                        "name": "branch",
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
@@ -4169,7 +4169,7 @@
                         }
                     },
                     {
-                        "name": "id",
+                        "name": "shift",
                         "in": "path",
                         "description": "معرف الوردية",
                         "required": true,
@@ -4766,17 +4766,17 @@
                 ]
             }
         },
-        "/v1/club-settings/{id}": {
+        "/v1/clubs/{club}/settings": {
             "get": {
                 "tags": [
                     "Club Settings"
                 ],
                 "summary": "🔍 إعدادات نادي محدد",
                 "description": "استرجاع الإعدادات الخاصة بنادي محدد عن طريق معرف النادي.",
-                "operationId": "1f6bb1a494274f121e59a50562c5c815",
+                "operationId": "14641919e50973254dbbfa8fe564acab",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "club",
                         "in": "path",
                         "description": "معرف النادي",
                         "required": true,
@@ -4859,10 +4859,10 @@
                 ],
                 "summary": "📝 تعديل إعدادات النادي",
                 "description": "تحديث أو إنشاء الإعدادات الخاصة بنادي محدد.",
-                "operationId": "87ea481ed98ad1bea9731b7ea4ce5789",
+                "operationId": "6f7dc02e34b0349b4caeb067c046e37d",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "club",
                         "in": "path",
                         "description": "معرف النادي",
                         "required": true,
@@ -5496,17 +5496,17 @@
                 ]
             }
         },
-        "/v1/facilities/{facilityId}/working-hours": {
+        "/v1/facilities/{facility}/working-hours": {
             "get": {
                 "tags": [
                     "Facility Working Hours"
                 ],
                 "summary": "🕒 عرض أوقات عمل المرفق",
                 "description": "استرجاع جميع أوقات العمل المسجلة لمرفق معين.",
-                "operationId": "6b967c0a052840fb96631130c069e773",
+                "operationId": "a6fa25ad572d8f5f255c62b43ecbc839",
                 "parameters": [
                     {
-                        "name": "facilityId",
+                        "name": "facility",
                         "in": "path",
                         "description": "معرف المرفق",
                         "required": true,
@@ -5590,10 +5590,10 @@
                 ],
                 "summary": "➕ إضافة وقت عمل للمرفق",
                 "description": "إضافة أو تحديث وقت عمل المرفق ليوم معين في الأسبوع.",
-                "operationId": "4c6ba0e4b596e1f9b6715a4229e77dcc",
+                "operationId": "acf6aa5986c70e63b160166187553bf2",
                 "parameters": [
                     {
-                        "name": "facilityId",
+                        "name": "facility",
                         "in": "path",
                         "description": "معرف المرفق",
                         "required": true,
@@ -5702,17 +5702,17 @@
                 ]
             }
         },
-        "/v1/facilities/{facilityId}/working-hours/{id}": {
+        "/v1/facilities/{facility}/working-hours/{working_hour}": {
             "delete": {
                 "tags": [
                     "Facility Working Hours"
                 ],
                 "summary": "🗑️ حذف وقت العمل للمرفق",
                 "description": "إزالة وقت عمل مسجل مسبقاً لمرفق.",
-                "operationId": "399eb4cd9f8730d3fb169ec3cf232e7c",
+                "operationId": "8954d6e0299c6693b7f875dcca173bdf",
                 "parameters": [
                     {
-                        "name": "facilityId",
+                        "name": "facility",
                         "in": "path",
                         "description": "معرف المرفق",
                         "required": true,
@@ -5722,7 +5722,7 @@
                         }
                     },
                     {
-                        "name": "id",
+                        "name": "working_hour",
                         "in": "path",
                         "description": "معرف وقت العمل",
                         "required": true,
@@ -6699,17 +6699,17 @@
                 ]
             }
         },
-        "/v1/members/{id}": {
+        "/v1/members/{member}": {
             "get": {
                 "tags": [
                     "Member Management"
                 ],
                 "summary": "🔍 تفاصيل العضو",
                 "description": "استرجاع جميع تفاصيل عضو محدد عن طريق المعرف (ID).",
-                "operationId": "3f92f2cd4f41b7224c4ce0d9ea4d1cae",
+                "operationId": "6abb3248ac3cab8b81336c3337d40394",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "member",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
@@ -6806,10 +6806,10 @@
                 ],
                 "summary": "📝 تحديث بيانات العضو",
                 "description": "تعديل البيانات الخاصة بعضو موجود في النظام.",
-                "operationId": "4ed81070dd85a56a3172ddc22e45c63b",
+                "operationId": "ead9366cf221bd8f57eb183469087dc4",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "member",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
@@ -6941,10 +6941,10 @@
                 ],
                 "summary": "🗑️ حذف عضو",
                 "description": "حذف العضو نهائياً من النظام.",
-                "operationId": "c14780dac4283e362a1f2fd0802c4c00",
+                "operationId": "8bd275b67d69c2f7e8e84d19d14fdd6f",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "member",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
@@ -7024,17 +7024,17 @@
                 ]
             }
         },
-        "/v1/members/{id}/health-profile": {
+        "/v1/members/{member}/health-profile": {
             "get": {
                 "tags": [
                     "Member Management"
                 ],
                 "summary": "🏥 الملف الصحي للعضو",
                 "description": "استرجاع الملف الصحي للعضو (الأمراض، الإصابات، إلخ).",
-                "operationId": "cf52995d4458d6a710b2ecf8b3c9359d",
+                "operationId": "fffe4cf15b265e64f5eabfc52b260777",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "member",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
@@ -7125,17 +7125,17 @@
                 ]
             }
         },
-        "/v1/members/{id}/measurements": {
+        "/v1/members/{member}/measurements": {
             "get": {
                 "tags": [
                     "Member Management"
                 ],
                 "summary": "📏 قياسات العضو",
                 "description": "استرجاع سجل جميع القياسات الحيوية (الوزن، الطول، نسبة الدهون) المرتبطة بالعضو.",
-                "operationId": "445550a07f01c38c18bfe2888c2d359b",
+                "operationId": "c4c2cd70de31ab6b0c5a8ce25ceaddd4",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "member",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
@@ -7243,10 +7243,10 @@
                 ],
                 "summary": "⚖️ إضافة قياس جديد",
                 "description": "إضافة سجل قياسات حيوية جديد للعضو المختار.",
-                "operationId": "4f46d4316053afde52269d8af4b0ee9b",
+                "operationId": "5f909a0c3b3a3223f2926c108efbc95b",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "member",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
@@ -7554,14 +7554,14 @@
                 ]
             }
         },
-        "/v1/member-health-profiles": {
+        "/v1/health-profiles": {
             "get": {
                 "tags": [
                     "Member Health Profiles"
                 ],
                 "summary": "🏥 عرض جميع الملفات الصحية",
                 "description": "استرجاع جميع الملفات الصحية للأعضاء المدخلة في النظام.",
-                "operationId": "37d2810e735611f47dd3d8fa72ea07f1",
+                "operationId": "df155f249e209c122ce9e607c2792f98",
                 "responses": {
                     "200": {
                         "description": "✅ قائمة الملفات الصحية",
@@ -7639,7 +7639,7 @@
                 ],
                 "summary": "➕ إضافة ملف صحي جديد",
                 "description": "إنشاء ملف صحي جديد لعضو.",
-                "operationId": "18659f47fb5b74acfa256c1a6d7c7a2f",
+                "operationId": "73a62d56114b65a6c81de887560e101f",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -7738,17 +7738,17 @@
                 ]
             }
         },
-        "/v1/member-health-profiles/{id}": {
+        "/v1/health-profiles/{health_profile}": {
             "get": {
                 "tags": [
                     "Member Health Profiles"
                 ],
                 "summary": "🔍 تفاصيل الملف الصحي",
                 "description": "استرجاع تفاصيل سجل صحي محدد عن طريق المعرف.",
-                "operationId": "52c05b8a489cb64c7a8beef4d79441f4",
+                "operationId": "31c70f5b506db47fe13850ff1739a8d6",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "health_profile",
                         "in": "path",
                         "description": "معرف الملف الصحي",
                         "required": true,
@@ -7831,10 +7831,10 @@
                 ],
                 "summary": "📝 تعديل الملف الصحي",
                 "description": "تعديل تفاصيل سجل صحي موجود.",
-                "operationId": "e38872bb8e2e2184b62fe6ad7ab3c216",
+                "operationId": "fa36eed302dd3d00d9aeb9a41c92ba9b",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "health_profile",
                         "in": "path",
                         "description": "معرف الملف الصحي",
                         "required": true,
@@ -7952,10 +7952,10 @@
                 ],
                 "summary": "🗑️ حذف الملف الصحي",
                 "description": "حذف سجل صحي من النظام.",
-                "operationId": "d9db702779ae675ae0e37424e81dea66",
+                "operationId": "320ec20adf386c99903e15d4b8ca295b",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "health_profile",
                         "in": "path",
                         "description": "معرف الملف الصحي",
                         "required": true,
@@ -8035,14 +8035,14 @@
                 ]
             }
         },
-        "/v1/member-measurements": {
+        "/v1/measurements": {
             "get": {
                 "tags": [
                     "Member Measurements"
                 ],
                 "summary": "📏 عرض جميع القياسات",
                 "description": "استرجاع جميع سجلات القياسات الحيوية للأعضاء المدخلة في النظام.",
-                "operationId": "56cfaea998feaabdfb01259cde817d7b",
+                "operationId": "8a5af4fb8fb12ac7b5480ceb59492784",
                 "responses": {
                     "200": {
                         "description": "✅ قائمة القياسات",
@@ -8119,7 +8119,7 @@
                 ],
                 "summary": "➕ إضافة قياس جديد",
                 "description": "إضافة سجل قياسات حيوية جديد لعضو.",
-                "operationId": "56aef58528136285a13fde57769fa6dc",
+                "operationId": "3aa31d8ece44141c013aef259aea1e67",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -8223,17 +8223,17 @@
                 ]
             }
         },
-        "/v1/member-measurements/{id}": {
+        "/v1/measurements/{measurement}": {
             "get": {
                 "tags": [
                     "Member Measurements"
                 ],
                 "summary": "🔍 تفاصيل القياس",
                 "description": "استرجاع تفاصيل سجل قياس محدد عن طريق المعرف.",
-                "operationId": "125465774becbcf89b105a0a701c1d9f",
+                "operationId": "bcd245f2cb03de53bf434d332f4c5a8d",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "measurement",
                         "in": "path",
                         "description": "معرف القياس",
                         "required": true,
@@ -8316,10 +8316,10 @@
                 ],
                 "summary": "📝 تعديل القياس",
                 "description": "تعديل تفاصيل سجل قياس موجود.",
-                "operationId": "4fcbb922069fab534160b32a719d631f",
+                "operationId": "6c39283c55aaca3ba215111e965431b2",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "measurement",
                         "in": "path",
                         "description": "معرف القياس",
                         "required": true,
@@ -8438,10 +8438,10 @@
                 ],
                 "summary": "🗑️ حذف القياس",
                 "description": "حذف سجل قياس من النظام.",
-                "operationId": "4fa45852cb5fedee900bfdbeb4aee3ed",
+                "operationId": "fe793cb66e27fab6c6799a00814bb04d",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "measurement",
                         "in": "path",
                         "description": "معرف القياس",
                         "required": true,
@@ -9639,17 +9639,17 @@
                 ]
             }
         },
-        "/v1/notification-templates/{id}": {
+        "/v1/notification-templates/{notification_template}": {
             "get": {
                 "tags": [
                     "Notification Management"
                 ],
                 "summary": "🔍 تفاصيل القالب",
                 "description": "استرجاع تفاصيل قالب إشعار محدد.",
-                "operationId": "f5430ebf7b74e3bd4a421f3b32fddfb7",
+                "operationId": "4e26713556db8c00ae872f2218c7e95e",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "notification_template",
                         "in": "path",
                         "description": "معرف القالب",
                         "required": true,
@@ -9732,10 +9732,10 @@
                 ],
                 "summary": "✏️ تعديل القالب",
                 "description": "تحديث بيانات ومحتوى قالب إشعار.",
-                "operationId": "9e29121b7c0097105646fe7a6d6507eb",
+                "operationId": "69d2b0a354fa5cb6e04d1292e70db272",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "notification_template",
                         "in": "path",
                         "description": "معرف القالب",
                         "required": true,
@@ -9853,10 +9853,10 @@
                 ],
                 "summary": "🗑️ حذف القالب",
                 "description": "حذف قالب إشعار من النظام.",
-                "operationId": "b8c13243ea54d8f12ff0ddfa8fecbf2f",
+                "operationId": "807d82109370bf8ad46636b466afd7ae",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "notification_template",
                         "in": "path",
                         "description": "معرف القالب",
                         "required": true,
@@ -10323,17 +10323,17 @@
                 ]
             }
         },
-        "/v1/activities/{id}": {
+        "/v1/activities/{activity}": {
             "get": {
                 "tags": [
                     "Sports & Activities"
                 ],
                 "summary": "🔍 تفاصيل النشاط",
                 "description": "استرجاع تفاصيل نشاط رياضي محدد.",
-                "operationId": "ac203ce6c950a29890c4691b4b527c70",
+                "operationId": "de1c7f9a34c724f3a63c0bb54b23ff30",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "activity",
                         "in": "path",
                         "description": "معرف النشاط",
                         "required": true,
@@ -10416,10 +10416,10 @@
                 ],
                 "summary": "✏️ تعديل النشاط",
                 "description": "تحديث بيانات نشاط رياضي مسجل.",
-                "operationId": "32dff7e4c6c866b17bbc2eb62de89af7",
+                "operationId": "d0e027b9bc039953004b3ab2d1af8ba4",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "activity",
                         "in": "path",
                         "description": "معرف النشاط",
                         "required": true,
@@ -10537,10 +10537,10 @@
                 ],
                 "summary": "🗑️ حذف النشاط",
                 "description": "إزالة نشاط رياضي من النظام.",
-                "operationId": "882eae4a3a2505043d92da3bd7a2b045",
+                "operationId": "fdf7d0704d687d2700dc5ef6a6eb5d9d",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "activity",
                         "in": "path",
                         "description": "معرف النشاط",
                         "required": true,
@@ -11095,17 +11095,17 @@
                 ]
             }
         },
-        "/v1/sessions/{id}": {
+        "/v1/sessions/{session}": {
             "get": {
                 "tags": [
                     "Session Management"
                 ],
                 "summary": "🔍 تفاصيل الجلسة",
                 "description": "استرجاع كافة تفاصيل جلسة رياضية محددة.",
-                "operationId": "87f0e9fbda7b897e43cc282e4df02efe",
+                "operationId": "b45c9479bc8198ed44566db73508e339",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "session",
                         "in": "path",
                         "description": "معرف الجلسة",
                         "required": true,
@@ -11188,10 +11188,10 @@
                 ],
                 "summary": "✏️ تعديل الجلسة",
                 "description": "تحديث بيانات جلسة رياضية مسجلة.",
-                "operationId": "b63efeb13393fde72d87d4953aa311cd",
+                "operationId": "0cc1d5f4870cb679e5cac97205c6a6ce",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "session",
                         "in": "path",
                         "description": "معرف الجلسة",
                         "required": true,
@@ -11309,10 +11309,10 @@
                 ],
                 "summary": "🗑️ حذف الجلسة",
                 "description": "إزالة الجلسة الرياضية من النظام.",
-                "operationId": "cc5dcfbed74976bc378d8112201b3a6b",
+                "operationId": "6c1ed4bf017362e558acf3ac9af44df2",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "session",
                         "in": "path",
                         "description": "معرف الجلسة",
                         "required": true,
@@ -11628,17 +11628,17 @@
                 ]
             }
         },
-        "/v1/staff-activities/{id}": {
+        "/v1/staff-activities/{staff_activity}": {
             "get": {
                 "tags": [
                     "Staff Activities"
                 ],
                 "summary": "🔍 تفاصيل الربط بين الموظف والنشاط",
                 "description": "استرجاع تفاصيل العلاقة بين الموظف والنشاط الرياضي.",
-                "operationId": "a09cba5235d2738f8689d65b2cb4fcce",
+                "operationId": "a7d22f940614a4b9bc82b19b4dfb761e",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_activity",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -11721,10 +11721,10 @@
                 ],
                 "summary": "✏️ تعديل ربط الموظف بالنشاط",
                 "description": "تحديث البيانات المتعلقة بنشاط الموظف.",
-                "operationId": "df28e158badb3cb217d0bd66cc67e89a",
+                "operationId": "6d90917478d8fd7a23629744c7e3f294",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_activity",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -11842,10 +11842,10 @@
                 ],
                 "summary": "🗑️ حذف العلاقة",
                 "description": "إزالة العلاقة بين الموظف والنشاط الرياضي.",
-                "operationId": "838611594a257ff43a932ae4d490d40a",
+                "operationId": "dff0e7dd7ea3b9359a27d093e9828235",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_activity",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -12087,17 +12087,17 @@
                 ]
             }
         },
-        "/v1/staff-commission-rules/{id}": {
+        "/v1/staff-commission-rules/{staff_commission_rule}": {
             "get": {
                 "tags": [
                     "Staff Commission Rules"
                 ],
                 "summary": "🔍 تفاصيل قاعدة العمولة",
                 "description": "استرجاع تفاصيل قاعدة عمولة محددة.",
-                "operationId": "c9dcb17b66ea9106c9641918c202e149",
+                "operationId": "1fd1bc88df58cd475a571bd43c849e0f",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_commission_rule",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -12180,10 +12180,10 @@
                 ],
                 "summary": "✏️ تعديل قاعدة العمولة",
                 "description": "تحديث بيانات قاعدة عمولة مسجلة.",
-                "operationId": "899f8f22531265082f86c96e748c3f37",
+                "operationId": "a10e16d751332b3d8c4f5af4c5598e94",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_commission_rule",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -12302,10 +12302,10 @@
                 ],
                 "summary": "🗑️ حذف قاعدة العمولة",
                 "description": "حذف قاعدة العمولة من النظام.",
-                "operationId": "3a285e102ce2b4c98088e9d7ed5fd429",
+                "operationId": "f70612f5370065398319f11260e808eb",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_commission_rule",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -12543,17 +12543,17 @@
                 ]
             }
         },
-        "/v1/payroll-runs/{id}": {
+        "/v1/payroll-runs/{payroll_run}": {
             "get": {
                 "tags": [
                     "Payroll Management"
                 ],
                 "summary": "🔍 تفاصيل مسير الرواتب",
                 "description": "استرجاع تفاصيل مسير رواتب محدد مع إيصالات الدفع المرتبطة به.",
-                "operationId": "7d8f19f840d3d14eb8a83afbdaac34f5",
+                "operationId": "b0644da45233c27196dec87c7d1a2537",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "payroll_run",
                         "in": "path",
                         "description": "معرف مسير الرواتب",
                         "required": true,
@@ -12975,17 +12975,17 @@
                 ]
             }
         },
-        "/v1/payslips/{id}": {
+        "/v1/payslips/{payslip}": {
             "get": {
                 "tags": [
                     "Payslips"
                 ],
                 "summary": "🔍 تفاصيل إيصال الدفع",
                 "description": "استرجاع تفاصيل إيصال الدفع مع الراتب والخصومات والمكافآت.",
-                "operationId": "403ee89259c092bf4a7cb51121c7d86c",
+                "operationId": "7e7ac285ac7c014662098245d77d8f0a",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "payslip",
                         "in": "path",
                         "description": "معرف الإيصال",
                         "required": true,
@@ -13068,10 +13068,10 @@
                 ],
                 "summary": "📝 تعديل إيصال دفع",
                 "description": "تحديث بيانات إيصال دفع موجود.",
-                "operationId": "672b8bc5d8a9151e83e8f633ecdf4c5f",
+                "operationId": "ffac5cdc4d359393729f66668c8ee98b",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "payslip",
                         "in": "path",
                         "description": "معرف الإيصال",
                         "required": true,
@@ -13190,10 +13190,10 @@
                 ],
                 "summary": "🗑️ حذف إيصال دفع",
                 "description": "حذف إيصال دفع من النظام.",
-                "operationId": "b54f955996d8a4b77c0dce4f159e9da1",
+                "operationId": "d21cbee0ee2ada3dda6107def742e8c8",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "payslip",
                         "in": "path",
                         "description": "معرف الإيصال",
                         "required": true,
@@ -13573,17 +13573,17 @@
                 ]
             }
         },
-        "/v1/staff/{id}": {
+        "/v1/staff/{staff}": {
             "get": {
                 "tags": [
                     "Staff Management"
                 ],
                 "summary": "🔍 تفاصيل الموظف",
                 "description": "استرجاع كافة التفاصيل الخاصة بموظف محدد.",
-                "operationId": "ea51f5dca987dc6d0eee0afaf7538e06",
+                "operationId": "9fff88a1b319757c26b54dadfd67b17d",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff",
                         "in": "path",
                         "description": "معرف الموظف",
                         "required": true,
@@ -13666,10 +13666,10 @@
                 ],
                 "summary": "✏️ تحديث بيانات الموظف",
                 "description": "تعديل المعلومات الخاصة بموظف مسجل.",
-                "operationId": "3ec83e4f69b9b598de9c52a013cdde06",
+                "operationId": "d60e13fa8ecf38b264b7875d634d4a37",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff",
                         "in": "path",
                         "description": "معرف الموظف",
                         "required": true,
@@ -13791,10 +13791,10 @@
                 ],
                 "summary": "🗑️ حذف موظف",
                 "description": "حذف موظف (Soft Delete) من النظام.",
-                "operationId": "115327a921aedc0c27cce6afcf5a2a1c",
+                "operationId": "29e68e331d2e6548b81ee1f38a226345",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff",
                         "in": "path",
                         "description": "معرف الموظف",
                         "required": true,
@@ -14255,17 +14255,17 @@
                 ]
             }
         },
-        "/v1/staff-shifts/{id}": {
+        "/v1/staff-shifts/{staff_shift}": {
             "get": {
                 "tags": [
                     "Staff Shifts"
                 ],
                 "summary": "🔍 تفاصيل مناوبة الموظف",
                 "description": "استرجاع تفاصيل مناوبة محددة لموظف.",
-                "operationId": "1b87295f32328e74bf3fe930302fb7d0",
+                "operationId": "7ec17eff86a2cfb0bbcb691ca4177170",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_shift",
                         "in": "path",
                         "description": "معرف المناوبة",
                         "required": true,
@@ -14348,10 +14348,10 @@
                 ],
                 "summary": "📝 تعديل مناوبة الموظف",
                 "description": "تحديث بيانات مناوبة عمل مخصصة لموظف.",
-                "operationId": "6f8b761e7d0dcb2ad3b821f620af9a09",
+                "operationId": "2f0c61a114c8bd6f0c9dafb8107b0090",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_shift",
                         "in": "path",
                         "description": "معرف المناوبة",
                         "required": true,
@@ -14470,10 +14470,10 @@
                 ],
                 "summary": "🗑️ حذف مناوبة",
                 "description": "حذف مناوبة عمل مسجلة لموظف.",
-                "operationId": "4303d73f5f6e563f9ca03258bb2e76ba",
+                "operationId": "93db7000378649a3a43dc1c079ec04a2",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "staff_shift",
                         "in": "path",
                         "description": "معرف المناوبة",
                         "required": true,
@@ -14553,17 +14553,17 @@
                 ]
             }
         },
-        "/v1/staff/{staffId}/unavailabilities": {
+        "/v1/staff/{staff}/unavailabilities": {
             "get": {
                 "tags": [
                     "Staff Unavailability"
                 ],
                 "summary": "📅 عرض أوقات عدم توفر الموظف",
                 "description": "استرجاع جميع فترات غياب وعدم توفر الموظف للعمل.",
-                "operationId": "3794744646ba76de3394d483cf3dc843",
+                "operationId": "86e99faf45524bc5411cd502b3a18087",
                 "parameters": [
                     {
-                        "name": "staffId",
+                        "name": "staff",
                         "in": "path",
                         "description": "معرف الموظف",
                         "required": true,
@@ -14616,10 +14616,10 @@
                 ],
                 "summary": "➕ إضافة فترة عدم توفر",
                 "description": "تسجيل فترة زمنية يكون فيها الموظف غير متاح للعمل.",
-                "operationId": "53aae434e31086d5312b45e52558cb13",
+                "operationId": "ef68a8e9d2dca107bd8abe748c398fc5",
                 "parameters": [
                     {
-                        "name": "staffId",
+                        "name": "staff",
                         "in": "path",
                         "description": "معرف الموظف",
                         "required": true,
@@ -14713,17 +14713,17 @@
                 ]
             }
         },
-        "/v1/staff/{staffId}/unavailabilities/{id}": {
+        "/v1/staff/{staff}/unavailabilities/{unavailability}": {
             "delete": {
                 "tags": [
                     "Staff Unavailability"
                 ],
                 "summary": "🗑️ حذف فترة عدم التوفر",
                 "description": "إزالة فترة مسجلة لعدم توفر الموظف.",
-                "operationId": "e5d7818d51306f9a298743d2da093fc6",
+                "operationId": "e964ddb18a1db499142b96a6c6d5e09c",
                 "parameters": [
                     {
-                        "name": "staffId",
+                        "name": "staff",
                         "in": "path",
                         "description": "معرف الموظف",
                         "required": true,
@@ -14733,7 +14733,7 @@
                         }
                     },
                     {
-                        "name": "id",
+                        "name": "unavailability",
                         "in": "path",
                         "description": "معرف الفترة",
                         "required": true,
@@ -14918,17 +14918,17 @@
                 ]
             }
         },
-        "/v1/extra-services/{id}": {
+        "/v1/extra-services/{extra_service}": {
             "get": {
                 "tags": [
                     "Extra Services"
                 ],
                 "summary": "🔍 تفاصيل الخدمة الإضافية",
                 "description": "استرجاع تفاصيل خدمة إضافية معينة.",
-                "operationId": "c1150744431008eb404b99afd19b8534",
+                "operationId": "35c5bfc608f070e32fee5387aeac8b12",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "extra_service",
                         "in": "path",
                         "description": "معرف الخدمة",
                         "required": true,
@@ -14994,10 +14994,10 @@
                 ],
                 "summary": "📝 تعديل الخدمة الإضافية",
                 "description": "تحديث بيانات خدمة إضافية موجودة.",
-                "operationId": "40623efd6d008b9d03991e7673baee0f",
+                "operationId": "7533cec50c40c8d9bf078225755967de",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "extra_service",
                         "in": "path",
                         "description": "معرف الخدمة",
                         "required": true,
@@ -15099,10 +15099,10 @@
                 ],
                 "summary": "🗑️ حذف الخدمة الإضافية",
                 "description": "حذف خدمة إضافية من النظام.",
-                "operationId": "2fd174d099be38712082a0fad45aabe0",
+                "operationId": "c50168f10d9e5da5e446be3cc1b7938c",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "extra_service",
                         "in": "path",
                         "description": "معرف الخدمة",
                         "required": true,
@@ -15418,17 +15418,17 @@
                 ]
             }
         },
-        "/v1/player-subscriptions/{id}": {
+        "/v1/player-subscriptions/{player_subscription}": {
             "get": {
                 "tags": [
                     "Subscription Management"
                 ],
                 "summary": "🔍 تفاصيل الاشتراك",
                 "description": "استرجاع تفاصيل اشتراك عضو محدد مع تجميداته.",
-                "operationId": "8a9b280572c05b196fa3a2805e94eac7",
+                "operationId": "22045c7fdb9692e065fe9abfcfc575d0",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription",
                         "in": "path",
                         "description": "معرف الاشتراك",
                         "required": true,
@@ -16187,17 +16187,17 @@
                 ]
             }
         },
-        "/v1/player-subscription-items/{id}": {
+        "/v1/player-subscription-items/{player_subscription_item}": {
             "get": {
                 "tags": [
                     "Player Subscription Items"
                 ],
                 "summary": "🔍 تفاصيل عنصر الاشتراك",
                 "description": "استرجاع تفاصيل عنصر محدد باشتراك لاعب.",
-                "operationId": "cb59d2293c650687f3650ecea75b7397",
+                "operationId": "8a0dad11e9a394cef66c6583bb0272d7",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription_item",
                         "in": "path",
                         "description": "معرف العنصر",
                         "required": true,
@@ -16280,10 +16280,10 @@
                 ],
                 "summary": "📝 تعديل عنصر الاشتراك",
                 "description": "تحديث بيانات عنصر ضمن اشتراك لاعب.",
-                "operationId": "52664652c06ea3c684d30c6c583d5ad1",
+                "operationId": "08a07ce829a1a91d75efc1b1c64f6a62",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription_item",
                         "in": "path",
                         "description": "معرف العنصر",
                         "required": true,
@@ -16401,10 +16401,10 @@
                 ],
                 "summary": "🗑️ حذف عنصر الاشتراك",
                 "description": "إزالة عنصر من اشتراك لاعب.",
-                "operationId": "3fdc4a8ab179604e036b2b0a5650f813",
+                "operationId": "c4a0c831497a61b2a4ce34fa575909d6",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription_item",
                         "in": "path",
                         "description": "معرف العنصر",
                         "required": true,
@@ -16614,17 +16614,17 @@
                 ]
             }
         },
-        "/v1/player-subscription-services/{id}": {
+        "/v1/player-subscription-services/{player_subscription_service}": {
             "get": {
                 "tags": [
                     "Player Subscription Services"
                 ],
                 "summary": "🔍 تفاصيل خدمة الاشتراك",
                 "description": "استرجاع تفاصيل خدمة محددة باشتراك لاعب.",
-                "operationId": "848b63aa7f9453fbba61467e65fa2af6",
+                "operationId": "c4f95d1db687c24971f7a313bd2a63e5",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription_service",
                         "in": "path",
                         "description": "معرف الخدمة",
                         "required": true,
@@ -16690,10 +16690,10 @@
                 ],
                 "summary": "📝 تعديل خدمة الاشتراك",
                 "description": "تحديث بيانات خدمة إضافية ضمن اشتراك لاعب.",
-                "operationId": "c16c93d4be5004dad1cf349aa23fefea",
+                "operationId": "30096ab8d26a0c6ba51468147481374f",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription_service",
                         "in": "path",
                         "description": "معرف الخدمة",
                         "required": true,
@@ -16794,10 +16794,10 @@
                 ],
                 "summary": "🗑️ حذف خدمة الاشتراك",
                 "description": "إزالة خدمة من اشتراك لاعب.",
-                "operationId": "1bb1cd4b8bb70b283f32d8e752709aff",
+                "operationId": "b199f465bc9e4c490a68894abb385caa",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "player_subscription_service",
                         "in": "path",
                         "description": "معرف الخدمة",
                         "required": true,
@@ -17014,17 +17014,17 @@
                 ]
             }
         },
-        "/v1/subscription-freezes/{id}": {
+        "/v1/subscription-freezes/{subscription_freeze}": {
             "get": {
                 "tags": [
                     "Subscription Freezes"
                 ],
                 "summary": "🔍 تفاصيل التجميد",
                 "description": "استرجاع تفاصيل سجل تجميد محدد.",
-                "operationId": "db16b19e2fd9ced1325f529a947eaa00",
+                "operationId": "00670d542512886c3c71476af3998be2",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_freeze",
                         "in": "path",
                         "description": "معرف التجميد",
                         "required": true,
@@ -17107,10 +17107,10 @@
                 ],
                 "summary": "📝 تعديل تجميد",
                 "description": "تحديث بيانات تجميد لاشتراك.",
-                "operationId": "d17aa76bd0d1f608ef8f3694014ba0a4",
+                "operationId": "4466feae7708a6cf879784d74bcafdbb",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_freeze",
                         "in": "path",
                         "description": "معرف التجميد",
                         "required": true,
@@ -17229,10 +17229,10 @@
                 ],
                 "summary": "🗑️ حذف تجميد",
                 "description": "حذف سجل تجميد لاشتراك.",
-                "operationId": "d4f1834833a934f7318cd9eac5056e23",
+                "operationId": "60279993b3234491c4a0bb59f1abd5d3",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_freeze",
                         "in": "path",
                         "description": "معرف التجميد",
                         "required": true,
@@ -17468,17 +17468,17 @@
                 ]
             }
         },
-        "/v1/subscription-plan-activities/{id}": {
+        "/v1/subscription-plan-activities/{subscription_plan_activity}": {
             "get": {
                 "tags": [
                     "Subscription Plan Activities"
                 ],
                 "summary": "🔍 تفاصيل نشاط الخطة",
                 "description": "استرجاع تفاصيل ارتباط نشاط بخطة.",
-                "operationId": "35159876f63e8e138bf16f6574319e44",
+                "operationId": "f5c53ad1ad1787176563672edca86d8b",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_plan_activity",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -17561,10 +17561,10 @@
                 ],
                 "summary": "📝 تعديل نشاط الخطة",
                 "description": "تحديث بيانات ارتباط النشاط بالخطة.",
-                "operationId": "59d22c63adebad497ca5c8db81193599",
+                "operationId": "d3bcfe488b24d3deb238564137d02075",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_plan_activity",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -17682,10 +17682,10 @@
                 ],
                 "summary": "🗑️ حذف نشاط من الخطة",
                 "description": "إزالة ارتباط نشاط بخطة اشتراك.",
-                "operationId": "baa7cc09e75f3fcea2777ac925449e53",
+                "operationId": "709631bab93185938bb4b2486a3c9b35",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_plan_activity",
                         "in": "path",
                         "description": "المعرف",
                         "required": true,
@@ -17927,17 +17927,17 @@
                 ]
             }
         },
-        "/v1/subscription-plans/{id}": {
+        "/v1/subscription-plans/{subscription_plan}": {
             "get": {
                 "tags": [
                     "Subscription Management"
                 ],
                 "summary": "🔍 تفاصيل خطة الاشتراك",
                 "description": "استرجاع تفاصيل خطة اشتراك محددة.",
-                "operationId": "e24d7c05878abe2afc0ac3932f9d872a",
+                "operationId": "dc547d5c282f314457b818585c787198",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_plan",
                         "in": "path",
                         "description": "معرف الخطة",
                         "required": true,
@@ -18020,10 +18020,10 @@
                 ],
                 "summary": "📝 تعديل خطة الاشتراك",
                 "description": "تحديث بيانات ومميزات خطة اشتراك.",
-                "operationId": "1f405e846e1f12740ba00fd943caf15a",
+                "operationId": "e2f0be4b9a66b67a0b4927bdb6aee9ca",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_plan",
                         "in": "path",
                         "description": "معرف الخطة",
                         "required": true,
@@ -18141,10 +18141,10 @@
                 ],
                 "summary": "🗑️ حذف خطة الاشتراك",
                 "description": "إزالة خطة اشتراك من النظام.",
-                "operationId": "4d39b9cd9a51b2220ec1907ebdf76e6f",
+                "operationId": "630078218265b88ac46b80ddc70a58cf",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "subscription_plan",
                         "in": "path",
                         "description": "معرف الخطة",
                         "required": true,
