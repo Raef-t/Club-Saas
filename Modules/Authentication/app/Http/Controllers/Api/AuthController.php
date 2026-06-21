@@ -350,6 +350,9 @@ class AuthController extends BaseController
             'password' => Hash::make($validated['new_password']),
         ]);
 
+        // مسح جميع الجلسات (Tokens) الحالية للمستخدم لإجباره على تسجيل الدخول مرة أخرى
+        $user->tokens()->delete();
+
         return $this->successResponse(null, __('Password changed successfully'));
     }
 
