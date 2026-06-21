@@ -26,7 +26,7 @@ class AuthController extends BaseController
         content: new OA\JsonContent(
             required: ['username', 'password'],
             properties: [
-                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'admin'),
+                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'player'),
                 new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
             ]
         )
@@ -51,6 +51,7 @@ class AuthController extends BaseController
                                 new OA\Property(property: 'id', type: 'integer', example: 1),
                                 new OA\Property(property: 'username', type: 'string', example: 'admin'),
                                 new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
+                                new OA\Property(property: 'photo_url', type: 'string', nullable: true, example: 'https://example.com/photo.jpg'),
                             ]
                         )
                     ]
@@ -120,6 +121,7 @@ class AuthController extends BaseController
                 'id' => $user->id,
                 'username' => $user->username,
                 'full_name' => $user->person->full_name ?? null,
+                'photo_url' => $user->person->photo_url ?? null,
             ]
         ], __('Logged in successfully'));
     }
@@ -362,5 +364,75 @@ class AuthController extends BaseController
             ->where('player_subscriptions.status', 'active')
             ->where('subscription_plans.type', 'like', '%vip%')
             ->exists();
+    }
+
+    #[OA\Post(
+        path: '/v1/auth/change-photo',
+        summary: '🖼️ تحديث الصورة الشخصية',
+        description: 'يقوم المستخدم المسجل برفع وتحديث صورته الشخصية مباشرة.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: 'ملف الصورة (jpeg, png, jpg, gif) بحد أقصى 2MB',
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['photo'],
+                properties: [
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'ملف الصورة المراد رفعها')
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تغيير الصورة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تحديث الصورة الشخصية بنجاح'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'photo_url', type: 'string', example: 'photos/xyz123.jpg')
+                    ]
+                )
+            ]
+        )
+    )]
+    public function updatePhoto(Request $request)
+    {
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        $user = $request->user();
+        $person = $user->person;
+
+        if (!$person) {
+            return $this->errorResponse(__('User does not have a profile'), 404);
+        }
+
+        if ($request->hasFile('photo')) {
+            // حذف الصورة القديمة إذا كانت موجودة
+            if ($person->photo_url && \Illuminate\Support\Facades\Storage::disk('public')->exists($person->photo_url)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            }
+
+            // حفظ الصورة الجديدة
+            $path = $request->file('photo')->store('photos', 'public');
+
+            // ربطها بالمستخدم
+            $person->update(['photo_url' => $path]);
+
+            return $this->successResponse([
+                'photo_url' => $path
+            ], __('تم تحديث الصورة الشخصية بنجاح'));
+        }
+
+        return $this->errorResponse(__('لم يتم إرفاق صورة'), 400);
     }
 }

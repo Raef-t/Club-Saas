@@ -2588,7 +2588,7 @@
                                     "username": {
                                         "description": "اسم المستخدم الفريد (للموظف أو المدير)",
                                         "type": "string",
-                                        "example": "admin"
+                                        "example": "player"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
@@ -2639,6 +2639,11 @@
                                                         "full_name": {
                                                             "type": "string",
                                                             "example": "أحمد محمد"
+                                                        },
+                                                        "photo_url": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/photo.jpg",
+                                                            "nullable": true
                                                         }
                                                     },
                                                     "type": "object"
@@ -3129,6 +3134,73 @@
                                         "message": {
                                             "type": "string",
                                             "example": "حدث خطأ داخلي في الخادم."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/change-photo": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "🖼️ تحديث الصورة الشخصية",
+                "description": "يقوم المستخدم المسجل برفع وتحديث صورته الشخصية مباشرة.",
+                "operationId": "9861516bdb66698d5325fdc08a1b4ac2",
+                "requestBody": {
+                    "description": "ملف الصورة (jpeg, png, jpg, gif) بحد أقصى 2MB",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "photo"
+                                ],
+                                "properties": {
+                                    "photo": {
+                                        "description": "ملف الصورة المراد رفعها",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تغيير الصورة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث الصورة الشخصية بنجاح"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "photo_url": {
+                                                    "type": "string",
+                                                    "example": "photos/xyz123.jpg"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -6294,6 +6366,113 @@
                                         "message": {
                                             "type": "string",
                                             "example": "حدث خطأ داخلي في الخادم."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/me/physical-stats": {
+            "post": {
+                "tags": [
+                    "Member App"
+                ],
+                "summary": "💪 تحديث البيانات الجسدية (الطول، الوزن، العمر)",
+                "description": "يسمح للاعب بتحديث طوله، وزنه، وتاريخ ميلاده. يقوم النظام بحساب العمر تلقائياً وإضافة سجل جديد في قياسات العضو.",
+                "operationId": "a685fe02f2359b764bc3d794636d2475",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "height": {
+                                        "description": "الطول بالسنتيمتر",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 175.5
+                                    },
+                                    "weight": {
+                                        "description": "الوزن بالكيلوجرام",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 70.2
+                                    },
+                                    "dob": {
+                                        "description": "تاريخ الميلاد (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1995-05-20"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التحديث بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث البيانات الجسدية بنجاح."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 الملف الشخصي غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Member profile not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
                                         }
                                     },
                                     "type": "object"
