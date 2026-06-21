@@ -4,6 +4,7 @@ namespace Modules\Authentication\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Person extends Model
 {
     use HasFactory;
@@ -65,5 +66,17 @@ class Person extends Model
             'staff', 'admin' => $this->staffProfile,
             default => null,
         };
+    }
+
+    /**
+     * Prepare photo_url for frontend by prepending storage/
+     */
+    public function getPhotoUrlAttribute($value)
+    {
+        if ($value && !str_starts_with($value, 'http') && !str_starts_with($value, 'storage/')) {
+            return 'storage/' . $value;
+        }
+
+        return $value;
     }
 }

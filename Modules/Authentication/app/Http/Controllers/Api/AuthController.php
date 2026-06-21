@@ -421,8 +421,9 @@ class AuthController extends BaseController
 
         if ($request->hasFile('photo')) {
             // حذف الصورة القديمة إذا كانت موجودة
-            if ($person->photo_url && \Illuminate\Support\Facades\Storage::disk('public')->exists($person->photo_url)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            $oldPhoto = $person->getRawOriginal('photo_url');
+            if ($oldPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldPhoto)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPhoto);
             }
 
             // حفظ الصورة الجديدة
@@ -432,7 +433,7 @@ class AuthController extends BaseController
             $person->update(['photo_url' => $path]);
 
             return $this->successResponse([
-                'photo_url' => $path
+                'photo_url' => 'storage/' . $path
             ], __('تم تحديث الصورة الشخصية بنجاح'));
         }
 
