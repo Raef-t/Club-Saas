@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 /**
  * @OA\Info(
- *     title="Clubs SaaS API Documentation",
+ *     title="Clubs API Documentation",
  *     version="1.0.0",
- *     description="API documentation for the Modular Multi-tenant Club Management System",
+ *     description="This is the API documentation for the Clubs system.",
  *     @OA\Contact(
  *         email="admin@example.com"
  *     )

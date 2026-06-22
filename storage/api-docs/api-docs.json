@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Clubs SaaS API",
-        "description": "API documentation for Clubs SaaS",
+        "title": "Clubs API",
+        "description": "API documentation for Clubs",
         "version": "1.0.0"
     },
     "servers": [
@@ -2594,6 +2594,12 @@
                                         "description": "كلمة المرور",
                                         "type": "string",
                                         "example": "password123"
+                                    },
+                                    "fcm_token": {
+                                        "description": "رمز الجهاز لإشعارات Firebase",
+                                        "type": "string",
+                                        "example": "fcm_token_string_here",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
