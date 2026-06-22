@@ -20,6 +20,7 @@ class User extends Authenticatable
         'person_id',
         'username',
         'password',
+        'fcm_token',
         'is_active',
         'last_login',
     ];
