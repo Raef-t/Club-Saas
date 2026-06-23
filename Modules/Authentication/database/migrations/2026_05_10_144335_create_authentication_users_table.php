@@ -19,10 +19,10 @@ return new class extends Migration
             $table->string('password');
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_login')->nullable();
+            $table->rememberToken();
             $table->timestamps();
 
             $table->foreign('person_id')->references('id')->on('people')->onDelete('cascade');
-
         });
     }
 

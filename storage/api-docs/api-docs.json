@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Clubs SaaS API",
-        "description": "API documentation for Clubs SaaS",
+        "title": "Clubs API",
+        "description": "API documentation for Clubs",
         "version": "1.0.0"
     },
     "servers": [
@@ -2594,6 +2594,12 @@
                                         "description": "كلمة المرور",
                                         "type": "string",
                                         "example": "password123"
+                                    },
+                                    "fcm_token": {
+                                        "description": "رمز الجهاز لإشعارات Firebase",
+                                        "type": "string",
+                                        "example": "fcm_token_string_here",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -14966,6 +14972,197 @@
                 ]
             }
         },
+        "/v1/staff/{staff}/working-hours": {
+            "get": {
+                "tags": [
+                    "Staff Working Hours"
+                ],
+                "summary": "🕒 عرض أوقات عمل الموظف",
+                "description": "استرجاع جميع أوقات العمل المسجلة لموظف معين.",
+                "operationId": "64a235d80c51c8f60b2e9f3345689931",
+                "parameters": [
+                    {
+                        "name": "staff",
+                        "in": "path",
+                        "description": "معرف الموظف",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع أوقات العمل بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff working hours retrieved"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Staff Working Hours"
+                ],
+                "summary": "➕ إضافة وقت عمل للموظف",
+                "description": "إضافة أو تحديث وقت عمل الموظف ليوم معين في الأسبوع.",
+                "operationId": "9831ba235b9c369dc1f1340f731d245d",
+                "parameters": [
+                    {
+                        "name": "staff",
+                        "in": "path",
+                        "description": "معرف الموظف",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "day_of_week",
+                                    "start_time",
+                                    "end_time"
+                                ],
+                                "properties": {
+                                    "day_of_week": {
+                                        "description": "من 0 (الأحد) إلى 6 (السبت)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": "08:00:00"
+                                    },
+                                    "end_time": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": "16:00:00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء وقت العمل بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff working hours updated"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff/{staff}/working-hours/{working_hour}": {
+            "delete": {
+                "tags": [
+                    "Staff Working Hours"
+                ],
+                "summary": "🗑️ حذف وقت العمل للموظف",
+                "description": "إزالة وقت عمل مسجل مسبقاً للموظف.",
+                "operationId": "ec5875f4a945a8b345523acc6d2ac0f7",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الحذف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff working hour deleted"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على وقت العمل"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/extra-services": {
             "get": {
                 "tags": [
@@ -18766,6 +18963,10 @@
         {
             "name": "Staff Unavailability",
             "description": "Staff Unavailability"
+        },
+        {
+            "name": "Staff Working Hours",
+            "description": "Staff Working Hours"
         },
         {
             "name": "Extra Services",

@@ -28,6 +28,7 @@ class AuthController extends BaseController
             properties: [
                 new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'player'),
                 new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
+                new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here', nullable: true),
             ]
         )
     )]
@@ -111,6 +112,10 @@ class AuthController extends BaseController
             return $this->errorResponse(__('User account is inactive'), 403);
         }
 
+        if (!empty($validated['fcm_token'])) {
+            $user->update(['fcm_token' => $validated['fcm_token']]);
+        }
+
         // Generate Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -156,7 +161,11 @@ class AuthController extends BaseController
     #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        if ($user) {
+            $user->update(['fcm_token' => null]);
+            $user->currentAccessToken()->delete();
+        }
         return $this->successResponse(null, __('Logged out successfully'));
     }
 
