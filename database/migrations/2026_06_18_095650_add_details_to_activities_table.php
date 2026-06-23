@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('activities', function (Blueprint $table) {
-            $table->integer('exercises_count')->default(0);
-            $table->integer('estimated_calories')->default(0);
+            if (!Schema::hasColumn('activities', 'exercises_count')) {
+                $table->integer('exercises_count')->default(0);
+            }
+            if (!Schema::hasColumn('activities', 'estimated_calories')) {
+                $table->integer('estimated_calories')->default(0);
+            }
         });
     }
 

@@ -1,0 +1,11 @@
+{
+    "name": "Accounting",
+    "alias": "accounting",
+    "description": "نظام دفتر الأستاذ العام - General Ledger Double-Entry Bookkeeping System",
+    "keywords": ["accounting", "ledger", "finance"],
+    "priority": 0,
+    "providers": [
+        "Modules\\Accounting\\Providers\\AccountingServiceProvider"
+    ],
+    "files": []
+}

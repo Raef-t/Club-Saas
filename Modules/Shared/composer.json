@@ -1,0 +1,9 @@
+{
+    "name": "nwidart/shared",
+    "description": "Shared Module for Cross-Module utilities",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Shared\\": "./"
+        }
+    }
+}

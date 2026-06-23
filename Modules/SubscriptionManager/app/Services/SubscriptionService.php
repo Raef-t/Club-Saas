@@ -140,34 +140,25 @@ class SubscriptionService
 
             // 7. Create Payment if paid_amount > 0
             if ($paidAmount > 0) {
-                $cashRegister = \Illuminate\Support\Facades\DB::table('cash_registers')
+                $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
                     ->where('branch_id', $branchId)
-                    ->first();
-                
-                if (!$cashRegister) {
-                    $cashRegisterId = \Illuminate\Support\Facades\DB::table('cash_registers')->insertGetId([
-                        'branch_id' => $branchId,
-                        'name' => 'Default Register',
-                        'type' => 'online',
-                        'balance' => 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    $cashRegisterId = $cashRegister->id;
+                    ->value('default_safe_id');
+
+                if (!$safeId) {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                        ->where('branch_id', $branchId)
+                        ->value('id');
                 }
 
-                \Modules\SubscriptionManager\Models\Payment::create([
+                $payment = \Modules\SubscriptionManager\Models\Payment::create([
                     'invoice_id' => $invoice->id,
-                    'cash_register_id' => $cashRegisterId,
+                    'safe_id' => $safeId,
                     'amount' => $paidAmount,
                     'payment_method' => $options['payment_method'] ?? 'cash',
                     'status' => 'completed',
                 ]);
 
-                \Illuminate\Support\Facades\DB::table('cash_registers')
-                    ->where('id', $cashRegisterId)
-                    ->increment('balance', $paidAmount);
+                event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
 
             // 8. Create Extra Services (including Lockers)
@@ -314,35 +305,26 @@ class SubscriptionService
                 ]
             );
 
-            $cashRegister = \Illuminate\Support\Facades\DB::table('cash_registers')
-                ->where('branch_id', $branchId)
-                ->first();
-            
-            if (!$cashRegister) {
-                $cashRegisterId = \Illuminate\Support\Facades\DB::table('cash_registers')->insertGetId([
-                    'branch_id' => $branchId,
-                    'name' => 'Default Register',
-                    'type' => 'online',
-                    'balance' => 0,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } else {
-                $cashRegisterId = $cashRegister->id;
-            }
-
             if ($amount > 0) {
-                \Modules\SubscriptionManager\Models\Payment::create([
+                $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                    ->where('branch_id', $branchId)
+                    ->value('default_safe_id');
+
+                if (!$safeId) {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                        ->where('branch_id', $branchId)
+                        ->value('id');
+                }
+
+                $payment = \Modules\SubscriptionManager\Models\Payment::create([
                     'invoice_id' => $invoice->id,
-                    'cash_register_id' => $cashRegisterId,
+                    'safe_id' => $safeId,
                     'amount' => $amount,
                     'payment_method' => 'cash',
                     'status' => 'completed',
                 ]);
 
-                \Illuminate\Support\Facades\DB::table('cash_registers')
-                    ->where('id', $cashRegisterId)
-                    ->increment('balance', $amount);
+                event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
 
             $invoice->update([
