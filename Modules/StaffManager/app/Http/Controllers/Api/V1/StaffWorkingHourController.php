@@ -53,6 +53,19 @@ class StaffWorkingHourController extends BaseController
             ]
         )
     )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم إنشاء وقت العمل بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff working hours updated'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function store(Request $request, $staffId)
     {
         $validated = $request->validate([
@@ -76,6 +89,19 @@ class StaffWorkingHourController extends BaseController
         tags: ['Staff Working Hours'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الحذف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff working hour deleted'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على وقت العمل')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function destroy($staffId, $id)
     {
         $workingHour = StaffWorkingHour::where('staff_id', $staffId)->findOrFail($id);
