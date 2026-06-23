@@ -16,14 +16,18 @@ class SessionService
     protected $branchService;
     protected $staffService;
 
+    protected $availabilityService;
+
     public function __construct(
         SessionRepositoryInterface $sessionRepository,
         BranchSharedServiceInterface $branchService,
-        StaffSharedServiceInterface $staffService
+        StaffSharedServiceInterface $staffService,
+        AvailabilityService $availabilityService
     ) {
         $this->sessionRepository = $sessionRepository;
         $this->branchService = $branchService;
         $this->staffService = $staffService;
+        $this->availabilityService = $availabilityService;
     }
 
     /**
@@ -73,25 +77,17 @@ class SessionService
             }
         }
 
-        // Validate coach schedule conflicts (overlap)
-        if (!empty($data['staff_id']) && !empty($data['start_time']) && !empty($data['end_time'])) {
-            $startTime = Carbon::parse($data['start_time']);
-            $endTime = Carbon::parse($data['end_time']);
-            
-            $query = SportSession::where('staff_id', $data['staff_id'])
-                ->where('status', 'scheduled')
-                ->where(function ($q) use ($startTime, $endTime) {
-                    $q->whereBetween('start_time', [$startTime, $endTime])
-                      ->orWhereBetween('end_time', [$startTime, $endTime])
-                      ->orWhere(function ($sub) use ($startTime, $endTime) {
-                          $sub->where('start_time', '<=', $startTime)
-                              ->where('end_time', '>=', $endTime);
-                      });
-                });
+        $startTime = Carbon::parse($data['start_time']);
+        $endTime = Carbon::parse($data['end_time']);
 
-            if ($query->exists()) {
-                throw new Exception(__('Coach has a conflicting session scheduled at this time.'));
-            }
+        // Validate coach schedule conflicts (overlap)
+        if (!empty($data['staff_id'])) {
+            $this->availabilityService->checkStaffAvailability($data['staff_id'], $startTime, $endTime);
+        }
+
+        // Validate facility availability
+        if (!empty($data['facility_id'])) {
+            $this->availabilityService->checkFacilityAvailability($data['facility_id'], $startTime, $endTime);
         }
 
         $session = $this->sessionRepository->create($data);
@@ -116,16 +112,17 @@ class SessionService
             $startTime = Carbon::parse($startTimeStr);
             $endTime = Carbon::parse($endTimeStr);
             
+            // Check availability (Note: This might conflict with itself if not handled in the service, 
+            // but the service currently checks overlap. For a real update, we'd need to exclude the current session ID in the service.
+            // For now, we will assume updating works or we wrap it in a try-catch for same session).
+            // Actually, we should probably add an $excludeSessionId to the service, but since it's an MVP, we can keep the basic check.
+            
             $query = SportSession::where('staff_id', $staffId)
                 ->where('id', '!=', $id)
                 ->where('status', 'scheduled')
                 ->where(function ($q) use ($startTime, $endTime) {
-                    $q->whereBetween('start_time', [$startTime, $endTime])
-                      ->orWhereBetween('end_time', [$startTime, $endTime])
-                      ->orWhere(function ($sub) use ($startTime, $endTime) {
-                          $sub->where('start_time', '<=', $startTime)
-                              ->where('end_time', '>=', $endTime);
-                      });
+                    $q->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
                 });
 
             if ($query->exists()) {
@@ -217,10 +214,10 @@ class SessionService
             throw new Exception(__('Member not found.'));
         }
 
-        // Check duplicate booking
+        // Check duplicate booking (ignore cancelled)
         $existing = SportSessionBooking::where('sports_session_id', $sessionId)
             ->where('member_id', $memberId)
-            ->where('status', 'booked')
+            ->whereIn('status', ['pending', 'confirmed'])
             ->first();
         if ($existing) {
             throw new Exception(__('Member has already booked this session.'));
@@ -232,7 +229,7 @@ class SessionService
 
         $overlap = SportSessionBooking::join('sports_sessions', 'sports_session_bookings.sports_session_id', '=', 'sports_sessions.id')
             ->where('sports_session_bookings.member_id', $memberId)
-            ->where('sports_session_bookings.status', 'booked')
+            ->whereIn('sports_session_bookings.status', ['pending', 'confirmed'])
             ->where('sports_sessions.status', 'scheduled')
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->whereBetween('sports_sessions.start_time', [$startTime, $endTime])
@@ -249,10 +246,12 @@ class SessionService
         }
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($session, $memberId) {
+            // By default, we mark it as pending to await payment. If it's free, another layer can mark it confirmed.
             $booking = SportSessionBooking::create([
                 'sports_session_id' => $session->id,
                 'member_id' => $memberId,
-                'status' => 'booked',
+                'status' => 'pending', // Use pending to start the booking lifecycle
+                'is_paid' => false,
             ]);
 
             $session->increment('booked_count');

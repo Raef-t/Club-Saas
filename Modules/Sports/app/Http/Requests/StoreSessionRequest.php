@@ -22,6 +22,7 @@ class StoreSessionRequest extends FormRequest
             'end_time' => 'required|date|after:start_time',
             'max_players' => 'nullable|integer|min:1',
             'gender_allowed' => 'nullable|in:male,female,mixed',
+            'session_type' => 'nullable|in:group_class,personal_training,facility_booking',
             'status' => 'nullable|in:scheduled,cancelled,completed',
         ];
     }
