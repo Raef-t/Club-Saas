@@ -60,7 +60,8 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'name', type: 'string', example: 'الاشتراك الذهبي'),
                 new OA\Property(property: 'duration_in_days', type: 'integer', example: 30),
-                new OA\Property(property: 'price', type: 'number', format: 'float', example: 350.00)
+                new OA\Property(property: 'price', type: 'number', format: 'float', example: 350.00),
+                new OA\Property(property: 'max_subscribers', type: 'integer', example: 50)
             ]
         )
     )]

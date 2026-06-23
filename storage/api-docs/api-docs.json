@@ -18229,6 +18229,10 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 350
+                                    },
+                                    "max_subscribers": {
+                                        "type": "integer",
+                                        "example": 50
                                     }
                                 },
                                 "type": "object"

@@ -23,6 +23,7 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'base_price' => 'required|numeric|min:0',
             'max_freeze_count' => 'nullable|integer|min:0',
             'max_freeze_days' => 'nullable|integer|min:0',
+            'max_subscribers' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
         ];
     }

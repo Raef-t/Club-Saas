@@ -17,6 +17,8 @@ class SubscriptionPlan extends Model
         'max_freeze_days',
         'base_price',
         'is_active',
+        'max_subscribers',
+        'current_subscribers',
     ];
 
     protected $casts = [
@@ -25,6 +27,8 @@ class SubscriptionPlan extends Model
         'base_price' => 'decimal:2',
         'max_freeze_count' => 'integer',
         'max_freeze_days' => 'integer',
+        'max_subscribers' => 'integer',
+        'current_subscribers' => 'integer',
     ];
 
     /**
