@@ -5,6 +5,27 @@ namespace Modules\Accounting\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(
+    schema: "AccAccount",
+    title: "حساب شجرة الحسابات (دليل الحسابات)",
+    description: "يمثل حساباً مالياً فريداً ضمن شجرة الحسابات (الأصول، الخصوم، حقوق الملكية، الإيرادات، المصروفات). يمكن أن يكون حساباً رئيسياً (مجمعاً) أو فرعياً (يقبل الحركات المالية والقيود).",
+    properties: [
+        new OA\Property(property: "id", type: "integer", description: "المعرف الفريد للحساب المالي", example: 1),
+        new OA\Property(property: "code", type: "string", description: "رمز الحساب المحاسبي الفريد (مثال: 1101 للصناديق، 1101001 لصندوق رئيسي)", example: "1101001"),
+        new OA\Property(property: "name", type: "string", description: "اسم الحساب باللغة العربية", example: "صندوق الصالة الرئيسي"),
+        new OA\Property(property: "name_en", type: "string", description: "اسم الحساب باللغة الإنجليزية", nullable: true, example: "Main Safe Cash"),
+        new OA\Property(property: "type", type: "string", enum: ["asset", "liability", "equity", "revenue", "expense"], description: "تصنيف الحساب الرئيسي (أصل، التزام، حقوق ملكية، إيراد، مصروف)", example: "asset"),
+        new OA\Property(property: "currency", type: "string", enum: ["USD", "SYP", "BOTH"], description: "العملة المقبولة للحساب: دولار أمريكي، ليرة سورية، أو كلتا العملتين", example: "BOTH"),
+        new OA\Property(property: "parent_id", type: "integer", description: "معرف الحساب الأب (في حال كان هذا الحساب فرعياً تحت حساب تجميعي)", nullable: true, example: 2),
+        new OA\Property(property: "is_active", type: "boolean", description: "حالة تفعيل الحساب لاستقبال القيود والعمليات", example: true),
+        new OA\Property(property: "allow_manual_entry", type: "boolean", description: "هل يسمح النظام للمستخدمين بإدخال قيود محاسبية يدوية على هذا الحساب (غالباً الحسابات الفرعية تسمح، والرئيسية التجميعية أو الصناديق المؤتمتة لا تسمح لمنع الأخطاء)", example: false),
+        new OA\Property(property: "description", type: "string", description: "شرح تفصيلي لوظيفة الحساب المحاسبي وسياق استخدامه", nullable: true, example: "صندوق استلام الكاش المالي لاشتراكات الصالة الرياضية"),
+        new OA\Property(property: "created_at", type: "string", format: "date-time", description: "تاريخ إنشاء السجل", example: "2026-06-01T08:00:00Z"),
+        new OA\Property(property: "updated_at", type: "string", format: "date-time", description: "تاريخ آخر تحديث للسجل", example: "2026-06-30T23:59:59Z")
+    ]
+)]
 class AccAccount extends Model
 {
     use HasFactory;

@@ -7,6 +7,34 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Scopes\BranchScope;
 use Modules\ClubManager\Models\Branch;
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(
+    schema: "AccJournal",
+    title: "سند القيود اليومية ورأس القيد",
+    description: "يمثل رأس السند المالي أو القيد المحاسبي المزدوج. قد يكون قيد تسوية عام (JV)، سند قبض نقدية (RV)، أو سند صرف نقدية (PV). يحتوي على التاريخ والوصف والفرع والحالة (مسودة أو مرحل).",
+    properties: [
+        new OA\Property(property: "id", type: "integer", description: "المعرف الفريد لسند القيد", example: 1),
+        new OA\Property(property: "reference_number", type: "string", description: "الرقم المرجعي التلقائي للسند (مثال: JV-2026-0001)", example: "JV-2026-0001"),
+        new OA\Property(property: "type", type: "string", enum: ["JV", "RV", "PV"], description: "نوع السند: JV (قيد عام)، RV (سند قبض وصندوق)، PV (سند صرف وصندوق)", example: "JV"),
+        new OA\Property(property: "period_id", type: "integer", description: "معرف الفترة المالية والمحاسبية المفتوحة التي ينتمي إليها السند", example: 1),
+        new OA\Property(property: "date", type: "string", format: "date", description: "التاريخ الفعلي لتأثير القيد محاسبياً", example: "2026-06-23"),
+        new OA\Property(property: "description", type: "string", description: "الوصف والبيان العام لسبب إنشاء السند", example: "إثبات مصروف صيانة أجهزة اللياقة البدنية"),
+        new OA\Property(property: "counterparty_id", type: "integer", description: "معرف الطرف الآخر المساهم أو المستلم في العملية (عميل، مورد، موظف)", nullable: true, example: 3),
+        new OA\Property(property: "safe_id", type: "integer", description: "معرف الصندوق المالي المتأثر في حال كان السند سند قبض أو صرف نقدية", nullable: true, example: null),
+        new OA\Property(property: "exchange_rate", type: "number", format: "float", description: "سعر الصرف المعتمد بين الدولار والليرة في تاريخ القيد", example: 15000.00),
+        new OA\Property(property: "status", type: "string", enum: ["draft", "posted"], description: "حالة السند: draft (مسودة ولا تؤثر مالياً بالتقارير)، posted (مرحل ويؤثر فورياً على الأرصدة ودفتر الأستاذ والميزانية)", example: "draft"),
+        new OA\Property(property: "posted_by", type: "integer", description: "معرف المستخدم الذي قام بترحيل السند والتصديق عليه مالياً", nullable: true, example: 3),
+        new OA\Property(property: "posted_at", type: "string", format: "date-time", description: "تاريخ ووقت ترحيل القيد المزدوج", nullable: true, example: "2026-06-23T14:30:00Z"),
+        new OA\Property(property: "reversed_journal_id", type: "integer", description: "في حال تم إلغاء القيد عبر قيد عاكس، يمثل هذا الحقل معرف القيد الجديد الذي تم إنشاؤه لإلغاء هذا القيد", nullable: true, example: null),
+        new OA\Property(property: "source_type", type: "string", description: "نوع مصدر القيد المؤتمت (مثال: subscription_payment, payroll)", nullable: true, example: "subscription_payment"),
+        new OA\Property(property: "source_id", type: "integer", description: "معرف السجل المصدر في جدوله الأصلي (مثال: معرف الدفعة Payment ID)", nullable: true, example: 120),
+        new OA\Property(property: "notes", type: "string", description: "ملاحظات وتفاصيل إضافية إدارية حول العملية", nullable: true, example: "تمت الموافقة من قبل الإدارة الفنية"),
+        new OA\Property(property: "branch_id", type: "integer", description: "معرف الفرع الجغرافي للنادي الرياضي التابع له القيد", example: 1),
+        new OA\Property(property: "created_at", type: "string", format: "date-time", description: "تاريخ إنشاء السجل", example: "2026-06-23T10:00:00Z"),
+        new OA\Property(property: "updated_at", type: "string", format: "date-time", description: "تاريخ آخر تحديث للسجل", example: "2026-06-23T14:30:00Z")
+    ]
+)]
 class AccJournal extends Model
 {
     use HasFactory;

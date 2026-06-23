@@ -16,6 +16,2957 @@
         }
     ],
     "paths": {
+        "/accounting/accounts": {
+            "get": {
+                "tags": [
+                    "Accounting - دليل الحسابات العام"
+                ],
+                "summary": "🗂️ جلب دليل الحسابات المالي",
+                "description": "يسترجع هذا الإجراء شجرة أو دليل الحسابات المالي بالكامل للفرع الحالي، مع إمكانية الفلترة حسب نوع الحساب أو حالة النشاط. السلوك الافتراضي هو جلب الحسابات الرئيسية (التي ليس لها أب) لعرض الشجرة بشكل متدرج. مفيد جداً لبناء شجرة الحسابات في واجهات النظام المالية.",
+                "operationId": "80db30fc72dd5376a3b8f09e362bbf7a",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "نوع الحساب (asset, liability, equity, revenue, expense)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asset",
+                                "liability",
+                                "equity",
+                                "revenue",
+                                "expense"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "تصفية حسب حالة النشاط (true = نشط فقط، false = معطل فقط)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "parent_id",
+                        "in": "query",
+                        "description": "معرف الحساب الأب لجلب الأبناء المباشرين له. أرسل \"all\" لجلب الجميع دون تدرج.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب دليل الحسابات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب دليل الحسابات"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AccAccount"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح - الرجاء تسجيل الدخول أولاً"
+                    },
+                    "500": {
+                        "description": "🔥 خطأ داخلي في الخادم أثناء المعالجة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - دليل الحسابات العام"
+                ],
+                "summary": "➕ إضافة حساب جديد للدليل",
+                "description": "ينشئ هذا الإجراء حساباً مالياً جديداً في شجرة الحسابات (دليل الحسابات). يمكن إضافته كحساب رئيسي أو كحساب فرعي تحت حساب أب محدد. السيناريو: إضافة حساب لمصروف جديد مثل (مصاريف تسويق) تحت حساب الأب (المصاريف التشغيلية).",
+                "operationId": "6fe9397894a2f383bec06fe5d9945f56",
+                "requestBody": {
+                    "description": "البيانات المطلوبة لإنشاء حساب جديد في دليل الحسابات المالي",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "name",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "description": "رمز الحساب المحاسبي الفريد (مثال: 1101)",
+                                        "type": "string",
+                                        "example": "1103"
+                                    },
+                                    "name": {
+                                        "description": "الاسم العربي للحساب المالي",
+                                        "type": "string",
+                                        "example": "صندوق الاستقبال - بطاقات"
+                                    },
+                                    "name_en": {
+                                        "description": "الاسم الإنجليزي للحساب المالي",
+                                        "type": "string",
+                                        "example": "Receiving Cash - Card"
+                                    },
+                                    "type": {
+                                        "description": "نوع الحساب المحاسبي الرئيسي",
+                                        "type": "string",
+                                        "example": "asset",
+                                        "enum": [
+                                            "asset",
+                                            "liability",
+                                            "equity",
+                                            "revenue",
+                                            "expense"
+                                        ]
+                                    },
+                                    "currency": {
+                                        "description": "العملة المعامل بها الحساب (USD, SYP, or BOTH)",
+                                        "type": "string",
+                                        "example": "BOTH",
+                                        "enum": [
+                                            "USD",
+                                            "SYP",
+                                            "BOTH"
+                                        ]
+                                    },
+                                    "parent_id": {
+                                        "description": "معرف الحساب الأب في حال كان الحساب فرعياً",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "allow_manual_entry": {
+                                        "description": "هل يُسمح بإدخال قيود محاسبية يدوية على هذا الحساب",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_active": {
+                                        "description": "حالة تفعيل الحساب",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء الحساب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إضافة الحساب بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccAccount"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ مدخلات خاطئة أو رمز الحساب مكرر"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/accounts/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - دليل الحسابات العام"
+                ],
+                "summary": "🔍 تفاصيل حساب مالي معين",
+                "description": "يسترجع هذا الإجراء البيانات التفصيلية لحساب مالي معين عبر معرفه الفريد (ID) مع إدراج الحسابات الأبناء التابعة له والحساب الأب المباشر.",
+                "operationId": "df839b91bc0729d495ab4c7feef256e4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الحساب المحاسبي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع تفاصيل الحساب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات الحساب"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccAccount"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الحساب المالي المحدد غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Accounting - دليل الحسابات العام"
+                ],
+                "summary": "📝 تحديث حساب محاسبي",
+                "description": "يسمح بتحديث البيانات الوصفية للحساب المحاسبي مثل الاسم، العملة، وحالة النشاط. السيناريو: إيقاف وتجميد حساب مصروف قديم عبر تحويل `is_active` إلى `false`.",
+                "operationId": "fefbf67d786fc40a4788d644e7ae3906",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الحساب المحاسبي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "صندوق الاستقبال المعدل"
+                                    },
+                                    "name_en": {
+                                        "type": "string",
+                                        "example": "Reception Cash Updated"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "USD",
+                                        "enum": [
+                                            "USD",
+                                            "SYP",
+                                            "BOTH"
+                                        ]
+                                    },
+                                    "allow_manual_entry": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث بيانات الحساب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث الحساب بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccAccount"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الحساب غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/accounts/{id}/ledger": {
+            "get": {
+                "tags": [
+                    "Accounting - دليل الحسابات العام"
+                ],
+                "summary": "📊 كشف حساب تفصيلي (دفتر أستاذ مساعد)",
+                "description": "يستخرج هذا الإجراء كشف حساب مالي تفصيلي (دفتر أستاذ مساعد) لحساب محدد خلال فترة زمنية معينة. يوضح الكشف الرصيد الافتتاحي، كافة الحركات المدينة والدائنة المدرجة، وتغير الرصيد التراكمي ونهاية الكشف بالرصيد الختامي.",
+                "operationId": "83a9efc85733b1c2be398a37d585fde4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الحساب المحاسبي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "تاريخ بدء الكشف (تنسيق YYYY-MM-DD) - الافتراضي بداية الشهر الحالي",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "تاريخ نهاية الكشف (تنسيق YYYY-MM-DD) - الافتراضي تاريخ اليوم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استخراج كشف الحساب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب كشف الحساب"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "opening_balance_usd": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1200.5
+                                                },
+                                                "opening_balance_syp": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500000
+                                                },
+                                                "closing_balance_usd": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1750
+                                                },
+                                                "closing_balance_syp": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 350000
+                                                },
+                                                "entries": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 25
+                                                            },
+                                                            "date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-06-15"
+                                                            },
+                                                            "reference_number": {
+                                                                "type": "string",
+                                                                "example": "JV-00021"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "إيراد مبيعات اشتراك"
+                                                            },
+                                                            "debit_usd": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 150
+                                                            },
+                                                            "credit_usd": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0
+                                                            },
+                                                            "debit_syp": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0
+                                                            },
+                                                            "credit_syp": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 150000
+                                                            },
+                                                            "memo": {
+                                                                "type": "string",
+                                                                "example": "دفعة العضو رقم 15"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "🔥 خطأ في استخراج الكشف"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/counterparties": {
+            "get": {
+                "tags": [
+                    "Accounting - الأطراف والعملاء والموردين"
+                ],
+                "summary": "🗂️ عرض الأطراف (العملاء / الموردين / الموظفين)",
+                "description": "يسترجع قائمة بكافة الأطراف الخارجية والداخلية المسجلين بالنظام مع إمكانية التصفية حسب نوع الطرف (عميل customer، مورد vendor، موظف employee، آخر other) أو حسب الكيان المرجعي المرتبط (Polymorphic Reference).",
+                "operationId": "10d8408e48b0297d0e78aaad41711305",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "نوع الطرف للتصفية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "customer",
+                                "vendor",
+                                "employee",
+                                "other"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "reference_type",
+                        "in": "query",
+                        "description": "نوع الكيان الخارجي المرجعي (Player, Staff)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "reference_id",
+                        "in": "query",
+                        "description": "معرف الكيان الخارجي المرجعي",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة الأطراف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب الأطراف"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AccCounterparty"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - الأطراف والعملاء والموردين"
+                ],
+                "summary": "➕ إضافة طرف جديد للنظام",
+                "description": "ينشئ طرفاً جديداً (عميل، مورد، موظف) ويربطه اختيارياً بحساب ذمم مدينة/دائنة في دليل الحسابات لضمان تسجيل القيود المحاسبية عليه بشكل آلي ودقيق.",
+                "operationId": "523558526f95029381f12eb12e22b4aa",
+                "requestBody": {
+                    "description": "بيانات إنشاء الطرف الجديد",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "اسم الطرف الكامل أو اسم الشركة للشركات الموردة",
+                                        "type": "string",
+                                        "example": "شركة مياه نقي للتوريدات"
+                                    },
+                                    "type": {
+                                        "description": "تصنيف نوع الكيان المالي",
+                                        "type": "string",
+                                        "example": "vendor",
+                                        "enum": [
+                                            "customer",
+                                            "vendor",
+                                            "employee",
+                                            "other"
+                                        ]
+                                    },
+                                    "ar_account_id": {
+                                        "description": "معرف الحساب المحاسبي للذمم المرتبط بالطرف في الدليل",
+                                        "type": "integer",
+                                        "example": 14,
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "description": "رقم هاتف الطرف",
+                                        "type": "string",
+                                        "example": "+966509998887",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "description": "البريد الإلكتروني للطرف",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "sales@naqiwater.com",
+                                        "nullable": true
+                                    },
+                                    "reference_type": {
+                                        "description": "نوع الموديل الخارجي المرتبط إن وجد (مثل Player)",
+                                        "type": "string",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "reference_id": {
+                                        "description": "معرف السجل في جدول الموديل الخارجي",
+                                        "type": "integer",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات وتفاصيل إضافية حول الطرف",
+                                        "type": "string",
+                                        "example": "مورد مياه رسمي لصالات النادي الرياضية",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء الطرف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إضافة الطرف بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccCounterparty"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الحساب أو البيانات المحددة غير صالحة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/counterparties/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - الأطراف والعملاء والموردين"
+                ],
+                "summary": "🔍 تفاصيل طرف معين",
+                "description": "يسترجع تفاصيل الطرف المالية والشخصية بواسطة معرفه الفريد (ID)، مع توضيح حسابه المرتبط ورقم هاتفه وإيميله وحالته.",
+                "operationId": "a903ceede40e37cd2eebfa1389a4dbd9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الطرف الفريد (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل الطرف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات الطرف"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccCounterparty"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الطرف المحدد غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Accounting - الأطراف والعملاء والموردين"
+                ],
+                "summary": "📝 تحديث بيانات طرف",
+                "description": "يسمح بتعديل بيانات الطرف مثل الاسم، التلفون، الحساب المرتبط، والبريد الإلكتروني لتغيير تفاصيل التواصل أو التعديلات المحاسبية.",
+                "operationId": "75daa016c43b83a632543ad57f6f2a27",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الطرف الفريد (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "الاسم الجديد للطرف",
+                                        "type": "string",
+                                        "example": "شركة مياه نقي للتوريدات المحدودة"
+                                    },
+                                    "type": {
+                                        "description": "نوع الكيان المالي",
+                                        "type": "string",
+                                        "example": "vendor",
+                                        "enum": [
+                                            "customer",
+                                            "vendor",
+                                            "employee",
+                                            "other"
+                                        ]
+                                    },
+                                    "ar_account_id": {
+                                        "description": "معرف حساب الذمم المرتبط بالطرف",
+                                        "type": "integer",
+                                        "example": 14,
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "description": "رقم هاتف التواصل الجديد",
+                                        "type": "string",
+                                        "example": "+966509998887",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "description": "البريد الإلكتروني الجديد للطرف",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "info@naqiwater.com",
+                                        "nullable": true
+                                    },
+                                    "reference_type": {
+                                        "description": "نوع الموديل الخارجي المرتبط إن وجد",
+                                        "type": "string",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "reference_id": {
+                                        "description": "معرف السجل الخارجي",
+                                        "type": "integer",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات إضافية حول التعديل",
+                                        "type": "string",
+                                        "example": "تم تعديل اسم الشركة بناءً على السجل التجاري الجديد",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث الطرف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث بيانات الطرف"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccCounterparty"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الطرف المحدد غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/journals": {
+            "get": {
+                "tags": [
+                    "Accounting - القيود اليومية العامة"
+                ],
+                "summary": "🗂️ جلب وقراءة سندات القيود اليومية",
+                "description": "يسترجع هذا الإجراء قائمة بكافة سندات القيد (سندات القبض، الصرف، القيود العامة) المعرفة بالنظام مع تفاصيل البنود الخاصة بكل قيد وحالته (مسودة Draft، أو مرحل Posted). يدعم التصفية حسب التاريخ، الفرع، الصندوق، أو نوع السند.",
+                "operationId": "33708c384b63357c0626f4c14d3b817f",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "نوع السند (JV = قيد عام، RV = قبض، PV = صرف)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "JV",
+                                "RV",
+                                "PV"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "حالة السند (draft = مسودة، posted = مرحل ومؤثر مالياً)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "posted"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "safe_id",
+                        "in": "query",
+                        "description": "معرف الصندوق المالي في حال كان السند سند قبض أو صرف مرتبط بصندوق",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "period_id",
+                        "in": "query",
+                        "description": "معرف الفترة المالية المرتبط بها القيد",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "بدءاً من هذا التاريخ (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "حتى هذا التاريخ (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد السندات في الصفحة (الافتراضي 20)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع قائمة السندات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب سندات القيود"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/AccJournal"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - القيود اليومية العامة"
+                ],
+                "summary": "➕ إنشاء سند قيد مالي جديد (مسودة)",
+                "description": "ينشئ هذا الإجراء سند قيد مالي مزدوج جديد ويحفظه بحالة (مسودة Draft). السند لا يؤثر على ميزان المراجعة أو أرصدة الصناديق إلا بعد ترحيله. **هام:** يجب أن يكون مجموع الحسابات المدينة مساوياً لمجموع الحسابات الدائنة بكلتا العملتين لتفادي أخطاء عدم توازن القيد.",
+                "operationId": "75ec3a9b58fd40fde25807601745f9fd",
+                "requestBody": {
+                    "description": "بيانات رأس السند وتفاصيل البنود المحاسبية للمدخلات والمخرجات",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "date",
+                                    "description",
+                                    "lines"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "نوع السند (JV = قيد عام، RV = قبض، PV = صرف)",
+                                        "type": "string",
+                                        "example": "JV",
+                                        "enum": [
+                                            "JV",
+                                            "RV",
+                                            "PV"
+                                        ]
+                                    },
+                                    "date": {
+                                        "description": "تاريخ الاستحقاق المحاسبي للقيد",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-23"
+                                    },
+                                    "description": {
+                                        "description": "البيان أو الوصف العام للسند المالي",
+                                        "type": "string",
+                                        "example": "إثبات مصروف الصيانة لشهر حزيران"
+                                    },
+                                    "branch_id": {
+                                        "description": "معرف الفرع التابع له العملية المالية",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "safe_id": {
+                                        "description": "معرف الصندوق في حال كان سند قبض أو صرف",
+                                        "type": "integer",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "counterparty_id": {
+                                        "description": "معرف الطرف الثالث (عميل/مورد/موظف)",
+                                        "type": "integer",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "lines": {
+                                        "description": "سطور القيد المحاسبي المزدوج (يجب أن تحتوي على سطرين على الأقل وتكون متوازنة)",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "account_id"
+                                            ],
+                                            "properties": {
+                                                "account_id": {
+                                                    "description": "معرف الحساب المحاسبي من دليل الحسابات",
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "debit_usd": {
+                                                    "description": "القيمة المدينة بالدولار",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 100
+                                                },
+                                                "credit_usd": {
+                                                    "description": "القيمة الدائنة بالدولار",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                },
+                                                "debit_syp": {
+                                                    "description": "القيمة المدينة بالليرة السورية",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                },
+                                                "credit_syp": {
+                                                    "description": "القيمة الدائنة بالليرة السورية",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                },
+                                                "memo": {
+                                                    "description": "شرح مخصص لهذا السطر المالي",
+                                                    "type": "string",
+                                                    "example": "فاتورة صيانة جهاز المشي رقم 3"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء قيد اليومية كمسودة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إنشاء سند القيد كمسودة"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccJournal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ القيد المزدوج غير متوازن مالياً، أو المدخلات غير صحيحة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/journals/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - القيود اليومية العامة"
+                ],
+                "summary": "🔍 تفاصيل سند قيد معين",
+                "description": "يسترجع تفاصيل سند القيد مع كافة الحركات المحاسبية المدرجة تحته والأطراف والفرع المرتبط به.",
+                "operationId": "84f3d871f7614e06bf136f3fe1b2165b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السند المحاسبي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب بيانات السند بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات السند"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccJournal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 السند المالي غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/journals/{id}/post": {
+            "post": {
+                "tags": [
+                    "Accounting - القيود اليومية العامة"
+                ],
+                "summary": "🔒 ترحيل قيد مالي مؤجل وتثبيته",
+                "description": "يغير حالة السند المالي المحدد من (مسودة draft) إلى (مرحل posted). بعد الترحيل، يتم إثبات التأثير المالي وتحديث أرصدة الحسابات والصناديق تلقائياً، ويُمنع تعديل أو حذف القيد لاحقاً لسلامة التدقيق والقيود المالية.",
+                "operationId": "49b0d8a129c92e502407e7b6400db5e0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السند المحاسبي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم ترحيل السند وتأثيره المالي بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم ترحيل السند بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccJournal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ السند تم ترحيله مسبقاً أو أن الفترة المالية الخاصة به مغلقة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/journals/{id}/reverse": {
+            "post": {
+                "tags": [
+                    "Accounting - القيود اليومية العامة"
+                ],
+                "summary": "↩️ عكس وإلغاء قيد مالي مرحل",
+                "description": "في النظام المحاسبي للقيود المزدوجة، لا يمكن حذف القيود المرحّلة إطلاقاً. بدلاً من ذلك، يقوم هذا الإجراء بإنشاء **قيد عكسي تلقائي (Reversal Entry)** يقوم بعكس القيم (يجعل المدين دائناً والدائن مديناً) لإلغاء تأثير السند الأصلي بالكامل، مع تسجيل سبب الإلغاء.",
+                "operationId": "c45e2d848e01a58562f5e38fa23985db",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السند المراد إلغاؤه (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "reason": {
+                                        "description": "سبب إلغاء وعكس السند المحاسبي",
+                                        "type": "string",
+                                        "example": "خطأ في تقدير قيمة المصروف وتم التعديل"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إلغاء السند وتوليد القيد العكسي بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم عكس السند بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccJournal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ السند ملغي مسبقاً، أو غير مرحل ليتم إلغاؤه"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/partners": {
+            "get": {
+                "tags": [
+                    "Accounting - الشركاء وجاري الشركاء"
+                ],
+                "summary": "🗂️ عرض الشركاء المساهمين",
+                "description": "يسترجع قائمة بكافة الشركاء المساهمين في رأسمال النادي الرياضي، مع تفاصيل حسابات رأس المال وحسابات المسحوبات الجارية ونسب الأرباح الخاصة بهم.",
+                "operationId": "f2cbec7756f79ee93ed643ee6deb7bc5",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة الشركاء بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب الشركاء"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AccPartner"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - الشركاء وجاري الشركاء"
+                ],
+                "summary": "➕ إضافة شريك جديد للمشروع",
+                "description": "ينشئ هذا الإجراء شريكاً مساهماً جديداً في النظام، ويربطه بحساب رأس المال المخصص له في دليل الحسابات ضمن حقوق الملكية مع تحديد نسبة توزيع الأرباح وتاريخ الانضمام الفعلي.",
+                "operationId": "955c9d47af250f5524aa5ae1ba38d1ad",
+                "requestBody": {
+                    "description": "بيانات إنشاء الشريك الجديد",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "capital_account_id",
+                                    "profit_share_pct",
+                                    "joined_at"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "الاسم الكامل للشريك الجديد",
+                                        "type": "string",
+                                        "example": "خالد بن عبد الله التويجري"
+                                    },
+                                    "capital_account_id": {
+                                        "description": "معرف الحساب المحاسبي لرأس مال الشريك",
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "drawings_account_id": {
+                                        "description": "معرف حساب جاري المسحوبات للشركاء إن وجد",
+                                        "type": "integer",
+                                        "example": 13,
+                                        "nullable": true
+                                    },
+                                    "profit_share_pct": {
+                                        "description": "نسبة الشريك من الأرباح والخسائر (0 - 100%)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25
+                                    },
+                                    "joined_at": {
+                                        "description": "تاريخ انضمام الشريك (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-01"
+                                    },
+                                    "is_active": {
+                                        "description": "حالة النشاط للشراكة",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "notes": {
+                                        "description": "شروط أو ملاحظات إضافية حول الشراكة",
+                                        "type": "string",
+                                        "example": "شريك ممول غير مشارك في الإدارة",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إضافة الشريك بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إضافة الشريك بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPartner"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الحسابات المحددة غير صالحة أو مكررة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/partners/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - الشركاء وجاري الشركاء"
+                ],
+                "summary": "🔍 تفاصيل شريك مساهم محدد",
+                "description": "يسترجع تفاصيل شريك معين بواسطة معرفه الفريد (ID)، مع توضيح نسبة أرباحه وحسابه الجاري وحساب رأس المال الخاص به وحالته.",
+                "operationId": "f1bb2e7e6d210493452757a21edb569b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الشريك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب بيانات الشريك بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات الشريك"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPartner"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الشريك غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Accounting - الشركاء وجاري الشركاء"
+                ],
+                "summary": "📝 تحديث بيانات شريك مساهم",
+                "description": "يسمح بتعديل البيانات الخاصة بالشريك المساهم مثل الاسم، نسبة توزيع الأرباح، حساب جاري المسحوبات، وحالة النشاط لتغيير الشروط التعاقدية أو إيقاف الشريك.",
+                "operationId": "4a43e62e7ec7b5f6f273101b818ea7b1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الشريك المساهم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "الاسم الجديد للشريك المساهم",
+                                        "type": "string",
+                                        "example": "خالد بن عبد الله التويجري"
+                                    },
+                                    "capital_account_id": {
+                                        "description": "معرف الحساب المحاسبي الجديد لرأس المال",
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "drawings_account_id": {
+                                        "description": "معرف الحساب المحاسبي للمسحوبات",
+                                        "type": "integer",
+                                        "example": 13,
+                                        "nullable": true
+                                    },
+                                    "profit_share_pct": {
+                                        "description": "النسبة المئوية المعدلة من الأرباح والخسائر",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 30
+                                    },
+                                    "joined_at": {
+                                        "description": "تاريخ انضمام معدل",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-06-01"
+                                    },
+                                    "is_active": {
+                                        "description": "حالة النشاط للشراكة",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "notes": {
+                                        "description": "شروط أو ملاحظات إضافية حول التحديث",
+                                        "type": "string",
+                                        "example": "تم زيادة النسبة بناءً على ملحق العقد رقم 2",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث بيانات الشريك بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث بيانات الشريك"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPartner"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الشريك غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/partners/{id}/statement": {
+            "get": {
+                "tags": [
+                    "Accounting - الشركاء وجاري الشركاء"
+                ],
+                "summary": "📑 كشف الحساب المالي الجاري للشريك",
+                "description": "يولد هذا الإجراء كشف حساب مالي جاري للشريك يوضح كافة مسحوباته الشخصية وحركاته المالية المودعة أو المسحوبة وتوزيع الأرباح الختامي للفترة المالية المحددة. مفيد للمطابقة المالية والمسائل الضريبية والقانونية بين الشركاء.",
+                "operationId": "ddeddeaf953550b0ae40c3094204af5e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الشريك المساهم",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "period_id",
+                        "in": "query",
+                        "description": "معرف الفترة المالية المراد جلب كشف الجاري ضمن تواريخها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب كشف حساب الشريك المساهم بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب كشف حساب الشريك"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "partner": {
+                                                    "description": "معلومات الشريك العامة",
+                                                    "type": "object"
+                                                },
+                                                "capital_balance": {
+                                                    "description": "رصيد رأس المال الحالي للشريك",
+                                                    "type": "number"
+                                                },
+                                                "drawings_balance": {
+                                                    "description": "إجمالي المسحوبات الشخصية المسجلة خلال الفترة",
+                                                    "type": "number"
+                                                },
+                                                "net_balance": {
+                                                    "description": "الرصيد المالي الجاري الصافي للعمليات",
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ معرف الفترة المحاسبية (period_id) مطلوب"
+                    },
+                    "404": {
+                        "description": "🚫 الشريك أو الفترة غير موجودين"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/periods": {
+            "get": {
+                "tags": [
+                    "Accounting - الفترات المحاسبية"
+                ],
+                "summary": "🗂️ عرض الفترات المحاسبية",
+                "description": "يسترجع هذا الإجراء قائمة بكافة الفترات المالية والمحاسبية المعرفة في النظام (مثل الأشهر المالية) مرتبة تنازلياً حسب تاريخ البداية. يُستخدم لعرض الفترات في لوحة التحكم وتحديد الفترة الحالية النشطة.",
+                "operationId": "e82be058f537bb4da10f7a1dae529065",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الفترات المحاسبية بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب الفترات المحاسبية بنجاح"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AccPeriod"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح - يجب تسجيل الدخول"
+                    },
+                    "500": {
+                        "description": "🔥 خطأ داخلي أثناء جلب البيانات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - الفترات المحاسبية"
+                ],
+                "summary": "➕ إنشاء فترة محاسبية جديدة",
+                "description": "ينشئ فترة مالية جديدة (مثال: شهر جديد) في النظام لتمكين المحاسبين من ترحيل القيود اليومية وعمليات الصناديق ضمنها. تفرض العملية شروط عدم تداخل تواريخ الفترة الجديدة مع أي فترات محاسبية جارية أخرى لمنع خلط الحسابات.",
+                "operationId": "f30196b93cd7eb311d149f0d93725606",
+                "requestBody": {
+                    "description": "بيانات إنشاء الفترة المالية الجديدة",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "start_date",
+                                    "end_date"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "اسم الفترة المالية الفريد والمميز",
+                                        "type": "string",
+                                        "example": "شهر تموز 2026"
+                                    },
+                                    "start_date": {
+                                        "description": "تاريخ بداية الفترة (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-01"
+                                    },
+                                    "end_date": {
+                                        "description": "تاريخ نهاية الفترة (يجب أن يكون بعد تاريخ البداية)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-31"
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات إضافية بخصوص الفترة المحاسبية الجديدة",
+                                        "type": "string",
+                                        "example": "فترة الربع الثالث",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء الفترة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إنشاء الفترة المحاسبية بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPeriod"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ مدخلات خاطئة أو تداخل في التواريخ"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من الحقول"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/periods/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - الفترات المحاسبية"
+                ],
+                "summary": "🔍 تفاصيل فترة محاسبية محددة",
+                "description": "يسترجع البيانات التفصيلية لفترة مالية معينة باستخدام معرفها الفريد (ID)، بما في ذلك تواريخها، وحالتها الحالية، ومن قام بإغلاقها وتاريخ الإغلاق إن وجد.",
+                "operationId": "02fb5310c8ee806518b0bb9958cc37e0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفترة المالية",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع تفاصيل الفترة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات الفترة"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPeriod"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الفترة المالية غير موجودة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/periods/{id}/close": {
+            "post": {
+                "tags": [
+                    "Accounting - الفترات المحاسبية"
+                ],
+                "summary": "🔒 إغلاق الفترة المحاسبية مؤقتاً",
+                "description": "يغلق هذا الإجراء الفترة المالية مؤقتاً لمنع تعديل القيود أو الصناديق يدوياً، مع إتاحة إمكانية إعادة فتحها لاحقاً للمدراء فقط في حال الحاجة لإجراء تسويات ضرورية. يمثل سيناريو نهاية الشهر الفنية.",
+                "operationId": "b396b1b3616820204fd096e3fce62eb9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفترة المالية المراد إغلاقها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إغلاق الفترة المحاسبية بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إغلاق الفترة المحاسبية بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPeriod"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن إغلاق الفترة (قد تكون مغلقة أو مقفلة مسبقاً)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/periods/{id}/lock": {
+            "post": {
+                "tags": [
+                    "Accounting - الفترات المحاسبية"
+                ],
+                "summary": "🔏 قفل الفترة المحاسبية نهائياً",
+                "description": "يقوم هذا الإجراء بقفل الفترة المالية نهائياً وحظر أي إمكانية لإعادة فتحها أو تعديل أي حركة مالية مرتبطة بها مجدداً. يُستخدم عادةً لإقفال الحسابات الختامية السنوية بعد الجرد وتوليد الميزانية العمومية الرسمية.",
+                "operationId": "1ce0dd0c16508d358376f8cca5f7ec89",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفترة المالية المراد قفلها نهائياً",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم قفل الفترة المالية نهائياً وبشكل غير قابل للتراجع",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم قفل الفترة نهائياً"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPeriod"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن قفل الفترة (قد لا تكون مغلقة أولاً أو مقفلة بالفعل)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/periods/{id}/reopen": {
+            "post": {
+                "tags": [
+                    "Accounting - الفترات المحاسبية"
+                ],
+                "summary": "🔓 إعادة فتح فترة مغلقة مؤقتاً",
+                "description": "يسمح هذا الإجراء للمدير المالي بإعادة فتح فترة مالية مغلقة مؤقتاً (Closed) لإجراء قيود تسوية طارئة أو تصحيح أخطاء القيود. لا يمكن إعادة فتح الفترات المقفلة نهائياً (Locked).",
+                "operationId": "923ca89f9a8a7e43b61bfe47c141d572",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفترة المراد إعادة فتحها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إعادة فتح الفترة بنجاح وجعلها مسودة للقيود الجارية",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إعادة فتح الفترة بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccPeriod"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن إعادة فتح الفترة (إذا كانت مقفلة نهائياً أو مفتوحة بالفعل)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/reconciliations": {
+            "get": {
+                "tags": [
+                    "Accounting - تسويات ومطابقة الصناديق"
+                ],
+                "summary": "🗂️ سجل تسويات ومطابقات الصناديق",
+                "description": "يسترجع هذا الإجراء قائمة بكافة سجلات تسويات الصناديق والخزائن المالية المدخلة يدوياً بواسطة موظفي الجرد أو المدراء الماليين مع تفاصيل الأرصدة المطابقة والتاريخ والملاحظات.",
+                "operationId": "367de938c933b710608a7d6f28e543d3",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب سجلات التسوية بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب سجلات التسوية"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AccReconciliation"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - تسويات ومطابقة الصناديق"
+                ],
+                "summary": "➕ تسجيل مطابقة وجرد فعلي لصندوق مالي",
+                "description": "يقوم هذا الإجراء بتسجيل عملية تسوية لصندوق مالي معين. يقوم النظام تلقائياً بقراءة الرصيد الدفتري الحالي للصندوق من الحساب المحاسبي المرتبط به ويقارنه مع المدخلات الفعلية المعبأة بالطلب (الرصيد الفعلي بالدولار والليرة) لإنشاء سجل تسوية يوضح مقدار العجز أو الفائض.",
+                "operationId": "6337a6afbdbeb1c951e729e7fc1c7fe5",
+                "requestBody": {
+                    "description": "بيانات الجرد الفعلي المسحوبة من الكاش في الصندوق يدوياً",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "safe_id",
+                                    "period_id",
+                                    "physical_balance_usd",
+                                    "physical_balance_syp"
+                                ],
+                                "properties": {
+                                    "safe_id": {
+                                        "description": "معرف الصندوق المالي المراد مطابقته",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "period_id": {
+                                        "description": "معرف الفترة المالية الجارية المطابق فيها",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "physical_balance_usd": {
+                                        "description": "المبلغ الفعلي المقاس بالدولار يدوياً في الخزينة",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1200
+                                    },
+                                    "physical_balance_syp": {
+                                        "description": "المبلغ الفعلي المقاس بالليرة السورية يدوياً في الخزينة",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15000000
+                                    },
+                                    "notes": {
+                                        "description": "أي ملاحظات أو تبريرات لظهور فروقات كالعجز أو الفائض",
+                                        "type": "string",
+                                        "example": "فروقات طفيفة بسبب كسر الفكة",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم تسجيل عملية التسوية والمطابقة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم حفظ التسوية بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccReconciliation"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الصندوق أو الفترة غير نشطين أو غير موجودين"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/reconciliations/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - تسويات ومطابقة الصناديق"
+                ],
+                "summary": "🔍 تفاصيل تسوية صندوق مالي معينة",
+                "description": "يسترجع البيانات التفصيلية لعملية تسوية ومطابقة صندوق معينة، بما في ذلك الأرصدة الدفترية والفعلية المقاسة والفرق والتاريخ وتوقيع الشخص المسؤول عن المطابقة.",
+                "operationId": "d81ecb73e3ffad650d79e2512ed0f2c8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف عملية التسوية (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل التسوية بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات التسوية"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccReconciliation"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 سجل التسوية المحدد غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/reports/trial-balance": {
+            "get": {
+                "tags": [
+                    "Accounting - التقارير والقوائم المالية الختامية"
+                ],
+                "summary": "📊 ميزان المراجعة المالي للفترة",
+                "description": "يولد هذا التقرير ميزان المراجعة المالي بالكامل للفترة المحددة. يستعرض قائمة بكافة حسابات دليل الحسابات مع أرصدتها الافتتاحية، وإجمالي الحركات المدينة والدائنة خلال الفترة، والأرصدة الختامية للتحقق من توازن الأستاذ المالي المزدوج (مجموع المدين = مجموع الدائن).",
+                "operationId": "2832908a7d9f39b18e891eb8be39fa75",
+                "parameters": [
+                    {
+                        "name": "period_id",
+                        "in": "query",
+                        "description": "معرف الفترة المالية المراد توليد التقرير لها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب ميزان المراجعة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب ميزان المراجعة"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "period": {
+                                                    "description": "معلومات الفترة المالية",
+                                                    "type": "object"
+                                                },
+                                                "accounts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "account_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "account_code": {
+                                                                "type": "string",
+                                                                "example": "1101001"
+                                                            },
+                                                            "account_name": {
+                                                                "type": "string",
+                                                                "example": "صندوق الصالة الرئيسي"
+                                                            },
+                                                            "debit_usd": {
+                                                                "type": "number",
+                                                                "example": 15000
+                                                            },
+                                                            "credit_usd": {
+                                                                "type": "number",
+                                                                "example": 12000
+                                                            },
+                                                            "debit_syp": {
+                                                                "type": "number",
+                                                                "example": 0
+                                                            },
+                                                            "credit_syp": {
+                                                                "type": "number",
+                                                                "example": 0
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "description": "المجاميع الإجمالية لضمان توازن ميزان المراجعة",
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الفترة المحددة غير موجودة أو الحقل مطلوب"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/reports/income-statement": {
+            "get": {
+                "tags": [
+                    "Accounting - التقارير والقوائم المالية الختامية"
+                ],
+                "summary": "📈 قائمة الدخل (الأرباح والخسائر)",
+                "description": "يولد هذا الإجراء قائمة الدخل للفترة المحددة. يقارن كافة إيرادات النادي الرياضي (اشتراكات، مبيعات منتجات) مع المصروفات (أجور، صيانة، إيجارات) لبيان صافي الربح أو الخسارة التشغيلية والنهائية للنادي.",
+                "operationId": "6528baef46803df6333ba26895cab3f7",
+                "parameters": [
+                    {
+                        "name": "period_id",
+                        "in": "query",
+                        "description": "معرف الفترة المالية المراد توليد قائمة الدخل لها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة الدخل بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب قائمة الدخل"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "revenues": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "بنود الإيرادات وأرصدتها",
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "expenses": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "بنود المصروفات وأرصدتها",
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "total_revenues_usd": {
+                                                    "type": "number",
+                                                    "example": 25000
+                                                },
+                                                "total_expenses_usd": {
+                                                    "type": "number",
+                                                    "example": 12000
+                                                },
+                                                "net_income_usd": {
+                                                    "description": "صافي الربح أو الخسارة بالدولار",
+                                                    "type": "number",
+                                                    "example": 13000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الفترة المحاسبية مطلوبة أو غير موجودة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/reports/balance-sheet": {
+            "get": {
+                "tags": [
+                    "Accounting - التقارير والقوائم المالية الختامية"
+                ],
+                "summary": "⚖️ الميزانية العمومية (قائمة المركز المالي)",
+                "description": "يولد قائمة المركز المالي أو الميزانية العمومية في نهاية الفترة المحددة. تلخص هذه القائمة ما يملكه النادي من أصول (نقدية بالصناديق، حسابات بنكية، أجهزة رياضية وعقارات) مقابل التزاماته وحقوق الملكية للشركاء (رأس المال، الأرباح المحتجزة). ويجب أن تتوازن المعادلة: الأصول = الالتزامات + حقوق الملكية.",
+                "operationId": "c84a93193fedba5be76f53cca37bfb9b",
+                "parameters": [
+                    {
+                        "name": "period_id",
+                        "in": "query",
+                        "description": "معرف الفترة المالية لتوليد الميزانية لها",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الميزانية العمومية بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب الميزانية العمومية"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "assets": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "بنود الأصول وقيمها الدفترية",
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "liabilities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "بنود الالتزامات",
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "equity": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "description": "بنود حقوق الملكية (رأس المال + أرباح الفترة)",
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "total_assets_usd": {
+                                                    "type": "number",
+                                                    "example": 85000
+                                                },
+                                                "total_liabilities_and_equity_usd": {
+                                                    "type": "number",
+                                                    "example": 85000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الحقول المطلوبة غير صالحة أو مفقودة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/safes": {
+            "get": {
+                "tags": [
+                    "Accounting - الصناديق والعهد المالية"
+                ],
+                "summary": "🏦 جلب قائمة الصناديق والخزائن المتاحة",
+                "description": "يسترجع هذا الإجراء قائمة بكافة الصناديق والخزائن النقدية والبنوك المعرفة بالنظام مع تفاصيل الأرصدة والحسابات المربوطة بها. يمكن استخدامها لعرض الخزائن المتوفرة لموظفي الاستقبال.",
+                "operationId": "76dec9633fbb3f038d2ea46f827bb715",
+                "parameters": [
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "تصفية حسب حالة النشاط (true = نشط فقط، false = معطل فقط)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة الصناديق بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب الصناديق"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AccSafe"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - الصناديق والعهد المالية"
+                ],
+                "summary": "➕ إضافة صندوق مالي/خزينة جديدة للفرع",
+                "description": "ينشئ هذا الإجراء صندوقاً مالياً جديداً (مثل صندوق الاستقبال، عهدة استقبال السيدات، خزينة الفرع الرئيسية) ويربطه بحساب محاسبي مقابل من دليل الحسابات ليعكس عملياته المالية.",
+                "operationId": "b1744ec3a807bbaf99c08b1b8031df75",
+                "requestBody": {
+                    "description": "البيانات المطلوبة لإنشاء صندوق أو خزينة جديدة",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "account_id",
+                                    "currency"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "اسم الصندوق المميز للفرع",
+                                        "type": "string",
+                                        "example": "خزينة الفرع الرئيسي - دولار"
+                                    },
+                                    "account_id": {
+                                        "description": "معرف الحساب المالي المرتبط بالصندوق من دليل الحسابات (يجب أن يكون من الأصول المتداولة)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "currency": {
+                                        "description": "العملة الأساسية للصندوق",
+                                        "type": "string",
+                                        "example": "USD",
+                                        "enum": [
+                                            "USD",
+                                            "SYP"
+                                        ]
+                                    },
+                                    "responsible_user_id": {
+                                        "description": "معرف المستخدم المسؤول عن عهدة هذا الصندوق",
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "is_active": {
+                                        "description": "حالة نشاط الصندوق",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات إضافية حول الاستخدام أو العهدة",
+                                        "type": "string",
+                                        "example": "صندوق دولار مخصص للاشتراكات السنوية الفاخرة",
+                                        "nullable": true
+                                    },
+                                    "branch_id": {
+                                        "description": "معرف الفرع الجغرافي للنادي التابع له الصندوق",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء الصندوق بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إضافة الصندوق بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccSafe"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ مدخلات غير صحيحة أو الحساب المحدد غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/safes/{id}": {
+            "get": {
+                "tags": [
+                    "Accounting - الصناديق والعهد المالية"
+                ],
+                "summary": "🔍 تفاصيل الصندوق المالي",
+                "description": "يسترجع تفاصيل الصندوق المالي المحدد مع الحساب المرتبط به وحالته الحالية.",
+                "operationId": "31f11aebfab65b52fb7cc168fd7758b0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الصندوق (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل الصندوق بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب بيانات الصندوق"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccSafe"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الصندوق غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Accounting - الصناديق والعهد المالية"
+                ],
+                "summary": "📝 تحديث بيانات الصندوق",
+                "description": "يحدث البيانات التفصيلية للصندوق مثل الاسم، الملاحظات، أو تعيين مسؤول عهدة جديد.",
+                "operationId": "1df912101473b41e246465af2be81f74",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الصندوق المالي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "صندوق الاستقبال الافتراضي المعدل"
+                                    },
+                                    "responsible_user_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "تعديل مسؤول العهدة ليكون الموظف المناوب الجديد"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث بيانات الصندوق بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث الصندوق بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccSafe"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الصندوق غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/safes/{id}/statement": {
+            "get": {
+                "tags": [
+                    "Accounting - الصناديق والعهد المالية"
+                ],
+                "summary": "📊 كشف حركة الصندوق التفصيلي",
+                "description": "يستخرج هذا الإجراء كشفاً بيانياً تفصيلياً بكافة الحركات النقدية (الداخلة والخارجة) التي تمت على صندوق محدد في نطاق تواريخ معين. يفيد في عمليات تسليم الوردية وإحصاء الرصيد الفعلي للصندوق ومطابقته.",
+                "operationId": "61915224a1b555a8ea0362ee7df8a17b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الصندوق المالي (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "تاريخ بدء الفلترة (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "تاريخ نهاية الفلترة (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استخراج كشف حركة الصندوق بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب كشف الصندوق"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "safe_name": {
+                                                    "type": "string",
+                                                    "example": "صندوق الاستقبال الرئيسي"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "USD"
+                                                },
+                                                "opening_balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 450
+                                                },
+                                                "closing_balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 850
+                                                },
+                                                "total_debits": {
+                                                    "description": "إجمالي المقبوضات/سندات القبض",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500
+                                                },
+                                                "total_credits": {
+                                                    "description": "إجمالي المدفوعات/سندات الصرف",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 100
+                                                },
+                                                "transactions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "journal_id": {
+                                                                "type": "integer",
+                                                                "example": 12
+                                                            },
+                                                            "date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-06-18"
+                                                            },
+                                                            "reference_number": {
+                                                                "type": "string",
+                                                                "example": "RV-0004"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "قيد تلقائي: إيراد اشتراك لاعب"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "RV"
+                                                            },
+                                                            "amount": {
+                                                                "description": "المبلغ المحرك (موجب للمقبوضات، سالب للمدفوعات)",
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 120
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "🔥 خطأ في السيرفر أثناء المعالجة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/gates/scan": {
             "post": {
                 "tags": [
@@ -18603,6 +21554,628 @@
     },
     "components": {
         "schemas": {
+            "AccAccount": {
+                "title": "حساب شجرة الحسابات (دليل الحسابات)",
+                "description": "يمثل حساباً مالياً فريداً ضمن شجرة الحسابات (الأصول، الخصوم، حقوق الملكية، الإيرادات، المصروفات). يمكن أن يكون حساباً رئيسياً (مجمعاً) أو فرعياً (يقبل الحركات المالية والقيود).",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد للحساب المالي",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "code": {
+                        "description": "رمز الحساب المحاسبي الفريد (مثال: 1101 للصناديق، 1101001 لصندوق رئيسي)",
+                        "type": "string",
+                        "example": "1101001"
+                    },
+                    "name": {
+                        "description": "اسم الحساب باللغة العربية",
+                        "type": "string",
+                        "example": "صندوق الصالة الرئيسي"
+                    },
+                    "name_en": {
+                        "description": "اسم الحساب باللغة الإنجليزية",
+                        "type": "string",
+                        "example": "Main Safe Cash",
+                        "nullable": true
+                    },
+                    "type": {
+                        "description": "تصنيف الحساب الرئيسي (أصل، التزام، حقوق ملكية، إيراد، مصروف)",
+                        "type": "string",
+                        "example": "asset",
+                        "enum": [
+                            "asset",
+                            "liability",
+                            "equity",
+                            "revenue",
+                            "expense"
+                        ]
+                    },
+                    "currency": {
+                        "description": "العملة المقبولة للحساب: دولار أمريكي، ليرة سورية، أو كلتا العملتين",
+                        "type": "string",
+                        "example": "BOTH",
+                        "enum": [
+                            "USD",
+                            "SYP",
+                            "BOTH"
+                        ]
+                    },
+                    "parent_id": {
+                        "description": "معرف الحساب الأب (في حال كان هذا الحساب فرعياً تحت حساب تجميعي)",
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "description": "حالة تفعيل الحساب لاستقبال القيود والعمليات",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "allow_manual_entry": {
+                        "description": "هل يسمح النظام للمستخدمين بإدخال قيود محاسبية يدوية على هذا الحساب (غالباً الحسابات الفرعية تسمح، والرئيسية التجميعية أو الصناديق المؤتمتة لا تسمح لمنع الأخطاء)",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "description": {
+                        "description": "شرح تفصيلي لوظيفة الحساب المحاسبي وسياق استخدامه",
+                        "type": "string",
+                        "example": "صندوق استلام الكاش المالي لاشتراكات الصالة الرياضية",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-01T08:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-30T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccCounterparty": {
+                "title": "الطرف الآخر في المعاملة المالية (عميل، مورد، موظف)",
+                "description": "يمثل الكيان الذي تتم معه المعاملات المالية كعميل (مشترك في النادي)، أو مورد خارجي للمعدات، أو موظف يتلقى سلف ورواتب. يمكن ربطه برقم مرجعي للموديلات الخارجية للمشروع.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد للطرف",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "اسم الطرف بالكامل",
+                        "type": "string",
+                        "example": "شركة الهدى للتوريدات الرياضية"
+                    },
+                    "type": {
+                        "description": "تصنيف الطرف: عميل، مورد، موظف، أو تصنيف آخر",
+                        "type": "string",
+                        "example": "vendor",
+                        "enum": [
+                            "customer",
+                            "vendor",
+                            "employee",
+                            "other"
+                        ]
+                    },
+                    "ar_account_id": {
+                        "description": "معرف حساب الذمم (المدينة للعملاء والدائنة للموردين) المرتبط بهذا الطرف في شجرة الحسابات",
+                        "type": "integer",
+                        "example": 15,
+                        "nullable": true
+                    },
+                    "phone": {
+                        "description": "رقم هاتف التواصل الخاص بالطرف",
+                        "type": "string",
+                        "example": "+966500000000",
+                        "nullable": true
+                    },
+                    "email": {
+                        "description": "البريد الإلكتروني للطرف للاتصال أو إرسال كشوف الحسابات",
+                        "type": "string",
+                        "format": "email",
+                        "example": "info@alhudasports.com",
+                        "nullable": true
+                    },
+                    "reference_type": {
+                        "description": "نوع الكيان المرجعي في قواعد البيانات الخارجية (مثال: Player, Staff, Vendor)",
+                        "type": "string",
+                        "example": "Player",
+                        "nullable": true
+                    },
+                    "reference_id": {
+                        "description": "معرف السجل المرتبط في جدول الكيان المرجعي الخارجي",
+                        "type": "integer",
+                        "example": 42,
+                        "nullable": true
+                    },
+                    "notes": {
+                        "description": "ملاحظات إضافية أو تفاصيل التواصل والاتفاقيات",
+                        "type": "string",
+                        "example": "مورد الأجهزة والمشايات الرياضية الخاص بالصالة الرئيسية",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-01T08:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-30T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccJournal": {
+                "title": "سند القيود اليومية ورأس القيد",
+                "description": "يمثل رأس السند المالي أو القيد المحاسبي المزدوج. قد يكون قيد تسوية عام (JV)، سند قبض نقدية (RV)، أو سند صرف نقدية (PV). يحتوي على التاريخ والوصف والفرع والحالة (مسودة أو مرحل).",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد لسند القيد",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "reference_number": {
+                        "description": "الرقم المرجعي التلقائي للسند (مثال: JV-2026-0001)",
+                        "type": "string",
+                        "example": "JV-2026-0001"
+                    },
+                    "type": {
+                        "description": "نوع السند: JV (قيد عام)، RV (سند قبض وصندوق)، PV (سند صرف وصندوق)",
+                        "type": "string",
+                        "example": "JV",
+                        "enum": [
+                            "JV",
+                            "RV",
+                            "PV"
+                        ]
+                    },
+                    "period_id": {
+                        "description": "معرف الفترة المالية والمحاسبية المفتوحة التي ينتمي إليها السند",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date": {
+                        "description": "التاريخ الفعلي لتأثير القيد محاسبياً",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-06-23"
+                    },
+                    "description": {
+                        "description": "الوصف والبيان العام لسبب إنشاء السند",
+                        "type": "string",
+                        "example": "إثبات مصروف صيانة أجهزة اللياقة البدنية"
+                    },
+                    "counterparty_id": {
+                        "description": "معرف الطرف الآخر المساهم أو المستلم في العملية (عميل، مورد، موظف)",
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    },
+                    "safe_id": {
+                        "description": "معرف الصندوق المالي المتأثر في حال كان السند سند قبض أو صرف نقدية",
+                        "type": "integer",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "exchange_rate": {
+                        "description": "سعر الصرف المعتمد بين الدولار والليرة في تاريخ القيد",
+                        "type": "number",
+                        "format": "float",
+                        "example": 15000
+                    },
+                    "status": {
+                        "description": "حالة السند: draft (مسودة ولا تؤثر مالياً بالتقارير)، posted (مرحل ويؤثر فورياً على الأرصدة ودفتر الأستاذ والميزانية)",
+                        "type": "string",
+                        "example": "draft",
+                        "enum": [
+                            "draft",
+                            "posted"
+                        ]
+                    },
+                    "posted_by": {
+                        "description": "معرف المستخدم الذي قام بترحيل السند والتصديق عليه مالياً",
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    },
+                    "posted_at": {
+                        "description": "تاريخ ووقت ترحيل القيد المزدوج",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T14:30:00Z",
+                        "nullable": true
+                    },
+                    "reversed_journal_id": {
+                        "description": "في حال تم إلغاء القيد عبر قيد عاكس، يمثل هذا الحقل معرف القيد الجديد الذي تم إنشاؤه لإلغاء هذا القيد",
+                        "type": "integer",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "source_type": {
+                        "description": "نوع مصدر القيد المؤتمت (مثال: subscription_payment, payroll)",
+                        "type": "string",
+                        "example": "subscription_payment",
+                        "nullable": true
+                    },
+                    "source_id": {
+                        "description": "معرف السجل المصدر في جدوله الأصلي (مثال: معرف الدفعة Payment ID)",
+                        "type": "integer",
+                        "example": 120,
+                        "nullable": true
+                    },
+                    "notes": {
+                        "description": "ملاحظات وتفاصيل إضافية إدارية حول العملية",
+                        "type": "string",
+                        "example": "تمت الموافقة من قبل الإدارة الفنية",
+                        "nullable": true
+                    },
+                    "branch_id": {
+                        "description": "معرف الفرع الجغرافي للنادي الرياضي التابع له القيد",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T10:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T14:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccJournalEntry": {
+                "title": "سطر حركة الحساب في القيد (القيد المزدوج)",
+                "description": "يمثل سطراً تفصيلياً (حركة) ضمن قيد اليومية المزدوج. يجب أن ترتبط كل حركة بحساب مالي فرعي محدد، وتحدد قيمتها إما مدينة (Debit) أو دائنة (Credit) بالدولار الأمريكي و/أو الليرة السورية.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد لسطر حركة القيد المالي",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "journal_id": {
+                        "description": "معرف سند القيد اليومي التابع له هذا السطر",
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "account_id": {
+                        "description": "معرف الحساب المالي من دليل الحسابات المتأثر بهذه الحركة",
+                        "type": "integer",
+                        "example": 8
+                    },
+                    "debit_usd": {
+                        "description": "القيمة المدينة بالدولار الأمريكي (يجب أن تكون 0 في حال كان السطر دائناً)",
+                        "type": "number",
+                        "format": "float",
+                        "example": 150
+                    },
+                    "credit_usd": {
+                        "description": "القيمة الدائنة بالدولار الأمريكي (يجب أن تكون 0 في حال كان السطر مديناً)",
+                        "type": "number",
+                        "format": "float",
+                        "example": 0
+                    },
+                    "debit_syp": {
+                        "description": "القيمة المدينة بالليرة السورية",
+                        "type": "number",
+                        "format": "float",
+                        "example": 2250000
+                    },
+                    "credit_syp": {
+                        "description": "القيمة الدائنة بالليرة السورية",
+                        "type": "number",
+                        "format": "float",
+                        "example": 0
+                    },
+                    "memo": {
+                        "description": "شرح وتفصيل مخصص لسبب حركة هذا الحساب بالذات",
+                        "type": "string",
+                        "example": "شراء وتوريد 10 كرات لياقة بدنية للفرع",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T10:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T10:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccPartner": {
+                "title": "شريك النادي الرياضي",
+                "description": "يمثل شريكاً مساهماً في رأسمال المشروع أو النادي. يتم ربطه بحساب رأس المال المخصص وحساب جاري (المسحوبات الشخصية) لتوزيع الأرباح والخسائر وحركات السحب المباشر.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد للشريك المساهم",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "اسم الشريك المساهم بالكامل",
+                        "type": "string",
+                        "example": "محمد بن فهد الرميح"
+                    },
+                    "capital_account_id": {
+                        "description": "معرف الحساب المخصص لرأس مال الشريك في حقوق الملكية",
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "drawings_account_id": {
+                        "description": "معرف الحساب المخصص للمسحوبات الشخصية للشريك",
+                        "type": "integer",
+                        "example": 13,
+                        "nullable": true
+                    },
+                    "profit_share_pct": {
+                        "description": "نسبة الشريك المئوية من الأرباح والخسائر الموزعة (0 - 100%)",
+                        "type": "number",
+                        "format": "float",
+                        "example": 35.5
+                    },
+                    "joined_at": {
+                        "description": "تاريخ انضمام وتأسيس الشراكة مع النادي",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-06-01"
+                    },
+                    "is_active": {
+                        "description": "حالة شراكة الشريك (نشطة أو مجمدة)",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "notes": {
+                        "description": "تفاصيل عقد الشراكة أو شروط إضافية للمساهمة",
+                        "type": "string",
+                        "example": "شراكة استثمارية بنسبة ثابتة مع حق الإدارة",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-01T08:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-30T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccPeriod": {
+                "title": "الفترة المالية والمحاسبية",
+                "description": "تمثل فترة زمنية محاسبية (شهرية أو سنوية) يتم تسجيل الحركات والقيود المالية ضمنها ويتم إغلاقها أو قفلها لمنع التلاعب بالبيانات التاريخية.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد للفترة المالية",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "اسم الفترة المالية (مثال: شهر حزيران 2026)",
+                        "type": "string",
+                        "example": "شهر حزيران 2026"
+                    },
+                    "start_date": {
+                        "description": "تاريخ بداية الفترة المالية",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-06-01"
+                    },
+                    "end_date": {
+                        "description": "تاريخ نهاية الفترة المالية",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-06-30"
+                    },
+                    "status": {
+                        "description": "حالة الفترة المالية: open (مفتوحة لتسجيل القيود)، closed (مغلقة مؤقتاً)، locked (مقفلة نهائياً للتدقيق والميزانية ولا يمكن إعادة فتحها)",
+                        "type": "string",
+                        "example": "open",
+                        "enum": [
+                            "open",
+                            "closed",
+                            "locked"
+                        ]
+                    },
+                    "closed_by": {
+                        "description": "معرف المستخدم (المدير/المحاسب) الذي قام بإغلاق أو قفل الفترة",
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    },
+                    "closed_at": {
+                        "description": "تاريخ ووقت إغلاق/قفل الفترة",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-30T23:59:59Z",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "description": "ملاحظات إضافية حول الفترة المالية أو سبب الإغلاق",
+                        "type": "string",
+                        "example": "فترة الصيف وتحديثات الاشتراكات",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-01T08:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-30T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccReconciliation": {
+                "title": "مطابقة وتسوية الصندوق المالي",
+                "description": "يمثل سجل تسوية الصندوق المالي والمطابقة بين رصيد النظام الدفتري (system_balance) والرصيد الفعلي الموجود بالخزينة (physical_balance). يوضح الفروقات وحالة العجز أو الفائض المكتشف.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد لسجل التسوية والمطابقة",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "safe_id": {
+                        "description": "معرف الصندوق المالي الذي تمت مطابقته وتسويته",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "period_id": {
+                        "description": "معرف الفترة المحاسبية الجارية أثناء عملية التسوية",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "system_balance_usd": {
+                        "description": "الرصيد الدفتري المسجل في النظام بالدولار الأمريكي قبل المطابقة",
+                        "type": "number",
+                        "format": "float",
+                        "example": 1250
+                    },
+                    "physical_balance_usd": {
+                        "description": "الرصيد الفعلي الفعلي الموجود بالصندوق يدوياً بالدولار الأمريكي",
+                        "type": "number",
+                        "format": "float",
+                        "example": 1245
+                    },
+                    "system_balance_syp": {
+                        "description": "الرصيد الدفتري المسجل في النظام بالليرة السورية قبل المطابقة",
+                        "type": "number",
+                        "format": "float",
+                        "example": 15000000
+                    },
+                    "physical_balance_syp": {
+                        "description": "الرصيد الفعلي الموجود بالصندوق يدوياً بالليرة السورية",
+                        "type": "number",
+                        "format": "float",
+                        "example": 15000000
+                    },
+                    "reconciled_by": {
+                        "description": "معرف المستخدم (المدقق/أمين الصندوق) الذي قام بعملية الجرد الفعلي والتسوية",
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "reconciled_at": {
+                        "description": "تاريخ ووقت إجراء المطابقة والتسوية الفعلي",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T15:00:00Z"
+                    },
+                    "notes": {
+                        "description": "شرح لوجود فروقات أو عجز أو فائض وكيفية معالجته إدارياً",
+                        "type": "string",
+                        "example": "عجز بسيط بقيمة 5 دولار تم تحميله لأمين الصندوق أو تسويته كمصروف فروقات",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T15:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-23T15:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccSafe": {
+                "title": "الصندوق / الخزينة المالية",
+                "description": "يمثل صندوق الكاش الفعلي في النادي الرياضي لاستلام مدفوعات المشتركين أو صرف المصاريف. يتم ربطه بحساب محاسبي أصل لسهولة الترحيل.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد للصندوق المالي",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "اسم الصندوق (مثال: صندوق استقبال فرع دبي)",
+                        "type": "string",
+                        "example": "صندوق استقبال فرع دبي"
+                    },
+                    "account_id": {
+                        "description": "معرف الحساب المحاسبي المرتبط بهذا الصندوق من شجرة الحسابات (أصل متداول)",
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "currency": {
+                        "description": "العملة الوحيدة المحددة للصندوق لكافة حركاته (دولار أو ليرة سورية)",
+                        "type": "string",
+                        "example": "USD",
+                        "enum": [
+                            "USD",
+                            "SYP"
+                        ]
+                    },
+                    "responsible_user_id": {
+                        "description": "معرف المستخدم المسؤول عن عهدة الصندوق (الكاشير/موظف الاستقبال)",
+                        "type": "integer",
+                        "example": 5,
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "description": "حالة تفعيل الصندوق لاستقبال دفوعات المشتركين أو الصرف منه",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "notes": {
+                        "description": "ملاحظات وتفاصيل إضافية حول عهدة الصندوق أو موقعه",
+                        "type": "string",
+                        "example": "صندوق الفترة الصباحية لخدمة المشتركين",
+                        "nullable": true
+                    },
+                    "branch_id": {
+                        "description": "معرف فرع النادي الذي ينتمي له هذا الصندوق",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "description": "تاريخ إنشاء السجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-01T08:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ آخر تحديث للسجل",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-06-30T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
             "StoreBranchRequest": {
                 "title": "StoreBranchRequest",
                 "required": [
@@ -18844,6 +22417,38 @@
         }
     },
     "tags": [
+        {
+            "name": "Accounting - دليل الحسابات العام",
+            "description": "Accounting - دليل الحسابات العام"
+        },
+        {
+            "name": "Accounting - الأطراف والعملاء والموردين",
+            "description": "Accounting - الأطراف والعملاء والموردين"
+        },
+        {
+            "name": "Accounting - القيود اليومية العامة",
+            "description": "Accounting - القيود اليومية العامة"
+        },
+        {
+            "name": "Accounting - الشركاء وجاري الشركاء",
+            "description": "Accounting - الشركاء وجاري الشركاء"
+        },
+        {
+            "name": "Accounting - الفترات المحاسبية",
+            "description": "Accounting - الفترات المحاسبية"
+        },
+        {
+            "name": "Accounting - تسويات ومطابقة الصناديق",
+            "description": "Accounting - تسويات ومطابقة الصناديق"
+        },
+        {
+            "name": "Accounting - التقارير والقوائم المالية الختامية",
+            "description": "Accounting - التقارير والقوائم المالية الختامية"
+        },
+        {
+            "name": "Accounting - الصناديق والعهد المالية",
+            "description": "Accounting - الصناديق والعهد المالية"
+        },
         {
             "name": "Gate Integration",
             "description": "Gate Integration"

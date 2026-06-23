@@ -5,6 +5,25 @@ namespace Modules\Accounting\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(
+    schema: "AccPeriod",
+    title: "الفترة المالية والمحاسبية",
+    description: "تمثل فترة زمنية محاسبية (شهرية أو سنوية) يتم تسجيل الحركات والقيود المالية ضمنها ويتم إغلاقها أو قفلها لمنع التلاعب بالبيانات التاريخية.",
+    properties: [
+        new OA\Property(property: "id", type: "integer", description: "المعرف الفريد للفترة المالية", example: 1),
+        new OA\Property(property: "name", type: "string", description: "اسم الفترة المالية (مثال: شهر حزيران 2026)", example: "شهر حزيران 2026"),
+        new OA\Property(property: "start_date", type: "string", format: "date", description: "تاريخ بداية الفترة المالية", example: "2026-06-01"),
+        new OA\Property(property: "end_date", type: "string", format: "date", description: "تاريخ نهاية الفترة المالية", example: "2026-06-30"),
+        new OA\Property(property: "status", type: "string", enum: ["open", "closed", "locked"], description: "حالة الفترة المالية: open (مفتوحة لتسجيل القيود)، closed (مغلقة مؤقتاً)، locked (مقفلة نهائياً للتدقيق والميزانية ولا يمكن إعادة فتحها)", example: "open"),
+        new OA\Property(property: "closed_by", type: "integer", description: "معرف المستخدم (المدير/المحاسب) الذي قام بإغلاق أو قفل الفترة", nullable: true, example: 3),
+        new OA\Property(property: "closed_at", type: "string", format: "date-time", description: "تاريخ ووقت إغلاق/قفل الفترة", nullable: true, example: "2026-06-30T23:59:59Z"),
+        new OA\Property(property: "notes", type: "string", description: "ملاحظات إضافية حول الفترة المالية أو سبب الإغلاق", nullable: true, example: "فترة الصيف وتحديثات الاشتراكات"),
+        new OA\Property(property: "created_at", type: "string", format: "date-time", description: "تاريخ إنشاء السجل", example: "2026-06-01T08:00:00Z"),
+        new OA\Property(property: "updated_at", type: "string", format: "date-time", description: "تاريخ آخر تحديث للسجل", example: "2026-06-30T23:59:59Z")
+    ]
+)]
 class AccPeriod extends Model
 {
     use HasFactory;
