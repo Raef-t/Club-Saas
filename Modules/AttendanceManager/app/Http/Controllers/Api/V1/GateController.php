@@ -2,14 +2,14 @@
 
 namespace Modules\AttendanceManager\Http\Controllers\Api\V1;
 
+use Exception;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\AttendanceManager\Models\GateDevice;
 use Modules\AttendanceManager\Services\QRSecurityService;
-use Modules\AttendanceManager\Services\AttendanceRecorder;
-use Modules\AttendanceManager\DTOs\CheckInAttempt;
+use Modules\AttendanceManager\Services\UnifiedAttendanceService;
 use Modules\AttendanceManager\Http\Requests\GateScanRequest;
 use OpenApi\Attributes as OA;
 
@@ -17,9 +17,10 @@ class GateController extends BaseController
 {
     public function __construct(
         protected QRSecurityService $qrService,
-        protected AttendanceRecorder $attendanceRecorder
+        protected UnifiedAttendanceService $attendanceService
     ) {}
 
+    /*
     #[OA\Post(
         path: '/v1/gates/scan',
         summary: '📲 تسجيل الدخول عبر البوابة',
@@ -56,6 +57,7 @@ class GateController extends BaseController
     #[OA\Response(response: 403, description: '🚫 محظور (الدخول مرفوض)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Membership expired.')]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 429, description: '⏳ طلبات متكررة جداً', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Scan already processing.')]))]
+    */
     public function scan(GateScanRequest $request)
     {
         $validated = $request->validated();
@@ -90,26 +92,19 @@ class GateController extends BaseController
             }
 
             try {
-                // 4. Record Attendance
-                $attempt = new CheckInAttempt(
-                    clubId: $gate->club_id,
-                    attendableType: 'member',
-                    attendableId: $memberId,
-                    branchId: $gate->branch_id,
-                    timestamp: now()->toDateTimeImmutable(),
+                // 4. Record Attendance via UnifiedAttendanceService → MemberAttendanceHandler
+                $attendance = $this->attendanceService->checkIn(
+                    type: 'member',
+                    entityId: (int) $memberId,
+                    clubId: (int) $gate->club_id,
+                    branchId: (int) $gate->branch_id,
                     metadata: ['source' => 'gate_hardware', 'gate_id' => $gate->id]
                 );
-
-                $decision = $this->attendanceRecorder->record($attempt);
-
-                if (!$decision->isAllowed) {
-                    return $this->errorResponse($decision->rejectionReason, 403);
-                }
 
                 // 5. Success - Instruct Gate to Unlock
                 return $this->successResponse([
                     'member_id' => $memberId,
-                    'action' => 'unlock_door',
+                    'action'    => 'unlock_door',
                     'display_message' => 'Welcome!'
                 ], 'Check-in successful.');
                 

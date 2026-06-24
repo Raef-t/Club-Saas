@@ -37,9 +37,15 @@ class SubscriptionPlanController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $plans = $this->planRepository->all();
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active();
+        
+        if ($request->boolean('available', true)) {
+            $query->available();
+        }
+        
+        $plans = $query->get();
         return $this->successResponse(
             SubscriptionPlanResource::collection($plans),
             __('Subscription plans retrieved successfully')

@@ -3,11 +3,9 @@
 namespace Modules\AttendanceManager\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Modules\AttendanceManager\Repositories\StaffAttendanceRepositoryInterface;
-use Modules\AttendanceManager\Repositories\EloquentStaffAttendanceRepository;
-use Modules\AttendanceManager\Repositories\MemberAttendanceRepositoryInterface;
-use Modules\AttendanceManager\Repositories\EloquentMemberAttendanceRepository;
-use Modules\AttendanceManager\Services\AttendanceRecorder;
+use Modules\AttendanceManager\Handlers\MemberAttendanceHandler;
+use Modules\AttendanceManager\Handlers\StaffAttendanceHandler;
+use Modules\AttendanceManager\Services\UnifiedAttendanceService;
 
 class AttendanceManagerServiceProvider extends ServiceProvider
 {
@@ -31,17 +29,16 @@ class AttendanceManagerServiceProvider extends ServiceProvider
 
         $this->app->register(RouteServiceProvider::class);
 
-        // Register the new Attendance Recording Engine
-        $this->app->singleton(AttendanceRecorder::class);
-
-        $this->app->bind(
-            StaffAttendanceRepositoryInterface::class,
-            EloquentStaffAttendanceRepository::class
-        );
-
-        $this->app->bind(
-            MemberAttendanceRepositoryInterface::class,
-            EloquentMemberAttendanceRepository::class
-        );
+        // Register the unified attendance service with all known handlers.
+        // To add a new attendable type (e.g. Coach, Guest), simply add another
+        // handler to this map — no other changes needed.
+        $this->app->singleton(UnifiedAttendanceService::class, function ($app) {
+            return new UnifiedAttendanceService([
+                'member' => $app->make(MemberAttendanceHandler::class),
+                'staff'  => $app->make(StaffAttendanceHandler::class),
+                // 'coach' => $app->make(CoachAttendanceHandler::class), // future
+                // 'guest' => $app->make(GuestAttendanceHandler::class), // future
+            ]);
+        });
     }
 }

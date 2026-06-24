@@ -40,6 +40,11 @@ class Person extends Model
         return $this->hasOne(PlayerProfile::class);
     }
 
+    public function contacts()
+    {
+        return $this->hasMany(PersonContact::class, 'person_id');
+    }
+
     public function coachProfile()
     {
         return $this->hasOne(CoachProfile::class);

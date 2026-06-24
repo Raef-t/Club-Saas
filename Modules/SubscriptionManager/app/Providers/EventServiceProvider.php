@@ -7,11 +7,11 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
-        \Modules\AttendanceManager\Events\CheckInRecorded::class => [
-            \Modules\SubscriptionManager\Listeners\DecrementSessionCredits::class,
-            \Modules\SubscriptionManager\Listeners\DeductSessionOnCheckIn::class,
-        ],
+        // DecrementSessionCredits is also removed — session deduction now happens
+        // atomically inside MemberAttendanceHandler within the same DB transaction.
+        // This guarantees atomic check-in + session decrement.
     ];
+
 
     /**
      * Indicates if events should be discovered.

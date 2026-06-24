@@ -3,20 +3,20 @@
 use Illuminate\Support\Facades\Route;
 use Modules\AttendanceManager\Http\Controllers\Api\V1\StaffAttendanceController;
 use Modules\AttendanceManager\Http\Controllers\Api\V1\MemberAttendanceController;
+use Modules\AttendanceManager\Http\Controllers\Api\V1\UnifiedAttendanceController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
-    // Staff Attendance
+    // Staff Attendance (CRUD only)
     Route::apiResource('staff-attendances', StaffAttendanceController::class);
-    Route::post('staff/{staffId}/check-in', [StaffAttendanceController::class, 'checkIn']);
-    Route::post('staff/check-out/{attendanceId}', [StaffAttendanceController::class, 'checkOut']);
-    Route::get('staff/{staffId}/history', [StaffAttendanceController::class, 'history']);
 
-    // Member Attendance
+    // Member Attendance (CRUD only)
     Route::apiResource('member-attendances', MemberAttendanceController::class);
-    Route::post('members/check-in', [MemberAttendanceController::class, 'checkIn']);
-    Route::post('members/check-out/{attendanceId}', [MemberAttendanceController::class, 'checkOut']);
-    Route::get('members/{memberId}/history', [MemberAttendanceController::class, 'history']);
+
+    // Unified Attendance API (Check-in, Check-out, History for all user types)
+    Route::post('attendances/check-in', [UnifiedAttendanceController::class, 'checkIn']);
+    Route::post('attendances/check-out/{attendanceId}', [UnifiedAttendanceController::class, 'checkOut']);
+    Route::get('attendances/history', [UnifiedAttendanceController::class, 'history']);
 
     // Authenticated Member's Activities (with period filtering)
     Route::get('my-activities', [MemberAttendanceController::class, 'myActivities']);

@@ -2967,178 +2967,6 @@
                 ]
             }
         },
-        "/v1/gates/scan": {
-            "post": {
-                "tags": [
-                    "Gate Integration"
-                ],
-                "summary": "📲 تسجيل الدخول عبر البوابة",
-                "description": "معالجة مسح رمز QR من جهاز البوابة (Hardware Gate).",
-                "operationId": "27727bac92ff24a303fa18b3d218adb3",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "qr_token"
-                                ],
-                                "properties": {
-                                    "qr_token": {
-                                        "type": "string",
-                                        "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الدخول بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Check-in successful."
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "member_id": {
-                                                    "type": "integer",
-                                                    "example": 123
-                                                },
-                                                "action": {
-                                                    "type": "string",
-                                                    "example": "unlock_door"
-                                                },
-                                                "display_message": {
-                                                    "type": "string",
-                                                    "example": "Welcome!"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Invalid token."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح (جهاز البوابة غير صالح)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized gate device."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 محظور (الدخول مرفوض)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Membership expired."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "⏳ طلبات متكررة جداً",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Scan already processing."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/member-attendances": {
             "get": {
                 "tags": [
@@ -3151,7 +2979,6 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "عدد العناصر في الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -3170,31 +2997,11 @@
                                             "type": "string",
                                             "example": "success"
                                         },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member attendance retrieved successfully"
-                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "type": "object"
                                             }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
                                         }
                                     },
                                     "type": "object"
@@ -3213,123 +3020,14 @@
                 "tags": [
                     "Member Attendance"
                 ],
-                "summary": "➕ إضافة سجل حضور للعضو",
-                "description": "إضافة سجل حضور يدوياً للعضو.",
+                "summary": "➕ إضافة حضور يدوي للعضو",
                 "operationId": "ee62f1514112e16ce25f89110809754b",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "member_id",
-                                    "check_in_at"
-                                ],
-                                "properties": {
-                                    "member_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "check_in_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-10-01T08:00:00Z"
-                                    },
-                                    "check_out_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-10-01T17:00:00Z"
-                                    },
-                                    "club_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "201": {
-                        "description": "✅ تم الإنشاء بنجاح",
+                        "description": "✅ تم الإنشاء",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Error creating record."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -3346,78 +3044,24 @@
                 "tags": [
                     "Member Attendance"
                 ],
-                "summary": "🔍 تفاصيل الحضور والانصراف للعضو",
-                "description": "استرجاع تفاصيل سجل حضور وانصراف محدد.",
+                "summary": "🔍 تفاصيل حضور عضو",
                 "operationId": "aa3cdef161bbf385a4b616c7d84d1e73",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف السجل",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تفاصيل السجل",
+                        "description": "✅",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -3432,134 +3076,24 @@
                 "tags": [
                     "Member Attendance"
                 ],
-                "summary": "✏️ تعديل سجل الحضور للعضو",
-                "description": "تعديل بيانات سجل حضور وانصراف العضو.",
+                "summary": "✏️ تعديل حضور عضو",
                 "operationId": "e393bbea8487abbdeb52b7b0c220faaf",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف السجل",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "check_out_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-10-01T18:00:00Z"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم التعديل بنجاح",
+                        "description": "✅ تم التعديل",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Error updating record."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -3574,439 +3108,24 @@
                 "tags": [
                     "Member Attendance"
                 ],
-                "summary": "🗑️ حذف سجل الحضور للعضو",
-                "description": "حذف سجل الحضور والانصراف للعضو من النظام.",
+                "summary": "🗑️ حذف حضور عضو",
                 "operationId": "2b546f4f1f35b6e17bcf74eb7414c2f9",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف السجل",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم الحذف",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Error deleting record."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/members/check-in": {
-            "post": {
-                "tags": [
-                    "Member Attendance"
-                ],
-                "summary": "✅ تسجيل الدخول اليدوي للعضو",
-                "description": "تسجيل دخول العضو في النادي أو الفرع يدوياً.",
-                "operationId": "6218367e5774917fead22503fb057c01",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "member_id",
-                                    "club_id",
-                                    "branch_id"
-                                ],
-                                "properties": {
-                                    "member_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "club_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "facility_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تسجيل الدخول بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member checked in successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member already checked in."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/members/check-out/{attendanceId}": {
-            "post": {
-                "tags": [
-                    "Member Attendance"
-                ],
-                "summary": "🚪 تسجيل الانصراف للعضو",
-                "description": "تسجيل خروج العضو.",
-                "operationId": "5fd598eb7a0ab3093318f72016722a16",
-                "parameters": [
-                    {
-                        "name": "attendanceId",
-                        "in": "path",
-                        "description": "معرف سجل الحضور",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تسجيل الانصراف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member checked out successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member already checked out."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 السجل غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/members/{memberId}/history": {
-            "get": {
-                "tags": [
-                    "Member Attendance"
-                ],
-                "summary": "📆 سجل حضور وانصراف عضو",
-                "description": "استرجاع تاريخ الحضور والانصراف لعضو محدد مع إمكانية الفلترة بالتواريخ.",
-                "operationId": "a53407d3d9f47c35d1ed1fc526c43a1d",
-                "parameters": [
-                    {
-                        "name": "memberId",
-                        "in": "path",
-                        "description": "معرف العضو",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "from",
-                        "in": "query",
-                        "description": "تاريخ البداية (YYYY-MM-DD)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date",
-                            "example": "2023-10-01"
-                        }
-                    },
-                    {
-                        "name": "to",
-                        "in": "query",
-                        "description": "تاريخ النهاية (YYYY-MM-DD)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date",
-                            "example": "2023-10-31"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "عدد العناصر في الصفحة",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع السجل بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member attendance history retrieved"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -4024,13 +3143,12 @@
                     "Member App"
                 ],
                 "summary": "🎯 نشاطاتي",
-                "description": "استرجاع نشاطات وحضور العضو المسجل للدخول مع إحصائيات لفترة معينة.",
+                "description": "استرجاع نشاطات وحضور العضو المسجّل للدخول مع إحصائيات.",
                 "operationId": "004d25e8f5bda2b152c91864985f0e01",
                 "parameters": [
                     {
                         "name": "period",
                         "in": "query",
-                        "description": "الفترة (weekly, monthly, yearly)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -4040,95 +3158,18 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "عدد العناصر في الصفحة",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "example": 15
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع النشاطات بنجاح",
+                        "description": "✅",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activities retrieved successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "stats": {
-                                                    "properties": {
-                                                        "total_attendance": {
-                                                            "type": "integer",
-                                                            "example": 5
-                                                        },
-                                                        "training_hours": {
-                                                            "type": "number",
-                                                            "example": 7.5
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                },
-                                                "items": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "pagination": {
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الملف الشخصي للعضو غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -4637,13 +3678,12 @@
                     "Staff Attendance"
                 ],
                 "summary": "📋 عرض حضور وانصراف الموظفين",
-                "description": "استرجاع سجل حضور وانصراف جميع الموظفين.",
+                "description": "استرجاع سجل حضور وانصراف جميع الموظفين (بما فيهم الكوتشات).",
                 "operationId": "db40ffaa075469897ece37c4e6b4ffbb",
                 "parameters": [
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "عدد العناصر في الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -4662,31 +3702,11 @@
                                             "type": "string",
                                             "example": "success"
                                         },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff attendance retrieved successfully"
-                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "type": "object"
                                             }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
                                         }
                                     },
                                     "type": "object"
@@ -4705,123 +3725,14 @@
                 "tags": [
                     "Staff Attendance"
                 ],
-                "summary": "➕ إضافة سجل حضور",
-                "description": "إضافة سجل حضور يدوياً للموظف.",
+                "summary": "➕ إضافة حضور يدوي للموظف",
                 "operationId": "e56436acdeeb5cf3202f867a3b3c0d3a",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "staff_id",
-                                    "check_in_at"
-                                ],
-                                "properties": {
-                                    "staff_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "check_in_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-10-01T08:00:00Z"
-                                    },
-                                    "check_out_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-10-01T17:00:00Z"
-                                    },
-                                    "club_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "201": {
-                        "description": "✅ تم الإنشاء بنجاح",
+                        "description": "✅ تم الإنشاء",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Error creating record."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -4838,78 +3749,24 @@
                 "tags": [
                     "Staff Attendance"
                 ],
-                "summary": "🔍 تفاصيل الحضور والانصراف",
-                "description": "استرجاع تفاصيل سجل حضور وانصراف محدد.",
+                "summary": "🔍 تفاصيل الحضور",
                 "operationId": "b5a0c5ea38d012eb8826de9a2a77fe23",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف السجل",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تفاصيل السجل",
+                        "description": "✅",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -4924,134 +3781,24 @@
                 "tags": [
                     "Staff Attendance"
                 ],
-                "summary": "✏️ تعديل سجل الحضور",
-                "description": "تعديل بيانات سجل حضور وانصراف الموظف.",
+                "summary": "✏️ تعديل حضور موظف",
                 "operationId": "0e5f7fc812ec1759305708948ac3bbaf",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف السجل",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "check_out_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-10-01T18:00:00Z"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم التعديل بنجاح",
+                        "description": "✅ تم التعديل",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Error updating record."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -5066,100 +3813,24 @@
                 "tags": [
                     "Staff Attendance"
                 ],
-                "summary": "🗑️ حذف سجل الحضور",
-                "description": "حذف سجل الحضور والانصراف من النظام.",
+                "summary": "🗑️ حذف حضور موظف",
                 "operationId": "c19129da1575b8c69b32d92f0d6e6cb6",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف السجل",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم الحذف",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Error deleting record."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -5171,36 +3842,38 @@
                 ]
             }
         },
-        "/v1/staff/{staffId}/check-in": {
+        "/v1/attendances/check-in": {
             "post": {
                 "tags": [
-                    "Staff Attendance"
+                    "Attendance"
                 ],
-                "summary": "✅ تسجيل الحضور للموظف",
-                "description": "تسجيل دخول/حضور الموظف في النادي أو الفرع.",
-                "operationId": "fb27074d475ae9cc1960dd6ad72aabcf",
-                "parameters": [
-                    {
-                        "name": "staffId",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
+                "summary": "✅ تسجيل الدخول الموحد (لكافة أنواع المستخدمين)",
+                "description": "تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type.",
+                "operationId": "f579e67dc0b9e62039a957a8263fb35b",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "attendable_type",
+                                    "attendable_id",
                                     "club_id",
                                     "branch_id"
                                 ],
                                 "properties": {
+                                    "attendable_type": {
+                                        "type": "string",
+                                        "example": "member",
+                                        "enum": [
+                                            "member",
+                                            "staff"
+                                        ]
+                                    },
+                                    "attendable_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "club_id": {
                                         "type": "integer",
                                         "example": 1
@@ -5221,80 +3894,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "✅ تم تسجيل الدخول بنجاح",
+                        "description": "✅ تم تسجيل الدخول",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff checked in successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff already checked in."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -5306,103 +3909,29 @@
                 ]
             }
         },
-        "/v1/staff/check-out/{attendanceId}": {
+        "/v1/attendances/check-out/{attendanceId}": {
             "post": {
                 "tags": [
-                    "Staff Attendance"
+                    "Attendance"
                 ],
-                "summary": "🚪 تسجيل الانصراف",
-                "description": "تسجيل خروج/انصراف الموظف.",
-                "operationId": "f8582a48319c730770164b6602b2dbff",
+                "summary": "🚪 تسجيل الانصراف الموحد",
+                "operationId": "6c38dc17b736c67290aa0da82daa4f1a",
                 "parameters": [
                     {
                         "name": "attendanceId",
                         "in": "path",
-                        "description": "معرف سجل الحضور",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم تسجيل الانصراف بنجاح",
+                        "description": "✅ تم الانصراف",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff checked out successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "⚠️ خطأ في المعالجة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff already checked out."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 السجل غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -5414,98 +3943,67 @@
                 ]
             }
         },
-        "/v1/staff/{staffId}/history": {
+        "/v1/attendances/history": {
             "get": {
                 "tags": [
-                    "Staff Attendance"
+                    "Attendance"
                 ],
-                "summary": "📆 سجل حضور وانصراف موظف",
-                "description": "استرجاع تاريخ الحضور والانصراف لموظف محدد مع إمكانية الفلترة بالتواريخ.",
-                "operationId": "5958deaec0d3485dac3f507499c47e2e",
+                "summary": "📆 سجل حضور موحد",
+                "operationId": "3076ed071799f8e5c3593d9d7b5583be",
                 "parameters": [
                     {
-                        "name": "staffId",
-                        "in": "path",
-                        "description": "معرف الموظف",
+                        "name": "attendable_type",
+                        "in": "query",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "string",
+                            "enum": [
+                                "member",
+                                "staff"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "attendable_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     },
                     {
                         "name": "from",
                         "in": "query",
-                        "description": "تاريخ البداية (YYYY-MM-DD)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "format": "date",
-                            "example": "2023-10-01"
+                            "format": "date"
                         }
                     },
                     {
                         "name": "to",
                         "in": "query",
-                        "description": "تاريخ النهاية (YYYY-MM-DD)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "format": "date",
-                            "example": "2023-10-31"
+                            "format": "date"
                         }
                     },
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "عدد العناصر في الصفحة",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "example": 15
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع السجل بنجاح",
+                        "description": "✅",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff attendance history retrieved"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                                "schema": {}
                             }
                         }
                     }
@@ -11648,6 +10146,274 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player/health-profile": {
+            "get": {
+                "tags": [
+                    "Player App"
+                ],
+                "summary": "🏥 جلب الملف الصحي للاعب",
+                "description": "استرجاع الملف الصحي للاعب المسجل دخوله حالياً.",
+                "operationId": "6ceaec1eca02cd0ede2a9e9947fbd0af",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الملف الصحي بنجاح"
+                    },
+                    "403": {
+                        "description": "🚫 لا يوجد حساب لاعب مرتبط"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Player App"
+                ],
+                "summary": "📝 تحديث الملف الصحي للاعب",
+                "description": "تحديث أو إنشاء الملف الصحي للاعب المسجل دخوله حالياً.",
+                "operationId": "e6a1527a1b6bcff2eaad986385616b1d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "allergies": {
+                                        "type": "string",
+                                        "example": "حساسية من البنسلين"
+                                    },
+                                    "blood_type": {
+                                        "type": "string",
+                                        "example": "O+"
+                                    },
+                                    "sport_goal": {
+                                        "type": "string",
+                                        "example": "خسارة الوزن"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التحديث بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player/measurements": {
+            "get": {
+                "tags": [
+                    "Player App"
+                ],
+                "summary": "📏 سجل قياسات اللاعب",
+                "description": "جلب جميع القياسات السابقة للاعب.",
+                "operationId": "911b09e547b4365a2b86d0342fb52032",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع القياسات بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Player App"
+                ],
+                "summary": "⚖️ إضافة قياس جديد",
+                "description": "تسجيل قياس جديد للاعب.",
+                "operationId": "0f36c725532111772102f10555ead876",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "weight"
+                                ],
+                                "properties": {
+                                    "weight": {
+                                        "type": "number",
+                                        "example": 75.5
+                                    },
+                                    "height": {
+                                        "type": "number",
+                                        "example": 178
+                                    },
+                                    "measurement_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-10-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إضافة القياس بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/players/register": {
+            "post": {
+                "tags": [
+                    "Player Management"
+                ],
+                "summary": "➕ تسجيل لاعب جديد (متدرب)",
+                "description": "تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته وإضافة خطط الاشتراك مع التحقق من سعة الاشتراكات.",
+                "operationId": "bccd33fe7fc34826290a9fec37930499",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "mobile",
+                                    "gender",
+                                    "plans"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "أحمد"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "محمد"
+                                    },
+                                    "mobile": {
+                                        "type": "string",
+                                        "example": "0501234567"
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "example": "male",
+                                        "enum": [
+                                            "male",
+                                            "female"
+                                        ]
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1995-10-25"
+                                    },
+                                    "branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "additional_contacts": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "name",
+                                                "phone_number"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "والد اللاعب"
+                                                },
+                                                "phone_number": {
+                                                    "type": "string",
+                                                    "example": "0509876543"
+                                                },
+                                                "relation": {
+                                                    "type": "string",
+                                                    "example": "Father"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "plans": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "plan_id"
+                                            ],
+                                            "properties": {
+                                                "plan_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "paid_amount": {
+                                                    "type": "number",
+                                                    "example": 150.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم تسجيل اللاعب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Player registered successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات (مثل اكتمال سعة الخطة)"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -22454,10 +21220,6 @@
             "description": "Accounting - الصناديق والعهد المالية"
         },
         {
-            "name": "Gate Integration",
-            "description": "Gate Integration"
-        },
-        {
             "name": "Member Attendance",
             "description": "Member Attendance"
         },
@@ -22472,6 +21234,10 @@
         {
             "name": "Staff Attendance",
             "description": "Staff Attendance"
+        },
+        {
+            "name": "Attendance",
+            "description": "Attendance"
         },
         {
             "name": "Authentication",
@@ -22524,6 +21290,14 @@
         {
             "name": "Member Measurements",
             "description": "Member Measurements"
+        },
+        {
+            "name": "Player App",
+            "description": "Player App"
+        },
+        {
+            "name": "Player Management",
+            "description": "Player Management"
         },
         {
             "name": "Notification Management",

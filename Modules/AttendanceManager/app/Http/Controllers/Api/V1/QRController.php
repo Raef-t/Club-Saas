@@ -2,23 +2,21 @@
 
 namespace Modules\AttendanceManager\Http\Controllers\Api\V1;
 
-use Modules\Core\Http\Controllers\Api\BaseController;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Modules\AttendanceManager\Services\QRSecurityService;
-use Modules\AttendanceManager\Services\AttendanceRecorder;
-use Modules\AttendanceManager\DTOs\CheckInAttempt;
-use Modules\AttendanceManager\DTOs\CheckOutAttempt;
+use Modules\AttendanceManager\Services\UnifiedAttendanceService;
 use Modules\AttendanceManager\Http\Requests\QRCheckInRequest;
 use Modules\AttendanceManager\Http\Requests\QRCheckOutRequest;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use OpenApi\Attributes as OA;
 
 class QRController extends BaseController
 {
     public function __construct(
         protected QRSecurityService $qrService,
-        protected AttendanceRecorder $attendanceRecorder
+        protected UnifiedAttendanceService $attendanceService
     ) {}
 
     #[OA\Post(
@@ -178,25 +176,21 @@ class QRController extends BaseController
 
         try {
             $memberId = $this->qrService->validateToken($validated['qr_token']);
-            
-            $attempt = new CheckInAttempt(
-                clubId: $validated['club_id'],
-                attendableType: 'member',
-                attendableId: $memberId,
-                branchId: $validated['branch_id'],
-                timestamp: now()->toDateTimeImmutable(),
+
+            $attendance = $this->attendanceService->checkIn(
+                type: 'member',
+                entityId: (int) $memberId,
+                clubId: (int) $validated['club_id'],
+                branchId: (int) $validated['branch_id'],
                 metadata: ['source' => 'qr_scan']
             );
 
-            $decision = $this->attendanceRecorder->record($attempt);
+            return $this->successResponse(
+                ['attendance_id' => $attendance->id],
+                'Check-in successful.'
+            );
 
-            if (!$decision->isAllowed) {
-                return $this->errorResponse($decision->rejectionReason, 403);
-            }
-
-            return $this->successResponse(null, 'Check-in successful.');
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
@@ -242,27 +236,21 @@ class QRController extends BaseController
 
         try {
             $memberId = $this->qrService->validateToken($validated['qr_token']);
-            
-            $attempt = new CheckOutAttempt(
-                clubId: $validated['club_id'],
-                attendableType: 'member',
-                attendableId: $memberId,
-                branchId: $validated['branch_id'],
-                timestamp: now(),
-                metadata: ['source' => 'qr_scan']
-            );
 
-            $attendance = $this->attendanceRecorder->recordCheckOut($attempt);
+            // Find the open attendance for this member
+            $open = $this->attendanceService->findOpen('member', (int) $memberId);
 
-            if (!$attendance) {
+            if (!$open) {
                 return $this->errorResponse('No active check-in found.', 404);
             }
 
+            $attendance = $this->attendanceService->checkOut($open->id);
+
             return $this->successResponse([
-                'duration_minutes' => $attendance->duration_minutes
+                'duration_minutes' => $attendance->duration_minutes,
             ], 'Check-out successful.');
-            
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
     }

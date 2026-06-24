@@ -29,11 +29,18 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 3. Create Admin User Account
-        User::create([
+        $adminUser = User::create([
             'person_id' => $adminPerson->id,
             'username' => 'admin',
             'password' => Hash::make('password'),
             'is_active' => true,
+            'role' => 'super_admin',
         ]);
+
+        // 4. Seed Roles and Permissions
+        $this->call(RolesAndPermissionsSeeder::class);
+
+        // 5. Assign Super Admin Role via Spatie
+        $adminUser->assignRole('super_admin');
     }
 }
