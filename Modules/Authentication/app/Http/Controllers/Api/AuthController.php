@@ -53,6 +53,7 @@ class AuthController extends BaseController
                                 new OA\Property(property: 'username', type: 'string', example: 'admin'),
                                 new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
                                 new OA\Property(property: 'photo_url', type: 'string', nullable: true, example: 'https://example.com/photo.jpg'),
+                                new OA\Property(property: 'gender', type: 'string', nullable: true, example: 'male'),
                             ]
                         )
                     ]
@@ -127,6 +128,7 @@ class AuthController extends BaseController
                 'username' => $user->username,
                 'full_name' => $user->person->full_name ?? null,
                 'photo_url' => $user->person->photo_url ?? null,
+                'gender' => $user->person->gender ?? null,
             ]
         ], __('Logged in successfully'));
     }

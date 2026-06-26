@@ -59,13 +59,16 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
                 $metadata = array_merge($metadata, $decision->context);
             }
 
+            $checkInAt = $metadata['check_in_at'] ?? now();
+            unset($metadata['check_in_at']);
+
             // 3. Create Attendance record
             $attendance = Attendance::create([
                 'club_id'         => $clubId,
                 'attendable_type' => 'staff',
                 'attendable_id'   => $entityId,
                 'branch_id'       => $branchId,
-                'check_in_at'     => now(),
+                'check_in_at'     => $checkInAt,
                 'status'          => 'checked_in',
                 'metadata'        => $metadata,
             ]);

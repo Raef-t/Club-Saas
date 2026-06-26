@@ -128,7 +128,7 @@ class SubscriptionService
 
             // 6. Create Invoice
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branch_id ?? 1;
+            $branchId = $memberDTO->branchId ?? 1;
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
                 'member_id' => $memberId,

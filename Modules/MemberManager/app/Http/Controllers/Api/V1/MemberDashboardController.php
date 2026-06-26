@@ -41,10 +41,17 @@ class MemberDashboardController extends BaseController
                             new OA\Property(property: 'qr_code', type: 'string', example: 'QR-X1Y2Z3'),
                             new OA\Property(property: 'image_url', type: 'string', nullable: true, example: 'https://club-saas.com/storage/profile.jpg')
                         ]),
-                        new OA\Property(property: 'active_subscriptions', type: 'array', items: new OA\Items(type: 'object', properties: [
+                        new OA\Property(property: 'subscriptions', type: 'array', items: new OA\Items(type: 'object', properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'status', type: 'string', example: 'active'),
                             new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك ذهبي 3 شهور'),
-                            new OA\Property(property: 'remaining_days', type: 'integer', example: 45)
+                            new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2023-10-01'),
+                            new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2024-01-01'),
+                            new OA\Property(property: 'formatted_end_date', type: 'string', example: '01/01/2024'),
+                            new OA\Property(property: 'membership_number', type: 'string', example: 'MEM-10023'),
+                            new OA\Property(property: 'price', type: 'number', example: 150.0),
+                            new OA\Property(property: 'formatted_price', type: 'string', example: '150$'),
+                            new OA\Property(property: 'remaining_sessions', type: 'integer', example: 15)
                         ])),
                         new OA\Property(property: 'upcoming_sessions', type: 'array', items: new OA\Items(type: 'object')),
                         new OA\Property(property: 'unpaid_invoices_count', type: 'integer', example: 1)

@@ -74,13 +74,16 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 throw new Exception(__('No remaining sessions in the active subscription.'));
             }
 
+            $checkInAt = $metadata['check_in_at'] ?? now();
+            unset($metadata['check_in_at']);
+
             // 5. Create Attendance record
             $attendance = Attendance::create([
                 'club_id'        => $clubId,
                 'attendable_type' => 'member',
                 'attendable_id'  => $entityId,
                 'branch_id'      => $branchId,
-                'check_in_at'    => now(),
+                'check_in_at'    => $checkInAt,
                 'status'         => 'checked_in',
                 'metadata'       => array_merge($metadata, [
                     'subscription_id'       => $subscription->id,

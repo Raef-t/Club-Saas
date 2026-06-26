@@ -141,7 +141,7 @@ class QRController extends BaseController
         path: '/v1/qr/check-in',
         summary: '✅ تسجيل الدخول عبر مسح QR',
         description: 'معالجة تسجيل الدخول (Check-In) باستخدام رمز QR من تطبيق الهاتف أو الموظف.',
-        tags: ['QR Attendance'],
+        tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -199,7 +199,7 @@ class QRController extends BaseController
         path: '/v1/qr/check-out',
         summary: '🚪 تسجيل الانصراف عبر مسح QR',
         description: 'معالجة تسجيل الانصراف (Check-Out) باستخدام رمز QR.',
-        tags: ['QR Attendance'],
+        tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(

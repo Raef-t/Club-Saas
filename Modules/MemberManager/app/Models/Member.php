@@ -4,6 +4,8 @@ namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Authentication\Models\Person;
+
 class Member extends Model
 {
     use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
@@ -24,6 +26,11 @@ class Member extends Model
 
     public ?\Modules\Core\DTOs\PersonDTO $person = null;
     public ?\Modules\Core\DTOs\BranchDTO $branch = null;
+
+    public function person()
+    {
+        return $this->belongsTo(Person::class, 'person_id');
+    }
 
     public function healthProfile()
     {

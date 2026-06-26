@@ -119,7 +119,7 @@ class StaffService
 
             // 3. Create active User Account so they can login to the Employee/Trainer App
             $username = $data['username'] ?? ('staff_' . $person->id . '_' . \Illuminate\Support\Str::random(4));
-            $password = $data['password'] ?? \Illuminate\Support\Str::random(8);
+            $password = $data['password'] ?? 'password123';
             
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,

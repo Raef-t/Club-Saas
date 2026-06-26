@@ -11,6 +11,8 @@ class User extends Authenticatable
 {
     use HasFactory, HasApiTokens, HasRoles;
 
+    protected $guard_name = 'sanctum';
+
     protected $table = 'authentication_users';
 
     /**

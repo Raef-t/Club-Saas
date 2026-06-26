@@ -115,6 +115,21 @@ class PlayerProfileController extends BaseController
             properties: [
                 new OA\Property(property: 'weight', type: 'number', example: 75.5),
                 new OA\Property(property: 'height', type: 'number', example: 178),
+                new OA\Property(property: 'neck_circumference', type: 'number', example: 40),
+                new OA\Property(property: 'shoulder_circumference', type: 'number', example: 110),
+                new OA\Property(property: 'chest_circumference', type: 'number', example: 100),
+                new OA\Property(property: 'waist_circumference', type: 'number', example: 85),
+                new OA\Property(property: 'hip_circumference', type: 'number', example: 95),
+                new OA\Property(property: 'buttocks_circumference', type: 'number', example: 98),
+                new OA\Property(property: 'right_thigh_mid', type: 'number', example: 60),
+                new OA\Property(property: 'left_thigh', type: 'number', example: 60),
+                new OA\Property(property: 'above_right_knee', type: 'number', example: 40),
+                new OA\Property(property: 'above_left_knee', type: 'number', example: 40),
+                new OA\Property(property: 'right_calf', type: 'number', example: 38),
+                new OA\Property(property: 'left_calf', type: 'number', example: 38),
+                new OA\Property(property: 'right_bicep', type: 'number', example: 35),
+                new OA\Property(property: 'left_bicep', type: 'number', example: 35),
+                new OA\Property(property: 'arm_circumference', type: 'number', example: 35),
                 new OA\Property(property: 'measurement_date', type: 'string', format: 'date', example: '2023-10-01')
             ]
         )

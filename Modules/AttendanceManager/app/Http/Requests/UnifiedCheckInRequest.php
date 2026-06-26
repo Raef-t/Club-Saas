@@ -19,6 +19,7 @@ class UnifiedCheckInRequest extends FormRequest
             'club_id'         => ['required', 'integer'],
             'branch_id'       => ['required', 'integer'],
             'facility_id'     => ['nullable', 'integer'],
+            'check_in_at'     => ['nullable', 'date'],
             'metadata'        => ['nullable', 'array'],
         ];
     }

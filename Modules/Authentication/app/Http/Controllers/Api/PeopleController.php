@@ -125,7 +125,7 @@ class PeopleController extends BaseController
                 $user = User::create([
                     'person_id' => $person->id,
                     'username' => $username,
-                    'password' => Hash::make($request->input('password', '123456')),
+                    'password' => Hash::make($request->input('password', 'password123')),
                     'is_active' => false, // Management activation required
                 ]);
 

@@ -3379,7 +3379,7 @@
         "/v1/qr/check-in": {
             "post": {
                 "tags": [
-                    "QR Attendance"
+                    "Attendance"
                 ],
                 "summary": "✅ تسجيل الدخول عبر مسح QR",
                 "description": "معالجة تسجيل الدخول (Check-In) باستخدام رمز QR من تطبيق الهاتف أو الموظف.",
@@ -3525,7 +3525,7 @@
         "/v1/qr/check-out": {
             "post": {
                 "tags": [
-                    "QR Attendance"
+                    "Attendance"
                 ],
                 "summary": "🚪 تسجيل الانصراف عبر مسح QR",
                 "description": "معالجة تسجيل الانصراف (Check-Out) باستخدام رمز QR.",
@@ -3885,6 +3885,11 @@
                                     "facility_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "check_in_at": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-06-26 15:30:00"
                                     }
                                 },
                                 "type": "object"
@@ -4098,6 +4103,11 @@
                                                         "photo_url": {
                                                             "type": "string",
                                                             "example": "https://example.com/photo.jpg",
+                                                            "nullable": true
+                                                        },
+                                                        "gender": {
+                                                            "type": "string",
+                                                            "example": "male",
                                                             "nullable": true
                                                         }
                                                     },
@@ -9085,7 +9095,7 @@
                                                     },
                                                     "type": "object"
                                                 },
-                                                "active_subscriptions": {
+                                                "subscriptions": {
                                                     "type": "array",
                                                     "items": {
                                                         "properties": {
@@ -9093,13 +9103,43 @@
                                                                 "type": "integer",
                                                                 "example": 1
                                                             },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            },
                                                             "plan_name": {
                                                                 "type": "string",
                                                                 "example": "اشتراك ذهبي 3 شهور"
                                                             },
-                                                            "remaining_days": {
+                                                            "start_date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2023-10-01"
+                                                            },
+                                                            "end_date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2024-01-01"
+                                                            },
+                                                            "formatted_end_date": {
+                                                                "type": "string",
+                                                                "example": "01/01/2024"
+                                                            },
+                                                            "membership_number": {
+                                                                "type": "string",
+                                                                "example": "MEM-10023"
+                                                            },
+                                                            "price": {
+                                                                "type": "number",
+                                                                "example": 150
+                                                            },
+                                                            "formatted_price": {
+                                                                "type": "string",
+                                                                "example": "150$"
+                                                            },
+                                                            "remaining_sessions": {
                                                                 "type": "integer",
-                                                                "example": 45
+                                                                "example": 15
                                                             }
                                                         },
                                                         "type": "object"
@@ -10262,6 +10302,66 @@
                                     "height": {
                                         "type": "number",
                                         "example": 178
+                                    },
+                                    "neck_circumference": {
+                                        "type": "number",
+                                        "example": 40
+                                    },
+                                    "shoulder_circumference": {
+                                        "type": "number",
+                                        "example": 110
+                                    },
+                                    "chest_circumference": {
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "waist_circumference": {
+                                        "type": "number",
+                                        "example": 85
+                                    },
+                                    "hip_circumference": {
+                                        "type": "number",
+                                        "example": 95
+                                    },
+                                    "buttocks_circumference": {
+                                        "type": "number",
+                                        "example": 98
+                                    },
+                                    "right_thigh_mid": {
+                                        "type": "number",
+                                        "example": 60
+                                    },
+                                    "left_thigh": {
+                                        "type": "number",
+                                        "example": 60
+                                    },
+                                    "above_right_knee": {
+                                        "type": "number",
+                                        "example": 40
+                                    },
+                                    "above_left_knee": {
+                                        "type": "number",
+                                        "example": 40
+                                    },
+                                    "right_calf": {
+                                        "type": "number",
+                                        "example": 38
+                                    },
+                                    "left_calf": {
+                                        "type": "number",
+                                        "example": 38
+                                    },
+                                    "right_bicep": {
+                                        "type": "number",
+                                        "example": 35
+                                    },
+                                    "left_bicep": {
+                                        "type": "number",
+                                        "example": 35
+                                    },
+                                    "arm_circumference": {
+                                        "type": "number",
+                                        "example": 35
                                     },
                                     "measurement_date": {
                                         "type": "string",
@@ -21232,12 +21332,12 @@
             "description": "QR Attendance"
         },
         {
-            "name": "Staff Attendance",
-            "description": "Staff Attendance"
-        },
-        {
             "name": "Attendance",
             "description": "Attendance"
+        },
+        {
+            "name": "Staff Attendance",
+            "description": "Staff Attendance"
         },
         {
             "name": "Authentication",

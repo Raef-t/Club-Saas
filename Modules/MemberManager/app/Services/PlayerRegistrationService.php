@@ -27,7 +27,7 @@ class PlayerRegistrationService
             // 1. Validate Capacity for all requested plans first
             foreach ($data['plans'] as $planData) {
                 $plan = SubscriptionPlan::findOrFail($planData['plan_id']);
-                
+
                 if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
                     throw ValidationException::withMessages([
                         'plans' => ["خطة الاشتراك '{$plan->name}' مكتملة العدد ولا يمكن التسجيل بها."]
@@ -74,15 +74,16 @@ class PlayerRegistrationService
             // 6. Create User Account automatically
             $user = User::create([
                 'person_id' => $person->id,
-                'username' => $data['mobile'],
-                'password' => Hash::make($data['mobile']),
+                'username' => $member->member_number,
+                'password' => Hash::make('password123'),
                 'is_active' => true,
                 'role' => 'player',
             ]);
 
             // Assign spatie role if needed
-            if (\Spatie\Permission\Models\Role::where('name', 'player')->exists()) {
-                $user->assignRole('player');
+            $role = \Spatie\Permission\Models\Role::where('name', 'player')->first();
+            if ($role) {
+                $user->assignRole($role);
             }
 
             // 7. Create Subscriptions
@@ -93,15 +94,15 @@ class PlayerRegistrationService
                     // Note: start_date is intentionally omitted here to default to today, 
                     // and end_date is calculated automatically inside subscribeMember
                 ];
-                
+
                 $subscription = $this->subscriptionService->subscribeMember(
                     $member->id,
                     $planData['plan_id'],
                     $options
                 );
-                
+
                 $subscriptions[] = $subscription;
-                
+
                 // Update plan subscribers count
                 $plan = SubscriptionPlan::find($planData['plan_id']);
                 if ($plan) {

@@ -26,7 +26,7 @@ class MemberDashboardService
     {
         $steps = [
             'profile' => fn() => $this->getProfile($personId),
-            'subscription_card' => fn() => $this->getSubscriptionCard($memberId),
+            'subscriptions' => fn() => $this->getSubscriptions($memberId),
             'stats' => fn() => $this->getStats($memberId),
             'recent_activities' => fn() => $this->getRecentActivities($memberId),
             'upcoming_events' => fn() => $this->getUpcomingEvents($memberId),
@@ -78,31 +78,35 @@ class MemberDashboardService
     }
 
     /**
-     * Subscription card: active subscription details.
+     * Subscriptions list: all subscriptions details.
      */
-    protected function getSubscriptionCard(int $memberId): ?array
+    protected function getSubscriptions(int $memberId): array
     {
-        $subscription = PlayerSubscription::with('plan')
+        $subscriptions = PlayerSubscription::with('plan')
             ->where('member_id', $memberId)
-            ->where('status', 'active')
             ->latest()
-            ->first();
+            ->get();
 
-        if (!$subscription) {
-            return null;
+        if ($subscriptions->isEmpty()) {
+            return [];
         }
 
         $member = DB::table('members')->where('id', $memberId)->first();
 
-        return [
-            'status' => $subscription->status,
-            'plan_name' => $subscription->plan->name ?? null,
-            'end_date' => $subscription->end_date?->toDateString(),
-            'formatted_end_date' => $subscription->end_date?->format('d/m/Y'),
-            'membership_number' => $member->member_number ?? null,
-            'price' => (float) ($subscription->total_amount ?? $subscription->plan->base_price ?? 0),
-            'formatted_price' => ($subscription->total_amount ?? $subscription->plan->base_price ?? 0) . '$',
-        ];
+        return $subscriptions->map(function ($subscription) use ($member) {
+            return [
+                'id' => $subscription->id,
+                'status' => $subscription->status,
+                'plan_name' => $subscription->plan->name ?? null,
+                'start_date' => $subscription->start_date?->toDateString(),
+                'end_date' => $subscription->end_date?->toDateString(),
+                'formatted_end_date' => $subscription->end_date?->format('d/m/Y'),
+                'membership_number' => $member->member_number ?? null,
+                'price' => (float) ($subscription->total_amount ?? $subscription->plan->base_price ?? 0),
+                'formatted_price' => ($subscription->total_amount ?? $subscription->plan->base_price ?? 0) . '$',
+                'remaining_sessions' => $subscription->remaining_sessions,
+            ];
+        })->toArray();
     }
 
     /**
