@@ -47,7 +47,7 @@ class TechnogymSeeder extends Seeder
         $adminUser = User::create([
             'person_id' => $adminPerson->id,
             'username' => 'admin_technogym',
-            'password' => Hash::make('password123'),
+            'password' => Hash::make('password'),
             'is_active' => true,
             'role' => 'admin',
         ]);

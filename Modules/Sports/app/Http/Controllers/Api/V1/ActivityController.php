@@ -59,12 +59,23 @@ class ActivityController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name_en', 'name_ar', 'type', 'gender_allowed'],
+            required: ['name'],
             properties: [
-                new OA\Property(property: 'name_en', type: 'string', example: 'Swimming'),
-                new OA\Property(property: 'name_ar', type: 'string', example: 'سباحة'),
-                new OA\Property(property: 'type', type: 'string', example: 'Group'),
-                new OA\Property(property: 'gender_allowed', type: 'string', example: 'mixed')
+                new OA\Property(
+                    property: 'name',
+                    type: 'object',
+                    required: ['ar'],
+                    description: 'اسم النشاط (مطلوب)',
+                    properties: [
+                        new OA\Property(property: 'ar', type: 'string', description: '(مطلوب) الاسم بالعربية', example: 'يوغا'),
+                        new OA\Property(property: 'en', type: 'string', description: '(اختياري) الاسم بالإنجليزية', example: 'Yoga')
+                    ]
+                ),
+                new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
+                new OA\Property(property: 'type', type: 'string', description: '(اختياري) نوع النشاط: open_gym, group_class, personal_training', example: 'group_class'),
+                new OA\Property(property: 'default_capacity', type: 'integer', description: '(اختياري) السعة الافتراضية للنشاط', example: 20),
+                new OA\Property(property: 'is_private_equipment', type: 'boolean', description: '(اختياري) هل يتطلب معدات خاصة؟', example: false),
+                new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
             ]
         )
     )]
@@ -128,7 +139,14 @@ class ActivityController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'name_en', type: 'string', example: 'Advanced Swimming')
+                new OA\Property(
+                    property: 'name',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'ar', type: 'string', example: 'سباحة متقدمة'),
+                        new OA\Property(property: 'en', type: 'string', example: 'Advanced Swimming')
+                    ]
+                )
             ]
         )
     )]

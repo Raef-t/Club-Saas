@@ -3656,7 +3656,7 @@
                                     "username": {
                                         "description": "اسم المستخدم الفريد (للموظف أو المدير)",
                                         "type": "string",
-                                        "example": "admin"
+                                        "example": "super_admin"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
@@ -10245,25 +10245,50 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name_en",
-                                    "name_ar",
-                                    "type",
-                                    "gender_allowed"
+                                    "name"
                                 ],
                                 "properties": {
-                                    "name_en": {
-                                        "type": "string",
-                                        "example": "Swimming"
+                                    "name": {
+                                        "description": "اسم النشاط (مطلوب)",
+                                        "required": [
+                                            "ar"
+                                        ],
+                                        "properties": {
+                                            "ar": {
+                                                "description": "(مطلوب) الاسم بالعربية",
+                                                "type": "string",
+                                                "example": "يوغا"
+                                            },
+                                            "en": {
+                                                "description": "(اختياري) الاسم بالإنجليزية",
+                                                "type": "string",
+                                                "example": "Yoga"
+                                            }
+                                        },
+                                        "type": "object"
                                     },
-                                    "name_ar": {
+                                    "description": {
+                                        "description": "(اختياري) وصف النشاط",
                                         "type": "string",
-                                        "example": "سباحة"
+                                        "example": "جلسة يوغا للمبتدئين"
                                     },
                                     "type": {
+                                        "description": "(اختياري) نوع النشاط: open_gym, group_class, personal_training",
                                         "type": "string",
-                                        "example": "Group"
+                                        "example": "group_class"
+                                    },
+                                    "default_capacity": {
+                                        "description": "(اختياري) السعة الافتراضية للنشاط",
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "is_private_equipment": {
+                                        "description": "(اختياري) هل يتطلب معدات خاصة؟",
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "gender_allowed": {
+                                        "description": "(اختياري) الجنس المسموح: male, female, mixed",
                                         "type": "string",
                                         "example": "mixed"
                                     }
@@ -10452,9 +10477,18 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "name_en": {
-                                        "type": "string",
-                                        "example": "Advanced Swimming"
+                                    "name": {
+                                        "properties": {
+                                            "ar": {
+                                                "type": "string",
+                                                "example": "سباحة متقدمة"
+                                            },
+                                            "en": {
+                                                "type": "string",
+                                                "example": "Advanced Swimming"
+                                            }
+                                        },
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
