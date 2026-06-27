@@ -4,9 +4,11 @@ namespace Modules\Accounting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Http\Requests\StorePartnerRequest;
 use Modules\Accounting\Http\Requests\UpdatePartnerRequest;
 use Modules\Accounting\Http\Resources\AccPartnerResource;
+use Modules\Accounting\Models\AccAccount;
 use Modules\Accounting\Models\AccPartner;
 use Modules\Accounting\Services\ReportService;
 use Modules\Shared\Traits\SuccessResponseTrait;
@@ -59,11 +61,11 @@ class PartnerController extends Controller
         required: true,
         description: 'بيانات إنشاء الشريك الجديد',
         content: new OA\JsonContent(
-            required: ['name', 'capital_account_id', 'profit_share_pct', 'joined_at'],
+            required: ['name', 'profit_share_pct', 'joined_at'],
             properties: [
                 new OA\Property(property: 'name', type: 'string', description: 'الاسم الكامل للشريك الجديد', example: 'خالد بن عبد الله التويجري'),
-                new OA\Property(property: 'capital_account_id', type: 'integer', description: 'معرف الحساب المحاسبي لرأس مال الشريك', example: 12),
-                new OA\Property(property: 'drawings_account_id', type: 'integer', description: 'معرف حساب جاري المسحوبات للشركاء إن وجد', nullable: true, example: 13),
+                new OA\Property(property: 'capital_account_id', type: 'integer', description: 'معرف الحساب المحاسبي لرأس مال الشريك (اختياري، يتم توليده تلقائياً إن لم يرسل)', nullable: true, example: 12),
+                new OA\Property(property: 'drawings_account_id', type: 'integer', description: 'معرف حساب جاري المسحوبات للشركاء (اختياري، يتم توليده تلقائياً إن لم يرسل)', nullable: true, example: 13),
                 new OA\Property(property: 'profit_share_pct', type: 'number', format: 'float', description: 'نسبة الشريك من الأرباح والخسائر (0 - 100%)', example: 25.00),
                 new OA\Property(property: 'joined_at', type: 'string', format: 'date', description: 'تاريخ انضمام الشريك (YYYY-MM-DD)', example: '2026-06-01'),
                 new OA\Property(property: 'is_active', type: 'boolean', description: 'حالة النشاط للشراكة', example: true),
@@ -86,8 +88,73 @@ class PartnerController extends Controller
     public function store(StorePartnerRequest $request)
     {
         try {
-            $partner = AccPartner::create($request->validated());
-            return $this->successResponse(new AccPartnerResource($partner->load('capitalAccount')), 'تم إضافة الشريك بنجاح', 201);
+            $data = $request->validated();
+
+            $partner = DB::transaction(function () use ($data) {
+                // 1. إنشاء حساب رأس المال تلقائياً إن لم يرسل
+                if (empty($data['capital_account_id'])) {
+                    $parentCapital = AccAccount::where('code', '3100')->first();
+                    if (!$parentCapital) {
+                        throw new \Exception('الحساب الرئيسي لرأس المال (3100) غير موجود في شجرة الحسابات.');
+                    }
+
+                    $maxCode = AccAccount::where(function($q) use ($parentCapital) {
+                        $q->where('parent_id', $parentCapital->id)
+                          ->orWhere('code', 'like', '31%');
+                    })->where('code', '!=', '3100')->max('code');
+
+                    $newCode = !$maxCode ? '3101' : (string) (intval($maxCode) + 1);
+
+                    $capitalAccount = AccAccount::create([
+                        'code'               => $newCode,
+                        'name'               => 'رأس مال الشريك - ' . $data['name'],
+                        'name_en'            => 'Capital - ' . $data['name'],
+                        'type'               => 'equity',
+                        'currency'           => 'BOTH',
+                        'parent_id'          => $parentCapital->id,
+                        'allow_manual_entry' => true,
+                        'is_active'          => true,
+                    ]);
+
+                    $data['capital_account_id'] = $capitalAccount->id;
+                }
+
+                // 2. إنشاء حساب المسحوبات تلقائياً إن لم يرسل
+                if (empty($data['drawings_account_id'])) {
+                    $parentDrawings = AccAccount::where('code', '3300')->first();
+                    if (!$parentDrawings) {
+                        throw new \Exception('الحساب الرئيسي للمسحوبات الشخصية (3300) غير موجود في شجرة الحسابات.');
+                    }
+
+                    $maxCode = AccAccount::where(function($q) use ($parentDrawings) {
+                        $q->where('parent_id', $parentDrawings->id)
+                          ->orWhere('code', 'like', '33%');
+                    })->where('code', '!=', '3300')->max('code');
+
+                    $newCode = !$maxCode ? '3301' : (string) (intval($maxCode) + 1);
+
+                    $drawingsAccount = AccAccount::create([
+                        'code'               => $newCode,
+                        'name'               => 'مسحوبات الشريك - ' . $data['name'],
+                        'name_en'            => 'Drawings - ' . $data['name'],
+                        'type'               => 'equity',
+                        'currency'           => 'BOTH',
+                        'parent_id'          => $parentDrawings->id,
+                        'allow_manual_entry' => true,
+                        'is_active'          => true,
+                    ]);
+
+                    $data['drawings_account_id'] = $drawingsAccount->id;
+                }
+
+                return AccPartner::create($data);
+            });
+
+            return $this->successResponse(
+                new AccPartnerResource($partner->load('capitalAccount', 'drawingsAccount')),
+                'تم إضافة الشريك بنجاح وتوليد حساباته تلقائياً',
+                201
+            );
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
         }
@@ -206,6 +273,66 @@ class PartnerController extends Controller
             if (!$periodId) return $this->error('معرف الفترة مطلوب', 422);
             $data = $this->reportService->getPartnerStatement((int) $id, (int) $periodId);
             return $this->successResponse($data, 'تم جلب كشف حساب الشريك');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/accounting/partners/{id}',
+        summary: '🗑️ حذف شريك مساهم وحساباته',
+        description: 'يحذف الشريك وحساب رأس المال والمسحوبات الخاصة به بشكل كامل بشرط عدم وجود أي حركات أو قيود مالية مسجلة عليها.',
+        tags: ['Accounting - الشركاء وجاري الشركاء'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الشريك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الشريك وحساباته بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'تم حذف الشريك وحساباته بنجاح')
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ لا يمكن حذف الشريك لوجود حركات مالية')]
+    #[OA\Response(response: 404, description: '🚫 الشريك غير موجود')]
+    public function destroy($id)
+    {
+        try {
+            $partner = AccPartner::findOrFail($id);
+
+            // التحقق من وجود قيود يومية لحساب رأس المال أو المسحوبات
+            $capitalEntriesCount = DB::table('acc_journal_entries')
+                ->where('account_id', $partner->capital_account_id)
+                ->count();
+
+            $drawingsEntriesCount = 0;
+            if ($partner->drawings_account_id) {
+                $drawingsEntriesCount = DB::table('acc_journal_entries')
+                    ->where('account_id', $partner->drawings_account_id)
+                    ->count();
+            }
+
+            if ($capitalEntriesCount > 0 || $drawingsEntriesCount > 0) {
+                return $this->error('لا يمكن حذف الشريك لوجود حركات مالية مسجلة على حساباته. يمكنك تعطيله بدلاً من ذلك.', 400);
+            }
+
+            // الحذف الآمن للشريك وحساباته
+            DB::transaction(function () use ($partner) {
+                $capitalAccountId = $partner->capital_account_id;
+                $drawingsAccountId = $partner->drawings_account_id;
+
+                $partner->delete();
+
+                AccAccount::where('id', $capitalAccountId)->delete();
+                if ($drawingsAccountId) {
+                    AccAccount::where('id', $drawingsAccountId)->delete();
+                }
+            });
+
+            return $this->successResponse(null, 'تم حذف الشريك وحساباته بنجاح');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
         }
