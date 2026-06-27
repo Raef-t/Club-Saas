@@ -13,6 +13,7 @@ class BranchResource extends JsonResource
             'name' => $this->name,
             'gender_restriction' => $this->gender_restriction,
             'address' => $this->address,
+            'country_code' => $this->country_code,
             'phone' => $this->phone,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),

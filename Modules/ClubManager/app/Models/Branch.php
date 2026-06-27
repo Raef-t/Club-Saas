@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Translatable\HasTranslations;
 class Branch extends Model {
     use HasFactory, SoftDeletes, HasTranslations;
-    protected $fillable = ['club_id', 'name', 'gender_restriction', 'type', 'address', 'phone', 'is_active'];
+    protected $fillable = ['club_id', 'name', 'gender_restriction', 'type', 'address', 'country_code', 'phone', 'is_active'];
     public $translatable = ['name'];
     protected $casts = ['is_active' => 'boolean'];
     public function club(): BelongsTo { return $this->belongsTo(Club::class); }

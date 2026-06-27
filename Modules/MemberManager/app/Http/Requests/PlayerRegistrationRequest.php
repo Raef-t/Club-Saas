@@ -17,6 +17,7 @@ class PlayerRegistrationRequest extends FormRequest
             // Mandatory Player (Person) fields
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
+            'mobile_country_code' => 'nullable|string|max:5',
             'mobile' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
             'dob' => 'nullable|date',
@@ -25,6 +26,7 @@ class PlayerRegistrationRequest extends FormRequest
             // Additional Contacts array
             'additional_contacts' => 'nullable|array',
             'additional_contacts.*.name' => 'required_with:additional_contacts|string|max:100',
+            'additional_contacts.*.country_code' => 'nullable|string|max:5',
             'additional_contacts.*.phone_number' => 'required_with:additional_contacts|string|max:20',
             'additional_contacts.*.relation' => 'nullable|string|max:50',
             

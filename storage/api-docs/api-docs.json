@@ -624,10 +624,16 @@
                                         "example": 14,
                                         "nullable": true
                                     },
+                                    "country_code": {
+                                        "description": "رمز الدولة",
+                                        "type": "string",
+                                        "example": "+963",
+                                        "nullable": true
+                                    },
                                     "phone": {
                                         "description": "رقم هاتف الطرف",
                                         "type": "string",
-                                        "example": "+966509998887",
+                                        "example": "0509998887",
                                         "nullable": true
                                     },
                                     "email": {
@@ -797,10 +803,16 @@
                                         "example": 14,
                                         "nullable": true
                                     },
+                                    "country_code": {
+                                        "description": "رمز الدولة",
+                                        "type": "string",
+                                        "example": "+963",
+                                        "nullable": true
+                                    },
                                     "phone": {
                                         "description": "رقم هاتف التواصل الجديد",
                                         "type": "string",
-                                        "example": "+966509998887",
+                                        "example": "0509998887",
                                         "nullable": true
                                     },
                                     "email": {
@@ -8430,6 +8442,10 @@
                                         "type": "string",
                                         "example": "محمد"
                                     },
+                                    "mobile_country_code": {
+                                        "type": "string",
+                                        "example": "+963"
+                                    },
                                     "mobile": {
                                         "type": "string",
                                         "example": "0501234567"
@@ -8462,6 +8478,10 @@
                                                 "name": {
                                                     "type": "string",
                                                     "example": "والد اللاعب"
+                                                },
+                                                "country_code": {
+                                                    "type": "string",
+                                                    "example": "+963"
                                                 },
                                                 "phone_number": {
                                                     "type": "string",
@@ -18718,10 +18738,16 @@
                         "example": 15,
                         "nullable": true
                     },
+                    "country_code": {
+                        "description": "رمز الدولة",
+                        "type": "string",
+                        "example": "+963",
+                        "nullable": true
+                    },
                     "phone": {
                         "description": "رقم هاتف التواصل الخاص بالطرف",
                         "type": "string",
-                        "example": "+966500000000",
+                        "example": "0500000000",
                         "nullable": true
                     },
                     "email": {
@@ -19248,6 +19274,10 @@
                         "type": "string",
                         "example": "Street 10, Dubai"
                     },
+                    "country_code": {
+                        "type": "string",
+                        "example": "+963"
+                    },
                     "phone": {
                         "type": "string",
                         "example": "0501234567"
@@ -19326,6 +19356,10 @@
                     },
                     "address": {
                         "type": "string"
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "example": "+963"
                     },
                     "phone": {
                         "type": "string"

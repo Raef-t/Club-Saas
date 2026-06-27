@@ -12,6 +12,7 @@ class AccCounterpartyResource extends JsonResource
             'id'             => $this->id,
             'name'           => $this->name,
             'type'           => $this->type,
+            'country_code'   => $this->country_code,
             'phone'          => $this->phone,
             'email'          => $this->email,
             'reference_type' => $this->reference_type,

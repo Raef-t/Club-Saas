@@ -16,6 +16,7 @@ class RegisterPersonRequest extends FormRequest
         return [
             'full_name' => 'required|string|max:255',
             'type' => 'required|in:player,coach,staff',
+            'mobile_1_country_code' => 'nullable|string|max:5',
             'mobile_1' => 'required|string|max:20',
             'email' => 'nullable|email',
             'username' => 'nullable|string|unique:authentication_users,username',

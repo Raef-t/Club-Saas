@@ -16,6 +16,7 @@ class StoreStaffRequest extends FormRequest
         return [
             // Personal Details (people table)
             'full_name' => 'required|string|max:200',
+            'mobile_1_country_code' => 'nullable|string|max:5',
             'mobile_1' => 'required|string',
             'gender' => 'nullable|in:male,female',
             'dob' => 'nullable|date',
@@ -24,9 +25,11 @@ class StoreStaffRequest extends FormRequest
             'social_status' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'photo_url' => 'nullable|string|max:255',
+            'mobile_2_country_code' => 'nullable|string|max:5',
             'mobile_2' => 'nullable|string|max:20',
             'landline' => 'nullable|string|max:20',
             'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_country_code' => 'nullable|string|max:5',
             'emergency_contact_phone' => 'nullable|string|max:20',
             'chronic_diseases' => 'nullable|string',
             'children_count' => 'nullable|integer|min:0',

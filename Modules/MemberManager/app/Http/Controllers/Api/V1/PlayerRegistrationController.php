@@ -30,6 +30,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
                 new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
+                new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
                 new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
                 new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
@@ -42,6 +43,7 @@ class PlayerRegistrationController extends BaseController
                         required: ['name', 'phone_number'],
                         properties: [
                             new OA\Property(property: 'name', type: 'string', example: 'والد اللاعب'),
+                            new OA\Property(property: 'country_code', type: 'string', example: '+963'),
                             new OA\Property(property: 'phone_number', type: 'string', example: '0509876543'),
                             new OA\Property(property: 'relation', type: 'string', example: 'Father')
                         ]

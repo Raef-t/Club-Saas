@@ -15,6 +15,7 @@ class UpdateStaffRequest extends FormRequest
     {
         return [
             'full_name' => 'nullable|string|max:200',
+            'mobile_1_country_code' => 'nullable|string|max:5',
             'mobile_1' => 'nullable|string',
             'email' => 'nullable|email',
             'role' => 'nullable|in:admin,receptionist,coach,cleaner,manager,staff',

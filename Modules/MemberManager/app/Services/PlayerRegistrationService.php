@@ -44,6 +44,7 @@ class PlayerRegistrationService
             // 3. Create Person
             $person = Person::create([
                 'full_name' => $data['first_name'] . ' ' . $data['last_name'],
+                'mobile_1_country_code' => $data['mobile_country_code'] ?? null,
                 'mobile_1' => $data['mobile'],
                 'gender' => $data['gender'],
                 'dob' => $data['dob'] ?? null,
@@ -56,6 +57,7 @@ class PlayerRegistrationService
                 foreach ($data['additional_contacts'] as $contactData) {
                     $person->contacts()->create([
                         'name' => $contactData['name'],
+                        'country_code' => $contactData['country_code'] ?? null,
                         'phone_number' => $contactData['phone_number'],
                         'relation' => $contactData['relation'] ?? null,
                     ]);

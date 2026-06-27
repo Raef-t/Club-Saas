@@ -14,6 +14,7 @@ class UpdateCounterpartyRequest extends FormRequest
             'name'           => 'sometimes|string|max:150',
             'type'           => 'sometimes|in:customer,vendor,employee,other',
             'ar_account_id'  => 'nullable|integer|exists:acc_accounts,id',
+            'country_code'   => 'nullable|string|max:5',
             'phone'          => 'nullable|string|max:30',
             'email'          => 'nullable|email|max:150',
             'reference_type' => 'nullable|string|max:100',

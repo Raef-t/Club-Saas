@@ -29,6 +29,7 @@ class StoreMemberRequest extends FormRequest
             // Person Info (Required if person_id is null)
             'person_id' => 'nullable|exists:people,id',
             'full_name' => 'required_without:person_id|string|max:255',
+            'mobile_1_country_code' => 'nullable|string|max:5',
             'mobile_1' => 'required_without:person_id|string|max:20',
             'gender' => 'required_without:person_id|in:male,female',
             'dob' => 'nullable|date',
@@ -37,9 +38,11 @@ class StoreMemberRequest extends FormRequest
             'social_status' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'photo_url' => 'nullable|string|max:255',
+            'mobile_2_country_code' => 'nullable|string|max:5',
             'mobile_2' => 'nullable|string|max:20',
             'landline' => 'nullable|string|max:20',
             'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_country_code' => 'nullable|string|max:5',
             'emergency_contact_phone' => 'nullable|string|max:20',
             'chronic_diseases' => 'nullable|string',
             'children_count' => 'nullable|integer|min:0',
@@ -59,6 +62,7 @@ class StoreMemberRequest extends FormRequest
             'health_profile.organic_diseases' => 'nullable|string',
             'health_profile.physical_injuries' => 'nullable|string',
             'health_profile.emergency_contact_name' => 'nullable|string|max:100',
+            'health_profile.emergency_contact_country_code' => 'nullable|string|max:5',
             'health_profile.emergency_contact_phone' => 'nullable|string|max:20',
         ];
     }

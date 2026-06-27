@@ -11,6 +11,7 @@ class PersonContact extends Model
     protected $fillable = [
         'person_id',
         'name',
+        'country_code',
         'phone_number',
         'relation',
     ];

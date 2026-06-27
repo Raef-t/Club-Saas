@@ -13,6 +13,7 @@ class MemberHealthProfile extends Model
         'medications',
         'blood_type',
         'emergency_contact_name',
+        'emergency_contact_country_code',
         'emergency_contact_phone',
         'sport_goal',
         'fitness_level',

@@ -8,6 +8,7 @@ readonly class UpdatePersonDTO
 {
     public function __construct(
         public ?string $fullName = null,
+        public ?string $mobile1CountryCode = null,
         public ?string $mobile1 = null,
         public ?Gender $gender = null,
         public ?string $dob = null,
@@ -16,9 +17,11 @@ readonly class UpdatePersonDTO
         public ?string $socialStatus = null,
         public ?string $address = null,
         public ?string $photoUrl = null,
+        public ?string $mobile2CountryCode = null,
         public ?string $mobile2 = null,
         public ?string $landline = null,
         public ?string $emergencyContactName = null,
+        public ?string $emergencyContactCountryCode = null,
         public ?string $emergencyContactPhone = null,
         public ?string $chronicDiseases = null,
         public ?int $childrenCount = null,
@@ -30,6 +33,7 @@ readonly class UpdatePersonDTO
     {
         return array_filter([
             'full_name' => $this->fullName,
+            'mobile_1_country_code' => $this->mobile1CountryCode,
             'mobile_1' => $this->mobile1,
             'gender' => $this->gender?->value,
             'dob' => $this->dob,
@@ -38,9 +42,11 @@ readonly class UpdatePersonDTO
             'social_status' => $this->socialStatus,
             'address' => $this->address,
             'photo_url' => $this->photoUrl,
+            'mobile_2_country_code' => $this->mobile2CountryCode,
             'mobile_2' => $this->mobile2,
             'landline' => $this->landline,
             'emergency_contact_name' => $this->emergencyContactName,
+            'emergency_contact_country_code' => $this->emergencyContactCountryCode,
             'emergency_contact_phone' => $this->emergencyContactPhone,
             'chronic_diseases' => $this->chronicDiseases,
             'children_count' => $this->childrenCount,
