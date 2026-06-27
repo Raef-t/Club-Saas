@@ -17,6 +17,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
 
     // Subscription Plans CRUD
+    Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
 
     // Player Subscriptions — Actions

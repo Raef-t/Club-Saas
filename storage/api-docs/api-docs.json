@@ -18210,6 +18210,49 @@
                 ]
             }
         },
+        "/v1/subscription-plans/registration": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "📋 عرض خطط الاشتراك المتاحة للتسجيل",
+                "description": "استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.",
+                "operationId": "0fc0d09079618666903ab9e08650d14a",
+                "responses": {
+                    "200": {
+                        "description": "✅ قائمة خطط الاشتراك المتاحة",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Registration plans retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/subscription-plans/{subscription_plan}": {
             "get": {
                 "tags": [

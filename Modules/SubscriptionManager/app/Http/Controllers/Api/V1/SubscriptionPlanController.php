@@ -52,6 +52,39 @@ class SubscriptionPlanController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/v1/subscription-plans/registration',
+        summary: '📋 عرض خطط الاشتراك المتاحة للتسجيل',
+        description: 'استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ قائمة خطط الاشتراك المتاحة',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Registration plans retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    public function registrationPlans()
+    {
+        // Get active plans that have available capacity, and eager load their activities
+        $plans = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
+            ->available()
+            ->with('planActivities')
+            ->get();
+            
+        return $this->successResponse(
+            \Modules\SubscriptionManager\Http\Resources\SubscriptionPlanRegistrationResource::collection($plans),
+            __('Registration plans retrieved successfully')
+        );
+    }
+
+
     #[OA\Post(
         path: '/v1/subscription-plans',
         summary: '➕ إنشاء خطة اشتراك جديدة',
