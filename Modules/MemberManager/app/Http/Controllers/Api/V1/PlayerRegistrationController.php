@@ -87,4 +87,65 @@ class PlayerRegistrationController extends BaseController
             201
         );
     }
+
+    #[OA\Put(
+        path: '/v1/players/{id}',
+        summary: '📝 تعديل بيانات لاعب (متدرب)',
+        description: 'تعديل البيانات الأساسية للاعب مثل الاسم ورقم الجوال والفرع وجهات الاتصال.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو (Member ID)', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
+                new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
+                new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
+                new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
+                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
+                new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                new OA\Property(
+                    property: 'additional_contacts',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        required: ['name', 'phone_number'],
+                        properties: [
+                            new OA\Property(property: 'name', type: 'string', example: 'والد اللاعب'),
+                            new OA\Property(property: 'country_code', type: 'string', example: '+963'),
+                            new OA\Property(property: 'phone_number', type: 'string', example: '0509876543'),
+                            new OA\Property(property: 'relation', type: 'string', example: 'Father')
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تعديل بيانات اللاعب بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Player updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
+    #[OA\Response(response: 404, description: '🚫 اللاعب غير موجود')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function update(\Modules\MemberManager\Http\Requests\UpdatePlayerRequest $request, $id)
+    {
+        $result = $this->registrationService->updatePlayer($id, $request->validated());
+
+        return $this->successResponse(
+            $result,
+            __('Player updated successfully'),
+            200
+        );
+    }
 }

@@ -1,16 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\MemberManager\Http\Controllers\Api\V1\MemberController;
 
 use Modules\MemberManager\Http\Controllers\Api\V1\PlayerRegistrationController;
 use Modules\MemberManager\Http\Controllers\Api\V1\PlayerProfileController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    // Player Registration
+    // Player Registration & Updates
     Route::post('players/register', [PlayerRegistrationController::class, 'register']);
-
-    Route::apiResource('members', MemberController::class);
+    Route::put('players/{id}', [PlayerRegistrationController::class, 'update']);
 
 
     // Player App Endpoints (Authenticated as Player)

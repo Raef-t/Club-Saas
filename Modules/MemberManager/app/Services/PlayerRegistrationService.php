@@ -121,6 +121,60 @@ class PlayerRegistrationService
         });
     }
 
+    public function updatePlayer($memberId, array $data)
+    {
+        return DB::transaction(function () use ($memberId, $data) {
+            $member = Member::findOrFail($memberId);
+            $person = $member->person;
+
+            // Handle Photo Upload
+            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+                if ($person->photo_url) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+                }
+                $data['photo_url'] = $data['photo']->store('people/photos', 'public');
+            }
+
+            // Update Person
+            $personData = [];
+            if (isset($data['first_name']) || isset($data['last_name'])) {
+                $firstName = $data['first_name'] ?? explode(' ', $person->full_name)[0] ?? '';
+                $lastName = $data['last_name'] ?? (isset(explode(' ', $person->full_name)[1]) ? explode(' ', $person->full_name)[1] : '');
+                $personData['full_name'] = trim($firstName . ' ' . $lastName);
+            }
+            if (isset($data['mobile'])) $personData['mobile_1'] = $data['mobile'];
+            if (array_key_exists('mobile_country_code', $data)) $personData['mobile_1_country_code'] = $data['mobile_country_code'];
+            if (isset($data['gender'])) $personData['gender'] = $data['gender'];
+            if (isset($data['dob'])) $personData['dob'] = $data['dob'];
+            if (isset($data['photo_url'])) $personData['photo_url'] = $data['photo_url'];
+
+            if (!empty($personData)) {
+                $person->update($personData);
+            }
+
+            // Update Additional Contacts
+            if (isset($data['additional_contacts']) && is_array($data['additional_contacts'])) {
+                $person->contacts()->delete();
+                foreach ($data['additional_contacts'] as $contactData) {
+                    $person->contacts()->create([
+                        'name' => $contactData['name'],
+                        'country_code' => $contactData['country_code'] ?? null,
+                        'phone_number' => $contactData['phone_number'],
+                        'relation' => $contactData['relation'] ?? null,
+                    ]);
+                }
+            }
+
+            // Update Member
+            if (isset($data['branch_id'])) {
+                $member->update(['branch_id' => $data['branch_id']]);
+            }
+
+            $member->load('person.contacts', 'measurements', 'healthProfile');
+            return $member;
+        });
+    }
+
     private function generateMemberNumber(): string
     {
         $lastMember = Member::latest('id')->first();
