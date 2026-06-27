@@ -11,7 +11,7 @@ use Modules\Accounting\Http\Controllers\ReportController;
 use Modules\Accounting\Http\Controllers\ReconciliationController;
 
 Route::group([
-    'middleware' => ['api', 'auth:sanctum', 'approved', 'force-password-change'],
+    'middleware' => ['api', 'auth:sanctum', 'approved', 'force-password-change', 'role:super_admin|admin|accountant'],
     'prefix'     => 'accounting',
     'as'         => 'api.accounting.',
 ], function () {
@@ -59,6 +59,7 @@ Route::group([
     Route::post('partners', [PartnerController::class, 'store'])->name('partners.store');
     Route::get('partners/{id}', [PartnerController::class, 'show'])->name('partners.show');
     Route::put('partners/{id}', [PartnerController::class, 'update'])->name('partners.update');
+    Route::delete('partners/{id}', [PartnerController::class, 'destroy'])->name('partners.destroy');
     Route::get('partners/{id}/statement', [PartnerController::class, 'statement'])->name('partners.statement');
 
     /*

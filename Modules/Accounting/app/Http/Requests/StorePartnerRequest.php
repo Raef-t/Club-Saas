@@ -12,9 +12,20 @@ class StorePartnerRequest extends FormRequest
     {
         return [
             'name'                => 'required|string|max:100',
-            'capital_account_id'  => 'required|integer|exists:acc_accounts,id',
+            'capital_account_id'  => 'nullable|integer|exists:acc_accounts,id',
             'drawings_account_id' => 'nullable|integer|exists:acc_accounts,id',
-            'profit_share_pct'    => 'required|numeric|min:0|max:100',
+            'profit_share_pct'    => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:100',
+                function ($attribute, $value, $fail) {
+                    $currentSum = \Modules\Accounting\Models\AccPartner::where('is_active', true)->sum('profit_share_pct');
+                    if ($currentSum + $value > 100) {
+                        $fail('مجموع نسب الأرباح للشركاء النشطين لا يمكن أن يتجاوز 100%. النسبة المتبقية المتاحة هي: ' . (100 - $currentSum) . '%');
+                    }
+                }
+            ],
             'joined_at'           => 'required|date',
             'is_active'           => 'nullable|boolean',
             'notes'               => 'nullable|string',
