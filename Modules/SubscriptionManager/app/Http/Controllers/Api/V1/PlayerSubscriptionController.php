@@ -50,7 +50,7 @@ class PlayerSubscriptionController extends BaseController
     {
         $subscriptions = $this->subscriptionService->getAllSubscriptions($request->all());
         return $this->successResponse(
-            PlayerSubscriptionResource::collection($subscriptions)->response()->getData(true),
+            PlayerSubscriptionResource::collection($subscriptions),
             __('Subscriptions retrieved successfully')
         );
     }

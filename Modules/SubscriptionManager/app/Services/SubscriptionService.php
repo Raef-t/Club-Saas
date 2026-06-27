@@ -57,8 +57,7 @@ class SubscriptionService
             $query->where('end_date', '<=', $filters['end_date']);
         }
 
-        $perPage = $filters['per_page'] ?? 15;
-        $subscriptions = $query->latest()->paginate($perPage);
+        $subscriptions = $query->latest()->get();
 
         foreach ($subscriptions as $subscription) {
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
