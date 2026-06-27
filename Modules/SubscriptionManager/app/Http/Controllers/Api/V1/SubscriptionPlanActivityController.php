@@ -49,9 +49,9 @@ class SubscriptionPlanActivityController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['subscription_plan_id', 'activity_id'],
+            required: ['plan_id', 'activity_id'],
             properties: [
-                new OA\Property(property: 'subscription_plan_id', type: 'integer', example: 1),
+                new OA\Property(property: 'plan_id', type: 'integer', example: 1),
                 new OA\Property(property: 'activity_id', type: 'integer', example: 1)
             ]
         )

@@ -8,7 +8,7 @@ class StoreSubscriptionPlanActivityRequest extends FormRequest
     public function authorize() { return true; }
     public function rules() {
         return [
-            'subscription_plan_id' => 'required|integer',
+            'plan_id' => 'required|integer',
             'activity_id' => 'required|integer',
         ];
     }
