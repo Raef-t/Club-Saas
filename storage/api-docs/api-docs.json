@@ -3656,7 +3656,7 @@
                                     "username": {
                                         "description": "اسم المستخدم الفريد (للموظف أو المدير)",
                                         "type": "string",
-                                        "example": "admin_technogym"
+                                        "example": "admin"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
