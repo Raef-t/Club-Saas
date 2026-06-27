@@ -23,7 +23,7 @@ class QRController extends BaseController
         path: '/v1/qr/generate',
         summary: 'توليد رمز QR الخاص بالعضو',
         description: 'توليد رمز QR فريد وصالح لمدة قصيرة (30 ثانية) ليستخدمه العضو في تسجيل الدخول عبر البوابة.',
-        tags: ['Member App', 'QR Attendance'],
+        tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(
@@ -63,7 +63,7 @@ class QRController extends BaseController
         path: '/v1/qr/screen',
         summary: '📱 عرض شاشة الـ QR',
         description: 'استرجاع البيانات اللازمة لعرض شاشة مسح QR في تطبيق العضو (الاسم، الباقة، الصورة، رمز الـ QR، الرصيد، حالة الدخول).',
-        tags: ['Member App', 'QR Attendance'],
+        tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(

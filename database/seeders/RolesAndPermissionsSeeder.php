@@ -18,10 +18,11 @@ class RolesAndPermissionsSeeder extends Seeder
         $roles = [
             'super_admin',
             'admin',
-            'accountant',
-            'receptionist',
+            'coach',
             'captain',
             'player',
+            'accountant',
+            'reception',
         ];
 
         foreach ($roles as $role) {

@@ -31,7 +31,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/health-profile',
         summary: '🏥 جلب الملف الصحي للاعب',
         description: 'استرجاع الملف الصحي للاعب المسجل دخوله حالياً.',
-        tags: ['Player App'],
+        tags: ['Member App'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(response: 200, description: '✅ تم استرجاع الملف الصحي بنجاح')]
@@ -51,7 +51,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/health-profile',
         summary: '📝 تحديث الملف الصحي للاعب',
         description: 'تحديث أو إنشاء الملف الصحي للاعب المسجل دخوله حالياً.',
-        tags: ['Player App'],
+        tags: ['Member App'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -86,7 +86,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/measurements',
         summary: '📏 سجل قياسات اللاعب',
         description: 'جلب جميع القياسات السابقة للاعب.',
-        tags: ['Player App'],
+        tags: ['Member App'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(response: 200, description: '✅ تم استرجاع القياسات بنجاح')]
@@ -105,7 +105,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/measurements',
         summary: '⚖️ إضافة قياس جديد',
         description: 'تسجيل قياس جديد للاعب.',
-        tags: ['Player App'],
+        tags: ['Member App'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(

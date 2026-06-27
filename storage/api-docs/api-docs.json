@@ -3184,8 +3184,7 @@
         "/v1/qr/generate": {
             "post": {
                 "tags": [
-                    "Member App",
-                    "QR Attendance"
+                    "Attendance"
                 ],
                 "summary": "توليد رمز QR الخاص بالعضو",
                 "description": "توليد رمز QR فريد وصالح لمدة قصيرة (30 ثانية) ليستخدمه العضو في تسجيل الدخول عبر البوابة.",
@@ -3271,8 +3270,7 @@
         "/v1/qr/screen": {
             "get": {
                 "tags": [
-                    "Member App",
-                    "QR Attendance"
+                    "Attendance"
                 ],
                 "summary": "📱 عرض شاشة الـ QR",
                 "description": "استرجاع البيانات اللازمة لعرض شاشة مسح QR في تطبيق العضو (الاسم، الباقة، الصورة، رمز الـ QR، الرصيد، حالة الدخول).",
@@ -7846,113 +7844,6 @@
                 ]
             }
         },
-        "/v1/me/physical-stats": {
-            "post": {
-                "tags": [
-                    "Member App"
-                ],
-                "summary": "💪 تحديث البيانات الجسدية (الطول، الوزن، العمر)",
-                "description": "يسمح للاعب بتحديث طوله، وزنه، وتاريخ ميلاده. يقوم النظام بحساب العمر تلقائياً وإضافة سجل جديد في قياسات العضو.",
-                "operationId": "a685fe02f2359b764bc3d794636d2475",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "height": {
-                                        "description": "الطول بالسنتيمتر",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 175.5
-                                    },
-                                    "weight": {
-                                        "description": "الوزن بالكيلوجرام",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 70.2
-                                    },
-                                    "dob": {
-                                        "description": "تاريخ الميلاد (YYYY-MM-DD)",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "1995-05-20"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم التحديث بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "تم تحديث البيانات الجسدية بنجاح."
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الملف الشخصي غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/me/preferences": {
             "get": {
                 "tags": [
@@ -10198,7 +10089,7 @@
         "/v1/player/health-profile": {
             "get": {
                 "tags": [
-                    "Player App"
+                    "Member App"
                 ],
                 "summary": "🏥 جلب الملف الصحي للاعب",
                 "description": "استرجاع الملف الصحي للاعب المسجل دخوله حالياً.",
@@ -10219,7 +10110,7 @@
             },
             "put": {
                 "tags": [
-                    "Player App"
+                    "Member App"
                 ],
                 "summary": "📝 تحديث الملف الصحي للاعب",
                 "description": "تحديث أو إنشاء الملف الصحي للاعب المسجل دخوله حالياً.",
@@ -10263,7 +10154,7 @@
         "/v1/player/measurements": {
             "get": {
                 "tags": [
-                    "Player App"
+                    "Member App"
                 ],
                 "summary": "📏 سجل قياسات اللاعب",
                 "description": "جلب جميع القياسات السابقة للاعب.",
@@ -10281,7 +10172,7 @@
             },
             "post": {
                 "tags": [
-                    "Player App"
+                    "Member App"
                 ],
                 "summary": "⚖️ إضافة قياس جديد",
                 "description": "تسجيل قياس جديد للاعب.",
@@ -21328,10 +21219,6 @@
             "description": "Member App"
         },
         {
-            "name": "QR Attendance",
-            "description": "QR Attendance"
-        },
-        {
             "name": "Attendance",
             "description": "Attendance"
         },
@@ -21390,10 +21277,6 @@
         {
             "name": "Member Measurements",
             "description": "Member Measurements"
-        },
-        {
-            "name": "Player App",
-            "description": "Player App"
         },
         {
             "name": "Player Management",
