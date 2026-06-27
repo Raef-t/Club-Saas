@@ -17625,11 +17625,11 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "plan_id",
+                                    "subscription_plan_id",
                                     "activity_id"
                                 ],
                                 "properties": {
-                                    "plan_id": {
+                                    "subscription_plan_id": {
                                         "type": "integer",
                                         "example": 1
                                     },
