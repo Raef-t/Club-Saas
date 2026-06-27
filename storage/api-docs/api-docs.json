@@ -1403,7 +1403,6 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "capital_account_id",
                                     "profit_share_pct",
                                     "joined_at"
                                 ],
@@ -1414,12 +1413,13 @@
                                         "example": "خالد بن عبد الله التويجري"
                                     },
                                     "capital_account_id": {
-                                        "description": "معرف الحساب المحاسبي لرأس مال الشريك",
+                                        "description": "معرف الحساب المحاسبي لرأس مال الشريك (اختياري، يتم توليده تلقائياً إن لم يرسل)",
                                         "type": "integer",
-                                        "example": 12
+                                        "example": 12,
+                                        "nullable": true
                                     },
                                     "drawings_account_id": {
-                                        "description": "معرف حساب جاري المسحوبات للشركاء إن وجد",
+                                        "description": "معرف حساب جاري المسحوبات للشركاء (اختياري، يتم توليده تلقائياً إن لم يرسل)",
                                         "type": "integer",
                                         "example": 13,
                                         "nullable": true
@@ -1635,6 +1635,59 @@
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "🚫 الشريك غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Accounting - الشركاء وجاري الشركاء"
+                ],
+                "summary": "🗑️ حذف شريك مساهم وحساباته",
+                "description": "يحذف الشريك وحساب رأس المال والمسحوبات الخاصة به بشكل كامل بشرط عدم وجود أي حركات أو قيود مالية مسجلة عليها.",
+                "operationId": "f85c3e562b7e5b33f057b57246bf4e79",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الشريك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الشريك وحساباته بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم حذف الشريك وحساباته بنجاح"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن حذف الشريك لوجود حركات مالية"
                     },
                     "404": {
                         "description": "🚫 الشريك غير موجود"
