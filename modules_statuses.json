@@ -8,5 +8,6 @@
     "StaffManager": true,
     "NotificationManager": true,
     "ClubManager": true,
-    "AttendanceManager": true
+    "AttendanceManager": true,
+    "FormulaEngine": true
 }

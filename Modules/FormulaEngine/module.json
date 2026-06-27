@@ -1,0 +1,11 @@
+{
+    "name": "FormulaEngine",
+    "alias": "formulaengine",
+    "description": "Dynamic Formula Engine — evaluates math expressions at runtime from database definitions.",
+    "keywords": ["formula", "expression", "calculation", "dynamic"],
+    "priority": 0,
+    "providers": [
+        "Modules\\FormulaEngine\\Providers\\FormulaEngineServiceProvider"
+    ],
+    "files": []
+}

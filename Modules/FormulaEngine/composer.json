@@ -1,0 +1,27 @@
+{
+    "name": "nwidart/formulaengine",
+    "description": "Dynamic Formula Engine module for Club-SaaS",
+    "authors": [
+        {
+            "name": "Club-SaaS Team"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\FormulaEngine\\": "app/",
+            "Modules\\FormulaEngine\\Database\\Factories\\": "database/factories/",
+            "Modules\\FormulaEngine\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\FormulaEngine\\Tests\\": "tests/"
+        }
+    }
+}
