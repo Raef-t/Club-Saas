@@ -62,12 +62,20 @@ class SubscriptionPlanController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'duration_in_days', 'price'],
+            required: ['name', 'type', 'base_price'],
             properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'الاشتراك الذهبي'),
-                new OA\Property(property: 'duration_in_days', type: 'integer', example: 30),
-                new OA\Property(property: 'price', type: 'number', format: 'float', example: 350.00),
-                new OA\Property(property: 'max_subscribers', type: 'integer', example: 50)
+                new OA\Property(property: 'name', type: 'object', properties: [
+                    new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الذهبي'),
+                    new OA\Property(property: 'en', type: 'string', example: 'Gold Subscription')
+                ]),
+                new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
+                new OA\Property(property: 'duration_days', type: 'integer', example: 30),
+                new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
+                new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
+                new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 2),
+                new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 14),
+                new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]
@@ -136,7 +144,18 @@ class SubscriptionPlanController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'الاشتراك الماسي')
+                new OA\Property(property: 'name', type: 'object', properties: [
+                    new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الماسي'),
+                    new OA\Property(property: 'en', type: 'string', example: 'Diamond Subscription')
+                ]),
+                new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
+                new OA\Property(property: 'duration_days', type: 'integer', example: 30),
+                new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
+                new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 400.00),
+                new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 3),
+                new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 20),
+                new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]

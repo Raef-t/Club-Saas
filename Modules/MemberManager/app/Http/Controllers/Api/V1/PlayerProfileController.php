@@ -31,7 +31,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/health-profile',
         summary: '🏥 جلب الملف الصحي للاعب',
         description: 'استرجاع الملف الصحي للاعب المسجل دخوله حالياً.',
-        tags: ['Member App'],
+        tags: ['Member Health Profiles'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(response: 200, description: '✅ تم استرجاع الملف الصحي بنجاح')]
@@ -51,7 +51,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/health-profile',
         summary: '📝 تحديث الملف الصحي للاعب',
         description: 'تحديث أو إنشاء الملف الصحي للاعب المسجل دخوله حالياً.',
-        tags: ['Member App'],
+        tags: ['Member Health Profiles'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -86,7 +86,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/measurements',
         summary: '📏 سجل قياسات اللاعب',
         description: 'جلب جميع القياسات السابقة للاعب.',
-        tags: ['Member App'],
+        tags: ['Member Measurements'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(response: 200, description: '✅ تم استرجاع القياسات بنجاح')]
@@ -105,7 +105,7 @@ class PlayerProfileController extends BaseController
         path: '/v1/player/measurements',
         summary: '⚖️ إضافة قياس جديد',
         description: 'تسجيل قياس جديد للاعب.',
-        tags: ['Member App'],
+        tags: ['Member Measurements'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -149,5 +149,75 @@ class PlayerProfileController extends BaseController
 
         $measurement = $this->memberService->recordMeasurement($memberId, $data);
         return $this->successResponse($measurement, __('Measurement added successfully'), 201);
+    }
+    #[OA\Get(
+        path: '/v1/player/health-profiles',
+        summary: '🏥 عرض جميع السجلات الصحية للاعبين',
+        description: 'استرجاع جميع السجلات الصحية لجميع اللاعبين.',
+        tags: ['Member Health Profiles'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
+    public function getAllHealthProfiles()
+    {
+        if (!request()->user() || !request()->user()->hasRole('super_admin')) {
+            return $this->errorResponse(__('Unauthorized'), 403);
+        }
+        $profiles = \Modules\MemberManager\Models\MemberHealthProfile::with('member')->get();
+        return $this->successResponse($profiles, __('All health profiles retrieved successfully'));
+    }
+
+    #[OA\Delete(
+        path: '/v1/player/health-profiles/{id}',
+        summary: '🗑️ حذف سجل صحي للاعب',
+        description: 'حذف سجل صحي معين بواسطة المعرف.',
+        tags: ['Member Health Profiles'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف السجل الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
+    public function deleteHealthProfile($id)
+    {
+        if (!request()->user() || !request()->user()->hasRole('super_admin')) {
+            return $this->errorResponse(__('Unauthorized'), 403);
+        }
+        $profile = \Modules\MemberManager\Models\MemberHealthProfile::findOrFail($id);
+        $profile->delete();
+        return $this->successResponse(null, __('Health profile deleted successfully'));
+    }
+    #[OA\Get(
+        path: '/v1/player/all-measurements',
+        summary: '📏 عرض جميع قياسات اللاعبين',
+        description: 'استرجاع جميع سجلات القياسات لجميع اللاعبين.',
+        tags: ['Member Measurements'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
+    public function getAllMeasurements()
+    {
+        if (!request()->user() || !request()->user()->hasRole('super_admin')) {
+            return $this->errorResponse(__('Unauthorized'), 403);
+        }
+        $measurements = \Modules\MemberManager\Models\MemberMeasurement::with('member')->get();
+        return $this->successResponse($measurements, __('All measurements retrieved successfully'));
+    }
+
+    #[OA\Delete(
+        path: '/v1/player/measurements/{id}',
+        summary: '🗑️ حذف سجل قياس للاعب',
+        description: 'حذف سجل قياس معين بواسطة المعرف.',
+        tags: ['Member Measurements'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل القياس', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
+    public function deleteMeasurement($id)
+    {
+        if (!request()->user() || !request()->user()->hasRole('super_admin')) {
+            return $this->errorResponse(__('Unauthorized'), 403);
+        }
+        $measurement = \Modules\MemberManager\Models\MemberMeasurement::findOrFail($id);
+        $measurement->delete();
+        return $this->successResponse(null, __('Measurement deleted successfully'));
     }
 }

@@ -21,7 +21,7 @@ class MemberDashboardController extends BaseController
         path: '/v1/member/dashboard',
         summary: '🏠 لوحة تحكم العضو (الرئيسية)',
         description: 'إرجاع جميع البيانات الخاصة بلوحة تحكم العضو الحالي مثل الحصص القادمة، الاشتراكات الفعالة، الإحصائيات والفواتير غير المدفوعة.',
-        tags: ['Member App'],
+        tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(

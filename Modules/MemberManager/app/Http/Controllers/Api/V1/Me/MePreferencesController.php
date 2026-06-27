@@ -17,7 +17,7 @@ class MePreferencesController extends BaseController
         path: '/v1/me/preferences',
         summary: '⚙️ عرض التفضيلات الشخصية',
         description: 'استرجاع التفضيلات الحالية للمستخدم (مثل: لغة العرض، والإشعارات).',
-        tags: ['Member App'],
+        tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(
@@ -53,7 +53,7 @@ class MePreferencesController extends BaseController
         path: '/v1/me/preferences',
         summary: '✏️ تحديث التفضيلات',
         description: 'تعديل تفضيلات المستخدم الخاصة بالتطبيق.',
-        tags: ['Member App'],
+        tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(

@@ -26,7 +26,7 @@ class AuthController extends BaseController
         content: new OA\JsonContent(
             required: ['username', 'password'],
             properties: [
-                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'player'),
+                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'admin_technogym'),
                 new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
                 new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here', nullable: true),
             ]

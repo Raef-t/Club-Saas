@@ -20,7 +20,7 @@ class PlayerRegistrationController extends BaseController
         path: '/v1/players/register',
         summary: '➕ تسجيل لاعب جديد (متدرب)',
         description: 'تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته وإضافة خطط الاشتراك مع التحقق من سعة الاشتراكات.',
-        tags: ['Player Management'],
+        tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
