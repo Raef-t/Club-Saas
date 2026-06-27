@@ -48,30 +48,20 @@ class Person extends Model
         return $this->hasMany(PersonContact::class, 'person_id');
     }
 
-    public function coachProfile()
-    {
-        return $this->hasOne(CoachProfile::class);
-    }
-
-    public function staffProfile()
-    {
-        return $this->hasOne(StaffProfile::class);
-    }
-
     public function user()
     {
         return $this->hasOne(User::class);
     }
 
     /**
-     * Get the active profile based on type
+     * Get the active profile based on type.
+     * Coach/staff profiles are now managed by StaffManager module via DTOs.
      */
     public function getProfileAttribute()
     {
         return match ($this->type) {
             'player' => $this->playerProfile,
-            'coach' => $this->coachProfile,
-            'staff', 'admin' => $this->staffProfile,
+            'coach', 'staff', 'admin' => null, // Resolved via StaffManager DTOs
             default => null,
         };
     }

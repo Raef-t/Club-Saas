@@ -64,6 +64,9 @@ class StaffService
             $query->whereIn('person_id', $personIds);
         }
 
+        // Eager-load coach details for coaches
+        $query->with('coachDetail');
+
         $perPage = $filters['per_page'] ?? 15;
         $staffMembers = $query->latest()->paginate($perPage);
 
@@ -80,11 +83,13 @@ class StaffService
     public function getStaffById($id)
     {
         $staff = $this->staffRepository->find($id);
+        $staff->load('coachDetail.certifications');
         return $this->attachSharedDTOs($staff);
     }
 
     /**
-     * Register a new staff member
+     * Register a new staff member.
+     * If role is 'coach', automatically creates coach_details record.
      */
     public function onboardStaff(array $data)
     {
@@ -96,7 +101,7 @@ class StaffService
                 mobile1CountryCode: $data['mobile_1_country_code'] ?? null,
                 gender: isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
                 dob: $data['dob'] ?? null,
-                type: 'staff',
+                type: ($data['role'] ?? 'staff') === 'coach' ? 'coach' : 'staff',
                 email: $data['email'] ?? null,
                 nationalId: $data['national_id'] ?? null,
                 socialStatus: $data['social_status'] ?? null,
@@ -120,7 +125,34 @@ class StaffService
                 'person_id' => $person->id,
             ]));
 
-            // 3. Create active User Account so they can login to the Employee/Trainer App
+            // 3. If coach, create coach_details record
+            if (($data['role'] ?? 'staff') === 'coach') {
+                $staff->coachDetail()->create([
+                    'specialization'          => $data['specialization'] ?? null,
+                    'bio'                     => $data['bio'] ?? null,
+                    'experience_years'        => $data['experience_years'] ?? 0,
+                    'payment_type'            => $data['payment_type'] ?? null,
+                    'commission_type'         => $data['commission_type'] ?? null,
+                    'default_commission_rate' => $data['default_commission_rate'] ?? null,
+                    'working_hours_per_week'  => $data['working_hours_per_week'] ?? null,
+                    'gym_type'                => $data['gym_type'] ?? null,
+                ]);
+
+                // Create certifications if provided
+                if (!empty($data['certifications']) && is_array($data['certifications'])) {
+                    foreach ($data['certifications'] as $cert) {
+                        $staff->coachDetail->certifications()->create([
+                            'name'         => $cert['name'] ?? $cert,
+                            'issuer'       => $cert['issuer'] ?? null,
+                            'issue_date'   => $cert['issue_date'] ?? null,
+                            'expiry_date'  => $cert['expiry_date'] ?? null,
+                            'document_url' => $cert['document_url'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // 4. Create active User Account so they can login to the Employee/Trainer App
             $username = $data['username'] ?? ('staff_' . $person->id . '_' . \Illuminate\Support\Str::random(4));
             $password = $data['password'] ?? 'password123';
             
@@ -139,6 +171,7 @@ class StaffService
             $staff->generated_username = $username;
             $staff->generated_password = $password;
 
+            $staff->load('coachDetail.certifications');
             return $this->attachSharedDTOs($staff);
         });
     }
@@ -179,6 +212,7 @@ class StaffService
 
     /**
      * Update staff member data.
+     * If staff is a coach, also updates coach_details.
      */
     public function updateStaff($id, array $data)
     {
@@ -219,6 +253,28 @@ class StaffService
             // Update Staff record
             $staff->update($data);
 
+            // Update coach_details if this is a coach
+            if ($staff->isCoach()) {
+                $coachFields = array_filter([
+                    'specialization'          => $data['specialization'] ?? null,
+                    'bio'                     => $data['bio'] ?? null,
+                    'experience_years'        => $data['experience_years'] ?? null,
+                    'payment_type'            => $data['payment_type'] ?? null,
+                    'commission_type'         => $data['commission_type'] ?? null,
+                    'default_commission_rate' => $data['default_commission_rate'] ?? null,
+                    'working_hours_per_week'  => $data['working_hours_per_week'] ?? null,
+                    'gym_type'                => $data['gym_type'] ?? null,
+                ], fn($value) => !is_null($value));
+
+                if (!empty($coachFields)) {
+                    $staff->coachDetail()->updateOrCreate(
+                        ['staff_id' => $staff->id],
+                        $coachFields
+                    );
+                }
+            }
+
+            $staff->load('coachDetail.certifications');
             return $this->attachSharedDTOs($staff->fresh());
         });
     }

@@ -14,7 +14,7 @@ class StoreStaffRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Personal Details (people table)
+            // ── Personal Details (people table) ──────────────────
             'full_name' => 'required|string|max:200',
             'mobile_1_country_code' => 'nullable|string|max:5',
             'mobile_1' => 'required|string',
@@ -36,27 +36,38 @@ class StoreStaffRequest extends FormRequest
             'how_did_you_hear' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
 
-            // Staff/Trainer Details (staff table)
+            // ── Staff Details (staff table) ──────────────────────
             'role' => 'required|in:admin,receptionist,coach,cleaner,manager,staff',
             'employment_type' => 'required|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
-            'commission_rate' => 'nullable|numeric|min:0|max:100',
             'branch_id' => 'required|exists:branches,id',
-            'specialization' => 'nullable|string|max:100',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'contract_type' => 'nullable|in:probation,permanent',
+            'shift_type' => 'nullable|string|max:50',
             'work_type' => 'nullable|in:part_time,full_time',
             'work_status' => 'nullable|in:active,suspended,on_leave',
-            'salary_type' => 'nullable|in:monthly,commission,weekly',
-            'employee_type' => 'nullable|in:receptionist,equipment_coach,cleaner,accountant,manager,supervisor,nursery',
             'other_tasks' => 'nullable|string|max:500',
-            'gym_type' => 'nullable|in:male,female,mixed',
-            'shift_type' => 'nullable|string|max:50',
-            'certificates_held' => 'nullable|array',
-            'certificates_held.*' => 'string',
 
-            // User login account info
+            // ── Coach Details (coach_details table, only when role=coach) ──
+            'specialization' => 'nullable|required_if:role,coach|string|max:100',
+            'bio' => 'nullable|string|max:2000',
+            'experience_years' => 'nullable|integer|min:0',
+            'payment_type' => 'nullable|string|max:50',
+            'commission_type' => 'nullable|string|max:50',
+            'default_commission_rate' => 'nullable|numeric|min:0|max:100',
+            'working_hours_per_week' => 'nullable|numeric|min:0',
+            'gym_type' => 'nullable|in:male,female,mixed',
+
+            // ── Certifications (coach_certifications table) ──────
+            'certifications' => 'nullable|array',
+            'certifications.*.name' => 'required_with:certifications|string|max:200',
+            'certifications.*.issuer' => 'nullable|string|max:200',
+            'certifications.*.issue_date' => 'nullable|date',
+            'certifications.*.expiry_date' => 'nullable|date|after_or_equal:certifications.*.issue_date',
+            'certifications.*.document_url' => 'nullable|string|max:255',
+
+            // ── User login account info ──────────────────────────
             'username' => 'nullable|string|max:100|unique:authentication_users,username',
             'password' => 'nullable|string|min:6',
         ];

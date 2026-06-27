@@ -17,33 +17,36 @@ class Staff extends Model
         'role',
         'employment_type',
         'base_salary',
-        'commission_rate',
-        'specialization',
         'is_active',
         'start_date',
         'end_date',
         'contract_type',
+        'shift_type',
         'work_type',
         'work_status',
-        'salary_type',
-        'employee_type',
         'other_tasks',
-        'gym_type',
-        'shift_type',
-        'certificates_held',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'is_active'   => 'boolean',
+        'start_date'  => 'date',
+        'end_date'    => 'date',
         'base_salary' => 'decimal:2',
-        'commission_rate' => 'decimal:2',
-        'certificates_held' => 'array',
     ];
 
     public ?\Modules\Core\DTOs\PersonDTO $person = null;
     public ?\Modules\Core\DTOs\BranchDTO $branch = null;
+
+    // ── Relationships ───────────────────────────────────────────
+
+    /**
+     * Coach-specific details (CTI pattern: 1:1 extension).
+     * Only populated when role = 'coach'.
+     */
+    public function coachDetail()
+    {
+        return $this->hasOne(CoachDetail::class);
+    }
 
     public function shifts()
     {
@@ -58,5 +61,25 @@ class Staff extends Model
     public function unavailabilities()
     {
         return $this->hasMany(StaffUnavailability::class);
+    }
+
+    public function workingHours()
+    {
+        return $this->hasMany(StaffWorkingHour::class);
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(StaffLeave::class);
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────
+
+    /**
+     * Check if this staff member is a coach.
+     */
+    public function isCoach(): bool
+    {
+        return $this->role === 'coach';
     }
 }

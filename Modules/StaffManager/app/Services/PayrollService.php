@@ -125,8 +125,9 @@ class PayrollService
             ->whereBetween('start_time', [$payrollRun->period_start, $payrollRun->period_end])
             ->count();
 
-        // Apply the staff's commission rate to the session count
-        // This is a simplified calculation — more complex logic can be added per activity
-        return $sessionsCount * (float) $staff->commission_rate;
+        // Apply the coach's commission rate to the session count
+        // Commission rate is now stored in coach_details (CTI pattern)
+        $commissionRate = $staff->coachDetail?->default_commission_rate ?? 0;
+        return $sessionsCount * (float) $commissionRate;
     }
 }

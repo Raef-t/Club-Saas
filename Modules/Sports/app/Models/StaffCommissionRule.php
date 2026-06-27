@@ -13,10 +13,16 @@ class StaffCommissionRule extends Model
         'activity_id',
         'calculation_type',
         'rate_value',
+        'min_players',
+        'max_players',
+        'is_active',
     ];
 
     protected $casts = [
-        'rate_value' => 'decimal:2',
+        'rate_value'  => 'decimal:2',
+        'min_players' => 'integer',
+        'max_players' => 'integer',
+        'is_active'   => 'boolean',
     ];
 
     // --- Same-module relationship only ---

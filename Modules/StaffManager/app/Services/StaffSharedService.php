@@ -38,8 +38,12 @@ class StaffSharedService implements StaffSharedServiceInterface
                 id: $staff->id,
                 personId: $staff->person_id,
                 branchId: $staff->branch_id,
+                role: $staff->role ?? 'staff',
                 employmentType: $staff->employment_type,
                 isActive: (bool)$staff->is_active,
+                specialization: $staff->role === 'coach'
+                    ? $staff->coachDetail?->specialization
+                    : null,
                 person: $personDTO
             );
         } catch (\Exception $e) {

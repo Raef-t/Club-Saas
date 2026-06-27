@@ -12,18 +12,45 @@ class StaffResource extends JsonResource
             'id' => $this->id,
             'role' => $this->role,
             'employment_type' => $this->employment_type,
-            'specialization' => $this->specialization,
             'base_salary' => $this->base_salary,
-            'commission_rate' => $this->commission_rate,
             'contract_type' => $this->contract_type,
+            'shift_type' => $this->shift_type,
             'work_type' => $this->work_type,
             'work_status' => $this->work_status,
-            'salary_type' => $this->salary_type,
-            'employee_type' => $this->employee_type,
             'other_tasks' => $this->other_tasks,
-            'gym_type' => $this->gym_type,
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
+            'is_active' => $this->is_active,
+
+            // Coach-specific details (only present when role = coach)
+            'coach_details' => $this->when($this->isCoach() && $this->relationLoaded('coachDetail'), function () {
+                $detail = $this->coachDetail;
+                if (!$detail) return null;
+
+                return [
+                    'specialization'          => $detail->specialization,
+                    'bio'                     => $detail->bio,
+                    'experience_years'        => $detail->experience_years,
+                    'payment_type'            => $detail->payment_type,
+                    'commission_type'         => $detail->commission_type,
+                    'default_commission_rate' => $detail->default_commission_rate,
+                    'working_hours_per_week'  => $detail->working_hours_per_week,
+                    'gym_type'                => $detail->gym_type,
+                    'certifications'          => $detail->relationLoaded('certifications')
+                        ? $detail->certifications->map(fn($cert) => [
+                            'id'           => $cert->id,
+                            'name'         => $cert->name,
+                            'issuer'       => $cert->issuer,
+                            'issue_date'   => $cert->issue_date?->toDateString(),
+                            'expiry_date'  => $cert->expiry_date?->toDateString(),
+                            'document_url' => $cert->document_url,
+                            'is_expired'   => $cert->isExpired(),
+                        ])
+                        : [],
+                ];
+            }),
+
+            // Person data (resolved via DTO)
             'person' => $this->person ? [
                 'full_name' => $this->person->fullName,
                 'mobile_1_country_code' => $this->person->mobile1CountryCode,
@@ -46,10 +73,10 @@ class StaffResource extends JsonResource
                 'how_did_you_hear' => $this->person->howDidYouHear,
                 'notes' => $this->person->notes,
             ] : null,
+
             'generated_username' => $this->generated_username ?? null,
             'generated_password' => $this->generated_password ?? null,
             'branch_name' => $this->branch->name ?? null,
-            'is_active' => $this->is_active,
             'shifts' => $this->whenLoaded('shifts'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

@@ -1,20 +1,4 @@
 <?php
-
-namespace Modules\Authentication\Models;
-
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-class StaffProfile extends Model
-{
-    use HasFactory;
-
-    protected $fillable = [
-        'person_id',
-        'job_title'
-    ];
-
-    public function person()
-    {
-        return $this->belongsTo(Person::class);
-    }
-}
+// This file has been removed as part of the Staff/Coach restructuring.
+// Staff data is managed directly by Modules\StaffManager\Models\Staff.
+// Do not use.
