@@ -51,7 +51,9 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 201, description: 'Coach created successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 422, description: 'Validation errors'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function store(StoreCoachRequest $request)
@@ -78,6 +80,8 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'List of coaches'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function index(Request $request)
@@ -100,7 +104,9 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'Coach details'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function show($id)
@@ -130,6 +136,10 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 200, description: 'Coach updated successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 422, description: 'Validation errors'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function updateBasicInfo(UpdateCoachBasicInfoRequest $request, $id)
@@ -162,6 +172,10 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 200, description: 'Coach details updated'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 422, description: 'Validation errors'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function updateDetails(UpdateCoachDetailsRequest $request, $id)
@@ -198,6 +212,10 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 200, description: 'Activities assigned successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 422, description: 'Validation errors'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function assignActivities(AssignCoachActivitiesRequest $request, $id)
@@ -222,6 +240,9 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'Activity removed successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach or Activity not found'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function removeActivity($id, $activityId)
@@ -258,6 +279,10 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 201, description: 'Certification uploaded successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 422, description: 'Validation errors'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function uploadCertification(UploadCoachCertificationRequest $request, $id)
@@ -286,6 +311,9 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'List of certifications'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function getCertifications($id)
@@ -308,6 +336,9 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'Coach deleted successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function destroy($id)

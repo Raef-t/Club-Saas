@@ -12159,6 +12159,12 @@
                 "responses": {
                     "200": {
                         "description": "List of coaches"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12245,8 +12251,14 @@
                     "201": {
                         "description": "Coach created successfully"
                     },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
                     "422": {
                         "description": "Validation errors"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12278,8 +12290,14 @@
                     "200": {
                         "description": "Coach details"
                     },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
                     "404": {
                         "description": "Coach not found"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12308,6 +12326,15 @@
                 "responses": {
                     "200": {
                         "description": "Coach deleted successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach not found"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12360,6 +12387,18 @@
                 "responses": {
                     "200": {
                         "description": "Coach updated successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach not found"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12410,6 +12449,18 @@
                 "responses": {
                     "200": {
                         "description": "Coach details updated"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach not found"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12462,6 +12513,18 @@
                 "responses": {
                     "200": {
                         "description": "Activities assigned successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach not found"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12499,6 +12562,15 @@
                 "responses": {
                     "200": {
                         "description": "Activity removed successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach or Activity not found"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12528,6 +12600,15 @@
                 "responses": {
                     "200": {
                         "description": "List of certifications"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach not found"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [
@@ -12592,6 +12673,18 @@
                 "responses": {
                     "201": {
                         "description": "Certification uploaded successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Coach not found"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "500": {
+                        "description": "Server Error"
                     }
                 },
                 "security": [

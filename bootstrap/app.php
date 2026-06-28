@@ -15,5 +15,26 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
+            if ($request->is('api/*')) {
+                return true;
+            }
+            return $request->expectsJson();
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $previous = $e->getPrevious();
+                if ($previous instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                    $modelName = class_basename($previous->getModel());
+                    return response()->json([
+                        'message' => "{$modelName} not found."
+                    ], 404);
+                }
+
+                return response()->json([
+                    'message' => 'The requested endpoint or resource was not found.'
+                ], 404);
+            }
+        });
     })->create();
