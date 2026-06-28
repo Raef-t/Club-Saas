@@ -206,8 +206,8 @@ class StaffService
     protected function attachSharedDTOs($staff)
     {
         if ($staff) {
-            $staff->person = $staff->person_id ? $this->personService->getPersonById($staff->person_id) : null;
-            $staff->branch = $staff->branch_id ? $this->branchService->getBranchById($staff->branch_id) : null;
+            $staff->personDto = $staff->person_id ? $this->personService->getPersonById($staff->person_id) : null;
+            $staff->branchDto = $staff->branch_id ? $this->branchService->getBranchById($staff->branch_id) : null;
         }
         return $staff;
     }

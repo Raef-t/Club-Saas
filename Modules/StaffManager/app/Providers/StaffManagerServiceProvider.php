@@ -3,7 +3,7 @@
 namespace Modules\StaffManager\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Modules\Core\Providers\RouteServiceProvider;
+use Modules\StaffManager\Providers\RouteServiceProvider;
 use Modules\StaffManager\Repositories\StaffRepositoryInterface;
 use Modules\StaffManager\Repositories\EloquentStaffRepository;
 

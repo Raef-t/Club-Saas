@@ -35,10 +35,20 @@ class Staff extends Model
         'base_salary' => 'decimal:2',
     ];
 
-    public ?\Modules\Core\DTOs\PersonDTO $person = null;
-    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
+    public ?\Modules\Core\DTOs\PersonDTO $personDto = null;
+    public ?\Modules\Core\DTOs\BranchDTO $branchDto = null;
 
     // ── Relationships ───────────────────────────────────────────
+
+    public function person()
+    {
+        return $this->belongsTo(\Modules\Authentication\Models\Person::class, 'person_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class, 'branch_id');
+    }
 
     /**
      * Coach-specific details (CTI pattern: 1:1 extension).
