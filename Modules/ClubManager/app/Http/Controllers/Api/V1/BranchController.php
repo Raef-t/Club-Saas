@@ -57,11 +57,7 @@ class BranchController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'club_id'],
-            properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'فرع الملز'),
-                new OA\Property(property: 'club_id', type: 'integer', example: 1)
-            ]
+            ref: '#/components/schemas/StoreBranchRequest'
         )
     )]
     #[OA\Response(
@@ -121,9 +117,7 @@ class BranchController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'فرع التخصصي')
-            ]
+            ref: '#/components/schemas/UpdateBranchRequest'
         )
     )]
     #[OA\Response(

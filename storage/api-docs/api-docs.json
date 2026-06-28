@@ -4440,21 +4440,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "club_id"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "فرع الملز"
-                                    },
-                                    "club_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/StoreBranchRequest"
                             }
                         }
                     }
@@ -4637,13 +4623,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "فرع التخصصي"
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/UpdateBranchRequest"
                             }
                         }
                     }
@@ -19492,12 +19472,30 @@
             "StoreBranchRequest": {
                 "title": "StoreBranchRequest",
                 "required": [
-                    "name"
+                    "name",
+                    "club_id"
                 ],
                 "properties": {
+                    "club_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
                     "name": {
+                        "properties": {
+                            "ar": {
+                                "type": "string",
+                                "example": "فرع دبي"
+                            },
+                            "en": {
+                                "type": "string",
+                                "example": "Dubai Branch"
+                            }
+                        },
                         "type": "object",
-                        "example": "{\"ar\": \"فرع دبي\", \"en\": \"Dubai Branch\"}"
+                        "example": {
+                            "ar": "فرع دبي",
+                            "en": "Dubai Branch"
+                        }
                     },
                     "gender_restriction": {
                         "type": "string",
@@ -19507,6 +19505,11 @@
                             "female",
                             "mixed"
                         ]
+                    },
+                    "type": {
+                        "description": "e.g. gym, pool, classroom",
+                        "type": "string",
+                        "example": "gym"
                     },
                     "address": {
                         "type": "string",
@@ -19580,9 +19583,26 @@
             "UpdateBranchRequest": {
                 "title": "UpdateBranchRequest",
                 "properties": {
+                    "club_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
                     "name": {
+                        "properties": {
+                            "ar": {
+                                "type": "string",
+                                "example": "فرع دبي المحدث"
+                            },
+                            "en": {
+                                "type": "string",
+                                "example": "Updated Dubai Branch"
+                            }
+                        },
                         "type": "object",
-                        "example": "{\"ar\": \"فرع دبي المحدث\", \"en\": \"Updated Dubai Branch\"}"
+                        "example": {
+                            "ar": "فرع دبي المحدث",
+                            "en": "Updated Dubai Branch"
+                        }
                     },
                     "gender_restriction": {
                         "type": "string",
@@ -19591,6 +19611,11 @@
                             "female",
                             "mixed"
                         ]
+                    },
+                    "type": {
+                        "description": "e.g. gym, pool, classroom",
+                        "type": "string",
+                        "example": "gym"
                     },
                     "address": {
                         "type": "string"
@@ -19601,9 +19626,6 @@
                     },
                     "phone": {
                         "type": "string"
-                    },
-                    "is_active": {
-                        "type": "boolean"
                     }
                 },
                 "type": "object"
