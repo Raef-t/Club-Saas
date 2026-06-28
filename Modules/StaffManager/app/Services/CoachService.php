@@ -110,21 +110,8 @@ class CoachService
             $query->where('branch_id', $filters['branch_id']);
         }
 
-        if (isset($filters['is_active'])) {
-            $query->where('is_active', $filters['is_active']);
-        }
 
-        if (!empty($filters['employment_type'])) {
-            $query->where('employment_type', $filters['employment_type']);
-        }
-
-        if (!empty($filters['specialization'])) {
-            $query->whereHas('coachDetail', function ($q) use ($filters) {
-                $q->where('specialization', 'like', '%' . $filters['specialization'] . '%');
-            });
-        }
-
-        return $query->paginate($filters['per_page'] ?? 15);
+        return $query->get();
     }
 
     /**

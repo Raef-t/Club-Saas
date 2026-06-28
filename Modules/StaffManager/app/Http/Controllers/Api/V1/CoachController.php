@@ -74,9 +74,6 @@ class CoachController extends Controller
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'specialization', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'is_active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
-            new OA\Parameter(name: 'employment_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
             new OA\Response(response: 200, description: 'List of coaches'),
@@ -86,7 +83,7 @@ class CoachController extends Controller
     )]
     public function index(Request $request)
     {
-        $filters = $request->only(['branch_id', 'specialization', 'is_active', 'employment_type', 'per_page']);
+        $filters = $request->only(['branch_id']);
         
         $coaches = $this->coachService->getAllCoaches($filters);
 
