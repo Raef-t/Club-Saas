@@ -25,6 +25,7 @@ class Staff extends Model
         'work_type',
         'work_status',
         'other_tasks',
+        'qr_code',
     ];
 
     protected $casts = [
@@ -74,6 +75,27 @@ class Staff extends Model
     }
 
     // ── Helpers ─────────────────────────────────────────────────
+
+    /**
+     * Get the User associated with this staff member.
+     */
+    public function user()
+    {
+        return $this->hasOne(\Modules\Authentication\Models\User::class, 'person_id', 'person_id');
+    }
+
+    /**
+     * Coach's activities.
+     */
+    public function activities()
+    {
+        return $this->belongsToMany(
+            \Modules\Sports\Models\Activity::class,
+            'staff_activities',
+            'staff_id',
+            'activity_id'
+        );
+    }
 
     /**
      * Check if this staff member is a coach.

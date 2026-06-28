@@ -11,7 +11,7 @@ return new class extends Migration
         if (Schema::hasTable('people')) {
             Schema::table('people', function (Blueprint $table) {
                 $table->index('full_name');
-                $table->index('mobile_1');
+
                 $table->index('email');
                 $table->index('national_id');
             });
@@ -53,7 +53,7 @@ return new class extends Migration
         if (Schema::hasTable('people')) {
             Schema::table('people', function (Blueprint $table) {
                 $table->dropIndex(['full_name']);
-                $table->dropIndex(['mobile_1']);
+
                 $table->dropIndex(['email']);
                 $table->dropIndex(['national_id']);
             });

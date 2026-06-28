@@ -22,11 +22,7 @@ return new class extends Migration
             $table->string('social_status', 50)->nullable();
             $table->text('address')->nullable();
             $table->string('photo_url')->nullable();
-            $table->string('mobile_1', 20);
-            $table->string('mobile_2', 20)->nullable();
-            $table->string('landline', 20)->nullable();
-            $table->string('emergency_contact_name', 100)->nullable();
-            $table->string('emergency_contact_phone', 20)->nullable();
+
             $table->string('email')->nullable();
             $table->text('chronic_diseases')->nullable();
             $table->timestamps();

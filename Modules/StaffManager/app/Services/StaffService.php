@@ -44,7 +44,7 @@ class StaffService
         }
 
         if (!empty($filters['gender']) || !empty($filters['search'])) {
-            $peopleQuery = \Illuminate\Support\Facades\DB::table('people');
+            $peopleQuery = \Modules\Authentication\Models\Person::query();
             
             if (!empty($filters['gender'])) {
                 $peopleQuery->where('gender', $filters['gender']);
@@ -54,7 +54,9 @@ class StaffService
                 $search = $filters['search'];
                 $peopleQuery->where(function($sq) use ($search) {
                     $sq->where('full_name', 'like', "%{$search}%")
-                       ->orWhere('mobile_1', 'like', "%{$search}%")
+                       ->orWhereHas('contacts', function($cq) use ($search) {
+                           $cq->where('phone_number', 'like', "%{$search}%");
+                       })
                        ->orWhere('email', 'like', "%{$search}%")
                        ->orWhere('national_id', 'like', "%{$search}%");
                 });
@@ -97,8 +99,8 @@ class StaffService
             // 1. Create the person profile in Authentication module
             $personDto = new \Modules\Core\DTOs\CreatePersonDTO(
                 fullName: $data['full_name'],
-                mobile1: $data['mobile_1'],
-                mobile1CountryCode: $data['mobile_1_country_code'] ?? null,
+                mobile1: $data['phone_number'],
+                mobile1CountryCode: $data['country_code'] ?? null,
                 gender: isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
                 dob: $data['dob'] ?? null,
                 type: ($data['role'] ?? 'staff') === 'coach' ? 'coach' : 'staff',
@@ -107,8 +109,8 @@ class StaffService
                 socialStatus: $data['social_status'] ?? null,
                 address: $data['address'] ?? null,
                 photoUrl: $data['photo_url'] ?? null,
-                mobile2: $data['mobile_2'] ?? null,
-                mobile2CountryCode: $data['mobile_2_country_code'] ?? null,
+                mobile2: $data['secondary_phone_number'] ?? null,
+                mobile2CountryCode: $data['secondary_country_code'] ?? null,
                 landline: $data['landline'] ?? null,
                 emergencyContactName: $data['emergency_contact_name'] ?? null,
                 emergencyContactPhone: $data['emergency_contact_phone'] ?? null,
@@ -223,8 +225,8 @@ class StaffService
             if ($staff->person_id) {
                 $personData = array_filter([
                     'fullName' => $data['full_name'] ?? null,
-                    'mobile1' => $data['mobile_1'] ?? null,
-                    'mobile1CountryCode' => $data['mobile_1_country_code'] ?? null,
+                    'mobile1' => $data['phone_number'] ?? null,
+                    'mobile1CountryCode' => $data['country_code'] ?? null,
                     'email' => $data['email'] ?? null,
                     'gender' => isset($data['gender']) ? \Modules\Core\Enums\Gender::tryFrom($data['gender']) : null,
                     'dob' => $data['dob'] ?? null,
@@ -232,8 +234,8 @@ class StaffService
                     'socialStatus' => $data['social_status'] ?? null,
                     'address' => $data['address'] ?? null,
                     'photoUrl' => $data['photo_url'] ?? null,
-                    'mobile2' => $data['mobile_2'] ?? null,
-                    'mobile2CountryCode' => $data['mobile_2_country_code'] ?? null,
+                    'mobile2' => $data['secondary_phone_number'] ?? null,
+                    'mobile2CountryCode' => $data['secondary_country_code'] ?? null,
                     'landline' => $data['landline'] ?? null,
                     'emergencyContactName' => $data['emergency_contact_name'] ?? null,
                     'emergencyContactPhone' => $data['emergency_contact_phone'] ?? null,

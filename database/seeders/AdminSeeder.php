@@ -19,8 +19,13 @@ class AdminSeeder extends Seeder
             'full_name' => 'Yaman Admin',
             'gender' => 'male',
             'type' => 'staff',
-            'mobile_1' => '0555555555',
             'email' => 'yaman@clubsaas.com',
+        ]);
+
+        $adminPerson->contacts()->create([
+            'name' => 'Personal',
+            'relation' => 'self',
+            'phone_number' => '0555555555',
         ]);
 
         // 2. Create Admin Staff Profile

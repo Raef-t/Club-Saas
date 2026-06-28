@@ -33,6 +33,20 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('payroll-runs', PayrollController::class)->except(['update', 'destroy']);
     Route::apiResource('payslips', PayslipController::class);
 
+    // Coach Management
+    Route::prefix('coaches')->group(function () {
+        Route::get('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'index']);
+        Route::post('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'store']);
+        Route::get('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'show']);
+        Route::patch('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updateBasicInfo']);
+        Route::patch('/{id}/details', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updateDetails']);
+        Route::post('/{id}/activities', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'assignActivities']);
+        Route::delete('/{id}/activities/{activityId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeActivity']);
+        Route::post('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'uploadCertification']);
+        Route::get('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'getCertifications']);
+        Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
+    });
+
     // Shifts
     Route::apiResource('staff-shifts', StaffShiftController::class);
 });

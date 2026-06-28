@@ -41,4 +41,5 @@ class CoachDetail extends Model
     {
         return $this->hasMany(CoachCertification::class);
     }
+
 }

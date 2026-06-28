@@ -7,6 +7,7 @@ use Modules\ClubManager\Models\Club;
 use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Modules\StaffManager\Models\Staff;
 
 class TechnogymSeeder extends Seeder
 {
@@ -28,31 +29,5 @@ class TechnogymSeeder extends Seeder
             'type' => 'main',
             'is_active' => true,
         ]);
-
-        // 3. Create Admin Person
-        $adminPerson = Person::create([
-            'full_name' => 'Admin Technogym',
-            'gender' => 'male',
-            'type' => 'staff',
-            'mobile_1' => '0500000000',
-            'email' => 'admin@technogym.com',
-        ]);
-
-        // 4. Create Staff Profile
-        $adminPerson->staffProfile()->create([
-            'job_title' => 'System Admin',
-        ]);
-
-        // 5. Create Admin User
-        $adminUser = User::create([
-            'person_id' => $adminPerson->id,
-            'username' => 'admin_technogym',
-            'password' => Hash::make('password'),
-            'is_active' => true,
-            'role' => 'admin',
-        ]);
-
-        // 6. Assign Admin Role via Spatie
-        $adminUser->assignRole('admin');
     }
 }

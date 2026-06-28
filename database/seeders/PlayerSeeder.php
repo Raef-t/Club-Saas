@@ -46,8 +46,13 @@ class PlayerSeeder extends Seeder
                 'gender' => 'male',
                 'type' => 'player',
                 'dob' => '2005-01-01',
-                'mobile_1' => '0555555555',
                 'email' => 'player@clubsaas.com',
+            ]);
+
+            $playerPerson->contacts()->create([
+                'name' => 'Personal',
+                'relation' => 'self',
+                'phone_number' => '0555555555',
             ]);
 
             // 2. Create Player Profile

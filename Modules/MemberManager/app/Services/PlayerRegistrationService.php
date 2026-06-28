@@ -44,12 +44,18 @@ class PlayerRegistrationService
             // 3. Create Person
             $person = Person::create([
                 'full_name' => $data['first_name'] . ' ' . $data['last_name'],
-                'mobile_1_country_code' => $data['mobile_country_code'] ?? null,
-                'mobile_1' => $data['mobile'],
                 'gender' => $data['gender'],
                 'dob' => $data['dob'] ?? null,
                 'photo_url' => $photoUrl,
                 'type' => 'player',
+            ]);
+
+            // 3.5 Create Primary Contact
+            $person->contacts()->create([
+                'name' => 'Personal',
+                'relation' => 'self',
+                'country_code' => $data['mobile_country_code'] ?? null,
+                'phone_number' => $data['mobile'],
             ]);
 
             // 4. Create Additional Contacts
@@ -142,8 +148,6 @@ class PlayerRegistrationService
                 $lastName = $data['last_name'] ?? (isset(explode(' ', $person->full_name)[1]) ? explode(' ', $person->full_name)[1] : '');
                 $personData['full_name'] = trim($firstName . ' ' . $lastName);
             }
-            if (isset($data['mobile'])) $personData['mobile_1'] = $data['mobile'];
-            if (array_key_exists('mobile_country_code', $data)) $personData['mobile_1_country_code'] = $data['mobile_country_code'];
             if (isset($data['gender'])) $personData['gender'] = $data['gender'];
             if (isset($data['dob'])) $personData['dob'] = $data['dob'];
             if (isset($data['photo_url'])) $personData['photo_url'] = $data['photo_url'];
@@ -153,8 +157,19 @@ class PlayerRegistrationService
             }
 
             // Update Additional Contacts
+            // If main mobile changed, update primary contact
+            if (isset($data['mobile'])) {
+                $person->contacts()->updateOrCreate(
+                    ['name' => 'Personal', 'relation' => 'self'],
+                    [
+                        'phone_number' => $data['mobile'],
+                        'country_code' => array_key_exists('mobile_country_code', $data) ? $data['mobile_country_code'] : null,
+                    ]
+                );
+            }
+
             if (isset($data['additional_contacts']) && is_array($data['additional_contacts'])) {
-                $person->contacts()->delete();
+                $person->contacts()->where('name', '!=', 'Personal')->delete();
                 foreach ($data['additional_contacts'] as $contactData) {
                     $person->contacts()->create([
                         'name' => $contactData['name'],

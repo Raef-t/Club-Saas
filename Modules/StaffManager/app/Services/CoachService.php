@@ -1,0 +1,254 @@
+<?php
+
+namespace Modules\StaffManager\Services;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Modules\StaffManager\Models\Staff;
+use Modules\StaffManager\Models\CoachDetail;
+use Modules\StaffManager\Models\CoachCertification;
+use Modules\Authentication\Models\Person;
+use Modules\Authentication\Models\PersonContact;
+use Modules\Authentication\Models\User;
+use Modules\Sports\Models\Activity;
+
+class CoachService
+{
+    /**
+     * Create a new coach, along with person, user, and details in one transaction.
+     */
+    public function createCoach(array $data)
+    {
+        return DB::transaction(function () use ($data) {
+            // 1. Create Person
+            $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
+            $person = Person::create([
+                'full_name' => $fullName,
+                'type'      => 'coach',
+                'gender'    => $data['gender'] ?? null,
+                'dob'       => $data['dob'] ?? null,
+            ]);
+
+            // 1.5 Create Person Contact
+            if (!empty($data['phone_number'])) {
+                PersonContact::create([
+                    'person_id'    => $person->id,
+                    'name'         => 'Personal',
+                    'relation'     => 'self',
+                    'phone_number' => $data['phone_number'],
+                    'country_code' => $data['country_code'] ?? null,
+                ]);
+            }
+
+            // 2. Generate unique username
+            $firstNameStr = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $data['first_name']));
+            if (empty($firstNameStr)) {
+                $firstNameStr = 'coach';
+            }
+            
+            do {
+                $randomNumber = rand(100, 999);
+                $username = $firstNameStr . $randomNumber;
+            } while (User::where('username', $username)->exists());
+
+            // 3. Generate QR Code
+            $qrCode = 'QR-' . Str::uuid()->toString();
+
+            // 4. Create User
+            $user = User::create([
+                'person_id' => $person->id,
+                'username'  => $username,
+                'password'  => Hash::make('password123'), // Default password
+                'is_active' => true,
+                'role'      => 'coach',
+            ]);
+
+            // 5. Create Staff (Role = coach)
+            $staff = Staff::create([
+                'person_id'       => $person->id,
+                'branch_id'       => $data['branch_id'],
+                'role'            => 'coach',
+                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
+                'base_salary'     => $data['base_salary'] ?? 0,
+                'is_active'       => $data['is_active'] ?? true,
+                'start_date'      => $data['start_date'] ?? null,
+                'end_date'        => $data['end_date'] ?? null,
+                'contract_type'   => $data['contract_type'] ?? null,
+                'shift_type'      => $data['shift_type'] ?? null,
+                'work_type'       => $data['work_type'] ?? null,
+                'work_status'     => $data['work_status'] ?? 'active',
+                'qr_code'         => $qrCode,
+            ]);
+
+            // 6. Create Coach Detail
+            CoachDetail::create([
+                'staff_id'               => $staff->id,
+                'specialization'         => $data['specialization'] ?? null,
+                'bio'                    => $data['bio'] ?? null,
+                'experience_years'       => $data['experience_years'] ?? 0,
+                'payment_type'           => $data['payment_type'] ?? null,
+                'commission_type'        => $data['commission_type'] ?? null,
+                'default_commission_rate'=> $data['default_commission_rate'] ?? 0,
+                'working_hours_per_week' => $data['working_hours_per_week'] ?? 0,
+                'gym_type'               => $data['gym_type'] ?? null,
+            ]);
+
+            return $this->getSingleCoach($staff->id);
+        });
+    }
+
+    /**
+     * Get all coaches with optional filters.
+     */
+    public function getAllCoaches(array $filters = [])
+    {
+        $query = Staff::with(['coachDetail', 'person', 'activities'])->where('role', 'coach');
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
+        }
+
+        if (isset($filters['is_active'])) {
+            $query->where('is_active', $filters['is_active']);
+        }
+
+        if (!empty($filters['employment_type'])) {
+            $query->where('employment_type', $filters['employment_type']);
+        }
+
+        if (!empty($filters['specialization'])) {
+            $query->whereHas('coachDetail', function ($q) use ($filters) {
+                $q->where('specialization', 'like', '%' . $filters['specialization'] . '%');
+            });
+        }
+
+        return $query->paginate($filters['per_page'] ?? 15);
+    }
+
+    /**
+     * Get a single coach with all related data.
+     */
+    public function getSingleCoach($id)
+    {
+        return Staff::with(['coachDetail.certifications', 'activities', 'person', 'user'])
+            ->where('role', 'coach')
+            ->findOrFail($id);
+    }
+
+    /**
+     * Update basic staff info for a coach.
+     */
+    public function updateBasicInfo($id, array $data)
+    {
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        
+        $fillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active', 'branch_id'];
+        $updateData = array_intersect_key($data, array_flip($fillable));
+
+        if (!empty($updateData)) {
+            $staff->update($updateData);
+        }
+
+        return $staff->fresh(['coachDetail']);
+    }
+
+    /**
+     * Update coach specific details.
+     */
+    public function updateDetails($id, array $data)
+    {
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        
+        $coachDetail = $staff->coachDetail;
+        if (!$coachDetail) {
+            $coachDetail = new CoachDetail(['staff_id' => $staff->id]);
+        }
+
+        $fillable = ['specialization', 'bio', 'experience_years', 'working_hours_per_week', 'gym_type', 'payment_type', 'commission_type', 'default_commission_rate'];
+        $updateData = array_intersect_key($data, array_flip($fillable));
+
+        foreach ($updateData as $key => $value) {
+            $coachDetail->{$key} = $value;
+        }
+        $coachDetail->save();
+
+        return $coachDetail;
+    }
+
+    /**
+     * Assign activities to a coach.
+     */
+    public function assignActivities($id, array $activityIds)
+    {
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+
+        // syncWithoutDetaching avoids duplicates and keeps existing associations
+        $staff->activities()->syncWithoutDetaching($activityIds);
+
+        return $staff->fresh(['activities']);
+    }
+
+    /**
+     * Remove an activity from a coach.
+     */
+    public function removeActivity($id, $activityId)
+    {
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        $staff->activities()->detach($activityId);
+        
+        return true;
+    }
+
+    /**
+     * Upload and save a certification for a coach.
+     */
+    public function uploadCertification($id, array $data)
+    {
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        $coachDetail = $staff->coachDetail;
+        
+        if (!$coachDetail) {
+            throw new \Exception("Coach details not found.");
+        }
+
+        $documentUrl = null;
+        if (isset($data['file']) && $data['file'] instanceof \Illuminate\Http\UploadedFile) {
+            $path = $data['file']->store('coach_certifications', 'public');
+            $documentUrl = $path;
+        } elseif (isset($data['document_url'])) {
+            $documentUrl = $data['document_url'];
+        }
+
+        if (!$documentUrl) {
+            throw new \Exception("A document file or URL is required.");
+        }
+
+        $certification = CoachCertification::create([
+            'coach_detail_id' => $coachDetail->id,
+            'name'            => $data['name'],
+            'issuer'          => $data['issuer'] ?? null,
+            'issue_date'      => $data['issue_date'] ?? null,
+            'expiry_date'     => $data['expiry_date'] ?? null,
+            'document_url'    => $documentUrl,
+        ]);
+
+        return $certification;
+    }
+
+    /**
+     * Soft delete a coach.
+     */
+    public function deleteCoach($id)
+    {
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        $staff->delete(); // Soft delete
+        
+        // Optional: deactivate user
+        if ($staff->user) {
+            $staff->user->update(['is_active' => false]);
+        }
+        
+        return true;
+    }
+}

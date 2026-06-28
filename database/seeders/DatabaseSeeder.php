@@ -19,8 +19,13 @@ class DatabaseSeeder extends Seeder
             'full_name' => 'Club Administrator',
             'gender' => 'male',
             'type' => 'staff',
-            'mobile_1' => '0500000000',
             'email' => 'admin@clubsaas.com',
+        ]);
+
+        $adminPerson->contacts()->create([
+            'name' => 'Personal',
+            'relation' => 'self',
+            'phone_number' => '0500000000',
         ]);
 
         // 2. Create Admin Staff Profile

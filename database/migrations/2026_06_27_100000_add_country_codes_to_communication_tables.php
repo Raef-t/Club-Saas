@@ -11,11 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('people', function (Blueprint $table) {
-            $table->string('mobile_1_country_code', 5)->nullable()->after('mobile_1');
-            $table->string('mobile_2_country_code', 5)->nullable()->after('mobile_2');
-            $table->string('emergency_contact_country_code', 5)->nullable()->after('emergency_contact_phone');
-        });
+
 
         Schema::table('person_contacts', function (Blueprint $table) {
             $table->string('country_code', 5)->nullable()->after('phone_number');
@@ -39,9 +35,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('people', function (Blueprint $table) {
-            $table->dropColumn(['mobile_1_country_code', 'mobile_2_country_code', 'emergency_contact_country_code']);
-        });
+
 
         Schema::table('person_contacts', function (Blueprint $table) {
             $table->dropColumn('country_code');

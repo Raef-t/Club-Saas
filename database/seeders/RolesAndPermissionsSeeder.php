@@ -19,7 +19,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'super_admin',
             'admin',
             'coach',
-            'captain',
             'player',
             'accountant',
             'reception',

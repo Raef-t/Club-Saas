@@ -53,8 +53,8 @@ class StaffResource extends JsonResource
             // Person data (resolved via DTO)
             'person' => $this->person ? [
                 'full_name' => $this->person->fullName,
-                'mobile_1_country_code' => $this->person->mobile1CountryCode,
-                'mobile_1' => $this->person->mobile1,
+                'country_code' => $this->person->mobile1CountryCode,
+                'phone_number' => $this->person->mobile1,
                 'email' => $this->person->email,
                 'gender' => $this->person->gender?->value,
                 'dob' => $this->person->dob,
@@ -62,8 +62,8 @@ class StaffResource extends JsonResource
                 'social_status' => $this->person->socialStatus,
                 'address' => $this->person->address,
                 'photo_url' => $this->person->photoUrl,
-                'mobile_2_country_code' => $this->person->mobile2CountryCode,
-                'mobile_2' => $this->person->mobile2,
+                'secondary_country_code' => $this->person->mobile2CountryCode,
+                'secondary_phone_number' => $this->person->mobile2,
                 'landline' => $this->person->landline,
                 'emergency_contact_name' => $this->person->emergencyContactName,
                 'emergency_contact_country_code' => $this->person->emergencyContactCountryCode,

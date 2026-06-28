@@ -16,8 +16,8 @@ class UpdateStaffRequest extends FormRequest
         return [
             // ── Personal Details ─────────────────────────────────
             'full_name' => 'nullable|string|max:200',
-            'mobile_1_country_code' => 'nullable|string|max:5',
-            'mobile_1' => 'nullable|string',
+            'country_code' => 'nullable|string|max:5',
+            'phone_number' => 'nullable|string',
             'email' => 'nullable|email',
             'gender' => 'nullable|in:male,female',
             'dob' => 'nullable|date',
@@ -25,8 +25,8 @@ class UpdateStaffRequest extends FormRequest
             'social_status' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'photo_url' => 'nullable|string|max:255',
-            'mobile_2_country_code' => 'nullable|string|max:5',
-            'mobile_2' => 'nullable|string|max:20',
+            'secondary_country_code' => 'nullable|string|max:5',
+            'secondary_phone_number' => 'nullable|string|max:20',
             'landline' => 'nullable|string|max:20',
             'emergency_contact_name' => 'nullable|string|max:100',
             'emergency_contact_country_code' => 'nullable|string|max:5',

@@ -33,8 +33,6 @@ readonly class UpdatePersonDTO
     {
         return array_filter([
             'full_name' => $this->fullName,
-            'mobile_1_country_code' => $this->mobile1CountryCode,
-            'mobile_1' => $this->mobile1,
             'gender' => $this->gender?->value,
             'dob' => $this->dob,
             'email' => $this->email,
@@ -42,12 +40,6 @@ readonly class UpdatePersonDTO
             'social_status' => $this->socialStatus,
             'address' => $this->address,
             'photo_url' => $this->photoUrl,
-            'mobile_2_country_code' => $this->mobile2CountryCode,
-            'mobile_2' => $this->mobile2,
-            'landline' => $this->landline,
-            'emergency_contact_name' => $this->emergencyContactName,
-            'emergency_contact_country_code' => $this->emergencyContactCountryCode,
-            'emergency_contact_phone' => $this->emergencyContactPhone,
             'chronic_diseases' => $this->chronicDiseases,
             'children_count' => $this->childrenCount,
             'how_did_you_hear' => $this->howDidYouHear,
