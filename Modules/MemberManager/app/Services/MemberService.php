@@ -76,8 +76,7 @@ class MemberService
             });
         }
 
-        $perPage = $filters['per_page'] ?? 15;
-        $members = $query->latest()->paginate($perPage);
+        $members = $query->latest()->get();
 
         foreach ($members as $member) {
             $this->attachSharedDTOs($member);
