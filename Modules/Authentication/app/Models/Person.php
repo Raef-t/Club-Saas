@@ -15,6 +15,7 @@ class Person extends Model
         'full_name',
         'gender',
         'type',
+        'age',
         'dob',
         'national_id',
         'social_status',

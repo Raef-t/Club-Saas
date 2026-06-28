@@ -32,11 +32,12 @@ class CoachController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['first_name', 'last_name', 'branch_id'],
+                required: ['first_name', 'last_name', 'branch_id', 'age'],
                 properties: [
                     new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
                     new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
                     new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                    new OA\Property(property: 'age', type: 'integer', example: 30),
                     new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1990-01-01'),
                     new OA\Property(property: 'phone_number', type: 'string', example: '500000000'),
                     new OA\Property(property: 'country_code', type: 'string', example: '+966'),

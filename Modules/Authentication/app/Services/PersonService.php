@@ -55,7 +55,7 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
         $person = $this->findPersonById($id);
         if ($person) {
             $person->update($dto->toArray());
-            
+
             // Note: Currently not fully updating contacts on updatePerson to avoid duplicates. 
             // The frontend should ideally call a specific contacts API, or we overwrite them here.
             // For now, we will leave contacts update manual or via dedicated endpoints.
@@ -97,6 +97,7 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
             id: $person->id,
             fullName: $person->full_name,
             gender: \Modules\Core\Enums\Gender::tryFrom($person->gender),
+            age: $person->age,
             mobile1: $primaryContact?->phone_number,
             mobile1CountryCode: $primaryContact?->country_code,
             email: $person->email,

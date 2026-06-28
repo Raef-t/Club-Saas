@@ -19,6 +19,7 @@ class MemberResource extends JsonResource
                 'country_code' => $this->person->mobile1CountryCode,
                 'phone_number' => $this->person->mobile1,
                 'gender' => $this->person->gender?->value,
+                'age' => $this->person->age,
                 'dob' => $this->person->dob,
                 'national_id' => $this->person->nationalId,
                 'social_status' => $this->person->socialStatus,

@@ -45,6 +45,7 @@ class PlayerRegistrationService
             $person = Person::create([
                 'full_name' => $data['first_name'] . ' ' . $data['last_name'],
                 'gender' => $data['gender'],
+                'age' => $data['age'] ?? null,
                 'dob' => $data['dob'] ?? null,
                 'photo_url' => $photoUrl,
                 'type' => 'player',

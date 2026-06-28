@@ -57,6 +57,7 @@ class StaffResource extends JsonResource
                 'phone_number' => $this->personDto->mobile1,
                 'email' => $this->personDto->email,
                 'gender' => $this->personDto->gender?->value,
+                'age' => $this->personDto->age,
                 'dob' => $this->personDto->dob,
                 'national_id' => $this->personDto->nationalId,
                 'social_status' => $this->personDto->socialStatus,

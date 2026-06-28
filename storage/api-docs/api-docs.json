@@ -7950,6 +7950,7 @@
                                     "last_name",
                                     "mobile",
                                     "gender",
+                                    "age",
                                     "plans"
                                 ],
                                 "properties": {
@@ -7976,6 +7977,10 @@
                                             "male",
                                             "female"
                                         ]
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "example": 25
                                     },
                                     "dob": {
                                         "type": "string",
@@ -12177,7 +12182,8 @@
                                 "required": [
                                     "first_name",
                                     "last_name",
-                                    "branch_id"
+                                    "branch_id",
+                                    "age"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -12191,6 +12197,10 @@
                                     "gender": {
                                         "type": "string",
                                         "example": "male"
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "example": 30
                                     },
                                     "dob": {
                                         "type": "string",

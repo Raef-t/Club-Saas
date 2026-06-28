@@ -11,6 +11,7 @@ readonly class UpdatePersonDTO
         public ?string $mobile1CountryCode = null,
         public ?string $mobile1 = null,
         public ?Gender $gender = null,
+        public ?int $age = null,
         public ?string $dob = null,
         public ?string $email = null,
         public ?string $nationalId = null,
@@ -34,6 +35,7 @@ readonly class UpdatePersonDTO
         return array_filter([
             'full_name' => $this->fullName,
             'gender' => $this->gender?->value,
+            'age' => $this->age,
             'dob' => $this->dob,
             'email' => $this->email,
             'national_id' => $this->nationalId,

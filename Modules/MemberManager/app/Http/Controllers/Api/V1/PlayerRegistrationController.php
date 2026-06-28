@@ -26,13 +26,14 @@ class PlayerRegistrationController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['first_name', 'last_name', 'mobile', 'gender', 'plans'],
+            required: ['first_name', 'last_name', 'mobile', 'gender', 'age', 'plans'],
             properties: [
                 new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
                 new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
                 new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
                 new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
+                new OA\Property(property: 'age', type: 'integer', example: 25),
                 new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
                 new OA\Property(

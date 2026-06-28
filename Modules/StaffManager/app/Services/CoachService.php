@@ -27,6 +27,7 @@ class CoachService
                 'full_name' => $fullName,
                 'type'      => 'coach',
                 'gender'    => $data['gender'] ?? null,
+                'age'       => $data['age'] ?? null,
                 'dob'       => $data['dob'] ?? null,
             ]);
 

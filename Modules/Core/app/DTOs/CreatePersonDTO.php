@@ -11,6 +11,7 @@ readonly class CreatePersonDTO
         public string $mobile1,
         public ?string $mobile1CountryCode = null,
         public ?Gender $gender = null,
+        public ?int $age = null,
         public ?string $dob = null,
         public ?string $type = null,
         public ?string $email = null,
@@ -35,6 +36,7 @@ readonly class CreatePersonDTO
         return array_filter([
             'full_name' => $this->fullName,
             'gender' => $this->gender?->value,
+            'age' => $this->age,
             'dob' => $this->dob,
             'type' => $this->type,
             'email' => $this->email,

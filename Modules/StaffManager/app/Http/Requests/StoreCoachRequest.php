@@ -18,6 +18,7 @@ class StoreCoachRequest extends FormRequest
             'first_name'              => ['required', 'string', 'max:255'],
             'last_name'               => ['required', 'string', 'max:255'],
             'gender'                  => ['nullable', 'string', 'in:male,female'],
+            'age'                     => ['required', 'integer', 'min:18', 'max:100'],
             'dob'                     => ['nullable', 'date'],
             'phone_number'            => ['nullable', 'string', 'max:20'],
             'country_code'            => ['nullable', 'string', 'max:5'],

@@ -20,6 +20,7 @@ class PlayerRegistrationRequest extends FormRequest
             'mobile_country_code' => 'nullable|string|max:5',
             'mobile' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
+            'age' => 'required|integer|min:4|max:100',
             'dob' => 'nullable|date',
             'photo' => 'nullable|image|max:2048', // max 2MB
             
@@ -48,6 +49,7 @@ class PlayerRegistrationRequest extends FormRequest
             'last_name.required' => 'كنية اللاعب حقل إجباري',
             'mobile.required' => 'رقم اللاعب (هاتف محمول) حقل إجباري',
             'gender.required' => 'الجنس حقل إجباري',
+            'age.required' => 'عمر اللاعب حقل إجباري',
             'plans.required' => 'يجب اختيار خطة اشتراك واحدة على الأقل',
             'photo.image' => 'يجب أن يكون الملف المرفق صورة',
             'photo.max' => 'حجم الصورة يجب ألا يتجاوز 2 ميغابايت',
