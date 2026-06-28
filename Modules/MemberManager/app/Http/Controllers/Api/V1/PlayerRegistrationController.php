@@ -10,14 +10,16 @@ use OpenApi\Attributes as OA;
 class PlayerRegistrationController extends BaseController
 {
     protected $registrationService;
+    protected $memberService;
 
-    public function __construct(PlayerRegistrationService $registrationService)
+    public function __construct(PlayerRegistrationService $registrationService, \Modules\MemberManager\Services\MemberService $memberService)
     {
         $this->registrationService = $registrationService;
+        $this->memberService = $memberService;
     }
 
     #[OA\Post(
-        path: '/v1/players/register',
+        path: '/v1/members/register',
         summary: '➕ تسجيل لاعب جديد (متدرب)',
         description: 'تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته وإضافة خطط الاشتراك مع التحقق من سعة الاشتراكات.',
         tags: ['Member Management'],
@@ -90,7 +92,7 @@ class PlayerRegistrationController extends BaseController
     }
 
     #[OA\Put(
-        path: '/v1/players/{id}',
+        path: '/v1/members/{id}',
         summary: '📝 تعديل بيانات لاعب (متدرب)',
         description: 'تعديل البيانات الأساسية للاعب مثل الاسم ورقم الجوال والفرع وجهات الاتصال.',
         tags: ['Member Management'],
@@ -148,5 +150,58 @@ class PlayerRegistrationController extends BaseController
             __('Player updated successfully'),
             200
         );
+    }
+
+    #[OA\Get(
+        path: '/v1/members',
+        summary: '📋 عرض جميع الأعضاء',
+        description: 'جلب قائمة بجميع الأعضاء (المتدربين) مع إمكانية التصفية.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء بنجاح')]
+    public function index(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->all();
+        $members = $this->memberService->getAllMembers($filters);
+        return $this->successResponse($members, __('Members retrieved successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/members/{id}',
+        summary: '🔍 عرض بيانات عضو محدد',
+        description: 'جلب تفاصيل عضو معين باستخدام المعرف الخاص به.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم جلب بيانات العضو بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    public function show($id)
+    {
+        $member = $this->memberService->getMemberById($id);
+        if (!$member) {
+            return response()->json(['message' => __('Member not found')], 404);
+        }
+        return $this->successResponse($member, __('Member retrieved successfully'));
+    }
+
+    #[OA\Delete(
+        path: '/v1/members/{id}',
+        summary: '🗑️ حذف عضو',
+        description: 'حذف عضو محدد من النظام.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    public function destroy($id)
+    {
+        $deleted = $this->memberService->deleteMember($id);
+        if (!$deleted) {
+            return response()->json(['message' => __('Member not found or could not be deleted')], 404);
+        }
+        return $this->successResponse(null, __('Member deleted successfully'));
     }
 }

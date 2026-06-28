@@ -7,8 +7,11 @@ use Modules\MemberManager\Http\Controllers\Api\V1\PlayerProfileController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Player Registration & Updates
-    Route::post('players/register', [PlayerRegistrationController::class, 'register']);
-    Route::put('players/{id}', [PlayerRegistrationController::class, 'update']);
+    Route::get('members', [PlayerRegistrationController::class, 'index']);
+    Route::post('members/register', [PlayerRegistrationController::class, 'register']);
+    Route::get('members/{id}', [PlayerRegistrationController::class, 'show']);
+    Route::put('members/{id}', [PlayerRegistrationController::class, 'update']);
+    Route::delete('members/{id}', [PlayerRegistrationController::class, 'destroy']);
 
 
     // Player App Endpoints (Authenticated as Player)

@@ -9,7 +9,7 @@ class StoreClubRequest extends FormRequest
     public function rules() {
         return [
             'name' => 'required|string|max:255',
-            'subdomain' => 'required|string|unique:clubs,subdomain',
+            'subdomain' => 'nullable|string',
         ];
     }
 }
