@@ -132,8 +132,11 @@ class PlayerRegistrationService
     {
         return DB::transaction(function () use ($memberId, $data) {
             $member = Member::findOrFail($memberId);
-            $person = $member->person;
+            $person = $member->person()->first();
 
+            if (!$person) {
+                abort(404, 'لا يمكن تعديل العضو: لا يوجد سجل بيانات شخصية مرتبط بهذا العضو.');
+            }
             // Handle Photo Upload
             if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
                 if ($person->photo_url) {
@@ -145,8 +148,9 @@ class PlayerRegistrationService
             // Update Person
             $personData = [];
             if (isset($data['first_name']) || isset($data['last_name'])) {
-                $firstName = $data['first_name'] ?? explode(' ', $person->full_name)[0] ?? '';
-                $lastName = $data['last_name'] ?? (isset(explode(' ', $person->full_name)[1]) ? explode(' ', $person->full_name)[1] : '');
+                $parts = explode(' ', $person->full_name);
+                $firstName = $data['first_name'] ?? ($parts[0] ?? '');
+                $lastName = $data['last_name'] ?? ($parts[1] ?? '');
                 $personData['full_name'] = trim($firstName . ' ' . $lastName);
             }
             if (isset($data['gender'])) $personData['gender'] = $data['gender'];
