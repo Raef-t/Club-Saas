@@ -21,14 +21,14 @@ class PlayerRegistrationController extends BaseController
     #[OA\Post(
         path: '/v1/members/register',
         summary: '➕ تسجيل لاعب جديد (متدرب)',
-        description: 'تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته وإضافة خطط الاشتراك مع التحقق من سعة الاشتراكات.',
+        description: 'تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['first_name', 'last_name', 'mobile', 'gender', 'age', 'plans'],
+            required: ['first_name', 'last_name', 'mobile', 'gender', 'age'],
             properties: [
                 new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
                 new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
@@ -50,18 +50,6 @@ class PlayerRegistrationController extends BaseController
                             new OA\Property(property: 'country_code', type: 'string', example: '+963'),
                             new OA\Property(property: 'phone_number', type: 'string', example: '0509876543'),
                             new OA\Property(property: 'relation', type: 'string', example: 'Father')
-                        ]
-                    )
-                ),
-                new OA\Property(
-                    property: 'plans',
-                    type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        required: ['plan_id'],
-                        properties: [
-                            new OA\Property(property: 'plan_id', type: 'integer', example: 2),
-                            new OA\Property(property: 'paid_amount', type: 'number', example: 150.50)
                         ]
                     )
                 )

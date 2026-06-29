@@ -32,7 +32,17 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plans retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(
+                    property: 'data', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -119,7 +129,14 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan created successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                    ]
+                )
             ]
         )
     )]
@@ -150,7 +167,14 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                    ]
+                )
             ]
         )
     )]
@@ -199,7 +223,14 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                    ]
+                )
             ]
         )
     )]

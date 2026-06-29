@@ -8064,7 +8064,7 @@
                     "Member Management"
                 ],
                 "summary": "➕ تسجيل لاعب جديد (متدرب)",
-                "description": "تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته وإضافة خطط الاشتراك مع التحقق من سعة الاشتراكات.",
+                "description": "تسجيل لاعب جديد يشمل إنشاء بياناته الشخصية وعضويته.",
                 "operationId": "bd4bc8971e3f602aacd292e705b104c5",
                 "requestBody": {
                     "required": true,
@@ -8076,8 +8076,7 @@
                                     "last_name",
                                     "mobile",
                                     "gender",
-                                    "age",
-                                    "plans"
+                                    "age"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -8145,25 +8144,6 @@
                                                 "relation": {
                                                     "type": "string",
                                                     "example": "Father"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "plans": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "plan_id"
-                                            ],
-                                            "properties": {
-                                                "plan_id": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "paid_amount": {
-                                                    "type": "number",
-                                                    "example": 150.5
                                                 }
                                             },
                                             "type": "object"
@@ -10145,7 +10125,8 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name"
+                                    "name",
+                                    "activity_type_id"
                                 ],
                                 "properties": {
                                     "name": {
@@ -10172,15 +10153,10 @@
                                         "type": "string",
                                         "example": "جلسة يوغا للمبتدئين"
                                     },
-                                    "type": {
-                                        "description": "(اختياري) نوع النشاط",
-                                        "type": "string",
-                                        "example": "group_class",
-                                        "enum": [
-                                            "open_gym",
-                                            "group_class",
-                                            "personal_training"
-                                        ]
+                                    "activity_type_id": {
+                                        "description": "(مطلوب) معرف نوع النشاط",
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "default_capacity": {
                                         "description": "(اختياري) السعة الافتراضية للنشاط",
@@ -10395,15 +10371,10 @@
                                         },
                                         "type": "object"
                                     },
-                                    "type": {
-                                        "description": "(اختياري) نوع النشاط",
-                                        "type": "string",
-                                        "example": "group_class",
-                                        "enum": [
-                                            "open_gym",
-                                            "group_class",
-                                            "personal_training"
-                                        ]
+                                    "activity_type_id": {
+                                        "description": "(اختياري) معرف نوع النشاط",
+                                        "type": "integer",
+                                        "example": 1
                                     }
                                 },
                                 "type": "object"
@@ -10544,6 +10515,503 @@
                     },
                     "404": {
                         "description": "🚫 النشاط غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activity-types": {
+            "get": {
+                "tags": [
+                    "Activity Types"
+                ],
+                "summary": "📋 عرض جميع أنواع الأنشطة",
+                "description": "استرجاع قائمة بجميع أنواع الأنشطة الرياضية.",
+                "operationId": "d1bf4f6b012823495143265eabbc5aaf",
+                "responses": {
+                    "200": {
+                        "description": "✅ قائمة أنواع الأنشطة",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity types retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "properties": {
+                                                            "ar": {
+                                                                "type": "string",
+                                                                "example": "صالة مفتوحة"
+                                                            },
+                                                            "en": {
+                                                                "type": "string",
+                                                                "example": "open_gym"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Activity Types"
+                ],
+                "summary": "➕ إنشاء نوع نشاط جديد",
+                "description": "إضافة نوع نشاط رياضي جديد إلى النظام.",
+                "operationId": "371e5a4660a948959de5c1c127b6e8bb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "properties": {
+                                            "ar": {
+                                                "type": "string",
+                                                "example": "صالة مفتوحة"
+                                            },
+                                            "en": {
+                                                "type": "string",
+                                                "example": "open_gym"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء نوع النشاط بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity type created successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activity-types/{activity_type}": {
+            "get": {
+                "tags": [
+                    "Activity Types"
+                ],
+                "summary": "🔍 عرض تفاصيل نوع النشاط",
+                "description": "استرجاع بيانات نوع نشاط محدد.",
+                "operationId": "24c9d258a57d342825127ee81a4aadd7",
+                "parameters": [
+                    {
+                        "name": "activity_type",
+                        "in": "path",
+                        "description": "معرف نوع النشاط",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تفاصيل نوع النشاط",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity type retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على نوع النشاط",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Activity Types"
+                ],
+                "summary": "📝 تحديث نوع نشاط",
+                "description": "تعديل بيانات نوع نشاط محدد.",
+                "operationId": "2ee16e17bad63ecc8026b48396f97469",
+                "parameters": [
+                    {
+                        "name": "activity_type",
+                        "in": "path",
+                        "description": "معرف نوع النشاط",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "properties": {
+                                            "ar": {
+                                                "type": "string",
+                                                "example": "صالة مفتوحة"
+                                            },
+                                            "en": {
+                                                "type": "string",
+                                                "example": "open_gym"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التحديث بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity type updated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على نوع النشاط",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Activity Types"
+                ],
+                "summary": "🗑️ حذف نوع نشاط",
+                "description": "إزالة نوع نشاط من النظام.",
+                "operationId": "c219900ea00d4d2fb22d3e741db1cea6",
+                "parameters": [
+                    {
+                        "name": "activity_type",
+                        "in": "path",
+                        "description": "معرف نوع النشاط",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الحذف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity type deleted successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على نوع النشاط",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -16859,6 +17327,12 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    }
+                                                },
                                                 "type": "object"
                                             }
                                         }
@@ -16915,6 +17389,23 @@
                                     "plan_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "activities": {
+                                        "description": "(اختياري) مصفوفة الأنشطة لاختيار المدربين لكل نشاط",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "activity_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "coach_id": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -16938,6 +17429,12 @@
                                             "example": "Member subscribed successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17025,6 +17522,12 @@
                                             "example": "Subscription retrieved successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17143,6 +17646,12 @@
                                             "example": "Subscription frozen successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17230,6 +17739,12 @@
                                             "example": "Subscription unfrozen successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17335,6 +17850,12 @@
                                             "example": "Subscription renewed successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17438,6 +17959,12 @@
                                             "example": "Subscription cancelled successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17546,6 +18073,12 @@
                                             "example": "Payment recorded successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -17566,464 +18099,6 @@
                                         },
                                         "errors": {
                                             "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/player-subscription-items": {
-            "get": {
-                "tags": [
-                    "Player Subscription Items"
-                ],
-                "summary": "📋 عرض عناصر اشتراك اللاعب",
-                "description": "استرجاع جميع العناصر المرتبطة باشتراكات اللاعبين.",
-                "operationId": "a0514eb92c2275a005fb62e0edce5220",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع العناصر بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Player Subscription Items"
-                ],
-                "summary": "➕ إضافة عنصر لاشتراك اللاعب",
-                "description": "إضافة عنصر جديد ضمن اشتراك لاعب.",
-                "operationId": "09cfb9a621ff711117983878f69ffe58",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "player_subscription_id",
-                                    "item_id",
-                                    "quantity"
-                                ],
-                                "properties": {
-                                    "player_subscription_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "item_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "quantity": {
-                                        "type": "integer",
-                                        "example": 2
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم الإضافة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/player-subscription-items/{player_subscription_item}": {
-            "get": {
-                "tags": [
-                    "Player Subscription Items"
-                ],
-                "summary": "🔍 تفاصيل عنصر الاشتراك",
-                "description": "استرجاع تفاصيل عنصر محدد باشتراك لاعب.",
-                "operationId": "8a0dad11e9a394cef66c6583bb0272d7",
-                "parameters": [
-                    {
-                        "name": "player_subscription_item",
-                        "in": "path",
-                        "description": "معرف العنصر",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تفاصيل العنصر",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Player Subscription Items"
-                ],
-                "summary": "📝 تعديل عنصر الاشتراك",
-                "description": "تحديث بيانات عنصر ضمن اشتراك لاعب.",
-                "operationId": "08a07ce829a1a91d75efc1b1c64f6a62",
-                "parameters": [
-                    {
-                        "name": "player_subscription_item",
-                        "in": "path",
-                        "description": "معرف العنصر",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "quantity": {
-                                        "type": "integer",
-                                        "example": 3
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم التعديل بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Player Subscription Items"
-                ],
-                "summary": "🗑️ حذف عنصر الاشتراك",
-                "description": "إزالة عنصر من اشتراك لاعب.",
-                "operationId": "c4a0c831497a61b2a4ce34fa575909d6",
-                "parameters": [
-                    {
-                        "name": "player_subscription_item",
-                        "in": "path",
-                        "description": "معرف العنصر",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الحذف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
                                         }
                                     },
                                     "type": "object"
@@ -18965,6 +19040,14 @@
                                     "activity_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "sessions_count": {
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "is_unlimited": {
+                                        "type": "boolean",
+                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -19154,6 +19237,14 @@
                                     "activity_id": {
                                         "type": "integer",
                                         "example": 2
+                                    },
+                                    "sessions_count": {
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "is_unlimited": {
+                                        "type": "boolean",
+                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -19362,6 +19453,16 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "subscription_number": {
+                                                        "type": "string",
+                                                        "example": "25487965"
+                                                    }
+                                                },
                                                 "type": "object"
                                             }
                                         }
@@ -19488,6 +19589,16 @@
                                             "example": "Subscription plan created successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "subscription_number": {
+                                                    "type": "string",
+                                                    "example": "25487965"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -19618,6 +19729,16 @@
                                             "example": "Subscription plan retrieved successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "subscription_number": {
+                                                    "type": "string",
+                                                    "example": "25487965"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -19770,6 +19891,16 @@
                                             "example": "Subscription plan updated successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "subscription_number": {
+                                                    "type": "string",
+                                                    "example": "25487965"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -20952,6 +21083,10 @@
             "description": "Sports & Activities"
         },
         {
+            "name": "Activity Types",
+            "description": "Activity Types"
+        },
+        {
             "name": "Session Bookings",
             "description": "Session Bookings"
         },
@@ -21002,10 +21137,6 @@
         {
             "name": "Subscription Management",
             "description": "Subscription Management"
-        },
-        {
-            "name": "Player Subscription Items",
-            "description": "Player Subscription Items"
         },
         {
             "name": "Player Subscription Services",

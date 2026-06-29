@@ -8,7 +8,12 @@ use Modules\Sports\Http\Controllers\Api\V1\SessionBookingController;
 use Modules\Sports\Http\Controllers\Api\V1\StaffCommissionRuleController;
 use Modules\Sports\Http\Controllers\Api\V1\StaffActivityController;
 
+use Modules\Sports\Http\Controllers\Api\V1\ActivityTypeController;
+
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    // Activity Types CRUD
+    Route::apiResource('activity-types', ActivityTypeController::class);
+
     // Activities CRUD
     Route::apiResource('activities', ActivityController::class);
 

@@ -10,6 +10,7 @@ class SubscriptionPlanResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'subscription_number' => $this->subscription_number,
             'name' => $this->name,
             'type' => $this->type,
             'duration_days' => $this->duration_days,

@@ -27,6 +27,9 @@ class SubscribeMemberRequest extends FormRequest
             'plan_id' => 'required|exists:subscription_plans,id',
             'start_date' => 'nullable|date',
             'paid_amount' => 'nullable|numeric|min:0',
+            'activities' => 'nullable|array',
+            'activities.*.activity_id' => 'required_with:activities|exists:activities,id',
+            'activities.*.coach_id' => 'nullable|exists:users,id',
         ];
     }
 }

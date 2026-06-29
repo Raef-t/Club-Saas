@@ -35,6 +35,7 @@ class PlayerSubscriptionResource extends JsonResource
                     return [
                         'id' => $item->id,
                         'activity_id' => $item->activity_id,
+                        'coach_id' => $item->coach_id,
                         'sessions_allocated' => $item->sessions_allocated,
                         'sessions_consumed' => $item->sessions_consumed ?? 0,
                         'is_unlimited' => (bool) $item->is_unlimited,

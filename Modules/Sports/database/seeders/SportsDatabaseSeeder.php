@@ -12,6 +12,7 @@ class SportsDatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            ActivityTypeSeeder::class,
             ActivitiesSeeder::class,
         ]);
     }

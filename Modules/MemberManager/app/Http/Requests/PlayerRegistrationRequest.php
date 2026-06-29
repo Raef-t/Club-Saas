@@ -36,10 +36,6 @@ class PlayerRegistrationRequest extends FormRequest
             'branch_id' => 'nullable|exists:branches,id',
             'member_number' => 'nullable|string|unique:members,member_number',
             
-            // Plans array
-            'plans' => 'required|array|min:1',
-            'plans.*.plan_id' => 'required|exists:subscription_plans,id',
-            'plans.*.paid_amount' => 'nullable|numeric|min:0',
         ];
     }
     
@@ -51,7 +47,6 @@ class PlayerRegistrationRequest extends FormRequest
             'mobile.required' => 'رقم اللاعب (هاتف محمول) حقل إجباري',
             'gender.required' => 'الجنس حقل إجباري',
             'age.required' => 'عمر اللاعب حقل إجباري',
-            'plans.required' => 'يجب اختيار خطة اشتراك واحدة على الأقل',
             'photo.image' => 'يجب أن يكون الملف المرفق صورة',
             'photo.max' => 'حجم الصورة يجب ألا يتجاوز 2 ميغابايت',
             'additional_contacts.*.name.required_with' => 'اسم جهة الاتصال الإضافية مطلوب',

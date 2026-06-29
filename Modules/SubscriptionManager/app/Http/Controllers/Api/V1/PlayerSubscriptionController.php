@@ -41,7 +41,16 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscriptions retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(
+                    property: 'data', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1)
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -68,7 +77,19 @@ class PlayerSubscriptionController extends BaseController
             required: ['member_id', 'plan_id'],
             properties: [
                 new OA\Property(property: 'member_id', type: 'integer', example: 1),
-                new OA\Property(property: 'plan_id', type: 'integer', example: 1)
+                new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                new OA\Property(
+                    property: 'activities',
+                    type: 'array',
+                    description: '(اختياري) مصفوفة الأنشطة لاختيار المدربين لكل نشاط',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'activity_id', type: 'integer', example: 2),
+                            new OA\Property(property: 'coach_id', type: 'integer', example: 5)
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -79,7 +100,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member subscribed successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]
@@ -116,7 +143,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]
@@ -158,7 +191,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription frozen successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]
@@ -195,7 +234,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription unfrozen successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]
@@ -233,7 +278,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription renewed successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]
@@ -274,7 +325,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription cancelled successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]
@@ -315,7 +372,13 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Payment recorded successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
             ]
         )
     )]

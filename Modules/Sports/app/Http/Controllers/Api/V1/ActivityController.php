@@ -34,7 +34,7 @@ class ActivityController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $query = Activity::query();
+        $query = Activity::with('activityType');
 
         if ($request->has('facility_id')) {
             $facility = Facility::find($request->facility_id);
@@ -59,7 +59,7 @@ class ActivityController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name'],
+            required: ['name', 'activity_type_id'],
             properties: [
                 new OA\Property(
                     property: 'name',
@@ -72,7 +72,7 @@ class ActivityController extends BaseController
                     ]
                 ),
                 new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
-                new OA\Property(property: 'type', description: '(اختياري) نوع النشاط', type: 'string', enum: ['open_gym', 'group_class', 'personal_training'], example: 'group_class'),
+                new OA\Property(property: 'activity_type_id', description: '(مطلوب) معرف نوع النشاط', type: 'integer', example: 1),
                 new OA\Property(property: 'default_capacity', type: 'integer', description: '(اختياري) السعة الافتراضية للنشاط', example: 20),
                 new OA\Property(property: 'is_private_equipment', type: 'boolean', description: '(اختياري) هل يتطلب معدات خاصة؟', example: false),
                 new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
@@ -123,7 +123,7 @@ class ActivityController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show(int $id)
     {
-        $activity = Activity::findOrFail($id);
+        $activity = Activity::with('activityType')->findOrFail($id);
         return $this->successResponse(new ActivityResource($activity), __('Activity retrieved successfully'));
     }
 
@@ -147,7 +147,7 @@ class ActivityController extends BaseController
                         new OA\Property(property: 'en', type: 'string', example: 'Advanced Swimming')
                     ]
                 ),
-                new OA\Property(property: 'type', description: '(اختياري) نوع النشاط', type: 'string', enum: ['open_gym', 'group_class', 'personal_training'], example: 'group_class'),
+                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 1),
             ]
         )
     )]

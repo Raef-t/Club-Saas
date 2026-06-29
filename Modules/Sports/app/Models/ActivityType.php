@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Translatable\HasTranslations;
 
-class Activity extends Model
+class ActivityType extends Model
 {
     use HasFactory, HasTranslations;
 
@@ -15,14 +15,7 @@ class Activity extends Model
      */
     protected $fillable = [
         'name',
-        'description',
-        'activity_type_id',
-        'default_capacity',
-        'is_private_equipment',
-        'gender_allowed',
         'is_active',
-        'exercises_count',
-        'estimated_calories',
     ];
 
     /**
@@ -38,10 +31,10 @@ class Activity extends Model
     ];
 
     /**
-     * Get the activity type for the activity.
+     * Get the activities for the activity type.
      */
-    public function activityType()
+    public function activities()
     {
-        return $this->belongsTo(ActivityType::class);
+        return $this->hasMany(Activity::class);
     }
 }

@@ -117,9 +117,16 @@ class SubscriptionService
             ]);
 
             // 5. Create Subscription Items
+            $requestedActivities = collect($options['activities'] ?? []);
+
             foreach ($plan->planActivities as $planActivity) {
+                // Find if the user provided a specific coach for this activity
+                $requestedActivity = $requestedActivities->firstWhere('activity_id', $planActivity->activity_id);
+                $coachId = $requestedActivity['coach_id'] ?? null;
+
                 $subscription->items()->create([
                     'activity_id' => $planActivity->activity_id,
+                    'coach_id' => $coachId,
                     'sessions_allocated' => $planActivity->sessions_count,
                     'is_unlimited' => $planActivity->is_unlimited,
                 ]);

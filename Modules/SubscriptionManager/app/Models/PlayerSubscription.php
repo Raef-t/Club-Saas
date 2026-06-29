@@ -27,6 +27,7 @@ class PlayerSubscription extends Model
         'paid_amount' => 'decimal:2',
     ];
 
+
     public ?\Modules\Core\DTOs\MemberDTO $member = null;
 
     public function plan()

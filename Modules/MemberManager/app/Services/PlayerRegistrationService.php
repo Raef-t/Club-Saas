@@ -24,16 +24,7 @@ class PlayerRegistrationService
     public function registerPlayer(array $data)
     {
         return DB::transaction(function () use ($data) {
-            // 1. Validate Capacity for all requested plans first
-            foreach ($data['plans'] as $planData) {
-                $plan = SubscriptionPlan::findOrFail($planData['plan_id']);
-
-                if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                    throw ValidationException::withMessages([
-                        'plans' => ["خطة الاشتراك '{$plan->name}' مكتملة العدد ولا يمكن التسجيل بها."]
-                    ]);
-                }
-            }
+            // 1. (Removed plan validation)
 
             // 2. Handle Photo Upload
             $photoUrl = null;
@@ -96,35 +87,10 @@ class PlayerRegistrationService
                 $user->assignRole($role);
             }
 
-            // 7. Create Subscriptions
-            $subscriptions = [];
-            foreach ($data['plans'] as $planData) {
-                $options = [
-                    'paid_amount' => $planData['paid_amount'] ?? 0,
-                    // Note: start_date is intentionally omitted here to default to today, 
-                    // and end_date is calculated automatically inside subscribeMember
-                ];
-
-                $subscription = $this->subscriptionService->subscribeMember(
-                    $member->id,
-                    $planData['plan_id'],
-                    $options
-                );
-
-                $subscriptions[] = $subscription;
-
-                // Update plan subscribers count
-                $plan = SubscriptionPlan::find($planData['plan_id']);
-                if ($plan) {
-                    $plan->increment('current_subscribers');
-                }
-            }
-
-            // Return the created member along with their subscriptions, person data, and contacts
+            // Return the created member along with their person data, and contacts
             $member->load('person.contacts', 'measurements', 'healthProfile');
             return [
-                'member' => $member,
-                'subscriptions' => $subscriptions
+                'member' => $member
             ];
         });
     }

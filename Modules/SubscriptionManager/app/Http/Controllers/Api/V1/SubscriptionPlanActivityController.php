@@ -52,7 +52,9 @@ class SubscriptionPlanActivityController extends BaseController
             required: ['plan_id', 'activity_id'],
             properties: [
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1),
-                new OA\Property(property: 'activity_id', type: 'integer', example: 1)
+                new OA\Property(property: 'activity_id', type: 'integer', example: 1),
+                new OA\Property(property: 'sessions_count', type: 'integer', example: 12),
+                new OA\Property(property: 'is_unlimited', type: 'boolean', example: false)
             ]
         )
     )]
@@ -111,7 +113,9 @@ class SubscriptionPlanActivityController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'activity_id', type: 'integer', example: 2)
+                new OA\Property(property: 'activity_id', type: 'integer', example: 2),
+                new OA\Property(property: 'sessions_count', type: 'integer', example: 12),
+                new OA\Property(property: 'is_unlimited', type: 'boolean', example: false)
             ]
         )
     )]

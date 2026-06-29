@@ -9,6 +9,7 @@ class SubscriptionPlan extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'subscription_number',
         'name',
         'type',
         'duration_days',
@@ -20,6 +21,24 @@ class SubscriptionPlan extends Model
         'max_subscribers',
         'current_subscribers',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($plan) {
+            if (empty($plan->subscription_number)) {
+                $plan->subscription_number = self::generateUniqueSubscriptionNumber();
+            }
+        });
+    }
+
+    public static function generateUniqueSubscriptionNumber()
+    {
+        do {
+            $number = random_int(10000000, 99999999);
+        } while (self::where('subscription_number', $number)->exists());
+
+        return (string) $number;
+    }
 
     protected $casts = [
         'name' => 'json',
