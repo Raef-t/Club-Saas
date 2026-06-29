@@ -137,17 +137,22 @@ class AuthController extends BaseController
             'photo_url' => $person->photo_url ?? null,
             'gender' => $person->gender ?? null,
             'type' => $person->type ?? null,
+            'branch_id' => null,
         ];
 
         if ($personId) {
             $member = DB::table('members')->where('person_id', $personId)->first();
             if ($member) {
                 $userData['member_id'] = $member->id;
+                $userData['branch_id'] = $member->branch_id;
             }
 
             $staff = DB::table('staff')->where('person_id', $personId)->first();
             if ($staff) {
                 $userData['staff_id'] = $staff->id;
+                if ($staff->branch_id) {
+                    $userData['branch_id'] = $staff->branch_id;
+                }
             }
         }
 
@@ -269,7 +274,7 @@ class AuthController extends BaseController
     public function me(Request $request)
     {
         $user = clone $request->user();
-        $user->load('person');
+        $user->load(['person', 'person.contacts']);
 
         $personData = $user->person;
         $profileData = [
@@ -281,6 +286,8 @@ class AuthController extends BaseController
 
         // Enrich with member-specific data if the user is a player
         if ($personData) {
+            $profileData['contacts'] = $personData->contacts;
+
             $member = DB::table('members')->where('person_id', $personData->id)->first();
 
             if ($member) {
@@ -288,6 +295,8 @@ class AuthController extends BaseController
                     ->where('member_id', $member->id)
                     ->orderByDesc('measurement_date')
                     ->first();
+
+                $healthProfile = DB::table('member_health_profiles')->where('member_id', $member->id)->first();
 
                 $profileData['member'] = [
                     'id' => $member->id,
@@ -302,6 +311,8 @@ class AuthController extends BaseController
                     'bmi' => $latestMeasurement->bmi ? (float) $latestMeasurement->bmi : null,
                     'measured_at' => $latestMeasurement->measurement_date,
                 ] : null;
+
+                $profileData['health_profile'] = $healthProfile;
 
                 // Age from person dob
                 $profileData['age'] = $personData->dob
