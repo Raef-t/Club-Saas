@@ -8,8 +8,17 @@ class StoreMemberHealthProfileRequest extends FormRequest
     public function authorize() { return true; }
     public function rules() {
         return [
-            'member_id' => 'required|integer',
-            // Add other specific rules as needed
+            'member_id' => 'required|integer|exists:members,id',
+            'allergies' => 'nullable|string',
+            'organic_diseases' => 'nullable|string',
+            'physical_injuries' => 'nullable|string',
+            'medications' => 'nullable|string',
+            'blood_type' => 'nullable|string|max:10',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_country_code' => 'nullable|string|max:5',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'sport_goal' => 'nullable|string',
+            'fitness_level' => 'nullable|string',
         ];
     }
 }
