@@ -52,4 +52,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Person::class, 'person_id');
     }
+
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+    }
 }

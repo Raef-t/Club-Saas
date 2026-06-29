@@ -119,7 +119,9 @@ class AuthController extends BaseController
         }
 
         if (!empty($validated['fcm_token'])) {
-            $user->update(['fcm_token' => $validated['fcm_token']]);
+            $user->devices()->firstOrCreate([
+                'fcm_token' => $validated['fcm_token']
+            ]);
         }
 
         // Generate Token
@@ -166,9 +168,18 @@ class AuthController extends BaseController
     #[OA\Post(
         path: '/v1/auth/logout',
         summary: '🚪 تسجيل الخروج',
-        description: 'إبطال رمز الوصول الحالي للمستخدم وإنهاء الجلسة.',
+        description: 'إبطال رمز الوصول الحالي للمستخدم وإنهاء الجلسة. يتم حذف fcm_token الخاص بالجهاز في حال إرساله.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: 'رمز الـ FCM',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here'),
+            ]
+        )
     )]
     #[OA\Response(
         response: 200,
@@ -195,7 +206,10 @@ class AuthController extends BaseController
     {
         $user = $request->user();
         if ($user) {
-            $user->update(['fcm_token' => null]);
+            $fcmToken = $request->input('fcm_token');
+            if ($fcmToken) {
+                $user->devices()->where('fcm_token', $fcmToken)->delete();
+            }
             $user->currentAccessToken()->delete();
         }
         return $this->successResponse(null, __('Logged out successfully'));
