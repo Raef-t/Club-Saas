@@ -18,6 +18,7 @@ class ExtraServiceController extends Controller
         tags: ['Extra Services'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الخدمات بنجاح',
@@ -27,9 +28,13 @@ class ExtraServiceController extends Controller
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $services = ExtraService::all();
+        $query = ExtraService::query();
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+        $services = $query->get();
         return ExtraServiceResource::collection($services);
     }
 

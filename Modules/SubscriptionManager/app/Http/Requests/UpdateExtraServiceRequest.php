@@ -14,7 +14,8 @@ class UpdateExtraServiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|required|string|max:255',
+            'branch_id' => 'nullable|exists:branches,id',
+            'name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'default_price' => 'sometimes|required|numeric|min:0',
             'is_active' => 'boolean',

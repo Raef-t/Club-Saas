@@ -91,9 +91,9 @@ class CoachController extends Controller
             ),
             new OA\Response(
                 response: 422, 
-                description: 'Validation errors',
+                description: 'Validation errors (e.g., branch gender restriction mismatch)',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                    new OA\Property(property: 'message', type: 'string', example: 'لا يمكن إضافة هذا المدرب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.'),
                     new OA\Property(property: 'errors', type: 'object')
                 ])
             ),

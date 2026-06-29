@@ -16,6 +16,7 @@ class Activity extends Model
     protected $fillable = [
         'name',
         'description',
+        'branch_id',
         'activity_type_id',
         'default_capacity',
         'is_private_equipment',
@@ -43,5 +44,13 @@ class Activity extends Model
     public function activityType()
     {
         return $this->belongsTo(ActivityType::class);
+    }
+
+    /**
+     * Get the branch that owns the activity.
+     */
+    public function branch()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class);
     }
 }

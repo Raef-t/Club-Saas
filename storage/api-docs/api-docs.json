@@ -8180,7 +8180,23 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات (مثل اكتمال سعة الخطة)"
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات (مثل اكتمال سعة الخطة، أو عدم تطابق جنس اللاعب مع جنس الفرع المحدد)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن إضافة هذا اللاعب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "❌ غير مصرح"
@@ -10062,6 +10078,17 @@
                 "summary": "🏋️ عرض جميع الأنشطة الرياضية",
                 "description": "استرجاع قائمة بجميع الأنشطة (مثال: سباحة، حديد، يوجا).",
                 "operationId": "add003712eaa331f776f15d1feaed965",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الأنشطة بنجاح",
@@ -10565,6 +10592,17 @@
                 "summary": "📋 عرض جميع أنواع الأنشطة",
                 "description": "استرجاع قائمة بجميع أنواع الأنشطة الرياضية.",
                 "operationId": "d1bf4f6b012823495143265eabbc5aaf",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة أنواع الأنشطة",
@@ -13096,14 +13134,14 @@
                         }
                     },
                     "422": {
-                        "description": "Validation errors",
+                        "description": "Validation errors (e.g., branch gender restriction mismatch)",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "The given data was invalid."
+                                            "example": "لا يمكن إضافة هذا المدرب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع."
                                         },
                                         "errors": {
                                             "type": "object"
@@ -16834,6 +16872,17 @@
                 "summary": "🛠️ عرض الخدمات الإضافية",
                 "description": "استرجاع جميع الخدمات الإضافية المتاحة في النظام.",
                 "operationId": "302a4681e54b13a77ff86f26d24f07fe",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الخدمات بنجاح",
@@ -19435,6 +19484,17 @@
                 "summary": "📋 عرض جميع خطط الاشتراك",
                 "description": "استرجاع قائمة بجميع خطط الاشتراك المتوفرة في النادي.",
                 "operationId": "d777883f9934526c98bba1e8b8912722",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة خطط الاشتراك",
@@ -19658,6 +19718,17 @@
                 "summary": "📋 عرض خطط الاشتراك المتاحة للتسجيل",
                 "description": "استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.",
                 "operationId": "0fc0d09079618666903ab9e08650d14a",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة خطط الاشتراك المتاحة",

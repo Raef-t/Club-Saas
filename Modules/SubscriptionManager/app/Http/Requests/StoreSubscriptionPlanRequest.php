@@ -14,6 +14,7 @@ class StoreSubscriptionPlanRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'branch_id' => 'required|exists:branches,id',
             'name' => 'required|array',
             'name.ar' => 'required|string|max:150',
             'name.en' => 'nullable|string|max:150',

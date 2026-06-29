@@ -67,7 +67,16 @@ class PlayerRegistrationController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات (مثل اكتمال سعة الخطة)')]
+    #[OA\Response(
+        response: 422, 
+        description: '⚠️ خطأ في التحقق من صحة البيانات (مثل اكتمال سعة الخطة، أو عدم تطابق جنس اللاعب مع جنس الفرع المحدد)',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن إضافة هذا اللاعب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.'),
+                new OA\Property(property: 'errors', type: 'object')
+            ]
+        )
+    )]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function register(PlayerRegistrationRequest $request)
     {

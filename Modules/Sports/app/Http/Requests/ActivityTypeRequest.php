@@ -14,6 +14,7 @@ class ActivityTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'branch_id' => 'required|exists:branches,id',
             'name' => 'required|array',
             'name.ar' => 'required|string|max:255',
             'name.en' => 'required|string|max:255',

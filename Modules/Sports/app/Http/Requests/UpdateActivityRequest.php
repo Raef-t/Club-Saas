@@ -14,6 +14,7 @@ class UpdateActivityRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'branch_id' => 'nullable|exists:branches,id',
             'name' => 'nullable|array',
             'name.ar' => 'nullable|string|max:150',
             'name.en' => 'nullable|string|max:150',

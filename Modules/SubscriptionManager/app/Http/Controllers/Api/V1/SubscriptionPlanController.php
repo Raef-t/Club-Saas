@@ -25,6 +25,7 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك',
@@ -51,6 +52,10 @@ class SubscriptionPlanController extends BaseController
     {
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active();
         
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
         if ($request->boolean('available', true)) {
             $query->available();
         }
@@ -69,6 +74,7 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك المتاحة',
@@ -80,13 +86,18 @@ class SubscriptionPlanController extends BaseController
             ]
         )
     )]
-    public function registrationPlans()
+    public function registrationPlans(\Illuminate\Http\Request $request)
     {
         // Get active plans that have available capacity, and eager load their activities
-        $plans = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
             ->available()
-            ->with('planActivities')
-            ->get();
+            ->with('planActivities');
+            
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        $plans = $query->get();
             
         return $this->successResponse(
             \Modules\SubscriptionManager\Http\Resources\SubscriptionPlanRegistrationResource::collection($plans),

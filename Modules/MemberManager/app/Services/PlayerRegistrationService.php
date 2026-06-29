@@ -24,7 +24,14 @@ class PlayerRegistrationService
     public function registerPlayer(array $data)
     {
         return DB::transaction(function () use ($data) {
-            // 1. (Removed plan validation)
+            $branchId = $data['branch_id'] ?? 1;
+            $branch = \Modules\ClubManager\Models\Branch::find($branchId);
+            
+            if ($branch && $branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $data['gender']) {
+                throw ValidationException::withMessages([
+                    'gender' => 'لا يمكن إضافة هذا اللاعب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.'
+                ]);
+            }
 
             // 2. Handle Photo Upload
             $photoUrl = null;

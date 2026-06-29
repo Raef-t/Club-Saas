@@ -20,6 +20,7 @@ class ActivityController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الأنشطة بنجاح',
@@ -35,6 +36,10 @@ class ActivityController extends BaseController
     public function index(Request $request)
     {
         $query = Activity::with('activityType');
+
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
 
         if ($request->has('facility_id')) {
             $facility = Facility::find($request->facility_id);

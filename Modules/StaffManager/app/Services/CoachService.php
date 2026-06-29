@@ -26,6 +26,14 @@ class CoachService
     public function createCoach(array $data)
     {
         return DB::transaction(function () use ($data) {
+            $branch = \Modules\ClubManager\Models\Branch::find($data['branch_id']);
+            
+            if ($branch && $branch->gender_restriction !== 'mixed' && isset($data['gender']) && $branch->gender_restriction !== $data['gender']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'gender' => 'لا يمكن إضافة هذا المدرب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.'
+                ]);
+            }
+
             // 1. Create Person
             $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
             $person = Person::create([

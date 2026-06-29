@@ -9,6 +9,7 @@ class SubscriptionPlan extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'branch_id',
         'subscription_number',
         'name',
         'type',
@@ -69,5 +70,13 @@ class SubscriptionPlan extends Model
     public function planActivities()
     {
         return $this->hasMany(SubscriptionPlanActivity::class, 'plan_id');
+    }
+
+    /**
+     * Get the branch that owns the subscription plan.
+     */
+    public function branch()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class);
     }
 }

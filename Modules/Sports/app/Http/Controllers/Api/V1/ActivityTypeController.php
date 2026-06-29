@@ -17,6 +17,7 @@ class ActivityTypeController extends BaseController
         tags: ['Activity Types'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة أنواع الأنشطة',
@@ -43,9 +44,13 @@ class ActivityTypeController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $types = ActivityType::all();
+        $query = ActivityType::query();
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+        $types = $query->get();
         return $this->successResponse(
             ActivityTypeResource::collection($types),
             __('Activity types retrieved successfully')
