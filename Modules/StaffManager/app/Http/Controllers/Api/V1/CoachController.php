@@ -53,13 +53,58 @@ class CoachController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Coach created successfully'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 409, description: 'Conflict - Data already exists'),
-            new OA\Response(response: 422, description: 'Validation errors'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 201, 
+                description: 'Coach created successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach created successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 409, 
+                description: 'Conflict - Data already exists',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Conflict occurred while creating coach. The data might already exist.')
+                ])
+            ),
+            new OA\Response(
+                response: 422, 
+                description: 'Validation errors',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                    new OA\Property(property: 'errors', type: 'object')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while creating the coach.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function store(StoreCoachRequest $request)
@@ -93,11 +138,42 @@ class CoachController extends Controller
             new OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of coaches'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'List of coaches',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while retrieving coaches.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function index(Request $request)
@@ -125,12 +201,49 @@ class CoachController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Coach details'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'Coach details',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'object')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while retrieving the coach.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function show($id)
@@ -172,14 +285,65 @@ class CoachController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Coach updated successfully'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 409, description: 'Conflict'),
-            new OA\Response(response: 422, description: 'Validation errors'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'Coach updated successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach updated successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 409, 
+                description: 'Conflict',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Conflict occurred while updating coach.')
+                ])
+            ),
+            new OA\Response(
+                response: 422, 
+                description: 'Validation errors',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                    new OA\Property(property: 'errors', type: 'object')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while updating the coach.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function update(\Modules\StaffManager\Http\Requests\UpdateCoachRequest $request, $id)
@@ -230,14 +394,65 @@ class CoachController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Activities assigned successfully'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 409, description: 'Conflict'),
-            new OA\Response(response: 422, description: 'Validation errors'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'Activities assigned successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                    new OA\Property(property: 'message', type: 'string', example: 'Activities assigned successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 409, 
+                description: 'Conflict',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Conflict occurred.')
+                ])
+            ),
+            new OA\Response(
+                response: 422, 
+                description: 'Validation errors',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                    new OA\Property(property: 'errors', type: 'object')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while assigning activities.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function assignActivities(AssignCoachActivitiesRequest $request, $id)
@@ -272,12 +487,49 @@ class CoachController extends Controller
             new OA\Parameter(name: 'activityId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Activity removed successfully'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach or Activity not found'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'Activity removed successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Activity removed successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach or Activity not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while removing the activity.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function removeActivity($id, $activityId)
@@ -326,13 +578,58 @@ class CoachController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Certification uploaded successfully'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 422, description: 'Validation errors'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 201, 
+                description: 'Certification uploaded successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Certification uploaded successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Please provide either a file or a document_url')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 422, 
+                description: 'Validation errors',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                    new OA\Property(property: 'errors', type: 'object')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while uploading certification.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function uploadCertification(UploadCoachCertificationRequest $request, $id)
@@ -379,12 +676,50 @@ class CoachController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of certifications'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'List of certifications',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                    new OA\Property(property: 'message', type: 'string', example: 'Certifications retrieved successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while retrieving certifications.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function getCertifications($id)
@@ -419,12 +754,49 @@ class CoachController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Coach deleted successfully'),
-            new OA\Response(response: 400, description: 'Bad Request'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Forbidden'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 500, description: 'Server Error'),
+            new OA\Response(
+                response: 200, 
+                description: 'Coach deleted successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 400, 
+                description: 'Bad Request',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
+                ])
+            ),
+            new OA\Response(
+                response: 401, 
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+                ])
+            ),
+            new OA\Response(
+                response: 403, 
+                description: 'Forbidden',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while deleting the coach.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
         ]
     )]
     public function destroy($id)
