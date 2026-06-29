@@ -72,7 +72,7 @@ class ActivityController extends BaseController
                     ]
                 ),
                 new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
-                new OA\Property(property: 'type', type: 'string', description: '(اختياري) نوع النشاط: open_gym, group_class, personal_training', example: 'group_class'),
+                new OA\Property(property: 'type', description: '(اختياري) نوع النشاط', type: 'string', enum: ['open_gym', 'group_class', 'personal_training'], example: 'group_class'),
                 new OA\Property(property: 'default_capacity', type: 'integer', description: '(اختياري) السعة الافتراضية للنشاط', example: 20),
                 new OA\Property(property: 'is_private_equipment', type: 'boolean', description: '(اختياري) هل يتطلب معدات خاصة؟', example: false),
                 new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
@@ -146,7 +146,8 @@ class ActivityController extends BaseController
                         new OA\Property(property: 'ar', type: 'string', example: 'سباحة متقدمة'),
                         new OA\Property(property: 'en', type: 'string', example: 'Advanced Swimming')
                     ]
-                )
+                ),
+                new OA\Property(property: 'type', description: '(اختياري) نوع النشاط', type: 'string', enum: ['open_gym', 'group_class', 'personal_training'], example: 'group_class'),
             ]
         )
     )]

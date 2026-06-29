@@ -24,12 +24,16 @@ class Member extends Model
         'join_date' => 'date',
     ];
 
-    public ?\Modules\Core\DTOs\PersonDTO $person = null;
-    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
+
 
     public function person()
     {
         return $this->belongsTo(Person::class, 'person_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class, 'branch_id');
     }
 
     public function healthProfile()

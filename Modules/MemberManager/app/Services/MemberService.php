@@ -34,7 +34,7 @@ class MemberService
 
     public function getAllMembers(array $filters = [])
     {
-        $query = \Modules\MemberManager\Models\Member::query();
+        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch']);
 
         // 1. Filtering by Branch
         if (!empty($filters['branch_id'])) {
@@ -76,13 +76,7 @@ class MemberService
             });
         }
 
-        $members = $query->latest()->get();
-
-        foreach ($members as $member) {
-            $this->attachSharedDTOs($member);
-        }
-
-        return $members;
+        return $query->latest()->get();
     }
 
     /**
@@ -263,13 +257,12 @@ class MemberService
     }
 
     /**
-     * Helper to resolve and attach Person and Branch DTOs
+     * Helper to resolve and attach Person and Branch Eloquent Models
      */
     protected function attachSharedDTOs($member)
     {
         if ($member) {
-            $member->person = $member->person_id ? $this->personService->getPersonById($member->person_id) : null;
-            $member->branch = $member->branch_id ? $this->branchService->getBranchById($member->branch_id) : null;
+            $member->loadMissing(['person.contacts', 'branch']);
         }
         return $member;
     }

@@ -125,43 +125,38 @@ class CoachService
     }
 
     /**
-     * Update basic staff info for a coach.
+     * Update coach basic info and details.
      */
-    public function updateBasicInfo($id, array $data)
+    public function updateCoach($id, array $data)
     {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        
-        $fillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active', 'branch_id'];
-        $updateData = array_intersect_key($data, array_flip($fillable));
+        return DB::transaction(function () use ($id, $data) {
+            $staff = Staff::where('role', 'coach')->findOrFail($id);
+            
+            // Update Basic Info
+            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active', 'branch_id'];
+            $basicData = array_intersect_key($data, array_flip($basicFillable));
+            if (!empty($basicData)) {
+                $staff->update($basicData);
+            }
+            
+            // Update Details
+            $coachDetail = $staff->coachDetail;
+            if (!$coachDetail) {
+                $coachDetail = new CoachDetail(['staff_id' => $staff->id]);
+            }
 
-        if (!empty($updateData)) {
-            $staff->update($updateData);
-        }
+            $detailsFillable = ['specialization', 'bio', 'experience_years', 'working_hours_per_week', 'gym_type', 'payment_type', 'commission_type', 'default_commission_rate'];
+            $detailsData = array_intersect_key($data, array_flip($detailsFillable));
+            
+            if (!empty($detailsData) || !$coachDetail->exists) {
+                foreach ($detailsData as $key => $value) {
+                    $coachDetail->{$key} = $value;
+                }
+                $coachDetail->save();
+            }
 
-        return $staff->fresh(['coachDetail']);
-    }
-
-    /**
-     * Update coach specific details.
-     */
-    public function updateDetails($id, array $data)
-    {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        
-        $coachDetail = $staff->coachDetail;
-        if (!$coachDetail) {
-            $coachDetail = new CoachDetail(['staff_id' => $staff->id]);
-        }
-
-        $fillable = ['specialization', 'bio', 'experience_years', 'working_hours_per_week', 'gym_type', 'payment_type', 'commission_type', 'default_commission_rate'];
-        $updateData = array_intersect_key($data, array_flip($fillable));
-
-        foreach ($updateData as $key => $value) {
-            $coachDetail->{$key} = $value;
-        }
-        $coachDetail->save();
-
-        return $coachDetail;
+            return $this->getSingleCoach($staff->id);
+        });
     }
 
     /**

@@ -42,7 +42,7 @@ class CoachController extends Controller
                     new OA\Property(property: 'phone_number', type: 'string', example: '500000000'),
                     new OA\Property(property: 'country_code', type: 'string', example: '+966'),
                     new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'employment_type', type: 'string', example: 'fixed_salary'),
+                    new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                     new OA\Property(property: 'base_salary', type: 'number', example: 5000),
                     new OA\Property(property: 'specialization', type: 'string', example: 'Bodybuilding'),
                     new OA\Property(property: 'experience_years', type: 'integer', example: 5),
@@ -114,8 +114,8 @@ class CoachController extends Controller
 
     #[OA\Patch(
         path: '/v1/coaches/{id}',
-        summary: 'Update Coach Basic Info',
-        description: 'Update base salary, employment type, status, etc.',
+        summary: 'Update Coach Data',
+        description: 'Update base salary, employment type, status, specialization, bio, experience, etc.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -126,8 +126,10 @@ class CoachController extends Controller
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'base_salary', type: 'number', example: 6000),
-                    new OA\Property(property: 'employment_type', type: 'string', example: 'hybrid'),
+                    new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
                     new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'specialization', type: 'string', example: 'CrossFit'),
+                    new OA\Property(property: 'experience_years', type: 'integer', example: 7),
                 ]
             )
         ),
@@ -139,49 +141,13 @@ class CoachController extends Controller
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
-    public function updateBasicInfo(UpdateCoachBasicInfoRequest $request, $id)
+    public function update(\Modules\StaffManager\Http\Requests\UpdateCoachRequest $request, $id)
     {
-        $coach = $this->coachService->updateBasicInfo($id, $request->validated());
+        $coach = $this->coachService->updateCoach($id, $request->validated());
 
         return response()->json([
             'data' => new CoachResource($coach),
             'message' => 'Coach updated successfully'
-        ]);
-    }
-
-    #[OA\Patch(
-        path: '/v1/coaches/{id}/details',
-        summary: 'Update Coach Details',
-        description: 'Update specialization, bio, experience, etc.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'specialization', type: 'string', example: 'CrossFit'),
-                    new OA\Property(property: 'experience_years', type: 'integer', example: 7),
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: 'Coach details updated'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 404, description: 'Coach not found'),
-            new OA\Response(response: 422, description: 'Validation errors'),
-            new OA\Response(response: 500, description: 'Server Error'),
-        ]
-    )]
-    public function updateDetails(UpdateCoachDetailsRequest $request, $id)
-    {
-        $details = $this->coachService->updateDetails($id, $request->validated());
-
-        return response()->json([
-            'data' => $details,
-            'message' => 'Coach details updated successfully'
         ]);
     }
 
