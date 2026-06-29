@@ -50,10 +50,15 @@ class AuthController extends BaseController
                             type: 'object',
                             properties: [
                                 new OA\Property(property: 'id', type: 'integer', example: 1),
+                                new OA\Property(property: 'user_id', type: 'integer', example: 1),
+                                new OA\Property(property: 'person_id', type: 'integer', nullable: true, example: 5),
+                                new OA\Property(property: 'member_id', type: 'integer', nullable: true, example: 10),
+                                new OA\Property(property: 'staff_id', type: 'integer', nullable: true, example: 3),
                                 new OA\Property(property: 'username', type: 'string', example: 'admin'),
                                 new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
                                 new OA\Property(property: 'photo_url', type: 'string', nullable: true, example: 'https://example.com/photo.jpg'),
                                 new OA\Property(property: 'gender', type: 'string', nullable: true, example: 'male'),
+                                new OA\Property(property: 'type', type: 'string', nullable: true, example: 'player'),
                             ]
                         )
                     ]
@@ -120,16 +125,36 @@ class AuthController extends BaseController
         // Generate Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $person = $user->person;
+        $personId = $person ? $person->id : null;
+        
+        $userData = [
+            'id' => $user->id,
+            'user_id' => $user->id,
+            'person_id' => $personId,
+            'username' => $user->username,
+            'full_name' => $person->full_name ?? null,
+            'photo_url' => $person->photo_url ?? null,
+            'gender' => $person->gender ?? null,
+            'type' => $person->type ?? null,
+        ];
+
+        if ($personId) {
+            $member = DB::table('members')->where('person_id', $personId)->first();
+            if ($member) {
+                $userData['member_id'] = $member->id;
+            }
+
+            $staff = DB::table('staff')->where('person_id', $personId)->first();
+            if ($staff) {
+                $userData['staff_id'] = $staff->id;
+            }
+        }
+
         return $this->successResponse([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'username' => $user->username,
-                'full_name' => $user->person->full_name ?? null,
-                'photo_url' => $user->person->photo_url ?? null,
-                'gender' => $user->person->gender ?? null,
-            ]
+            'user' => $userData
         ], __('Logged in successfully'));
     }
 

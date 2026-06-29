@@ -3771,6 +3771,25 @@
                                                             "type": "integer",
                                                             "example": 1
                                                         },
+                                                        "user_id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "person_id": {
+                                                            "type": "integer",
+                                                            "example": 5,
+                                                            "nullable": true
+                                                        },
+                                                        "member_id": {
+                                                            "type": "integer",
+                                                            "example": 10,
+                                                            "nullable": true
+                                                        },
+                                                        "staff_id": {
+                                                            "type": "integer",
+                                                            "example": 3,
+                                                            "nullable": true
+                                                        },
                                                         "username": {
                                                             "type": "string",
                                                             "example": "admin"
@@ -3787,6 +3806,11 @@
                                                         "gender": {
                                                             "type": "string",
                                                             "example": "male",
+                                                            "nullable": true
+                                                        },
+                                                        "type": {
+                                                            "type": "string",
+                                                            "example": "player",
                                                             "nullable": true
                                                         }
                                                     },
