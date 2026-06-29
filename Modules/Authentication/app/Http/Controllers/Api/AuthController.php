@@ -286,8 +286,6 @@ class AuthController extends BaseController
 
         // Enrich with member-specific data if the user is a player
         if ($personData) {
-            $profileData['contacts'] = $personData->contacts;
-
             $member = DB::table('members')->where('person_id', $personData->id)->first();
 
             if ($member) {
