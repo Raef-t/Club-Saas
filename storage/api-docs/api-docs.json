@@ -10017,9 +10017,14 @@
                                         "example": "جلسة يوغا للمبتدئين"
                                     },
                                     "type": {
-                                        "description": "(اختياري) نوع النشاط: open_gym, group_class, personal_training",
+                                        "description": "(اختياري) نوع النشاط",
                                         "type": "string",
-                                        "example": "group_class"
+                                        "example": "group_class",
+                                        "enum": [
+                                            "open_gym",
+                                            "group_class",
+                                            "personal_training"
+                                        ]
                                     },
                                     "default_capacity": {
                                         "description": "(اختياري) السعة الافتراضية للنشاط",
@@ -10233,6 +10238,16 @@
                                             }
                                         },
                                         "type": "object"
+                                    },
+                                    "type": {
+                                        "description": "(اختياري) نوع النشاط",
+                                        "type": "string",
+                                        "example": "group_class",
+                                        "enum": [
+                                            "open_gym",
+                                            "group_class",
+                                            "personal_training"
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -12268,8 +12283,14 @@
                                         "example": 1
                                     },
                                     "employment_type": {
+                                        "description": "نوع التوظيف",
                                         "type": "string",
-                                        "example": "fixed_salary"
+                                        "example": "fixed_salary",
+                                        "enum": [
+                                            "fixed_salary",
+                                            "commission_based",
+                                            "hybrid"
+                                        ]
                                     },
                                     "base_salary": {
                                         "type": "number",
@@ -12389,9 +12410,9 @@
                 "tags": [
                     "Coach Management"
                 ],
-                "summary": "Update Coach Basic Info",
-                "description": "Update base salary, employment type, status, etc.",
-                "operationId": "1a79a21a68d83da7b42c68dc41d8dfce",
+                "summary": "Update Coach Data",
+                "description": "Update base salary, employment type, status, specialization, bio, experience, etc.",
+                "operationId": "1c1b09733daf8b2bdc0ee2644da36794",
                 "parameters": [
                     {
                         "name": "id",
@@ -12413,67 +12434,19 @@
                                         "example": 6000
                                     },
                                     "employment_type": {
+                                        "description": "نوع التوظيف",
                                         "type": "string",
-                                        "example": "hybrid"
+                                        "example": "hybrid",
+                                        "enum": [
+                                            "fixed_salary",
+                                            "commission_based",
+                                            "hybrid"
+                                        ]
                                     },
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Coach updated successfully"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    },
-                    "404": {
-                        "description": "Coach not found"
-                    },
-                    "422": {
-                        "description": "Validation errors"
-                    },
-                    "500": {
-                        "description": "Server Error"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/details": {
-            "patch": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Update Coach Details",
-                "description": "Update specialization, bio, experience, etc.",
-                "operationId": "d7dc117425139a2f05205bb3d8992527",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
+                                    },
                                     "specialization": {
                                         "type": "string",
                                         "example": "CrossFit"
@@ -12490,7 +12463,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Coach details updated"
+                        "description": "Coach updated successfully"
                     },
                     "401": {
                         "description": "Unauthenticated"

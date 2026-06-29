@@ -12,6 +12,9 @@ use Modules\StaffManager\Http\Requests\AssignCoachActivitiesRequest;
 use Modules\StaffManager\Http\Requests\UploadCoachCertificationRequest;
 use Modules\StaffManager\Http\Resources\CoachResource;
 use OpenApi\Attributes as OA;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
+use Exception;
 
 #[OA\Tag(name: 'Coach Management', description: 'API Endpoints for managing coaches')]
 class CoachController extends Controller
@@ -51,19 +54,33 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 201, description: 'Coach created successfully'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 409, description: 'Conflict - Data already exists'),
             new OA\Response(response: 422, description: 'Validation errors'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function store(StoreCoachRequest $request)
     {
-        $coach = $this->coachService->createCoach($request->validated());
+        try {
+            $coach = $this->coachService->createCoach($request->validated());
 
-        return response()->json([
-            'data' => new CoachResource($coach),
-            'message' => 'Coach created successfully'
-        ], 201);
+            return response()->json([
+                'data' => new CoachResource($coach),
+                'message' => 'Coach created successfully'
+            ], 201);
+        } catch (QueryException $e) {
+            return response()->json([
+                'message' => 'Conflict occurred while creating coach. The data might already exist.'
+            ], 409);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while creating the coach.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Get(
@@ -77,17 +94,25 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'List of coaches'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function index(Request $request)
     {
-        $filters = $request->only(['branch_id']);
-        
-        $coaches = $this->coachService->getAllCoaches($filters);
+        try {
+            $filters = $request->only(['branch_id']);
+            $coaches = $this->coachService->getAllCoaches($filters);
 
-        return CoachResource::collection($coaches);
+            return CoachResource::collection($coaches);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while retrieving coaches.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Get(
@@ -101,15 +126,28 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'Coach details'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach not found'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function show($id)
     {
-        $coach = $this->coachService->getSingleCoach($id);
-        return new CoachResource($coach);
+        try {
+            $coach = $this->coachService->getSingleCoach($id);
+            return new CoachResource($coach);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while retrieving the coach.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Patch(
@@ -135,20 +173,38 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 200, description: 'Coach updated successfully'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 409, description: 'Conflict'),
             new OA\Response(response: 422, description: 'Validation errors'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function update(\Modules\StaffManager\Http\Requests\UpdateCoachRequest $request, $id)
     {
-        $coach = $this->coachService->updateCoach($id, $request->validated());
+        try {
+            $coach = $this->coachService->updateCoach($id, $request->validated());
 
-        return response()->json([
-            'data' => new CoachResource($coach),
-            'message' => 'Coach updated successfully'
-        ]);
+            return response()->json([
+                'data' => new CoachResource($coach),
+                'message' => 'Coach updated successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'message' => 'Conflict occurred while updating coach.'
+            ], 409);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the coach.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Post(
@@ -175,21 +231,35 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 200, description: 'Activities assigned successfully'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach not found'),
+            new OA\Response(response: 409, description: 'Conflict'),
             new OA\Response(response: 422, description: 'Validation errors'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function assignActivities(AssignCoachActivitiesRequest $request, $id)
     {
-        $validated = $request->validated();
-        $coach = $this->coachService->assignActivities($id, $validated['activity_ids']);
+        try {
+            $validated = $request->validated();
+            $coach = $this->coachService->assignActivities($id, $validated['activity_ids']);
 
-        return response()->json([
-            'data' => $coach->activities,
-            'message' => 'Activities assigned successfully'
-        ]);
+            return response()->json([
+                'data' => $coach->activities,
+                'message' => 'Activities assigned successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while assigning activities.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Delete(
@@ -203,15 +273,30 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'Activity removed successfully'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach or Activity not found'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function removeActivity($id, $activityId)
     {
-        $this->coachService->removeActivity($id, $activityId);
-        return response()->json(['message' => 'Activity removed successfully']);
+        try {
+            $this->coachService->removeActivity($id, $activityId);
+            return response()->json([
+                'message' => 'Activity removed successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while removing the activity.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Post(
@@ -242,7 +327,9 @@ class CoachController extends Controller
         ),
         responses: [
             new OA\Response(response: 201, description: 'Certification uploaded successfully'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach not found'),
             new OA\Response(response: 422, description: 'Validation errors'),
             new OA\Response(response: 500, description: 'Server Error'),
@@ -250,18 +337,37 @@ class CoachController extends Controller
     )]
     public function uploadCertification(UploadCoachCertificationRequest $request, $id)
     {
-        $validated = $request->validated();
+        try {
+            $validated = $request->validated();
 
-        if (empty($validated['file']) && empty($validated['document_url'])) {
-            return response()->json(['message' => 'Please provide either a file or a document_url'], 422);
+            if (empty($validated['file']) && empty($validated['document_url'])) {
+                return response()->json([
+                    'message' => 'Please provide either a file or a document_url'
+                ], 422);
+            }
+
+            $certification = $this->coachService->uploadCertification($id, $validated);
+
+            return response()->json([
+                'data' => $certification,
+                'message' => 'Certification uploaded successfully'
+            ], 201);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            // CoachService throws Exception for missing details
+            if ($e->getMessage() === 'Coach details not found.' || $e->getMessage() === 'A document file or URL is required.') {
+                return response()->json([
+                    'message' => $e->getMessage()
+                ], 400);
+            }
+            return response()->json([
+                'message' => 'An error occurred while uploading certification.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $certification = $this->coachService->uploadCertification($id, $validated);
-
-        return response()->json([
-            'data' => $certification,
-            'message' => 'Certification uploaded successfully'
-        ], 201);
     }
 
     #[OA\Get(
@@ -274,18 +380,33 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'List of certifications'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach not found'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function getCertifications($id)
     {
-        $coach = $this->coachService->getSingleCoach($id);
-        
-        $certifications = $coach->coachDetail ? $coach->coachDetail->certifications : [];
+        try {
+            $coach = $this->coachService->getSingleCoach($id);
+            $certifications = $coach->coachDetail ? $coach->coachDetail->certifications : [];
 
-        return response()->json(['data' => $certifications]);
+            return response()->json([
+                'data' => $certifications,
+                'message' => 'Certifications retrieved successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while retrieving certifications.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     #[OA\Delete(
@@ -299,14 +420,29 @@ class CoachController extends Controller
         ],
         responses: [
             new OA\Response(response: 200, description: 'Coach deleted successfully'),
+            new OA\Response(response: 400, description: 'Bad Request'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Coach not found'),
             new OA\Response(response: 500, description: 'Server Error'),
         ]
     )]
     public function destroy($id)
     {
-        $this->coachService->deleteCoach($id);
-        return response()->json(['message' => 'Coach deleted successfully']);
+        try {
+            $this->coachService->deleteCoach($id);
+            return response()->json([
+                'message' => 'Coach deleted successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while deleting the coach.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
