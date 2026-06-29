@@ -7617,20 +7617,17 @@
                 ]
             }
         },
-        "/v1/player/health-profile": {
+        "/v1/member/health-profiles": {
             "get": {
                 "tags": [
                     "Member Health Profiles"
                 ],
-                "summary": "🏥 جلب الملف الصحي للاعب",
-                "description": "استرجاع الملف الصحي للاعب المسجل دخوله حالياً.",
-                "operationId": "6ceaec1eca02cd0ede2a9e9947fbd0af",
+                "summary": "🏥 جلب جميع السجلات الصحية",
+                "description": "استرجاع جميع السجلات الصحية للأعضاء.",
+                "operationId": "ea758b81d8b12185b51ab5bb3972e742",
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع الملف الصحي بنجاح"
-                    },
-                    "403": {
-                        "description": "🚫 لا يوجد حساب لاعب مرتبط"
+                        "description": "✅ تم الاسترجاع بنجاح"
                     }
                 },
                 "security": [
@@ -7639,19 +7636,26 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Member Health Profiles"
                 ],
-                "summary": "📝 تحديث الملف الصحي للاعب",
-                "description": "تحديث أو إنشاء الملف الصحي للاعب المسجل دخوله حالياً.",
-                "operationId": "e6a1527a1b6bcff2eaad986385616b1d",
+                "summary": "➕ إنشاء سجل صحي جديد",
+                "description": "إنشاء سجل صحي جديد لعضو باستخدام معرف العضو (member_id).",
+                "operationId": "55dfb411e69058765120cdf790e7d71c",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "member_id"
+                                ],
                                 "properties": {
+                                    "member_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "allergies": {
                                         "type": "string",
                                         "example": "حساسية من البنسلين"
@@ -7671,8 +7675,338 @@
                     }
                 },
                 "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء السجل الصحي بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/member/health-profiles/{id}": {
+            "get": {
+                "tags": [
+                    "Member Health Profiles"
+                ],
+                "summary": "🔍 جلب سجل صحي محدد",
+                "description": "استرجاع تفاصيل سجل صحي معين بواسطة معرف السجل.",
+                "operationId": "0bc69ebcb1be6d0aeb71893ad6945712",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السجل الصحي",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع السجل الصحي بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Member Health Profiles"
+                ],
+                "summary": "📝 تعديل سجل صحي",
+                "description": "تعديل بيانات سجل صحي محدد.",
+                "operationId": "b304aa7805efb334ff1dc0dba3bd8dc7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السجل الصحي",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "allergies": {
+                                        "type": "string",
+                                        "example": "حساسية من البنسلين"
+                                    },
+                                    "blood_type": {
+                                        "type": "string",
+                                        "example": "A+"
+                                    },
+                                    "sport_goal": {
+                                        "type": "string",
+                                        "example": "بناء العضلات"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التعديل بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Member Health Profiles"
+                ],
+                "summary": "🗑️ حذف سجل صحي",
+                "description": "حذف سجل صحي محدد.",
+                "operationId": "7fc6645e2b56600169cec476d70145df",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السجل الصحي",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الحذف بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/member/measurements": {
+            "get": {
+                "tags": [
+                    "Member Measurements"
+                ],
+                "summary": "📏 جلب جميع القياسات",
+                "description": "استرجاع جميع سجلات القياسات. يمكن التصفية حسب العضو لعرض قياسات شخص محدد.",
+                "operationId": "9bbb9b0d95221c358871cb5a6fd0d9ca",
+                "parameters": [
+                    {
+                        "name": "member_id",
+                        "in": "query",
+                        "description": "معرف العضو (ID) لعرض قياساته فقط",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الاسترجاع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Member Measurements"
+                ],
+                "summary": "➕ إضافة قياس جديد",
+                "description": "إنشاء سجل قياس جديد لعضو محدد باستخدام معرف العضو (member_id).",
+                "operationId": "7cc7a3fc183194dc607fd9a0313bab44",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "member_id",
+                                    "weight"
+                                ],
+                                "properties": {
+                                    "member_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "weight": {
+                                        "type": "number",
+                                        "example": 75.5
+                                    },
+                                    "height": {
+                                        "type": "number",
+                                        "example": 178
+                                    },
+                                    "measurement_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-10-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إضافة القياس بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/member/measurements/{id}": {
+            "get": {
+                "tags": [
+                    "Member Measurements"
+                ],
+                "summary": "🔍 عرض قياس محدد",
+                "description": "استرجاع تفاصيل سجل قياس معين بواسطة معرف القياس (ID).",
+                "operationId": "9cb7a0666838bba6d3abde973e05cfef",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل القياس",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع القياس بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Member Measurements"
+                ],
+                "summary": "📝 تحديث سجل قياس",
+                "description": "تعديل بيانات سجل قياس محدد (مثل التحديث حسب تاريخ معين عبر تمرير measurement_date).",
+                "operationId": "56f7cf86d15c86e9dea1a7a6a5f5cec1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل القياس",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "weight": {
+                                        "type": "number",
+                                        "example": 74
+                                    },
+                                    "measurement_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-10-05"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
                     "200": {
                         "description": "✅ تم التحديث بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Member Measurements"
+                ],
+                "summary": "🗑️ حذف سجل قياس",
+                "description": "حذف سجل قياس محدد بواسطة المعرف (ID).",
+                "operationId": "73f89f115ac9a579857558550e8c6d18",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل القياس",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الحذف بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
                     }
                 },
                 "security": [
@@ -7808,58 +8142,6 @@
                 ]
             }
         },
-        "/v1/player/health-profiles": {
-            "get": {
-                "tags": [
-                    "Member Health Profiles"
-                ],
-                "summary": "🏥 عرض جميع السجلات الصحية للاعبين",
-                "description": "استرجاع جميع السجلات الصحية لجميع اللاعبين.",
-                "operationId": "fcf0028b718f784dcd97558bd7e408b8",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الاسترجاع بنجاح"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/player/health-profiles/{id}": {
-            "delete": {
-                "tags": [
-                    "Member Health Profiles"
-                ],
-                "summary": "🗑️ حذف سجل صحي للاعب",
-                "description": "حذف سجل صحي معين بواسطة المعرف.",
-                "operationId": "421ef6e0d1e7d9b71f5705909962cd38",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف السجل الصحي",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الحذف بنجاح"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/player/all-measurements": {
             "get": {
                 "tags": [
@@ -7966,6 +8248,11 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "1995-10-25"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "شارع الملك فهد، الرياض",
+                                        "nullable": true
                                     },
                                     "branch_id": {
                                         "type": "integer",
@@ -8149,6 +8436,11 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "1995-10-25"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "شارع الملك فهد، الرياض",
+                                        "nullable": true
                                     },
                                     "branch_id": {
                                         "type": "integer",

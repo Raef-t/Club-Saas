@@ -47,6 +47,7 @@ class PlayerRegistrationService
                 'gender' => $data['gender'],
                 'age' => $data['age'] ?? null,
                 'dob' => $data['dob'] ?? null,
+                'address' => $data['address'] ?? null,
                 'photo_url' => $photoUrl,
                 'type' => 'player',
             ]);
@@ -154,7 +155,8 @@ class PlayerRegistrationService
                 $personData['full_name'] = trim($firstName . ' ' . $lastName);
             }
             if (isset($data['gender'])) $personData['gender'] = $data['gender'];
-            if (isset($data['dob'])) $personData['dob'] = $data['dob'];
+            if (array_key_exists('dob', $data)) $personData['dob'] = $data['dob'];
+            if (array_key_exists('address', $data)) $personData['address'] = $data['address'];
             if (isset($data['photo_url'])) $personData['photo_url'] = $data['photo_url'];
 
             if (!empty($personData)) {

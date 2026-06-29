@@ -20,6 +20,7 @@ class UpdatePlayerRequest extends FormRequest
             'mobile' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female',
             'dob' => 'nullable|date',
+            'address' => 'nullable|string|max:500',
             'photo' => 'nullable|image|max:2048',
             
             'additional_contacts' => 'nullable|array',

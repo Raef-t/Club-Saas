@@ -37,6 +37,7 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
                 new OA\Property(property: 'age', type: 'integer', example: 25),
                 new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
+                new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
                 new OA\Property(
                     property: 'additional_contacts',
@@ -109,6 +110,7 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
                 new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
+                new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
                 new OA\Property(
                     property: 'additional_contacts',

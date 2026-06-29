@@ -27,60 +27,6 @@ class PlayerProfileController extends BaseController
         return $user->person->member->id;
     }
 
-    #[OA\Get(
-        path: '/v1/player/health-profile',
-        summary: '🏥 جلب الملف الصحي للاعب',
-        description: 'استرجاع الملف الصحي للاعب المسجل دخوله حالياً.',
-        tags: ['Member Health Profiles'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الملف الصحي بنجاح')]
-    #[OA\Response(response: 403, description: '🚫 لا يوجد حساب لاعب مرتبط')]
-    public function getHealthProfile(Request $request)
-    {
-        $memberId = $this->getMemberId($request);
-        if (!$memberId) {
-            return $this->errorResponse(__('No player account linked to this user.'), 403);
-        }
-
-        $profile = $this->memberService->getHealthProfile($memberId);
-        return $this->successResponse($profile, __('Health profile retrieved'));
-    }
-
-    #[OA\Put(
-        path: '/v1/player/health-profile',
-        summary: '📝 تحديث الملف الصحي للاعب',
-        description: 'تحديث أو إنشاء الملف الصحي للاعب المسجل دخوله حالياً.',
-        tags: ['Member Health Profiles'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'allergies', type: 'string', example: 'حساسية من البنسلين'),
-                new OA\Property(property: 'blood_type', type: 'string', example: 'O+'),
-                new OA\Property(property: 'sport_goal', type: 'string', example: 'خسارة الوزن')
-            ]
-        )
-    )]
-    #[OA\Response(response: 200, description: '✅ تم التحديث بنجاح')]
-    public function updateHealthProfile(UpdatePlayerHealthProfileRequest $request)
-    {
-        $memberId = $this->getMemberId($request);
-        if (!$memberId) {
-            return $this->errorResponse(__('No player account linked to this user.'), 403);
-        }
-
-        // We can reuse updateMember from MemberService which handles health_profile creation/updating
-        // Or we can just do it directly. Let's use updateMember.
-        $this->memberService->updateMember($memberId, [
-            'health_profile' => $request->validated()
-        ]);
-
-        $profile = $this->memberService->getHealthProfile($memberId);
-        return $this->successResponse($profile, __('Health profile updated successfully'));
-    }
 
     #[OA\Get(
         path: '/v1/player/measurements',
@@ -150,41 +96,7 @@ class PlayerProfileController extends BaseController
         $measurement = $this->memberService->recordMeasurement($memberId, $data);
         return $this->successResponse($measurement, __('Measurement added successfully'), 201);
     }
-    #[OA\Get(
-        path: '/v1/player/health-profiles',
-        summary: '🏥 عرض جميع السجلات الصحية للاعبين',
-        description: 'استرجاع جميع السجلات الصحية لجميع اللاعبين.',
-        tags: ['Member Health Profiles'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
-    public function getAllHealthProfiles()
-    {
-        if (!request()->user() || !request()->user()->hasRole('super_admin')) {
-            return $this->errorResponse(__('Unauthorized'), 403);
-        }
-        $profiles = \Modules\MemberManager\Models\MemberHealthProfile::with('member')->get();
-        return $this->successResponse($profiles, __('All health profiles retrieved successfully'));
-    }
 
-    #[OA\Delete(
-        path: '/v1/player/health-profiles/{id}',
-        summary: '🗑️ حذف سجل صحي للاعب',
-        description: 'حذف سجل صحي معين بواسطة المعرف.',
-        tags: ['Member Health Profiles'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف السجل الصحي', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
-    public function deleteHealthProfile($id)
-    {
-        if (!request()->user() || !request()->user()->hasRole('super_admin')) {
-            return $this->errorResponse(__('Unauthorized'), 403);
-        }
-        $profile = \Modules\MemberManager\Models\MemberHealthProfile::findOrFail($id);
-        $profile->delete();
-        return $this->successResponse(null, __('Health profile deleted successfully'));
-    }
     #[OA\Get(
         path: '/v1/player/all-measurements',
         summary: '📏 عرض جميع قياسات اللاعبين',

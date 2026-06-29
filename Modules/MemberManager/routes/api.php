@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 
 use Modules\MemberManager\Http\Controllers\Api\V1\PlayerRegistrationController;
-use Modules\MemberManager\Http\Controllers\Api\V1\PlayerProfileController;
+use Modules\MemberManager\Http\Controllers\Api\V1\MemberHealthProfileController;
+use Modules\MemberManager\Http\Controllers\Api\V1\MemberMeasurementController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Player Registration & Updates
@@ -14,17 +15,24 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::delete('members/{id}', [PlayerRegistrationController::class, 'destroy']);
 
 
-    // Player App Endpoints (Authenticated as Player)
-    Route::prefix('player')->group(function () {
-        Route::get('health-profiles', [PlayerProfileController::class, 'getAllHealthProfiles']);
-        Route::delete('health-profiles/{id}', [PlayerProfileController::class, 'deleteHealthProfile']);
-        Route::get('health-profile', [PlayerProfileController::class, 'getHealthProfile']);
-        Route::put('health-profile', [PlayerProfileController::class, 'updateHealthProfile']);
-        Route::get('measurements', [PlayerProfileController::class, 'getMeasurements']);
-        Route::post('measurements', [PlayerProfileController::class, 'addMeasurement']);
-        Route::get('all-measurements', [PlayerProfileController::class, 'getAllMeasurements']);
-        Route::delete('measurements/{id}', [PlayerProfileController::class, 'deleteMeasurement']);
+    // Member Health Profiles CRUD
+    Route::prefix('member/health-profiles')->group(function () {
+        Route::get('/', [MemberHealthProfileController::class, 'index']);
+        Route::post('/', [MemberHealthProfileController::class, 'store']);
+        Route::get('{id}', [MemberHealthProfileController::class, 'show']);
+        Route::put('{id}', [MemberHealthProfileController::class, 'update']);
+        Route::delete('{id}', [MemberHealthProfileController::class, 'destroy']);
     });
+
+    // Member Measurements CRUD
+    Route::prefix('member/measurements')->group(function () {
+        Route::get('/', [MemberMeasurementController::class, 'index']);
+        Route::post('/', [MemberMeasurementController::class, 'store']);
+        Route::get('{id}', [MemberMeasurementController::class, 'show']);
+        Route::put('{id}', [MemberMeasurementController::class, 'update']);
+        Route::delete('{id}', [MemberMeasurementController::class, 'destroy']);
+    });
+
 
     // Player Unavailabilities
     Route::get('members/{member}/unavailabilities', [\Modules\MemberManager\Http\Controllers\Api\V1\PlayerUnavailabilityController::class, 'index']);

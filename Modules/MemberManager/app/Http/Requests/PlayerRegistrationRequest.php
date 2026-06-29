@@ -22,6 +22,7 @@ class PlayerRegistrationRequest extends FormRequest
             'gender' => 'required|in:male,female',
             'age' => 'required|integer|min:4|max:100',
             'dob' => 'nullable|date',
+            'address' => 'nullable|string|max:500',
             'photo' => 'nullable|image|max:2048', // max 2MB
             
             // Additional Contacts array
