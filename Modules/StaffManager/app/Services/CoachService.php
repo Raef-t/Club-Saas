@@ -12,9 +12,14 @@ use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\PersonContact;
 use Modules\Authentication\Models\User;
 use Modules\Sports\Models\Activity;
+use Modules\Authentication\Services\PersonQrCodeService;
 
 class CoachService
 {
+    public function __construct(
+        protected PersonQrCodeService $qrCodeService
+    ) {}
+
     /**
      * Create a new coach, along with person, user, and details in one transaction.
      */
@@ -53,8 +58,6 @@ class CoachService
                 $username = $firstNameStr . $randomNumber;
             } while (User::where('username', $username)->exists());
 
-            // 3. Generate QR Code
-            $qrCode = 'QR-' . Str::uuid()->toString();
 
             // 4. Create User
             $user = User::create([
@@ -79,10 +82,12 @@ class CoachService
                 'shift_type'      => $data['shift_type'] ?? null,
                 'work_type'       => $data['work_type'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
-                'qr_code'         => $qrCode,
             ]);
 
-            // 6. Create Coach Detail
+            // 6. Generate 7 QR codes for this coach
+            $this->qrCodeService->generateForPerson($person->id);
+
+            // 7. Create Coach Detail
             CoachDetail::create([
                 'staff_id'               => $staff->id,
                 'specialization'         => $data['specialization'] ?? null,

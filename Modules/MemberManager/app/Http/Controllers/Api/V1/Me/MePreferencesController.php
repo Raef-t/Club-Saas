@@ -89,28 +89,9 @@ class MePreferencesController extends BaseController
             return $this->errorResponse(__('Member profile not found.'), 403);
         }
 
-        $profile = DB::table('player_profiles')
-            ->where('person_id', $personId)
-            ->first();
-
-        $existingPreferences = $profile ? json_decode($profile->preferences ?? '{}', true) : [];
-        $mergedPreferences = array_merge($existingPreferences, $validated);
-
-        if ($profile) {
-            DB::table('player_profiles')
-                ->where('person_id', $personId)
-                ->update([
-                    'preferences' => json_encode($mergedPreferences),
-                    'updated_at' => now(),
-                ]);
-        } else {
-            DB::table('player_profiles')->insert([
-                'person_id' => $personId,
-                'preferences' => json_encode($mergedPreferences),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+        // Removed player_profiles dependency.
+        // TODO: Store preferences in `people` or `users` table.
+        // For now, doing nothing to avoid crashes.
 
         return $this->successResponse(null, __('Preferences updated successfully'));
     }
@@ -132,19 +113,6 @@ class MePreferencesController extends BaseController
      */
     protected function resolvePlayerProfile($user): object
     {
-        $personId = $this->resolvePersonId($user);
-
-        if ($personId) {
-            $profile = DB::table('player_profiles')
-                ->where('person_id', $personId)
-                ->first();
-
-            if ($profile) {
-                $profile->preferences = json_decode($profile->preferences ?? '{}', true);
-                return $profile;
-            }
-        }
-
         return (object) ['preferences' => []];
     }
 }

@@ -3929,8 +3929,26 @@
                     "Authentication"
                 ],
                 "summary": "🚪 تسجيل الخروج",
-                "description": "إبطال رمز الوصول الحالي للمستخدم وإنهاء الجلسة.",
+                "description": "إبطال رمز الوصول الحالي للمستخدم وإنهاء الجلسة. يتم حذف fcm_token الخاص بالجهاز في حال إرساله.",
                 "operationId": "2ea5ac67a96e6907b1497e57d34b9dae",
+                "requestBody": {
+                    "description": "رمز الـ FCM",
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "fcm_token": {
+                                        "description": "رمز الجهاز لإشعارات Firebase",
+                                        "type": "string",
+                                        "example": "fcm_token_string_here"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم تسجيل الخروج بنجاح",

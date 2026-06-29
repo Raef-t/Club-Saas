@@ -25,7 +25,6 @@ class Staff extends Model
         'work_type',
         'work_status',
         'other_tasks',
-        'qr_code',
     ];
 
     protected $casts = [

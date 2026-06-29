@@ -14,7 +14,6 @@ class Member extends Model
         'branch_id',
         'person_id',
         'member_number',
-        'barcode_qr_code',
         'membership_status',
         'join_date',
         'how_heard_about_us',

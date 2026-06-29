@@ -7,6 +7,8 @@ use Modules\Core\DTOs\MemberDTO;
 use Modules\Core\DTOs\PersonDTO;
 use Modules\MemberManager\Repositories\MemberRepositoryInterface;
 use Modules\Core\Contracts\PersonSharedServiceInterface;
+use Modules\Authentication\Services\PersonQrCodeService;
+use Modules\Authentication\Models\PersonQrCode;
 
 class MemberSharedService implements MemberSharedServiceInterface
 {
@@ -36,7 +38,13 @@ class MemberSharedService implements MemberSharedServiceInterface
 
     public function getMemberByBarcode(string $barcode): ?MemberDTO
     {
-        $member = $this->repository->findByBarcode($barcode);
+        // Look up which person owns this QR code
+        $qrRecord = PersonQrCode::where('code', $barcode)->first();
+        if (!$qrRecord) {
+            return null;
+        }
+
+        $member = $this->repository->findByPersonId($qrRecord->person_id);
         if (!$member) {
             return null;
         }
@@ -56,7 +64,7 @@ class MemberSharedService implements MemberSharedServiceInterface
             personId: $member->person_id,
             branchId: $member->branch_id,
             memberNumber: $member->member_number,
-            barcode: $member->barcode_qr_code,
+            barcode: null, // QR codes are now in person_qr_codes table
             status: $member->membership_status,
             isActive: (bool)$member->isActive,
             person: $personDTO

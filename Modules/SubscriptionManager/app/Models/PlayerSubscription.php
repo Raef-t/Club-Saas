@@ -10,7 +10,6 @@ class PlayerSubscription extends Model
 
     protected $fillable = [
         'member_id',
-        'coach_id',
         'plan_id',
         'total_amount',
         'paid_amount',

@@ -39,8 +39,17 @@ class EloquentMemberRepository implements MemberRepositoryInterface
         return Member::where('member_number', $number)->first();
     }
 
+    public function findByPersonId(int $personId): ?Member
+    {
+        return Member::where('person_id', $personId)->whereNull('deleted_at')->first();
+    }
+
+    /**
+     * @deprecated QR codes are now in person_qr_codes table.
+     * Use PersonQrCodeService + findByPersonId instead.
+     */
     public function findByBarcode($barcode)
     {
-        return Member::where('barcode_qr_code', $barcode)->first();
+        return null; // Legacy - no longer supported
     }
 }

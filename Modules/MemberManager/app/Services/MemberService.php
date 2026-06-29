@@ -12,6 +12,7 @@ use Modules\Core\Contracts\BranchSharedServiceInterface;
 use Modules\ClubManager\Models\Branch;
 use Modules\ClubManager\Models\ClubSetting;
 use Modules\Authentication\Models\User;
+use Modules\Authentication\Services\PersonQrCodeService;
 
 class MemberService
 {
@@ -19,17 +20,20 @@ class MemberService
     protected $genderRule;
     protected $personService;
     protected $branchService;
+    protected $qrCodeService;
 
     public function __construct(
         MemberRepositoryInterface $repository,
         MemberGenderMatchRule $genderRule,
         PersonSharedServiceInterface $personService,
-        BranchSharedServiceInterface $branchService
+        BranchSharedServiceInterface $branchService,
+        PersonQrCodeService $qrCodeService
     ) {
-        $this->repository = $repository;
-        $this->genderRule = $genderRule;
+        $this->repository    = $repository;
+        $this->genderRule    = $genderRule;
         $this->personService = $personService;
         $this->branchService = $branchService;
+        $this->qrCodeService = $qrCodeService;
     }
 
     public function getAllMembers(array $filters = [])
@@ -129,16 +133,13 @@ class MemberService
                             : true; // Default to true if not specified
 
             if ($autoGenerate) {
-                // Generate QR Code
-                $data['barcode_qr_code'] = 'QR-' . Str::uuid()->toString();
-
                 // Generate User Account for Mobile App
                 $username = 'player_' . $personId . '_' . Str::random(4);
                 $password = 'password123'; // Default password
                 
                 $user = User::create([
-                    'username' => $username,
-                    'password' => Hash::make($password),
+                    'username'  => $username,
+                    'password'  => Hash::make($password),
                     'person_id' => $personId,
                     'is_active' => true,
                 ]);
@@ -149,7 +150,10 @@ class MemberService
             $data['person_id'] = $personId;
             $member = $this->repository->create($data);
 
-            // 4. Initialize health profile if provided
+            // 4. Generate 7 QR codes for this person
+            $this->qrCodeService->generateForPerson($personId);
+
+            // 5. Initialize health profile if provided
             if (isset($data['health_profile'])) {
                 $member->healthProfile()->create($data['health_profile']);
             }

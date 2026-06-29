@@ -31,10 +31,6 @@ class Person extends Model
     /**
      * Relationships
      */
-    public function playerProfile()
-    {
-        return $this->hasOne(PlayerProfile::class);
-    }
 
     public function contacts()
     {
@@ -53,7 +49,7 @@ class Person extends Model
     public function getProfileAttribute()
     {
         return match ($this->type) {
-            'player' => $this->playerProfile,
+            'player' => null,
             'coach', 'staff', 'admin' => null, // Resolved via StaffManager DTOs
             default => null,
         };

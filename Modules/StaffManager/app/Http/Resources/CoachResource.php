@@ -22,7 +22,6 @@ class CoachResource extends JsonResource
             'shift_type'      => $this->shift_type,
             'work_type'       => $this->work_type,
             'work_status'     => $this->work_status,
-            'qr_code'         => $this->qr_code,
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,
             

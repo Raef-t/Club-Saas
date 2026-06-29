@@ -8,6 +8,7 @@ class PlayerSubscriptionItem extends Model
     protected $fillable = [
         'player_subscription_id',
         'activity_id',
+        'coach_id',
         'sessions_allocated',
         'sessions_consumed',
         'is_unlimited',

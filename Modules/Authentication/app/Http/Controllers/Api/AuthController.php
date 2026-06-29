@@ -11,9 +11,13 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
 use Modules\Authentication\Http\Requests\LoginRequest;
+use Modules\Authentication\Services\PersonQrCodeService;
 
 class AuthController extends BaseController
 {
+    public function __construct(
+        protected PersonQrCodeService $qrCodeService
+    ) {}
     #[OA\Post(
         path: '/v1/auth/login',
         summary: '🔐 تسجيل الدخول',
@@ -156,6 +160,9 @@ class AuthController extends BaseController
                     $userData['branch_id'] = $staff->branch_id;
                 }
             }
+
+            // Attach the 7 QR codes for this person (Frontend caches them)
+            $userData['qr_codes'] = $this->qrCodeService->getCodesForPerson($personId);
         }
 
         return $this->successResponse([
