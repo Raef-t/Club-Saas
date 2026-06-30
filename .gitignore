@@ -1,29 +1,48 @@
-*.log
-.DS_Store
+# Global Monorepo Gitignore
+
+# Dependencies
+node_modules/
+/backend/node_modules/
+/backend/vendor/
+/front/node_modules/
+
+# Local env files
 .env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
+.env*.local
+/backend/.env
+/backend/.env.backup
+/backend/.env.production
+/front/.env*.local
+
+# Build outputs
+/front/.next/
+/front/out/
+/front/build/
+/backend/public/storage
+/backend/public/build
+/backend/public/hot
+
+# IDEs and Editors
+.idea/
+.vscode/
+.fleet/
+.nova/
+.zed/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
 Thumbs.db
-*.pdf
-database.dbml
-deploy.zip
-*.zip
-_laravel_base.zip
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Misc
+*.log
+.phpunit.result.cache
+.phpunit.cache/
+/backend/storage/*.key
+/backend/storage/pail
