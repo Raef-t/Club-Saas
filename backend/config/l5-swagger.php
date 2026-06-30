@@ -157,7 +157,11 @@ return [
              * @note This option overwrites `paths.excludes`
              * @see \OpenApi\scan
              */
-            'exclude' => [],
+            'exclude' => array_merge(
+                glob(base_path('Modules/*/Tests')),
+                glob(base_path('Modules/*/database/migrations')),
+                glob(base_path('Modules/*/database/seeders'))
+            ),
 
             /*
              * Allows to generate specs either for OpenAPI 3.0.0 or OpenAPI 3.1.0.
