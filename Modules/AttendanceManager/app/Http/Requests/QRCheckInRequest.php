@@ -15,7 +15,6 @@ class QRCheckInRequest extends FormRequest
     {
         return [
             'qr_token' => 'required|string',
-            'club_id' => 'required|integer',
             'branch_id' => 'required|integer',
         ];
     }

@@ -3240,17 +3240,12 @@
                             "schema": {
                                 "required": [
                                     "qr_token",
-                                    "club_id",
                                     "branch_id"
                                 ],
                                 "properties": {
                                     "qr_token": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
-                                    },
-                                    "club_id": {
-                                        "type": "integer",
-                                        "example": 1
                                     },
                                     "branch_id": {
                                         "type": "integer",
@@ -3386,17 +3381,12 @@
                             "schema": {
                                 "required": [
                                     "qr_token",
-                                    "club_id",
                                     "branch_id"
                                 ],
                                 "properties": {
                                     "qr_token": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
-                                    },
-                                    "club_id": {
-                                        "type": "integer",
-                                        "example": 1
                                     },
                                     "branch_id": {
                                         "type": "integer",
@@ -3537,7 +3527,6 @@
                                 "required": [
                                     "attendable_type",
                                     "attendable_id",
-                                    "club_id",
                                     "branch_id"
                                 ],
                                 "properties": {
@@ -3550,10 +3539,6 @@
                                         ]
                                     },
                                     "attendable_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "club_id": {
                                         "type": "integer",
                                         "example": 1
                                     },

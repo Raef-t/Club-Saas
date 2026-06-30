@@ -44,19 +44,26 @@ class QRController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function generate(Request $request)
     {
-        // For security, only the authenticated member can generate their own QR
-        $member = $request->user();
+        $user = $request->user();
+        $member = $this->resolveMember($user);
         
-        if (!$member || get_class($member) !== \Modules\MemberManager\Models\Member::class) {
+        if (!$member) {
             return $this->errorResponse('Unauthorized or invalid user type.', 403);
         }
 
-        $token = $this->qrService->generateToken($member);
+        $personId = $member->person_id;
+        $qrCodes = app(\Modules\Authentication\Services\PersonQrCodeService::class)->getCodesForPerson($personId);
+        $today = (int) \Carbon\Carbon::now()->format('w');
+        $token = $qrCodes[$today] ?? null;
+
+        if (!$token) {
+            return $this->errorResponse('No QR code generated for today.', 404);
+        }
 
         return $this->successResponse([
             'qr_token' => $token,
-            'expires_in_seconds' => 30
-        ], 'QR code generated successfully.');
+            'expires_in_seconds' => 86400
+        ], 'QR code retrieved successfully.');
     }
 
     #[OA\Get(
@@ -96,9 +103,11 @@ class QRController extends BaseController
             return $this->errorResponse(__('Member profile not found.'), 403);
         }
 
-        // Generate a fresh QR token
-        $memberModel = \Modules\MemberManager\Models\Member::find($member->id);
-        $qrToken = $memberModel ? $this->qrService->generateToken($memberModel) : null;
+        // Retrieve today's static QR code
+        $personId = $member->person_id;
+        $qrCodes = app(\Modules\Authentication\Services\PersonQrCodeService::class)->getCodesForPerson($personId);
+        $today = (int) \Carbon\Carbon::now()->format('w');
+        $qrToken = $qrCodes[$today] ?? null;
 
         // Get person data
         $person = DB::table('people')->where('id', $member->person_id)->first();
@@ -147,10 +156,9 @@ class QRController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_token', 'club_id', 'branch_id'],
+            required: ['qr_token', 'branch_id'],
             properties: [
                 new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAi...'),
-                new OA\Property(property: 'club_id', type: 'integer', example: 1),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1)
             ]
         )
@@ -175,18 +183,39 @@ class QRController extends BaseController
         $validated = $request->validated();
 
         try {
-            $memberId = $this->qrService->validateToken($validated['qr_token']);
+            $personId = $this->qrService->validateCode($validated['qr_token']);
+
+            $member = DB::table('members')->where('person_id', $personId)->whereNull('deleted_at')->first();
+            $staff = DB::table('staff')->where('person_id', $personId)->whereNull('deleted_at')->first();
+
+            $type = null;
+            $entityId = null;
+
+            if ($member) {
+                $type = 'member';
+                $entityId = $member->id;
+            } elseif ($staff) {
+                $type = 'staff';
+                $entityId = $staff->id;
+            } else {
+                throw new Exception('No active profile found for this QR code.');
+            }
+
+            $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $validated['branch_id'])->first();
+            if (!$branch) {
+                return $this->errorResponse('Branch not found.', 404);
+            }
 
             $attendance = $this->attendanceService->checkIn(
-                type: 'member',
-                entityId: (int) $memberId,
-                clubId: (int) $validated['club_id'],
-                branchId: (int) $validated['branch_id'],
+                type: $type,
+                entityId: (int) $entityId,
+                clubId: (int) $branch->club_id,
+                branchId: (int) $branch->id,
                 metadata: ['source' => 'qr_scan']
             );
 
             return $this->successResponse(
-                ['attendance_id' => $attendance->id],
+                ['attendance_id' => $attendance->id, 'type' => $type],
                 'Check-in successful.'
             );
 
@@ -205,10 +234,9 @@ class QRController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_token', 'club_id', 'branch_id'],
+            required: ['qr_token', 'branch_id'],
             properties: [
                 new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAi...'),
-                new OA\Property(property: 'club_id', type: 'integer', example: 1),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1)
             ]
         )
@@ -235,10 +263,26 @@ class QRController extends BaseController
         $validated = $request->validated();
 
         try {
-            $memberId = $this->qrService->validateToken($validated['qr_token']);
+            $personId = $this->qrService->validateCode($validated['qr_token']);
 
-            // Find the open attendance for this member
-            $open = $this->attendanceService->findOpen('member', (int) $memberId);
+            $member = DB::table('members')->where('person_id', $personId)->whereNull('deleted_at')->first();
+            $staff = DB::table('staff')->where('person_id', $personId)->whereNull('deleted_at')->first();
+
+            $type = null;
+            $entityId = null;
+
+            if ($member) {
+                $type = 'member';
+                $entityId = $member->id;
+            } elseif ($staff) {
+                $type = 'staff';
+                $entityId = $staff->id;
+            } else {
+                throw new Exception('No active profile found for this QR code.');
+            }
+
+            // Find the open attendance
+            $open = $this->attendanceService->findOpen($type, (int) $entityId);
 
             if (!$open) {
                 return $this->errorResponse('No active check-in found.', 404);

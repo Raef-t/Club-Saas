@@ -21,7 +21,7 @@ class UnifiedAttendanceController extends BaseController
         tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(required: ['attendable_type', 'attendable_id', 'club_id', 'branch_id'], properties: [new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'), new OA\Property(property: 'attendable_id', type: 'integer', example: 1), new OA\Property(property: 'club_id', type: 'integer', example: 1), new OA\Property(property: 'branch_id', type: 'integer', example: 1), new OA\Property(property: 'facility_id', type: 'integer', example: 1), new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00')]))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(required: ['attendable_type', 'attendable_id', 'branch_id'], properties: [new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'), new OA\Property(property: 'attendable_id', type: 'integer', example: 1), new OA\Property(property: 'branch_id', type: 'integer', example: 1), new OA\Property(property: 'facility_id', type: 'integer', example: 1), new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00')]))]
     #[OA\Response(response: 200, description: '✅ تم تسجيل الدخول', content: new OA\JsonContent())]
     public function checkIn(UnifiedCheckInRequest $request)
     {
@@ -38,11 +38,16 @@ class UnifiedAttendanceController extends BaseController
                 $metadata['check_in_at'] = \Carbon\Carbon::parse($request->input('check_in_at'))->toDateTimeString();
             }
 
+            $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();
+            if (!$branch) {
+                return $this->errorResponse('Branch not found.', 404);
+            }
+
             $attendance = $this->attendanceService->checkIn(
                 type: $type,
                 entityId: $id,
-                clubId: (int) $request->input('club_id'),
-                branchId: (int) $request->input('branch_id'),
+                clubId: (int) $branch->club_id,
+                branchId: (int) $branch->id,
                 metadata: $metadata
             );
 

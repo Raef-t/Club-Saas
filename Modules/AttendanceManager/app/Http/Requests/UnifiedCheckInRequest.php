@@ -16,7 +16,6 @@ class UnifiedCheckInRequest extends FormRequest
         return [
             'attendable_type' => ['required', 'string', 'in:member,staff'],
             'attendable_id'   => ['required', 'integer'],
-            'club_id'         => ['required', 'integer'],
             'branch_id'       => ['required', 'integer'],
             'facility_id'     => ['nullable', 'integer'],
             'check_in_at'     => ['nullable', 'date'],
