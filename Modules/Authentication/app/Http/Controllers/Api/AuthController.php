@@ -33,6 +33,13 @@ class AuthController extends BaseController
                 new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'technogym'),
                 new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
                 new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here', nullable: true),
+                new OA\Property(
+                    property: 'device_info', 
+                    type: 'object', 
+                    description: 'معلومات الجهاز', 
+                    nullable: true,
+                    example: ["sdk" => 33, "brand" => "Redmi", "model" => "M2101K6G", "version" => "13", "manufacturer" => "Xiaomi", "isPhysicalDevice" => true]
+                ),
             ]
         )
     )]
@@ -123,9 +130,13 @@ class AuthController extends BaseController
         }
 
         if (!empty($validated['fcm_token'])) {
-            $user->devices()->firstOrCreate([
-                'fcm_token' => $validated['fcm_token']
-            ]);
+            \Modules\Authentication\Models\UserDevice::updateOrCreate(
+                ['fcm_token' => $validated['fcm_token']],
+                [
+                    'user_id' => $user->id,
+                    'device_info' => $validated['device_info'] ?? null,
+                ]
+            );
         }
 
         // Generate Token
@@ -162,7 +173,15 @@ class AuthController extends BaseController
             }
 
             // Attach the 7 QR codes for this person (Frontend caches them)
-            $userData['qr_codes'] = $this->qrCodeService->getCodesForPerson($personId);
+            $rawQrCodes = $this->qrCodeService->getCodesForPerson($personId);
+            $formattedQrCodes = [];
+            foreach ($rawQrCodes as $day => $code) {
+                $formattedQrCodes[] = [
+                    'day' => $day,
+                    'code' => $code
+                ];
+            }
+            $userData['qr_codes'] = $formattedQrCodes;
         }
 
         return $this->successResponse([

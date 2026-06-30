@@ -98,6 +98,25 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                     ->decrement('remaining_sessions');
             }
 
+            // 7. Increment sessions_consumed in player_subscription_items
+            $activityId = $metadata['activity_id'] ?? null;
+            $itemsQuery = DB::table('player_subscription_items')
+                ->where('player_subscription_id', $subscription->id)
+                ->where('is_unlimited', false);
+
+            if ($activityId) {
+                $itemsQuery->where('activity_id', $activityId);
+            }
+
+            $itemsToIncrement = $itemsQuery->get();
+            foreach ($itemsToIncrement as $item) {
+                if ($item->sessions_consumed < $item->sessions_allocated) {
+                    DB::table('player_subscription_items')
+                        ->where('id', $item->id)
+                        ->increment('sessions_consumed');
+                }
+            }
+
             event(new MemberCheckedIn($attendance));
 
             return $attendance;

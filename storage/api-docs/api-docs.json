@@ -3733,6 +3733,19 @@
                                         "type": "string",
                                         "example": "fcm_token_string_here",
                                         "nullable": true
+                                    },
+                                    "device_info": {
+                                        "description": "معلومات الجهاز",
+                                        "type": "object",
+                                        "example": {
+                                            "sdk": 33,
+                                            "brand": "Redmi",
+                                            "model": "M2101K6G",
+                                            "version": "13",
+                                            "manufacturer": "Xiaomi",
+                                            "isPhysicalDevice": true
+                                        },
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"

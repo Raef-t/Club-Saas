@@ -17,6 +17,7 @@ class LoginRequest extends FormRequest
             'username' => 'required|string',
             'password' => 'required|string',
             'fcm_token' => 'nullable|string',
+            'device_info' => 'nullable|array',
         ];
     }
 }

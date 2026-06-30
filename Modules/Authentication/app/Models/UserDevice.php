@@ -9,6 +9,11 @@ class UserDevice extends Model
     protected $fillable = [
         'user_id',
         'fcm_token',
+        'device_info',
+    ];
+
+    protected $casts = [
+        'device_info' => 'array',
     ];
 
     public function user()
