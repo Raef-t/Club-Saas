@@ -17487,7 +17487,8 @@
                             "schema": {
                                 "required": [
                                     "member_id",
-                                    "plan_id"
+                                    "plan_id",
+                                    "paid_amount"
                                 ],
                                 "properties": {
                                     "member_id": {
@@ -17497,6 +17498,12 @@
                                     "plan_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "paid_amount": {
+                                        "description": "المبلغ المدفوع فوراً (أدخل 0 إذا لم يتم الدفع)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "activities": {
                                         "description": "(اختياري) مصفوفة الأنشطة لاختيار المدربين لكل نشاط",

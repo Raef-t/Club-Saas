@@ -92,7 +92,7 @@ class SubscriptionService
         // 1. Load plan with activities and ensure it exists
         $plan = $this->planRepository->find($planId);
         $plan->load('planActivities');
-        
+
         return DB::transaction(function () use ($memberId, $plan, $options) {
             // 2. Dates Calculation
             $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
@@ -128,7 +128,7 @@ class SubscriptionService
             foreach ($plan->planActivities as $planActivity) {
                 // Find if the user provided a specific coach for this activity
                 $requestedActivity = $requestedActivities->firstWhere('activity_id', $planActivity->activity_id);
-                $coachId = $requestedActivity['coach_id'] ?? null;
+                $coachId = $requestedActivity ? ($requestedActivity['coach_id'] ?? null) : null;
 
                 $subscription->items()->create([
                     'activity_id' => $planActivity->activity_id,
@@ -178,7 +178,7 @@ class SubscriptionService
                 foreach ($options['extra_services'] as $serviceData) {
                     $priceCharged = $serviceData['price_charged'] ?? 0;
                     $lockerId = $serviceData['locker_id'] ?? null;
-                    
+
                     if ($lockerId) {
                         $locker = \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->first();
                         if (!$locker) {
@@ -187,7 +187,7 @@ class SubscriptionService
                         if ($locker->status !== 'available') {
                             throw new Exception(__('Locker :number is already rented.', ['number' => $locker->locker_number]));
                         }
-                        
+
                         \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->update([
                             'status' => 'rented',
                             'updated_at' => now(),
@@ -232,7 +232,7 @@ class SubscriptionService
                 // Validate max freeze days
                 if ($plan->max_freeze_days !== null) {
                     $requestedDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
-                    
+
                     $previousFreezeDays = 0;
                     foreach ($subscription->freezes as $freeze) {
                         $end = $freeze->actual_end_date ?? $freeze->freeze_end_date;
@@ -265,14 +265,14 @@ class SubscriptionService
     public function renewSubscription($subscriptionId, array $options = [])
     {
         $oldSubscription = $this->subscriptionRepository->find($subscriptionId);
-        
+
         // Ensure plan is loaded
         $plan = $oldSubscription->plan;
 
         return DB::transaction(function () use ($oldSubscription, $plan, $options) {
             // New start date is either after the old one ends or NOW if it already ended
-            $startDate = $oldSubscription->end_date && Carbon::parse($oldSubscription->end_date)->isFuture() 
-                ? Carbon::parse($oldSubscription->end_date) 
+            $startDate = $oldSubscription->end_date && Carbon::parse($oldSubscription->end_date)->isFuture()
+                ? Carbon::parse($oldSubscription->end_date)
                 : now();
 
             $options['coach_id'] = $options['coach_id'] ?? $oldSubscription->coach_id;
@@ -288,10 +288,10 @@ class SubscriptionService
     public function recordPayment($subscriptionId, $amount)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
-        
+
         return DB::transaction(function () use ($subscription, $amount) {
             $newPaidAmount = $subscription->paid_amount + $amount;
-            
+
             if ($newPaidAmount > $subscription->total_amount) {
                 $amount = max(0, $subscription->total_amount - $subscription->paid_amount);
                 $newPaidAmount = $subscription->total_amount;
@@ -305,7 +305,7 @@ class SubscriptionService
             ]);
 
             $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
-            $branchId = $memberDTO->branch_id ?? 1;
+            $branchId = $memberDTO->branchId ?? 1;
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
                 ['player_subscription_id' => $subscription->id],

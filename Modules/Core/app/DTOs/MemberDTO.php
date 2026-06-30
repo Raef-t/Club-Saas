@@ -9,8 +9,8 @@ readonly class MemberDTO
         public int $personId,
         public ?int $branchId,
         public string $memberNumber,
-        public string $barcode,
-        public string $status, // e.g. active, frozen, expired
+        public ?string $barcode = null,
+        public ?string $status = null, // e.g. active, frozen, expired
         public bool $isActive,
         public ?PersonDTO $person = null
     ) {}

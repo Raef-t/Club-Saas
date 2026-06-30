@@ -43,8 +43,8 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscriptions retrieved successfully'),
                 new OA\Property(
-                    property: 'data', 
-                    type: 'array', 
+                    property: 'data',
+                    type: 'array',
                     items: new OA\Items(
                         type: 'object',
                         properties: [
@@ -75,10 +75,11 @@ class PlayerSubscriptionController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['member_id', 'plan_id'],
+            required: ['member_id', 'plan_id', 'paid_amount'],
             properties: [
                 new OA\Property(property: 'member_id', type: 'integer', example: 1),
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 50.00, description: 'المبلغ المدفوع فوراً (أدخل 0 إذا لم يتم الدفع)'),
                 new OA\Property(
                     property: 'activities',
                     type: 'array',
@@ -102,7 +103,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member subscribed successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
@@ -116,11 +117,13 @@ class PlayerSubscriptionController extends BaseController
     public function store(SubscribeMemberRequest $request)
     {
         $data = $request->validated();
+
         $subscription = $this->subscriptionService->subscribeMember(
             $data['member_id'],
             $data['plan_id'],
             $data
         );
+
 
         return $this->successResponse(
             new PlayerSubscriptionResource($subscription->load(['plan'])),
@@ -145,7 +148,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription retrieved successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
@@ -193,7 +196,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription frozen successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
@@ -236,7 +239,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription unfrozen successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
@@ -280,7 +283,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription renewed successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
@@ -327,7 +330,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription cancelled successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
@@ -374,7 +377,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Payment recorded successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1)
