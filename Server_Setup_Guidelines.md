@@ -36,7 +36,7 @@
 * **المسار**: `/etc/nginx/sites-available/default`.
 * **آلية التوجيه (Routing)**:
   * طلبات النطاق الرئيسي `/` يتم تمريرها (Reverse Proxy) إلى Next.js على `http://localhost:3000`.
-  * طلبات الـ API التي تبدأ بـ `/api` يتم توجيهها إلى مجلد الباك إند `/var/www/club/backend/public/index.php`.
+  * طلبات الـ API التي تبدأ بـ `/api/v1` يتم توجيهها إلى مجلد الباك إند `/var/www/club/backend/public/index.php`.
   * طلبات الصور والملفات التي تبدأ بـ `/storage` يتم توجيهها إلى المجلد الرمزي `/var/www/club/backend/public/storage`.
 
 ---
