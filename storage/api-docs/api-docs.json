@@ -7536,6 +7536,10 @@
                                                                 "type": "string",
                                                                 "example": "active"
                                                             },
+                                                            "subscription_number": {
+                                                                "type": "string",
+                                                                "example": "SUB-12345"
+                                                            },
                                                             "plan_name": {
                                                                 "type": "string",
                                                                 "example": "اشتراك ذهبي 3 شهور"
@@ -7569,6 +7573,38 @@
                                                             "remaining_sessions": {
                                                                 "type": "integer",
                                                                 "example": 15
+                                                            },
+                                                            "activities": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "activity_name": {
+                                                                            "type": "string",
+                                                                            "example": "سباحة"
+                                                                        },
+                                                                        "coach_name": {
+                                                                            "type": "string",
+                                                                            "example": "أحمد علي"
+                                                                        },
+                                                                        "total_sessions": {
+                                                                            "type": "integer",
+                                                                            "example": 20
+                                                                        },
+                                                                        "remaining_sessions": {
+                                                                            "type": "integer",
+                                                                            "example": 15
+                                                                        },
+                                                                        "is_unlimited": {
+                                                                            "type": "boolean",
+                                                                            "example": false
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
                                                             }
                                                         },
                                                         "type": "object"

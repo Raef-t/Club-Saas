@@ -82,7 +82,7 @@ class MemberDashboardService
      */
     protected function getSubscriptions(int $memberId): array
     {
-        $subscriptions = PlayerSubscription::with('plan')
+        $subscriptions = PlayerSubscription::with(['plan', 'items.activity', 'items.coach.person'])
             ->where('member_id', $memberId)
             ->latest()
             ->get();
@@ -94,9 +94,30 @@ class MemberDashboardService
         $member = DB::table('members')->where('id', $memberId)->first();
 
         return $subscriptions->map(function ($subscription) use ($member) {
+            $activities = $subscription->items->map(function ($item) {
+                // Determine activity name
+                $activityName = $item->activity->name ?? null;
+                if (is_string($activityName) && json_decode($activityName)) {
+                    $decoded = json_decode($activityName, true);
+                    $activityName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $activityName;
+                }
+
+                $coachName = $item->coach?->person?->full_name ?? null;
+
+                return [
+                    'id' => $item->id,
+                    'activity_name' => $activityName,
+                    'coach_name' => $coachName,
+                    'total_sessions' => $item->sessions_allocated,
+                    'remaining_sessions' => $item->sessions_allocated - ($item->sessions_consumed ?? 0),
+                    'is_unlimited' => (bool) $item->is_unlimited,
+                ];
+            });
+
             return [
                 'id' => $subscription->id,
                 'status' => $subscription->status,
+                'subscription_number' => $subscription->plan->subscription_number ?? null,
                 'plan_name' => $subscription->plan->name ?? null,
                 'start_date' => $subscription->start_date?->toDateString(),
                 'end_date' => $subscription->end_date?->toDateString(),
@@ -105,6 +126,7 @@ class MemberDashboardService
                 'price' => (float) ($subscription->total_amount ?? $subscription->plan->base_price ?? 0),
                 'formatted_price' => ($subscription->total_amount ?? $subscription->plan->base_price ?? 0) . '$',
                 'remaining_sessions' => $subscription->remaining_sessions,
+                'activities' => $activities->toArray(),
             ];
         })->toArray();
     }

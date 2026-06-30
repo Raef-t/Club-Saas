@@ -18,4 +18,14 @@ class PlayerSubscriptionItem extends Model
     {
         return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id');
     }
+
+    public function activity()
+    {
+        return $this->belongsTo(\Modules\Sports\Models\Activity::class, 'activity_id');
+    }
+
+    public function coach()
+    {
+        return $this->belongsTo(\Modules\StaffManager\Models\Staff::class, 'coach_id');
+    }
 }

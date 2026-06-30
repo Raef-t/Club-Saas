@@ -44,6 +44,7 @@ class MemberDashboardController extends BaseController
                         new OA\Property(property: 'subscriptions', type: 'array', items: new OA\Items(type: 'object', properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
                             new OA\Property(property: 'status', type: 'string', example: 'active'),
+                            new OA\Property(property: 'subscription_number', type: 'string', example: 'SUB-12345'),
                             new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك ذهبي 3 شهور'),
                             new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2023-10-01'),
                             new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2024-01-01'),
@@ -51,7 +52,15 @@ class MemberDashboardController extends BaseController
                             new OA\Property(property: 'membership_number', type: 'string', example: 'MEM-10023'),
                             new OA\Property(property: 'price', type: 'number', example: 150.0),
                             new OA\Property(property: 'formatted_price', type: 'string', example: '150$'),
-                            new OA\Property(property: 'remaining_sessions', type: 'integer', example: 15)
+                            new OA\Property(property: 'remaining_sessions', type: 'integer', example: 15),
+                            new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object', properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 1),
+                                new OA\Property(property: 'activity_name', type: 'string', example: 'سباحة'),
+                                new OA\Property(property: 'coach_name', type: 'string', example: 'أحمد علي'),
+                                new OA\Property(property: 'total_sessions', type: 'integer', example: 20),
+                                new OA\Property(property: 'remaining_sessions', type: 'integer', example: 15),
+                                new OA\Property(property: 'is_unlimited', type: 'boolean', example: false),
+                            ]))
                         ])),
                         new OA\Property(property: 'upcoming_sessions', type: 'array', items: new OA\Items(type: 'object')),
                         new OA\Property(property: 'unpaid_invoices_count', type: 'integer', example: 1)
