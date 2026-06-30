@@ -3,9 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Modules\Authentication\Models\Person;
-use Modules\Authentication\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,38 +11,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create Admin Person Profile
-        $adminPerson = Person::create([
-            'full_name' => 'Club Administrator',
-            'gender' => 'male',
-            'type' => 'staff',
-            'email' => 'admin@clubsaas.com',
-        ]);
-
-        $adminPerson->contacts()->create([
-            'name' => 'Personal',
-            'relation' => 'self',
-            'phone_number' => '0500000000',
-        ]);
-
-        // 2. Create Admin Staff Profile
-        $adminPerson->staffProfile()->create([
-            'job_title' => 'System Administrator',
-        ]);
-
-        // 3. Create Admin User Account
-        $adminUser = User::create([
-            'person_id' => $adminPerson->id,
-            'username' => 'admin',
-            'password' => Hash::make('password'),
-            'is_active' => true,
-            'role' => 'super_admin',
-        ]);
-
-        // 4. Seed Roles and Permissions
+        // 1. Seed Roles and Permissions
         $this->call(RolesAndPermissionsSeeder::class);
 
-        // 5. Assign Super Admin Role via Spatie
-        $adminUser->assignRole('super_admin');
+        // 2. Seed Club and Branch
+        $this->call(TechnogymSeeder::class);
+
+        // 3. Seed Super Admin (with Staff profile)
+        $this->call(NewSuperAdminSeeder::class);
+
+        // 4. Seed default plans and activities
+        $this->call(RealPlansAndActivitiesSeeder::class);
     }
 }
