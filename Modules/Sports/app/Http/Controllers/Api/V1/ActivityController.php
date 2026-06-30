@@ -64,8 +64,9 @@ class ActivityController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'activity_type_id'],
+            required: ['name', 'activity_type_id', 'branch_id'],
             properties: [
+                new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 1),
                 new OA\Property(
                     property: 'name',
                     type: 'object',

@@ -39,11 +39,16 @@ class PlayerRegistrationService
                 $photoUrl = $data['photo']->store('people/photos', 'public');
             }
 
+            $age = $data['age'] ?? null;
+            if (!$age && !empty($data['dob'])) {
+                $age = \Carbon\Carbon::parse($data['dob'])->age;
+            }
+
             // 3. Create Person
             $person = Person::create([
                 'full_name' => $data['first_name'] . ' ' . $data['last_name'],
                 'gender' => $data['gender'],
-                'age' => $data['age'] ?? null,
+                'age' => $age,
                 'dob' => $data['dob'] ?? null,
                 'address' => $data['address'] ?? null,
                 'photo_url' => $photoUrl,
@@ -93,6 +98,9 @@ class PlayerRegistrationService
             if ($role) {
                 $user->assignRole($role);
             }
+
+            // Generate 7 QR codes for the new player (one for each day of the week)
+            app(\Modules\Authentication\Services\PersonQrCodeService::class)->generateForPerson($person->id);
 
             // Return the created member along with their person data, and contacts
             $member->load('person.contacts', 'measurements', 'healthProfile');

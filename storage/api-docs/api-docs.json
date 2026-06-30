@@ -8075,8 +8075,7 @@
                                     "first_name",
                                     "last_name",
                                     "mobile",
-                                    "gender",
-                                    "age"
+                                    "gender"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -8104,10 +8103,12 @@
                                         ]
                                     },
                                     "age": {
+                                        "description": "(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات",
                                         "type": "integer",
                                         "example": 25
                                     },
                                     "dob": {
+                                        "description": "(مطلوب في حال لم يتم إدخال العمر) تاريخ الميلاد",
                                         "type": "string",
                                         "format": "date",
                                         "example": "1995-10-25"
@@ -10153,9 +10154,15 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "activity_type_id"
+                                    "activity_type_id",
+                                    "branch_id"
                                 ],
                                 "properties": {
+                                    "branch_id": {
+                                        "description": "(مطلوب) معرف الفرع",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "name": {
                                         "description": "اسم النشاط (مطلوب)",
                                         "required": [
@@ -10689,9 +10696,15 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name"
+                                    "name",
+                                    "branch_id"
                                 ],
                                 "properties": {
+                                    "branch_id": {
+                                        "description": "(مطلوب) معرف الفرع",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "name": {
                                         "properties": {
                                             "ar": {

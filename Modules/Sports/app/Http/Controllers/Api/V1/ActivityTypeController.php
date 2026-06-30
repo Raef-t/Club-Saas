@@ -67,8 +67,9 @@ class ActivityTypeController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name'],
+            required: ['name', 'branch_id'],
             properties: [
+                new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 1),
                 new OA\Property(property: 'name', type: 'object', properties: [
                     new OA\Property(property: 'ar', type: 'string', example: 'صالة مفتوحة'),
                     new OA\Property(property: 'en', type: 'string', example: 'open_gym')
