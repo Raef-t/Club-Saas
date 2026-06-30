@@ -183,7 +183,12 @@ class PlayerRegistrationController extends BaseController
         if (!$member) {
             return response()->json(['message' => __('Member not found')], 404);
         }
-        return $this->successResponse($member, __('Member retrieved successfully'));
+
+        $data = $member->toArray();
+        $dashboardService = app(\Modules\MemberManager\Services\Me\MemberDashboardService::class);
+        $data['subscriptions'] = $dashboardService->getSubscriptions((int) $member->id);
+
+        return $this->successResponse($data, __('Member retrieved successfully'));
     }
 
     #[OA\Delete(

@@ -80,7 +80,7 @@ class MemberDashboardService
     /**
      * Subscriptions list: all subscriptions details.
      */
-    protected function getSubscriptions(int $memberId): array
+    public function getSubscriptions(int $memberId): array
     {
         $subscriptions = PlayerSubscription::with(['plan', 'items.activity', 'items.coach.person'])
             ->where('member_id', $memberId)
