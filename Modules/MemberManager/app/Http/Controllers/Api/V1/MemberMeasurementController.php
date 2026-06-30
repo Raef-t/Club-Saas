@@ -13,11 +13,12 @@ class MemberMeasurementController extends BaseController
     #[OA\Get(
         path: '/v1/member/measurements',
         summary: '📏 جلب جميع القياسات',
-        description: 'استرجاع جميع سجلات القياسات. يمكن التصفية حسب العضو لعرض قياسات شخص محدد.',
+        description: 'استرجاع جميع سجلات القياسات. يمكن التصفية حسب العضو أو الفرع.',
         tags: ['Member Measurements'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'member_id', in: 'query', required: false, description: 'معرف العضو (ID) لعرض قياساته فقط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
     public function index(Request $request)
     {
@@ -25,6 +26,12 @@ class MemberMeasurementController extends BaseController
         
         if ($request->has('member_id')) {
             $query->where('member_id', $request->input('member_id'));
+        }
+
+        if ($request->has('branch_id')) {
+            $query->whereHas('member', function($q) use ($request) {
+                $q->where('branch_id', $request->input('branch_id'));
+            });
         }
 
         $measurements = $query->get();

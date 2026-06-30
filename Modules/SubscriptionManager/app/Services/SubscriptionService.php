@@ -41,6 +41,12 @@ class SubscriptionService
             $query->where('plan_id', $filters['plan_id']);
         }
 
+        if (!empty($filters['branch_id'])) {
+            $query->whereHas('plan', function ($q) use ($filters) {
+                $q->where('branch_id', $filters['branch_id']);
+            });
+        }
+
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }

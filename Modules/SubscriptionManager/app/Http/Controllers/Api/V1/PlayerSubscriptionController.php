@@ -30,10 +30,11 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Get(
         path: '/v1/player-subscriptions',
         summary: '👥 عرض اشتراكات الأعضاء',
-        description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي.',
+        description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الاشتراكات بنجاح',

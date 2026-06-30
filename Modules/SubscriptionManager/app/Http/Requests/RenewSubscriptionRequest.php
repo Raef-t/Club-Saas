@@ -14,7 +14,7 @@ class RenewSubscriptionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'coach_id' => 'nullable|integer',
+            'coach_id' => 'nullable|exists:staff,id',
             'paid_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
         ];

@@ -116,8 +116,9 @@ class SubscriptionPlanController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'type', 'base_price'],
+            required: ['branch_id', 'name', 'type', 'base_price'],
             properties: [
+                new OA\Property(property: 'branch_id', type: 'integer', description: '(مطلوب) معرف الفرع', example: 1),
                 new OA\Property(property: 'name', type: 'object', properties: [
                     new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الذهبي'),
                     new OA\Property(property: 'en', type: 'string', example: 'Gold Subscription')

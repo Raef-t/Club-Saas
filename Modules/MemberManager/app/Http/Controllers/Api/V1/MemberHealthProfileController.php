@@ -14,14 +14,23 @@ class MemberHealthProfileController extends BaseController
     #[OA\Get(
         path: '/v1/member/health-profiles',
         summary: '🏥 جلب جميع السجلات الصحية',
-        description: 'استرجاع جميع السجلات الصحية للأعضاء.',
+        description: 'استرجاع جميع السجلات الصحية للأعضاء. يمكن التصفية حسب الفرع.',
         tags: ['Member Health Profiles'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
-    public function index()
+    public function index(Request $request)
     {
-        $profiles = MemberHealthProfile::with('member')->get();
+        $query = MemberHealthProfile::with('member');
+
+        if ($request->has('branch_id')) {
+            $query->whereHas('member', function($q) use ($request) {
+                $q->where('branch_id', $request->input('branch_id'));
+            });
+        }
+
+        $profiles = $query->get();
         return $this->successResponse($profiles, __('Health profiles retrieved successfully'));
     }
 

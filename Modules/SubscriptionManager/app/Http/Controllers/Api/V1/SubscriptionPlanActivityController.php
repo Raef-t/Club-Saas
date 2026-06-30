@@ -19,10 +19,11 @@ class SubscriptionPlanActivityController extends BaseController
     #[OA\Get(
         path: '/v1/subscription-plan-activities',
         summary: '🏋️ عرض نشاطات الخطط',
-        description: 'استرجاع الأنشطة المرتبطة بخطط الاشتراك.',
+        description: 'استرجاع الأنشطة المرتبطة بخطط الاشتراك. يمكن التصفية حسب الفرع.',
         tags: ['Subscription Plan Activities'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأنشطة حسب الفرع المرتبط بالخطة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع النشاطات بنجاح',
@@ -35,8 +36,9 @@ class SubscriptionPlanActivityController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index() {
-        return $this->successResponse(SubscriptionPlanActivityResource::collection($this->service->getAll()), 'Retrieved successfully');
+    public function index(\Illuminate\Http\Request $request) {
+        $filters = $request->only(['branch_id']);
+        return $this->successResponse(SubscriptionPlanActivityResource::collection($this->service->getAll($filters)), 'Retrieved successfully');
     }
 
     #[OA\Post(

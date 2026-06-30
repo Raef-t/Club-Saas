@@ -7665,8 +7665,20 @@
                     "Member Health Profiles"
                 ],
                 "summary": "🏥 جلب جميع السجلات الصحية",
-                "description": "استرجاع جميع السجلات الصحية للأعضاء.",
+                "description": "استرجاع جميع السجلات الصحية للأعضاء. يمكن التصفية حسب الفرع.",
                 "operationId": "ea758b81d8b12185b51ab5bb3972e742",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم الاسترجاع بنجاح"
@@ -7859,13 +7871,23 @@
                     "Member Measurements"
                 ],
                 "summary": "📏 جلب جميع القياسات",
-                "description": "استرجاع جميع سجلات القياسات. يمكن التصفية حسب العضو لعرض قياسات شخص محدد.",
+                "description": "استرجاع جميع سجلات القياسات. يمكن التصفية حسب العضو أو الفرع.",
                 "operationId": "9bbb9b0d95221c358871cb5a6fd0d9ca",
                 "parameters": [
                     {
                         "name": "member_id",
                         "in": "query",
                         "description": "معرف العضو (ID) لعرض قياساته فقط",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -8423,6 +8445,18 @@
                 "summary": "📋 عرض جميع الأعضاء",
                 "description": "جلب قائمة بجميع الأعضاء (المتدربين) مع إمكانية التصفية.",
                 "operationId": "1d2abb206ea609ea5e762edc815d1894",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الأعضاء بنجاح"
@@ -17369,8 +17403,20 @@
                     "Subscription Management"
                 ],
                 "summary": "👥 عرض اشتراكات الأعضاء",
-                "description": "استرجاع قائمة بجميع اشتراكات الأعضاء في النادي.",
+                "description": "استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.",
                 "operationId": "078e2cb73b70d3a434d3424d990aec51",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية الاشتراكات حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الاشتراكات بنجاح",
@@ -19026,8 +19072,20 @@
                     "Subscription Plan Activities"
                 ],
                 "summary": "🏋️ عرض نشاطات الخطط",
-                "description": "استرجاع الأنشطة المرتبطة بخطط الاشتراك.",
+                "description": "استرجاع الأنشطة المرتبطة بخطط الاشتراك. يمكن التصفية حسب الفرع.",
                 "operationId": "8151c379544030cd8e4a7cdd54943aa2",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية الأنشطة حسب الفرع المرتبط بالخطة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع النشاطات بنجاح",
@@ -19581,11 +19639,17 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "branch_id",
                                     "name",
                                     "type",
                                     "base_price"
                                 ],
                                 "properties": {
+                                    "branch_id": {
+                                        "description": "(مطلوب) معرف الفرع",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "name": {
                                         "properties": {
                                             "ar": {

@@ -29,7 +29,7 @@ class SubscribeMemberRequest extends FormRequest
             'paid_amount' => 'nullable|numeric|min:0',
             'activities' => 'nullable|array',
             'activities.*.activity_id' => 'required_with:activities|exists:activities,id',
-            'activities.*.coach_id' => 'nullable|exists:users,id',
+            'activities.*.coach_id' => 'nullable|exists:staff,id',
         ];
     }
 }

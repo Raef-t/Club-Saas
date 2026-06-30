@@ -158,6 +158,7 @@ class PlayerRegistrationController extends BaseController
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء بنجاح')]
     public function index(\Illuminate\Http\Request $request)
     {
