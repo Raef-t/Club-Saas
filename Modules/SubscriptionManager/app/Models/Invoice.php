@@ -13,12 +13,28 @@ class Invoice extends Model
     protected $table = 'invoices';
 
     protected $fillable = [
+        'code',
         'member_id',
         'branch_id',
         'player_subscription_id',
         'total',
         'status',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->code)) {
+                $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
+                while (static::where('code', $code)->exists()) {
+                    $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
+                }
+                $model->code = $code;
+            }
+        });
+    }
 
     protected $casts = [
         'total' => 'decimal:2',

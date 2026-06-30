@@ -17331,20 +17331,8 @@
                     "Invoices & Payments"
                 ],
                 "summary": "💳 فواتيري",
-                "description": "استرجاع جميع فواتير العضو المصادق عليه مع تفاصيل المدفوعات.",
+                "description": "استرجاع جميع فواتير العضو المصادق عليه مع تفاصيل المدفوعات الإجمالية والتفصيلية.",
                 "operationId": "a412a002aeeaa84bc19fc2f4ca32a0d4",
-                "parameters": [
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "عدد العناصر في الصفحة",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الفواتير بنجاح",
@@ -17361,25 +17349,59 @@
                                             "example": "Invoices retrieved successfully"
                                         },
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "amount": {
-                                                        "type": "number",
-                                                        "format": "float",
-                                                        "example": 500
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "example": "paid"
-                                                    }
+                                            "properties": {
+                                                "total_paid": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1000
                                                 },
-                                                "type": "object"
-                                            }
+                                                "total_remaining": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500
+                                                },
+                                                "total_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1500
+                                                },
+                                                "invoices": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "code": {
+                                                                "type": "string",
+                                                                "example": "INV_123456789"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "example": "2026-06-30"
+                                                            },
+                                                            "paid_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "subscription_name": {
+                                                                "type": "string",
+                                                                "example": "Gold Plan"
+                                                            },
+                                                            "total": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 1000
+                                                            },
+                                                            "remaining_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -17388,40 +17410,10 @@
                         }
                     },
                     "403": {
-                        "description": "🚫 الملف الشخصي غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "🚫 الملف الشخصي غير موجود"
                     },
                     "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [

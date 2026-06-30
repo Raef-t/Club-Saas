@@ -68,7 +68,7 @@ class PlayerRegistrationController extends BaseController
         )
     )]
     #[OA\Response(
-        response: 422, 
+        response: 422,
         description: '⚠️ خطأ في التحقق من صحة البيانات (مثل اكتمال سعة الخطة، أو عدم تطابق جنس اللاعب مع جنس الفرع المحدد)',
         content: new OA\JsonContent(
             properties: [
@@ -183,12 +183,7 @@ class PlayerRegistrationController extends BaseController
         if (!$member) {
             return response()->json(['message' => __('Member not found')], 404);
         }
-
-        $data = $member->toArray();
-        $dashboardService = app(\Modules\MemberManager\Services\Me\MemberDashboardService::class);
-        $data['subscriptions'] = $dashboardService->getSubscriptions((int) $member->id);
-
-        return $this->successResponse($data, __('Member retrieved successfully'));
+        return $this->successResponse($member, __('Member retrieved successfully'));
     }
 
     #[OA\Delete(
