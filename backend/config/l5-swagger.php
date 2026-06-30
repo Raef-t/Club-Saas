@@ -159,6 +159,7 @@ return [
              */
             'exclude' => array_merge(
                 glob(base_path('Modules/*/Tests')),
+                glob(base_path('Modules/*/tests')),
                 glob(base_path('Modules/*/database/migrations')),
                 glob(base_path('Modules/*/database/seeders'))
             ),
