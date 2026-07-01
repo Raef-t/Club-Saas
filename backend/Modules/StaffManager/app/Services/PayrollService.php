@@ -117,17 +117,50 @@ class PayrollService
             return 0;
         }
 
-        // Count sessions this staff conducted during the payroll period
-        // Using direct DB query since sports_sessions is accessible via schema
-        $sessionsCount = DB::table('sports_sessions')
-            ->where('staff_id', $staff->id)
-            ->where('status', 'completed')
-            ->whereBetween('start_time', [$payrollRun->period_start, $payrollRun->period_end])
-            ->count();
+        // Get completed sessions grouped by activity and join with activities to get session_price
+        $sessions = DB::table('sports_sessions')
+            ->join('activities', 'sports_sessions.activity_id', '=', 'activities.id')
+            ->select('sports_sessions.activity_id', DB::raw('count(sports_sessions.id) as total_sessions'), 'activities.session_price')
+            ->where('sports_sessions.staff_id', $staff->id)
+            ->where('sports_sessions.status', 'completed')
+            ->whereBetween('sports_sessions.start_time', [$payrollRun->period_start, $payrollRun->period_end])
+            ->groupBy('sports_sessions.activity_id', 'activities.session_price')
+            ->get();
 
-        // Apply the coach's commission rate to the session count
-        // Commission rate is now stored in coach_details (CTI pattern)
-        $commissionRate = $staff->coachDetail?->default_commission_rate ?? 0;
-        return $sessionsCount * (float) $commissionRate;
+        if ($sessions->isEmpty()) {
+            return 0;
+        }
+
+        // Get commission rules for this staff
+        $rules = DB::table('staff_commission_rules')
+            ->where('staff_id', $staff->id)
+            ->get()
+            ->keyBy('activity_id');
+
+        $totalCommission = 0;
+
+        foreach ($sessions as $session) {
+            $activityId = $session->activity_id;
+            $count = $session->total_sessions;
+            
+            // If there's a specific rule for this activity
+            if ($rules->has($activityId)) {
+                $rule = $rules->get($activityId);
+                
+                if ($rule->calculation_type === 'fixed_amount') {
+                    $totalCommission += $count * (float) $rule->rate_value;
+                } elseif ($rule->calculation_type === 'percentage') {
+                    $sessionPrice = (float) $session->session_price;
+                    $commissionPerSession = $sessionPrice * ((float) $rule->rate_value / 100);
+                    $totalCommission += $count * $commissionPerSession;
+                }
+            } else {
+                // Fallback to default commission rate if no specific rule is found
+                $defaultRate = $staff->coachDetail?->default_commission_rate ?? 0;
+                $totalCommission += $count * (float) $defaultRate;
+            }
+        }
+
+        return $totalCommission;
     }
 }
