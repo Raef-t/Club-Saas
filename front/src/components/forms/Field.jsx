@@ -14,6 +14,8 @@ export function Field({
   children,
   name,
   onChange,
+  compact = false,
+  error,
   ...props
 }) {
   if (type === "time") {
@@ -26,6 +28,8 @@ export function Field({
         required={required}
         disabled={props.disabled}
         allowClear={true}
+        compact={compact}
+        error={error}
       />
     );
   }
@@ -40,27 +44,42 @@ export function Field({
         required={required}
         disabled={props.disabled}
         allowClear={true}
+        compact={compact}
+        error={error}
       />
     );
   }
   const borderClass = 
     variant === "ghost" 
       ? "border-transparent bg-transparent" 
+      : error
+      ? "border border-app-red bg-app-red/5 focus-within:ring-1 focus-within:ring-app-red"
       : variant === "search"
       ? "border-transparent bg-white/5 focus-within:ring-1 focus-within:ring-app-yellow"
+      : compact
+      ? "border border-app-line bg-black/35 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow"
       : "border border-app-muted/50 bg-app-panel-soft/40 focus:border-app-yellow focus-within:border-app-yellow";
 
   const baseInputClass =
-    `flex h-[46px] w-full items-center justify-between rounded-lg px-4 text-sm outline-none transition text-start ${borderClass}`;
+    `flex w-full items-center justify-between rounded-lg outline-none transition text-start ${
+      compact ? "h-9 px-3 text-xs" : "h-[46px] px-4 text-sm"
+    } ${borderClass}`;
 
   return (
     <label className={`block min-w-0 text-start ${className}`}>
       {label && (
-        <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
-          <TagIcon className="size-4 shrink-0 text-app-yellow" />
-          <span>{label}</span>
-          {required ? <span className="text-app-red">*</span> : null}
-        </span>
+        compact ? (
+          <span className="mb-1.5 block text-xs text-app-muted-light text-right w-full">
+            {label}
+            {required ? <span className="text-app-red">*</span> : null}
+          </span>
+        ) : (
+          <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
+            <TagIcon className="size-4 shrink-0 text-app-yellow" />
+            <span>{label}</span>
+            {required ? <span className="text-app-red">*</span> : null}
+          </span>
+        )
       )}
       {type === "select" ? (
         <div className="relative w-full">
@@ -95,6 +114,11 @@ export function Field({
             {...props}
           />
         </div>
+      )}
+      {error && (
+        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+          {error}
+        </span>
       )}
     </label>
   );

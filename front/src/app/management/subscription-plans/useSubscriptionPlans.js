@@ -8,16 +8,15 @@ import {
 } from "@/lib/api/subscriptionPlansApi";
 import { useToast } from "@/components/ui/Toast";
 
+import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
+
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
   return Number.isFinite(number) ? number : 0;
 }
 
 function formatMoney(value) {
-  return `$${parseAmount(value).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })}`;
+  return baseFormatMoney(value, "$");
 }
 
 function getPlans(response) {
@@ -28,9 +27,8 @@ function getPlanDetails(response) {
   return response?.data || null;
 }
 
-function planName(plan) {
-  return plan?.name?.ar || plan?.name?.en || "-";
-}
+const planName = formatLocalizedName;
+
 
 export function useSubscriptionPlans() {
   const toast = useToast();

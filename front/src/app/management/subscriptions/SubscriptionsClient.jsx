@@ -11,7 +11,7 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import { FilterIcon, SearchIcon, PlusIcon, TrashIcon } from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { useToast } from "@/components/ui/Toast";
-
+import { subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
 const statusLabels = {
   active: "نشط",
   expired: "منتهي",
@@ -335,6 +335,7 @@ function SubscriptionCreateForm({
     plan_id: plans[0]?.id ? String(plans[0].id) : "",
     paid_amount: plans[0]?.base_price ? String(plans[0].base_price) : "0",
   });
+  const [errors, setErrors] = useState({});
 
   const [selectedActivities, setSelectedActivities] = useState([]);
   const [currActivityId, setCurrActivityId] = useState("");
@@ -342,6 +343,7 @@ function SubscriptionCreateForm({
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleAddActivity() {
@@ -377,7 +379,7 @@ function SubscriptionCreateForm({
   function handleSubmit(event) {
     event.preventDefault();
 
-    onSubmit({
+    const data = {
       member_id: Number(form.member_id),
       plan_id: Number(form.plan_id),
       paid_amount: Number(form.paid_amount) || 0,
@@ -385,13 +387,26 @@ function SubscriptionCreateForm({
         activity_id: act.activity_id,
         coach_id: act.coach_id,
       })),
-    });
+    };
+
+    const result = subscriptionSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join('_')] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
+    onSubmit(data);
   }
 
   const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         اللاعب العضو
         <Dropdown
@@ -404,6 +419,7 @@ function SubscriptionCreateForm({
             label: `${m.person?.full_name || `${m.first_name || ""} ${m.last_name || ""}`} (رقم العضوية: #${m.id})`,
           }))}
           placeholder="اختر اللاعب"
+          error={errors && errors.member_id}
         />
       </label>
 
@@ -425,6 +441,7 @@ function SubscriptionCreateForm({
             label: `${p.name?.ar || p.name?.en || ""} - ${formatMoney(p.base_price)}`,
           }))}
           placeholder="اختر الخطة"
+          error={errors && errors.plan_id}
         />
       </label>
 
@@ -439,6 +456,9 @@ function SubscriptionCreateForm({
           placeholder={selectedPlanObj ? `السعر الأساسي: ${selectedPlanObj.base_price}` : ""}
           required
         />
+        {errors && errors.paid_amount && (
+          <span className="text-app-red text-xs mt-1 block">{errors.paid_amount}</span>
+        )}
       </label>
 
       {/* Dynamic Activities Selection */}

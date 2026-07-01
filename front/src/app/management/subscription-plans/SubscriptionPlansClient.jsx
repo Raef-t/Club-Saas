@@ -8,9 +8,14 @@ import Drawer from "@/components/ui/Drawer";
 import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { PlusIcon, SearchIcon } from "@/components/icons/Icons";
+import { PlusIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import DetailItem from "@/components/ui/DetailItem";
+import SearchInput from "@/components/ui/SearchInput";
+import { Field } from "@/components/forms/FormControls";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
+import { formatLocalizedName } from "@/lib/utils";
+import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
 
 const TABLE_GRID_COLUMNS =
   "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 88px";
@@ -21,21 +26,13 @@ const initialForm = {
   price: "",
 };
 
-function parseAmount(value) {
-  const number = Number.parseFloat(value || 0);
-  return Number.isFinite(number) ? number : 0;
-}
-
 function formatMoney(value) {
-  return `$${parseAmount(value).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })}`;
+  // Use our centralized formatMoney with '$' symbol
+  const { formatMoney: baseFormat } = require("@/lib/utils");
+  return baseFormat(value, "$");
 }
 
-function planName(plan) {
-  return plan?.name?.ar || plan?.name?.en || "-";
-}
+const planName = formatLocalizedName;
 
 function planTypeLabel(type) {
   const labels = {
@@ -60,23 +57,6 @@ function StatusBadge({ active }) {
   );
 }
 
-function DetailItem({ label, value, tone = "default" }) {
-  const toneClass =
-    tone === "green"
-      ? "text-app-green"
-      : tone === "yellow"
-        ? "text-app-yellow"
-        : "text-app-text";
-
-  return (
-    <div className="rounded-lg border border-app-line bg-app-card-soft/70 p-3 text-right">
-      <p className="text-[11px] text-app-muted-light">{label}</p>
-      <p className={`mt-1 truncate text-sm font-medium ${toneClass}`}>
-        {value ?? "-"}
-      </p>
-    </div>
-  );
-}
 
 function PlanDetails({ plan, isLoading, error }) {
   if (isLoading) {
@@ -136,58 +116,68 @@ function PlanForm({
   errorMessage,
 }) {
   const [form, setForm] = useState(initialValues);
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
-    onSubmit({
+    const data = {
       name: form.name.trim(),
       duration_in_days: Number(form.duration_in_days),
       price: Number(form.price),
-    });
+    };
+    
+    const result = subscriptionPlanSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach(issue => {
+        formattedErrors[issue.path.join('_')] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+    
+    setErrors({});
+    onSubmit(data);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <label className="block text-right text-sm text-app-muted-light">
-        اسم الخطة
-        <input
-          value={form.name}
-          onChange={(event) => updateField("name", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70"
-          placeholder="الاشتراك الفضي"
-          required
+    <form noValidate onSubmit={handleSubmit} className="space-y-4">
+      <Field
+        label="اسم الخطة"
+        value={form.name}
+        onChange={(event) => updateField("name", event.target.value)}
+        placeholder="الاشتراك الفضي"
+        required
+        type="text"
+       error={errors.name}
         />
-      </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        المدة بالأيام
-        <input
-          value={form.duration_in_days}
-          onChange={(event) => updateField("duration_in_days", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70"
-          type="number"
-          min="1"
-          required
+      <Field
+        label="المدة بالأيام"
+        value={form.duration_in_days}
+        onChange={(event) => updateField("duration_in_days", event.target.value)}
+        type="number"
+        min="1"
+        required
+       error={errors.duration_in_days}
         />
-      </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        السعر
-        <input
-          value={form.price}
-          onChange={(event) => updateField("price", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="350"
-          required
+      <Field
+        label="السعر"
+        value={form.price}
+        onChange={(event) => updateField("price", event.target.value)}
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="350"
+        required
+       error={errors.price}
         />
-      </label>
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -369,16 +359,12 @@ export default function SubscriptionPlansClient() {
         }}
         getRowKey={(plan) => plan.id}
         toolbarActions={
-          <label className="relative block min-w-72">
-            <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
-            <input
-              className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="بحث باسم الخطة أو السعر"
-              type="search"
-            />
-          </label>
+          <SearchInput
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="بحث باسم الخطة أو السعر"
+            className="min-w-72"
+          />
         }
         toolbarMeta={
           <p className="text-sm text-app-muted-light">

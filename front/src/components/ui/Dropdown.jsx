@@ -13,6 +13,7 @@ export default function Dropdown({
   buttonClassName = "",
   menuClassName = "",
   disabled = false,
+  error,
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -55,20 +56,34 @@ export default function Dropdown({
     <div ref={containerRef} className={`relative ${className}`} dir="rtl">
       <button
         type="button"
-        className={`app-input flex h-10 w-full items-center justify-between gap-3 px-3 text-sm outline-none transition hover:border-app-yellow/50 focus:border-app-yellow/70 disabled:cursor-not-allowed disabled:opacity-60 ${buttonClassName}`}
+        className={`flex w-full items-center justify-between rounded-lg transition outline-none ${
+          error
+            ? "border border-app-red bg-app-red/5 focus:border-app-red focus:ring-1 focus:ring-app-red"
+            : buttonClassName
+        } ${
+          disabled
+            ? "cursor-not-allowed opacity-60"
+            : open
+            ? "border-app-yellow ring-1 ring-app-yellow"
+            : !buttonClassName.includes("border-") 
+            ? "border border-app-muted/50 bg-app-panel-soft/40 hover:border-app-yellow/50 focus:border-app-yellow" 
+            : ""
+        }`}
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => !disabled && setOpen(!open)}
       >
-        <span className="flex min-w-0 items-center gap-2">
-          {Icon && <Icon className="size-4 shrink-0 text-app-muted-light" />}
-          <span className="truncate text-app-text">
-            {selectedOption?.label || placeholder}
-          </span>
+        <span className="flex items-center gap-2 px-3 h-10">
+          {Icon && <Icon className="size-5 text-app-muted-light" />}
+          {selectedOption ? (
+            <span className="text-white text-sm">{selectedOption.label}</span>
+          ) : (
+            <span className="text-app-muted-light text-sm">{placeholder}</span>
+          )}
         </span>
         <ChevronDownIcon
-          className={`size-4 shrink-0 text-app-muted-light transition ${
+          className={`size-4 ml-3 shrink-0 text-app-muted-light transition ${
             open ? "rotate-180 text-app-yellow" : ""
           }`}
         />
@@ -105,6 +120,11 @@ export default function Dropdown({
             })}
           </div>
         </div>
+      )}
+      {error && (
+        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+          {error}
+        </span>
       )}
     </div>
   );

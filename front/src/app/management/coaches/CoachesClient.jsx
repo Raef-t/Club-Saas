@@ -12,6 +12,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import { PlusIcon, SearchIcon, FilterIcon, TrashIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useCoaches } from "./useCoaches";
+import { coachSchema } from "@/lib/validations/coachesSchema";
 
 const TABLE_GRID_COLUMNS = "minmax(160px,1.2fr) 120px 140px 120px 100px 100px";
 const CURRENCY_SYMBOL = "ل.س";
@@ -239,9 +240,11 @@ function CoachCreateForm({
     employment_type: "fixed_salary",
     base_salary: "3000",
   });
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
@@ -262,7 +265,7 @@ function CoachCreateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         الاسم الكامل للمدرب
         <input
@@ -272,6 +275,7 @@ function CoachCreateForm({
           placeholder="الاسم الثلاثي للمدرب"
           required
         />
+        {errors && errors.full_name && <span className="text-app-red text-xs mt-1 block">{errors.full_name}</span>}
       </label>
 
       <div className="grid grid-cols-2 gap-3">
@@ -286,7 +290,7 @@ function CoachCreateForm({
               { value: "male", label: "ذكر" },
               { value: "female", label: "أنثى" },
             ]}
-          />
+           error={errors && errors.gender} />
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
@@ -297,6 +301,7 @@ function CoachCreateForm({
             className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
             type="date"
           />
+        {errors && errors.dob && <span className="text-app-red text-xs mt-1 block">{errors.dob}</span>}
         </label>
       </div>
 
@@ -310,6 +315,7 @@ function CoachCreateForm({
             placeholder="09xx xxx xxx"
             dir="ltr"
           />
+        {errors && errors.phone && <span className="text-app-red text-xs mt-1 block">{errors.phone}</span>}
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
@@ -322,6 +328,7 @@ function CoachCreateForm({
             dir="ltr"
             type="email"
           />
+        {errors && errors.email && <span className="text-app-red text-xs mt-1 block">{errors.email}</span>}
         </label>
       </div>
 
@@ -334,7 +341,7 @@ function CoachCreateForm({
           onChange={(val) => updateField("branch_id", val)}
           options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
           placeholder="اختر الفرع"
-        />
+         error={errors && errors.branch_id} />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -345,6 +352,7 @@ function CoachCreateForm({
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
           placeholder="مثال: Yoga, CrossFit, Bodybuilding"
         />
+        {errors && errors.specialization && <span className="text-app-red text-xs mt-1 block">{errors.specialization}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -356,6 +364,7 @@ function CoachCreateForm({
           type="number"
           min="0"
         />
+        {errors && errors.experience_years && <span className="text-app-red text-xs mt-1 block">{errors.experience_years}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -366,7 +375,7 @@ function CoachCreateForm({
           value={form.employment_type}
           onChange={(val) => updateField("employment_type", val)}
           options={employmentTypes}
-        />
+         error={errors && errors.employment_type} />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -379,6 +388,7 @@ function CoachCreateForm({
           min="0"
           required
         />
+        {errors && errors.base_salary && <span className="text-app-red text-xs mt-1 block">{errors.base_salary}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -389,6 +399,7 @@ function CoachCreateForm({
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
           placeholder="المدينة، الحي"
         />
+        {errors && errors.address && <span className="text-app-red text-xs mt-1 block">{errors.address}</span>}
       </label>
 
       {errorMessage && (
@@ -428,9 +439,11 @@ function CoachEditForm({
     specialization: initialValues.details?.specialization || "",
     experience_years: String(initialValues.details?.experience_years || 0),
   });
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
@@ -449,7 +462,7 @@ function CoachEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         التخصص التدريبي
         <input
@@ -458,6 +471,7 @@ function CoachEditForm({
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
           placeholder="مثال: Yoga, CrossFit"
         />
+        {errors && errors.specialization && <span className="text-app-red text-xs mt-1 block">{errors.specialization}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -469,6 +483,7 @@ function CoachEditForm({
           type="number"
           min="0"
         />
+        {errors && errors.experience_years && <span className="text-app-red text-xs mt-1 block">{errors.experience_years}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -479,7 +494,7 @@ function CoachEditForm({
           value={form.employment_type}
           onChange={(val) => updateField("employment_type", val)}
           options={employmentTypes}
-        />
+         error={errors && errors.employment_type} />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -492,6 +507,7 @@ function CoachEditForm({
           min="0"
           required
         />
+        {errors && errors.base_salary && <span className="text-app-red text-xs mt-1 block">{errors.base_salary}</span>}
       </label>
 
       <div className="flex items-center gap-3 pt-2">
@@ -502,6 +518,7 @@ function CoachEditForm({
             onChange={(e) => updateField("is_active", e.target.checked)}
             className="peer sr-only"
           />
+        {errors && errors.is_active && <span className="text-app-red text-xs mt-1 block">{errors.is_active}</span>}
           <div className="peer h-6 w-11 rounded-full bg-app-line after:absolute after:top-[2px] after:right-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]"></div>
         </label>
         <span className="text-sm font-medium text-white">مدرب نشط في النظام</span>

@@ -8,10 +8,15 @@ import Drawer from "@/components/ui/Drawer";
 import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { PlusIcon, SearchIcon } from "@/components/icons/Icons";
+import { PlusIcon } from "@/components/icons/Icons";
 import { CheckboxField } from "@/components/forms/CheckboxField";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import DetailItem from "@/components/ui/DetailItem";
+import SearchInput from "@/components/ui/SearchInput";
+import { Field } from "@/components/forms/FormControls";
 import { useClubs } from "./useClubs";
+import { formatDate } from "@/lib/utils";
+import { clubSchema } from "@/lib/validations/clubsSchema";
 
 const TABLE_GRID_COLUMNS = "80px minmax(180px,1.5fr) 140px 140px 120px";
 
@@ -57,37 +62,6 @@ function ClubLogo({ src, name, className = "size-10" }) {
   );
 }
 
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("ar", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
-function DetailItem({ label, value, tone = "default" }) {
-  const toneClass =
-    tone === "green"
-      ? "text-app-green"
-      : tone === "red"
-        ? "text-app-red"
-        : tone === "yellow"
-          ? "text-app-yellow"
-          : "text-app-text";
-
-  return (
-    <div className="rounded-lg border border-app-line bg-app-card-soft/70 p-3 text-right">
-      <p className="text-[11px] text-app-muted-light">{label}</p>
-      <p className={`mt-1 truncate text-sm font-medium ${toneClass}`}>
-        {value ?? "-"}
-      </p>
-    </div>
-  );
-}
 
 function ClubDetails({ club, isLoading, error }) {
   if (isLoading) {
@@ -152,32 +126,46 @@ function ClubForm({
   errorMessage,
 }) {
   const [form, setForm] = useState(initialValues);
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
-    onSubmit({
+    const data = {
       name: form.name.trim(),
       logo_url: form.logo_url?.trim() || null,
       is_active: Boolean(form.is_active),
-    });
+    };
+    
+    const result = clubSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach(issue => {
+        formattedErrors[issue.path.join('_')] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+    
+    setErrors({});
+    onSubmit(data);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <label className="block text-right text-sm text-app-muted-light">
-        اسم النادي
-        <input
-          value={form.name}
-          onChange={(event) => updateField("name", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70"
-          placeholder="تكنوجيم"
-          required
+    <form noValidate onSubmit={handleSubmit} className="space-y-4">
+      <Field
+        label="اسم النادي"
+        value={form.name}
+        onChange={(event) => updateField("name", event.target.value)}
+        placeholder="تكنوجيم"
+        required
+        type="text"
+       error={errors.name}
         />
-      </label>
 
       {/* 
       <label className="block text-right text-sm text-app-muted-light">
@@ -364,16 +352,12 @@ export default function ClubsClient() {
         }}
         getRowKey={(club) => club.id}
         toolbarActions={
-          <label className="relative block min-w-72">
-            <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
-            <input
-              className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="البحث باسم النادي..."
-              type="search"
-            />
-          </label>
+          <SearchInput
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="البحث باسم النادي..."
+            className="min-w-72"
+          />
         }
         toolbarMeta={
           <p className="text-sm text-app-muted-light">

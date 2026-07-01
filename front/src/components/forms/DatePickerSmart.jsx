@@ -144,6 +144,8 @@ export default function DatePickerSmart({
   disabled = false,
   allowClear = true,
   autoDefault = true,
+  compact = false,
+  error,
 }) {
   const inputWrapRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -162,7 +164,11 @@ export default function DatePickerSmart({
     placement: "bottom",
   });
 
-  const [digits, setDigits] = useState("");
+  const [digits, setDigits] = useState(() => {
+    if (value) return cleanTyped(value);
+    if (autoDefault) return cleanTyped(formatDisplay(toISO(new Date()), format));
+    return "";
+  });
 
   const inputText = useMemo(
     () => applyMask(digits, format),
@@ -403,19 +409,31 @@ export default function DatePickerSmart({
   return (
     <div className="flex flex-col w-full text-start">
       {label && (
-        <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
-          <TagIcon className="size-4 shrink-0 text-app-yellow" />
-          <span>{label}</span>
-          {required ? <span className="text-app-red">*</span> : null}
-        </span>
+        compact ? (
+          <span className="mb-1.5 block text-xs text-app-muted-light text-right w-full">
+            {label}
+            {required ? <span className="text-app-red">*</span> : null}
+          </span>
+        ) : (
+          <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
+            <TagIcon className="size-4 shrink-0 text-app-yellow" />
+            <span>{label}</span>
+            {required ? <span className="text-app-red">*</span> : null}
+          </span>
+        )
       )}
 
       {/* Input */}
       <div
         ref={inputWrapRef}
         className={[
-          "relative flex h-[46px] w-full items-center justify-between rounded-lg px-4 text-sm transition outline-none",
-          "border border-app-muted/50 bg-app-panel-soft/40 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow",
+          "relative flex w-full items-center justify-between rounded-lg px-4 text-sm transition outline-none",
+          compact
+            ? "h-9 bg-black/35 border"
+            : "h-[46px] bg-app-panel-soft/40 border",
+          error
+            ? "border-app-red focus-within:border-app-red focus-within:ring-1 focus-within:ring-app-red"
+            : "border-app-muted/50 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow",
           disabled ? "opacity-60 pointer-events-none" : "cursor-text",
         ].join(" ")}
         onClick={() => {
@@ -635,6 +653,11 @@ export default function DatePickerSmart({
           </>,
           document.body,
         )}
+      {error && (
+        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

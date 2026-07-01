@@ -9,9 +9,16 @@ import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import Dropdown from "@/components/ui/Dropdown";
-import { PlusIcon, SearchIcon, FilterIcon } from "@/components/icons/Icons";
+import { PlusIcon, FilterIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import DetailItem from "@/components/ui/DetailItem";
+import SearchInput from "@/components/ui/SearchInput";
+import ToggleSwitch from "@/components/ui/ToggleSwitch";
+import { Field, PhoneField } from "@/components/forms/FormControls";
 import { useBranches } from "./useBranches";
+import { formatDate, formatLocalizedName } from "@/lib/utils";
+import { genderLabels } from "@/lib/constants";
+import { branchSchema } from "@/lib/validations/branchesSchema";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 120px 180px 140px 110px 110px";
 
@@ -26,12 +33,6 @@ const initialForm = {
   type: "gym",
 };
 
-const genderLabels = {
-  mixed: "مختلط",
-  male: "ذكور",
-  female: "إناث",
-};
-
 const genderOptions = [
   { value: "all", label: "كل الفروع" },
   { value: "mixed", label: "مختلط" },
@@ -39,43 +40,8 @@ const genderOptions = [
   { value: "female", label: "إناث" },
 ];
 
-function branchName(branch) {
-  if (!branch?.name) return "-";
-  if (typeof branch.name === "string") return branch.name;
-  return branch.name.ar || branch.name.en || "-";
-}
+const branchName = formatLocalizedName;
 
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("ar", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
-function DetailItem({ label, value, tone = "default" }) {
-  const toneClass =
-    tone === "green"
-      ? "text-app-green"
-      : tone === "red"
-        ? "text-app-red"
-        : tone === "yellow"
-          ? "text-app-yellow"
-          : "text-app-text";
-
-  return (
-    <div className="rounded-lg border border-app-line bg-app-card-soft/70 p-3 text-right">
-      <p className="text-[11px] text-app-muted-light">{label}</p>
-      <p className={`mt-1 truncate text-sm font-medium ${toneClass}`}>
-        {value ?? "-"}
-      </p>
-    </div>
-  );
-}
 
 function BranchDetails({ branch, isLoading, error }) {
   if (isLoading) {
@@ -145,14 +111,16 @@ function BranchForm({
   errorMessage,
 }) {
   const [form, setForm] = useState(initialValues);
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
-    onSubmit({
+    const data = {
       club_id: Number(form.club_id),
       name: {
         ar: form.name_ar.trim(),
@@ -163,11 +131,25 @@ function BranchForm({
       address: form.address.trim() || null,
       country_code: form.country_code.trim() || null,
       phone: form.phone.trim() || null,
-    });
+    };
+    
+    const result = branchSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach(issue => {
+        formattedErrors[issue.path.join('_')] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+    
+    setErrors({});
+    onSubmit(data);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form noValidate onSubmit={handleSubmit} className="flex flex-col min-h-full" dir="rtl">
+      <div className="space-y-4 flex-1 pb-4">
       <label className="block text-right text-sm text-app-muted-light">
         النادي التابع له
         <Dropdown
@@ -177,31 +159,30 @@ function BranchForm({
           onChange={(val) => updateField("club_id", val)}
           options={clubs.map((club) => ({ value: club.id, label: club.name }))}
           placeholder="اختر النادي"
-        />
+         error={errors.club_id}
+          />
       </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        اسم الفرع بالعربية
-        <input
-          value={form.name_ar}
-          onChange={(event) => updateField("name_ar", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder="مثال: الفرع الرئيسي"
-          required
+      <Field
+        label="اسم الفرع بالعربية"
+        value={form.name_ar}
+        onChange={(event) => updateField("name_ar", event.target.value)}
+        placeholder="مثال: الفرع الرئيسي"
+        required
+        type="text"
+       error={errors.name_ar}
         />
-      </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        اسم الفرع بالإنجليزية
-        <input
-          value={form.name_en}
-          onChange={(event) => updateField("name_en", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-left outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder="Main Branch"
-          dir="ltr"
-          required
+      <Field
+        label="اسم الفرع بالإنجليزية"
+        value={form.name_en}
+        onChange={(event) => updateField("name_en", event.target.value)}
+        placeholder="Main Branch"
+        dir="ltr"
+        required
+        type="text"
+       error={errors.name_en}
         />
-      </label>
 
       <label className="block text-right text-sm text-app-muted-light">
         التقييد الجنسي
@@ -216,49 +197,39 @@ function BranchForm({
             { value: "female", label: "إناث فقط" },
           ]}
           placeholder="اختر التقييد الجنسي"
-        />
+         error={errors.gender_restriction}
+          />
       </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        العنوان
-        <input
-          value={form.address}
-          onChange={(event) => updateField("address", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder="مثال: حلب، الشهباء"
+      <Field
+        label="العنوان"
+        value={form.address}
+        onChange={(event) => updateField("address", event.target.value)}
+        placeholder="مثال: حلب، الشهباء"
+        required={false}
+        type="text"
+       error={errors.address}
         />
-      </label>
 
-      <div className="grid grid-cols-3 gap-3">
-        <label className="col-span-2 block text-right text-sm text-app-muted-light">
-          رقم الهاتف
-          <input
-            value={form.phone}
-            onChange={(event) => updateField("phone", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-left outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            placeholder="924325325"
-            dir="ltr"
-          />
-        </label>
-        <label className="block text-right text-sm text-app-muted-light">
-          رمز الدولة
-          <input
-            value={form.country_code}
-            onChange={(event) => updateField("country_code", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-center outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            placeholder="+963"
-            dir="ltr"
-          />
-        </label>
+      <PhoneField
+        label="رقم الهاتف"
+        phoneValue={form.phone}
+        onPhoneChange={(val) => updateField("phone", val)}
+        codeValue={form.country_code}
+        onCodeChange={(val) => updateField("country_code", val)}
+        required={false}
+       error={errors.phone || errors.country_code}
+        />
+
       </div>
 
       {errorMessage && (
-        <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
+        <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red mb-4">
           {errorMessage}
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className="sticky bottom-[-20px] -mx-5 -mb-5 mt-4 flex items-center gap-3 border-t border-app-line bg-app-bg p-5 z-10">
         <Button
           type="button"
           tone="outline"
@@ -360,15 +331,11 @@ export default function BranchesClient() {
         align: "center",
         render: (value, branch) => (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                checked={value}
-                onChange={() => handleToggleStatus(branch)}
-                className="peer sr-only"
-              />
-              <div className="peer h-5 w-9 rounded-full bg-app-line after:absolute after:top-[2px] after:right-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-full"></div>
-            </label>
+            <ToggleSwitch
+              checked={value}
+              onChange={() => handleToggleStatus(branch)}
+              size="sm"
+            />
           </div>
         ),
       },
@@ -454,16 +421,11 @@ export default function BranchesClient() {
         getRowKey={(branch) => branch.id}
         toolbarActions={
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="relative block min-w-64">
-              <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
-              <input
-                className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="البحث باسم الفرع أو العنوان..."
-                type="search"
-              />
-            </label>
+            <SearchInput
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="البحث باسم الفرع أو العنوان..."
+            />
 
             <Dropdown
               className="min-w-48 bg-app-card-soft border-app-line text-white"

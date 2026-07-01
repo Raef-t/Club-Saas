@@ -11,6 +11,8 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import Dropdown from "@/components/ui/Dropdown";
 import { PlusIcon, SearchIcon, FilterIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { memberSchema } from "@/lib/validations/membersSchema";
+import PhoneField from "@/components/forms/PhoneField";
 import { useMembers } from "./useMembers";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
@@ -166,9 +168,11 @@ function MemberForm({
   errorMessage,
 }) {
   const [form, setForm] = useState(initialValues);
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
@@ -188,6 +192,34 @@ function MemberForm({
     const calculatedAge = form.dob
       ? new Date().getFullYear() - new Date(form.dob).getFullYear()
       : 25;
+
+    const validationData = {
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      mobile_country_code: form.mobile_country_code.trim(),
+      mobile: form.mobile.trim(),
+      gender: form.gender,
+      dob: form.dob || null,
+      branch_id: Number(form.branch_id),
+      emergency_name: form.emergency_name.trim(),
+      emergency_relation: form.emergency_relation,
+      emergency_phone: form.emergency_phone.trim(),
+      emergency_country_code: form.emergency_country_code.trim(),
+      plan_id: form.plan_id ? Number(form.plan_id) : undefined,
+      paid_amount: form.paid_amount ? Number(form.paid_amount) : undefined,
+    };
+
+    const result = memberSchema.safeParse(validationData);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join('_')] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
 
     if (mode === "create") {
       const plansPayload = form.plan_id
@@ -228,7 +260,7 @@ function MemberForm({
   const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
           الاسم الأول
@@ -239,6 +271,7 @@ function MemberForm({
             placeholder="مثال: أحمد"
             required
           />
+          {errors && errors.first_name && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.first_name}</span>}
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
@@ -250,33 +283,19 @@ function MemberForm({
             placeholder="مثال: محمد"
             required
           />
+          {errors && errors.last_name && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.last_name}</span>}
         </label>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <label className="col-span-2 block text-right text-sm text-app-muted-light">
-          رقم الهاتف المحمول
-          <input
-            value={form.mobile}
-            onChange={(event) => updateField("mobile", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-left outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            placeholder="0501234567"
-            dir="ltr"
-            required
-          />
-        </label>
-        <label className="block text-right text-sm text-app-muted-light">
-          رمز الدولة
-          <input
-            value={form.mobile_country_code}
-            onChange={(event) => updateField("mobile_country_code", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-center outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            placeholder="+963"
-            dir="ltr"
-            required
-          />
-        </label>
-      </div>
+      <PhoneField
+        label="رقم الهاتف المحمول"
+        phoneValue={form.mobile}
+        onPhoneChange={(val) => updateField("mobile", val)}
+        codeValue={form.mobile_country_code}
+        onCodeChange={(val) => updateField("mobile_country_code", val)}
+        required
+        error={errors && (errors.mobile || errors.mobile_country_code)}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
@@ -290,6 +309,7 @@ function MemberForm({
               { value: "male", label: "ذكر" },
               { value: "female", label: "أنثى" },
             ]}
+            error={errors && errors.gender}
           />
         </label>
 
@@ -301,6 +321,7 @@ function MemberForm({
             className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
             type="date"
           />
+          {errors && errors.dob && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.dob}</span>}
         </label>
       </div>
 
@@ -313,6 +334,7 @@ function MemberForm({
           onChange={(val) => updateField("branch_id", val)}
           options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
           placeholder="اختر الفرع"
+          error={errors && errors.branch_id}
         />
       </label>
 
@@ -328,6 +350,7 @@ function MemberForm({
             className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
             placeholder="مثال: والد اللاعب"
           />
+          {errors && errors.emergency_name && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.emergency_name}</span>}
         </label>
 
         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -339,31 +362,19 @@ function MemberForm({
               value={form.emergency_relation}
               onChange={(val) => updateField("emergency_relation", val)}
               options={relationOptions}
+              error={errors && errors.emergency_relation}
             />
           </label>
 
-          <div className="grid grid-cols-3 gap-2">
-            <label className="col-span-2 block text-right text-sm text-app-muted-light">
-              رقم الهاتف
-              <input
-                value={form.emergency_phone}
-                onChange={(event) => updateField("emergency_phone", event.target.value)}
-                className="app-input mt-2 h-11 w-full px-3 text-left outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-                placeholder="0509876543"
-                dir="ltr"
-              />
-            </label>
-            <label className="block text-right text-sm text-app-muted-light">
-              الرمز
-              <input
-                value={form.emergency_country_code}
-                onChange={(event) => updateField("emergency_country_code", event.target.value)}
-                className="app-input mt-2 h-11 w-full px-3 text-center outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-                placeholder="+963"
-                dir="ltr"
-              />
-            </label>
-          </div>
+          <PhoneField
+            label="رقم الهاتف"
+            phoneValue={form.emergency_phone}
+            onPhoneChange={(val) => updateField("emergency_phone", val)}
+            codeValue={form.emergency_country_code}
+            onCodeChange={(val) => updateField("emergency_country_code", val)}
+            required={false}
+            error={errors && (errors.emergency_phone || errors.emergency_country_code)}
+          />
         </div>
       </div>
 

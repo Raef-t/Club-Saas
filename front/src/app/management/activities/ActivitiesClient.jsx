@@ -9,9 +9,15 @@ import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import Dropdown from "@/components/ui/Dropdown";
-import { PlusIcon, SearchIcon } from "@/components/icons/Icons";
+import { PlusIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import DetailItem from "@/components/ui/DetailItem";
+import SearchInput from "@/components/ui/SearchInput";
+import { Field, TextAreaField } from "@/components/forms/FormControls";
 import { useActivities } from "./useActivities";
+import { formatDate, formatLocalizedName } from "@/lib/utils";
+import { genderLabels } from "@/lib/constants";
+import { activitySchema } from "@/lib/validations/activitiesSchema";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) minmax(200px,1.8fr) 110px 130px 90px 100px";
 
@@ -25,49 +31,8 @@ const initialForm = {
   gender_allowed: "mixed",
 };
 
-const genderLabels = {
-  mixed: "مختلط",
-  male: "ذكور",
-  female: "إناث",
-};
+const activityName = formatLocalizedName;
 
-function activityName(act) {
-  if (!act?.name) return "-";
-  if (typeof act.name === "string") return act.name;
-  return act.name.ar || act.name.en || "-";
-}
-
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("ar", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
-function DetailItem({ label, value, tone = "default" }) {
-  const toneClass =
-    tone === "green"
-      ? "text-app-green"
-      : tone === "red"
-        ? "text-app-red"
-        : tone === "yellow"
-          ? "text-app-yellow"
-          : "text-app-text";
-
-  return (
-    <div className="rounded-lg border border-app-line bg-app-card-soft/70 p-3 text-right">
-      <p className="text-[11px] text-app-muted-light">{label}</p>
-      <p className={`mt-1 text-sm font-medium ${toneClass}`}>
-        {value ?? "-"}
-      </p>
-    </div>
-  );
-}
 
 function ActivityDetails({ activity, isLoading, error }) {
   if (isLoading) {
@@ -148,14 +113,16 @@ function ActivityForm({
   errorMessage,
 }) {
   const [form, setForm] = useState(initialValues);
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
-    onSubmit({
+    const data = {
       name: {
         ar: form.name_ar.trim(),
         en: form.name_en.trim(),
@@ -165,43 +132,52 @@ function ActivityForm({
       default_capacity: Number(form.default_capacity) || 20,
       is_private_equipment: form.is_private_equipment === "1",
       gender_allowed: form.gender_allowed,
-    });
+    };
+    
+    const result = activitySchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach(issue => {
+        formattedErrors[issue.path.join('_')] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+    
+    setErrors({});
+    onSubmit(data);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-      <label className="block text-right text-sm text-app-muted-light">
-        اسم النشاط بالعربية
-        <input
-          value={form.name_ar}
-          onChange={(event) => updateField("name_ar", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder="مثال: صالة حديد حرة"
-          required
+    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+      <Field
+        label="اسم النشاط بالعربية"
+        value={form.name_ar}
+        onChange={(event) => updateField("name_ar", event.target.value)}
+        placeholder="مثال: صالة حديد حرة"
+        required
+        type="text"
+       error={errors.name_ar}
         />
-      </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        اسم النشاط بالإنجليزية
-        <input
-          value={form.name_en}
-          onChange={(event) => updateField("name_en", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-left outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder="Open Gym"
-          dir="ltr"
-          required
+      <Field
+        label="اسم النشاط بالإنجليزية"
+        value={form.name_en}
+        onChange={(event) => updateField("name_en", event.target.value)}
+        placeholder="Open Gym"
+        dir="ltr"
+        required
+        type="text"
+       error={errors.name_en}
         />
-      </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        الوصف
-        <textarea
-          value={form.description}
-          onChange={(event) => updateField("description", event.target.value)}
-          className="app-input mt-2 h-24 w-full p-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white resize-none"
-          placeholder="أدخل وصفاً مختصراً للنشاط والتمارين..."
+      <TextAreaField
+        label="الوصف"
+        value={form.description}
+        onChange={(event) => updateField("description", event.target.value)}
+        placeholder="أدخل وصفاً مختصراً للنشاط والتمارين..."
+       error={errors.description}
         />
-      </label>
 
       <label className="block text-right text-sm text-app-muted-light">
         نوع النشاط
@@ -215,7 +191,8 @@ function ActivityForm({
             { value: "private_session", label: "تدريب خاص / فردي" },
           ]}
           placeholder="اختر النوع"
-        />
+         error={errors.type}
+          />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -230,7 +207,8 @@ function ActivityForm({
             { value: "1", label: "أجهزة خاصة / تدريب خاص" },
           ]}
           placeholder="نوع التجهيز"
-        />
+         error={errors.is_private_equipment}
+          />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -246,20 +224,19 @@ function ActivityForm({
             { value: "female", label: "إناث فقط" },
           ]}
           placeholder="اختر الفئة المسموح بها"
-        />
+         error={errors.gender_allowed}
+          />
       </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        السعة الافتراضية للنشاط
-        <input
-          value={form.default_capacity}
-          onChange={(event) => updateField("default_capacity", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          type="number"
-          min="1"
-          required
+      <Field
+        label="السعة الافتراضية للنشاط"
+        value={form.default_capacity}
+        onChange={(event) => updateField("default_capacity", event.target.value)}
+        type="number"
+        min="1"
+        required
+       error={errors.default_capacity}
         />
-      </label>
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -450,16 +427,12 @@ export default function ActivitiesClient() {
         }}
         getRowKey={(act) => act.id}
         toolbarActions={
-          <label className="relative block min-w-80">
-            <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
-            <input
-              className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="البحث باسم النشاط أو الوصف..."
-              type="search"
-            />
-          </label>
+          <SearchInput
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="البحث باسم النشاط أو الوصف..."
+            className="min-w-80"
+          />
         }
         toolbarMeta={
           <p className="text-sm text-app-muted-light">

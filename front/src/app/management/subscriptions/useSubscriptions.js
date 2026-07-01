@@ -13,6 +13,7 @@ import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
+import { formatMoney as baseFormatMoney } from "@/lib/utils";
 
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
@@ -20,10 +21,7 @@ function parseAmount(value) {
 }
 
 function formatMoney(value) {
-  return `$${parseAmount(value).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })}`;
+  return baseFormatMoney(value, "$");
 }
 
 function getSubscriptionRows(response) {

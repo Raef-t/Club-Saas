@@ -125,10 +125,12 @@ export function useMembers() {
       toast.success("تم تسجيل اللاعب العضو بنجاح!");
       closeDrawer();
     } catch (submitError) {
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر إضافة العضو. تحقق من البيانات وحاول مرة أخرى.",
-      );
+      const rawMsg = submitError?.data?.message || "";
+      if (rawMsg.includes("endpoint or resource was not found") || submitError?.status === 404) {
+        setFormError("عذراً، الرابط البرمجي لإضافة اللاعب غير متوفر حالياً على الخادم (404).");
+      } else {
+        setFormError(rawMsg || "تعذر إضافة العضو. تحقق من البيانات وحاول مرة أخرى.");
+      }
     }
   }
 
@@ -140,10 +142,12 @@ export function useMembers() {
       toast.success("تم تعديل بيانات اللاعب بنجاح!");
       closeDrawer();
     } catch (submitError) {
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر تعديل بيانات العضو. تحقق من البيانات وحاول مرة أخرى.",
-      );
+      const rawMsg = submitError?.data?.message || "";
+      if (rawMsg.includes("endpoint or resource was not found") || submitError?.status === 404) {
+        setFormError("عذراً، الرابط البرمجي لتعديل بيانات اللاعب غير متوفر حالياً على الخادم (404).");
+      } else {
+        setFormError(rawMsg || "تعذر تعديل بيانات العضو. تحقق من البيانات وحاول مرة أخرى.");
+      }
     }
   }
 

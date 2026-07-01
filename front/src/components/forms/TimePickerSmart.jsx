@@ -62,7 +62,14 @@ export default function TimePickerSmart({
     placement: "bottom",
   });
 
-  const [digits, setDigits] = useState("");
+  const [digits, setDigits] = useState(() => {
+    if (value) return cleanTyped(value);
+    if (autoDefault) {
+      const now = new Date();
+      return cleanTyped(`${pad2(now.getHours())}:${pad2(now.getMinutes())}`);
+    }
+    return "";
+  });
 
   const inputText = useMemo(() => applyMask(digits), [digits]);
 
