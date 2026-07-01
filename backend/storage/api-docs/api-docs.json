@@ -7,8 +7,12 @@
     },
     "servers": [
         {
+            "url": "http://31.70.108.63/api",
+            "description": "New Production API Server"
+        },
+        {
             "url": "http://issgroup-001-site1.anytempurl.com/api",
-            "description": "Production API Server"
+            "description": "Legacy Staging Server"
         },
         {
             "url": "http://127.0.0.1:8000/api",
@@ -12949,6 +12953,14 @@
                 "parameters": [
                     {
                         "name": "branch_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "activity_id",
                         "in": "query",
                         "required": false,
                         "schema": {
