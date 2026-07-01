@@ -123,7 +123,11 @@ class CoachService
             $query->where('branch_id', $filters['branch_id']);
         }
 
-
+        if (!empty($filters['activity_id'])) {
+            $query->whereHas('activities', function ($q) use ($filters) {
+                $q->where('activities.id', $filters['activity_id']);
+            });
+        }
         return $query->get();
     }
 

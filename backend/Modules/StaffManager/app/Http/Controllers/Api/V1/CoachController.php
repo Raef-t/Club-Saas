@@ -136,6 +136,7 @@ class CoachController extends Controller
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'activity_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(
@@ -179,7 +180,7 @@ class CoachController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['branch_id']);
+            $filters = $request->only(['branch_id', 'activity_id']);
             $coaches = $this->coachService->getAllCoaches($filters);
 
             return CoachResource::collection($coaches);
