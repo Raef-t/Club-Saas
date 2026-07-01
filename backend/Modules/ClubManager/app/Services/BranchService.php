@@ -62,4 +62,20 @@ class BranchService
         $branch->update(['is_active' => !$branch->is_active]);
         return $branch;
     }
+
+    /**
+     * Get statistics for branches.
+     */
+    public function getStats()
+    {
+        $query = \Modules\ClubManager\Models\Branch::query();
+
+        return [
+            'total_branches' => (clone $query)->count(),
+            'active_branches' => (clone $query)->where('is_active', true)->count(),
+            'male_branches' => (clone $query)->where('gender_restriction', 'male')->count(),
+            'female_branches' => (clone $query)->where('gender_restriction', 'female')->count(),
+            'mixed_branches' => (clone $query)->where('gender_restriction', 'mixed')->count(),
+        ];
+    }
 }

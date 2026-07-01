@@ -9,6 +9,7 @@ use Modules\ClubManager\Http\Controllers\Api\V1\ClubController;
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('clubs', ClubController::class);
 
+    Route::get('branches/stats', [BranchController::class, 'stats']);
     Route::apiResource('branches', BranchController::class);
     Route::patch('branches/{id}/toggle-status', [BranchController::class, 'toggleStatus']);
     

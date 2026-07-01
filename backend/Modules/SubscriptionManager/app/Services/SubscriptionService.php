@@ -12,9 +12,9 @@ use Exception;
 
 class SubscriptionService
 {
-    protected $planRepository;
-    protected $subscriptionRepository;
-    protected $memberSharedService;
+    protected SubscriptionPlanRepositoryInterface $planRepository;
+    protected PlayerSubscriptionRepositoryInterface $subscriptionRepository;
+    protected MemberSharedServiceInterface $memberSharedService;
 
     public function __construct(
         SubscriptionPlanRepositoryInterface $planRepository,
@@ -75,7 +75,7 @@ class SubscriptionService
     /**
      * Get a single subscription with resolved Member DTO.
      */
-    public function getSubscriptionById($id)
+    public function getSubscriptionById(int $id)
     {
         $subscription = $this->subscriptionRepository->find($id);
         if ($subscription) {
@@ -87,7 +87,7 @@ class SubscriptionService
     /**
      * Subscribe a member to a plan.
      */
-    public function subscribeMember($memberId, $planId, array $options = [])
+    public function subscribeMember(int $memberId, int $planId, array $options = [])
     {
         // 1. Load plan with activities and ensure it exists
         $plan = $this->planRepository->find($planId);
@@ -152,23 +152,43 @@ class SubscriptionService
 
             // 7. Create Payment if paid_amount > 0
             if ($paidAmount > 0) {
-                $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
-                    ->where('branch_id', $branchId)
-                    ->value('default_safe_id');
+                if (($options['payment_method'] ?? 'cash') === 'wallet') {
+                    // Pay via wallet
+                    $walletService = app(\Modules\WalletManager\Services\WalletService::class);
+                    $walletService->pay(
+                        $memberDTO->personId,
+                        $paidAmount,
+                        'Subscription Payment for Invoice #' . $invoice->id,
+                        \Modules\SubscriptionManager\Models\Invoice::class,
+                        $invoice->id
+                    );
 
-                if (!$safeId) {
-                    $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => null, // No safe involved since money is taken from wallet
+                        'amount' => $paidAmount,
+                        'payment_method' => 'wallet',
+                        'status' => 'completed',
+                    ]);
+                } else {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
                         ->where('branch_id', $branchId)
-                        ->value('id');
-                }
+                        ->value('default_safe_id');
 
-                $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                    'invoice_id' => $invoice->id,
-                    'safe_id' => $safeId,
-                    'amount' => $paidAmount,
-                    'payment_method' => $options['payment_method'] ?? 'cash',
-                    'status' => 'completed',
-                ]);
+                    if (!$safeId) {
+                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                            ->where('branch_id', $branchId)
+                            ->value('id');
+                    }
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => $safeId,
+                        'amount' => $paidAmount,
+                        'payment_method' => $options['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+                }
 
                 event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
@@ -213,7 +233,7 @@ class SubscriptionService
     /**
      * Freeze a subscription.
      */
-    public function freezeSubscription($subscriptionId, $startDate, $endDate, $reason = null)
+    public function freezeSubscription(int $subscriptionId, string $startDate, string $endDate, ?string $reason = null)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
@@ -262,7 +282,7 @@ class SubscriptionService
     /**
      * Renew an existing subscription.
      */
-    public function renewSubscription($subscriptionId, array $options = [])
+    public function renewSubscription(int $subscriptionId, array $options = [])
     {
         $oldSubscription = $this->subscriptionRepository->find($subscriptionId);
 
@@ -285,7 +305,7 @@ class SubscriptionService
     /**
      * Record a payment for a subscription.
      */
-    public function recordPayment($subscriptionId, $amount)
+    public function recordPayment(int $subscriptionId, float $amount)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
@@ -318,23 +338,44 @@ class SubscriptionService
             );
 
             if ($amount > 0) {
-                $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
-                    ->where('branch_id', $branchId)
-                    ->value('default_safe_id');
+                if (($options['payment_method'] ?? 'cash') === 'wallet') {
+                    // Pay via wallet
+                    $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
+                    $walletService = app(\Modules\WalletManager\Services\WalletService::class);
+                    $walletService->pay(
+                        $memberDTO->personId,
+                        $amount,
+                        'Subscription Payment for Invoice #' . $invoice->id,
+                        \Modules\SubscriptionManager\Models\Invoice::class,
+                        $invoice->id
+                    );
 
-                if (!$safeId) {
-                    $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => null,
+                        'amount' => $amount,
+                        'payment_method' => 'wallet',
+                        'status' => 'completed',
+                    ]);
+                } else {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
                         ->where('branch_id', $branchId)
-                        ->value('id');
-                }
+                        ->value('default_safe_id');
 
-                $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                    'invoice_id' => $invoice->id,
-                    'safe_id' => $safeId,
-                    'amount' => $amount,
-                    'payment_method' => 'cash',
-                    'status' => 'completed',
-                ]);
+                    if (!$safeId) {
+                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                            ->where('branch_id', $branchId)
+                            ->value('id');
+                    }
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => $safeId,
+                        'amount' => $amount,
+                        'payment_method' => 'cash',
+                        'status' => 'completed',
+                    ]);
+                }
 
                 event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
@@ -352,7 +393,7 @@ class SubscriptionService
     /**
      * Cancel a subscription.
      */
-    public function cancelSubscription($subscriptionId, $reason = null)
+    public function cancelSubscription(int $subscriptionId, ?string $reason = null)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
@@ -392,7 +433,7 @@ class SubscriptionService
     /**
      * Unfreeze a frozen subscription and extend end_date by freeze duration.
      */
-    public function unfreezeSubscription($subscriptionId)
+    public function unfreezeSubscription(int $subscriptionId)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 

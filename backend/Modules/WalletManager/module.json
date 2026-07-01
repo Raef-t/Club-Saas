@@ -1,0 +1,11 @@
+{
+    "name": "WalletManager",
+    "alias": "walletmanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\WalletManager\\Providers\\WalletManagerServiceProvider"
+    ],
+    "files": []
+}

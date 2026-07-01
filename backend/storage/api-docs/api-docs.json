@@ -4556,6 +4556,79 @@
                 ]
             }
         },
+        "/v1/branches/stats": {
+            "get": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "📊 إحصائيات الفروع",
+                "description": "استرجاع إحصائيات الفروع (العدد الكلي، النشطة، المخصصة للذكور/الإناث/المختلط).",
+                "operationId": "7566e15c2254a8d1c56c1d01656354e7",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الإحصائيات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Branch statistics retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_branches": {
+                                                    "type": "integer"
+                                                },
+                                                "active_branches": {
+                                                    "type": "integer"
+                                                },
+                                                "male_branches": {
+                                                    "type": "integer"
+                                                },
+                                                "female_branches": {
+                                                    "type": "integer"
+                                                },
+                                                "mixed_branches": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/branches/{id}": {
             "get": {
                 "tags": [
@@ -8507,6 +8580,74 @@
                 ]
             }
         },
+        "/v1/members/stats": {
+            "get": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "📊 إحصائيات الأعضاء",
+                "description": "استرجاع إحصائيات الأعضاء (العدد الكلي، النشطين، ذكور/إناث).",
+                "operationId": "c1d1b7a53bcc20094344c0a89df2aea4",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الإحصائيات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Member statistics retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_members": {
+                                                    "type": "integer"
+                                                },
+                                                "active_members": {
+                                                    "type": "integer"
+                                                },
+                                                "male_members": {
+                                                    "type": "integer"
+                                                },
+                                                "female_members": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/members/{member}/unavailabilities": {
             "get": {
                 "tags": [
@@ -10343,6 +10484,71 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activities/stats": {
+            "get": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "📊 إحصائيات الأنشطة",
+                "description": "استرجاع إحصائيات الأنشطة (العدد الكلي والأنشطة المجمعة حسب النوع).",
+                "operationId": "e2059b8cdd1648d72d714fa96eed195a",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الإحصائيات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity statistics retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_activities": {
+                                                    "type": "integer"
+                                                },
+                                                "activities_by_type": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -13258,6 +13464,81 @@
                                         "error": {
                                             "type": "string",
                                             "example": "Error message details"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/coaches/stats": {
+            "get": {
+                "tags": [
+                    "Coach Management"
+                ],
+                "summary": "Get Coaches Statistics",
+                "description": "Get statistics about coaches including total, active, and employment types.",
+                "operationId": "73e3e3a032c5ac4c8255f0a8ab0a7bb7",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Coaches statistics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "total_coaches": {
+                                                    "type": "integer"
+                                                },
+                                                "active_coaches": {
+                                                    "type": "integer"
+                                                },
+                                                "fixed_salary_coaches": {
+                                                    "type": "integer"
+                                                },
+                                                "commission_based_coaches": {
+                                                    "type": "integer"
+                                                },
+                                                "hybrid_coaches": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "An error occurred while retrieving statistics."
                                         }
                                     },
                                     "type": "object"
@@ -20252,6 +20533,53 @@
                     }
                 ]
             }
+        },
+        "/api/v1/people/{person_id}/wallet": {
+            "get": {
+                "tags": [
+                    "WalletManager"
+                ],
+                "summary": "Get wallet details for a person",
+                "operationId": "0b52f0ddac7faa116228a2458f06c254",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v1/people/{person_id}/wallet/deposit": {
+            "post": {
+                "tags": [
+                    "WalletManager"
+                ],
+                "summary": "Deposit funds into a person's wallet",
+                "operationId": "77c908d866ec2c86d160d65140d26290",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -21342,6 +21670,10 @@
         {
             "name": "Subscription Plan Activities",
             "description": "Subscription Plan Activities"
+        },
+        {
+            "name": "WalletManager",
+            "description": "WalletManager"
         }
     ]
 }

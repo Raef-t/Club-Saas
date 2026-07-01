@@ -66,4 +66,9 @@ class Person extends Model
 
         return $value;
     }
+
+    public function wallet()
+    {
+        return $this->hasOne(\Modules\WalletManager\Models\Wallet::class, 'person_id');
+    }
 }

@@ -15,6 +15,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('activity-types', ActivityTypeController::class);
 
     // Activities CRUD
+    Route::get('activities/stats', [ActivityController::class, 'stats']);
     Route::apiResource('activities', ActivityController::class);
 
     // Sessions
