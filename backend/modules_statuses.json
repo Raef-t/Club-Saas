@@ -9,5 +9,6 @@
     "NotificationManager": true,
     "ClubManager": true,
     "AttendanceManager": true,
-    "FormulaEngine": true
+    "FormulaEngine": true,
+    "WalletManager": true
 }

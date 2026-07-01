@@ -20533,6 +20533,53 @@
                     }
                 ]
             }
+        },
+        "/api/v1/people/{person_id}/wallet": {
+            "get": {
+                "tags": [
+                    "WalletManager"
+                ],
+                "summary": "Get wallet details for a person",
+                "operationId": "0b52f0ddac7faa116228a2458f06c254",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v1/people/{person_id}/wallet/deposit": {
+            "post": {
+                "tags": [
+                    "WalletManager"
+                ],
+                "summary": "Deposit funds into a person's wallet",
+                "operationId": "77c908d866ec2c86d160d65140d26290",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -21623,6 +21670,10 @@
         {
             "name": "Subscription Plan Activities",
             "description": "Subscription Plan Activities"
+        },
+        {
+            "name": "WalletManager",
+            "description": "WalletManager"
         }
     ]
 }
