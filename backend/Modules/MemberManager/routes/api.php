@@ -8,6 +8,7 @@ use Modules\MemberManager\Http\Controllers\Api\V1\MemberMeasurementController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Player Registration & Updates
+    Route::get('members/stats', [PlayerRegistrationController::class, 'stats']);
     Route::get('members', [PlayerRegistrationController::class, 'index']);
     Route::post('members/register', [PlayerRegistrationController::class, 'register']);
     Route::get('members/{id}', [PlayerRegistrationController::class, 'show']);

@@ -193,6 +193,55 @@ class CoachController extends Controller
     }
 
     #[OA\Get(
+        path: '/v1/coaches/stats',
+        summary: 'Get Coaches Statistics',
+        description: 'Get statistics about coaches including total, active, and employment types.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: 'Coaches statistics',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', type: 'object', properties: [
+                        new OA\Property(property: 'total_coaches', type: 'integer'),
+                        new OA\Property(property: 'active_coaches', type: 'integer'),
+                        new OA\Property(property: 'fixed_salary_coaches', type: 'integer'),
+                        new OA\Property(property: 'commission_based_coaches', type: 'integer'),
+                        new OA\Property(property: 'hybrid_coaches', type: 'integer'),
+                    ])
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while retrieving statistics.')
+                ])
+            ),
+        ]
+    )]
+    public function stats(Request $request)
+    {
+        try {
+            $filters = $request->only(['branch_id']);
+            $stats = $this->coachService->getStats($filters);
+
+            return response()->json([
+                'data' => $stats
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while retrieving statistics.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[OA\Get(
         path: '/v1/coaches/{id}',
         summary: 'Get Single Coach',
         description: 'Returns staff data, coach details, certifications, and assigned activities.',

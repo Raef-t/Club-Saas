@@ -54,6 +54,60 @@ class ActivityController extends BaseController
         return $this->successResponse(ActivityResource::collection($activities), __('Activities retrieved successfully'));
     }
 
+    #[OA\Get(
+        path: '/v1/activities/stats',
+        summary: '📊 إحصائيات الأنشطة',
+        description: 'استرجاع إحصائيات الأنشطة (العدد الكلي والأنشطة المجمعة حسب النوع).',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الإحصائيات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity statistics retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'total_activities', type: 'integer'),
+                    new OA\Property(property: 'activities_by_type', type: 'array', items: new OA\Items(type: 'object'))
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function stats(Request $request)
+    {
+        $query = Activity::query();
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        $totalActivities = (clone $query)->count();
+
+        // Get count grouped by activity_type_id
+        // Using Eloquent with to load the ActivityType name
+        $grouped = (clone $query)
+            ->select('activity_type_id', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('activity_type_id')
+            ->with('activityType')
+            ->get();
+
+        $activitiesByType = $grouped->map(function ($item) {
+            return [
+                'activity_type_id' => $item->activity_type_id,
+                'activity_type_name' => $item->activityType ? $item->activityType->name : 'Unknown',
+                'count' => $item->count,
+            ];
+        });
+
+        return $this->successResponse([
+            'total_activities' => $totalActivities,
+            'activities_by_type' => $activitiesByType,
+        ], __('Activity statistics retrieved successfully'));
+    }
+
     #[OA\Post(
         path: '/v1/activities',
         summary: '➕ إضافة نشاط رياضي',

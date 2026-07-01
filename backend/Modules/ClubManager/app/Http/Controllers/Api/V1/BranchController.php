@@ -47,6 +47,37 @@ class BranchController extends BaseController
         return $this->successResponse(BranchResource::collection($branches), __('Branches retrieved successfully'));
     }
 
+    #[OA\Get(
+        path: '/v1/branches/stats',
+        summary: '📊 إحصائيات الفروع',
+        description: 'استرجاع إحصائيات الفروع (العدد الكلي، النشطة، المخصصة للذكور/الإناث/المختلط).',
+        tags: ['Branch Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الإحصائيات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch statistics retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'total_branches', type: 'integer'),
+                    new OA\Property(property: 'active_branches', type: 'integer'),
+                    new OA\Property(property: 'male_branches', type: 'integer'),
+                    new OA\Property(property: 'female_branches', type: 'integer'),
+                    new OA\Property(property: 'mixed_branches', type: 'integer'),
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function stats()
+    {
+        $stats = $this->branchService->getStats();
+        return $this->successResponse($stats, __('Branch statistics retrieved successfully'));
+    }
+
     #[OA\Post(
         path: '/v1/branches',
         summary: '➕ إنشاء فرع جديد',

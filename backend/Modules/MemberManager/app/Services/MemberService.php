@@ -270,4 +270,29 @@ class MemberService
         }
         return $member;
     }
+
+    /**
+     * Get statistics for members.
+     */
+    public function getStats(array $filters = [])
+    {
+        $query = \Modules\MemberManager\Models\Member::query();
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
+        }
+
+        $baseQuery = clone $query;
+
+        return [
+            'total_members' => (clone $baseQuery)->count(),
+            'active_members' => (clone $baseQuery)->where('membership_status', 'active')->count(),
+            'male_members' => (clone $baseQuery)->whereHas('person', function ($q) {
+                $q->where('gender', 'male');
+            })->count(),
+            'female_members' => (clone $baseQuery)->whereHas('person', function ($q) {
+                $q->where('gender', 'female');
+            })->count(),
+        ];
+    }
 }

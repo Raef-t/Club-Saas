@@ -168,6 +168,38 @@ class PlayerRegistrationController extends BaseController
     }
 
     #[OA\Get(
+        path: '/v1/members/stats',
+        summary: '📊 إحصائيات الأعضاء',
+        description: 'استرجاع إحصائيات الأعضاء (العدد الكلي، النشطين، ذكور/إناث).',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الإحصائيات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Member statistics retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'total_members', type: 'integer'),
+                    new OA\Property(property: 'active_members', type: 'integer'),
+                    new OA\Property(property: 'male_members', type: 'integer'),
+                    new OA\Property(property: 'female_members', type: 'integer'),
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function stats(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->only(['branch_id']);
+        $stats = $this->memberService->getStats($filters);
+        return $this->successResponse($stats, __('Member statistics retrieved successfully'));
+    }
+
+    #[OA\Get(
         path: '/v1/members/{id}',
         summary: '🔍 عرض بيانات عضو محدد',
         description: 'جلب تفاصيل عضو معين باستخدام المعرف الخاص به.',

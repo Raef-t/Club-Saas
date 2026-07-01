@@ -132,6 +132,26 @@ class CoachService
     }
 
     /**
+     * Get statistics for coaches.
+     */
+    public function getStats(array $filters = [])
+    {
+        $query = Staff::where('role', 'coach');
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
+        }
+
+        return [
+            'total_coaches' => (clone $query)->count(),
+            'active_coaches' => (clone $query)->where('is_active', true)->count(),
+            'fixed_salary_coaches' => (clone $query)->where('employment_type', 'fixed_salary')->count(),
+            'commission_based_coaches' => (clone $query)->where('employment_type', 'commission_based')->count(),
+            'hybrid_coaches' => (clone $query)->where('employment_type', 'hybrid')->count(),
+        ];
+    }
+
+    /**
      * Get a single coach with all related data.
      */
     public function getSingleCoach($id)
