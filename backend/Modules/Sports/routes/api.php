@@ -18,8 +18,14 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('activities/stats', [ActivityController::class, 'stats']);
     Route::apiResource('activities', ActivityController::class);
 
+    // Session Templates
+    Route::post('session-templates/generate', [Modules\Sports\Http\Controllers\Api\V1\SessionTemplateController::class, 'generate']);
+    Route::apiResource('session-templates', Modules\Sports\Http\Controllers\Api\V1\SessionTemplateController::class);
+
     // Sessions
     Route::get('sessions/weekly-schedule', [SessionController::class, 'weeklySchedule']);
+    Route::get('sessions/my-schedule', [SessionController::class, 'playerSchedule']);
+    Route::patch('sessions/{session}/complete', [SessionController::class, 'markCompleted']);
     Route::apiResource('sessions', SessionController::class);
 
     // Session Bookings
