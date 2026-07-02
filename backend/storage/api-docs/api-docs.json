@@ -3515,6 +3515,205 @@
                 ]
             }
         },
+        "/v1/reception/members/{memberId}/subscriptions": {
+            "get": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "📋 اشتراكات اللاعب النشطة (للاستقبال)",
+                "description": "يعرض جميع اشتراكات اللاعب النشطة مع تفاصيل الجلسات المتبقية لكل بند. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب قبل تسجيل الحضور.",
+                "operationId": "f1db92d243e3d4c288a81cc1fe3e5231",
+                "parameters": [
+                    {
+                        "name": "memberId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الاشتراكات",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "❌ لا توجد اشتراكات نشطة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/reception/lockers": {
+            "get": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "🔑 المفاتيح المتاحة في الفرع",
+                "description": "يعرض جميع خزائن الفرع مع حالتها (متاح / مشغول). يستخدمه موظف الاستقبال لاختيار مفتاح للاعب.",
+                "operationId": "21a0a569e2d8c1354c3084bd8776286f",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "available_only",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع المفاتيح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/attendances/{attendanceId}/assign-locker": {
+            "post": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "🔐 تخصيص مفتاح للاعب بعد تسجيل الدخول",
+                "description": "يربط مفتاح خزانة بسجل الحضور المفتوح. يمكن استخدامه إذا لم يتم تحديد المفتاح أثناء check-in أو لتغييره.",
+                "operationId": "62290db7d0230a44a938dad1d35009c3",
+                "parameters": [
+                    {
+                        "name": "attendanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "locker_id"
+                                ],
+                                "properties": {
+                                    "locker_id": {
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تخصيص المفتاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/attendances/{attendanceId}/release-locker": {
+            "post": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "🔓 تسليم المفتاح (إرجاع أو نقل لصديق)",
+                "description": "يُفك ارتباط المفتاح عن اللاعب عند خروجه.\n\n**release_type = return**: اللاعب يُعيد المفتاح للاستقبال → يصبح المفتاح متاحاً.\n\n**release_type = transfer**: اللاعب يعطي المفتاح لصديقه → يُسجَّل اسم الصديق ويُفك الارتباط عن هذا اللاعب.",
+                "operationId": "fabb00434eadad1c97cb41022784d14d",
+                "parameters": [
+                    {
+                        "name": "attendanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "release_type"
+                                ],
+                                "properties": {
+                                    "release_type": {
+                                        "type": "string",
+                                        "example": "return",
+                                        "enum": [
+                                            "return",
+                                            "transfer"
+                                        ]
+                                    },
+                                    "transfer_to_name": {
+                                        "description": "مطلوب فقط عند النقل",
+                                        "type": "string",
+                                        "example": "أحمد محمد"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تسليم المفتاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/attendances/check-in": {
             "post": {
                 "tags": [
@@ -22079,6 +22278,10 @@
         {
             "name": "Attendance",
             "description": "Attendance"
+        },
+        {
+            "name": "Reception",
+            "description": "Reception"
         },
         {
             "name": "Authentication",

@@ -38,6 +38,16 @@ class UnifiedAttendanceController extends BaseController
                 $metadata['check_in_at'] = \Carbon\Carbon::parse($request->input('check_in_at'))->toDateTimeString();
             }
 
+            // Receptionist-selected subscription (for manual session deduction)
+            if ($request->has('subscription_id')) {
+                $metadata['subscription_id'] = (int) $request->input('subscription_id');
+            }
+
+            // Locker key assigned to the player
+            if ($request->has('locker_id')) {
+                $metadata['locker_id'] = (int) $request->input('locker_id');
+            }
+
             $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();
             if (!$branch) {
                 return $this->errorResponse('Branch not found.', 404);

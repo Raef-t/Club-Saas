@@ -16,6 +16,7 @@ class UpdateClubSettingRequest extends FormRequest
         return [
             'theme_colors' => 'sometimes|array',
             'language' => 'sometimes|string|in:ar,en,all',
+            'allow_partial_payment' => 'sometimes|boolean',
             'enabled_features' => 'sometimes|array',
             'bg_image_url' => 'sometimes|string|nullable'
         ];

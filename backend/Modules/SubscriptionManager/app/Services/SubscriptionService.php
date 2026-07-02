@@ -105,6 +105,19 @@ class SubscriptionService
             // 3. Financials
             $totalAmount = $plan->base_price;
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
+            
+            if ($paidAmount < $totalAmount) {
+                $memberDTO = $this->memberSharedService->getMemberById($memberId);
+                $branchId = $memberDTO->branchId ?? 1;
+                $branch = \Modules\ClubManager\Models\Branch::find($branchId);
+                $clubId = $branch ? $branch->club_id : 1;
+                
+                $clubSetting = \Modules\ClubManager\Models\ClubSetting::where('club_id', $clubId)->first();
+                if ($clubSetting && !$clubSetting->allow_partial_payment) {
+                    throw new Exception(__('Partial payments are not allowed for this club. Please pay the full amount.'));
+                }
+            }
+
             $remainingAmount = max(0, $totalAmount - $paidAmount);
 
             // 4. Create Subscription
