@@ -21,7 +21,22 @@ class UnifiedAttendanceController extends BaseController
         tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(required: ['attendable_type', 'attendable_id', 'branch_id'], properties: [new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'), new OA\Property(property: 'attendable_id', type: 'integer', example: 1), new OA\Property(property: 'branch_id', type: 'integer', example: 1), new OA\Property(property: 'facility_id', type: 'integer', example: 1), new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00')]))]
+    #[OA\RequestBody(
+        required: true, 
+        content: new OA\JsonContent(
+            required: ['attendable_type', 'attendable_id', 'branch_id'], 
+            properties: [
+                new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'), 
+                new OA\Property(property: 'attendable_id', type: 'integer', example: 1), 
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1), 
+                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'), 
+                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00'),
+                new OA\Property(property: 'subscription_id', type: 'integer', example: 5, description: 'معرف الاشتراك لخصم الجلسة منه (اختياري)'),
+                new OA\Property(property: 'locker_id', type: 'integer', example: 12, description: 'معرف الخزانة المخصصة للاعب (اختياري)'),
+                new OA\Property(property: 'metadata', type: 'object', description: 'بيانات إضافية (اختياري)')
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم تسجيل الدخول', content: new OA\JsonContent())]
     public function checkIn(UnifiedCheckInRequest $request)
     {

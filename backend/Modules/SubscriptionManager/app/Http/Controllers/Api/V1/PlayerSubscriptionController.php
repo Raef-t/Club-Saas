@@ -80,6 +80,10 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'member_id', type: 'integer', example: 1),
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1),
                 new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 50.00, description: 'المبلغ المدفوع فوراً (أدخل 0 إذا لم يتم الدفع)'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01', description: 'تاريخ بداية الاشتراك (اختياري)'),
+                new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات إضافية', description: 'ملاحظات (اختياري)'),
+                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
+                new OA\Property(property: 'coach_id', type: 'integer', example: 3, description: 'معرف المدرب العام للاشتراك (اختياري)'),
                 new OA\Property(
                     property: 'activities',
                     type: 'array',
@@ -89,6 +93,19 @@ class PlayerSubscriptionController extends BaseController
                         properties: [
                             new OA\Property(property: 'activity_id', type: 'integer', example: 2),
                             new OA\Property(property: 'coach_id', type: 'integer', example: 5)
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: 'extra_services',
+                    type: 'array',
+                    description: '(اختياري) خدمات إضافية مع الاشتراك (مثل استئجار خزانة)',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'extra_service_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'price_charged', type: 'number', format: 'float', example: 10.00),
+                            new OA\Property(property: 'locker_id', type: 'integer', example: 5, description: 'معرف الخزانة إذا كانت الخدمة عبارة عن استئجار خزانة')
                         ]
                     )
                 )

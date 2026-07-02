@@ -3750,6 +3750,7 @@
                                         "example": 1
                                     },
                                     "facility_id": {
+                                        "description": "معرف المنشأة (اختياري)",
                                         "type": "integer",
                                         "example": 1
                                     },
@@ -3757,6 +3758,20 @@
                                         "type": "string",
                                         "format": "date-time",
                                         "example": "2026-06-26 15:30:00"
+                                    },
+                                    "subscription_id": {
+                                        "description": "معرف الاشتراك لخصم الجلسة منه (اختياري)",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "locker_id": {
+                                        "description": "معرف الخزانة المخصصة للاعب (اختياري)",
+                                        "type": "integer",
+                                        "example": 12
+                                    },
+                                    "metadata": {
+                                        "description": "بيانات إضافية (اختياري)",
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -18560,6 +18575,27 @@
                                         "format": "float",
                                         "example": 50
                                     },
+                                    "start_date": {
+                                        "description": "تاريخ بداية الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-01"
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات (اختياري)",
+                                        "type": "string",
+                                        "example": "ملاحظات إضافية"
+                                    },
+                                    "payment_method": {
+                                        "description": "طريقة الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "cash"
+                                    },
+                                    "coach_id": {
+                                        "description": "معرف المدرب العام للاشتراك (اختياري)",
+                                        "type": "integer",
+                                        "example": 3
+                                    },
                                     "activities": {
                                         "description": "(اختياري) مصفوفة الأنشطة لاختيار المدربين لكل نشاط",
                                         "type": "array",
@@ -18570,6 +18606,29 @@
                                                     "example": 2
                                                 },
                                                 "coach_id": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "extra_services": {
+                                        "description": "(اختياري) خدمات إضافية مع الاشتراك (مثل استئجار خزانة)",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "extra_service_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "price_charged": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                },
+                                                "locker_id": {
+                                                    "description": "معرف الخزانة إذا كانت الخدمة عبارة عن استئجار خزانة",
                                                     "type": "integer",
                                                     "example": 5
                                                 }
