@@ -208,4 +208,43 @@ class SessionController extends BaseController
 
         return $this->successResponse(SessionResource::collection($sessions), __('Weekly schedule retrieved'));
     }
+
+    #[OA\Patch(
+        path: '/v1/sessions/{session}/complete',
+        summary: '✅ إكمال الجلسة',
+        description: 'تأكيد حضور المدرب وإكمال الجلسة.',
+        tags: ['Session Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'session', in: 'path', required: true, description: 'معرف الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: 'تم التحديث')]
+    public function markCompleted(int $id)
+    {
+        $session = $this->sessionService->markSessionAsCompleted($id);
+        return $this->successResponse(new SessionResource($session), __('Session marked as completed successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/sessions/my-schedule',
+        summary: '📆 جدولي (للاعب)',
+        description: 'استرجاع جلسات الأنشطة التي يشترك بها اللاعب.',
+        tags: ['Session Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'member_id', in: 'query', required: true, description: 'معرف اللاعب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: 'تم الاسترجاع')]
+    public function playerSchedule(Request $request)
+    {
+        $memberId = $request->input('member_id');
+        if (!$memberId && $request->user()) {
+            $memberId = $request->user()->id; // Fallback to auth user if it matches member
+        }
+
+        if (!$memberId) {
+            return $this->errorResponse(__('Member ID is required'), 400);
+        }
+
+        $sessions = $this->sessionService->getPlayerSchedule((int) $memberId);
+        return $this->successResponse(SessionResource::collection($sessions), __('Player schedule retrieved successfully'));
+    }
 }

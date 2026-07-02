@@ -145,6 +145,24 @@ class SessionService
     }
 
     /**
+     * Mark a session as completed to confirm coach attendance.
+     */
+    public function markSessionAsCompleted(int $id)
+    {
+        $session = $this->sessionRepository->find($id);
+        if (!$session) {
+            throw new Exception(__('Session not found.'));
+        }
+
+        if ($session->status !== 'scheduled') {
+            throw new Exception(__('Only scheduled sessions can be marked as completed.'));
+        }
+
+        $session->update(['status' => 'completed']);
+        return $this->attachSharedDTOs($session);
+    }
+
+    /**
      * Delete a session.
      */
     public function deleteSession(int $id)
@@ -165,6 +183,32 @@ class SessionService
             $start->toDateTimeString(),
             $end->toDateTimeString()
         );
+
+        foreach ($sessions as $session) {
+            $this->attachSharedDTOs($session);
+        }
+
+        return $sessions;
+    }
+
+    /**
+     * Get upcoming schedule for a specific player based on their subscriptions.
+     */
+    public function getPlayerSchedule(int $memberId)
+    {
+        $activityIds = \Illuminate\Support\Facades\DB::table('player_subscriptions')
+            ->join('subscription_plan_activities', 'player_subscriptions.plan_id', '=', 'subscription_plan_activities.plan_id')
+            ->where('player_subscriptions.member_id', $memberId)
+            ->where('player_subscriptions.status', 'active')
+            ->where('player_subscriptions.end_date', '>=', now()->toDateString())
+            ->pluck('subscription_plan_activities.activity_id')
+            ->unique();
+
+        $sessions = SportSession::whereIn('activity_id', $activityIds)
+            ->where('start_time', '>=', now())
+            ->where('status', 'scheduled')
+            ->orderBy('start_time')
+            ->get();
 
         foreach ($sessions as $session) {
             $this->attachSharedDTOs($session);
