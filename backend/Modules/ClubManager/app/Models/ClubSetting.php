@@ -16,6 +16,7 @@ class ClubSetting extends Model
         'language',
         'allowed_debt_limit',
         'grace_period_days',
+        'allow_partial_payment',
         'enabled_features',
         'bg_image_url',
     ];
@@ -25,6 +26,7 @@ class ClubSetting extends Model
         'enabled_features' => 'array',
         'allowed_debt_limit' => 'decimal:2',
         'grace_period_days' => 'integer',
+        'allow_partial_payment' => 'boolean',
     ];
 
     public function club(): BelongsTo
