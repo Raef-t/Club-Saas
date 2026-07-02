@@ -51,9 +51,25 @@ class MemberMeasurementController extends BaseController
             required: ['member_id', 'weight'],
             properties: [
                 new OA\Property(property: 'member_id', type: 'integer', example: 1),
+                new OA\Property(property: 'measurement_date', type: 'string', format: 'date', example: '2023-10-01'),
                 new OA\Property(property: 'weight', type: 'number', example: 75.5),
                 new OA\Property(property: 'height', type: 'number', example: 178),
-                new OA\Property(property: 'measurement_date', type: 'string', format: 'date', example: '2023-10-01')
+                new OA\Property(property: 'neck_circumference', type: 'number', example: 40.0),
+                new OA\Property(property: 'shoulder_circumference', type: 'number', example: 110.0),
+                new OA\Property(property: 'chest_circumference', type: 'number', example: 100.0),
+                new OA\Property(property: 'waist_circumference', type: 'number', example: 85.0),
+                new OA\Property(property: 'hip_circumference', type: 'number', example: 95.0),
+                new OA\Property(property: 'buttocks_circumference', type: 'number', example: 100.0),
+                new OA\Property(property: 'right_thigh_mid', type: 'number', example: 55.0),
+                new OA\Property(property: 'left_thigh', type: 'number', example: 55.0),
+                new OA\Property(property: 'above_right_knee', type: 'number', example: 40.0),
+                new OA\Property(property: 'above_left_knee', type: 'number', example: 40.0),
+                new OA\Property(property: 'right_calf', type: 'number', example: 38.0),
+                new OA\Property(property: 'left_calf', type: 'number', example: 38.0),
+                new OA\Property(property: 'right_bicep', type: 'number', example: 35.0),
+                new OA\Property(property: 'left_bicep', type: 'number', example: 35.0),
+                new OA\Property(property: 'arm_circumference', type: 'number', example: 32.0),
+                new OA\Property(property: 'activity_level', type: 'string', example: 'High')
             ]
         )
     )]
@@ -104,8 +120,25 @@ class MemberMeasurementController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
+                new OA\Property(property: 'measurement_date', type: 'string', format: 'date', example: '2023-10-05'),
                 new OA\Property(property: 'weight', type: 'number', example: 74.0),
-                new OA\Property(property: 'measurement_date', type: 'string', format: 'date', example: '2023-10-05')
+                new OA\Property(property: 'height', type: 'number', example: 178),
+                new OA\Property(property: 'neck_circumference', type: 'number', example: 39.5),
+                new OA\Property(property: 'shoulder_circumference', type: 'number', example: 110.0),
+                new OA\Property(property: 'chest_circumference', type: 'number', example: 99.0),
+                new OA\Property(property: 'waist_circumference', type: 'number', example: 84.0),
+                new OA\Property(property: 'hip_circumference', type: 'number', example: 94.0),
+                new OA\Property(property: 'buttocks_circumference', type: 'number', example: 99.0),
+                new OA\Property(property: 'right_thigh_mid', type: 'number', example: 54.0),
+                new OA\Property(property: 'left_thigh', type: 'number', example: 54.0),
+                new OA\Property(property: 'above_right_knee', type: 'number', example: 39.0),
+                new OA\Property(property: 'above_left_knee', type: 'number', example: 39.0),
+                new OA\Property(property: 'right_calf', type: 'number', example: 37.0),
+                new OA\Property(property: 'left_calf', type: 'number', example: 37.0),
+                new OA\Property(property: 'right_bicep', type: 'number', example: 36.0),
+                new OA\Property(property: 'left_bicep', type: 'number', example: 36.0),
+                new OA\Property(property: 'arm_circumference', type: 'number', example: 33.0),
+                new OA\Property(property: 'activity_level', type: 'string', example: 'Medium')
             ]
         )
     )]
