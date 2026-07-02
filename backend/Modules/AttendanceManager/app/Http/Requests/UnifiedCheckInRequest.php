@@ -19,6 +19,10 @@ class UnifiedCheckInRequest extends FormRequest
             'branch_id'       => ['required', 'integer'],
             'facility_id'     => ['nullable', 'integer'],
             'check_in_at'     => ['nullable', 'date'],
+            // Receptionist manually picks which subscription to deduct a session from
+            'subscription_id' => ['nullable', 'integer'],
+            // Locker key assigned to the player (optional)
+            'locker_id'       => ['nullable', 'integer'],
             'metadata'        => ['nullable', 'array'],
         ];
     }

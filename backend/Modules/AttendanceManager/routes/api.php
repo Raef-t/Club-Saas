@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use Modules\AttendanceManager\Http\Controllers\Api\V1\UnifiedAttendanceController;
+use Modules\AttendanceManager\Http\Controllers\Api\V1\ReceptionAttendanceController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
@@ -12,6 +13,21 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('attendances/check-in', [UnifiedAttendanceController::class, 'checkIn']);
     Route::post('attendances/check-out/{attendanceId}', [UnifiedAttendanceController::class, 'checkOut']);
     Route::get('attendances/history', [UnifiedAttendanceController::class, 'history']);
+
+
+    // ── Reception Desk Workflow ──────────────────────────────────────────────
+    // 1. Browse player's active subscriptions (to pick one for session deduction)
+    Route::get('reception/members/{memberId}/subscriptions', [ReceptionAttendanceController::class, 'memberSubscriptions']);
+
+    // 2. List all lockers in a branch (pass ?branch_id=1&available_only=1)
+    Route::get('reception/lockers', [ReceptionAttendanceController::class, 'availableLockers']);
+
+    // 3. Assign a locker key to an open attendance (post check-in or during check-in)
+    Route::post('attendances/{attendanceId}/assign-locker', [ReceptionAttendanceController::class, 'assignLocker']);
+
+    // 4. Release the locker key: return it or transfer it to a friend
+    Route::post('attendances/{attendanceId}/release-locker', [ReceptionAttendanceController::class, 'releaseLocker']);
+    // ────────────────────────────────────────────────────────────────────────
 
 
 
