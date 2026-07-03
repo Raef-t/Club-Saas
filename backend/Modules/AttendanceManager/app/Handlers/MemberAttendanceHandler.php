@@ -24,10 +24,8 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
      *  3. Validate debt / remaining sessions on the selected subscription.
      *  4. Create Attendance record, capturing:
      *      - recorded_by_staff_id  → the currently authenticated user (receptionist)
-     *      - locker_id             → locker chosen by the receptionist (nullable)
      *  5. Decrement sessions_consumed ONLY in player_subscription_items (per user's spec).
-     *  6. If a locker was selected, mark it as 'rented' and link it to this attendance.
-     *  7. Fire MemberCheckedIn event.
+     *  6. Fire MemberCheckedIn event.
      */
     public function checkIn(int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance
     {
@@ -115,44 +113,30 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 }
             }
 
-            // ── 5. Resolve locker (if chosen) ──────────────────────────────────────
-            $lockerId = $metadata['locker_id'] ?? null;
-            if ($lockerId) {
-                $locker = DB::table('lockers')->where('id', $lockerId)->first();
-                if (!$locker) {
-                    throw new Exception(__('Selected locker not found.'));
-                }
-                if ($locker->status !== 'available') {
-                    throw new Exception(__('Locker :number is not available.', ['number' => $locker->locker_number]));
-                }
-            }
-
-            // ── 6. Build metadata stored in the attendance record ──────────────────
+            // ── 5. Build metadata stored in the attendance record ──────────────────
             $checkInAt = $metadata['check_in_at'] ?? now();
             // Strip fields promoted to dedicated columns
             $storedMetadata = array_diff_key($metadata, array_flip([
                 'check_in_at',
                 'subscription_id',
-                'locker_id',
             ]));
 
             $storedMetadata['subscription_id']         = $subscription->id;
             $storedMetadata['sessions_before_checkin'] = $subscription->remaining_sessions;
 
-            // ── 7. Create Attendance record ─────────────────────────────────────────
+            // ── 6. Create Attendance record ─────────────────────────────────────────
             $attendance = Attendance::create([
                 'club_id'              => $clubId,
                 'attendable_type'      => 'member',
                 'attendable_id'        => $entityId,
                 'branch_id'            => $branchId,
                 'recorded_by_staff_id' => Auth::id(),   // The logged-in receptionist
-                'locker_id'            => $lockerId,
                 'check_in_at'          => $checkInAt,
                 'status'               => 'checked_in',
                 'metadata'             => $storedMetadata,
             ]);
 
-            // ── 8. Decrement sessions_consumed in player_subscription_items ONLY ───
+            // ── 7. Decrement sessions_consumed in player_subscription_items ONLY ───
             // (Per business spec: deduct from items, NOT from player_subscriptions.remaining_sessions)
             foreach ($items as $item) {
                 if ($item->sessions_consumed < $item->sessions_allocated) {
@@ -161,15 +145,6 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                         ->increment('sessions_consumed');
                     break; // Deduct from the first eligible item only
                 }
-            }
-
-            // ── 9. Assign the locker ────────────────────────────────────────────────
-            if ($lockerId) {
-                DB::table('lockers')->where('id', $lockerId)->update([
-                    'status'                => 'rented',
-                    'current_attendance_id' => $attendance->id,
-                    'updated_at'            => now(),
-                ]);
             }
 
             event(new MemberCheckedIn($attendance));
