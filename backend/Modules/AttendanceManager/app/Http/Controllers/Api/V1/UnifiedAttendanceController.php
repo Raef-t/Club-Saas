@@ -32,7 +32,6 @@ class UnifiedAttendanceController extends BaseController
                 new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'), 
                 new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00'),
                 new OA\Property(property: 'subscription_id', type: 'integer', example: 5, description: 'معرف الاشتراك لخصم الجلسة منه (اختياري)'),
-                new OA\Property(property: 'locker_id', type: 'integer', example: 12, description: 'معرف الخزانة المخصصة للاعب (اختياري)'),
                 new OA\Property(property: 'metadata', type: 'object', description: 'بيانات إضافية (اختياري)')
             ]
         )
@@ -56,11 +55,6 @@ class UnifiedAttendanceController extends BaseController
             // Receptionist-selected subscription (for manual session deduction)
             if ($request->has('subscription_id')) {
                 $metadata['subscription_id'] = (int) $request->input('subscription_id');
-            }
-
-            // Locker key assigned to the player
-            if ($request->has('locker_id')) {
-                $metadata['locker_id'] = (int) $request->input('locker_id');
             }
 
             $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();

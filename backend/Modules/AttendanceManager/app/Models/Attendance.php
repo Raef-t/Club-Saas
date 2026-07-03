@@ -16,10 +16,6 @@ class Attendance extends Model
         'branch_id',
         // Staff member (receptionist) who registered this attendance
         'recorded_by_staff_id',
-        // Locker key assigned to this player during the visit
-        'locker_id',
-        // Name of the friend holding the key if transferred (not returned)
-        'locker_holder_name',
         'check_in_at',
         'check_out_at',
         'status',
