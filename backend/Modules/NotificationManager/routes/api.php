@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\NotificationManager\Http\Controllers\Api\V1\NotificationController;
-use Modules\NotificationManager\Http\Controllers\Api\V1\FcmTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,19 +19,8 @@ use Modules\NotificationManager\Http\Controllers\Api\V1\FcmTokenController;
 |
 */
 
-// ========================================
-// 🔹 FCM Tokens — يعتمد على جدول user_devices
-// ========================================
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-
-    Route::prefix('fcm-tokens')->as('api.fcm-tokens.')->group(function () {
-        // POST /v1/fcm-tokens → تسجيل توكن جهاز
-        Route::post('/', [FcmTokenController::class, 'store'])->name('store');
-
-        // DELETE /v1/fcm-tokens/{token} → حذف التوكن عند تسجيل الخروج
-        Route::delete('/{token}', [FcmTokenController::class, 'destroy'])->name('destroy');
-    });
-});
+// تم نقل إدارة توكنات FCM بالكامل إلى موديول Authentication
+// هذا الموديول (NotificationManager) سيعتمد فقط على القراءة من جدول user_devices عند الإرسال
 
 // ========================================
 // 🔹 واجهات المستخدم العادي (auth فقط)
