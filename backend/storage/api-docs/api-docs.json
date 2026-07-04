@@ -3553,6 +3553,64 @@
                 ]
             }
         },
+        "/v1/reception/attendances/{attendanceId}/deduct": {
+            "post": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "💰 خصم جلسة من اشتراك محدد",
+                "description": "بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار الاشتراك وتأكيد الخصم عبر هذا المسار.",
+                "operationId": "0e5a59577ea71c8ec3245d44606662b6",
+                "parameters": [
+                    {
+                        "name": "attendanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "subscription_id"
+                                ],
+                                "properties": {
+                                    "subscription_id": {
+                                        "description": "معرف الاشتراك المراد الخصم منه",
+                                        "type": "integer",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم خصم الجلسة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/reception/lockers": {
             "get": {
                 "tags": [
@@ -3588,135 +3646,6 @@
                                 "schema": {}
                             }
                         }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/attendances/{attendanceId}/assign-locker": {
-            "post": {
-                "tags": [
-                    "Reception"
-                ],
-                "summary": "🔐 تخصيص مفتاح للاعب أو موظف",
-                "description": "يخصص مفتاح خزانة للشخص المرتبط بسجل الحضور.\n\n- **holder_type = member** (default): عضو مسجّل\n- **holder_type = staff**: موظف أو كوتش",
-                "operationId": "62290db7d0230a44a938dad1d35009c3",
-                "parameters": [
-                    {
-                        "name": "attendanceId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "locker_id"
-                                ],
-                                "properties": {
-                                    "locker_id": {
-                                        "type": "integer",
-                                        "example": 4
-                                    },
-                                    "holder_type": {
-                                        "description": "اختياري – member افتراضياً",
-                                        "type": "string",
-                                        "example": "member",
-                                        "enum": [
-                                            "member",
-                                            "staff"
-                                        ]
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تخصيص المفتاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/attendances/{attendanceId}/release-locker": {
-            "post": {
-                "tags": [
-                    "Reception"
-                ],
-                "summary": "🔓 تسليم المفتاح (إرجاع أو نقل لضيف)",
-                "description": "يُحرِّر المفتاح المرتبط بالشخص الذي سجّل دخوله في هذا السجل.\n\n**release_type = return**: إرجاع المفتاح → يصبح متاحاً.\n\n**release_type = transfer**: نقل المفتاح لضيف غير مسجّل → يُسجَّل اسمه ويظل مشغولاً (`with_guest`).",
-                "operationId": "fabb00434eadad1c97cb41022784d14d",
-                "parameters": [
-                    {
-                        "name": "attendanceId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "release_type"
-                                ],
-                                "properties": {
-                                    "release_type": {
-                                        "type": "string",
-                                        "example": "return",
-                                        "enum": [
-                                            "return",
-                                            "transfer"
-                                        ]
-                                    },
-                                    "transfer_to_name": {
-                                        "description": "مطلوب فقط عند النقل لضيف",
-                                        "type": "string",
-                                        "example": "مريم أحمد"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تسليم المفتاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ هذا الشخص لا يحمل أي مفتاح حالياً"
                     }
                 },
                 "security": [
@@ -14288,7 +14217,7 @@
                                 "required": [
                                     "first_name",
                                     "last_name",
-                                    "branch_id",
+                                    "branch_ids",
                                     "age"
                                 ],
                                 "properties": {
@@ -14321,9 +14250,12 @@
                                         "type": "string",
                                         "example": "+966"
                                     },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
+                                    "branch_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     },
                                     "employment_type": {
                                         "description": "نوع التوظيف",
@@ -16612,7 +16544,8 @@
                                     "first_name",
                                     "last_name",
                                     "role",
-                                    "email"
+                                    "email",
+                                    "branch_ids"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -16631,6 +16564,13 @@
                                         "type": "string",
                                         "format": "email",
                                         "example": "john@example.com"
+                                    },
+                                    "branch_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -16957,6 +16897,13 @@
                                     "last_name": {
                                         "type": "string",
                                         "example": "Smith"
+                                    },
+                                    "branch_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     }
                                 },
                                 "type": "object"
