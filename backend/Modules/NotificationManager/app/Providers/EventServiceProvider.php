@@ -12,8 +12,8 @@ class EventServiceProvider extends ServiceProvider
      * @var array<string, array<int, string>>
      */
     protected $listen = [
-        \Modules\NotificationManager\Events\NotificationLogged::class => [
-            \Modules\NotificationManager\Listeners\ProcessNotification::class,
+        \Modules\NotificationManager\Events\NotificationCreated::class => [
+            \Modules\NotificationManager\Listeners\SendNotificationListener::class,
         ],
     ];
 
@@ -22,7 +22,7 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var bool
      */
-    protected static $shouldDiscoverEvents = true;
+    protected static $shouldDiscoverEvents = false;
 
     /**
      * Configure the proper event listeners for email verification.
