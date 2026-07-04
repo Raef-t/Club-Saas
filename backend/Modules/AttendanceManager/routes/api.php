@@ -18,6 +18,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // ── Reception Desk Workflow ──────────────────────────────────────────────
     // 1. Browse player's active subscriptions (to pick one for session deduction)
     Route::get('reception/members/{memberId}/subscriptions', [ReceptionAttendanceController::class, 'memberSubscriptions']);
+    
+    // 1.5. Deduct session from a specific subscription after check-in
+    Route::post('reception/attendances/{attendanceId}/deduct', [ReceptionAttendanceController::class, 'deductSession']);
 
     // 2. List all lockers in a branch (pass ?branch_id=1&available_only=1)
     Route::get('reception/lockers', [ReceptionAttendanceController::class, 'availableLockers']);
