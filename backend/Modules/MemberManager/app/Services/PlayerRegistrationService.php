@@ -94,10 +94,7 @@ class PlayerRegistrationService
             ]);
 
             // Assign spatie role if needed
-            $role = \Spatie\Permission\Models\Role::where('name', 'player')->first();
-            if ($role) {
-                $user->assignRole($role);
-            }
+            $user->assignRole('player');
 
             // Generate 7 QR codes for the new player (one for each day of the week)
             app(\Modules\Authentication\Services\PersonQrCodeService::class)->generateForPerson($person->id);
