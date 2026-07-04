@@ -27,13 +27,15 @@ class WalletController extends Controller
     }
 
     #[OA\Get(
-        path: '/api/v1/people/{person_id}/wallet',
+        path: '/v1/people/{person_id}/wallet',
         summary: 'Get wallet details for a person',
         tags: ['WalletManager'],
+        security: [['bearerAuth' => []]],
         responses: [
             new OA\Response(response: 200, description: 'Success')
         ]
     )]
+    #[OA\Parameter(name: 'person_id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     public function show($personId)
     {
         $wallet = $this->walletRepository->findByPersonId($personId);
@@ -54,9 +56,10 @@ class WalletController extends Controller
     }
 
     #[OA\Post(
-        path: '/api/v1/people/{person_id}/wallet/deposit',
+        path: '/v1/people/{person_id}/wallet/deposit',
         summary: 'Deposit funds into a person\'s wallet',
         tags: ['WalletManager'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -70,6 +73,7 @@ class WalletController extends Controller
             new OA\Response(response: 200, description: 'Success')
         ]
     )]
+    #[OA\Parameter(name: 'person_id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     public function deposit(Request $request, $personId)
     {
         $request->validate([

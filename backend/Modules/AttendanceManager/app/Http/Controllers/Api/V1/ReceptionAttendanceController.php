@@ -65,6 +65,8 @@ class ReceptionAttendanceController extends BaseController
 
             // Attach items (session breakdown per activity) for each subscription
             $subscriptions->transform(function ($sub) {
+                $sub->plan_name = json_decode($sub->plan_name, true) ?? $sub->plan_name;
+
                 $sub->items = DB::table('player_subscription_items as psi')
                     ->leftJoin('activities as a', 'a.id', '=', 'psi.activity_id')
                     ->where('psi.player_subscription_id', $sub->id)
@@ -78,7 +80,11 @@ class ReceptionAttendanceController extends BaseController
                         'psi.is_unlimited',
                         DB::raw('(psi.sessions_allocated - psi.sessions_consumed) as sessions_remaining')
                     )
-                    ->get();
+                    ->get()
+                    ->map(function ($item) {
+                        $item->activity_name = json_decode($item->activity_name, true) ?? $item->activity_name;
+                        return $item;
+                    });
 
                 return $sub;
             });
@@ -120,7 +126,7 @@ class ReceptionAttendanceController extends BaseController
                 $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
 
                 $metadata = $attendance->metadata ?? [];
-                
+
                 if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
                     return $this->errorResponse(__('Session already deducted for this attendance.'), 400);
                 }
@@ -175,7 +181,7 @@ class ReceptionAttendanceController extends BaseController
                         DB::table('player_subscription_items')
                             ->where('id', $item->id)
                             ->increment('sessions_consumed');
-                        break; 
+                        break;
                     }
                 }
 
@@ -184,7 +190,7 @@ class ReceptionAttendanceController extends BaseController
                 $metadata['deduction_status'] = 'completed';
                 $metadata['sessions_before_checkin'] = $subscription->remaining_sessions;
                 $metadata['deducted_by_staff_id'] = \Illuminate\Support\Facades\Auth::id();
-                
+
                 $attendance->update([
                     'metadata' => $metadata
                 ]);
@@ -209,13 +215,13 @@ class ReceptionAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Parameter(name: 'available_only', in: 'query', required: false, schema: new OA\Schema(type: 'boolean', default: false))]
+    #[OA\Parameter(name: 'available_only', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['true', 'false', 'all'], default: 'false'))]
     #[OA\Response(response: 200, description: '✅ تم استرجاع الخزائن', content: new OA\JsonContent())]
     public function availableLockers(Request $request)
     {
         $request->validate([
             'branch_id'      => ['required', 'integer'],
-            'available_only' => ['nullable', 'boolean'],
+            'available_only' => ['nullable', 'string', 'in:true,false,all,1,0'],
         ]);
 
         try {
@@ -233,7 +239,8 @@ class ReceptionAttendanceController extends BaseController
                 )
                 ->orderBy('locker_number');
 
-            if (filter_var($request->input('available_only', false), FILTER_VALIDATE_BOOLEAN)) {
+            $availableOnly = $request->input('available_only');
+            if ($availableOnly === 'true' || $availableOnly === '1' || $availableOnly === true || $availableOnly === 1) {
                 $query->where('status', 'available');
             }
 
@@ -368,6 +375,4 @@ class ReceptionAttendanceController extends BaseController
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
-
-
 }
