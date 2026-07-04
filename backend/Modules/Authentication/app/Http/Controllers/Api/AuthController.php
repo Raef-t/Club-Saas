@@ -167,8 +167,9 @@ class AuthController extends BaseController
             $staff = DB::table('staff')->where('person_id', $personId)->first();
             if ($staff) {
                 $userData['staff_id'] = $staff->id;
-                if ($staff->branch_id) {
-                    $userData['branch_id'] = $staff->branch_id;
+                $staffBranch = DB::table('staff_branches')->where('staff_id', $staff->id)->first();
+                if ($staffBranch) {
+                    $userData['branch_id'] = $staffBranch->branch_id;
                 }
             }
 

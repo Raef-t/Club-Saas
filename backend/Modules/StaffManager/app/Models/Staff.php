@@ -82,6 +82,15 @@ class Staff extends Model
     // ── Helpers ─────────────────────────────────────────────────
 
     /**
+     * Get the first branch ID assigned to this staff member (virtual attribute).
+     */
+    public function getBranchIdAttribute()
+    {
+        $firstBranch = $this->branches()->first();
+        return $firstBranch ? $firstBranch->branch_id : null;
+    }
+
+    /**
      * Get the User associated with this staff member.
      */
     public function user()
