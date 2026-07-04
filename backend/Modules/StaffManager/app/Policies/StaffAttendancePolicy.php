@@ -34,8 +34,7 @@ class StaffAttendancePolicy implements AttendancePolicy
             return AttendanceDecision::deny("The check-in branch does not belong to the specified club.");
         }
 
-        // Get all branches the staff member is assigned to (primary + additional branches)
-        $branchIds = $staff->branches()->pluck('branch_id')->push($staff->branch_id)->unique()->toArray();
+        $branchIds = $staff->branches()->pluck('staff_branches.branch_id')->toArray();
 
         // Verify that the staff member is assigned to the attempt's check-in branch
         if (!in_array($attempt->branchId, $branchIds)) {

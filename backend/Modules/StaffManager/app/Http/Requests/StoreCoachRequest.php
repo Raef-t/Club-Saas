@@ -24,7 +24,8 @@ class StoreCoachRequest extends FormRequest
             'country_code'            => ['nullable', 'string', 'max:5'],
             
             // Staff & Coach Details
-            'branch_id'               => ['required', 'exists:branches,id'],
+            'branch_ids'              => ['required', 'array'],
+            'branch_ids.*'            => ['exists:branches,id'],
             'employment_type'         => ['nullable', 'string', 'in:fixed_salary,commission_based,hybrid'],
             'base_salary'             => ['nullable', 'numeric', 'min:0'],
             'specialization'          => ['nullable', 'string', 'max:255'],

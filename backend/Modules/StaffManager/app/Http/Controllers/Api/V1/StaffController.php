@@ -63,12 +63,13 @@ class StaffController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['first_name', 'last_name', 'role', 'email'],
+            required: ['first_name', 'last_name', 'role', 'email', 'branch_ids'],
             properties: [
                 new OA\Property(property: 'first_name', type: 'string', example: 'John'),
                 new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
                 new OA\Property(property: 'role', type: 'string', example: 'Coach'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com')
+                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
             ]
         )
     )]
@@ -171,7 +172,8 @@ class StaffController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'first_name', type: 'string', example: 'John'),
-                new OA\Property(property: 'last_name', type: 'string', example: 'Smith')
+                new OA\Property(property: 'last_name', type: 'string', example: 'Smith'),
+                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
             ]
         )
     )]

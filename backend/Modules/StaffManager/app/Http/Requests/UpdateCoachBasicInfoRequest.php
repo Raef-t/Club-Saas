@@ -19,7 +19,8 @@ class UpdateCoachBasicInfoRequest extends FormRequest
             'shift_type'      => ['nullable', 'string'],
             'work_status'     => ['nullable', 'string'],
             'is_active'       => ['nullable', 'boolean'],
-            'branch_id'       => ['nullable', 'exists:branches,id'],
+            'branch_ids'      => ['nullable', 'array'],
+            'branch_ids.*'    => ['exists:branches,id'],
         ];
     }
 }

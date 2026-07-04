@@ -35,7 +35,7 @@ class CoachController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['first_name', 'last_name', 'branch_id', 'age'],
+                required: ['first_name', 'last_name', 'branch_ids', 'age'],
                 properties: [
                     new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
                     new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
@@ -44,7 +44,7 @@ class CoachController extends Controller
                     new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1990-01-01'),
                     new OA\Property(property: 'phone_number', type: 'string', example: '500000000'),
                     new OA\Property(property: 'country_code', type: 'string', example: '+966'),
-                    new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                     new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                     new OA\Property(property: 'base_salary', type: 'number', example: 5000),
                     new OA\Property(property: 'specialization', type: 'string', example: 'Bodybuilding'),
