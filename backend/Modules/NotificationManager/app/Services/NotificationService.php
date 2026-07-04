@@ -2,86 +2,130 @@
 
 namespace Modules\NotificationManager\Services;
 
-use Modules\NotificationManager\Models\NotificationTemplate;
-use Modules\NotificationManager\Models\NotificationLog;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\NotificationManager\Models\Notification;
+use Modules\NotificationManager\Models\NotificationAttachment;
+use Modules\NotificationManager\Models\NotificationRecipient;
+use Modules\NotificationManager\Events\NotificationCreated;
 
 class NotificationService
 {
     /**
-     * Send a notification using a template slug
+     * إنشاء إشعار جديد مع مستلميه ومرفقاته
+     *
+     * @param array $data {
+     *   title: string,
+     *   body: string,
+     *   sender_id: int|null,
+     *   sender_type: string|null (admin|system),
+     *   target_snapshot: array|null,
+     *   user_ids: int[],
+     *   attachments: UploadedFile[]|null,
+     * }
      */
-    public function sendFromTemplate($recipient, string $slug, array $data = [])
+    public function createNotification(array $data): Notification
     {
-        $template = NotificationTemplate::where('slug', $slug)
-            ->where('is_active', true)
+        return DB::transaction(function () use ($data) {
+
+            // 1️⃣ إنشاء الإشعار الرئيسي
+            $notification = Notification::create([
+                'title'           => $data['title'],
+                'body'            => $data['body'],
+                'sender_id'       => $data['sender_id'] ?? null,
+                'sender_type'     => $data['sender_type'] ?? null,
+                'target_snapshot' => $data['target_snapshot'] ?? null,
+            ]);
+
+            // 2️⃣ رفع المرفقات
+            if (!empty($data['attachments'])) {
+                foreach ($data['attachments'] as $file) {
+                    $path = $file->store("notifications/{$notification->id}", 'public');
+
+                    NotificationAttachment::create([
+                        'notification_id' => $notification->id,
+                        'file_name'       => $file->getClientOriginalName(),
+                        'file_path'       => $path,
+                        'mime_type'       => $file->getClientMimeType(),
+                        'size'            => $file->getSize(),
+                    ]);
+                }
+            }
+
+            // 3️⃣ ربط المستلمين
+            $userIds = $data['user_ids'] ?? [];
+
+            if (!empty($userIds)) {
+                $userIds = array_unique(array_filter($userIds));
+
+                foreach ($userIds as $userId) {
+                    NotificationRecipient::firstOrCreate([
+                        'notification_id' => $notification->id,
+                        'user_id'         => $userId,
+                    ]);
+                }
+
+                Log::info('📦 تم إنشاء مستلمي الإشعار', [
+                    'notification_id'  => $notification->id,
+                    'recipients_count' => count($userIds),
+                ]);
+            }
+
+            // 4️⃣ إطلاق الحدث
+            event(new NotificationCreated($notification));
+
+            return $notification->load([
+                'attachments',
+                'recipients',
+            ]);
+        });
+    }
+
+    /**
+     * تعليم إشعار كمقروء لمستخدم محدد
+     */
+    public function markAsRead(int $recipientId, int $userId): bool
+    {
+        $recipient = NotificationRecipient::where('id', $recipientId)
+            ->where('user_id', $userId)
             ->first();
 
-        if (!$template) {
-            return null;
+        if (!$recipient) return false;
+
+        if (is_null($recipient->read_at)) {
+            $recipient->update(['read_at' => now()]);
         }
 
-        $subject = $this->parseTemplate($template->getTranslation('subject', app()->getLocale()), $data);
-        $content = $this->parseTemplate($template->getTranslation('content', app()->getLocale()), $data);
-
-        return $this->logAndDispatch($recipient, $template->channel, $subject, $content);
-    }
-
-    protected function parseTemplate($text, array $data)
-    {
-        if (!$text) return "";
-        foreach ($data as $key => $value) {
-            $text = str_replace("{" . $key . "}", $value, $text);
-        }
-        return $text;
-    }
-
-    protected function logAndDispatch($recipient, string $channel, $subject, $content)
-    {
-        $log = NotificationLog::create([
-            'recipient_id' => $recipient->id,
-            'recipient_type' => get_class($recipient),
-            'channel' => $channel,
-            'subject' => $subject,
-            'content' => $content,
-            'status' => 'pending',
-        ]);
-
-        // Dispatch event for background queued processing
-        event(new \Modules\NotificationManager\Events\NotificationLogged($log));
-        
-        return $log;
+        return true;
     }
 
     /**
-     * Send notification for subscription expiring soon.
+     * تعليم جميع إشعارات المستخدم كمقروءة
      */
-    public function notifySubscriptionExpiring($recipient, array $subscriptionData)
+    public function markAllAsRead(int $userId): int
     {
-        return $this->sendFromTemplate($recipient, 'subscription_expiring', $subscriptionData);
+        return NotificationRecipient::where('user_id', $userId)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
     }
 
     /**
-     * Send notification for subscription expired.
+     * عدد الإشعارات غير المقروءة للمستخدم
      */
-    public function notifySubscriptionExpired($recipient, array $subscriptionData)
+    public function unreadCount(int $userId): int
     {
-        return $this->sendFromTemplate($recipient, 'subscription_expired', $subscriptionData);
+        return NotificationRecipient::where('user_id', $userId)
+            ->whereNull('read_at')
+            ->count();
     }
 
     /**
-     * Send notification for payment due.
+     * حذف إشعار من قائمة مستخدم (حذف سجل الاستقبال فقط)
      */
-    public function notifyPaymentDue($recipient, array $paymentData)
+    public function removeFromUserList(int $recipientId, int $userId): bool
     {
-        return $this->sendFromTemplate($recipient, 'payment_due', $paymentData);
-    }
-
-    /**
-     * Send notification for new member welcome.
-     */
-    public function notifyWelcome($recipient, array $memberData)
-    {
-        return $this->sendFromTemplate($recipient, 'welcome', $memberData);
+        return (bool) NotificationRecipient::where('id', $recipientId)
+            ->where('user_id', $userId)
+            ->delete();
     }
 }

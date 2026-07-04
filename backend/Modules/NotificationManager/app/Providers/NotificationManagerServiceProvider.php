@@ -37,10 +37,10 @@ class NotificationManagerServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         parent::register();
-        
-        $this->app->bind(
-            \Modules\NotificationManager\Repositories\NotificationTemplateRepositoryInterface::class,
-            \Modules\NotificationManager\Repositories\EloquentNotificationTemplateRepository::class
+
+        // تسجيل NotificationService
+        $this->app->singleton(
+            \Modules\NotificationManager\Services\NotificationService::class
         );
     }
 
