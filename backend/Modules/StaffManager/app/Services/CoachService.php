@@ -26,12 +26,13 @@ class CoachService
     public function createCoach(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $branch = \Modules\ClubManager\Models\Branch::find($data['branch_id']);
-            
-            if ($branch && $branch->gender_restriction !== 'mixed' && isset($data['gender']) && $branch->gender_restriction !== $data['gender']) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'gender' => 'لا يمكن إضافة هذا المدرب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.'
-                ]);
+            foreach ($data['branch_ids'] as $bId) {
+                $branch = \Modules\ClubManager\Models\Branch::find($bId);
+                if ($branch && $branch->gender_restriction !== 'mixed' && isset($data['gender']) && $branch->gender_restriction !== $data['gender']) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'gender' => 'لا يمكن إضافة هذا المدرب/ة في الفرع بسبب قيود الجنس الخاصة بالفرع.'
+                    ]);
+                }
             }
 
             // 1. Create Person
@@ -79,7 +80,6 @@ class CoachService
             // 5. Create Staff (Role = coach)
             $staff = Staff::create([
                 'person_id'       => $person->id,
-                'branch_id'       => $data['branch_id'],
                 'role'            => 'coach',
                 'employment_type' => $data['employment_type'] ?? 'fixed_salary',
                 'base_salary'     => $data['base_salary'] ?? 0,
@@ -91,6 +91,8 @@ class CoachService
                 'work_type'       => $data['work_type'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
             ]);
+
+            $staff->branches()->sync($data['branch_ids']);
 
             // 6. Generate 7 QR codes for this coach
             $this->qrCodeService->generateForPerson($person->id);
@@ -117,10 +119,12 @@ class CoachService
      */
     public function getAllCoaches(array $filters = [])
     {
-        $query = Staff::with(['coachDetail', 'person', 'activities'])->where('role', 'coach');
+        $query = Staff::with(['coachDetail', 'person', 'activities', 'branches'])->where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
-            $query->where('branch_id', $filters['branch_id']);
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
         }
 
         if (!empty($filters['activity_id'])) {
@@ -139,7 +143,9 @@ class CoachService
         $query = Staff::where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
-            $query->where('branch_id', $filters['branch_id']);
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
         }
 
         return [
@@ -156,7 +162,7 @@ class CoachService
      */
     public function getSingleCoach($id)
     {
-        return Staff::with(['coachDetail.certifications', 'activities', 'person', 'user'])
+        return Staff::with(['coachDetail.certifications', 'activities', 'person', 'user', 'branches'])
             ->where('role', 'coach')
             ->findOrFail($id);
     }
@@ -170,10 +176,14 @@ class CoachService
             $staff = Staff::where('role', 'coach')->findOrFail($id);
             
             // Update Basic Info
-            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active', 'branch_id'];
+            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
+            }
+            
+            if (isset($data['branch_ids'])) {
+                $staff->branches()->sync($data['branch_ids']);
             }
             
             // Update Details

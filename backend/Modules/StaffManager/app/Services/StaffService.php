@@ -32,7 +32,9 @@ class StaffService
         $query = \Modules\StaffManager\Models\Staff::query();
 
         if (!empty($filters['branch_id'])) {
-            $query->where('branch_id', $filters['branch_id']);
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
         }
 
         if (!empty($filters['role'])) {
@@ -66,8 +68,8 @@ class StaffService
             $query->whereIn('person_id', $personIds);
         }
 
-        // Eager-load coach details for coaches
-        $query->with('coachDetail');
+        // Eager-load coach details and branches
+        $query->with(['coachDetail', 'branches']);
 
         $perPage = $filters['per_page'] ?? 15;
         $staffMembers = $query->latest()->paginate($perPage);
@@ -126,6 +128,10 @@ class StaffService
             $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
             ]));
+            
+            if (!empty($data['branch_ids'])) {
+                $staff->branches()->sync($data['branch_ids']);
+            }
 
             // 3. If coach, create coach_details record
             if (($data['role'] ?? 'staff') === 'coach') {
@@ -207,7 +213,8 @@ class StaffService
     {
         if ($staff) {
             $staff->personDto = $staff->person_id ? $this->personService->getPersonById($staff->person_id) : null;
-            $staff->branchDto = $staff->branch_id ? $this->branchService->getBranchById($staff->branch_id) : null;
+            $firstBranch = $staff->branches->first();
+            $staff->branchDto = $firstBranch ? $this->branchService->getBranchById($firstBranch->id) : null;
         }
         return $staff;
     }
@@ -254,6 +261,10 @@ class StaffService
 
             // Update Staff record
             $staff->update($data);
+
+            if (isset($data['branch_ids'])) {
+                $staff->branches()->sync($data['branch_ids']);
+            }
 
             // Update coach_details if this is a coach
             if ($staff->isCoach()) {

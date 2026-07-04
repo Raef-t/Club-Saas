@@ -3558,8 +3558,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "🔑 المفاتيح المتاحة في الفرع",
-                "description": "يعرض جميع خزائن الفرع مع حالتها (متاح / مشغول). يستخدمه موظف الاستقبال لاختيار مفتاح للاعب.",
+                "summary": "🔑 خزائن الفرع مع حالة كل مفتاح",
+                "description": "يعرض جميع خزائن الفرع مع حالتها الكاملة:\n- **available**: المفتاح في الاستقبال\n- **with_member**: عضو مسجّل يحمله\n- **with_staff**: موظف/كوتش يحمله\n- **with_guest**: ضيف غير مسجّل يحمله\n\nيُعرض أيضاً اسم الحامل ووقت التخصيص.",
                 "operationId": "21a0a569e2d8c1354c3084bd8776286f",
                 "parameters": [
                     {
@@ -3582,7 +3582,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع المفاتيح",
+                        "description": "✅ تم استرجاع الخزائن",
                         "content": {
                             "application/json": {
                                 "schema": {}
@@ -3602,8 +3602,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "🔐 تخصيص مفتاح للاعب بعد تسجيل الدخول",
-                "description": "يربط مفتاح خزانة بسجل الحضور المفتوح. يمكن استخدامه إذا لم يتم تحديد المفتاح أثناء check-in أو لتغييره.",
+                "summary": "🔐 تخصيص مفتاح للاعب أو موظف",
+                "description": "يخصص مفتاح خزانة للشخص المرتبط بسجل الحضور.\n\n- **holder_type = member** (default): عضو مسجّل\n- **holder_type = staff**: موظف أو كوتش",
                 "operationId": "62290db7d0230a44a938dad1d35009c3",
                 "parameters": [
                     {
@@ -3627,6 +3627,15 @@
                                     "locker_id": {
                                         "type": "integer",
                                         "example": 4
+                                    },
+                                    "holder_type": {
+                                        "description": "اختياري – member افتراضياً",
+                                        "type": "string",
+                                        "example": "member",
+                                        "enum": [
+                                            "member",
+                                            "staff"
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -3656,8 +3665,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "🔓 تسليم المفتاح (إرجاع أو نقل لصديق)",
-                "description": "يُفك ارتباط المفتاح عن اللاعب عند خروجه.\n\n**release_type = return**: اللاعب يُعيد المفتاح للاستقبال → يصبح المفتاح متاحاً.\n\n**release_type = transfer**: اللاعب يعطي المفتاح لصديقه → يُسجَّل اسم الصديق ويُفك الارتباط عن هذا اللاعب.",
+                "summary": "🔓 تسليم المفتاح (إرجاع أو نقل لضيف)",
+                "description": "يُحرِّر المفتاح المرتبط بالشخص الذي سجّل دخوله في هذا السجل.\n\n**release_type = return**: إرجاع المفتاح → يصبح متاحاً.\n\n**release_type = transfer**: نقل المفتاح لضيف غير مسجّل → يُسجَّل اسمه ويظل مشغولاً (`with_guest`).",
                 "operationId": "fabb00434eadad1c97cb41022784d14d",
                 "parameters": [
                     {
@@ -3687,9 +3696,9 @@
                                         ]
                                     },
                                     "transfer_to_name": {
-                                        "description": "مطلوب فقط عند النقل",
+                                        "description": "مطلوب فقط عند النقل لضيف",
                                         "type": "string",
-                                        "example": "أحمد محمد"
+                                        "example": "مريم أحمد"
                                     }
                                 },
                                 "type": "object"
@@ -3705,6 +3714,124 @@
                                 "schema": {}
                             }
                         }
+                    },
+                    "422": {
+                        "description": "⚠️ هذا الشخص لا يحمل أي مفتاح حالياً"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/{lockerId}/holder": {
+            "delete": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "🔓 إلغاء تخصيص الخزانة مباشرة",
+                "description": "يُحرِّر الخزانة ويجعلها متاحة فوراً بغض النظر عن سجل الحضور.\n\nمفيد في حالات:\n- إلغاء خزانة مخصصة لكوتش/موظف بشكل دائم\n- تحرير خزانة يدوياً من لوحة الاستقبال\n- تصحيح تخصيص خاطئ",
+                "operationId": "106766073f877bc0ab12da95221489dc",
+                "parameters": [
+                    {
+                        "name": "lockerId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحرير الخزانة",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "❌ الخزانة غير موجودة"
+                    },
+                    "409": {
+                        "description": "⚠️ الخزانة متاحة بالفعل"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "🔄 تغيير حامل المفتاح",
+                "description": "يتيح تغيير مَن يحمل المفتاح في أي وقت بدون الحاجة لعمل check-out.\n\nالاستخدامات:\n- تحويل المفتاح من عضو لآخر\n- منح كوتش خزانة ثابتة\n- تسجيل ضيف حمل المفتاح يدوياً",
+                "operationId": "14a6d5b209bed03fa9f5110eeef2d0e8",
+                "parameters": [
+                    {
+                        "name": "lockerId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "holder_type",
+                                    "holder_name"
+                                ],
+                                "properties": {
+                                    "holder_type": {
+                                        "type": "string",
+                                        "example": "staff",
+                                        "enum": [
+                                            "member",
+                                            "staff",
+                                            "guest"
+                                        ]
+                                    },
+                                    "holder_id": {
+                                        "description": "ID العضو أو الموظف – مطلوب إذا holder_type ≠ guest",
+                                        "type": "integer",
+                                        "example": 7,
+                                        "nullable": true
+                                    },
+                                    "holder_name": {
+                                        "type": "string",
+                                        "example": "المدرب خالد"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث حامل المفتاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "❌ الخزانة غير موجودة"
+                    },
+                    "422": {
+                        "description": "⚠️ بيانات غير صالحة"
                     }
                 },
                 "security": [
@@ -3763,11 +3890,6 @@
                                         "description": "معرف الاشتراك لخصم الجلسة منه (اختياري)",
                                         "type": "integer",
                                         "example": 5
-                                    },
-                                    "locker_id": {
-                                        "description": "معرف الخزانة المخصصة للاعب (اختياري)",
-                                        "type": "integer",
-                                        "example": 12
                                     },
                                     "metadata": {
                                         "description": "بيانات إضافية (اختياري)",

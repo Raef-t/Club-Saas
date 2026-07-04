@@ -37,7 +37,7 @@ class StaffSharedService implements StaffSharedServiceInterface
             return new StaffDTO(
                 id: $staff->id,
                 personId: $staff->person_id,
-                branchId: $staff->branch_id,
+                branchId: $staff->branches()->first()?->id,
                 role: $staff->role ?? 'staff',
                 employmentType: $staff->employment_type,
                 isActive: (bool)$staff->is_active,

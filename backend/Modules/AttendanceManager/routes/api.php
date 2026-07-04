@@ -22,16 +22,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // 2. List all lockers in a branch (pass ?branch_id=1&available_only=1)
     Route::get('reception/lockers', [ReceptionAttendanceController::class, 'availableLockers']);
 
-    // 3. Assign a locker key to an open attendance (post check-in or during check-in)
-    Route::post('attendances/{attendanceId}/assign-locker', [ReceptionAttendanceController::class, 'assignLocker']);
-
-    // 4. Release the locker key: return it or transfer it to a guest
-    Route::post('attendances/{attendanceId}/release-locker', [ReceptionAttendanceController::class, 'releaseLocker']);
-
-    // 5. Update locker holder at any time (change who currently holds the key)
+    // 3. Update locker holder at any time (change who currently holds the key)
     Route::patch('lockers/{lockerId}/holder', [ReceptionAttendanceController::class, 'updateLockerHolder']);
 
-    // 6. Free a locker directly – regardless of attendance (e.g. staff/coach permanent locker)
+    // 4. Free a locker directly – regardless of attendance (e.g. staff/coach permanent locker)
     Route::delete('lockers/{lockerId}/holder', [ReceptionAttendanceController::class, 'freeLocker']);
     // ────────────────────────────────────────────────────────────────────────────
 

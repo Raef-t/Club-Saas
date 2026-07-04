@@ -13,7 +13,6 @@ class Staff extends Model
 
     protected $fillable = [
         'person_id',
-        'branch_id',
         'role',
         'employment_type',
         'base_salary',
@@ -44,10 +43,7 @@ class Staff extends Model
         return $this->belongsTo(\Modules\Authentication\Models\Person::class, 'person_id');
     }
 
-    public function branch()
-    {
-        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class, 'branch_id');
-    }
+
 
     /**
      * Coach-specific details (CTI pattern: 1:1 extension).
@@ -65,7 +61,7 @@ class Staff extends Model
 
     public function branches()
     {
-        return $this->hasMany(StaffBranch::class);
+        return $this->belongsToMany(\Modules\ClubManager\Models\Branch::class, 'staff_branches', 'staff_id', 'branch_id');
     }
 
     public function unavailabilities()

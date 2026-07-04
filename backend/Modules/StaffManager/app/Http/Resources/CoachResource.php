@@ -11,7 +11,7 @@ class CoachResource extends JsonResource
         return [
             'id'              => $this->id,
             'person_id'       => $this->person_id,
-            'branch_id'       => $this->branch_id,
+            'branch_ids'      => $this->whenLoaded('branches', fn() => $this->branches->pluck('id')),
             'role'            => $this->role,
             'employment_type' => $this->employment_type,
             'base_salary'     => $this->base_salary,
