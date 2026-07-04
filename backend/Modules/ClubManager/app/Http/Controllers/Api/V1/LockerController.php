@@ -57,10 +57,11 @@ class LockerController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['locker_number', 'branch_id'],
+            required: ['locker_number', 'branch_id', 'facility_id'],
             properties: [
                 new OA\Property(property: 'locker_number', type: 'string', example: 'L-102'),
-                new OA\Property(property: 'branch_id', type: 'integer', example: 1)
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                new OA\Property(property: 'facility_id', type: 'integer', example: 1)
             ]
         )
     )]

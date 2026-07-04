@@ -7221,7 +7221,8 @@
                             "schema": {
                                 "required": [
                                     "locker_number",
-                                    "branch_id"
+                                    "branch_id",
+                                    "facility_id"
                                 ],
                                 "properties": {
                                     "locker_number": {
@@ -7229,6 +7230,10 @@
                                         "example": "L-102"
                                     },
                                     "branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "facility_id": {
                                         "type": "integer",
                                         "example": 1
                                     }
@@ -22277,8 +22282,8 @@
                         "example": 1
                     },
                     "name": {
-                        "type": "object",
-                        "example": "{\"ar\": \"صالة الملاكمة\", \"en\": \"Boxing Hall\"}"
+                        "type": "string",
+                        "example": "المسبح الأولمبي"
                     },
                     "capacity": {
                         "type": "integer",
@@ -22373,8 +22378,8 @@
                 "title": "UpdateFacilityRequest",
                 "properties": {
                     "name": {
-                        "type": "object",
-                        "example": "{\"ar\": \"الصالة المحدثة\", \"en\": \"Updated Hall\"}"
+                        "type": "string",
+                        "example": "الصالة المحدثة"
                     },
                     "capacity": {
                         "type": "integer"
