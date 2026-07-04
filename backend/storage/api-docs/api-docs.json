@@ -3633,8 +3633,13 @@
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "type": "boolean",
-                            "default": false
+                            "type": "string",
+                            "default": "false",
+                            "enum": [
+                                "true",
+                                "false",
+                                "all"
+                            ]
                         }
                     }
                 ],
@@ -21535,27 +21540,52 @@
                 ]
             }
         },
-        "/api/v1/people/{person_id}/wallet": {
+        "/v1/people/{person_id}/wallet": {
             "get": {
                 "tags": [
                     "WalletManager"
                 ],
                 "summary": "Get wallet details for a person",
-                "operationId": "0b52f0ddac7faa116228a2458f06c254",
+                "operationId": "39577215dcf0232954479d2f689a3a74",
+                "parameters": [
+                    {
+                        "name": "person_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Success"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
-        "/api/v1/people/{person_id}/wallet/deposit": {
+        "/v1/people/{person_id}/wallet/deposit": {
             "post": {
                 "tags": [
                     "WalletManager"
                 ],
                 "summary": "Deposit funds into a person's wallet",
-                "operationId": "77c908d866ec2c86d160d65140d26290",
+                "operationId": "970a049c7000aa660075ed70714c5381",
+                "parameters": [
+                    {
+                        "name": "person_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -21579,7 +21609,12 @@
                     "200": {
                         "description": "Success"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },
