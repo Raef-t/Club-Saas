@@ -11,6 +11,22 @@ class PlayerRegistrationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('additional_contacts') && is_string($this->additional_contacts)) {
+            $contacts = json_decode($this->additional_contacts, true);
+            if (is_array($contacts)) {
+                // If it's a single associative array (object), wrap it in an array
+                if (\Illuminate\Support\Arr::isAssoc($contacts)) {
+                    $contacts = [$contacts];
+                }
+                $this->merge([
+                    'additional_contacts' => $contacts
+                ]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
