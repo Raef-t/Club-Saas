@@ -82,7 +82,7 @@ class StaffController extends BaseController
                     new OA\Property(property: 'role', type: 'string', example: 'Coach'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
-                    new OA\Property(property: 'branch_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+                    new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
                 ]
             )
         )
