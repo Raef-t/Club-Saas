@@ -11,6 +11,15 @@ class StoreSubscriptionPlanRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('is_unlimited_subscribers') && filter_var($this->is_unlimited_subscribers, FILTER_VALIDATE_BOOLEAN)) {
+            $this->merge([
+                'max_subscribers' => 0
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -26,7 +35,8 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'base_price' => 'required|numeric|min:0',
             'max_freeze_count' => 'nullable|integer|min:0',
             'max_freeze_days' => 'nullable|integer|min:0',
-            'max_subscribers' => 'nullable|integer|min:1',
+            'max_subscribers' => 'nullable|integer|min:0',
+            'is_unlimited_subscribers' => 'nullable|boolean',
             'is_active' => 'boolean',
         ];
     }

@@ -21211,6 +21211,18 @@
                                                         "example": "2026-12-31",
                                                         "nullable": true
                                                     },
+                                                    "max_subscribers": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    },
+                                                    "current_subscribers": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    },
+                                                    "is_unlimited_subscribers": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
                                                     "activities": {
                                                         "type": "array",
                                                         "items": {
@@ -21336,6 +21348,11 @@
                                         "example": 50,
                                         "nullable": true
                                     },
+                                    "is_unlimited_subscribers": {
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    },
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
@@ -21382,6 +21399,18 @@
                                                     "format": "date",
                                                     "example": "2026-12-31",
                                                     "nullable": true
+                                                },
+                                                "max_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "current_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "is_unlimited_subscribers": {
+                                                    "type": "boolean",
+                                                    "example": false
                                                 }
                                             },
                                             "type": "object"
@@ -21546,6 +21575,18 @@
                                                     "example": "2026-12-31",
                                                     "nullable": true
                                                 },
+                                                "max_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "current_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "is_unlimited_subscribers": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
                                                 "activities": {
                                                     "type": "array",
                                                     "items": {
@@ -21691,6 +21732,11 @@
                                         "example": 50,
                                         "nullable": true
                                     },
+                                    "is_unlimited_subscribers": {
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    },
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
@@ -21737,6 +21783,18 @@
                                                     "format": "date",
                                                     "example": "2026-12-31",
                                                     "nullable": true
+                                                },
+                                                "max_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "current_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "is_unlimited_subscribers": {
+                                                    "type": "boolean",
+                                                    "example": false
                                                 }
                                             },
                                             "type": "object"

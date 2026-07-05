@@ -43,6 +43,9 @@ class SubscriptionPlanController extends BaseController
                             new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
                             new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
                             new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
+                            new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
+                            new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
+                            new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
                             new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
@@ -135,6 +138,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 2),
                 new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 14),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
+                new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
@@ -153,7 +157,10 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
                         new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31')
+                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
+                        new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
+                        new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false)
                     ]
                 )
             ]
@@ -194,6 +201,9 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
                         new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
                         new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
+                        new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
+                        new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
                         new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
@@ -237,6 +247,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 3),
                 new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 20),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
+                new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
@@ -255,7 +266,10 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
                         new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31')
+                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
+                        new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
+                        new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false)
                     ]
                 )
             ]
