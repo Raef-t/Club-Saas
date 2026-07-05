@@ -163,7 +163,41 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب الأعضاء بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Members retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
+                            new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
+                            new OA\Property(
+                                property: 'subscriptions',
+                                type: 'array',
+                                items: new OA\Items(
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                                        new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
+                                        new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
+                                        new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false)
+                                    ]
+                                )
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
     public function index(\Illuminate\Http\Request $request)
     {
         $filters = $request->all();
@@ -211,7 +245,52 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب بيانات العضو بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب بيانات العضو بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Member retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
+                        new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
+                        new OA\Property(
+                            property: 'subscriptions',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
+                                    new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
+                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false),
+                                    new OA\Property(
+                                        property: 'items',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            type: 'object',
+                                            properties: [
+                                                new OA\Property(property: 'id', type: 'integer', example: 1),
+                                                new OA\Property(property: 'activity', type: 'object', properties: [
+                                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                                    new OA\Property(property: 'name', type: 'string', example: 'سباحة')
+                                                ])
+                                            ]
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
     public function show($id)
     {

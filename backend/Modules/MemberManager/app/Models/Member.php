@@ -45,6 +45,11 @@ class Member extends Model
         return $this->hasMany(MemberMeasurement::class);
     }
 
+    public function subscriptions()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\PlayerSubscription::class, 'member_id');
+    }
+
     /**
      * Scopes
      */
@@ -70,4 +75,16 @@ class Member extends Model
     {
         return $this->hasMany(PlayerUnavailability::class);
     }
+
+    public function getTotalSubscriptionsAmountAttribute()
+    {
+        return $this->subscriptions->sum('total_amount');
+    }
+
+    public function getTotalPaidAmountAttribute()
+    {
+        return $this->subscriptions->sum('paid_amount');
+    }
+
+    protected $appends = ['total_subscriptions_amount', 'total_paid_amount'];
 }

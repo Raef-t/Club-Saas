@@ -40,7 +40,8 @@ class SubscriptionPlanController extends BaseController
                         type: 'object',
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                            new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                            new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
                 )
@@ -50,7 +51,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active();
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()->with('planActivities');
         
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
@@ -184,7 +185,8 @@ class SubscriptionPlanController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
             ]
@@ -195,6 +197,7 @@ class SubscriptionPlanController extends BaseController
     public function show($id)
     {
         $plan = $this->planRepository->find($id);
+        $plan->loadMissing('planActivities');
         return $this->successResponse(
             new SubscriptionPlanResource($plan),
             __('Subscription plan retrieved successfully')

@@ -49,4 +49,11 @@ class PlayerSubscription extends Model
     {
         return $this->hasMany(PlayerSubscriptionService::class);
     }
+
+    public function getIsFullyPaidAttribute()
+    {
+        return (float) $this->paid_amount >= (float) $this->total_amount;
+    }
+    
+    protected $appends = ['is_fully_paid'];
 }

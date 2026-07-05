@@ -19,6 +19,7 @@ class SubscriptionPlanResource extends JsonResource
             'max_freeze_days' => $this->max_freeze_days,
             'base_price' => $this->base_price,
             'is_active' => $this->is_active,
+            'activities' => SubscriptionPlanActivityResource::collection($this->whenLoaded('planActivities')),
         ];
     }
 }
