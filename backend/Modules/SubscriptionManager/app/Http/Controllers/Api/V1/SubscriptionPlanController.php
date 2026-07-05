@@ -40,7 +40,10 @@ class SubscriptionPlanController extends BaseController
                         type: 'object',
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                            new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                            new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
+                            new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
+                            new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
                 )
@@ -50,7 +53,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active();
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()->with('planActivities');
         
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
@@ -124,6 +127,8 @@ class SubscriptionPlanController extends BaseController
                     new OA\Property(property: 'en', type: 'string', example: 'Gold Subscription')
                 ]),
                 new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                 new OA\Property(property: 'duration_days', type: 'integer', example: 30),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
@@ -146,7 +151,9 @@ class SubscriptionPlanController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
+                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31')
                     ]
                 )
             ]
@@ -184,7 +191,10 @@ class SubscriptionPlanController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
+                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
             ]
@@ -195,6 +205,7 @@ class SubscriptionPlanController extends BaseController
     public function show($id)
     {
         $plan = $this->planRepository->find($id);
+        $plan->loadMissing('planActivities');
         return $this->successResponse(
             new SubscriptionPlanResource($plan),
             __('Subscription plan retrieved successfully')
@@ -218,6 +229,8 @@ class SubscriptionPlanController extends BaseController
                     new OA\Property(property: 'en', type: 'string', example: 'Diamond Subscription')
                 ]),
                 new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                 new OA\Property(property: 'duration_days', type: 'integer', example: 30),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 400.00),
@@ -240,7 +253,9 @@ class SubscriptionPlanController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965')
+                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
+                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31')
                     ]
                 )
             ]

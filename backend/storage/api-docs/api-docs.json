@@ -4629,6 +4629,11 @@
                                         "description": "ملف الصورة المراد رفعها",
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "user_id": {
+                                        "description": "معرف المستخدم (في حال تعديل صورة مستخدم آخر)",
+                                        "type": "integer",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -4659,6 +4664,61 @@
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/delete-photo": {
+            "delete": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "🗑️ حذف الصورة الشخصية",
+                "description": "حذف الصورة الشخصية للمستخدم الحالي أو لأي مستخدم آخر (في حال تمرير user_id).",
+                "operationId": "2d008bfa389511925f305f5b8b3db283",
+                "requestBody": {
+                    "description": "معرف المستخدم",
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "description": "معرف المستخدم (في حال حذف صورة مستخدم آخر)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الصورة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم حذف الصورة الشخصية بنجاح"
                                         }
                                     },
                                     "type": "object"
@@ -8609,7 +8669,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "first_name",
@@ -8656,6 +8716,12 @@
                                     "address": {
                                         "type": "string",
                                         "example": "شارع الملك فهد، الرياض",
+                                        "nullable": true
+                                    },
+                                    "photo": {
+                                        "description": "صورة اللاعب",
+                                        "type": "string",
+                                        "format": "binary",
                                         "nullable": true
                                     },
                                     "branch_id": {
@@ -8772,7 +8838,94 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم جلب بيانات العضو بنجاح"
+                        "description": "✅ تم جلب بيانات العضو بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Member retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total_subscriptions_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1500
+                                                },
+                                                "total_paid_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1000
+                                                },
+                                                "subscriptions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "total_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 1500
+                                                            },
+                                                            "paid_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 1000
+                                                            },
+                                                            "is_fully_paid": {
+                                                                "type": "boolean",
+                                                                "example": false
+                                                            },
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "activity": {
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "integer",
+                                                                                    "example": 1
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string",
+                                                                                    "example": "سباحة"
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "🚫 العضو غير موجود"
@@ -8977,7 +9130,72 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم جلب الأعضاء بنجاح"
+                        "description": "✅ تم جلب الأعضاء بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Members retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "total_subscriptions_amount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 1500
+                                                    },
+                                                    "total_paid_amount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 1000
+                                                    },
+                                                    "subscriptions": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "total_amount": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 1500
+                                                                },
+                                                                "paid_amount": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 1000
+                                                                },
+                                                                "is_fully_paid": {
+                                                                    "type": "boolean",
+                                                                    "example": false
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -14222,7 +14440,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "first_name",
@@ -14259,6 +14477,12 @@
                                     "country_code": {
                                         "type": "string",
                                         "example": "+966"
+                                    },
+                                    "photo": {
+                                        "description": "صورة المدرب",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
                                     },
                                     "branch_ids": {
                                         "type": "array",
@@ -16506,6 +16730,17 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "username": {
+                                                        "type": "string",
+                                                        "example": "staff_1_abcd",
+                                                        "nullable": true
+                                                    }
+                                                },
                                                 "type": "object"
                                             }
                                         }
@@ -16548,7 +16783,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "first_name",
@@ -16574,6 +16809,12 @@
                                         "type": "string",
                                         "format": "email",
                                         "example": "john@example.com"
+                                    },
+                                    "photo": {
+                                        "description": "صورة الموظف",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
                                     },
                                     "branch_ids": {
                                         "type": "array",
@@ -16824,6 +17065,17 @@
                                             "example": "Staff retrieved successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "staff_1_abcd",
+                                                    "nullable": true
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -20924,6 +21176,24 @@
                                                     "subscription_number": {
                                                         "type": "string",
                                                         "example": "25487965"
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2026-08-01",
+                                                        "nullable": true
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2026-12-31",
+                                                        "nullable": true
+                                                    },
+                                                    "activities": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
                                                     }
                                                 },
                                                 "type": "object"
@@ -21003,6 +21273,18 @@
                                             "session_based"
                                         ]
                                     },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01",
+                                        "nullable": true
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-31",
+                                        "nullable": true
+                                    },
                                     "duration_days": {
                                         "type": "integer",
                                         "example": 30
@@ -21066,6 +21348,18 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-01",
+                                                    "nullable": true
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-12-31",
+                                                    "nullable": true
                                                 }
                                             },
                                             "type": "object"
@@ -21217,6 +21511,24 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-01",
+                                                    "nullable": true
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-12-31",
+                                                    "nullable": true
+                                                },
+                                                "activities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -21316,6 +21628,18 @@
                                             "session_based"
                                         ]
                                     },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01",
+                                        "nullable": true
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-31",
+                                        "nullable": true
+                                    },
                                     "duration_days": {
                                         "type": "integer",
                                         "example": 30
@@ -21379,6 +21703,18 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-01",
+                                                    "nullable": true
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-12-31",
+                                                    "nullable": true
                                                 }
                                             },
                                             "type": "object"

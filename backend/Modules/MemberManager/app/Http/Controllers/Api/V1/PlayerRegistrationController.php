@@ -27,33 +27,37 @@ class PlayerRegistrationController extends BaseController
     )]
     #[OA\RequestBody(
         required: true,
-        content: new OA\JsonContent(
-            required: ['first_name', 'last_name', 'mobile', 'gender'],
-            properties: [
-                new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
-                new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
-                new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
-                new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
-                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
-                new OA\Property(property: 'age', type: 'integer', description: '(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات', example: 25),
-                new OA\Property(property: 'dob', type: 'string', format: 'date', description: '(مطلوب في حال لم يتم إدخال العمر) تاريخ الميلاد', example: '1995-10-25'),
-                new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
-                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                new OA\Property(
-                    property: 'additional_contacts',
-                    type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        required: ['name', 'phone_number'],
-                        properties: [
-                            new OA\Property(property: 'name', type: 'string', example: 'والد اللاعب'),
-                            new OA\Property(property: 'country_code', type: 'string', example: '+963'),
-                            new OA\Property(property: 'phone_number', type: 'string', example: '0509876543'),
-                            new OA\Property(property: 'relation', type: 'string', example: 'Father')
-                        ]
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['first_name', 'last_name', 'mobile', 'gender'],
+                properties: [
+                    new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
+                    new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
+                    new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
+                    new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
+                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
+                    new OA\Property(property: 'age', type: 'integer', description: '(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات', example: 25),
+                    new OA\Property(property: 'dob', type: 'string', format: 'date', description: '(مطلوب في حال لم يتم إدخال العمر) تاريخ الميلاد', example: '1995-10-25'),
+                    new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة اللاعب', nullable: true),
+                    new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                    new OA\Property(
+                        property: 'additional_contacts',
+                        type: 'array',
+                        items: new OA\Items(
+                            type: 'object',
+                            required: ['name', 'phone_number'],
+                            properties: [
+                                new OA\Property(property: 'name', type: 'string', example: 'والد اللاعب'),
+                                new OA\Property(property: 'country_code', type: 'string', example: '+963'),
+                                new OA\Property(property: 'phone_number', type: 'string', example: '0509876543'),
+                                new OA\Property(property: 'relation', type: 'string', example: 'Father')
+                            ]
+                        )
                     )
-                )
-            ]
+                ]
+            )
         )
     )]
     #[OA\Response(
@@ -159,7 +163,41 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب الأعضاء بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Members retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
+                            new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
+                            new OA\Property(
+                                property: 'subscriptions',
+                                type: 'array',
+                                items: new OA\Items(
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                                        new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
+                                        new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
+                                        new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false)
+                                    ]
+                                )
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
     public function index(\Illuminate\Http\Request $request)
     {
         $filters = $request->all();
@@ -207,7 +245,52 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب بيانات العضو بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب بيانات العضو بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Member retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
+                        new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
+                        new OA\Property(
+                            property: 'subscriptions',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
+                                    new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
+                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false),
+                                    new OA\Property(
+                                        property: 'items',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            type: 'object',
+                                            properties: [
+                                                new OA\Property(property: 'id', type: 'integer', example: 1),
+                                                new OA\Property(property: 'activity', type: 'object', properties: [
+                                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                                    new OA\Property(property: 'name', type: 'string', example: 'سباحة')
+                                                ])
+                                            ]
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
     public function show($id)
     {

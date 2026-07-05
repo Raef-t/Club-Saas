@@ -13,6 +13,8 @@ class SubscriptionPlan extends Model
         'subscription_number',
         'name',
         'type',
+        'start_date',
+        'end_date',
         'duration_days',
         'session_count',
         'max_freeze_count',
@@ -43,6 +45,8 @@ class SubscriptionPlan extends Model
 
     protected $casts = [
         'name' => 'json',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'is_active' => 'boolean',
         'base_price' => 'decimal:2',
         'max_freeze_count' => 'integer',

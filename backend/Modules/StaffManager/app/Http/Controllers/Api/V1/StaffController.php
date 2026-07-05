@@ -39,7 +39,17 @@ class StaffController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(
+                    property: 'data', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -62,15 +72,19 @@ class StaffController extends BaseController
     )]
     #[OA\RequestBody(
         required: true,
-        content: new OA\JsonContent(
-            required: ['first_name', 'last_name', 'role', 'email', 'branch_ids'],
-            properties: [
-                new OA\Property(property: 'first_name', type: 'string', example: 'John'),
-                new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
-                new OA\Property(property: 'role', type: 'string', example: 'Coach'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
-                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
-            ]
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['first_name', 'last_name', 'role', 'email', 'branch_ids'],
+                properties: [
+                    new OA\Property(property: 'first_name', type: 'string', example: 'John'),
+                    new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
+                    new OA\Property(property: 'role', type: 'string', example: 'Coach'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
+                    new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+                ]
+            )
         )
     )]
     #[OA\Response(
@@ -147,7 +161,14 @@ class StaffController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd')
+                    ]
+                )
             ]
         )
     )]

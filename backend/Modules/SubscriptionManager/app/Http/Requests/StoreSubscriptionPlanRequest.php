@@ -19,6 +19,8 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'name.ar' => 'required|string|max:150',
             'name.en' => 'nullable|string|max:150',
             'type' => 'required|in:fixed_period,session_based',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'duration_days' => 'required_if:type,fixed_period|nullable|integer|min:1',
             'session_count' => 'required_if:type,session_based|nullable|integer|min:1',
             'base_price' => 'required|numeric|min:0',

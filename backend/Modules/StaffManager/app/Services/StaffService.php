@@ -47,20 +47,20 @@ class StaffService
 
         if (!empty($filters['gender']) || !empty($filters['search'])) {
             $peopleQuery = \Modules\Authentication\Models\Person::query();
-            
+
             if (!empty($filters['gender'])) {
                 $peopleQuery->where('gender', $filters['gender']);
             }
-            
+
             if (!empty($filters['search'])) {
                 $search = $filters['search'];
-                $peopleQuery->where(function($sq) use ($search) {
+                $peopleQuery->where(function ($sq) use ($search) {
                     $sq->where('full_name', 'like', "%{$search}%")
-                       ->orWhereHas('contacts', function($cq) use ($search) {
-                           $cq->where('phone_number', 'like', "%{$search}%");
-                       })
-                       ->orWhere('email', 'like', "%{$search}%")
-                       ->orWhere('national_id', 'like', "%{$search}%");
+                        ->orWhereHas('contacts', function ($cq) use ($search) {
+                            $cq->where('phone_number', 'like', "%{$search}%");
+                        })
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('national_id', 'like', "%{$search}%");
                 });
             }
 
@@ -68,8 +68,8 @@ class StaffService
             $query->whereIn('person_id', $personIds);
         }
 
-        // Eager-load coach details and branches
-        $query->with(['coachDetail', 'branches']);
+        // Eager-load coach details and branches and user
+        $query->with(['coachDetail', 'branches', 'user']);
 
         $perPage = $filters['per_page'] ?? 15;
         $staffMembers = $query->latest()->paginate($perPage);
@@ -87,7 +87,7 @@ class StaffService
     public function getStaffById($id)
     {
         $staff = $this->staffRepository->find($id);
-        $staff->load('coachDetail.certifications');
+        $staff->load(['coachDetail.certifications', 'user']);
         return $this->attachSharedDTOs($staff);
     }
 
@@ -98,6 +98,12 @@ class StaffService
     public function onboardStaff(array $data)
     {
         return DB::transaction(function () use ($data) {
+            // Handle Photo Upload
+            $photoUrl = $data['photo_url'] ?? null;
+            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+                $photoUrl = $data['photo']->store('people/photos', 'public');
+            }
+
             // 1. Create the person profile in Authentication module
             $personDto = new \Modules\Core\DTOs\CreatePersonDTO(
                 fullName: $data['full_name'],
@@ -110,7 +116,7 @@ class StaffService
                 nationalId: $data['national_id'] ?? null,
                 socialStatus: $data['social_status'] ?? null,
                 address: $data['address'] ?? null,
-                photoUrl: $data['photo_url'] ?? null,
+                photoUrl: $photoUrl,
                 mobile2: $data['secondary_phone_number'] ?? null,
                 mobile2CountryCode: $data['secondary_country_code'] ?? null,
                 landline: $data['landline'] ?? null,
@@ -128,7 +134,7 @@ class StaffService
             $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
             ]));
-            
+
             if (!empty($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
             }
@@ -163,7 +169,7 @@ class StaffService
             // 4. Create active User Account so they can login to the Employee/Trainer App
             $username = $data['username'] ?? ('staff_' . $person->id . '_' . \Illuminate\Support\Str::random(4));
             $password = $data['password'] ?? 'password123';
-            
+
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,
                 'password' => \Illuminate\Support\Facades\Hash::make($password),
@@ -190,7 +196,7 @@ class StaffService
     public function setStaffSchedule($staffId, array $shifts)
     {
         $staff = $this->staffRepository->find($staffId);
-        
+
         return DB::transaction(function () use ($staff, $shifts) {
             // Remove old shifts
             $staff->shifts()->delete();
@@ -301,5 +307,4 @@ class StaffService
         $staff->update(['is_active' => !$staff->is_active]);
         return $this->attachSharedDTOs($staff->fresh());
     }
-
 }
