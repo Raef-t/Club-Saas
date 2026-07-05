@@ -27,7 +27,7 @@ class CoachResource extends JsonResource
             
             // Relations
             'person'         => $this->whenLoaded('person'),
-            'user'           => $this->whenLoaded('user'),
+            'username'       => $this->whenLoaded('user', fn() => $this->user ? $this->user->username : null),
             'details'        => $this->whenLoaded('coachDetail'),
             'activities'     => $this->whenLoaded('activities'),
         ];
