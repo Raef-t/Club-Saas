@@ -75,6 +75,7 @@ class StaffResource extends JsonResource
                 'notes' => $this->personDto->notes,
             ] : null,
 
+            'username' => $this->whenLoaded('user', fn() => $this->user?->username),
             'generated_username' => $this->generated_username ?? null,
             'generated_password' => $this->generated_password ?? null,
             'branch_name' => $this->branchDto->name ?? null,

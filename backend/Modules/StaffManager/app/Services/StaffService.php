@@ -68,8 +68,8 @@ class StaffService
             $query->whereIn('person_id', $personIds);
         }
 
-        // Eager-load coach details and branches
-        $query->with(['coachDetail', 'branches']);
+        // Eager-load coach details and branches and user
+        $query->with(['coachDetail', 'branches', 'user']);
 
         $perPage = $filters['per_page'] ?? 15;
         $staffMembers = $query->latest()->paginate($perPage);
@@ -87,7 +87,7 @@ class StaffService
     public function getStaffById($id)
     {
         $staff = $this->staffRepository->find($id);
-        $staff->load('coachDetail.certifications');
+        $staff->load(['coachDetail.certifications', 'user']);
         return $this->attachSharedDTOs($staff);
     }
 

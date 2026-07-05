@@ -39,7 +39,17 @@ class StaffController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(
+                    property: 'data', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -151,7 +161,14 @@ class StaffController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data', 
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd')
+                    ]
+                )
             ]
         )
     )]

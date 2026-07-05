@@ -13,6 +13,8 @@ class SubscriptionPlanResource extends JsonResource
             'subscription_number' => $this->subscription_number,
             'name' => $this->name,
             'type' => $this->type,
+            'start_date' => $this->start_date ? $this->start_date->format('Y-m-d') : null,
+            'end_date' => $this->end_date ? $this->end_date->format('Y-m-d') : null,
             'duration_days' => $this->duration_days,
             'session_count' => $this->session_count,
             'max_freeze_count' => $this->max_freeze_count,

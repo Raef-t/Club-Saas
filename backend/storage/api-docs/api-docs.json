@@ -16730,6 +16730,17 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "username": {
+                                                        "type": "string",
+                                                        "example": "staff_1_abcd",
+                                                        "nullable": true
+                                                    }
+                                                },
                                                 "type": "object"
                                             }
                                         }
@@ -17054,6 +17065,17 @@
                                             "example": "Staff retrieved successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "staff_1_abcd",
+                                                    "nullable": true
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -21155,6 +21177,18 @@
                                                         "type": "string",
                                                         "example": "25487965"
                                                     },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2026-08-01",
+                                                        "nullable": true
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2026-12-31",
+                                                        "nullable": true
+                                                    },
                                                     "activities": {
                                                         "type": "array",
                                                         "items": {
@@ -21239,6 +21273,18 @@
                                             "session_based"
                                         ]
                                     },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01",
+                                        "nullable": true
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-31",
+                                        "nullable": true
+                                    },
                                     "duration_days": {
                                         "type": "integer",
                                         "example": 30
@@ -21302,6 +21348,18 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-01",
+                                                    "nullable": true
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-12-31",
+                                                    "nullable": true
                                                 }
                                             },
                                             "type": "object"
@@ -21454,6 +21512,18 @@
                                                     "type": "string",
                                                     "example": "25487965"
                                                 },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-01",
+                                                    "nullable": true
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-12-31",
+                                                    "nullable": true
+                                                },
                                                 "activities": {
                                                     "type": "array",
                                                     "items": {
@@ -21558,6 +21628,18 @@
                                             "session_based"
                                         ]
                                     },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01",
+                                        "nullable": true
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-31",
+                                        "nullable": true
+                                    },
                                     "duration_days": {
                                         "type": "integer",
                                         "example": 30
@@ -21621,6 +21703,18 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-01",
+                                                    "nullable": true
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-12-31",
+                                                    "nullable": true
                                                 }
                                             },
                                             "type": "object"
