@@ -147,7 +147,17 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'List of coaches',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                    new OA\Property(
+                        property: 'data', 
+                        type: 'array', 
+                        items: new OA\Items(
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 1),
+                                new OA\Property(property: 'username', type: 'string', nullable: true, example: 'coach_123')
+                            ]
+                        )
+                    )
                 ])
             ),
             new OA\Response(
@@ -259,7 +269,14 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'Coach details',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object')
+                    new OA\Property(
+                        property: 'data', 
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'coach_123')
+                        ]
+                    )
                 ])
             ),
             new OA\Response(
