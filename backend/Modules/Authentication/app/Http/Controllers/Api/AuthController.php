@@ -469,7 +469,8 @@ class AuthController extends BaseController
             schema: new OA\Schema(
                 required: ['photo'],
                 properties: [
-                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'ملف الصورة المراد رفعها')
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'ملف الصورة المراد رفعها'),
+                    new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل صورة مستخدم آخر)', nullable: true)
                 ]
             )
         )
@@ -494,10 +495,16 @@ class AuthController extends BaseController
     public function updatePhoto(Request $request)
     {
         $request->validate([
-            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'user_id' => 'nullable|integer|exists:authentication_users,id'
         ]);
 
-        $user = $request->user();
+        if ($request->has('user_id')) {
+            $user = User::findOrFail($request->user_id);
+        } else {
+            $user = $request->user();
+        }
+
         $person = $user->person;
 
         if (!$person) {
@@ -523,5 +530,59 @@ class AuthController extends BaseController
         }
 
         return $this->errorResponse(__('لم يتم إرفاق صورة'), 400);
+    }
+
+    #[OA\Delete(
+        path: '/v1/auth/delete-photo',
+        summary: '🗑️ حذف الصورة الشخصية',
+        description: 'حذف الصورة الشخصية للمستخدم الحالي أو لأي مستخدم آخر (في حال تمرير user_id).',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: 'معرف المستخدم',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال حذف صورة مستخدم آخر)', nullable: true)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الصورة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم حذف الصورة الشخصية بنجاح')
+            ]
+        )
+    )]
+    public function deletePhoto(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'nullable|integer|exists:authentication_users,id'
+        ]);
+
+        if ($request->has('user_id')) {
+            $user = User::findOrFail($request->user_id);
+        } else {
+            $user = $request->user();
+        }
+
+        $person = $user->person;
+
+        if (!$person) {
+            return $this->errorResponse(__('User does not have a profile'), 404);
+        }
+
+        $oldPhoto = $person->getRawOriginal('photo_url');
+        if ($oldPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldPhoto)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPhoto);
+        }
+
+        $person->update(['photo_url' => null]);
+
+        return $this->successResponse(null, __('تم حذف الصورة الشخصية بنجاح'));
     }
 }

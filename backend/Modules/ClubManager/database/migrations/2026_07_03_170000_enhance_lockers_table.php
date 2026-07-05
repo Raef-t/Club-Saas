@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Enhance the lockers table so it becomes the single source of truth
@@ -36,30 +37,30 @@ return new class extends Migration
             // ── Polymorphic holder fields ─────────────────────────────────────
             // No foreign-key constraint intentionally: guests have no DB record.
             $table->unsignedBigInteger('holder_id')
-                  ->nullable()
-                  ->after('status')
-                  ->comment('ID of the person holding the key (member/staff). NULL for guests.');
+                ->nullable()
+                ->after('status')
+                ->comment('ID of the person holding the key (member/staff). NULL for guests.');
 
             $table->string('holder_type', 50)
-                  ->nullable()
-                  ->after('holder_id')
-                  ->comment('member | staff | guest');
+                ->nullable()
+                ->after('holder_id')
+                ->comment('member | staff | guest');
 
             $table->string('holder_name')
-                  ->nullable()
-                  ->after('holder_type')
-                  ->comment('Cached display name or raw guest name.');
+                ->nullable()
+                ->after('holder_type')
+                ->comment('Cached display name or raw guest name.');
 
             $table->timestamp('assigned_at')
-                  ->nullable()
-                  ->after('holder_name')
-                  ->comment('When the key was handed out.');
+                ->nullable()
+                ->after('holder_name')
+                ->comment('When the key was handed out.');
         });
 
         // ── Update status default & existing rows ─────────────────────────
         // Old statuses: 'available', 'rented'  →  New: 'available', 'with_member', 'with_staff', 'with_guest'
         // Any row that was 'rented' but has no holder context yet → keep 'available' to avoid orphans.
-        \DB::table('lockers')->where('status', 'rented')->update(['status' => 'available']);
+        DB::table('lockers')->where('status', 'rented')->update(['status' => 'available']);
 
         // Update column default
         Schema::table('lockers', function (Blueprint $table) {
@@ -74,12 +75,12 @@ return new class extends Migration
 
             // Restore the interim column
             $table->unsignedBigInteger('current_attendance_id')
-                  ->nullable()
-                  ->after('status');
+                ->nullable()
+                ->after('status');
         });
 
         // Restore old status values
-        \DB::table('lockers')
+        DB::table('lockers')
             ->whereIn('status', ['with_member', 'with_staff', 'with_guest'])
             ->update(['status' => 'rented']);
     }

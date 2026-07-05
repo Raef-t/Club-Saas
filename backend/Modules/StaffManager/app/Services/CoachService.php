@@ -36,6 +36,11 @@ class CoachService
             }
 
             // 1. Create Person
+            $photoUrl = null;
+            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+                $photoUrl = $data['photo']->store('people/photos', 'public');
+            }
+
             $fullName = trim($data['first_name'] . ' ' . $data['last_name']);
             $person = Person::create([
                 'full_name' => $fullName,
@@ -43,6 +48,7 @@ class CoachService
                 'gender'    => $data['gender'] ?? null,
                 'age'       => $data['age'] ?? null,
                 'dob'       => $data['dob'] ?? null,
+                'photo_url' => $photoUrl,
             ]);
 
             // 1.5 Create Person Contact
