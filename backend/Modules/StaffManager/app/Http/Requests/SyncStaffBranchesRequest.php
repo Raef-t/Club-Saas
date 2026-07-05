@@ -11,6 +11,17 @@ class SyncStaffBranchesRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
+            $this->merge([
+                'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',') 
+                    ? explode(',', $this->branch_ids) 
+                    : [$this->branch_ids]
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
