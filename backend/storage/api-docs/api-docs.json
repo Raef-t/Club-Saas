@@ -14484,7 +14484,7 @@
                                         "format": "binary",
                                         "nullable": true
                                     },
-                                    "branch_ids": {
+                                    "branch_ids[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
@@ -16816,7 +16816,7 @@
                                         "format": "binary",
                                         "nullable": true
                                     },
-                                    "branch_ids": {
+                                    "branch_ids[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
