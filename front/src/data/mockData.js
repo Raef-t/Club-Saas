@@ -70,6 +70,14 @@ export const accountingMenu = [
 ];
 
 export const pageMeta = {
+  "/management": {
+    title: "لوحة التحكم",
+    subtitle: "ملخص شامل لأداء نظام إدارة النادي",
+  },
+  "/management/attendance": {
+    title: "تسجيل الحضور",
+    subtitle: "مسح QR واختيار نشاط اللاعب قبل تسجيل الحضور",
+  },
   "/accounting": {
     title: "النظرة العامة للأمور المالية",
     subtitle: "ملخص شامل للأداء المالي يومياً وشهرياً",

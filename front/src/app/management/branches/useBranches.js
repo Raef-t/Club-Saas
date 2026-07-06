@@ -24,12 +24,12 @@ function branchName(branch) {
   return branch.name.ar || branch.name.en || "-";
 }
 
-export function useBranches() {
+export function useBranches({ selectedBranchId: initialSelectedBranchId = null } = {}) {
   const toast = useToast();
   const [search, setSearch] = useState("");
   const [genderFilter, setGenderFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedBranchId, setSelectedBranchId] = useState(null);
+  const [selectedBranchId, setSelectedBranchId] = useState(initialSelectedBranchId);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -132,26 +132,30 @@ export function useBranches() {
       await createBranch(values).unwrap();
       toast.success("تم إنشاء الفرع بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر إنشاء الفرع. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
   async function handleUpdate(values) {
-    if (!selectedBranchId) return;
+    if (!selectedBranchId) return false;
     setFormError("");
     try {
       await updateBranch({ id: selectedBranchId, body: values }).unwrap();
       toast.success("تم تعديل بيانات الفرع بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل الفرع. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 

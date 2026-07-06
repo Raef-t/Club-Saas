@@ -13,6 +13,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import DetailItem from "@/components/ui/DetailItem";
 import SearchInput from "@/components/ui/SearchInput";
 import { Field } from "@/components/forms/FormControls";
+import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { formatLocalizedName } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
@@ -21,9 +22,16 @@ const TABLE_GRID_COLUMNS =
   "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 88px";
 
 const initialForm = {
+  branch_id: "",
   name: "",
+  type: "fixed_period",
   duration_in_days: "30",
+  session_count: "",
   price: "",
+  max_freeze_count: "2",
+  max_freeze_days: "14",
+  max_subscribers: "50",
+  is_active: true,
 };
 
 function formatMoney(value) {
@@ -57,10 +65,13 @@ function StatusBadge({ active }) {
   );
 }
 
-
 function PlanDetails({ plan, isLoading, error }) {
   if (isLoading) {
-    return <SkeletonPage blocks={[{ type: "details", sections: 2, itemsPerSection: 4 }]} />;
+    return (
+      <SkeletonPage
+        blocks={[{ type: "details", sections: 2, itemsPerSection: 4 }]}
+      />
+    );
   }
 
   if (error) {
@@ -97,7 +108,11 @@ function PlanDetails({ plan, isLoading, error }) {
 
       <section className="grid gap-3 sm:grid-cols-2">
         <DetailItem label="نوع الخطة" value={planTypeLabel(plan.type)} />
-        <DetailItem label="السعر" value={formatMoney(plan.base_price)} tone="yellow" />
+        <DetailItem
+          label="السعر"
+          value={formatMoney(plan.base_price)}
+          tone="yellow"
+        />
         <DetailItem label="المدة" value={`${plan.duration_days || 0} يوم`} />
         <DetailItem label="عدد الجلسات" value={plan.session_count} />
         <DetailItem label="عدد مرات التجميد" value={plan.max_freeze_count} />
@@ -107,13 +122,17 @@ function PlanDetails({ plan, isLoading, error }) {
   );
 }
 
-function PlanForm({
+export function PlanForm({
   mode,
   initialValues = initialForm,
   onSubmit,
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
+  branches = [],
 }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
@@ -126,27 +145,55 @@ function PlanForm({
   function handleSubmit(event) {
     event.preventDefault();
     const data = {
+      branch_id: form.branch_id,
       name: form.name.trim(),
+      type: form.type,
       duration_in_days: Number(form.duration_in_days),
+      session_count: form.type === "session_based" && form.session_count ? Number(form.session_count) : null,
       price: Number(form.price),
+      max_freeze_count: Number(form.max_freeze_count),
+      max_freeze_days: Number(form.max_freeze_days),
+      max_subscribers: Number(form.max_subscribers),
+      is_active: !!form.is_active,
     };
-    
+
     const result = subscriptionPlanSchema.safeParse(data);
     if (!result.success) {
       const formattedErrors = {};
-      result.error.issues.forEach(issue => {
-        formattedErrors[issue.path.join('_')] = issue.message;
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join("_")] = issue.message;
       });
       setErrors(formattedErrors);
       return;
     }
-    
+
     setErrors({});
     onSubmit(data);
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4">
+    <form
+      id={formId}
+      noValidate
+      onSubmit={handleSubmit}
+      className={formClassName}
+    >
+      <label className="block text-right text-sm text-app-muted-light">
+        الفرع *
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="bg-app-card-soft h-11"
+          value={form.branch_id}
+          onChange={(val) => updateField("branch_id", val)}
+          options={branches.map((b) => ({
+            value: String(b.id),
+            label: b.name?.ar || b.name?.en || b.name,
+          }))}
+          placeholder="اختر الفرع"
+          error={errors.branch_id}
+        />
+      </label>
+
       <Field
         label="اسم الخطة"
         value={form.name}
@@ -154,18 +201,48 @@ function PlanForm({
         placeholder="الاشتراك الفضي"
         required
         type="text"
-       error={errors.name}
+        error={errors.name}
+      />
+
+      <label className="block text-right text-sm text-app-muted-light">
+        نوع الخطة *
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="bg-app-card-soft h-11"
+          value={form.type}
+          onChange={(val) => updateField("type", val)}
+          options={[
+            { value: "fixed_period", label: "محددة بمدة" },
+            { value: "session_based", label: "محددة بعدد جلسات" },
+          ]}
+          placeholder="اختر نوع الخطة"
+          error={errors.type}
         />
+      </label>
 
       <Field
         label="المدة بالأيام"
         value={form.duration_in_days}
-        onChange={(event) => updateField("duration_in_days", event.target.value)}
+        onChange={(event) =>
+          updateField("duration_in_days", event.target.value)
+        }
         type="number"
         min="1"
         required
-       error={errors.duration_in_days}
+        error={errors.duration_in_days}
+      />
+
+      {form.type === "session_based" && (
+        <Field
+          label="عدد الجلسات"
+          value={form.session_count}
+          onChange={(event) => updateField("session_count", event.target.value)}
+          type="number"
+          min="1"
+          placeholder="مثال: 12"
+          error={errors.session_count}
         />
+      )}
 
       <Field
         label="السعر"
@@ -176,8 +253,48 @@ function PlanForm({
         step="0.01"
         placeholder="350"
         required
-       error={errors.price}
+        error={errors.price}
+      />
+
+      <Field
+        label="أقصى عدد مرات التجميد"
+        value={form.max_freeze_count}
+        onChange={(event) => updateField("max_freeze_count", event.target.value)}
+        type="number"
+        min="0"
+        required
+        error={errors.max_freeze_count}
+      />
+
+      <Field
+        label="أقصى إجمالي أيام التجميد"
+        value={form.max_freeze_days}
+        onChange={(event) => updateField("max_freeze_days", event.target.value)}
+        type="number"
+        min="0"
+        required
+        error={errors.max_freeze_days}
+      />
+
+      <Field
+        label="الحد الأقصى للمشتركين"
+        value={form.max_subscribers}
+        onChange={(event) => updateField("max_subscribers", event.target.value)}
+        type="number"
+        min="1"
+        required
+        error={errors.max_subscribers}
+      />
+
+      <label className="flex items-center gap-2 text-sm text-app-muted-light cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={form.is_active}
+          onChange={(e) => updateField("is_active", e.target.checked)}
+          className="size-4 rounded border-app-line bg-app-card-soft text-app-yellow focus:ring-0 cursor-pointer"
         />
+        <span>الخطة فعالة ونشطة حالياً</span>
+      </label>
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -185,11 +302,23 @@ function PlanForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
-        <Button type="button" tone="outline" className="h-11 flex-1" onClick={onCancel}>
+      <div
+        className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}
+      >
+        <Button
+          type="button"
+          tone="outline"
+          className="h-11 flex-1"
+          onClick={onCancel}
+        >
           إلغاء
         </Button>
-        <Button type="submit" className="h-11 flex-1" loading={isLoading}>
+        <Button
+          type="submit"
+          className="h-11 flex-1"
+          loading={isLoading}
+          style={{ color: "#000000" }}
+        >
           {mode === "edit" ? "حفظ التعديل" : "إنشاء الخطة"}
         </Button>
       </div>
@@ -229,6 +358,7 @@ export default function SubscriptionPlansClient() {
     itemToDelete,
     closeDeleteConfirm,
     confirmDelete,
+    branches,
   } = useSubscriptionPlans();
 
   const columns = useMemo(
@@ -271,14 +401,17 @@ export default function SubscriptionPlansClient() {
         label: "السعر",
         align: "center",
         render: (value) => (
-          <span className="font-medium text-app-yellow">{formatMoney(value)}</span>
+          <span className="font-medium text-app-yellow">
+            {formatMoney(value)}
+          </span>
         ),
       },
       {
         key: "freeze",
         label: "التجميد",
         align: "center",
-        render: (_, plan) => `${plan.max_freeze_count || 0} مرة / ${plan.max_freeze_days || 0} يوم`,
+        render: (_, plan) =>
+          `${plan.max_freeze_count || 0} مرة / ${plan.max_freeze_days || 0} يوم`,
       },
       {
         key: "is_active",
@@ -293,17 +426,13 @@ export default function SubscriptionPlansClient() {
         render: (_, plan) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => {
-              setFormError("");
-              setSelectedPlanId(plan.id);
-              setDrawerMode("edit");
-            }}
+            editHref={`/management/subscription-plans/create?mode=edit&id=${plan.id}`}
             onDelete={() => handleDelete(plan)}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setFormError, setSelectedPlanId, setDrawerMode],
+    [isDeleting, handleDelete],
   );
 
   return (
@@ -314,11 +443,8 @@ export default function SubscriptionPlansClient() {
         subtitle="إنشاء وتعديل خطط الاشتراك وربطها مع مدة الخطة والسعر وعدد الجلسات."
         action={
           <Button
+            href="/management/subscription-plans/create"
             icon={<PlusIcon className="size-4" />}
-            onClick={() => {
-              setFormError("");
-              setDrawerMode("create");
-            }}
           >
             إنشاء خطة
           </Button>
@@ -342,7 +468,11 @@ export default function SubscriptionPlansClient() {
           error ? (
             <div className="space-y-3 text-center">
               <p className="text-app-red">تعذر تحميل خطط الاشتراك.</p>
-              <Button tone="outline" className="h-9 px-3 text-xs" onClick={refetch}>
+              <Button
+                tone="outline"
+                className="h-9 px-3 text-xs"
+                onClick={refetch}
+              >
                 إعادة المحاولة
               </Button>
             </div>
@@ -377,21 +507,6 @@ export default function SubscriptionPlansClient() {
       />
 
       <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إنشاء خطة اشتراك"
-        subtitle="أدخل اسم الخطة والمدة والسعر"
-      >
-        <PlanForm
-          mode="create"
-          onSubmit={handleCreate}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-        />
-      </Drawer>
-
-      <Drawer
         open={drawerMode === "edit"}
         onClose={closeDrawer}
         title="تعديل خطة الاشتراك"
@@ -405,6 +520,7 @@ export default function SubscriptionPlansClient() {
           onCancel={closeDrawer}
           isLoading={isUpdating}
           errorMessage={formError}
+          branches={branches}
         />
       </Drawer>
 

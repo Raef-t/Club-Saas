@@ -8,7 +8,10 @@ import {
 } from "@/lib/api/subscriptionPlansApi";
 import { useToast } from "@/components/ui/Toast";
 
-import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
+import {
+  formatMoney as baseFormatMoney,
+  formatLocalizedName,
+} from "@/lib/utils";
 
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
@@ -29,12 +32,13 @@ function getPlanDetails(response) {
 
 const planName = formatLocalizedName;
 
-
-export function useSubscriptionPlans() {
+export function useSubscriptionPlans({
+  selectedPlanId: initialSelectedPlanId = null,
+} = {}) {
   const toast = useToast();
   const [search, setSearch] = useState("");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState(initialSelectedPlanId);
   const [formError, setFormError] = useState("");
 
   const { data, error, isLoading, refetch } = useGetSubscriptionPlansQuery();
@@ -68,14 +72,17 @@ export function useSubscriptionPlans() {
     return plans.filter((plan) =>
       [plan.name?.ar, plan.name?.en, plan.type, plan.base_price]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
+        .some((value) =>
+          String(value).toLowerCase().includes(normalizedSearch),
+        ),
     );
   }, [plans, search]);
 
   const stats = useMemo(() => {
     const activeCount = plans.filter((plan) => plan.is_active).length;
     const averagePrice = plans.length
-      ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) / plans.length
+      ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) /
+        plans.length
       : 0;
 
     return [
@@ -123,25 +130,31 @@ export function useSubscriptionPlans() {
       await createPlan(values).unwrap();
       toast.success("تم إنشاء خطة الاشتراك بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
-        submitError?.data?.message || "تعذر إنشاء الخطة. تحقق من البيانات وحاول مرة أخرى.",
+        submitError?.data?.message ||
+          "تعذر إنشاء الخطة. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
   async function handleUpdate(values) {
-    if (!selectedPlanId) return;
+    if (!selectedPlanId) return false;
     setFormError("");
 
     try {
       await updatePlan({ id: selectedPlanId, body: values }).unwrap();
       toast.success("تم تعديل خطة الاشتراك بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
-        submitError?.data?.message || "تعذر تعديل الخطة. تحقق من البيانات وحاول مرة أخرى.",
+        submitError?.data?.message ||
+          "تعذر تعديل الخطة. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
@@ -171,6 +184,8 @@ export function useSubscriptionPlans() {
   }
 
   function getEditInitialValues() {
+    if (!selectedPlan) return null;
+
     return {
       name: planName(selectedPlan) === "-" ? "" : planName(selectedPlan),
       duration_in_days: String(selectedPlan?.duration_days || 30),

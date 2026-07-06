@@ -104,13 +104,16 @@ function ActivityDetails({ activity, isLoading, error }) {
   );
 }
 
-function ActivityForm({
+export function ActivityForm({
   mode,
   initialValues = initialForm,
   onSubmit,
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
@@ -122,19 +125,17 @@ function ActivityForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const data = {
-      name: {
-        ar: form.name_ar.trim(),
-        en: form.name_en.trim(),
-      },
+    const validationData = {
+      name_ar: form.name_ar.trim(),
+      name_en: form.name_en.trim(),
       description: form.description.trim() || null,
       type: form.type,
       default_capacity: Number(form.default_capacity) || 20,
-      is_private_equipment: form.is_private_equipment === "1",
+      is_private_equipment: form.is_private_equipment,
       gender_allowed: form.gender_allowed,
     };
     
-    const result = activitySchema.safeParse(data);
+    const result = activitySchema.safeParse(validationData);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach(issue => {
@@ -145,11 +146,21 @@ function ActivityForm({
     }
     
     setErrors({});
-    onSubmit(data);
+    onSubmit({
+      name: {
+        ar: form.name_ar.trim(),
+        en: form.name_en.trim(),
+      },
+      description: form.description.trim() || null,
+      type: form.type,
+      default_capacity: Number(form.default_capacity) || 20,
+      is_private_equipment: form.is_private_equipment === "1",
+      gender_allowed: form.gender_allowed,
+    });
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
       <Field
         label="اسم النشاط بالعربية"
         value={form.name_ar}
@@ -188,7 +199,7 @@ function ActivityForm({
           onChange={(val) => updateField("type", val)}
           options={[
             { value: "group_class", label: "حصة تدريبية جماعية" },
-            { value: "private_session", label: "تدريب خاص / فردي" },
+            { value: "personal_training", label: "تدريب خاص / فردي" },
           ]}
           placeholder="اختر النوع"
          error={errors.type}
@@ -244,7 +255,7 @@ function ActivityForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
         <Button
           type="button"
           tone="outline"
@@ -353,17 +364,13 @@ export default function ActivitiesClient() {
         render: (_, act) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => {
-              setFormError("");
-              setSelectedActivityId(act.id);
-              setDrawerMode("edit");
-            }}
+            editHref={`/management/activities/create?mode=edit&id=${act.id}`}
             onDelete={() => handleDelete(act)}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setFormError, setSelectedActivityId, setDrawerMode],
+    [isDeleting, handleDelete],
   );
 
   const editInitialValues = useMemo(() => {
@@ -378,11 +385,8 @@ export default function ActivitiesClient() {
         subtitle="عرض وتعديل وتصنيف الرياضات والأنشطة الجماعية والتدريبات الخاصة في النادي."
         action={
           <Button
+            href="/management/activities/create"
             icon={<PlusIcon className="size-4" />}
-            onClick={() => {
-              setFormError("");
-              setDrawerMode("create");
-            }}
           >
             إضافة نشاط
           </Button>
@@ -443,21 +447,6 @@ export default function ActivitiesClient() {
           </p>
         }
       />
-
-      <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إضافة نشاط جديد"
-        subtitle="أدخل تفاصيل النشاط والتمارين المتاحة"
-      >
-        <ActivityForm
-          mode="create"
-          onSubmit={handleCreate}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-        />
-      </Drawer>
 
       <Drawer
         open={drawerMode === "edit"}

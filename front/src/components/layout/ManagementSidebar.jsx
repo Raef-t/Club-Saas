@@ -6,6 +6,7 @@ import { ChevronLeft } from "@/components/icons/Icons";
 import Image from "next/image";
 
 const navItems = [
+  { title: "لوحة التحكم", href: "/management" },
   { title: "إدارة النادي", href: "/management/clubs" },
   { title: "الأعضاء", href: "/management/members" },
   { title: "الاشتراكات", href: "/management/subscriptions" },

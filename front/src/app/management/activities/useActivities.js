@@ -18,11 +18,11 @@ function activityName(act) {
   return act.name.ar || act.name.en || "-";
 }
 
-export function useActivities() {
+export function useActivities({ selectedActivityId: initialSelectedActivityId = null } = {}) {
   const toast = useToast();
   const [search, setSearch] = useState("");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedActivityId, setSelectedActivityId] = useState(null);
+  const [selectedActivityId, setSelectedActivityId] = useState(initialSelectedActivityId);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -124,26 +124,30 @@ export function useActivities() {
       await createActivity(values).unwrap();
       toast.success("تم إنشاء النشاط بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر إنشاء النشاط. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
   async function handleUpdate(values) {
-    if (!selectedActivityId) return;
+    if (!selectedActivityId) return false;
     setFormError("");
     try {
       await updateActivity({ id: selectedActivityId, body: values }).unwrap();
       toast.success("تم تعديل النشاط بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل النشاط. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
