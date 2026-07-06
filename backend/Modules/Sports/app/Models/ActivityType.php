@@ -4,11 +4,10 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\Translatable\HasTranslations;
 
 class ActivityType extends Model
 {
-    use HasFactory, HasTranslations;
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -18,11 +17,6 @@ class ActivityType extends Model
         'branch_id',
         'is_active',
     ];
-
-    /**
-     * The attributes that are translatable.
-     */
-    public $translatable = ['name'];
 
     /**
      * The attributes that should be cast.

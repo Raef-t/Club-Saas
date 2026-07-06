@@ -67,7 +67,7 @@ class CoachService
             if (empty($firstNameStr)) {
                 $firstNameStr = 'coach';
             }
-            
+
             do {
                 $randomNumber = rand(100, 999);
                 $username = $firstNameStr . $randomNumber;
@@ -111,7 +111,7 @@ class CoachService
                 'experience_years'       => $data['experience_years'] ?? 0,
                 'payment_type'           => $data['payment_type'] ?? null,
                 'commission_type'        => $data['commission_type'] ?? null,
-                'default_commission_rate'=> $data['default_commission_rate'] ?? 0,
+                'default_commission_rate' => $data['default_commission_rate'] ?? 0,
                 'working_hours_per_week' => $data['working_hours_per_week'] ?? 0,
                 'gym_type'               => $data['gym_type'] ?? null,
             ]);
@@ -180,18 +180,18 @@ class CoachService
     {
         return DB::transaction(function () use ($id, $data) {
             $staff = Staff::where('role', 'coach')->findOrFail($id);
-            
+
             // Update Basic Info
             $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
             }
-            
+
             if (isset($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
             }
-            
+
             // Update Details
             $coachDetail = $staff->coachDetail;
             if (!$coachDetail) {
@@ -200,7 +200,7 @@ class CoachService
 
             $detailsFillable = ['specialization', 'bio', 'experience_years', 'working_hours_per_week', 'gym_type', 'payment_type', 'commission_type', 'default_commission_rate'];
             $detailsData = array_intersect_key($data, array_flip($detailsFillable));
-            
+
             if (!empty($detailsData) || !$coachDetail->exists) {
                 foreach ($detailsData as $key => $value) {
                     $coachDetail->{$key} = $value;
@@ -232,7 +232,7 @@ class CoachService
     {
         $staff = Staff::where('role', 'coach')->findOrFail($id);
         $staff->activities()->detach($activityId);
-        
+
         return true;
     }
 
@@ -243,7 +243,7 @@ class CoachService
     {
         $staff = Staff::where('role', 'coach')->findOrFail($id);
         $coachDetail = $staff->coachDetail;
-        
+
         if (!$coachDetail) {
             throw new \Exception("Coach details not found.");
         }
@@ -279,12 +279,12 @@ class CoachService
     {
         $staff = Staff::where('role', 'coach')->findOrFail($id);
         $staff->delete(); // Soft delete
-        
+
         // Optional: deactivate user
         if ($staff->user) {
             $staff->user->update(['is_active' => false]);
         }
-        
+
         return true;
     }
 }

@@ -24,26 +24,26 @@ class RealPlansAndActivitiesSeeder extends Seeder
 
         // 1. أولاً: نقوم بإنشاء أنواع الأنشطة الرياضية (Activity Types)
         $fitnessType = ActivityType::create([
-            'name' => ['ar' => 'اللياقة البدنية والصالة', 'en' => 'Fitness & Gym'],
+            'name' => 'اللياقة البدنية والصالة',
             'branch_id' => $branchId,
             'is_active' => true,
         ]);
 
         $swimmingType = ActivityType::create([
-            'name' => ['ar' => 'الألعاب المائية', 'en' => 'Aquatic Sports'],
+            'name' => 'الألعاب المائية',
             'branch_id' => $branchId,
             'is_active' => true,
         ]);
 
         $classType = ActivityType::create([
-            'name' => ['ar' => 'الحصص الجماعية', 'en' => 'Group Classes'],
+            'name' => 'الحصص الجماعية',
             'branch_id' => $branchId,
             'is_active' => true,
         ]);
 
         // 2. ثانياً: نقوم بإنشاء الأنشطة الرياضية (Activities) وتعيين النوع لها
         $ironActivity = Activity::create([
-            'name' => ['ar' => 'صالة الحديد والأجهزة', 'en' => 'Gym & Iron'],
+            'name' => 'صالة الحديد والأجهزة',
             'description' => 'دخول صالة كمال الأجسام والأجهزة الرياضية العامة',
             'activity_type_id' => $fitnessType->id,
             'branch_id' => $branchId,
@@ -54,7 +54,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
         ]);
 
         $poolActivity = Activity::create([
-            'name' => ['ar' => 'المسبح الأولمبي', 'en' => 'Olympic Pool'],
+            'name' => 'المسبح الأولمبي',
             'description' => 'استخدام المسبح للسباحة الحرة',
             'activity_type_id' => $swimmingType->id,
             'branch_id' => $branchId,
@@ -65,7 +65,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
         ]);
 
         $crossFitActivity = Activity::create([
-            'name' => ['ar' => 'كلاس الكروس فيت', 'en' => 'CrossFit Class'],
+            'name' => 'كلاس الكروس فيت',
             'description' => 'حصص جماعية مكثفة بإشراف مدرب',
             'activity_type_id' => $classType->id,
             'branch_id' => $branchId,
@@ -80,7 +80,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
 
         // الخطة الأولى: اشتراك شامل (شهر واحد)
         $goldPlan = SubscriptionPlan::create([
-            'name' => ['ar' => 'الاشتراك الذهبي الشامل (شهر)', 'en' => 'Gold Full Access (1 Month)'],
+            'name' => 'الاشتراك الذهبي الشامل (شهر)',
             'type' => 'duration', // اشتراك يعتمد على المدة الزمنية
             'duration_days' => 30, // صالح لمدة 30 يوم
             'session_count' => null, 
@@ -92,7 +92,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
 
         // الخطة الثانية: اشتراك حصص فقط (10 جلسات كروس فيت)
         $sessionsPlan = SubscriptionPlan::create([
-            'name' => ['ar' => 'باقة 10 حصص كروس فيت', 'en' => '10 CrossFit Sessions'],
+            'name' => 'باقة 10 حصص كروس فيت',
             'type' => 'session', // اشتراك يعتمد على عدد الجلسات
             'duration_days' => 90, // الجلسات صالحة للاستخدام خلال 90 يوم
             'session_count' => 10, // 10 جلسات
