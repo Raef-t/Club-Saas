@@ -8,7 +8,12 @@ import Dropdown from "@/components/ui/Dropdown";
 import Drawer from "@/components/ui/Drawer";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { FilterIcon, SearchIcon, PlusIcon, TrashIcon } from "@/components/icons/Icons";
+import {
+  FilterIcon,
+  SearchIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { useToast } from "@/components/ui/Toast";
 import { subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
@@ -121,7 +126,9 @@ function SubscriptionDetails({
 }) {
   const [showFreezeForm, setShowFreezeForm] = useState(false);
   const [daysCount, setDaysCount] = useState("7");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   if (isLoading) {
     return (
@@ -178,8 +185,14 @@ function SubscriptionDetails({
       <DetailSection title="الخطة والمدة">
         <DetailItem label="الخطة" value={planName} />
         <DetailItem label="نوع الخطة" value={plan.type} />
-        <DetailItem label="تاريخ البداية" value={formatDate(subscription.start_date)} />
-        <DetailItem label="تاريخ النهاية" value={formatDate(subscription.end_date)} />
+        <DetailItem
+          label="تاريخ البداية"
+          value={formatDate(subscription.start_date)}
+        />
+        <DetailItem
+          label="تاريخ النهاية"
+          value={formatDate(subscription.end_date)}
+        />
         <DetailItem label="عدد الجلسات" value={plan.session_count} />
         <DetailItem
           label="الجلسات المتبقية"
@@ -202,18 +215,28 @@ function SubscriptionDetails({
         <DetailItem
           label="المتبقي"
           value={formatMoney(subscription.remaining_amount)}
-          tone={parseAmount(subscription.remaining_amount) > 0 ? "red" : "green"}
+          tone={
+            parseAmount(subscription.remaining_amount) > 0 ? "red" : "green"
+          }
         />
-        <DetailItem label="المدرب المسؤول" value={subscription.coach?.person?.full_name || "-"} />
+        <DetailItem
+          label="المدرب المسؤول"
+          value={subscription.coach?.person?.full_name || "-"}
+        />
       </DetailSection>
 
       {/* Freeze Logs */}
       {subscription.freezes && subscription.freezes.length > 0 && (
         <div className="rounded-xl border border-app-line bg-app-card-soft/40 p-4 text-right space-y-2">
-          <h4 className="text-xs font-semibold text-white">سجل تجميد الاشتراك</h4>
+          <h4 className="text-xs font-semibold text-white">
+            سجل تجميد الاشتراك
+          </h4>
           <div className="space-y-2">
             {subscription.freezes.map((f, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded bg-black/25 text-xs text-app-text border border-app-line">
+              <div
+                key={i}
+                className="flex items-center justify-between p-2 rounded bg-black/25 text-xs text-app-text border border-app-line"
+              >
                 <span className="text-app-muted-light">
                   {formatDate(f.start_date)} ← {formatDate(f.end_date)}
                 </span>
@@ -252,7 +275,9 @@ function SubscriptionDetails({
               </div>
             ) : (
               <div className="rounded-xl border border-app-line bg-app-card-soft p-4 space-y-3 text-right">
-                <h4 className="text-xs font-bold text-white">تجميد الاشتراك الحالي</h4>
+                <h4 className="text-xs font-bold text-white">
+                  تجميد الاشتراك الحالي
+                </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-xs text-app-muted-light">
                     تاريخ البدء
@@ -319,7 +344,7 @@ function SubscriptionDetails({
   );
 }
 
-function SubscriptionCreateForm({
+export function SubscriptionCreateForm({
   members = [],
   plans = [],
   activities = [],
@@ -328,12 +353,16 @@ function SubscriptionCreateForm({
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
 }) {
   const toast = useToast();
   const [form, setForm] = useState({
     member_id: members[0]?.id ? String(members[0].id) : "",
     plan_id: plans[0]?.id ? String(plans[0].id) : "",
     paid_amount: plans[0]?.base_price ? String(plans[0].base_price) : "0",
+    start_date: "",
   });
   const [errors, setErrors] = useState({});
 
@@ -343,19 +372,26 @@ function SubscriptionCreateForm({
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
-    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
+    if (errors && errors[field])
+      setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleAddActivity() {
     if (!currActivityId || !currCoachId) return;
 
     // Avoid duplicates
-    if (selectedActivities.some((item) => String(item.activity_id) === String(currActivityId))) {
+    if (
+      selectedActivities.some(
+        (item) => String(item.activity_id) === String(currActivityId),
+      )
+    ) {
       toast.warning("تمت إضافة هذا النشاط مسبقاً.");
       return;
     }
 
-    const activityObj = activities.find((a) => String(a.id) === String(currActivityId));
+    const activityObj = activities.find(
+      (a) => String(a.id) === String(currActivityId),
+    );
     const coachObj = coaches.find((c) => String(c.id) === String(currCoachId));
 
     setSelectedActivities((prev) => [
@@ -363,7 +399,11 @@ function SubscriptionCreateForm({
       {
         activity_id: Number(currActivityId),
         coach_id: Number(currCoachId),
-        activityName: activityObj ? (typeof activityObj.name === "string" ? activityObj.name : activityObj.name?.ar || activityObj.name?.en) : "",
+        activityName: activityObj
+          ? typeof activityObj.name === "string"
+            ? activityObj.name
+            : activityObj.name?.ar || activityObj.name?.en
+          : "",
         coachName: coachObj?.person?.full_name || `مدرب #${currCoachId}`,
       },
     ]);
@@ -373,7 +413,9 @@ function SubscriptionCreateForm({
   }
 
   function handleRemoveActivity(actId) {
-    setSelectedActivities((prev) => prev.filter((item) => item.activity_id !== actId));
+    setSelectedActivities((prev) =>
+      prev.filter((item) => item.activity_id !== actId),
+    );
   }
 
   function handleSubmit(event) {
@@ -383,6 +425,7 @@ function SubscriptionCreateForm({
       member_id: Number(form.member_id),
       plan_id: Number(form.plan_id),
       paid_amount: Number(form.paid_amount) || 0,
+      start_date: form.start_date || undefined,
       activities: selectedActivities.map((act) => ({
         activity_id: act.activity_id,
         coach_id: act.coach_id,
@@ -393,7 +436,7 @@ function SubscriptionCreateForm({
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
-        formattedErrors[issue.path.join('_')] = issue.message;
+        formattedErrors[issue.path.join("_")] = issue.message;
       });
       setErrors(formattedErrors);
       return;
@@ -403,10 +446,18 @@ function SubscriptionCreateForm({
     onSubmit(data);
   }
 
-  const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
+  const selectedPlanObj = plans.find(
+    (p) => String(p.id) === String(form.plan_id),
+  );
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form
+      id={formId}
+      noValidate
+      onSubmit={handleSubmit}
+      className={formClassName}
+      dir="rtl"
+    >
       <label className="block text-right text-sm text-app-muted-light">
         اللاعب العضو
         <Dropdown
@@ -453,17 +504,35 @@ function SubscriptionCreateForm({
           value={form.paid_amount}
           onChange={(e) => updateField("paid_amount", e.target.value)}
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder={selectedPlanObj ? `السعر الأساسي: ${selectedPlanObj.base_price}` : ""}
+          placeholder={
+            selectedPlanObj
+              ? `السعر الأساسي: ${selectedPlanObj.base_price}`
+              : ""
+          }
           required
         />
         {errors && errors.paid_amount && (
-          <span className="text-app-red text-xs mt-1 block">{errors.paid_amount}</span>
+          <span className="text-app-red text-xs mt-1 block">
+            {errors.paid_amount}
+          </span>
         )}
+      </label>
+
+      <label className="block text-right text-sm text-app-muted-light">
+        تاريخ بداية الاشتراك
+        <input
+          type="date"
+          value={form.start_date}
+          onChange={(event) => updateField("start_date", event.target.value)}
+          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+        />
       </label>
 
       {/* Dynamic Activities Selection */}
       <div className="border-t border-app-line pt-4 mt-2 text-right">
-        <h4 className="text-sm font-semibold text-white mb-3">الأنشطة والمدربين المنسوبين للاشتراك</h4>
+        <h4 className="text-sm font-semibold text-white mb-3">
+          الأنشطة والمدربين المنسوبين للاشتراك
+        </h4>
 
         {selectedActivities.length > 0 && (
           <div className="space-y-2 mb-3">
@@ -479,7 +548,9 @@ function SubscriptionCreateForm({
                 >
                   <TrashIcon className="size-4" />
                 </button>
-                <span>{act.activityName} · المدرب: {act.coachName}</span>
+                <span>
+                  {act.activityName} · المدرب: {act.coachName}
+                </span>
               </div>
             ))}
           </div>
@@ -487,7 +558,9 @@ function SubscriptionCreateForm({
 
         <div className="flex gap-2 items-end bg-app-card-soft/40 p-3 rounded-xl border border-app-line">
           <div className="flex-1 space-y-2">
-            <label className="block text-xs text-app-muted-light">اختر النشاط</label>
+            <label className="block text-xs text-app-muted-light">
+              اختر النشاط
+            </label>
             <Dropdown
               className="text-white bg-black/45 rounded text-xs"
               buttonClassName="h-9"
@@ -495,14 +568,19 @@ function SubscriptionCreateForm({
               onChange={setCurrActivityId}
               options={activities.map((a) => ({
                 value: String(a.id),
-                label: typeof a.name === "string" ? a.name : a.name?.ar || a.name?.en || "",
+                label:
+                  typeof a.name === "string"
+                    ? a.name
+                    : a.name?.ar || a.name?.en || "",
               }))}
               placeholder="الرياضة / النشاط"
             />
           </div>
 
           <div className="flex-1 space-y-2">
-            <label className="block text-xs text-app-muted-light">اختر المدرب</label>
+            <label className="block text-xs text-app-muted-light">
+              اختر المدرب
+            </label>
             <Dropdown
               className="text-white bg-black/45 rounded text-xs"
               buttonClassName="h-9"
@@ -533,7 +611,9 @@ function SubscriptionCreateForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div
+        className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}
+      >
         <Button
           type="button"
           tone="outline"
@@ -635,17 +715,19 @@ export default function SubscriptionsClient() {
           );
         },
       },
-      {
-        key: "branch",
-        label: "الفرع",
-        align: "center",
-        render: (_, subscription) => {
-          const branchName =
-            branches.find((b) => b.id === subscription.branch_id)?.name ||
-            (subscription.branch_id ? `فرع #${subscription.branch_id}` : "-");
-          return <span className="text-xs text-app-muted-light">{branchName}</span>;
-        },
-      },
+      // {
+      //   key: "branch",
+      //   label: "الفرع",
+      //   align: "center",
+      //   render: (_, subscription) => {
+      //     const branchName =
+      //       branches.find((b) => b.id === subscription.branch_id)?.name ||
+      //       (subscription.branch_id ? `فرع #${subscription.branch_id}` : "-");
+      //     return (
+      //       <span className="text-xs text-app-muted-light">{branchName}</span>
+      //     );
+      //   },
+      // },
       {
         key: "remaining_amount",
         label: "المتبقي",
@@ -660,8 +742,12 @@ export default function SubscriptionsClient() {
         align: "center",
         render: (_, subscription) => (
           <div className="text-center text-[11px]">
-            <p className="text-app-muted-light">{formatDate(subscription.start_date)}</p>
-            <p className="mt-0.5 text-app-yellow">{formatDate(subscription.end_date)}</p>
+            <p className="text-app-muted-light">
+              {formatDate(subscription.start_date)}
+            </p>
+            <p className="mt-0.5 text-app-yellow">
+              {formatDate(subscription.end_date)}
+            </p>
           </div>
         ),
       },
@@ -700,11 +786,9 @@ export default function SubscriptionsClient() {
               {isFetching ? "جاري التحديث" : "تحديث البيانات"}
             </Button>
             <Button
-              icon={<PlusIcon className="size-4" />}
-              onClick={() => {
-                setFormError("");
-                setDrawerMode("create");
-              }}
+              href="/management/subscriptions/create"
+              icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+              style={{ color: "#000000" }}
             >
               تسجيل اشتراك
             </Button>
@@ -735,7 +819,9 @@ export default function SubscriptionsClient() {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        onRowClick={(subscription) => setSelectedSubscriptionId(subscription.id)}
+        onRowClick={(subscription) =>
+          setSelectedSubscriptionId(subscription.id)
+        }
         getRowKey={(subscription) => subscription.id}
         totalPages={0}
         toolbarActions={
@@ -779,36 +865,22 @@ export default function SubscriptionsClient() {
       />
 
       <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إنشاء اشتراك جديد"
-        subtitle="أدخل تفاصيل اللاعب والخطة والأنشطة الملحقة بالاشتراك"
-      >
-        <SubscriptionCreateForm
-          members={members}
-          plans={plans}
-          activities={activities}
-          coaches={coaches}
-          onSubmit={handleCreateSubscription}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-        />
-      </Drawer>
-
-      <Drawer
         open={Boolean(selectedSubscriptionId)}
         onClose={closeDrawer}
         title="تفاصيل الاشتراك"
         subtitle={
           selectedSubscription?.member?.person?.full_name ||
-          (selectedSubscriptionId ? `رقم الاشتراك ${selectedSubscriptionId}` : "")
+          (selectedSubscriptionId
+            ? `رقم الاشتراك ${selectedSubscriptionId}`
+            : "")
         }
       >
         <SubscriptionDetails
           subscription={selectedSubscription}
           error={subscriptionDetailError}
-          isLoading={isSubscriptionDetailLoading || isSubscriptionDetailFetching}
+          isLoading={
+            isSubscriptionDetailLoading || isSubscriptionDetailFetching
+          }
           onRetry={refetchSubscriptionDetail}
           onFreeze={handleFreeze}
           onUnfreeze={handleUnfreeze}

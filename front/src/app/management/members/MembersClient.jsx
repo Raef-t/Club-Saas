@@ -15,7 +15,8 @@ import { memberSchema } from "@/lib/validations/membersSchema";
 import PhoneField from "@/components/forms/PhoneField";
 import { useMembers } from "./useMembers";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
+const TABLE_GRID_COLUMNS =
+  "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
 const CURRENCY_SYMBOL = "ل.س";
 
 const genderLabels = {
@@ -41,13 +42,14 @@ const relationLabels = {
   Other: "قريب / آخر",
 };
 
-const initialForm = {
+export const memberInitialForm = {
   first_name: "",
   last_name: "",
   mobile_country_code: "+963",
   mobile: "",
   gender: "male",
   dob: "",
+  age: "",
   branch_id: "",
   emergency_name: "",
   emergency_relation: "Father",
@@ -56,6 +58,8 @@ const initialForm = {
   plan_id: "",
   paid_amount: "",
 };
+
+const initialForm = memberInitialForm;
 
 function formatDate(value) {
   if (!value) return "-";
@@ -100,23 +104,29 @@ function MemberDetails({ member, branches = [] }) {
 
   const person = member.person || {};
   const branchName =
-    branches.find((b) => b.id === member.branch_id)?.name || `فرع #${member.branch_id}`;
+    branches.find((b) => b.id === member.branch_id)?.name ||
+    `فرع #${member.branch_id}`;
 
-  const contact = member.additional_contacts?.[0] || null;
+  const personalContact = person.contacts?.find(
+    (c) => c.relation === "self" || c.name === "Personal",
+  );
+  const emergencyContact = person.contacts?.find((c) => c.relation !== "self");
 
-  const fullName = person.full_name || `${member.first_name || ""} ${member.last_name || ""}`.trim() || "-";
+  const fullName =
+    person.full_name ||
+    `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
+    "-";
   const gender = person.gender || member.gender || "-";
-  const mobile = person.phone || person.mobile || member.mobile || "";
-  const countryCode = person.mobile_country_code || member.mobile_country_code || "";
+  const mobile = personalContact?.phone_number || person.phone || person.mobile || member.mobile || "";
+  const countryCode =
+    personalContact?.country_code || person.mobile_country_code || member.mobile_country_code || "";
   const dob = person.dob || member.dob || "";
   const age = person.age || member.age || "";
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right">
-        <h3 className="text-lg font-medium text-white">
-          {fullName}
-        </h3>
+        <h3 className="text-lg font-medium text-white">{fullName}</h3>
         <p className="mt-1 text-xs text-app-muted-light">
           رقم العضوية: #{member.id}
         </p>
@@ -136,20 +146,33 @@ function MemberDetails({ member, branches = [] }) {
           value={member.is_active !== false ? "نشط" : "غير نشط"}
           tone={member.is_active !== false ? "green" : "red"}
         />
-        <DetailItem label="تاريخ التسجيل" value={formatDate(member.created_at)} />
+        <DetailItem
+          label="تاريخ التسجيل"
+          value={formatDate(member.created_at)}
+        />
       </section>
 
       {/* Emergency Contact */}
-      {contact && (
+      {emergencyContact && (
         <div className="rounded-xl border border-app-line bg-app-card-soft/50 p-4 text-right space-y-3">
-          <h4 className="text-sm font-semibold text-white">جهة اتصال إضافية للطوارئ</h4>
+          <h4 className="text-sm font-semibold text-white">
+            جهة اتصال إضافية للطوارئ
+          </h4>
           <section className="grid gap-3 sm:grid-cols-2">
-            <DetailItem label="اسم القريب" value={contact.name} />
-            <DetailItem label="العلاقة" value={relationLabels[contact.relation] || contact.relation} />
+            <DetailItem label="اسم القريب" value={emergencyContact.name} />
+            <DetailItem
+              label="العلاقة"
+              value={relationLabels[emergencyContact.relation] || emergencyContact.relation}
+            />
             <DetailItem
               label="رقم الهاتف"
-              value={contact.phone_number ? `${contact.country_code || ""} ${contact.phone_number}` : "-"}
+              value={
+                emergencyContact.phone_number
+                  ? `${emergencyContact.country_code || ""} ${emergencyContact.phone_number}`
+                  : "-"
+              }
             />
+
           </section>
         </div>
       )}
@@ -157,7 +180,7 @@ function MemberDetails({ member, branches = [] }) {
   );
 }
 
-function MemberForm({
+export function MemberForm({
   mode,
   initialValues = initialForm,
   branches = [],
@@ -166,13 +189,17 @@ function MemberForm({
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
-    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
+    if (errors && errors[field])
+      setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
@@ -189,9 +216,11 @@ function MemberForm({
         ]
       : [];
 
-    const calculatedAge = form.dob
-      ? new Date().getFullYear() - new Date(form.dob).getFullYear()
-      : 25;
+    const enteredAge = form.age !== "" && form.age !== null && form.age !== undefined ? Number(form.age) : undefined;
+    let calculatedDob = form.dob || null;
+    if (enteredAge && !calculatedDob) {
+      calculatedDob = `${new Date().getFullYear() - enteredAge}-01-01`;
+    }
 
     const validationData = {
       first_name: form.first_name.trim(),
@@ -199,7 +228,8 @@ function MemberForm({
       mobile_country_code: form.mobile_country_code.trim(),
       mobile: form.mobile.trim(),
       gender: form.gender,
-      dob: form.dob || null,
+      dob: calculatedDob,
+      age: enteredAge,
       branch_id: Number(form.branch_id),
       emergency_name: form.emergency_name.trim(),
       emergency_relation: form.emergency_relation,
@@ -213,7 +243,7 @@ function MemberForm({
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
-        formattedErrors[issue.path.join('_')] = issue.message;
+        formattedErrors[issue.path.join("_")] = issue.message;
       });
       setErrors(formattedErrors);
       return;
@@ -222,6 +252,18 @@ function MemberForm({
     setErrors({});
 
     if (mode === "create") {
+      let customErrors = {};
+      if (!form.plan_id) {
+        customErrors.plan_id = "يرجى اختيار خطة الاشتراك";
+      }
+      if (form.plan_id && (!form.paid_amount && form.paid_amount !== 0 && form.paid_amount !== "0")) {
+        customErrors.paid_amount = "يرجى ادخال المبلغ المدفوع";
+      }
+      if (Object.keys(customErrors).length > 0) {
+        setErrors(customErrors);
+        return;
+      }
+
       const plansPayload = form.plan_id
         ? [
             {
@@ -237,8 +279,8 @@ function MemberForm({
         mobile_country_code: form.mobile_country_code.trim(),
         mobile: form.mobile.trim(),
         gender: form.gender,
-        dob: form.dob || null,
-        age: calculatedAge,
+        dob: calculatedDob,
+        age: enteredAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
         plans: plansPayload,
@@ -250,17 +292,26 @@ function MemberForm({
         mobile_country_code: form.mobile_country_code.trim(),
         mobile: form.mobile.trim(),
         gender: form.gender,
-        dob: form.dob || null,
+        dob: calculatedDob,
+        age: enteredAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
       });
     }
   }
 
-  const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
+  const selectedPlanObj = plans.find(
+    (p) => String(p.id) === String(form.plan_id),
+  );
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form
+      id={formId}
+      noValidate
+      onSubmit={handleSubmit}
+      className={formClassName}
+      dir="rtl"
+    >
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
           الاسم الأول
@@ -271,7 +322,11 @@ function MemberForm({
             placeholder="مثال: أحمد"
             required
           />
-          {errors && errors.first_name && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.first_name}</span>}
+          {errors && errors.first_name && (
+            <span className="text-app-red text-xs mt-1 block text-right w-full">
+              {errors.first_name}
+            </span>
+          )}
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
@@ -283,7 +338,11 @@ function MemberForm({
             placeholder="مثال: محمد"
             required
           />
-          {errors && errors.last_name && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.last_name}</span>}
+          {errors && errors.last_name && (
+            <span className="text-app-red text-xs mt-1 block text-right w-full">
+              {errors.last_name}
+            </span>
+          )}
         </label>
       </div>
 
@@ -314,14 +373,21 @@ function MemberForm({
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
-          تاريخ الميلاد
+          العمر *
           <input
-            value={form.dob}
-            onChange={(event) => updateField("dob", event.target.value)}
+            value={form.age}
+            onChange={(event) => updateField("age", event.target.value)}
             className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            type="date"
+            type="number"
+            min="4"
+            required
+            placeholder="مثال: 25"
           />
-          {errors && errors.dob && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.dob}</span>}
+          {errors && errors.age && (
+            <span className="text-app-red text-xs mt-1 block text-right w-full">
+              {errors.age}
+            </span>
+          )}
         </label>
       </div>
 
@@ -332,7 +398,10 @@ function MemberForm({
           buttonClassName="bg-app-card-soft h-11"
           value={form.branch_id}
           onChange={(val) => updateField("branch_id", val)}
-          options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
+          options={branches.map((b) => ({
+            value: String(b.id),
+            label: b.name,
+          }))}
           placeholder="اختر الفرع"
           error={errors && errors.branch_id}
         />
@@ -340,17 +409,25 @@ function MemberForm({
 
       {/* Emergency Contact */}
       <div className="border-t border-app-line pt-4 mt-2">
-        <h4 className="text-sm font-semibold text-white mb-3">جهة اتصال إضافية للطوارئ (اختياري)</h4>
+        <h4 className="text-sm font-semibold text-white mb-3">
+          جهة اتصال إضافية للطوارئ (اختياري)
+        </h4>
 
         <label className="block text-right text-sm text-app-muted-light mb-3">
           الاسم
           <input
             value={form.emergency_name}
-            onChange={(event) => updateField("emergency_name", event.target.value)}
+            onChange={(event) =>
+              updateField("emergency_name", event.target.value)
+            }
             className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
             placeholder="مثال: والد اللاعب"
           />
-          {errors && errors.emergency_name && <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.emergency_name}</span>}
+          {errors && errors.emergency_name && (
+            <span className="text-app-red text-xs mt-1 block text-right w-full">
+              {errors.emergency_name}
+            </span>
+          )}
         </label>
 
         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -373,7 +450,10 @@ function MemberForm({
             codeValue={form.emergency_country_code}
             onCodeChange={(val) => updateField("emergency_country_code", val)}
             required={false}
-            error={errors && (errors.emergency_phone || errors.emergency_country_code)}
+            error={
+              errors &&
+              (errors.emergency_phone || errors.emergency_country_code)
+            }
           />
         </div>
       </div>
@@ -381,7 +461,9 @@ function MemberForm({
       {/* Plan Section (Only in Create Mode) */}
       {mode === "create" && (
         <div className="border-t border-app-line pt-4 mt-2">
-          <h4 className="text-sm font-semibold text-white mb-3">تسجيل في خطة اشتراك مباشرة (اختياري)</h4>
+          <h4 className="text-sm font-semibold text-white mb-3">
+            تسجيل في خطة اشتراك مباشرة
+          </h4>
 
           <label className="block text-right text-sm text-app-muted-light mb-3">
             الخطة الرياضية
@@ -391,9 +473,14 @@ function MemberForm({
               value={form.plan_id}
               onChange={(val) => {
                 updateField("plan_id", val);
-                const selected = plans.find((p) => String(p.id) === String(val));
+                const selected = plans.find(
+                  (p) => String(p.id) === String(val),
+                );
                 if (selected) {
-                  updateField("paid_amount", String(selected.base_price || "0"));
+                  updateField(
+                    "paid_amount",
+                    String(selected.base_price || "0"),
+                  );
                 }
               }}
               options={plans.map((p) => ({
@@ -401,6 +488,7 @@ function MemberForm({
                 label: p.name?.ar || p.name?.en || "",
               }))}
               placeholder="اختر خطة الاشتراك"
+              error={errors && errors.plan_id}
             />
           </label>
 
@@ -409,12 +497,23 @@ function MemberForm({
               المبلغ المدفوع ({CURRENCY_SYMBOL})
               <input
                 value={form.paid_amount}
-                onChange={(event) => updateField("paid_amount", event.target.value)}
+                onChange={(event) =>
+                  updateField("paid_amount", event.target.value)
+                }
                 className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
                 type="number"
                 min="0"
-                placeholder={selectedPlanObj ? `القيمة الأساسية: ${selectedPlanObj.base_price}` : ""}
+                placeholder={
+                  selectedPlanObj
+                    ? `القيمة الأساسية: ${selectedPlanObj.base_price}`
+                    : ""
+                }
               />
+              {errors && errors.paid_amount && (
+                <span className="text-app-red text-xs mt-1 block text-right w-full">
+                  {errors.paid_amount}
+                </span>
+              )}
             </label>
           )}
         </div>
@@ -426,7 +525,9 @@ function MemberForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div
+        className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}
+      >
         <Button
           type="button"
           tone="outline"
@@ -487,7 +588,9 @@ export default function MembersClient() {
         align: "center",
         render: (_, member) => {
           const person = member.person || {};
-          const fullName = person.full_name || `${member.first_name || ""} ${member.last_name || ""}`.trim();
+          const fullName =
+            person.full_name ||
+            `${member.first_name || ""} ${member.last_name || ""}`.trim();
           return (
             <span className="text-sm font-medium text-white">
               {fullName || "-"}
@@ -501,8 +604,12 @@ export default function MembersClient() {
         align: "center",
         render: (_, member) => {
           const person = member.person || {};
-          const mobile = person.phone || person.mobile || member.mobile;
-          const countryCode = person.mobile_country_code || member.mobile_country_code || "";
+          const personalContact = person.contacts?.find(
+            (c) => c.relation === "self" || c.name === "Personal",
+          );
+          const mobile = personalContact?.phone_number || person.phone || person.mobile || member.mobile;
+          const countryCode =
+            personalContact?.country_code || person.mobile_country_code || member.mobile_country_code || "";
           return (
             <span className="text-xs text-app-muted-light" dir="ltr">
               {mobile ? `${countryCode} ${mobile}`.trim() : "-"}
@@ -532,7 +639,9 @@ export default function MembersClient() {
           const person = member.person || {};
           const dob = person.dob || member.dob;
           return (
-            <span className="text-xs text-app-muted-light">{formatDate(dob)}</span>
+            <span className="text-xs text-app-muted-light">
+              {formatDate(dob)}
+            </span>
           );
         },
       },
@@ -543,7 +652,9 @@ export default function MembersClient() {
         render: (value) => {
           const branchName =
             branches.find((b) => b.id === value)?.name || `فرع #${value}`;
-          return <span className="text-xs text-app-muted-light">{branchName}</span>;
+          return (
+            <span className="text-xs text-app-muted-light">{branchName}</span>
+          );
         },
       },
       {
@@ -569,17 +680,13 @@ export default function MembersClient() {
         render: (_, member) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => {
-              setFormError("");
-              setSelectedMemberId(member.id);
-              setDrawerMode("edit");
-            }}
+            editHref={`/management/members/create?mode=edit&id=${member.id}`}
             onDelete={() => handleDelete(member)}
           />
         ),
       },
     ],
-    [branches, setSelectedMemberId, setDrawerMode, setFormError, isDeleting, handleDelete],
+    [branches, isDeleting, handleDelete],
   );
 
   const editInitialValues = useMemo(() => {
@@ -608,11 +715,9 @@ export default function MembersClient() {
         subtitle="تسجيل الأعضاء، وتحديث البيانات الشخصية، وربط جهات اتصال الطوارئ وتفاصيل العضوية."
         action={
           <Button
-            icon={<PlusIcon className="size-4" />}
-            onClick={() => {
-              setFormError("");
-              setDrawerMode("create");
-            }}
+            href="/management/members/create"
+            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+            style={{ color: "#000000" }}
           >
             إضافة لاعب
           </Button>
@@ -697,31 +802,14 @@ export default function MembersClient() {
       />
 
       <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إضافة لاعب جديد"
-        subtitle="أدخل بيانات اللاعب ورقم الهاتف والفرع التابع له"
-      >
-        <MemberForm
-          mode="create"
-          branches={branches}
-          plans={plans}
-          onSubmit={handleCreate}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-          initialValues={{
-            ...initialForm,
-            branch_id: branches[0]?.id ? String(branches[0].id) : "",
-          }}
-        />
-      </Drawer>
-
-      <Drawer
         open={drawerMode === "edit"}
         onClose={closeDrawer}
         title="تعديل بيانات اللاعب"
-        subtitle={selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ""}
+        subtitle={
+          selectedMember
+            ? `${selectedMember.first_name} ${selectedMember.last_name}`
+            : ""
+        }
       >
         {editInitialValues && (
           <MemberForm
@@ -741,7 +829,11 @@ export default function MembersClient() {
         open={drawerMode === "details"}
         onClose={closeDrawer}
         title="تفاصيل اللاعب العضو"
-        subtitle={selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ""}
+        subtitle={
+          selectedMember
+            ? `${selectedMember.first_name} ${selectedMember.last_name}`
+            : ""
+        }
       >
         <MemberDetails member={selectedMember} branches={branches} />
       </Drawer>

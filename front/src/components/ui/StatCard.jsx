@@ -2,8 +2,8 @@ import { GridIcon, TrendUpIcon } from "@/components/icons/Icons";
 
 const toneMap = {
   yellow: {
-    icon: "bg-[rgba(252,205,3,0.22)] text-app-yellow",
-    spark: "#FCCD03",
+    icon: "bg-app-yellow-soft text-app-yellow",
+    spark: "#d97706",
   },
   green: {
     icon: "bg-[rgba(19,172,73,0.22)] text-app-green",
@@ -16,6 +16,14 @@ const toneMap = {
   purple: {
     icon: "bg-[rgba(121,37,255,0.22)] text-app-purple",
     spark: "#7925FF",
+  },
+  orange: {
+    icon: "bg-[rgba(179,107,0,0.24)] text-app-orange",
+    spark: "#B36B00",
+  },
+  cyan: {
+    icon: "bg-[rgba(0,188,212,0.22)] text-cyan-400",
+    spark: "#00BCD4",
   },
 };
 
@@ -75,12 +83,12 @@ export default function StatCard({
       </div>
 
       {!compact && (
-        <div className="mt-1 text-center text-xl font-medium leading-7 text-app-text">
+        <div className={`mt-1 text-center text-xl font-medium leading-7 ${tone === 'yellow' ? 'text-app-yellow' : 'text-app-text'}`}>
           {value}
         </div>
       )}
       {compact && value && (
-        <div className="mt-5 text-center text-xl font-medium text-app-text">
+        <div className={`mt-5 text-center text-xl font-medium ${tone === 'yellow' ? 'text-app-yellow' : 'text-app-text'}`}>
           {value}
         </div>
       )}

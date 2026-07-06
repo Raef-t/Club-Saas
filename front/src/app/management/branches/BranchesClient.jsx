@@ -22,7 +22,7 @@ import { branchSchema } from "@/lib/validations/branchesSchema";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 120px 180px 140px 110px 110px";
 
-const initialForm = {
+export const branchInitialForm = {
   club_id: "",
   name_ar: "",
   name_en: "",
@@ -32,6 +32,8 @@ const initialForm = {
   phone: "",
   type: "gym",
 };
+
+const initialForm = branchInitialForm;
 
 const genderOptions = [
   { value: "all", label: "كل الفروع" },
@@ -101,7 +103,7 @@ function BranchDetails({ branch, isLoading, error }) {
   );
 }
 
-function BranchForm({
+export function BranchForm({
   mode,
   initialValues = initialForm,
   clubs = [],
@@ -109,6 +111,9 @@ function BranchForm({
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "flex flex-col min-h-full",
 }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
@@ -120,20 +125,18 @@ function BranchForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const data = {
+    const validationData = {
       club_id: Number(form.club_id),
-      name: {
-        ar: form.name_ar.trim(),
-        en: form.name_en.trim(),
-      },
+      name_ar: form.name_ar.trim(),
+      name_en: form.name_en.trim(),
       gender_restriction: form.gender_restriction,
       type: "gym",
-      address: form.address.trim() || null,
-      country_code: form.country_code.trim() || null,
-      phone: form.phone.trim() || null,
+      address: form.address.trim(),
+      country_code: form.country_code.trim(),
+      phone: form.phone.trim(),
     };
     
-    const result = branchSchema.safeParse(data);
+    const result = branchSchema.safeParse(validationData);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach(issue => {
@@ -144,11 +147,22 @@ function BranchForm({
     }
     
     setErrors({});
-    onSubmit(data);
+    onSubmit({
+      club_id: validationData.club_id,
+      name: {
+        ar: validationData.name_ar,
+        en: validationData.name_en,
+      },
+      gender_restriction: validationData.gender_restriction,
+      type: validationData.type,
+      address: validationData.address || null,
+      country_code: validationData.country_code || null,
+      phone: validationData.phone || null,
+    });
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col min-h-full" dir="rtl">
+    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
       <div className="space-y-4 flex-1 pb-4">
       <label className="block text-right text-sm text-app-muted-light">
         النادي التابع له
@@ -157,7 +171,7 @@ function BranchForm({
           buttonClassName="bg-app-card-soft h-11"
           value={form.club_id}
           onChange={(val) => updateField("club_id", val)}
-          options={clubs.map((club) => ({ value: club.id, label: club.name }))}
+          options={clubs.map((club) => ({ value: String(club.id), label: club.name }))}
           placeholder="اختر النادي"
          error={errors.club_id}
           />
@@ -229,7 +243,7 @@ function BranchForm({
         </p>
       )}
 
-      <div className="sticky bottom-[-20px] -mx-5 -mb-5 mt-4 flex items-center gap-3 border-t border-app-line bg-app-bg p-5 z-10">
+      <div className={`${showFooterActions ? "sticky flex" : "entry-form-actions-hidden"} bottom-[-20px] -mx-5 -mb-5 mt-4 items-center gap-3 border-t border-app-line bg-app-bg p-5 z-10`}>
         <Button
           type="button"
           tone="outline"
@@ -267,10 +281,8 @@ export default function BranchesClient() {
     detailsBranch,
     isFetchingDetails,
     detailsError,
-    isCreating,
     isUpdating,
     isDeleting,
-    handleCreate,
     handleUpdate,
     handleDelete,
     confirmDelete,
@@ -346,17 +358,13 @@ export default function BranchesClient() {
         render: (_, branch) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => {
-              setFormError("");
-              setSelectedBranchId(branch.id);
-              setDrawerMode("edit");
-            }}
+            editHref={`/management/branches/create?mode=edit&id=${branch.id}`}
             onDelete={() => handleDelete(branch)}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setFormError, setSelectedBranchId, setDrawerMode, handleToggleStatus],
+    [isDeleting, handleDelete, handleToggleStatus],
   );
 
   const editInitialValues = useMemo(() => {
@@ -371,11 +379,8 @@ export default function BranchesClient() {
         subtitle="عرض فروع النادي المختلفة، تعديل بيانات الهاتف والعنوان، وتفعيل أو تعطيل الفروع."
         action={
           <Button
+            href="/management/branches/create"
             icon={<PlusIcon className="size-4" />}
-            onClick={() => {
-              setFormError("");
-              setDrawerMode("create");
-            }}
           >
             إضافة فرع
           </Button>
@@ -445,26 +450,6 @@ export default function BranchesClient() {
           </p>
         }
       />
-
-      <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إضافة فرع جديد"
-        subtitle="أدخل بيانات الفرع والتقييد الجنسي ورقم الهاتف"
-      >
-        <BranchForm
-          mode="create"
-          clubs={clubs}
-          onSubmit={handleCreate}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-          initialValues={{
-            ...initialForm,
-            club_id: clubs[0]?.id || "",
-          }}
-        />
-      </Drawer>
 
       <Drawer
         open={drawerMode === "edit"}

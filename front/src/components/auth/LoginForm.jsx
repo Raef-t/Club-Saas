@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { useLoginMutation } from "@/lib/api/authApi";
+import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
 
 const DEFAULT_FCM_TOKEN = "fcm_token_string_here";
 
@@ -30,6 +31,8 @@ export default function LoginForm() {
     remember: true,
   });
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -82,15 +85,24 @@ export default function LoginForm() {
           />
         </label>
 
-        <label className="block text-end text-sm text-app-muted-light">
+        <label className="block text-end text-sm text-app-muted-light relative">
           كلمة المرور
-          <input
-            value={form.password}
-            type="password"
-            autoComplete="current-password"
-            onChange={(event) => updateField("password", event.target.value)}
-            className="mt-2 h-12 w-full rounded-xl border border-app-line bg-app-card-soft px-4 text-end text-white outline-none transition focus:border-app-yellow"
-          />
+          <div className="relative mt-2">
+            <input
+              value={form.password}
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              onChange={(event) => updateField("password", event.target.value)}
+              className="h-12 w-full rounded-xl border border-app-line bg-app-card-soft pl-12 pr-4 text-end text-white outline-none transition focus:border-app-yellow"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
+            >
+              {showPassword ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
+            </button>
+          </div>
         </label>
       </div>
 
