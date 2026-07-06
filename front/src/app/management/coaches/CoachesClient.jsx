@@ -130,11 +130,10 @@ function CoachDetails({
           </p>
         </div>
         <span
-          className={`rounded px-2.5 py-1 text-xs font-semibold ${
-            coach.is_active
+          className={`rounded px-2.5 py-1 text-xs font-semibold ${coach.is_active
               ? "bg-app-green/10 text-app-green"
               : "bg-app-red/10 text-app-red"
-          }`}
+            }`}
         >
           {coach.is_active ? "نشط" : "غير نشط"}
         </span>
@@ -623,11 +622,10 @@ export default function CoachesClient() {
         align: "center",
         render: (value) => (
           <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-              value
+            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${value
                 ? "bg-app-green/10 text-app-green"
                 : "bg-app-red/10 text-app-red"
-            }`}
+              }`}
           >
             {value ? "نشط" : "غير نشط"}
           </span>

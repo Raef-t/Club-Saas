@@ -25,6 +25,7 @@ class SubscribeMemberRequest extends FormRequest
                 new NoActiveSubscriptionRule($subscriptionRepo, $this->member_id, $this->plan_id)
             ],
             'plan_id' => 'required|exists:subscription_plans,id',
+            'coach_id' => 'nullable|exists:staff,id',
             'start_date' => 'nullable|date',
             'paid_amount' => 'required|numeric|min:0',
             'activities' => 'nullable|array',

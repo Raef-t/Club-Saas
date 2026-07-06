@@ -15,7 +15,7 @@ class PlayerSubscriptionResource extends JsonResource
                 'member_number' => $this->member->memberNumber,
                 'membership_status' => $this->member->status,
                 'person' => $this->member->person ? [
-                    'full_name' => $this->member->person->fullName,
+                    'full_name' => $this->member->person->full_name,
                     'email' => $this->member->person->email,
                     'phone' => $this->member->person->mobile1,
                 ] : null,
@@ -35,7 +35,15 @@ class PlayerSubscriptionResource extends JsonResource
                     return [
                         'id' => $item->id,
                         'activity_id' => $item->activity_id,
+                        'activity' => $item->relationLoaded('activity') && $item->activity ? [
+                            'id' => $item->activity->id,
+                            'name' => $item->activity->name,
+                        ] : null,
                         'coach_id' => $item->coach_id,
+                        'coach' => $item->relationLoaded('coach') && $item->coach ? [
+                            'id' => $item->coach->id,
+                            'name' => $item->coach->person ? $item->coach->person->full_name : null,
+                        ] : null,
                         'sessions_allocated' => $item->sessions_allocated,
                         'sessions_consumed' => $item->sessions_consumed ?? 0,
                         'is_unlimited' => (bool) $item->is_unlimited,

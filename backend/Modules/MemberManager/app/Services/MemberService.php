@@ -16,11 +16,11 @@ use Modules\Authentication\Services\PersonQrCodeService;
 
 class MemberService
 {
-    protected $repository;
-    protected $genderRule;
-    protected $personService;
-    protected $branchService;
-    protected $qrCodeService;
+    protected MemberRepositoryInterface $repository;
+    protected MemberGenderMatchRule $genderRule;
+    protected PersonSharedServiceInterface $personService;
+    protected BranchSharedServiceInterface $branchService;
+    protected PersonQrCodeService $qrCodeService;
 
     public function __construct(
         MemberRepositoryInterface $repository,
@@ -132,6 +132,10 @@ class MemberService
                             ? filter_var($enabledFeatures['auto_generate_credentials'], FILTER_VALIDATE_BOOLEAN) 
                             : true; // Default to true if not specified
 
+            $username = null;
+            $password = null;
+            $user = null;
+
             if ($autoGenerate) {
                 // Generate User Account for Mobile App
                 $username = 'player_' . $personId . '_' . Str::random(4);
@@ -159,16 +163,17 @@ class MemberService
             }
 
             // 5. Expose generated credentials and send welcome notification
-            if ($autoGenerate && isset($username)) {
+            if ($autoGenerate && $username && $password && $user) {
                 $member->generated_username = $username;
                 $member->generated_password = $password;
 
                 try {
                     $notificationService = app(\Modules\NotificationManager\Services\NotificationService::class);
-                    $notificationService->notifyWelcome($member, [
-                        'name' => $data['full_name'],
-                        'username' => $username,
-                        'password' => $password,
+                    $notificationService->createNotification([
+                        'title' => 'Welcome!',
+                        'body' => "Hello {$data['full_name']}, your account has been created. Username: {$username}, Password: {$password}",
+                        'sender_type' => 'system',
+                        'user_ids' => [$user->id],
                     ]);
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error("Welcome notification failed: " . $e->getMessage());
@@ -179,13 +184,13 @@ class MemberService
         });
     }
 
-    public function getMemberById($id)
+    public function getMemberById(int $id)
     {
         $member = $this->repository->find($id);
         return $this->attachSharedDTOs($member);
     }
 
-    public function updateMember($id, array $data)
+    public function updateMember(int $id, array $data)
     {
         return DB::transaction(function () use ($id, $data) {
             $member = $this->repository->find($id);
@@ -237,24 +242,24 @@ class MemberService
         });
     }
 
-    public function deleteMember($id)
+    public function deleteMember(int $id)
     {
         return $this->repository->delete($id);
     }
 
-    public function getMeasurements($memberId)
+    public function getMeasurements(int $memberId)
     {
         $member = $this->repository->find($memberId);
         return $member->measurements()->latest()->get();
     }
 
-    public function getHealthProfile($memberId)
+    public function getHealthProfile(int $memberId)
     {
         $member = $this->repository->find($memberId);
         return $member->healthProfile;
     }
 
-    public function recordMeasurement($memberId, array $data)
+    public function recordMeasurement(int $memberId, array $data)
     {
         $member = $this->getMemberById($memberId);
         return $member->measurements()->create($data);
@@ -263,7 +268,7 @@ class MemberService
     /**
      * Helper to resolve and attach Person and Branch Eloquent Models
      */
-    protected function attachSharedDTOs($member)
+    protected function attachSharedDTOs(?\Modules\MemberManager\Models\Member $member)
     {
         if ($member) {
             $member->loadMissing(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan']);

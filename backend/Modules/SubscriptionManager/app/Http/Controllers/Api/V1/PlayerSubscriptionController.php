@@ -143,7 +143,7 @@ class PlayerSubscriptionController extends BaseController
 
 
         return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['plan'])),
+            new PlayerSubscriptionResource($subscription->load(['plan', 'items.activity', 'items.coach.person'])),
             __('Member subscribed successfully'),
             201
         );
@@ -179,7 +179,7 @@ class PlayerSubscriptionController extends BaseController
     public function show($id)
     {
         $subscription = $this->subscriptionService->getSubscriptionById($id);
-        $subscription->load(['plan', 'items', 'freezes']);
+        $subscription->load(['plan', 'items.activity', 'items.coach.person', 'freezes']);
         return $this->successResponse(
             new PlayerSubscriptionResource($subscription),
             __('Subscription retrieved successfully')
