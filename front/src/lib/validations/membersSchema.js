@@ -32,6 +32,11 @@ export const memberSchema = z.object({
     .optional()
     .or(z.literal("")),
 
+  age: z
+    .number({ invalid_type_error: "العمر مطلوب" })
+    .min(4, "العمر يجب أن يكون 4 سنوات على الأقل")
+    .or(z.string().min(1, "العمر مطلوب").transform(Number)),
+
   branch_id: z
     .number({ invalid_type_error: "يرجى اختيار الفرع" })
     .positive("يرجى اختيار الفرع")

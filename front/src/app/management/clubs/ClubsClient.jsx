@@ -20,11 +20,13 @@ import { clubSchema } from "@/lib/validations/clubsSchema";
 
 const TABLE_GRID_COLUMNS = "80px minmax(180px,1.5fr) 140px 140px 120px";
 
-const initialForm = {
+export const clubInitialForm = {
   name: "",
   logo_url: "",
   is_active: true,
 };
+
+const initialForm = clubInitialForm;
 
 function StatusBadge({ active }) {
   return (
@@ -61,7 +63,6 @@ function ClubLogo({ src, name, className = "size-10" }) {
     />
   );
 }
-
 
 function ClubDetails({ club, isLoading, error }) {
   if (isLoading) {
@@ -117,13 +118,16 @@ function ClubDetails({ club, isLoading, error }) {
   );
 }
 
-function ClubForm({
+export function ClubForm({
   mode,
   initialValues = initialForm,
   onSubmit,
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
@@ -135,28 +139,36 @@ function ClubForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const data = {
+    const validationData = {
       name: form.name.trim(),
-      logo_url: form.logo_url?.trim() || null,
+      logo_url: form.logo_url?.trim() || "",
       is_active: Boolean(form.is_active),
     };
-    
-    const result = clubSchema.safeParse(data);
+
+    const result = clubSchema.safeParse(validationData);
     if (!result.success) {
       const formattedErrors = {};
-      result.error.issues.forEach(issue => {
-        formattedErrors[issue.path.join('_')] = issue.message;
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join("_")] = issue.message;
       });
       setErrors(formattedErrors);
       return;
     }
-    
+
     setErrors({});
-    onSubmit(data);
+    onSubmit({
+      ...validationData,
+      logo_url: validationData.logo_url || null,
+    });
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4">
+    <form
+      id={formId}
+      noValidate
+      onSubmit={handleSubmit}
+      className={formClassName}
+    >
       <Field
         label="اسم النادي"
         value={form.name}
@@ -164,8 +176,8 @@ function ClubForm({
         placeholder="تكنوجيم"
         required
         type="text"
-       error={errors.name}
-        />
+        error={errors.name}
+      />
 
       {/* 
       <label className="block text-right text-sm text-app-muted-light">
@@ -191,7 +203,9 @@ function ClubForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div
+        className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}
+      >
         <Button
           type="button"
           tone="outline"
@@ -227,10 +241,8 @@ export default function ClubsClient() {
     detailsClub,
     isFetchingDetails,
     detailsError,
-    isCreating,
     isUpdating,
     isDeleting,
-    handleCreate,
     handleUpdate,
     handleDelete,
     closeDrawer,
@@ -282,17 +294,13 @@ export default function ClubsClient() {
         render: (_, club) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => {
-              setFormError("");
-              setSelectedClubId(club.id);
-              setDrawerMode("edit");
-            }}
+            editHref={`/management/clubs/create?mode=edit&id=${club.id}`}
             onDelete={() => handleDelete(club)}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setFormError, setSelectedClubId, setDrawerMode],
+    [isDeleting, handleDelete],
   );
 
   return (
@@ -303,11 +311,8 @@ export default function ClubsClient() {
         subtitle="عرض النوادي المسجلة في النظام، وتعديل بياناتها أو إضافة نوادٍ جديدة."
         action={
           <Button
+            href="/management/clubs/create"
             icon={<PlusIcon className="size-4" />}
-            onClick={() => {
-              setFormError("");
-              setDrawerMode("create");
-            }}
           >
             إضافة نادٍ
           </Button>
@@ -368,21 +373,6 @@ export default function ClubsClient() {
           </p>
         }
       />
-
-      <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إضافة نادٍ جديد"
-        subtitle="أدخل اسم النادي ورابط الشعار"
-      >
-        <ClubForm
-          mode="create"
-          onSubmit={handleCreate}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-        />
-      </Drawer>
 
       <Drawer
         open={drawerMode === "edit"}

@@ -7,10 +7,12 @@ import {
   useDeleteClubMutation,
 } from "@/lib/api/clubsApi";
 
-export function useClubs() {
+export function useClubs({
+  selectedClubId: initialSelectedClubId = null,
+} = {}) {
   const [search, setSearch] = useState("");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedClubId, setSelectedClubId] = useState(null);
+  const [selectedClubId, setSelectedClubId] = useState(initialSelectedClubId);
   const [formError, setFormError] = useState("");
 
   const { data, error, isLoading, refetch } = useGetClubsQuery();
@@ -46,7 +48,9 @@ export function useClubs() {
     return clubs.filter((club) =>
       [club.name, club.is_active ? "نشط" : "غير نشط"]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
+        .some((value) =>
+          String(value).toLowerCase().includes(normalizedSearch),
+        ),
     );
   }, [clubs, search]);
 
@@ -92,29 +96,54 @@ export function useClubs() {
   async function handleCreate(values) {
     setFormError("");
 
+    const nameExists = clubs.some(
+      (club) =>
+        club.name?.trim().toLowerCase() === values.name?.trim().toLowerCase(),
+    );
+
+    if (nameExists) {
+      setFormError("اسم النادي موجود بالفعل، يرجى اختيار اسم آخر.");
+      return false;
+    }
+
     try {
       await createClub(values).unwrap();
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر إنشاء النادي. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
   async function handleUpdate(values) {
-    if (!selectedClubId) return;
+    if (!selectedClubId) return false;
     setFormError("");
+
+    const nameExists = clubs.some(
+      (club) =>
+        club.id !== selectedClubId &&
+        club.name?.trim().toLowerCase() === values.name?.trim().toLowerCase(),
+    );
+
+    if (nameExists) {
+      setFormError("اسم النادي موجود بالفعل، يرجى اختيار اسم آخر.");
+      return false;
+    }
 
     try {
       await updateClub({ id: selectedClubId, body: values }).unwrap();
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل النادي. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
@@ -143,10 +172,12 @@ export function useClubs() {
   }
 
   function getEditInitialValues() {
+    if (!selectedClub) return null;
+
     return {
-      name: selectedClub?.name || "",
-      logo_url: selectedClub?.logo_url || "",
-      is_active: selectedClub ? Boolean(selectedClub.is_active) : true,
+      name: selectedClub.name || "",
+      logo_url: selectedClub.logo_url || "",
+      is_active: Boolean(selectedClub.is_active),
     };
   }
 

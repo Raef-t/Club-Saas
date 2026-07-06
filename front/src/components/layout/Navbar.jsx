@@ -6,6 +6,8 @@ import { pageMeta } from "@/data/mockData";
 import Breadcrumb from "@/components/common/Breadcrumb";
 import { SearchIcon, CalendarIcon, ClockIcon } from "@/components/icons/Icons";
 import { Field } from "@/components/forms/Field";
+import { useGetProfileQuery } from "@/lib/api/authApi";
+import ProfileDrawer from "./ProfileDrawer";
 
 function InfoChip({ icon: Icon, children }) {
   return (
@@ -24,6 +26,13 @@ export default function Navbar() {
 
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const { data: profileData } = useGetProfileQuery();
+
+  const user = profileData?.data || {};
+  const fullName = user.person?.full_name || user.username || "";
+  const avatarLetter = fullName ? fullName.charAt(0).toUpperCase() : "U";
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -54,13 +63,7 @@ export default function Navbar() {
 
   return (
     <div>
-      <header className="app-panel flex h-16 items-center gap-4 rounded-2xl px-4">
-        {/* <div className="hidden flex-1 items-center gap-14 text-app-muted-light md:flex">
-          {(isReports ? [1, 2, 3] : [1]).map((item) => (
-            <SearchIcon key={item} className="size-5" />
-          ))}
-        </div> */}
-
+      <header className="app-panel flex h-16 items-center justify-between gap-4 rounded-2xl px-4" dir="rtl">
         <Field
           type="search"
           placeholder="البحث"
@@ -69,6 +72,27 @@ export default function Navbar() {
           className="w-full md:w-[373px]"
           required={false}
         />
+
+        {/* Profile Avatar Button on the left */}
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="flex items-center gap-3 rounded-xl bg-app-card-soft/80 p-1.5 pl-3 pr-1.5 border border-app-line/20 hover:border-app-yellow/50 transition duration-300"
+        >
+          <div className="grid size-8 place-items-center rounded-full bg-app-yellow text-sm font-bold text-app-bg uppercase shadow-inner">
+            {user.person?.photo_url ? (
+              <img
+                src={user.person.photo_url}
+                className="size-full rounded-full object-cover"
+                alt="Profile Avatar"
+              />
+            ) : (
+              avatarLetter
+            )}
+          </div>
+          <span className="hidden sm:inline text-xs text-app-muted-light font-medium ml-1">
+            {fullName || "الملف الشخصي"}
+          </span>
+        </button>
       </header>
 
       <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
@@ -85,6 +109,7 @@ export default function Navbar() {
           {meta && <Breadcrumb title={meta.title} subtitle={meta.subtitle} />}
         </div>
       </div>
+      <ProfileDrawer open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }

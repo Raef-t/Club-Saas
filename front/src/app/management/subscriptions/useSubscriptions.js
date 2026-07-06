@@ -184,11 +184,13 @@ export function useSubscriptions() {
       await createPlayerSubscription(values).unwrap();
       toast.success("تم تسجيل الاشتراك الجديد بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر إنشاء الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 

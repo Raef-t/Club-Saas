@@ -34,7 +34,7 @@ export default function Menu({ items }) {
                     return (
                       <Link key={child.title} href={child.href} className={`flex items-center justify-end gap-2 text-xs ${childActive ? "text-app-yellow" : "text-app-text"}`}>
                         <span>{child.title}</span>
-                        <span className={`size-2 rounded-full border ${childActive ? "border-app-yellow" : "border-white/60"}`} />
+                        <span className={`size-2 rounded-full border ${childActive ? "border-transparent bg-app-yellow" : "border-white/60"}`} />
                       </Link>
                     );
                   })}

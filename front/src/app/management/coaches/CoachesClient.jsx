@@ -131,10 +131,11 @@ function CoachDetails({
           </p>
         </div>
         <span
-          className={`rounded px-2.5 py-1 text-xs font-semibold ${coach.is_active
+          className={`rounded px-2.5 py-1 text-xs font-semibold ${
+            coach.is_active
               ? "bg-app-green/10 text-app-green"
               : "bg-app-red/10 text-app-red"
-            }`}
+          }`}
         >
           {coach.is_active ? "نشط" : "غير نشط"}
         </span>
@@ -219,12 +220,15 @@ function CoachDetails({
   );
 }
 
-function CoachCreateForm({
+export function CoachCreateForm({
   branches = [],
   onSubmit,
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState({
     full_name: "",
@@ -264,7 +268,7 @@ function CoachCreateForm({
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         الاسم الكامل للمدرب
         <input
@@ -407,7 +411,7 @@ function CoachCreateForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
         <Button
           type="button"
           tone="outline"
@@ -424,12 +428,15 @@ function CoachCreateForm({
   );
 }
 
-function CoachEditForm({
+export function CoachEditForm({
   initialValues,
   onSubmit,
   onCancel,
   isLoading,
   errorMessage,
+  formId,
+  showFooterActions = true,
+  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState({
     base_salary: String(initialValues.basic?.base_salary || 0),
@@ -461,7 +468,7 @@ function CoachEditForm({
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         التخصص التدريبي
         <input
@@ -529,7 +536,7 @@ function CoachEditForm({
         </p>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
         <Button
           type="button"
           tone="outline"
@@ -639,10 +646,11 @@ export default function CoachesClient() {
         align: "center",
         render: (value) => (
           <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${value
+            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              value
                 ? "bg-app-green/10 text-app-green"
                 : "bg-app-red/10 text-app-red"
-              }`}
+            }`}
           >
             {value ? "نشط" : "غير نشط"}
           </span>
@@ -655,17 +663,13 @@ export default function CoachesClient() {
         render: (_, coach) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => {
-              setFormError("");
-              setSelectedCoachId(coach.id);
-              setDrawerMode("edit");
-            }}
+            editHref={`/management/coaches/create?mode=edit&id=${coach.id}`}
             onDelete={() => handleDelete(coach)}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setFormError, setSelectedCoachId, setDrawerMode],
+    [isDeleting, handleDelete],
   );
 
   const editInitialValues = useMemo(() => {
@@ -693,11 +697,8 @@ export default function CoachesClient() {
         subtitle="عرض قائمة الكوادر التدريبية، إحصاءات الأجور، تعيين المهام والرياضات لكل كوتش."
         action={
           <Button
+            href="/management/coaches/create"
             icon={<PlusIcon className="size-4" />}
-            onClick={() => {
-              setFormError("");
-              setDrawerMode("create");
-            }}
           >
             إضافة مدرب
           </Button>
@@ -780,21 +781,6 @@ export default function CoachesClient() {
           </p>
         }
       />
-
-      <Drawer
-        open={drawerMode === "create"}
-        onClose={closeDrawer}
-        title="إضافة مدرب جديد"
-        subtitle="أدخل بيانات الموظف والراتب الأساسي وقسم التخصص"
-      >
-        <CoachCreateForm
-          branches={branches}
-          onSubmit={handleCreate}
-          onCancel={closeDrawer}
-          isLoading={isCreating}
-          errorMessage={formError}
-        />
-      </Drawer>
 
       <Drawer
         open={drawerMode === "edit"}

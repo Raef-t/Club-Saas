@@ -32,7 +32,7 @@ export const membersApi = createApi({
     }),
     createPlayer: builder.mutation({
       query: (body) => ({
-        url: "players",
+        url: "members/register",
         method: "POST",
         body,
       }),
@@ -40,7 +40,7 @@ export const membersApi = createApi({
     }),
     updatePlayer: builder.mutation({
       query: ({ id, body }) => ({
-        url: `players/${id}`,
+        url: `members/${id}`,
         method: "PUT",
         body,
       }),

@@ -7,6 +7,7 @@ import {
 } from "@/lib/api/membersApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
+import { useCreatePlayerSubscriptionMutation } from "@/lib/api/playerSubscriptionsApi";
 import { useToast } from "@/components/ui/Toast";
 
 function getMembersArray(response) {
@@ -21,13 +22,13 @@ function getPlansArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
 }
 
-export function useMembers() {
+export function useMembers({ selectedMemberId: initialSelectedMemberId = null } = {}) {
   const toast = useToast();
   const [search, setSearch] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const [selectedMemberId, setSelectedMemberId] = useState(initialSelectedMemberId);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -43,6 +44,7 @@ export function useMembers() {
   const [createPlayer, { isLoading: isCreating }] = useCreatePlayerMutation();
   const [updatePlayer, { isLoading: isUpdating }] = useUpdatePlayerMutation();
   const [deleteMember, { isLoading: isDeleting }] = useDeleteMemberMutation();
+  const [createPlayerSubscription] = useCreatePlayerSubscriptionMutation();
 
   const members = useMemo(() => getMembersArray(data), [data]);
   const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
@@ -121,33 +123,64 @@ export function useMembers() {
   async function handleCreate(values) {
     setFormError("");
     try {
-      await createPlayer(values).unwrap();
-      toast.success("تم تسجيل اللاعب العضو بنجاح!");
+      console.log("handleCreate values:", values);
+      const { plans: plansPayload, ...memberDetails } = values;
+      console.log("Sending memberDetails to API:", memberDetails);
+
+      const memberResult = await createPlayer(memberDetails).unwrap();
+      console.log("Member created successfully:", memberResult);
+
+      const memberId = memberResult?.data?.member?.id || memberResult?.data?.id || memberResult?.id;
+      if (!memberId) {
+        throw new Error("لم يتم الحصول على معرف العضو الجديد");
+      }
+
+      if (plansPayload && plansPayload.length > 0) {
+        const plan = plansPayload[0];
+        const subscriptionPayload = {
+          member_id: memberId,
+          plan_id: plan.plan_id,
+          paid_amount: plan.paid_amount,
+          start_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+          payment_method: "cash",
+        };
+
+        console.log("Creating subscription with payload:", subscriptionPayload);
+        await createPlayerSubscription(subscriptionPayload).unwrap();
+      }
+
+      toast.success("تم تسجيل اللاعب العضو وتفعيل الاشتراك بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
+      console.error("Create member/subscription error:", submitError);
       const rawMsg = submitError?.data?.message || "";
       if (rawMsg.includes("endpoint or resource was not found") || submitError?.status === 404) {
         setFormError("عذراً، الرابط البرمجي لإضافة اللاعب غير متوفر حالياً على الخادم (404).");
       } else {
         setFormError(rawMsg || "تعذر إضافة العضو. تحقق من البيانات وحاول مرة أخرى.");
       }
+      return false;
     }
   }
 
   async function handleUpdate(values) {
-    if (!selectedMemberId) return;
+    if (!selectedMemberId) return false;
     setFormError("");
     try {
       await updatePlayer({ id: selectedMemberId, body: values }).unwrap();
       toast.success("تم تعديل بيانات اللاعب بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
+      console.error("Update member error:", submitError);
       const rawMsg = submitError?.data?.message || "";
       if (rawMsg.includes("endpoint or resource was not found") || submitError?.status === 404) {
         setFormError("عذراً، الرابط البرمجي لتعديل بيانات اللاعب غير متوفر حالياً على الخادم (404).");
       } else {
         setFormError(rawMsg || "تعذر تعديل بيانات العضو. تحقق من البيانات وحاول مرة أخرى.");
       }
+      return false;
     }
   }
 
@@ -185,6 +218,7 @@ export function useMembers() {
     const dob = person.dob || selectedMember.dob || "";
     const mobile = person.phone || person.mobile || selectedMember.mobile || "";
     const mobileCountryCode = person.mobile_country_code || selectedMember.mobile_country_code || "+963";
+    const age = person.age || selectedMember.age || "";
 
     const contact = selectedMember.additional_contacts?.[0] || null;
 
@@ -195,6 +229,7 @@ export function useMembers() {
       mobile: mobile,
       gender: gender,
       dob: dob,
+      age: age,
       branch_id: String(selectedMember.branch_id || ""),
       emergency_name: contact?.name || "",
       emergency_relation: contact?.relation || "Father",

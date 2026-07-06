@@ -25,13 +25,13 @@ function getActivitiesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
 }
 
-export function useCoaches() {
+export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = {}) {
   const toast = useToast();
   const [search, setSearch] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [employmentFilter, setEmploymentFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedCoachId, setSelectedCoachId] = useState(null);
+  const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedCoachId);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -150,16 +150,18 @@ export function useCoaches() {
       await createCoach(values).unwrap();
       toast.success("تم إضافة المدرب بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر إضافة المدرب. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
   async function handleUpdate(basicValues, detailsValues) {
-    if (!selectedCoachId) return;
+    if (!selectedCoachId) return false;
     setFormError("");
     try {
       // 1. Update basic parameters
@@ -176,11 +178,13 @@ export function useCoaches() {
 
       toast.success("تم تعديل بيانات المدرب بنجاح!");
       closeDrawer();
+      return true;
     } catch (submitError) {
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل بيانات المدرب. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
   }
 
