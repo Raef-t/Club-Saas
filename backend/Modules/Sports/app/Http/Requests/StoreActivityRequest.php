@@ -15,9 +15,7 @@ class StoreActivityRequest extends FormRequest
     {
         return [
             'branch_id' => 'required|exists:branches,id',
-            'name' => 'required|array',
-            'name.ar' => 'required|string|max:150',
-            'name.en' => 'nullable|string|max:150',
+            'name' => 'required|string|max:150',
             'description' => 'nullable|string',
             'activity_type_id' => 'required|exists:activity_types,id',
             'default_capacity' => 'nullable|integer|min:1',

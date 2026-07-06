@@ -15,9 +15,7 @@ class ActivityTypeRequest extends FormRequest
     {
         return [
             'branch_id' => 'required|exists:branches,id',
-            'name' => 'required|array',
-            'name.ar' => 'required|string|max:255',
-            'name.en' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'is_active' => 'boolean',
         ];
     }

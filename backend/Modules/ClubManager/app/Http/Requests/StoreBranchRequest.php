@@ -10,15 +10,7 @@ use OpenApi\Attributes as OA;
     required: ["name", "club_id"],
     properties: [
         new OA\Property(property: "club_id", type: "integer", example: 1),
-        new OA\Property(
-            property: "name", 
-            type: "object", 
-            example: ["ar" => "فرع دبي", "en" => "Dubai Branch"],
-            properties: [
-                new OA\Property(property: "ar", type: "string", example: "فرع دبي"),
-                new OA\Property(property: "en", type: "string", example: "Dubai Branch")
-            ]
-        ),
+        new OA\Property(property: "name", type: "string", example: "فرع دبي"),
         new OA\Property(property: "gender_restriction", type: "string", enum: ["male", "female", "mixed"], example: "mixed"),
         new OA\Property(property: "type", type: "string", example: "gym", description: "e.g. gym, pool, classroom"),
         new OA\Property(property: "address", type: "string", example: "Street 10, Dubai"),
@@ -37,9 +29,7 @@ class StoreBranchRequest extends FormRequest
     {
         return [
             'club_id' => 'required|exists:clubs,id',
-            'name' => 'required|array',
-            'name.ar' => 'required|string|max:255',
-            'name.en' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'gender_restriction' => 'nullable|in:male,female,mixed',
             'type' => 'nullable|string|max:50',
             'address' => 'nullable|string',

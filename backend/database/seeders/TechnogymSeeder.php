@@ -24,7 +24,7 @@ class TechnogymSeeder extends Seeder
 
         // 2. Create Branch
         $branch = $club->branches()->create([
-            'name' => ['en' => 'Main Branch', 'ar' => 'الفرع الرئيسي'], // Branch name is translatable
+            'name' => 'الفرع الرئيسي',
             'gender_restriction' => 'mixed',
             'type' => 'main',
             'is_active' => true,

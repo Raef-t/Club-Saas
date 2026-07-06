@@ -44,7 +44,6 @@ class SubscriptionPlan extends Model
     }
 
     protected $casts = [
-        'name' => 'json',
         'start_date' => 'date',
         'end_date' => 'date',
         'is_active' => 'boolean',

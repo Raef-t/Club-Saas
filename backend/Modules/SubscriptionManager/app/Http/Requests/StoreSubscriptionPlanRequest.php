@@ -24,9 +24,7 @@ class StoreSubscriptionPlanRequest extends FormRequest
     {
         return [
             'branch_id' => 'required|exists:branches,id',
-            'name' => 'required|array',
-            'name.ar' => 'required|string|max:150',
-            'name.en' => 'nullable|string|max:150',
+            'name' => 'required|string|max:150',
             'type' => 'required|in:fixed_period,session_based',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
