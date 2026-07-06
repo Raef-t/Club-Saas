@@ -115,88 +115,17 @@ class ReceptionAttendanceController extends BaseController
     ))]
     #[OA\Response(response: 200, description: '✅ تم خصم الجلسة بنجاح', content: new OA\JsonContent())]
     #[OA\Response(response: 400, description: '❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)')]
-    public function deductSession(int $attendanceId, Request $request)
+    public function deductSession(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
         $request->validate([
             'subscription_id' => 'required|integer'
         ]);
 
         try {
-            return DB::transaction(function () use ($attendanceId, $request) {
-                $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
-
-                $metadata = $attendance->metadata ?? [];
-
-                if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
-                    return $this->errorResponse(__('Session already deducted for this attendance.'), 400);
-                }
-
-                $subscriptionId = $request->input('subscription_id');
-
-                $subscription = DB::table('player_subscriptions')
-                    ->where('id', $subscriptionId)
-                    ->where('member_id', $attendance->attendable_id)
-                    ->where('status', 'active')
-                    ->first();
-
-                if (!$subscription) {
-                    return $this->errorResponse(__('The selected subscription is not active or does not belong to this member.'), 400);
-                }
-
-                // Validate debt
-                if ($subscription->remaining_amount > 0) {
-                    $settings = DB::table('club_settings')->where('club_id', $attendance->club_id)->first();
-                    $allowedDebt = $settings->allowed_debt_limit ?? 0;
-                    $gracePeriod = $settings->grace_period_days  ?? 0;
-
-                    if ($subscription->remaining_amount > $allowedDebt) {
-                        return $this->errorResponse(__('Access denied: Outstanding debt exceeds the allowed limit.'), 400);
-                    }
-
-                    $startDate = \Carbon\Carbon::parse($subscription->start_date);
-                    if (now()->diffInDays($startDate) > $gracePeriod) {
-                        return $this->errorResponse(__('Access denied: Grace period for payment has expired.'), 400);
-                    }
-                }
-
-                // Validate remaining sessions in items
-                $items = DB::table('player_subscription_items')
-                    ->where('player_subscription_id', $subscription->id)
-                    ->where('is_unlimited', false)
-                    ->get();
-
-                if ($items->isNotEmpty()) {
-                    $hasAvailable = $items->contains(
-                        fn($item) => $item->sessions_consumed < $item->sessions_allocated
-                    );
-
-                    if (!$hasAvailable) {
-                        return $this->errorResponse(__('No remaining sessions in the selected subscription.'), 400);
-                    }
-                }
-
-                // Decrement sessions_consumed in player_subscription_items ONLY
-                foreach ($items as $item) {
-                    if ($item->sessions_consumed < $item->sessions_allocated) {
-                        DB::table('player_subscription_items')
-                            ->where('id', $item->id)
-                            ->increment('sessions_consumed');
-                        break;
-                    }
-                }
-
-                // Update Attendance Record
-                $metadata['subscription_id'] = $subscription->id;
-                $metadata['deduction_status'] = 'completed';
-                $metadata['sessions_before_checkin'] = $subscription->remaining_sessions;
-                $metadata['deducted_by_staff_id'] = \Illuminate\Support\Facades\Auth::id();
-
-                $attendance->update([
-                    'metadata' => $metadata
-                ]);
-
-                return $this->successResponse(new AttendanceResource($attendance), __('Session deducted successfully.'));
-            });
+            $subscriptionId = $request->input('subscription_id');
+            $attendance = $sessionDeductionService->deductSession($attendanceId, $subscriptionId);
+            
+            return $this->successResponse(new AttendanceResource($attendance), __('Session deducted successfully.'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
