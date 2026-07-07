@@ -18,6 +18,7 @@ class Attendance extends Model
         'recorded_by_staff_id',
         'check_in_at',
         'check_out_at',
+        'duration_minutes',
         'status',
         'metadata',
     ];
