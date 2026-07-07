@@ -27,6 +27,7 @@ readonly class PersonDTO
         public ?int $childrenCount = null,
         public ?string $howDidYouHear = null,
         public ?string $notes = null,
-        public ?int $age = null
+        public ?int $age = null,
+        public ?string $dob = null
     ) {}
 }

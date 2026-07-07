@@ -13,6 +13,12 @@ class StoreStaffRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+        if ($this->has('first_name') && $this->has('last_name')) {
+            $this->merge([
+                'full_name' => $this->first_name . ' ' . $this->last_name
+            ]);
+        }
+
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
                 'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',') 
@@ -26,7 +32,9 @@ class StoreStaffRequest extends FormRequest
     {
         return [
             // ── Personal Details (people table) ──────────────────
-            'full_name' => 'required|string|max:200',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'full_name' => 'nullable|string|max:200',
             'country_code' => 'nullable|string|max:5',
             'phone_number' => 'required|string',
             'gender' => 'nullable|in:male,female',

@@ -179,7 +179,8 @@ class StaffService
 
             // Assign matching role (admin, receptionist, coach, cleaner, manager)
             $roleName = $data['role'] ?? 'staff';
-            $user->assignRole($roleName);
+            $spatieRole = $roleName === 'receptionist' ? 'reception' : $roleName;
+            $user->assignRole($spatieRole);
 
             // Expose credentials temporarily
             $staff->generated_username = $username;

@@ -75,11 +75,14 @@ class StaffController extends BaseController
         content: new OA\MediaType(
             mediaType: 'multipart/form-data',
             schema: new OA\Schema(
-                required: ['first_name', 'last_name', 'role', 'email', 'branch_ids'],
+                required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
                 properties: [
                     new OA\Property(property: 'first_name', type: 'string', example: 'John'),
                     new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
-                    new OA\Property(property: 'role', type: 'string', example: 'Coach'),
+                    new OA\Property(property: 'country_code', type: 'string', example: '+1'),
+                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                    new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
                     new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
@@ -190,12 +193,22 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'first_name', type: 'string', example: 'John'),
-                new OA\Property(property: 'last_name', type: 'string', example: 'Smith'),
-                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
-            ]
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
+                properties: [
+                    new OA\Property(property: 'first_name', type: 'string', example: 'John'),
+                    new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
+                    new OA\Property(property: 'country_code', type: 'string', example: '+1'),
+                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                    new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
+                    new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+                ]
+            )
         )
     )]
     #[OA\Response(
