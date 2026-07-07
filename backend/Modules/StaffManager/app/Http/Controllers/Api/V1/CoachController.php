@@ -332,16 +332,29 @@ class CoachController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'base_salary', type: 'number', example: 6000),
-                    new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
-                    new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 25.0),
-                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                    new OA\Property(property: 'specialization', type: 'string', example: 'CrossFit'),
-                    new OA\Property(property: 'experience_years', type: 'integer', example: 7),
-                ]
+            required: false,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: '_method', type: 'string', example: 'PATCH', description: 'يجب إرسال هذه القيمة عند رفع ملفات عبر POST method spoofing'),
+                        new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
+                        new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
+                        new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                        new OA\Property(property: 'age', type: 'integer', example: 30),
+                        new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1990-01-01'),
+                        new OA\Property(property: 'phone_number', type: 'string', example: '500000000'),
+                        new OA\Property(property: 'country_code', type: 'string', example: '+966'),
+                        new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب', nullable: true),
+                        new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
+                        new OA\Property(property: 'base_salary', type: 'number', example: 6000),
+                        new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 25.0),
+                        new OA\Property(property: 'specialization', type: 'string', example: 'CrossFit'),
+                        new OA\Property(property: 'experience_years', type: 'integer', example: 7),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    ]
+                )
             )
         ),
         responses: [
