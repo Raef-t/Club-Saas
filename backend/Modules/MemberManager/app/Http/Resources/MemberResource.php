@@ -39,7 +39,7 @@ class MemberResource extends JsonResource
                 'email' => $this->person->email,
                 'country_code' => $this->person->mobile1CountryCode,
                 'phone_number' => $this->person->mobile1,
-                'gender' => $this->person->gender?->value,
+                'gender' => $this->person->gender,
                 'age' => $this->person->age,
                 'dob' => $this->person->dob,
                 'national_id' => $this->person->nationalId,
