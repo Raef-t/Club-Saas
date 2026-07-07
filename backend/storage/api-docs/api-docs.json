@@ -16810,8 +16810,9 @@
                                 "required": [
                                     "first_name",
                                     "last_name",
+                                    "phone_number",
                                     "role",
-                                    "email",
+                                    "employment_type",
                                     "branch_ids"
                                 ],
                                 "properties": {
@@ -16823,9 +16824,34 @@
                                         "type": "string",
                                         "example": "Doe"
                                     },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+1"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "234567890"
+                                    },
                                     "role": {
                                         "type": "string",
-                                        "example": "Coach"
+                                        "example": "receptionist",
+                                        "enum": [
+                                            "admin",
+                                            "receptionist",
+                                            "coach",
+                                            "cleaner",
+                                            "manager",
+                                            "staff"
+                                        ]
+                                    },
+                                    "employment_type": {
+                                        "type": "string",
+                                        "example": "fixed_salary",
+                                        "enum": [
+                                            "fixed_salary",
+                                            "commission_based",
+                                            "hybrid"
+                                        ]
                                     },
                                     "email": {
                                         "type": "string",
@@ -17171,8 +17197,16 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "phone_number",
+                                    "role",
+                                    "employment_type",
+                                    "branch_ids"
+                                ],
                                 "properties": {
                                     "first_name": {
                                         "type": "string",
@@ -17180,7 +17214,47 @@
                                     },
                                     "last_name": {
                                         "type": "string",
-                                        "example": "Smith"
+                                        "example": "Doe"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+1"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "234567890"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "example": "receptionist",
+                                        "enum": [
+                                            "admin",
+                                            "receptionist",
+                                            "coach",
+                                            "cleaner",
+                                            "manager",
+                                            "staff"
+                                        ]
+                                    },
+                                    "employment_type": {
+                                        "type": "string",
+                                        "example": "fixed_salary",
+                                        "enum": [
+                                            "fixed_salary",
+                                            "commission_based",
+                                            "hybrid"
+                                        ]
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "photo": {
+                                        "description": "صورة الموظف",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
                                     },
                                     "branch_ids": {
                                         "type": "array",
@@ -22676,21 +22750,8 @@
                         "example": 1
                     },
                     "name": {
-                        "properties": {
-                            "ar": {
-                                "type": "string",
-                                "example": "فرع دبي"
-                            },
-                            "en": {
-                                "type": "string",
-                                "example": "Dubai Branch"
-                            }
-                        },
-                        "type": "object",
-                        "example": {
-                            "ar": "فرع دبي",
-                            "en": "Dubai Branch"
-                        }
+                        "type": "string",
+                        "example": "فرع دبي"
                     },
                     "gender_restriction": {
                         "type": "string",
@@ -22783,21 +22844,8 @@
                         "example": 1
                     },
                     "name": {
-                        "properties": {
-                            "ar": {
-                                "type": "string",
-                                "example": "فرع دبي المحدث"
-                            },
-                            "en": {
-                                "type": "string",
-                                "example": "Updated Dubai Branch"
-                            }
-                        },
-                        "type": "object",
-                        "example": {
-                            "ar": "فرع دبي المحدث",
-                            "en": "Updated Dubai Branch"
-                        }
+                        "type": "string",
+                        "example": "فرع دبي المحدث"
                     },
                     "gender_restriction": {
                         "type": "string",
