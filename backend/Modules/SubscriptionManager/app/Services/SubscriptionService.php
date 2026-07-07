@@ -139,9 +139,8 @@ class SubscriptionService
             $requestedActivities = collect($options['activities'] ?? []);
 
             foreach ($plan->planActivities as $planActivity) {
-                // Find if the user provided a specific coach for this activity
-                $requestedActivity = $requestedActivities->firstWhere('activity_id', $planActivity->activity_id);
-                $coachId = $requestedActivity ? ($requestedActivity['coach_id'] ?? null) : null;
+                // The coach is now strictly inherited from the Plan's setup as per the new design.
+                $coachId = $planActivity->coach_id;
 
                 $subscription->items()->create([
                     'activity_id' => $planActivity->activity_id,

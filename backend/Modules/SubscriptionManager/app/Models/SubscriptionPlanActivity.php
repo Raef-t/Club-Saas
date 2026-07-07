@@ -11,6 +11,7 @@ class SubscriptionPlanActivity extends Model
     protected $fillable = [
         'plan_id',
         'activity_id',
+        'coach_id',
         'sessions_count',
         'is_unlimited',
     ];
@@ -23,5 +24,10 @@ class SubscriptionPlanActivity extends Model
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+    }
+
+    public function coach()
+    {
+        return $this->belongsTo(\Modules\StaffManager\Models\Staff::class, 'coach_id');
     }
 }

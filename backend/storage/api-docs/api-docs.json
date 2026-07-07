@@ -4734,6 +4734,132 @@
                 ]
             }
         },
+        "/api/v1/contacts": {
+            "get": {
+                "tags": [
+                    "Person Contacts"
+                ],
+                "summary": "Get all person contacts",
+                "operationId": "getPersonContacts",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Person Contacts"
+                ],
+                "summary": "Add a new contact",
+                "operationId": "storePersonContact",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePersonContactRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contact created successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/contacts/{contact}": {
+            "get": {
+                "tags": [
+                    "Person Contacts"
+                ],
+                "summary": "Get a specific person contact",
+                "operationId": "getPersonContact",
+                "parameters": [
+                    {
+                        "name": "contact",
+                        "in": "path",
+                        "description": "Contact ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Contact not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Person Contacts"
+                ],
+                "summary": "Update an existing person contact",
+                "operationId": "updatePersonContact",
+                "parameters": [
+                    {
+                        "name": "contact",
+                        "in": "path",
+                        "description": "Contact ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePersonContactRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contact updated successfully"
+                    },
+                    "404": {
+                        "description": "Contact not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Person Contacts"
+                ],
+                "summary": "Delete a person contact",
+                "operationId": "deletePersonContact",
+                "parameters": [
+                    {
+                        "name": "contact",
+                        "in": "path",
+                        "description": "Contact ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contact deleted successfully"
+                    },
+                    "404": {
+                        "description": "Contact not found"
+                    }
+                }
+            }
+        },
         "/v1/branches": {
             "get": {
                 "tags": [
@@ -8778,7 +8904,7 @@
                                             "example": "Player registered successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/MemberResource"
                                         }
                                     },
                                     "type": "object"
@@ -8852,74 +8978,7 @@
                                             "example": "Member retrieved successfully"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "total_subscriptions_amount": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 1500
-                                                },
-                                                "total_paid_amount": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 1000
-                                                },
-                                                "subscriptions": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "total_amount": {
-                                                                "type": "number",
-                                                                "format": "float",
-                                                                "example": 1500
-                                                            },
-                                                            "paid_amount": {
-                                                                "type": "number",
-                                                                "format": "float",
-                                                                "example": 1000
-                                                            },
-                                                            "is_fully_paid": {
-                                                                "type": "boolean",
-                                                                "example": false
-                                                            },
-                                                            "items": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "properties": {
-                                                                        "id": {
-                                                                            "type": "integer",
-                                                                            "example": 1
-                                                                        },
-                                                                        "activity": {
-                                                                            "properties": {
-                                                                                "id": {
-                                                                                    "type": "integer",
-                                                                                    "example": 1
-                                                                                },
-                                                                                "name": {
-                                                                                    "type": "string",
-                                                                                    "example": "سباحة"
-                                                                                }
-                                                                            },
-                                                                            "type": "object"
-                                                                        }
-                                                                    },
-                                                                    "type": "object"
-                                                                }
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/MemberResource"
                                         }
                                     },
                                     "type": "object"
@@ -9050,7 +9109,7 @@
                                             "example": "Player updated successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/MemberResource"
                                         }
                                     },
                                     "type": "object"
@@ -9146,49 +9205,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "total_subscriptions_amount": {
-                                                        "type": "number",
-                                                        "format": "float",
-                                                        "example": 1500
-                                                    },
-                                                    "total_paid_amount": {
-                                                        "type": "number",
-                                                        "format": "float",
-                                                        "example": 1000
-                                                    },
-                                                    "subscriptions": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 1
-                                                                },
-                                                                "total_amount": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 1500
-                                                                },
-                                                                "paid_amount": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 1000
-                                                                },
-                                                                "is_fully_paid": {
-                                                                    "type": "boolean",
-                                                                    "example": false
-                                                                }
-                                                            },
-                                                            "type": "object"
-                                                        }
-                                                    }
-                                                },
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/MemberResource"
                                             }
                                         }
                                     },
@@ -10946,7 +10963,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ActivityResource"
                                             }
                                         }
                                     },
@@ -11067,7 +11084,7 @@
                                             "example": "Activity created successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -11219,7 +11236,7 @@
                                             "example": "Activity retrieved successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -11335,7 +11352,7 @@
                                             "example": "Activity updated successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -11531,30 +11548,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "name": {
-                                                        "properties": {
-                                                            "ar": {
-                                                                "type": "string",
-                                                                "example": "صالة مفتوحة"
-                                                            },
-                                                            "en": {
-                                                                "type": "string",
-                                                                "example": "open_gym"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    },
-                                                    "is_active": {
-                                                        "type": "boolean",
-                                                        "example": true
-                                                    }
-                                                },
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ActivityTypeResource"
                                             }
                                         }
                                     },
@@ -11647,7 +11641,7 @@
                                             "example": "Activity type created successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityTypeResource"
                                         }
                                     },
                                     "type": "object"
@@ -11734,7 +11728,7 @@
                                             "example": "Activity type retrieved successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityTypeResource"
                                         }
                                     },
                                     "type": "object"
@@ -11849,7 +11843,7 @@
                                             "example": "Activity type updated successfully"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityTypeResource"
                                         }
                                     },
                                     "type": "object"
@@ -14346,18 +14340,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "username": {
-                                                        "type": "string",
-                                                        "example": "coach_123",
-                                                        "nullable": true
-                                                    }
-                                                },
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/CoachResource"
                                             }
                                         }
                                     },
@@ -14538,7 +14521,7 @@
                                 "schema": {
                                     "properties": {
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/CoachResource"
                                         },
                                         "message": {
                                             "type": "string",
@@ -14762,18 +14745,7 @@
                                 "schema": {
                                     "properties": {
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "username": {
-                                                    "type": "string",
-                                                    "example": "coach_123",
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/CoachResource"
                                         }
                                     },
                                     "type": "object"
@@ -15060,7 +15032,7 @@
                                 "schema": {
                                     "properties": {
                                         "data": {
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/CoachResource"
                                         },
                                         "message": {
                                             "type": "string",
@@ -15247,10 +15219,7 @@
                                 "schema": {
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
+                                            "$ref": "#/components/schemas/CoachResource"
                                         },
                                         "message": {
                                             "type": "string",
@@ -19163,10 +19132,6 @@
                                                 "activity_id": {
                                                     "type": "integer",
                                                     "example": 2
-                                                },
-                                                "coach_id": {
-                                                    "type": "integer",
-                                                    "example": 5
                                                 }
                                             },
                                             "type": "object"
@@ -20841,6 +20806,11 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "coach_id": {
+                                        "description": "(مطلوب) المدرب المشرف",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
                                     "sessions_count": {
                                         "type": "integer",
                                         "example": 12
@@ -21037,6 +21007,11 @@
                                     "activity_id": {
                                         "type": "integer",
                                         "example": 2
+                                    },
+                                    "coach_id": {
+                                        "description": "(مطلوب) المدرب المشرف",
+                                        "type": "integer",
+                                        "example": 5
                                     },
                                     "sessions_count": {
                                         "type": "integer",
@@ -22738,6 +22713,106 @@
                 },
                 "type": "object"
             },
+            "StorePersonContactRequest": {
+                "title": "Store Person Contact Request",
+                "required": [
+                    "person_id",
+                    "name",
+                    "country_code",
+                    "phone_number"
+                ],
+                "properties": {
+                    "person_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "example": "+966"
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "example": "500000000"
+                    },
+                    "relation": {
+                        "type": "string",
+                        "example": "Father",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "UpdatePersonContactRequest": {
+                "title": "Update Person Contact Request",
+                "properties": {
+                    "person_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "example": "+966"
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "example": "500000000"
+                    },
+                    "relation": {
+                        "type": "string",
+                        "example": "Father",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PersonContactResource": {
+                "title": "Person Contact Resource",
+                "description": "Person Contact resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "person_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "example": "+966"
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "example": "500000000"
+                    },
+                    "relation": {
+                        "type": "string",
+                        "example": "Father",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "StoreBranchRequest": {
                 "title": "StoreBranchRequest",
                 "required": [
@@ -22959,6 +23034,240 @@
                 },
                 "type": "object"
             },
+            "MemberResource": {
+                "title": "Member Resource",
+                "description": "Member resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "member_number": {
+                        "type": "string",
+                        "example": "MEM-2023-0001"
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "membership_status": {
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "join_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2023-01-01"
+                    },
+                    "person": {
+                        "type": "object"
+                    },
+                    "generated_username": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "generated_password": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "branch": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "health_profile": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "measurements": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "ActivityResource": {
+                "title": "Activity Resource",
+                "description": "Activity resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "properties": {
+                            "ar": {
+                                "type": "string",
+                                "example": "سباحة"
+                            },
+                            "en": {
+                                "type": "string",
+                                "example": "Swimming"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "activity_type": {
+                        "description": "Activity type details",
+                        "type": "object"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "is_private_equipment": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "gender_allowed": {
+                        "type": "string",
+                        "example": "mixed"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "ActivityTypeResource": {
+                "title": "Activity Type Resource",
+                "description": "Activity Type resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "properties": {
+                            "ar": {
+                                "type": "string",
+                                "example": "صالة مفتوحة"
+                            },
+                            "en": {
+                                "type": "string",
+                                "example": "open_gym"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "CoachResource": {
+                "title": "Coach Resource",
+                "description": "Coach resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "person_id": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "branch_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "coach"
+                    },
+                    "employment_type": {
+                        "type": "string",
+                        "example": "fixed_salary"
+                    },
+                    "base_salary": {
+                        "type": "number",
+                        "example": 5000
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2023-01-01"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "contract_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "shift_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "work_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "work_status": {
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "person": {
+                        "description": "Person details",
+                        "type": "object"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "coach_123",
+                        "nullable": true
+                    },
+                    "details": {
+                        "description": "Coach specific details",
+                        "type": "object"
+                    },
+                    "activities": {
+                        "description": "Assigned activities",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "ApiResponse": {
                 "properties": {
                     "status": {
@@ -23050,6 +23359,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Person Contacts",
+            "description": "Person Contacts"
         },
         {
             "name": "Branch Management",
