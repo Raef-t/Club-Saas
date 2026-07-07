@@ -181,6 +181,46 @@ class CoachService
         return DB::transaction(function () use ($id, $data) {
             $staff = Staff::where('role', 'coach')->findOrFail($id);
 
+            // Update Person Info
+            $person = $staff->person;
+            if ($person) {
+                $personFillable = ['gender', 'age', 'dob'];
+                $personData = array_intersect_key($data, array_flip($personFillable));
+                
+                if (isset($data['first_name']) || isset($data['last_name'])) {
+                    $firstName = $data['first_name'] ?? explode(' ', $person->full_name)[0];
+                    $lastName = $data['last_name'] ?? (explode(' ', $person->full_name)[1] ?? '');
+                    $personData['full_name'] = trim($firstName . ' ' . $lastName);
+                }
+
+                if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+                    $personData['photo_url'] = $data['photo']->store('people/photos', 'public');
+                }
+
+                if (!empty($personData)) {
+                    $person->update($personData);
+                }
+
+                // Update Person Contact
+                if (isset($data['phone_number'])) {
+                    $contact = $person->contacts()->where('name', 'Personal')->first();
+                    if ($contact) {
+                        $contact->update([
+                            'phone_number' => $data['phone_number'],
+                            'country_code' => $data['country_code'] ?? $contact->country_code,
+                        ]);
+                    } else {
+                        PersonContact::create([
+                            'person_id'    => $person->id,
+                            'name'         => 'Personal',
+                            'relation'     => 'self',
+                            'phone_number' => $data['phone_number'],
+                            'country_code' => $data['country_code'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
             // Update Basic Info
             $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));

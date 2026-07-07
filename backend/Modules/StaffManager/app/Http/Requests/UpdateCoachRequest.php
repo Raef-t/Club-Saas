@@ -25,6 +25,16 @@ class UpdateCoachRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Person Fields
+            'first_name'              => ['nullable', 'string', 'max:255'],
+            'last_name'               => ['nullable', 'string', 'max:255'],
+            'gender'                  => ['nullable', 'string', 'in:male,female'],
+            'age'                     => ['nullable', 'integer', 'min:18', 'max:100'],
+            'dob'                     => ['nullable', 'date'],
+            'phone_number'            => ['nullable', 'string', 'max:20'],
+            'country_code'            => ['nullable', 'string', 'max:5'],
+            'photo'                   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+
             // Basic Info
             'base_salary'             => ['nullable', 'numeric', 'min:0'],
             'employment_type'         => ['nullable', 'string', 'in:fixed_salary,commission_based,hybrid'],

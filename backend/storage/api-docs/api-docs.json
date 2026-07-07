@@ -9018,9 +9018,14 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
+                                    "_method": {
+                                        "description": "يجب إرسال هذه القيمة عند رفع ملفات عبر POST method spoofing",
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
                                     "first_name": {
                                         "type": "string",
                                         "example": "أحمد"
@@ -9045,6 +9050,11 @@
                                             "female"
                                         ]
                                     },
+                                    "age": {
+                                        "description": "(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات",
+                                        "type": "integer",
+                                        "example": 25
+                                    },
                                     "dob": {
                                         "type": "string",
                                         "format": "date",
@@ -9053,6 +9063,12 @@
                                     "address": {
                                         "type": "string",
                                         "example": "شارع الملك فهد، الرياض",
+                                        "nullable": true
+                                    },
+                                    "photo": {
+                                        "description": "صورة اللاعب",
+                                        "type": "string",
+                                        "format": "binary",
                                         "nullable": true
                                     },
                                     "branch_id": {
@@ -14993,14 +15009,57 @@
                     }
                 ],
                 "requestBody": {
-                    "required": true,
+                    "required": false,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
-                                    "base_salary": {
-                                        "type": "number",
-                                        "example": 6000
+                                    "_method": {
+                                        "description": "يجب إرسال هذه القيمة عند رفع ملفات عبر POST method spoofing",
+                                        "type": "string",
+                                        "example": "PATCH"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Ahmed"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Ali"
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "example": "male"
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "example": 30
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "500000000"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+966"
+                                    },
+                                    "photo": {
+                                        "description": "صورة المدرب",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "branch_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     },
                                     "employment_type": {
                                         "description": "نوع التوظيف",
@@ -15012,15 +15071,15 @@
                                             "hybrid"
                                         ]
                                     },
+                                    "base_salary": {
+                                        "type": "number",
+                                        "example": 6000
+                                    },
                                     "default_commission_rate": {
                                         "description": "نسبة العمولة الثابتة للمدرب (مئوية)",
                                         "type": "number",
                                         "format": "float",
                                         "example": 25
-                                    },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
                                     },
                                     "specialization": {
                                         "type": "string",
@@ -15029,6 +15088,10 @@
                                     "experience_years": {
                                         "type": "integer",
                                         "example": 7
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
                                     }
                                 },
                                 "type": "object"

@@ -19,6 +19,7 @@ class UpdatePlayerRequest extends FormRequest
             'mobile_country_code' => 'nullable|string|max:5',
             'mobile' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female',
+            'age' => 'nullable|integer|min:0',
             'dob' => 'nullable|date',
             'address' => 'nullable|string|max:500',
             'photo' => 'nullable|image|max:2048',

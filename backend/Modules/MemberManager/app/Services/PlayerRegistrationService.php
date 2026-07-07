@@ -133,6 +133,7 @@ class PlayerRegistrationService
                 $personData['full_name'] = trim($firstName . ' ' . $lastName);
             }
             if (isset($data['gender'])) $personData['gender'] = $data['gender'];
+            if (array_key_exists('age', $data)) $personData['age'] = $data['age'];
             if (array_key_exists('dob', $data)) $personData['dob'] = $data['dob'];
             if (array_key_exists('address', $data)) $personData['address'] = $data['address'];
             if (isset($data['photo_url'])) $personData['photo_url'] = $data['photo_url'];
