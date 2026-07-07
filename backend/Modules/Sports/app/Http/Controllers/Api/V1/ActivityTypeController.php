@@ -28,17 +28,7 @@ class ActivityTypeController extends BaseController
                 new OA\Property(
                     property: 'data', 
                     type: 'array', 
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'name', type: 'object', properties: [
-                                new OA\Property(property: 'ar', type: 'string', example: 'صالة مفتوحة'),
-                                new OA\Property(property: 'en', type: 'string', example: 'open_gym')
-                            ]),
-                            new OA\Property(property: 'is_active', type: 'boolean', example: true)
-                        ]
-                    )
+                    items: new OA\Items(ref: '#/components/schemas/ActivityTypeResource')
                 )
             ]
         )
@@ -85,7 +75,7 @@ class ActivityTypeController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity type created successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityTypeResource')
             ]
         )
     )]
@@ -116,7 +106,7 @@ class ActivityTypeController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity type retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityTypeResource')
             ]
         )
     )]
@@ -157,7 +147,7 @@ class ActivityTypeController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity type updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityTypeResource')
             ]
         )
     )]

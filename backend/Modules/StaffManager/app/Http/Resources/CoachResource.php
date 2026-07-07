@@ -3,7 +3,34 @@
 namespace Modules\StaffManager\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    schema: "CoachResource",
+    title: "Coach Resource",
+    description: "Coach resource representation",
+    properties: [
+        new OA\Property(property: "id", type: "integer", example: 1),
+        new OA\Property(property: "person_id", type: "integer", example: 10),
+        new OA\Property(property: "branch_ids", type: "array", items: new OA\Items(type: "integer", example: 1)),
+        new OA\Property(property: "role", type: "string", example: "coach"),
+        new OA\Property(property: "employment_type", type: "string", example: "fixed_salary"),
+        new OA\Property(property: "base_salary", type: "number", example: 5000),
+        new OA\Property(property: "is_active", type: "boolean", example: true),
+        new OA\Property(property: "start_date", type: "string", format: "date", example: "2023-01-01"),
+        new OA\Property(property: "end_date", type: "string", format: "date", nullable: true),
+        new OA\Property(property: "contract_type", type: "string", nullable: true),
+        new OA\Property(property: "shift_type", type: "string", nullable: true),
+        new OA\Property(property: "work_type", type: "string", nullable: true),
+        new OA\Property(property: "work_status", type: "string", example: "active"),
+        new OA\Property(property: "created_at", type: "string", format: "date-time"),
+        new OA\Property(property: "updated_at", type: "string", format: "date-time"),
+        new OA\Property(property: "person", type: "object", description: "Person details"),
+        new OA\Property(property: "username", type: "string", nullable: true, example: "coach_123"),
+        new OA\Property(property: "details", type: "object", description: "Coach specific details"),
+        new OA\Property(property: "activities", type: "array", items: new OA\Items(type: "object"), description: "Assigned activities"),
+    ]
+)]
 class CoachResource extends JsonResource
 {
     public function toArray($request)
@@ -11,7 +38,7 @@ class CoachResource extends JsonResource
         return [
             'id'              => $this->id,
             'person_id'       => $this->person_id,
-            'branch_ids'      => $this->whenLoaded('branches', fn() => $this->branches->pluck('id')),
+            'branch_ids'      => $this->branches->pluck('id'),
             'role'            => $this->role,
             'employment_type' => $this->employment_type,
             'base_salary'     => $this->base_salary,
@@ -26,10 +53,10 @@ class CoachResource extends JsonResource
             'updated_at'      => $this->updated_at,
             
             // Relations
-            'person'         => $this->whenLoaded('person'),
-            'username'       => $this->whenLoaded('user', fn() => $this->user ? $this->user->username : null),
-            'details'        => $this->whenLoaded('coachDetail'),
-            'activities'     => $this->whenLoaded('activities'),
+            'person'         => $this->person,
+            'username'       => $this->user ? $this->user->username : null,
+            'details'        => $this->coachDetail,
+            'activities'     => $this->activities,
         ];
     }
 }
