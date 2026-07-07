@@ -4734,7 +4734,7 @@
                 ]
             }
         },
-        "/api/v1/contacts": {
+        "/v1/contacts": {
             "get": {
                 "tags": [
                     "Person Contacts"
@@ -4770,7 +4770,7 @@
                 }
             }
         },
-        "/api/v1/contacts/{contact}": {
+        "/v1/contacts/{contact}": {
             "get": {
                 "tags": [
                     "Person Contacts"
