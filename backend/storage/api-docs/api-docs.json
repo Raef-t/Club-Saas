@@ -14499,6 +14499,12 @@
                                         "type": "number",
                                         "example": 5000
                                     },
+                                    "default_commission_rate": {
+                                        "description": "نسبة العمولة الثابتة للمدرب (مئوية)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20.5
+                                    },
                                     "specialization": {
                                         "type": "string",
                                         "example": "Bodybuilding"
@@ -15005,6 +15011,12 @@
                                             "commission_based",
                                             "hybrid"
                                         ]
+                                    },
+                                    "default_commission_rate": {
+                                        "description": "نسبة العمولة الثابتة للمدرب (مئوية)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25
                                     },
                                     "is_active": {
                                         "type": "boolean",
@@ -23256,6 +23268,14 @@
                     },
                     "details": {
                         "description": "Coach specific details",
+                        "properties": {
+                            "default_commission_rate": {
+                                "description": "نسبة العمولة الثابتة (مئوية)",
+                                "type": "number",
+                                "format": "float",
+                                "example": 15.5
+                            }
+                        },
                         "type": "object"
                     },
                     "activities": {
