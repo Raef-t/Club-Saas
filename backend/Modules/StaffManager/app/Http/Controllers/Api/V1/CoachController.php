@@ -50,6 +50,7 @@ class CoachController extends Controller
                         new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                         new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                         new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                        new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 20.5),
                         new OA\Property(property: 'specialization', type: 'string', example: 'Bodybuilding'),
                         new OA\Property(property: 'experience_years', type: 'integer', example: 5),
                     ]
@@ -336,6 +337,7 @@ class CoachController extends Controller
                 properties: [
                     new OA\Property(property: 'base_salary', type: 'number', example: 6000),
                     new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
+                    new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 25.0),
                     new OA\Property(property: 'is_active', type: 'boolean', example: true),
                     new OA\Property(property: 'specialization', type: 'string', example: 'CrossFit'),
                     new OA\Property(property: 'experience_years', type: 'integer', example: 7),

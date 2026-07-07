@@ -27,7 +27,9 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "updated_at", type: "string", format: "date-time"),
         new OA\Property(property: "person", type: "object", description: "Person details"),
         new OA\Property(property: "username", type: "string", nullable: true, example: "coach_123"),
-        new OA\Property(property: "details", type: "object", description: "Coach specific details"),
+        new OA\Property(property: "details", type: "object", description: "Coach specific details", properties: [
+            new OA\Property(property: "default_commission_rate", type: "number", format: "float", example: 15.5, description: "نسبة العمولة الثابتة (مئوية)")
+        ]),
         new OA\Property(property: "activities", type: "array", items: new OA\Items(type: "object"), description: "Assigned activities"),
     ]
 )]
