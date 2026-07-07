@@ -3,7 +3,27 @@
 namespace Modules\MemberManager\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    schema: "MemberResource",
+    title: "Member Resource",
+    description: "Member resource representation",
+    properties: [
+        new OA\Property(property: "id", type: "integer", example: 1),
+        new OA\Property(property: "member_number", type: "string", example: "MEM-2023-0001"),
+        new OA\Property(property: "branch_id", type: "integer", example: 1),
+        new OA\Property(property: "membership_status", type: "string", example: "active"),
+        new OA\Property(property: "join_date", type: "string", format: "date", example: "2023-01-01"),
+        new OA\Property(property: "person", type: "object"),
+        new OA\Property(property: "generated_username", type: "string", nullable: true),
+        new OA\Property(property: "generated_password", type: "string", nullable: true),
+        new OA\Property(property: "branch", type: "object", nullable: true),
+        new OA\Property(property: "health_profile", type: "object", nullable: true),
+        new OA\Property(property: "measurements", type: "array", items: new OA\Items(type: "object"), nullable: true),
+        new OA\Property(property: "created_at", type: "string", format: "date-time")
+    ]
+)]
 class MemberResource extends JsonResource
 {
     public function toArray($request): array
@@ -11,6 +31,7 @@ class MemberResource extends JsonResource
         return [
             'id' => $this->id,
             'member_number' => $this->member_number,
+            'branch_id' => $this->branch_id,
             'membership_status' => $this->membership_status,
             'join_date' => $this->join_date,
             'person' => $this->person ? [
@@ -41,12 +62,12 @@ class MemberResource extends JsonResource
             'branch' => $this->branch ? [
                 'id' => $this->branch->id,
                 'name' => $this->branch->name,
-                'gender_restriction' => $this->branch->genderRestriction->value,
+                'gender_restriction' => $this->branch->genderRestriction ? $this->branch->genderRestriction->value : null,
                 'is_active' => $this->branch->isActive,
             ] : null,
-            'health_profile' => $this->whenLoaded('healthProfile'),
-            'measurements' => $this->whenLoaded('measurements'),
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'health_profile' => $this->healthProfile,
+            'measurements' => $this->measurements,
+            'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
         ];
     }
 }

@@ -67,7 +67,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Player registered successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
             ]
         )
     )]
@@ -87,7 +87,7 @@ class PlayerRegistrationController extends BaseController
         $result = $this->registrationService->registerPlayer($request->validated());
 
         return $this->successResponse(
-            $result,
+            new \Modules\MemberManager\Http\Resources\MemberResource($result['member']),
             __('Player registered successfully'),
             201
         );
@@ -137,7 +137,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Player updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
             ]
         )
     )]
@@ -149,7 +149,7 @@ class PlayerRegistrationController extends BaseController
         $result = $this->registrationService->updatePlayer($id, $request->validated());
 
         return $this->successResponse(
-            $result,
+            new \Modules\MemberManager\Http\Resources\MemberResource($result),
             __('Player updated successfully'),
             200
         );
@@ -173,27 +173,7 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(
                     property: 'data',
                     type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
-                            new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
-                            new OA\Property(
-                                property: 'subscriptions',
-                                type: 'array',
-                                items: new OA\Items(
-                                    type: 'object',
-                                    properties: [
-                                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                                        new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
-                                        new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
-                                        new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false)
-                                    ]
-                                )
-                            )
-                        ]
-                    )
+                    items: new OA\Items(ref: '#/components/schemas/MemberResource')
                 )
             ]
         )
@@ -202,7 +182,7 @@ class PlayerRegistrationController extends BaseController
     {
         $filters = $request->all();
         $members = $this->memberService->getAllMembers($filters);
-        return $this->successResponse($members, __('Members retrieved successfully'));
+        return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Members retrieved successfully'));
     }
 
     #[OA\Get(
@@ -252,42 +232,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member retrieved successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
-                        new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
-                        new OA\Property(
-                            property: 'subscriptions',
-                            type: 'array',
-                            items: new OA\Items(
-                                type: 'object',
-                                properties: [
-                                    new OA\Property(property: 'id', type: 'integer', example: 1),
-                                    new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
-                                    new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
-                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false),
-                                    new OA\Property(
-                                        property: 'items',
-                                        type: 'array',
-                                        items: new OA\Items(
-                                            type: 'object',
-                                            properties: [
-                                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                                new OA\Property(property: 'activity', type: 'object', properties: [
-                                                    new OA\Property(property: 'id', type: 'integer', example: 1),
-                                                    new OA\Property(property: 'name', type: 'string', example: 'سباحة')
-                                                ])
-                                            ]
-                                        )
-                                    )
-                                ]
-                            )
-                        )
-                    ]
-                )
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
             ]
         )
     )]
@@ -298,7 +243,7 @@ class PlayerRegistrationController extends BaseController
         if (!$member) {
             return response()->json(['message' => __('Member not found')], 404);
         }
-        return $this->successResponse($member, __('Member retrieved successfully'));
+        return $this->successResponse(new \Modules\MemberManager\Http\Resources\MemberResource($member), __('Member retrieved successfully'));
     }
 
     #[OA\Delete(

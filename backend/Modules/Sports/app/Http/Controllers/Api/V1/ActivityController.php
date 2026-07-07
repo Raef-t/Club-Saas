@@ -28,7 +28,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activities retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ActivityResource'))
             ]
         )
     )]
@@ -146,7 +146,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity created successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -157,6 +157,7 @@ class ActivityController extends BaseController
         $data = $request->validated();
 
         $activity = Activity::create($data);
+        $activity->load('activityType');
         return $this->successResponse(new ActivityResource($activity), __('Activity created successfully'), 201);
     }
 
@@ -175,7 +176,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -218,7 +219,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -231,6 +232,7 @@ class ActivityController extends BaseController
 
         $activity = Activity::findOrFail($id);
         $activity->update($data);
+        $activity->load('activityType');
         return $this->successResponse(new ActivityResource($activity), __('Activity updated successfully'));
     }
 

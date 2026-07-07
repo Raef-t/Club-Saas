@@ -61,7 +61,7 @@ class CoachController extends Controller
                 response: 201, 
                 description: 'Coach created successfully',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
                     new OA\Property(property: 'message', type: 'string', example: 'Coach created successfully')
                 ])
             ),
@@ -150,13 +150,7 @@ class CoachController extends Controller
                     new OA\Property(
                         property: 'data', 
                         type: 'array', 
-                        items: new OA\Items(
-                            type: 'object',
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                new OA\Property(property: 'username', type: 'string', nullable: true, example: 'coach_123')
-                            ]
-                        )
+                        items: new OA\Items(ref: '#/components/schemas/CoachResource')
                     )
                 ])
             ),
@@ -269,14 +263,7 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'Coach details',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(
-                        property: 'data', 
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'coach_123')
-                        ]
-                    )
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource')
                 ])
             ),
             new OA\Response(
@@ -360,7 +347,7 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'Coach updated successfully',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
                     new OA\Property(property: 'message', type: 'string', example: 'Coach updated successfully')
                 ])
             ),
@@ -469,7 +456,7 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'Activities assigned successfully',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
                     new OA\Property(property: 'message', type: 'string', example: 'Activities assigned successfully')
                 ])
             ),
@@ -530,10 +517,11 @@ class CoachController extends Controller
     {
         try {
             $validated = $request->validated();
-            $coach = $this->coachService->assignActivities($id, $validated['activity_ids']);
+            $this->coachService->assignActivities($id, $validated['activity_ids']);
+            $coach = $this->coachService->getSingleCoach($id);
 
             return response()->json([
-                'data' => $coach->activities,
+                'data' => new CoachResource($coach),
                 'message' => 'Activities assigned successfully'
             ], 200);
         } catch (ModelNotFoundException $e) {
