@@ -91,8 +91,7 @@ class PlayerSubscriptionController extends BaseController
                     items: new OA\Items(
                         type: 'object',
                         properties: [
-                            new OA\Property(property: 'activity_id', type: 'integer', example: 2),
-                            new OA\Property(property: 'coach_id', type: 'integer', example: 5)
+                            new OA\Property(property: 'activity_id', type: 'integer', example: 2)
                         ]
                     )
                 ),
