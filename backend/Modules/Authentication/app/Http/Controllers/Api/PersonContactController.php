@@ -15,7 +15,7 @@ use OpenApi\Attributes as OA;
 class PersonContactController extends BaseController
 {
     #[OA\Get(
-        path: "/api/v1/contacts",
+        path: "/v1/contacts",
         operationId: "getPersonContacts",
         summary: "Get all person contacts",
         tags: ["Person Contacts"],
@@ -30,7 +30,7 @@ class PersonContactController extends BaseController
     }
 
     #[OA\Post(
-        path: "/api/v1/contacts",
+        path: "/v1/contacts",
         operationId: "storePersonContact",
         summary: "Add a new contact",
         tags: ["Person Contacts"],
@@ -49,7 +49,7 @@ class PersonContactController extends BaseController
     }
 
     #[OA\Get(
-        path: "/api/v1/contacts/{contact}",
+        path: "/v1/contacts/{contact}",
         operationId: "getPersonContact",
         summary: "Get a specific person contact",
         tags: ["Person Contacts"],
@@ -67,7 +67,7 @@ class PersonContactController extends BaseController
     }
 
     #[OA\Put(
-        path: "/api/v1/contacts/{contact}",
+        path: "/v1/contacts/{contact}",
         operationId: "updatePersonContact",
         summary: "Update an existing person contact",
         tags: ["Person Contacts"],
@@ -90,7 +90,7 @@ class PersonContactController extends BaseController
     }
 
     #[OA\Delete(
-        path: "/api/v1/contacts/{contact}",
+        path: "/v1/contacts/{contact}",
         operationId: "deletePersonContact",
         summary: "Delete a person contact",
         tags: ["Person Contacts"],
