@@ -125,7 +125,10 @@ class MemberService
 
             // Fetch Branch and Club Settings
             $branch = Branch::find($data['branch_id']);
-            $clubSettings = ClubSetting::where('club_id', $branch->club_id ?? 1)->first();
+            if (!$branch) {
+                throw new \Exception(__('Member branch not found.'));
+            }
+            $clubSettings = ClubSetting::where('club_id', $branch->club_id)->first();
             $enabledFeatures = $clubSettings ? ($clubSettings->enabled_features ?? []) : [];
             
             $autoGenerate = isset($enabledFeatures['auto_generate_credentials']) 

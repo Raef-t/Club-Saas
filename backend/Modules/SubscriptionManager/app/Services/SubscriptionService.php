@@ -122,9 +122,15 @@ class SubscriptionService
 
             if ($paidAmount < $totalAmount) {
                 $memberDTO = $this->memberSharedService->getMemberById($memberId);
-                $branchId = $memberDTO->branchId ?? 1;
+                $branchId = $memberDTO->branchId;
+                if (!$branchId) {
+                    throw new Exception(__('Member does not belong to any branch.'));
+                }
                 $branch = \Modules\ClubManager\Models\Branch::find($branchId);
-                $clubId = $branch ? $branch->club_id : 1;
+                if (!$branch) {
+                    throw new Exception(__('Branch not found.'));
+                }
+                $clubId = $branch->club_id;
 
                 $clubSetting = \Modules\ClubManager\Models\ClubSetting::where('club_id', $clubId)->first();
                 if ($clubSetting && !$clubSetting->allow_partial_payment) {
@@ -166,7 +172,10 @@ class SubscriptionService
 
             // 6. Create Invoice
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branchId ?? 1;
+            $branchId = $memberDTO->branchId;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
                 'member_id' => $memberId,
@@ -351,7 +360,10 @@ class SubscriptionService
             ]);
 
             $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
-            $branchId = $memberDTO->branchId ?? 1;
+            $branchId = $memberDTO->branchId;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
                 ['player_subscription_id' => $subscription->id],
