@@ -11,11 +11,6 @@ export default function AppShell({ children, sidebar }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  console.log("DEBUG AppShell - IconRail:", IconRail);
-  console.log("DEBUG AppShell - Navbar:", Navbar);
-  console.log("DEBUG AppShell - XIcon:", XIcon);
-  console.log("DEBUG AppShell - sidebar:", sidebar);
-
   // Close sidebar on page change
   useEffect(() => {
     setSidebarOpen(false);
