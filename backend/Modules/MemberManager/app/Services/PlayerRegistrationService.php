@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PlayerRegistrationService
 {
-    protected $subscriptionService;
+    protected SubscriptionService $subscriptionService;
 
     public function __construct(SubscriptionService $subscriptionService)
     {
@@ -24,7 +24,20 @@ class PlayerRegistrationService
     public function registerPlayer(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $branchId = $data['branch_id'] ?? 1;
+            $branchId = $data['branch_id'] ?? null;
+            if (!$branchId) {
+                /** @var \Modules\Authentication\Models\User|null $user */
+                $user = \Illuminate\Support\Facades\Auth::user();
+                if ($user && $user->person) {
+                    $staff = \Modules\StaffManager\Models\Staff::where('person_id', $user->person_id)->first();
+                    if ($staff && $staff->branches()->exists()) {
+                        $branchId = $staff->branches()->first()->id;
+                    }
+                }
+            }
+            if (!$branchId) {
+                throw new Exception(__('Branch is required. Please specify a branch.'));
+            }
             $branch = \Modules\ClubManager\Models\Branch::find($branchId);
             
             if ($branch && $branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $data['gender']) {
@@ -78,7 +91,7 @@ class PlayerRegistrationService
             // 5. Create Member
             $member = Member::create([
                 'person_id' => $person->id,
-                'branch_id' => $data['branch_id'] ?? 1, // Default to branch 1 if not provided
+                'branch_id' => $branchId,
                 'member_number' => $data['member_number'] ?? $this->generateMemberNumber(),
                 'membership_status' => 'active',
                 'join_date' => now(),
@@ -107,7 +120,7 @@ class PlayerRegistrationService
         });
     }
 
-    public function updatePlayer($memberId, array $data)
+    public function updatePlayer(int $memberId, array $data)
     {
         return DB::transaction(function () use ($memberId, $data) {
             $member = Member::findOrFail($memberId);
