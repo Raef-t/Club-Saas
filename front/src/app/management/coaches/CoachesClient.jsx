@@ -12,7 +12,8 @@ import Dropdown from "@/components/ui/Dropdown";
 import { PlusIcon, SearchIcon, FilterIcon, TrashIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useCoaches } from "./useCoaches";
-import { coachSchema } from "@/lib/validations/coachesSchema";
+import PhoneField from "@/components/forms/PhoneField";
+import DatePickerSmart from "@/components/forms/DatePickerSmart";
 
 const TABLE_GRID_COLUMNS = "minmax(160px,1.2fr) 120px 140px 120px 100px 100px";
 const CURRENCY_SYMBOL = "ل.س";
@@ -226,15 +227,13 @@ export function CoachCreateForm({
   onCancel,
   isLoading,
   errorMessage,
-  formId,
-  showFooterActions = true,
-  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState({
     full_name: "",
     gender: "male",
     dob: "",
     phone: "",
+    country_code: "+963",
     email: "",
     address: "",
     branch_id: branches[0]?.id ? String(branches[0].id) : "",
@@ -243,11 +242,9 @@ export function CoachCreateForm({
     employment_type: "fixed_salary",
     base_salary: "3000",
   });
-  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
-    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
@@ -257,6 +254,7 @@ export function CoachCreateForm({
       gender: form.gender,
       dob: form.dob || null,
       phone: form.phone.trim() || null,
+      country_code: form.country_code.trim() || "+963",
       email: form.email.trim() || null,
       address: form.address.trim() || null,
       branch_id: Number(form.branch_id),
@@ -268,7 +266,7 @@ export function CoachCreateForm({
   }
 
   return (
-    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         الاسم الكامل للمدرب
         <input
@@ -278,7 +276,6 @@ export function CoachCreateForm({
           placeholder="الاسم الثلاثي للمدرب"
           required
         />
-        {errors && errors.full_name && <span className="text-app-red text-xs mt-1 block">{errors.full_name}</span>}
       </label>
 
       <div className="grid grid-cols-2 gap-3">
@@ -293,33 +290,27 @@ export function CoachCreateForm({
               { value: "male", label: "ذكر" },
               { value: "female", label: "أنثى" },
             ]}
-           error={errors && errors.gender} />
+          />
         </label>
 
-        <label className="block text-right text-sm text-app-muted-light">
-          تاريخ الميلاد
-          <input
-            value={form.dob}
-            onChange={(event) => updateField("dob", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            type="date"
-          />
-        {errors && errors.dob && <span className="text-app-red text-xs mt-1 block">{errors.dob}</span>}
-        </label>
+        <DatePickerSmart
+          label="تاريخ الميلاد"
+          value={form.dob}
+          onChange={(val) => updateField("dob", val)}
+          compact={false}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="block text-right text-sm text-app-muted-light">
-          رقم الهاتف
-          <input
-            value={form.phone}
-            onChange={(event) => updateField("phone", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-left outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            placeholder="09xx xxx xxx"
-            dir="ltr"
-          />
-        {errors && errors.phone && <span className="text-app-red text-xs mt-1 block">{errors.phone}</span>}
-        </label>
+        <PhoneField
+          label="رقم الهاتف"
+          phoneValue={form.phone}
+          onPhoneChange={(val) => updateField("phone", val)}
+          codeValue={form.country_code}
+          onCodeChange={(val) => updateField("country_code", val)}
+          required={false}
+          className="text-right"
+        />
 
         <label className="block text-right text-sm text-app-muted-light">
           البريد الإلكتروني
@@ -331,7 +322,6 @@ export function CoachCreateForm({
             dir="ltr"
             type="email"
           />
-        {errors && errors.email && <span className="text-app-red text-xs mt-1 block">{errors.email}</span>}
         </label>
       </div>
 
@@ -344,7 +334,7 @@ export function CoachCreateForm({
           onChange={(val) => updateField("branch_id", val)}
           options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
           placeholder="اختر الفرع"
-         error={errors && errors.branch_id} />
+        />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -355,7 +345,6 @@ export function CoachCreateForm({
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
           placeholder="مثال: Yoga, CrossFit, Bodybuilding"
         />
-        {errors && errors.specialization && <span className="text-app-red text-xs mt-1 block">{errors.specialization}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -367,7 +356,6 @@ export function CoachCreateForm({
           type="number"
           min="0"
         />
-        {errors && errors.experience_years && <span className="text-app-red text-xs mt-1 block">{errors.experience_years}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -378,7 +366,7 @@ export function CoachCreateForm({
           value={form.employment_type}
           onChange={(val) => updateField("employment_type", val)}
           options={employmentTypes}
-         error={errors && errors.employment_type} />
+        />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -391,7 +379,6 @@ export function CoachCreateForm({
           min="0"
           required
         />
-        {errors && errors.base_salary && <span className="text-app-red text-xs mt-1 block">{errors.base_salary}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -402,7 +389,6 @@ export function CoachCreateForm({
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
           placeholder="المدينة، الحي"
         />
-        {errors && errors.address && <span className="text-app-red text-xs mt-1 block">{errors.address}</span>}
       </label>
 
       {errorMessage && (
@@ -411,7 +397,7 @@ export function CoachCreateForm({
         </p>
       )}
 
-      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
+      <div className="flex gap-3 pt-2">
         <Button
           type="button"
           tone="outline"
@@ -434,9 +420,6 @@ export function CoachEditForm({
   onCancel,
   isLoading,
   errorMessage,
-  formId,
-  showFooterActions = true,
-  formClassName = "space-y-4",
 }) {
   const [form, setForm] = useState({
     base_salary: String(initialValues.basic?.base_salary || 0),
@@ -445,11 +428,9 @@ export function CoachEditForm({
     specialization: initialValues.details?.specialization || "",
     experience_years: String(initialValues.details?.experience_years || 0),
   });
-  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
-    if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
@@ -468,7 +449,7 @@ export function CoachEditForm({
   }
 
   return (
-    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         التخصص التدريبي
         <input
@@ -477,7 +458,6 @@ export function CoachEditForm({
           className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
           placeholder="مثال: Yoga, CrossFit"
         />
-        {errors && errors.specialization && <span className="text-app-red text-xs mt-1 block">{errors.specialization}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -489,7 +469,6 @@ export function CoachEditForm({
           type="number"
           min="0"
         />
-        {errors && errors.experience_years && <span className="text-app-red text-xs mt-1 block">{errors.experience_years}</span>}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -500,7 +479,7 @@ export function CoachEditForm({
           value={form.employment_type}
           onChange={(val) => updateField("employment_type", val)}
           options={employmentTypes}
-         error={errors && errors.employment_type} />
+        />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -513,7 +492,6 @@ export function CoachEditForm({
           min="0"
           required
         />
-        {errors && errors.base_salary && <span className="text-app-red text-xs mt-1 block">{errors.base_salary}</span>}
       </label>
 
       <div className="flex items-center gap-3 pt-2">
@@ -524,7 +502,6 @@ export function CoachEditForm({
             onChange={(e) => updateField("is_active", e.target.checked)}
             className="peer sr-only"
           />
-        {errors && errors.is_active && <span className="text-app-red text-xs mt-1 block">{errors.is_active}</span>}
           <div className="peer h-6 w-11 rounded-full bg-app-line after:absolute after:top-[2px] after:right-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]"></div>
         </label>
         <span className="text-sm font-medium text-white">مدرب نشط في النظام</span>
@@ -536,7 +513,7 @@ export function CoachEditForm({
         </p>
       )}
 
-      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
+      <div className="flex gap-3 pt-2">
         <Button
           type="button"
           tone="outline"
@@ -669,7 +646,7 @@ export default function CoachesClient() {
         ),
       },
     ],
-    [isDeleting, handleDelete],
+    [isDeleting, handleDelete, setFormError, setSelectedCoachId, setDrawerMode],
   );
 
   const editInitialValues = useMemo(() => {
@@ -698,7 +675,8 @@ export default function CoachesClient() {
         action={
           <Button
             href="/management/coaches/create"
-            icon={<PlusIcon className="size-4" />}
+            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+            style={{ color: "#000000" }}
           >
             إضافة مدرب
           </Button>
@@ -782,23 +760,7 @@ export default function CoachesClient() {
         }
       />
 
-      <Drawer
-        open={drawerMode === "edit"}
-        onClose={closeDrawer}
-        title="تعديل بيانات المدرب"
-        subtitle={selectedCoach?.person?.full_name || ""}
-      >
-        {editInitialValues && (
-          <CoachEditForm
-            key={selectedCoachId || "edit"}
-            initialValues={editInitialValues}
-            onSubmit={handleUpdate}
-            onCancel={closeDrawer}
-            isLoading={isUpdating}
-            errorMessage={formError}
-          />
-        )}
-      </Drawer>
+
 
       <Drawer
         open={drawerMode === "details"}

@@ -312,7 +312,8 @@ export default function ClubsClient() {
         action={
           <Button
             href="/management/clubs/create"
-            icon={<PlusIcon className="size-4" />}
+            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+            style={{ color: "#000000" }}
           >
             إضافة نادٍ
           </Button>

@@ -36,5 +36,15 @@ export const activitySchema = z.object({
     required_error: "يرجى تحديد قيود الجنس" 
   }),
 
+  branch_id: z
+    .number({ invalid_type_error: "يرجى اختيار الفرع" })
+    .positive("يرجى اختيار الفرع")
+    .or(z.string().min(1, "يرجى اختيار الفرع").transform(Number)),
+
+  activity_type_id: z
+    .number({ invalid_type_error: "يرجى اختيار نوع الفئة" })
+    .positive("يرجى اختيار نوع الفئة")
+    .or(z.string().min(1, "يرجى اختيار نوع الفئة").transform(Number)),
+
   is_active: z.boolean().optional(),
 });

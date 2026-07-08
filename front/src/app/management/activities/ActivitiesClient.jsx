@@ -19,7 +19,8 @@ import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { genderLabels } from "@/lib/constants";
 import { activitySchema } from "@/lib/validations/activitiesSchema";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) minmax(200px,1.8fr) 110px 130px 90px 100px";
+const TABLE_GRID_COLUMNS =
+  "minmax(180px,1.2fr) minmax(200px,1.8fr) 110px 130px 90px 100px";
 
 const initialForm = {
   name_ar: "",
@@ -29,10 +30,11 @@ const initialForm = {
   default_capacity: "20",
   is_private_equipment: "0",
   gender_allowed: "mixed",
+  branch_id: "",
+  activity_type_id: "",
 };
 
-const activityName = formatLocalizedName;
-
+const activityName = (act) => formatLocalizedName(act?.name);
 
 function ActivityDetails({ activity, isLoading, error }) {
   if (isLoading) {
@@ -73,23 +75,36 @@ function ActivityDetails({ activity, isLoading, error }) {
       <section className="grid gap-3 sm:grid-cols-2">
         <DetailItem
           label="نوع النشاط"
-          value={activity.type === "group_class" ? "حصة جماعية" : "تدريب فردي / خاص"}
+          value={
+            activity.type === "group_class" ? "حصة جماعية" : "تدريب فردي / خاص"
+          }
         />
         <DetailItem
           label="الجمهور المسموح"
-          value={genderLabels[activity.gender_allowed] || activity.gender_allowed}
+          value={
+            genderLabels[activity.gender_allowed] || activity.gender_allowed
+          }
           tone="yellow"
         />
         <DetailItem
           label="السعة الافتراضية"
-          value={activity.default_capacity ? `${activity.default_capacity} شخص` : "-"}
+          value={
+            activity.default_capacity ? `${activity.default_capacity} شخص` : "-"
+          }
         />
         <DetailItem
           label="طبيعة الأجهزة"
-          value={activity.is_private_equipment ? "تدريب خاص / أجهزة خاصة" : "أجهزة عامة"}
+          value={
+            activity.is_private_equipment
+              ? "تدريب خاص / أجهزة خاصة"
+              : "أجهزة عامة"
+          }
           tone={activity.is_private_equipment ? "yellow" : "default"}
         />
-        <DetailItem label="تاريخ الإنشاء" value={formatDate(activity.created_at)} />
+        <DetailItem
+          label="تاريخ الإنشاء"
+          value={formatDate(activity.created_at)}
+        />
       </section>
 
       {activity.description && (
@@ -107,6 +122,8 @@ function ActivityDetails({ activity, isLoading, error }) {
 export function ActivityForm({
   mode,
   initialValues = initialForm,
+  branches = [],
+  activityTypes = [],
   onSubmit,
   onCancel,
   isLoading,
@@ -133,34 +150,41 @@ export function ActivityForm({
       default_capacity: Number(form.default_capacity) || 20,
       is_private_equipment: form.is_private_equipment,
       gender_allowed: form.gender_allowed,
+      branch_id: form.branch_id,
+      activity_type_id: form.activity_type_id,
     };
-    
+
     const result = activitySchema.safeParse(validationData);
     if (!result.success) {
       const formattedErrors = {};
-      result.error.issues.forEach(issue => {
-        formattedErrors[issue.path.join('_')] = issue.message;
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join("_")] = issue.message;
       });
       setErrors(formattedErrors);
       return;
     }
-    
+
     setErrors({});
     onSubmit({
-      name: {
-        ar: form.name_ar.trim(),
-        en: form.name_en.trim(),
-      },
+      name: form.name_ar.trim(),
       description: form.description.trim() || null,
       type: form.type,
       default_capacity: Number(form.default_capacity) || 20,
       is_private_equipment: form.is_private_equipment === "1",
       gender_allowed: form.gender_allowed,
+      branch_id: Number(form.branch_id),
+      activity_type_id: Number(form.activity_type_id),
     });
   }
 
   return (
-    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
+    <form
+      id={formId}
+      noValidate
+      onSubmit={handleSubmit}
+      className={formClassName}
+      dir="rtl"
+    >
       <Field
         label="اسم النشاط بالعربية"
         value={form.name_ar}
@@ -168,8 +192,8 @@ export function ActivityForm({
         placeholder="مثال: صالة حديد حرة"
         required
         type="text"
-       error={errors.name_ar}
-        />
+        error={errors.name_ar}
+      />
 
       <Field
         label="اسم النشاط بالإنجليزية"
@@ -179,16 +203,48 @@ export function ActivityForm({
         dir="ltr"
         required
         type="text"
-       error={errors.name_en}
+        error={errors.name_en}
+      />
+
+      <label className="block text-right text-sm text-app-muted-light">
+        الفرع التابع له
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="bg-app-card-soft h-11"
+          value={form.branch_id}
+          onChange={(val) => updateField("branch_id", val)}
+          options={branches.map((b) => {
+            const label = typeof b.name === "string" ? b.name : b.name?.ar || b.name?.en || "-";
+            return { value: String(b.id), label };
+          })}
+          placeholder="اختر الفرع"
+          error={errors.branch_id}
         />
+      </label>
+
+      <label className="block text-right text-sm text-app-muted-light">
+        نوع الفئة / التصنيف
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="bg-app-card-soft h-11"
+          value={form.activity_type_id}
+          onChange={(val) => updateField("activity_type_id", val)}
+          options={activityTypes.map((type) => {
+            const label = typeof type.name === "string" ? type.name : type.name?.ar || type.name?.en || "-";
+            return { value: String(type.id), label };
+          })}
+          placeholder="اختر نوع الفئة"
+          error={errors.activity_type_id}
+        />
+      </label>
 
       <TextAreaField
         label="الوصف"
         value={form.description}
         onChange={(event) => updateField("description", event.target.value)}
         placeholder="أدخل وصفاً مختصراً للنشاط والتمارين..."
-       error={errors.description}
-        />
+        error={errors.description}
+      />
 
       <label className="block text-right text-sm text-app-muted-light">
         نوع النشاط
@@ -202,8 +258,8 @@ export function ActivityForm({
             { value: "personal_training", label: "تدريب خاص / فردي" },
           ]}
           placeholder="اختر النوع"
-         error={errors.type}
-          />
+          error={errors.type}
+        />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -218,8 +274,8 @@ export function ActivityForm({
             { value: "1", label: "أجهزة خاصة / تدريب خاص" },
           ]}
           placeholder="نوع التجهيز"
-         error={errors.is_private_equipment}
-          />
+          error={errors.is_private_equipment}
+        />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -235,19 +291,21 @@ export function ActivityForm({
             { value: "female", label: "إناث فقط" },
           ]}
           placeholder="اختر الفئة المسموح بها"
-         error={errors.gender_allowed}
-          />
+          error={errors.gender_allowed}
+        />
       </label>
 
       <Field
         label="السعة الافتراضية للنشاط"
         value={form.default_capacity}
-        onChange={(event) => updateField("default_capacity", event.target.value)}
+        onChange={(event) =>
+          updateField("default_capacity", event.target.value)
+        }
         type="number"
         min="1"
         required
-       error={errors.default_capacity}
-        />
+        error={errors.default_capacity}
+      />
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -255,7 +313,9 @@ export function ActivityForm({
         </p>
       )}
 
-      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
+      <div
+        className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}
+      >
         <Button
           type="button"
           tone="outline"
@@ -303,6 +363,8 @@ export default function ActivitiesClient() {
     itemToDelete,
     getEditInitialValues,
     closeDrawer,
+    branches,
+    activityTypes,
   } = useActivities();
 
   const columns = useMemo(
@@ -386,7 +448,8 @@ export default function ActivitiesClient() {
         action={
           <Button
             href="/management/activities/create"
-            icon={<PlusIcon className="size-4" />}
+            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+            style={{ color: "#000000" }}
           >
             إضافة نشاط
           </Button>
@@ -459,6 +522,8 @@ export default function ActivitiesClient() {
             key={selectedActivityId || "edit"}
             mode="edit"
             initialValues={editInitialValues}
+            branches={branches}
+            activityTypes={activityTypes}
             onSubmit={handleUpdate}
             onCancel={closeDrawer}
             isLoading={isUpdating}
@@ -471,7 +536,13 @@ export default function ActivitiesClient() {
         open={drawerMode === "details"}
         onClose={closeDrawer}
         title="تفاصيل النشاط"
-        subtitle={detailsActivity ? activityName(detailsActivity) : (selectedActivity ? activityName(selectedActivity) : "")}
+        subtitle={
+          detailsActivity
+            ? activityName(detailsActivity)
+            : selectedActivity
+              ? activityName(selectedActivity)
+              : ""
+        }
       >
         <ActivityDetails
           activity={detailsActivity || selectedActivity}

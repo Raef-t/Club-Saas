@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { pageMeta } from "@/data/mockData";
 import Breadcrumb from "@/components/common/Breadcrumb";
-import { SearchIcon, CalendarIcon, ClockIcon } from "@/components/icons/Icons";
+import { SearchIcon, CalendarIcon, ClockIcon, MenuIcon } from "@/components/icons/Icons";
 import { Field } from "@/components/forms/Field";
 import { useGetProfileQuery } from "@/lib/api/authApi";
 import ProfileDrawer from "./ProfileDrawer";
@@ -18,11 +18,13 @@ function InfoChip({ icon: Icon, children }) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ onMenuClick }) {
   const pathname = usePathname();
   const meta =
     pageMeta[pathname] || (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
   const isReports = pathname.startsWith("/reports");
+
+  console.log("DEBUG Navbar - MenuIcon:", MenuIcon);
 
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
@@ -64,14 +66,24 @@ export default function Navbar() {
   return (
     <div>
       <header className="app-panel flex h-16 items-center justify-between gap-4 rounded-2xl px-4" dir="rtl">
-        <Field
-          type="search"
-          placeholder="البحث"
-          icon={SearchIcon}
-          variant="search"
-          className="w-full md:w-[373px]"
-          required={false}
-        />
+        <div className="flex flex-1 items-center gap-3 max-w-[373px] md:max-w-none">
+          <button
+            onClick={onMenuClick}
+            type="button"
+            className="grid size-10 shrink-0 place-items-center rounded-xl bg-app-card-soft text-app-text border border-app-line/20 hover:border-app-yellow/50 transition lg:hidden"
+            title="القائمة"
+          >
+            <MenuIcon className="size-6" />
+          </button>
+          <Field
+            type="search"
+            placeholder="البحث"
+            icon={SearchIcon}
+            variant="search"
+            className="w-full md:w-[373px]"
+            required={false}
+          />
+        </div>
 
         {/* Profile Avatar Button on the left */}
         <button

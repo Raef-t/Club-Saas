@@ -36,7 +36,7 @@ const systems = [
   },
 ];
 
-export default function IconRail() {
+export default function IconRail({ className, isMobile = false }) {
   const pathname = usePathname() || "";
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -64,8 +64,8 @@ export default function IconRail() {
   }
 
   return (
-    <aside className="app-panel sticky top-6 hidden h-[calc(100vh-3rem)] overflow-hidden rounded-2xl px-2 py-4 lg:flex lg:flex-col lg:items-center">
-      <div className="mt-10 flex flex-1 flex-col items-center justify-center gap-3">
+    <aside className={className || "app-panel sticky top-6 hidden h-[calc(100vh-3rem)] overflow-hidden rounded-2xl px-2 py-4 lg:flex lg:flex-col lg:items-center"}>
+      <div className={`${isMobile ? "mt-4" : "mt-10"} flex flex-1 flex-col items-center justify-center gap-3`}>
         {systems.map((sys) => {
           const Icon = sys.icon;
           const active = isActive(sys.href);

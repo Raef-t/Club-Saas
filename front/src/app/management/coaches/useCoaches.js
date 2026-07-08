@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useGetCoachesQuery,
   useGetCoachQuery,
@@ -41,6 +41,12 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
   const { data: branchesData } = useGetBranchesQuery();
   const { data: activitiesData } = useGetActivitiesQuery();
 
+  useEffect(() => {
+    if (error) {
+      console.error("Coaches list query error:", error);
+    }
+  }, [error]);
+
   const {
     data: detailsData,
     error: detailsError,
@@ -48,6 +54,12 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
   } = useGetCoachQuery(selectedCoachId, {
     skip: !selectedCoachId || drawerMode !== "details",
   });
+
+  useEffect(() => {
+    if (detailsError) {
+      console.error("Coach details query error:", detailsError);
+    }
+  }, [detailsError]);
 
   const [createCoach, { isLoading: isCreating }] = useCreateCoachMutation();
   const [updateCoachBasic, { isLoading: isUpdatingBasic }] =
@@ -146,12 +158,55 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
   async function handleCreate(values) {
     setFormError("");
     try {
-      // API expects parameters flat or localized
-      await createCoach(values).unwrap();
+      const nameParts = (values.full_name || "").trim().split(" ");
+      const first_name = nameParts[0] || "";
+      const last_name = nameParts.slice(1).join(" ") || ".";
+
+      let age = 25;
+      if (values.dob) {
+        const birthDate = new Date(values.dob);
+        const today = new Date();
+        let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          calculatedAge--;
+        }
+        if (!isNaN(calculatedAge) && calculatedAge >= 18 && calculatedAge <= 100) {
+          age = calculatedAge;
+        }
+      }
+
+      let employment_type = values.employment_type || "fixed_salary";
+      if (employment_type === "commission") {
+        employment_type = "commission_based";
+      }
+
+      const payload = {
+        first_name,
+        last_name,
+        gender: values.gender || "male",
+        age,
+        dob: values.dob || null,
+        phone_number: values.phone || null,
+        country_code: values.country_code || "+963",
+        email: values.email || null,
+        address: values.address || null,
+        branch_ids: values.branch_id ? [Number(values.branch_id)] : [],
+        specialization: values.specialization || null,
+        experience_years: Number(values.experience_years) || 0,
+        employment_type,
+        base_salary: Number(values.base_salary) || 0,
+      };
+
+      await createCoach(payload).unwrap();
       toast.success("تم إضافة المدرب بنجاح!");
       closeDrawer();
       return true;
     } catch (submitError) {
+      console.error("Create coach validation/API error:", submitError);
+      if (submitError?.data?.errors) {
+        console.error("Detailed validation errors:", submitError.data.errors);
+      }
       setFormError(
         submitError?.data?.message ||
           "تعذر إضافة المدرب. تحقق من البيانات وحاول مرة أخرى.",
@@ -164,22 +219,33 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
     if (!selectedCoachId) return false;
     setFormError("");
     try {
-      // 1. Update basic parameters
+      let employment_type = basicValues.employment_type || "fixed_salary";
+      if (employment_type === "commission") {
+        employment_type = "commission_based";
+      }
+
+      const mergedBody = {
+        base_salary: Number(basicValues.base_salary) || 0,
+        employment_type,
+        is_active: basicValues.is_active,
+        specialization: detailsValues.specialization || null,
+        experience_years: Number(detailsValues.experience_years) || 0,
+      };
+
+      // The backend updates both basic info and details via the single PUT/PATCH endpoint
       await updateCoachBasic({
         id: selectedCoachId,
-        body: basicValues,
-      }).unwrap();
-
-      // 2. Update specialization and experience details
-      await updateCoachDetails({
-        id: selectedCoachId,
-        body: detailsValues,
+        body: mergedBody,
       }).unwrap();
 
       toast.success("تم تعديل بيانات المدرب بنجاح!");
       closeDrawer();
       return true;
     } catch (submitError) {
+      console.error("Update coach validation/API error:", submitError);
+      if (submitError?.data?.errors) {
+        console.error("Detailed validation errors:", submitError.data.errors);
+      }
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل بيانات المدرب. تحقق من البيانات وحاول مرة أخرى.",

@@ -13,6 +13,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import DetailItem from "@/components/ui/DetailItem";
 import SearchInput from "@/components/ui/SearchInput";
 import { Field } from "@/components/forms/FormControls";
+import { CheckboxField } from "@/components/forms/CheckboxField";
 import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { formatLocalizedName } from "@/lib/utils";
@@ -40,7 +41,7 @@ function formatMoney(value) {
   return baseFormat(value, "$");
 }
 
-const planName = formatLocalizedName;
+const planName = (plan) => formatLocalizedName(plan?.name);
 
 function planTypeLabel(type) {
   const labels = {
@@ -144,20 +145,20 @@ export function PlanForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const data = {
+    const rawData = {
       branch_id: form.branch_id,
-      name: form.name.trim(),
+      name: form.name?.trim(),
       type: form.type,
-      duration_in_days: Number(form.duration_in_days),
-      session_count: form.type === "session_based" && form.session_count ? Number(form.session_count) : null,
-      price: Number(form.price),
-      max_freeze_count: Number(form.max_freeze_count),
-      max_freeze_days: Number(form.max_freeze_days),
-      max_subscribers: Number(form.max_subscribers),
+      duration_in_days: form.duration_in_days,
+      session_count: form.type === "session_based" ? form.session_count : null,
+      price: form.price,
+      max_freeze_count: form.max_freeze_count,
+      max_freeze_days: form.max_freeze_days,
+      max_subscribers: form.max_subscribers,
       is_active: !!form.is_active,
     };
 
-    const result = subscriptionPlanSchema.safeParse(data);
+    const result = subscriptionPlanSchema.safeParse(rawData);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
@@ -168,7 +169,7 @@ export function PlanForm({
     }
 
     setErrors({});
-    onSubmit(data);
+    onSubmit(result.data);
   }
 
   return (
@@ -286,15 +287,11 @@ export function PlanForm({
         error={errors.max_subscribers}
       />
 
-      <label className="flex items-center gap-2 text-sm text-app-muted-light cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={form.is_active}
-          onChange={(e) => updateField("is_active", e.target.checked)}
-          className="size-4 rounded border-app-line bg-app-card-soft text-app-yellow focus:ring-0 cursor-pointer"
-        />
-        <span>الخطة فعالة ونشطة حالياً</span>
-      </label>
+      <CheckboxField
+        label="الخطة فعالة ونشطة حالياً"
+        checked={form.is_active}
+        onChange={(e) => updateField("is_active", e.target.checked)}
+      />
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -444,7 +441,8 @@ export default function SubscriptionPlansClient() {
         action={
           <Button
             href="/management/subscription-plans/create"
-            icon={<PlusIcon className="size-4" />}
+            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+            style={{ color: "#000000" }}
           >
             إنشاء خطة
           </Button>

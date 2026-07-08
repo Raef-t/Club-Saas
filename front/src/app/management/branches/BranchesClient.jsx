@@ -42,7 +42,7 @@ const genderOptions = [
   { value: "female", label: "إناث" },
 ];
 
-const branchName = formatLocalizedName;
+const branchName = (branch) => formatLocalizedName(branch?.name);
 
 
 function BranchDetails({ branch, isLoading, error }) {
@@ -380,7 +380,8 @@ export default function BranchesClient() {
         action={
           <Button
             href="/management/branches/create"
-            icon={<PlusIcon className="size-4" />}
+            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+            style={{ color: "#000000" }}
           >
             إضافة فرع
           </Button>

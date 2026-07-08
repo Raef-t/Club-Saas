@@ -79,7 +79,10 @@ export function useSubscriptions() {
   const branches = useMemo(() => branchesData?.data || [], [branchesData]);
   const members = useMemo(() => membersData?.data || [], [membersData]);
   const plans = useMemo(() => plansData?.data || [], [plansData]);
-  const activities = useMemo(() => activitiesData?.data || [], [activitiesData]);
+  const activities = useMemo(
+    () => activitiesData?.data || [],
+    [activitiesData],
+  );
   const coaches = useMemo(() => coachesData?.data || [], [coachesData]);
 
   const selectedSubscription = useMemo(
@@ -213,7 +216,11 @@ export function useSubscriptions() {
   }
 
   async function handleCancel(id) {
-    if (!window.confirm("هل أنت متأكد من رغبتك في إلغاء هذا الاشتراك؟ لا يمكن التراجع عن هذا الإجراء.")) {
+    if (
+      !window.confirm(
+        "هل أنت متأكد من رغبتك في إلغاء هذا الاشتراك؟ لا يمكن التراجع عن هذا الإجراء.",
+      )
+    ) {
       return;
     }
     try {

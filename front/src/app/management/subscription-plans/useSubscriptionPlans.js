@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useCreateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
@@ -6,6 +6,7 @@ import {
   useGetSubscriptionPlansQuery,
   useUpdateSubscriptionPlanMutation,
 } from "@/lib/api/subscriptionPlansApi";
+import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useToast } from "@/components/ui/Toast";
 
 import {
@@ -30,7 +31,7 @@ function getPlanDetails(response) {
   return response?.data || null;
 }
 
-const planName = formatLocalizedName;
+const planName = (plan) => formatLocalizedName(plan?.name);
 
 export function useSubscriptionPlans({
   selectedPlanId: initialSelectedPlanId = null,
@@ -50,6 +51,21 @@ export function useSubscriptionPlans({
   } = useGetSubscriptionPlanQuery(selectedPlanId, {
     skip: !selectedPlanId || drawerMode !== "details",
   });
+
+  const { data: branchesData, error: branchesError } = useGetBranchesQuery();
+  const branches = useMemo(() => branchesData?.data || [], [branchesData]);
+
+  useEffect(() => {
+    if (error) {
+      console.error("[useSubscriptionPlans] Error fetching subscription plans:", error);
+    }
+    if (detailsError) {
+      console.error("[useSubscriptionPlans] Error fetching subscription plan details:", detailsError);
+    }
+    if (branchesError) {
+      console.error("[useSubscriptionPlans] Error fetching branches:", branchesError);
+    }
+  }, [error, detailsError, branchesError]);
 
   const [createPlan, { isLoading: isCreating }] =
     useCreateSubscriptionPlanMutation();
@@ -126,8 +142,16 @@ export function useSubscriptionPlans({
   async function handleCreate(values) {
     setFormError("");
 
+    const apiPayload = {
+      ...values,
+      duration_days: values.duration_in_days,
+      base_price: values.price,
+    };
+    delete apiPayload.duration_in_days;
+    delete apiPayload.price;
+
     try {
-      await createPlan(values).unwrap();
+      await createPlan(apiPayload).unwrap();
       toast.success("تم إنشاء خطة الاشتراك بنجاح!");
       closeDrawer();
       return true;
@@ -144,8 +168,16 @@ export function useSubscriptionPlans({
     if (!selectedPlanId) return false;
     setFormError("");
 
+    const apiPayload = {
+      ...values,
+      duration_days: values.duration_in_days,
+      base_price: values.price,
+    };
+    delete apiPayload.duration_in_days;
+    delete apiPayload.price;
+
     try {
-      await updatePlan({ id: selectedPlanId, body: values }).unwrap();
+      await updatePlan({ id: selectedPlanId, body: apiPayload }).unwrap();
       toast.success("تم تعديل خطة الاشتراك بنجاح!");
       closeDrawer();
       return true;
@@ -187,9 +219,16 @@ export function useSubscriptionPlans({
     if (!selectedPlan) return null;
 
     return {
+      branch_id: selectedPlan.branch_id ? String(selectedPlan.branch_id) : "",
       name: planName(selectedPlan) === "-" ? "" : planName(selectedPlan),
-      duration_in_days: String(selectedPlan?.duration_days || 30),
+      type: selectedPlan.type || "fixed_period",
+      duration_in_days: String(selectedPlan?.duration_days ?? ""),
+      session_count: selectedPlan.session_count ? String(selectedPlan.session_count) : "",
       price: String(parseAmount(selectedPlan?.base_price || "")),
+      max_freeze_count: String(selectedPlan?.max_freeze_count ?? "0"),
+      max_freeze_days: String(selectedPlan?.max_freeze_days ?? "0"),
+      max_subscribers: String(selectedPlan?.max_subscribers ?? "0"),
+      is_active: selectedPlan?.is_active ?? true,
     };
   }
 
@@ -224,5 +263,6 @@ export function useSubscriptionPlans({
     itemToDelete,
     closeDeleteConfirm,
     confirmDelete,
+    branches,
   };
 }
