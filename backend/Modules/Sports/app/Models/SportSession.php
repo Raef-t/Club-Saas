@@ -22,6 +22,7 @@ class SportSession extends Model
         'gender_allowed',
         'status',
         'booked_count',
+        'template_id',
     ];
 
     protected $casts = [

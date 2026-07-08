@@ -54,9 +54,9 @@ class ScheduleGeneratorService
                                 'start_time' => $sessionStartTime,
                                 'end_time' => $sessionEndTime,
                                 'max_players' => $template->max_players,
+                                'gender_allowed' => $template->gender_allowed,
                                 'status' => 'scheduled',
                                 'template_id' => $template->id,
-                                // Assuming gender_allowed exists on sports_sessions, if not we ignore it or add it later
                             ]);
                             $generatedCount++;
                         }
