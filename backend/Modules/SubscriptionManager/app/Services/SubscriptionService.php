@@ -93,7 +93,21 @@ class SubscriptionService
         $plan = $this->planRepository->find($planId);
         $plan->load('planActivities');
 
+        if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+            throw new Exception(__('This subscription plan has reached its maximum capacity.'));
+        }
+
         return DB::transaction(function () use ($memberId, $plan, $options) {
+            if ($plan->max_subscribers > 0) {
+                $plan->increment('current_subscribers');
+                
+                // Automatically deactivate the plan if it's now full
+                if ($plan->current_subscribers >= $plan->max_subscribers) {
+                    $plan->update(['is_active' => false]);
+                }
+            }
+
+
             // 2. Dates Calculation
             $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
             $endDate = null;
