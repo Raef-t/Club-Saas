@@ -257,3 +257,12 @@ export function EyeOffIcon({ className = "size-5" }) {
     </svg>
   );
 }
+
+export function MenuIcon({ className = "size-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+

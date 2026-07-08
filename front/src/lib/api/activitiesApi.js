@@ -21,6 +21,9 @@ export const activitiesApi = createApi({
       query: () => "activities",
       providesTags: ["Activities"],
     }),
+    getActivityTypes: builder.query({
+      query: () => "activity-types",
+    }),
     getActivity: builder.query({
       query: (id) => `activities/${id}`,
       providesTags: (result, error, id) => [{ type: "Activities", id }],
@@ -60,4 +63,5 @@ export const {
   useCreateActivityMutation,
   useUpdateActivityMutation,
   useDeleteActivityMutation,
+  useGetActivityTypesQuery,
 } = activitiesApi;

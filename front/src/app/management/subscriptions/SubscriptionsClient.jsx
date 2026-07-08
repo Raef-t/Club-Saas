@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -279,15 +280,12 @@ function SubscriptionDetails({
                   تجميد الاشتراك الحالي
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="block text-xs text-app-muted-light">
-                    تاريخ البدء
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="app-input mt-1.5 h-9 w-full px-2 text-right bg-black/35 text-white"
-                    />
-                  </label>
+                  <DatePickerSmart
+                    label="تاريخ البدء"
+                    value={startDate}
+                    onChange={setStartDate}
+                    compact={true}
+                  />
                   <label className="block text-xs text-app-muted-light">
                     عدد الأيام
                     <input
@@ -518,15 +516,12 @@ export function SubscriptionCreateForm({
         )}
       </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        تاريخ بداية الاشتراك
-        <input
-          type="date"
-          value={form.start_date}
-          onChange={(event) => updateField("start_date", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-        />
-      </label>
+      <DatePickerSmart
+        label="تاريخ بداية الاشتراك"
+        value={form.start_date}
+        onChange={(val) => updateField("start_date", val)}
+        compact={false}
+      />
 
       {/* Dynamic Activities Selection */}
       <div className="border-t border-app-line pt-4 mt-2 text-right">
@@ -812,7 +807,16 @@ export default function SubscriptionsClient() {
         loadingRows={5}
         emptyMessage={
           error ? (
-            <ErrorState message={errorMessage} onRetry={refetch} />
+            <div className="space-y-3 text-center">
+              <p className="text-app-red">{errorMessage || "تعذر تحميل الاشتراكات."}</p>
+              <Button
+                tone="outline"
+                className="h-9 px-3 text-xs"
+                onClick={refetch}
+              >
+                إعادة المحاولة
+              </Button>
+            </div>
           ) : (
             "لا توجد اشتراكات مطابقة للبحث الحالي."
           )

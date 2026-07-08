@@ -53,12 +53,12 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function AccountingSidebar() {
+export default function AccountingSidebar({ className }) {
   const pathname = usePathname();
 
   return (
     <aside
-      className="app-panel sticky top-6 hidden h-[calc(100vh-3rem)] overflow-y-auto overflow-x-hidden sidebar-scrollbar rounded-2xl px-1 pt-4 pb-6 lg:block"
+      className={className !== undefined ? className : "app-panel sticky top-6 hidden h-[calc(100vh-3rem)] overflow-y-auto overflow-x-hidden sidebar-scrollbar rounded-2xl px-1 pt-4 pb-6 lg:block"}
       dir="ltr"
     >
       <div className="mx-auto grid h-[59px] w-[159px] place-items-center">

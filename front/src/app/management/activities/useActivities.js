@@ -5,8 +5,9 @@ import {
   useCreateActivityMutation,
   useUpdateActivityMutation,
   useDeleteActivityMutation,
+  useGetActivityTypesQuery,
 } from "@/lib/api/activitiesApi";
-import { useToast } from "@/components/ui/Toast";
+import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 
 function getActivitiesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -18,16 +19,25 @@ function activityName(act) {
   return act.name.ar || act.name.en || "-";
 }
 
-export function useActivities({ selectedActivityId: initialSelectedActivityId = null } = {}) {
-  const toast = useToast();
+export function useActivities() {
   const [search, setSearch] = useState("");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedActivityId, setSelectedActivityId] = useState(initialSelectedActivityId);
+  const [selectedActivityId, setSelectedActivityId] = useState(null);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const { data, error, isLoading, refetch } = useGetActivitiesQuery();
+  const { data: branchesData } = useGetBranchesQuery();
+  const { data: activityTypesData } = useGetActivityTypesQuery();
+
+  const branches = useMemo(() => {
+    return Array.isArray(branchesData?.data) ? branchesData.data : [];
+  }, [branchesData]);
+
+  const activityTypes = useMemo(() => {
+    return Array.isArray(activityTypesData?.data) ? activityTypesData.data : [];
+  }, [activityTypesData]);
 
   const {
     data: detailsData,
@@ -122,10 +132,13 @@ export function useActivities({ selectedActivityId: initialSelectedActivityId = 
     setFormError("");
     try {
       await createActivity(values).unwrap();
-      toast.success("تم إنشاء النشاط بنجاح!");
       closeDrawer();
       return true;
     } catch (submitError) {
+      console.error("Create activity validation/API error:", submitError);
+      if (submitError?.data?.errors) {
+        console.error("Detailed validation errors:", submitError.data.errors);
+      }
       setFormError(
         submitError?.data?.message ||
           "تعذر إنشاء النشاط. تحقق من البيانات وحاول مرة أخرى.",
@@ -139,10 +152,13 @@ export function useActivities({ selectedActivityId: initialSelectedActivityId = 
     setFormError("");
     try {
       await updateActivity({ id: selectedActivityId, body: values }).unwrap();
-      toast.success("تم تعديل النشاط بنجاح!");
       closeDrawer();
       return true;
     } catch (submitError) {
+      console.error("Update activity validation/API error:", submitError);
+      if (submitError?.data?.errors) {
+        console.error("Detailed validation errors:", submitError.data.errors);
+      }
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل النشاط. تحقق من البيانات وحاول مرة أخرى.",
@@ -165,9 +181,8 @@ export function useActivities({ selectedActivityId: initialSelectedActivityId = 
     if (!itemToDelete) return;
     try {
       await deleteActivity(itemToDelete.id).unwrap();
-      toast.success("تم حذف النشاط بنجاح!");
     } catch {
-      toast.error("تعذر حذف النشاط. حاول مرة أخرى.");
+      window.alert("تعذر حذف النشاط. حاول مرة أخرى.");
     } finally {
       closeDeleteConfirm();
     }
@@ -191,6 +206,8 @@ export function useActivities({ selectedActivityId: initialSelectedActivityId = 
       default_capacity: String(selectedActivity.default_capacity || 20),
       is_private_equipment: selectedActivity.is_private_equipment ? "1" : "0",
       gender_allowed: selectedActivity.gender_allowed || "mixed",
+      branch_id: selectedActivity.branch_id ? String(selectedActivity.branch_id) : "",
+      activity_type_id: selectedActivity.activity_type_id ? String(selectedActivity.activity_type_id) : "",
     };
   }
 
@@ -224,5 +241,7 @@ export function useActivities({ selectedActivityId: initialSelectedActivityId = 
     itemToDelete,
     getEditInitialValues,
     closeDrawer,
+    branches,
+    activityTypes,
   };
 }

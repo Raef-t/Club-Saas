@@ -21,6 +21,8 @@ export default function ActivitiesCreateClient() {
     handleCreate,
     handleUpdate,
     getEditInitialValues,
+    branches,
+    activityTypes,
   } = useActivities({ selectedActivityId: isEdit ? Number(editId) : null });
 
   async function submit(values) {
@@ -51,6 +53,8 @@ export default function ActivitiesCreateClient() {
             formId={FORM_ID}
             mode={isEdit ? "edit" : "create"}
             initialValues={editInitialValues || undefined}
+            branches={branches}
+            activityTypes={activityTypes}
             onSubmit={submit}
             onCancel={() => router.push("/management/activities")}
             isLoading={isEdit ? isUpdating : isCreating}
