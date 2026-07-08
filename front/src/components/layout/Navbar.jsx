@@ -24,8 +24,6 @@ export default function Navbar({ onMenuClick }) {
     pageMeta[pathname] || (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
   const isReports = pathname.startsWith("/reports");
 
-  console.log("DEBUG Navbar - MenuIcon:", MenuIcon);
-
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);

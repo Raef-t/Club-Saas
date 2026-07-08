@@ -134,10 +134,18 @@ export function useBranches({ selectedBranchId: initialSelectedBranchId = null }
       closeDrawer();
       return true;
     } catch (submitError) {
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر إنشاء الفرع. تحقق من البيانات وحاول مرة أخرى.",
-      );
+      console.error("DEBUG handleCreate Error:", submitError);
+      let errorMsg = "تعذر إنشاء الفرع. تحقق من البيانات وحاول مرة أخرى.";
+      if (submitError?.data?.errors) {
+        const errors = submitError.data.errors;
+        const messages = Object.keys(errors).map(key => {
+          return `${key}: ${errors[key].join(", ")}`;
+        });
+        errorMsg = messages.join(" | ");
+      } else if (submitError?.data?.message) {
+        errorMsg = submitError.data.message;
+      }
+      setFormError(errorMsg);
       return false;
     }
   }
@@ -151,10 +159,18 @@ export function useBranches({ selectedBranchId: initialSelectedBranchId = null }
       closeDrawer();
       return true;
     } catch (submitError) {
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر تعديل الفرع. تحقق من البيانات وحاول مرة أخرى.",
-      );
+      console.error("DEBUG handleUpdate Error:", submitError);
+      let errorMsg = "تعذر تعديل الفرع. تحقق من البيانات وحاول مرة أخرى.";
+      if (submitError?.data?.errors) {
+        const errors = submitError.data.errors;
+        const messages = Object.keys(errors).map(key => {
+          return `${key}: ${errors[key].join(", ")}`;
+        });
+        errorMsg = messages.join(" | ");
+      } else if (submitError?.data?.message) {
+        errorMsg = submitError.data.message;
+      }
+      setFormError(errorMsg);
       return false;
     }
   }
@@ -193,7 +209,6 @@ export function useBranches({ selectedBranchId: initialSelectedBranchId = null }
   function getEditInitialValues() {
     if (!selectedBranch) return null;
 
-    // Handle name mapping (localized object name to form fields or fallback)
     const nameAr =
       typeof selectedBranch.name === "object"
         ? selectedBranch.name?.ar

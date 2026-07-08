@@ -149,10 +149,7 @@ export function BranchForm({
     setErrors({});
     onSubmit({
       club_id: validationData.club_id,
-      name: {
-        ar: validationData.name_ar,
-        en: validationData.name_en,
-      },
+      name: validationData.name_ar,
       gender_restriction: validationData.gender_restriction,
       type: validationData.type,
       address: validationData.address || null,
