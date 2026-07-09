@@ -56,7 +56,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()->with('planActivities');
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()->with(['planActivities', 'sessionTemplates']);
         
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
@@ -97,7 +97,7 @@ class SubscriptionPlanController extends BaseController
         // Get active plans that have available capacity, and eager load their activities
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
             ->available()
-            ->with('planActivities');
+            ->with(['planActivities', 'sessionTemplates']);
             
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
@@ -132,11 +132,34 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'duration_days', type: 'integer', example: 30),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
-                new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 2),
-                new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 14),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(
+                    property: 'activities', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'staff_activity_id', type: 'integer', nullable: true, example: 1)
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: 'session_templates',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'facility_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                            new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
+                            new OA\Property(property: 'max_players', type: 'integer', example: 20),
+                            new OA\Property(property: 'gender_allowed', type: 'string', example: 'both')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -212,7 +235,7 @@ class SubscriptionPlanController extends BaseController
     public function show($id)
     {
         $plan = $this->planRepository->find($id);
-        $plan->loadMissing('planActivities');
+        $plan->loadMissing(['planActivities', 'sessionTemplates']);
         return $this->successResponse(
             new SubscriptionPlanResource($plan),
             __('Subscription plan retrieved successfully')
@@ -238,11 +261,34 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'duration_days', type: 'integer', example: 30),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 400.00),
-                new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 3),
-                new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 20),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(
+                    property: 'activities', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'staff_activity_id', type: 'integer', nullable: true, example: 1)
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: 'session_templates',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'facility_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                            new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
+                            new OA\Property(property: 'max_players', type: 'integer', example: 20),
+                            new OA\Property(property: 'gender_allowed', type: 'string', example: 'both')
+                        ]
+                    )
+                )
             ]
         )
     )]

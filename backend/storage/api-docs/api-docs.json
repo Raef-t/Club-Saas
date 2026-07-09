@@ -14619,6 +14619,22 @@
                                     "experience_years": {
                                         "type": "integer",
                                         "example": 5
+                                    },
+                                    "activity_ids": {
+                                        "description": "مصفوفة معرفات الأنشطة (اختياري)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "shifts": {
+                                        "description": "مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -15962,6 +15978,253 @@
                                         "error": {
                                             "type": "string",
                                             "example": "Error message details"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/coaches/{id}/schedule": {
+            "post": {
+                "tags": [
+                    "Coach Management"
+                ],
+                "summary": "Set Coach Schedule",
+                "description": "Assigns a full schedule (multiple shifts) to a coach, overwriting existing ones.",
+                "operationId": "b5c1882d5db12f4d8c9a4a9c941a3ede",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "shifts"
+                                ],
+                                "properties": {
+                                    "shifts": {
+                                        "description": "Array of branch_shift IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Schedule updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/coaches/{id}/shifts": {
+            "post": {
+                "tags": [
+                    "Coach Management"
+                ],
+                "summary": "Add a single Shift to Coach",
+                "description": "Assigns a single specific shift to a coach on a specific date.",
+                "operationId": "deaa2a84dbf022b936280c4c77c24288",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_shift_id",
+                                    "date"
+                                ],
+                                "properties": {
+                                    "branch_shift_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-11-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Shift created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/coaches/{id}/shifts/{shiftId}": {
+            "put": {
+                "tags": [
+                    "Coach Management"
+                ],
+                "summary": "Update Coach Shift",
+                "description": "Updates a specific assigned shift for a coach.",
+                "operationId": "683f2aa91c06c313d300a965aaf75808",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-11-02"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Shift updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Coach Management"
+                ],
+                "summary": "Remove Coach Shift",
+                "description": "Removes a specific shift assigned to a coach.",
+                "operationId": "bfcec81bdf4e3466722f8615b28b643d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Shift deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
                                         }
                                     },
                                     "type": "object"
@@ -18484,197 +18747,6 @@
                                 }
                             }
                         }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/staff/{staff}/working-hours": {
-            "get": {
-                "tags": [
-                    "Staff Working Hours"
-                ],
-                "summary": "🕒 عرض أوقات عمل الموظف",
-                "description": "استرجاع جميع أوقات العمل المسجلة لموظف معين.",
-                "operationId": "64a235d80c51c8f60b2e9f3345689931",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع أوقات العمل بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff working hours retrieved"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Staff Working Hours"
-                ],
-                "summary": "➕ إضافة وقت عمل للموظف",
-                "description": "إضافة أو تحديث وقت عمل الموظف ليوم معين في الأسبوع.",
-                "operationId": "9831ba235b9c369dc1f1340f731d245d",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "day_of_week",
-                                    "start_time",
-                                    "end_time"
-                                ],
-                                "properties": {
-                                    "day_of_week": {
-                                        "description": "من 0 (الأحد) إلى 6 (السبت)",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "start_time": {
-                                        "type": "string",
-                                        "format": "time",
-                                        "example": "08:00:00"
-                                    },
-                                    "end_time": {
-                                        "type": "string",
-                                        "format": "time",
-                                        "example": "16:00:00"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم إنشاء وقت العمل بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff working hours updated"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/staff/{staff}/working-hours/{working_hour}": {
-            "delete": {
-                "tags": [
-                    "Staff Working Hours"
-                ],
-                "summary": "🗑️ حذف وقت العمل للموظف",
-                "description": "إزالة وقت عمل مسجل مسبقاً للموظف.",
-                "operationId": "ec5875f4a945a8b345523acc6d2ac0f7",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الحذف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Staff working hour deleted"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على وقت العمل"
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -21515,16 +21587,6 @@
                                         "format": "float",
                                         "example": 350
                                     },
-                                    "max_freeze_count": {
-                                        "type": "integer",
-                                        "example": 2,
-                                        "nullable": true
-                                    },
-                                    "max_freeze_days": {
-                                        "type": "integer",
-                                        "example": 14,
-                                        "nullable": true
-                                    },
                                     "max_subscribers": {
                                         "type": "integer",
                                         "example": 50,
@@ -21538,6 +21600,51 @@
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "activities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "staff_activity_id": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "session_templates": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "facility_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "day_of_week": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                },
+                                                "start_time": {
+                                                    "type": "string",
+                                                    "example": "08:00"
+                                                },
+                                                "end_time": {
+                                                    "type": "string",
+                                                    "example": "09:00"
+                                                },
+                                                "max_players": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "gender_allowed": {
+                                                    "type": "string",
+                                                    "example": "both"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -21891,16 +21998,6 @@
                                         "format": "float",
                                         "example": 400
                                     },
-                                    "max_freeze_count": {
-                                        "type": "integer",
-                                        "example": 3,
-                                        "nullable": true
-                                    },
-                                    "max_freeze_days": {
-                                        "type": "integer",
-                                        "example": 20,
-                                        "nullable": true
-                                    },
                                     "max_subscribers": {
                                         "type": "integer",
                                         "example": 50,
@@ -21914,6 +22011,51 @@
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "activities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "staff_activity_id": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "session_templates": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "facility_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "day_of_week": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                },
+                                                "start_time": {
+                                                    "type": "string",
+                                                    "example": "08:00"
+                                                },
+                                                "end_time": {
+                                                    "type": "string",
+                                                    "example": "09:00"
+                                                },
+                                                "max_players": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "gender_allowed": {
+                                                    "type": "string",
+                                                    "example": "both"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -23696,10 +23838,6 @@
         {
             "name": "Staff Unavailability",
             "description": "Staff Unavailability"
-        },
-        {
-            "name": "Staff Working Hours",
-            "description": "Staff Working Hours"
         },
         {
             "name": "Extra Services",

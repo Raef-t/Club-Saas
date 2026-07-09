@@ -76,6 +76,11 @@ class SubscriptionPlan extends Model
         return $this->hasMany(SubscriptionPlanActivity::class, 'plan_id');
     }
 
+    public function sessionTemplates()
+    {
+        return $this->hasMany(\Modules\Sports\Models\SportSessionTemplate::class, 'plan_id');
+    }
+
     /**
      * Get the branch that owns the subscription plan.
      */

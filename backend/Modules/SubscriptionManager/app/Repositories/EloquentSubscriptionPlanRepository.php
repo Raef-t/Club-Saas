@@ -18,14 +18,33 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
 
     public function create(array $data)
     {
-        return SubscriptionPlan::create($data);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            $plan = SubscriptionPlan::create($data);
+            if (isset($data['activities']) && is_array($data['activities'])) {
+                $plan->planActivities()->createMany($data['activities']);
+            }
+            if (isset($data['session_templates']) && is_array($data['session_templates'])) {
+                $plan->sessionTemplates()->createMany($data['session_templates']);
+            }
+            return $plan;
+        });
     }
 
     public function update(int $id, array $data)
     {
-        $plan = $this->find($id);
-        $plan->update($data);
-        return $plan;
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id, $data) {
+            $plan = $this->find($id);
+            $plan->update($data);
+            if (isset($data['activities']) && is_array($data['activities'])) {
+                $plan->planActivities()->delete();
+                $plan->planActivities()->createMany($data['activities']);
+            }
+            if (isset($data['session_templates']) && is_array($data['session_templates'])) {
+                $plan->sessionTemplates()->delete();
+                $plan->sessionTemplates()->createMany($data['session_templates']);
+            }
+            return $plan;
+        });
     }
 
     public function delete(int $id)
