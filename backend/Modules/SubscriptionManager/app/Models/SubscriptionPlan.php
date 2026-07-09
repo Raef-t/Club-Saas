@@ -65,7 +65,8 @@ class SubscriptionPlan extends Model
     public function scopeAvailable($query)
     {
         return $query->where(function ($q) {
-            $q->where('max_subscribers', 0)
+            $q->whereNull('max_subscribers')
+              ->orWhere('max_subscribers', 0)
               ->orWhereColumn('current_subscribers', '<', 'max_subscribers');
         });
     }

@@ -12,6 +12,7 @@ class BranchShift extends Model
 
     protected $fillable = [
         'branch_id',
+        'activity_id',
         'day_of_week',
         'start_time',
         'end_time',
@@ -21,5 +22,10 @@ class BranchShift extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function activity(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Sports\Models\Activity::class);
     }
 }

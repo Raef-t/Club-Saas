@@ -14,11 +14,9 @@ class UpdateActivityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'branch_id' => 'nullable|exists:branches,id',
-            'name' => 'nullable|string|max:150',
-            'description' => 'nullable|string',
+            'branch_id' => 'sometimes|exists:branches,id',
+            'duration_minutes' => 'sometimes|nullable|integer|min:1',
             'activity_type_id' => 'nullable|exists:activity_types,id',
-            'default_capacity' => 'nullable|integer|min:1',
             'is_private_equipment' => 'nullable|boolean',
             'gender_allowed' => 'nullable|in:male,female,mixed',
             'is_active' => 'nullable|boolean',

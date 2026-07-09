@@ -14,4 +14,6 @@ class Branch extends Model {
     public function facilities(): HasMany { return $this->hasMany(Facility::class); }
     public function lockers(): HasMany { return $this->hasMany(Locker::class); }
     public function shifts(): HasMany { return $this->hasMany(BranchShift::class); }
+    public function settings() { return $this->hasOne(BranchSetting::class); }
+    public function holidays(): HasMany { return $this->hasMany(BranchHoliday::class); }
 }

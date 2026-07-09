@@ -131,9 +131,9 @@ class CoachService
         }
 
         if (!empty($filters['activity_id'])) {
-            $query->whereHas('activities', function ($q) use ($filters) {
+            $query->withCount(['activities as has_specific_activity' => function ($q) use ($filters) {
                 $q->where('activities.id', $filters['activity_id']);
-            });
+            }])->orderByDesc('has_specific_activity');
         }
         return $query->get();
     }

@@ -5,6 +5,9 @@ use Modules\ClubManager\Http\Controllers\Api\V1\BranchController;
 use Modules\ClubManager\Http\Controllers\Api\V1\FacilityController;
 use Modules\ClubManager\Http\Controllers\Api\V1\LockerController;
 use Modules\ClubManager\Http\Controllers\Api\V1\ClubController;
+use Modules\ClubManager\Http\Controllers\Api\V1\ClubSettingController;
+use Modules\ClubManager\Http\Controllers\Api\V1\BranchHolidayController;
+use Modules\ClubManager\Http\Controllers\Api\V1\BranchSettingController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('clubs', ClubController::class);
@@ -30,6 +33,15 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::patch('lockers/{id}/toggle-status', [LockerController::class, 'toggleStatus']);
 
     // Club Settings
-    Route::get('clubs/{club}/settings', [\Modules\ClubManager\Http\Controllers\Api\V1\ClubSettingController::class, 'show']);
-    Route::put('clubs/{club}/settings', [\Modules\ClubManager\Http\Controllers\Api\V1\ClubSettingController::class, 'update']);
+    Route::get('clubs/{club}/settings', [ClubSettingController::class, 'show']);
+    Route::put('clubs/{club}/settings', [ClubSettingController::class, 'update']);
+
+    // Branch Holidays
+    Route::get('branches/{branch}/holidays', [BranchHolidayController::class, 'index']);
+    Route::post('branches/{branch}/holidays', [BranchHolidayController::class, 'store']);
+    Route::apiResource('holidays', BranchHolidayController::class)->except(['index', 'store']);
+
+    // Branch Settings
+    Route::get('branches/{branch}/settings', [BranchSettingController::class, 'show']);
+    Route::put('branches/{branch}/settings', [BranchSettingController::class, 'update']);
 });

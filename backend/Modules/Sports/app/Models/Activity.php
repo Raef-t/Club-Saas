@@ -17,7 +17,6 @@ class Activity extends Model
         'description',
         'branch_id',
         'activity_type_id',
-        'default_capacity',
         'is_private_equipment',
         'gender_allowed',
         'is_active',

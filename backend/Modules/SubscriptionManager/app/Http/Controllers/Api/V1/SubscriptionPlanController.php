@@ -125,10 +125,7 @@ class SubscriptionPlanController extends BaseController
             required: ['branch_id', 'name', 'type', 'base_price'],
             properties: [
                 new OA\Property(property: 'branch_id', type: 'integer', description: '(مطلوب) معرف الفرع', example: 1),
-                new OA\Property(property: 'name', type: 'object', properties: [
-                    new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الذهبي'),
-                    new OA\Property(property: 'en', type: 'string', example: 'Gold Subscription')
-                ]),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الذهبي'),
                 new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
@@ -234,10 +231,7 @@ class SubscriptionPlanController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'name', type: 'object', properties: [
-                    new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الماسي'),
-                    new OA\Property(property: 'en', type: 'string', example: 'Diamond Subscription')
-                ]),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الماسي'),
                 new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
