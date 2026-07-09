@@ -11,8 +11,7 @@ class SubscriptionPlanActivityResource extends JsonResource
         return [
             'id' => $this->id,
             'plan_id' => $this->plan_id,
-            'activity_id' => $this->activity_id,
-            'coach_id' => $this->coach_id,
+            'staff_activity_id' => $this->staff_activity_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

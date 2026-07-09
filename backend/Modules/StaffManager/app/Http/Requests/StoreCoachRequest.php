@@ -15,8 +15,8 @@ class StoreCoachRequest extends FormRequest
     {
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
-                'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',') 
-                    ? explode(',', $this->branch_ids) 
+                'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',')
+                    ? explode(',', $this->branch_ids)
                     : [$this->branch_ids]
             ]);
         }
@@ -34,7 +34,7 @@ class StoreCoachRequest extends FormRequest
             'phone_number'            => ['nullable', 'string', 'max:20'],
             'country_code'            => ['nullable', 'string', 'max:5'],
             'photo'                   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-            
+
             // Staff & Coach Details
             'branch_ids'              => ['required', 'array'],
             'branch_ids.*'            => ['exists:branches,id'],

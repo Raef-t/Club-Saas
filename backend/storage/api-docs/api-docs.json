@@ -20871,21 +20871,16 @@
                             "schema": {
                                 "required": [
                                     "plan_id",
-                                    "activity_id"
+                                    "staff_activity_id"
                                 ],
                                 "properties": {
                                     "plan_id": {
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "activity_id": {
+                                    "staff_activity_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "coach_id": {
-                                        "description": "(مطلوب) المدرب المشرف",
-                                        "type": "integer",
-                                        "example": 5
                                     }
                                 },
                                 "type": "object"
@@ -21072,14 +21067,9 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "activity_id": {
+                                    "staff_activity_id": {
                                         "type": "integer",
                                         "example": 2
-                                    },
-                                    "coach_id": {
-                                        "description": "(مطلوب) المدرب المشرف",
-                                        "type": "integer",
-                                        "example": 5
                                     }
                                 },
                                 "type": "object"

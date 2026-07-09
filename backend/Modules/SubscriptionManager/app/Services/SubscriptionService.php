@@ -158,11 +158,12 @@ class SubscriptionService
             $requestedActivities = collect($options['activities'] ?? []);
 
             foreach ($plan->planActivities as $planActivity) {
-                // The coach is now strictly inherited from the Plan's setup as per the new design.
-                $coachId = $planActivity->coach_id;
+                $staffActivity = $planActivity->staffActivity;
+                $activityId = $staffActivity ? $staffActivity->activity_id : null;
+                $coachId = $staffActivity ? $staffActivity->staff_id : null;
 
                 $subscription->items()->create([
-                    'activity_id' => $planActivity->activity_id,
+                    'activity_id' => $activityId,
                     'coach_id' => $coachId,
                     'sessions_allocated' => $plan->session_count,
                     'is_unlimited' => is_null($plan->session_count),

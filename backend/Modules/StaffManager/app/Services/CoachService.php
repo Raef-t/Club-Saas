@@ -183,7 +183,7 @@ class CoachService
             if ($person) {
                 $personFillable = ['gender', 'age', 'dob'];
                 $personData = array_intersect_key($data, array_flip($personFillable));
-                
+
                 if (isset($data['first_name']) || isset($data['last_name'])) {
                     $firstName = $data['first_name'] ?? explode(' ', $person->full_name)[0];
                     $lastName = $data['last_name'] ?? (explode(' ', $person->full_name)[1] ?? '');
@@ -235,8 +235,13 @@ class CoachService
             }
 
             $detailFillable = [
-                'bio', 'experience_years', 'payment_type', 
-                'commission_type', 'default_commission_rate', 'gym_type', 'work_types'
+                'bio',
+                'experience_years',
+                'payment_type',
+                'commission_type',
+                'default_commission_rate',
+                'gym_type',
+                'work_types'
             ];
             $detailsData = array_intersect_key($data, array_flip($detailFillable));
 

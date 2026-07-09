@@ -15,7 +15,6 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: "ar", type: "string", example: "صالة مفتوحة"),
             new OA\Property(property: "en", type: "string", example: "open_gym")
         ]),
-        new OA\Property(property: "branch_id", type: "integer", example: 1),
         new OA\Property(property: "is_active", type: "boolean", example: true)
     ]
 )]
@@ -26,7 +25,6 @@ class ActivityTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'branch_id' => $this->branch_id,
             'is_active' => $this->is_active,
         ];
     }
