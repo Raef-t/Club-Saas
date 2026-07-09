@@ -122,7 +122,7 @@ class StaffController extends BaseController
         content: new OA\JsonContent(
             required: ['shifts'],
             properties: [
-                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'object', example: ['day' => 'Monday', 'start_time' => '09:00', 'end_time' => '17:00']))
+                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الورديات من جدول branch_shifts')
             ]
         )
     )]

@@ -51,7 +51,6 @@ class CoachResource extends JsonResource
             'end_date'        => $this->end_date,
             'contract_type'   => $this->contract_type,
             'shift_type'      => $this->shift_type,
-            'work_types'      => $this->work_types,
             'work_status'     => $this->work_status,
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,
@@ -62,6 +61,7 @@ class CoachResource extends JsonResource
             'details'        => $this->coachDetail,
             'activities'     => $this->activities,
             'experience_years'       => $this->coachDetail?->experience_years,
+            'work_types'     => $this->coachDetail?->work_types,
         ];
     }
 }

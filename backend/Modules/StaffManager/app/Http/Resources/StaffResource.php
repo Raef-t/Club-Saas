@@ -15,7 +15,6 @@ class StaffResource extends JsonResource
             'base_salary' => $this->base_salary,
             'contract_type' => $this->contract_type,
             'shift_type' => $this->shift_type,
-            'work_types' => $this->work_types,
             'work_status' => $this->work_status,
             'other_tasks' => $this->other_tasks,
             'start_date' => $this->start_date?->toDateString(),

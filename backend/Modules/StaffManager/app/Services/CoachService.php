@@ -94,7 +94,6 @@ class CoachService
                 'end_date'        => $data['end_date'] ?? null,
                 'contract_type'   => $data['contract_type'] ?? null,
                 'shift_type'      => $data['shift_type'] ?? null,
-                'work_types'      => $data['work_types'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
             ]);
 
@@ -111,6 +110,7 @@ class CoachService
                 'commission_type'        => $data['commission_type'] ?? null,
                 'default_commission_rate' => $data['default_commission_rate'] ?? 0,
                 'gym_type'               => $data['gym_type'] ?? null,
+                'work_types'             => $data['work_types'] ?? null,
             ]);
 
             return $this->getSingleCoach($staff->id);
@@ -218,8 +218,7 @@ class CoachService
                 }
             }
 
-            // Update Basic Info
-            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active', 'work_types'];
+            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
@@ -237,7 +236,7 @@ class CoachService
 
             $detailFillable = [
                 'bio', 'experience_years', 'payment_type', 
-                'commission_type', 'default_commission_rate', 'gym_type'
+                'commission_type', 'default_commission_rate', 'gym_type', 'work_types'
             ];
             $detailsData = array_intersect_key($data, array_flip($detailFillable));
 

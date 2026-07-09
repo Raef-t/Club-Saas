@@ -17022,14 +17022,11 @@
                                 ],
                                 "properties": {
                                     "shifts": {
+                                        "description": "مصفوفة معرفات الورديات من جدول branch_shifts",
                                         "type": "array",
                                         "items": {
-                                            "type": "object",
-                                            "example": {
-                                                "day": "Monday",
-                                                "start_time": "09:00",
-                                                "end_time": "17:00"
-                                            }
+                                            "type": "integer",
+                                            "example": 1
                                         }
                                     }
                                 },
