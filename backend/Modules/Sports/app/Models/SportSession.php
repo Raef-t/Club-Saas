@@ -12,9 +12,7 @@ class SportSession extends Model
     protected $table = 'sports_sessions';
 
     protected $fillable = [
-        'branch_id',
-        'activity_id',
-        'staff_id',
+        'plan_id',
         'facility_id',
         'start_time',
         'end_time',
@@ -32,17 +30,8 @@ class SportSession extends Model
         'booked_count' => 'integer',
     ];
 
-    // --- Same-module relationships only ---
-
-    public function activity()
-    {
-        return $this->belongsTo(Activity::class);
-    }
-
     // --- Cross-module data resolved via DTOs in Service layer ---
-
-    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
-    public ?\Modules\Core\DTOs\StaffDTO $staff = null;
+    public ?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan = null;
 
     /**
      * Scopes
@@ -50,11 +39,6 @@ class SportSession extends Model
     public function scopeScheduled($query)
     {
         return $query->where('status', 'scheduled');
-    }
-
-    public function scopeForBranch($query, int $branchId)
-    {
-        return $query->where('branch_id', $branchId);
     }
 
     public function scopeForDate($query, string $date)
