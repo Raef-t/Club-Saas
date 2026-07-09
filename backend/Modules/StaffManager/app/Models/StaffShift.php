@@ -7,10 +7,13 @@ class StaffShift extends Model
 {
     protected $fillable = [
         'staff_id',
-        'day_of_week',
-        'start_time',
-        'end_time',
+        'branch_shift_id',
     ];
+
+    public function branchShift()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\BranchShift::class);
+    }
 
     public function staff()
     {

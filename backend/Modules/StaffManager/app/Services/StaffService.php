@@ -203,11 +203,11 @@ class StaffService
             $staff->shifts()->delete();
 
             // Add new shifts
-            foreach ($shifts as $shift) {
-                $staff->shifts()->create($shift);
+            foreach ($shifts as $branchShiftId) {
+                $staff->shifts()->create(['branch_shift_id' => $branchShiftId]);
             }
 
-            $staff->load('shifts');
+            $staff->load('shifts.branchShift');
             return $this->attachSharedDTOs($staff);
         });
     }

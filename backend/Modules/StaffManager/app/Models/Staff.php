@@ -21,7 +21,6 @@ class Staff extends Model
         'end_date',
         'contract_type',
         'shift_type',
-        'work_types',
         'work_status',
         'other_tasks',
     ];
@@ -31,7 +30,6 @@ class Staff extends Model
         'start_date'  => 'date',
         'end_date'    => 'date',
         'base_salary' => 'decimal:2',
-        'work_types'  => 'array',
     ];
 
     public ?\Modules\Core\DTOs\PersonDTO $personDto = null;

@@ -55,7 +55,7 @@ class SubscriptionPlanActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1),
                 new OA\Property(property: 'activity_id', type: 'integer', example: 1),
-                new OA\Property(property: 'coach_id', type: 'integer', description: '(مطلوب) المدرب المشرف', example: 5)
+                new OA\Property(property: 'coach_id', type: 'integer', description: '(اختياري) المدرب المشرف', example: 5)
             ]
         )
     )]
@@ -115,7 +115,7 @@ class SubscriptionPlanActivityController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'activity_id', type: 'integer', example: 2),
-                new OA\Property(property: 'coach_id', type: 'integer', description: '(مطلوب) المدرب المشرف', example: 5)
+                new OA\Property(property: 'coach_id', type: 'integer', description: '(اختياري) المدرب المشرف', example: 5)
             ]
         )
     )]
