@@ -68,10 +68,6 @@ class Staff extends Model
         return $this->hasMany(StaffUnavailability::class);
     }
 
-    public function workingHours()
-    {
-        return $this->hasMany(StaffWorkingHour::class);
-    }
 
     public function leaves()
     {

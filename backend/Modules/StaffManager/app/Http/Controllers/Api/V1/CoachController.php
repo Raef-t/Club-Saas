@@ -11,6 +11,11 @@ use Modules\StaffManager\Http\Requests\UpdateCoachDetailsRequest;
 use Modules\StaffManager\Http\Requests\AssignCoachActivitiesRequest;
 use Modules\StaffManager\Http\Requests\UploadCoachCertificationRequest;
 use Modules\StaffManager\Http\Resources\CoachResource;
+use Modules\StaffManager\Http\Resources\StaffResource;
+use Modules\StaffManager\Http\Resources\StaffShiftResource;
+use Modules\StaffManager\Services\StaffService;
+use Modules\StaffManager\Services\StaffShiftService;
+use Modules\StaffManager\Http\Requests\SetStaffScheduleRequest;
 use OpenApi\Attributes as OA;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -20,10 +25,17 @@ use Exception;
 class CoachController extends Controller
 {
     protected CoachService $coachService;
+    protected StaffService $staffService;
+    protected StaffShiftService $staffShiftService;
 
-    public function __construct(CoachService $coachService)
-    {
+    public function __construct(
+        CoachService $coachService,
+        StaffService $staffService,
+        StaffShiftService $staffShiftService
+    ) {
         $this->coachService = $coachService;
+        $this->staffService = $staffService;
+        $this->staffShiftService = $staffShiftService;
     }
 
     #[OA\Post(
@@ -889,6 +901,150 @@ class CoachController extends Controller
                 'message' => 'An error occurred while deleting the coach.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+    #[OA\Post(
+        path: '/v1/coaches/{id}/schedule',
+        summary: 'Set Coach Schedule',
+        description: 'Assigns a full schedule (multiple shifts) to a coach, overwriting existing ones.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['shifts'],
+                properties: [
+                    new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'Array of branch_shift IDs')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Schedule updated successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function setSchedule(SetStaffScheduleRequest $request, $id)
+    {
+        try {
+            $data = $request->validated();
+            $staff = $this->staffService->setStaffSchedule($id, $data['shifts']);
+            return response()->json([
+                'data' => new StaffResource($staff),
+                'message' => 'Schedule updated successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Coach not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/shifts',
+        summary: 'Add a single Shift to Coach',
+        description: 'Assigns a single specific shift to a coach on a specific date.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['branch_shift_id', 'date'],
+                properties: [
+                    new OA\Property(property: 'branch_shift_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2023-11-01')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Shift created successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function addShift(Request $request, $id)
+    {
+        try {
+            $data = $request->validate([
+                'branch_shift_id' => 'required|integer',
+                'date' => 'required|date'
+            ]);
+            $data['staff_id'] = $id;
+            
+            $record = $this->staffShiftService->create($data);
+            return response()->json([
+                'data' => new StaffShiftResource($record),
+                'message' => 'Shift created successfully'
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Put(
+        path: '/v1/coaches/{id}/shifts/{shiftId}',
+        summary: 'Update Coach Shift',
+        description: 'Updates a specific assigned shift for a coach.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'shiftId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2023-11-02')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Shift updated successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function updateShift(Request $request, $id, $shiftId)
+    {
+        try {
+            $data = $request->validate([
+                'date' => 'sometimes|date',
+                'branch_shift_id' => 'sometimes|integer'
+            ]);
+            $record = $this->staffShiftService->update($shiftId, $data);
+            return response()->json([
+                'data' => new StaffShiftResource($record),
+                'message' => 'Shift updated successfully'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/v1/coaches/{id}/shifts/{shiftId}',
+        summary: 'Remove Coach Shift',
+        description: 'Removes a specific shift assigned to a coach.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'shiftId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Shift deleted successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function removeShift($id, $shiftId)
+    {
+        try {
+            $this->staffShiftService->delete($shiftId);
+            return response()->json([
+                'message' => 'Shift deleted successfully'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
         }
     }
 }

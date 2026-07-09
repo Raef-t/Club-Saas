@@ -31,4 +31,21 @@ class StoreBranchShiftRequest extends FormRequest
             'gender_allowed' => 'required|string|in:male,female,mixed',
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if (!$validator->failed()) {
+                $overlap = \Modules\ClubManager\Models\BranchShift::where('branch_id', $this->route('branch'))
+                    ->where('day_of_week', $this->input('day_of_week'))
+                    ->where('start_time', '<', $this->input('end_time'))
+                    ->where('end_time', '>', $this->input('start_time'))
+                    ->exists();
+
+                if ($overlap) {
+                    $validator->errors()->add('start_time', __('يوجد تعارض في الوقت مع وردية أخرى في نفس اليوم للفرع.'));
+                }
+            }
+        });
+    }
 }
