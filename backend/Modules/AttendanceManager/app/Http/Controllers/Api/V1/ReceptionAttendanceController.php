@@ -42,7 +42,7 @@ class ReceptionAttendanceController extends BaseController
                 ->where('ps.member_id', $memberId)
                 ->where('ps.status', 'active')
                 ->select(
-                    'ps.id',
+                    'ps.id as player_subscription_id',
                     'ps.member_id',
                     'ps.plan_id',
                     'sp.name as plan_name',
@@ -68,7 +68,7 @@ class ReceptionAttendanceController extends BaseController
 
                 $sub->items = DB::table('player_subscription_items as psi')
                     ->leftJoin('activities as a', 'a.id', '=', 'psi.activity_id')
-                    ->where('psi.player_subscription_id', $sub->id)
+                    ->where('psi.player_subscription_id', $sub->player_subscription_id)
                     ->select(
                         'psi.id',
                         'psi.activity_id',
@@ -107,9 +107,9 @@ class ReceptionAttendanceController extends BaseController
     )]
     #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['subscription_id'],
+        required: ['player_subscription_id'],
         properties: [
-            new OA\Property(property: 'subscription_id', type: 'integer', example: 5, description: 'معرف الاشتراك المراد الخصم منه'),
+            new OA\Property(property: 'player_subscription_id', type: 'integer', example: 5, description: 'معرف اشتراك اللاعب المراد الخصم منه'),
         ]
     ))]
     #[OA\Response(response: 200, description: '✅ تم خصم الجلسة بنجاح', content: new OA\JsonContent())]
@@ -117,13 +117,13 @@ class ReceptionAttendanceController extends BaseController
     public function deductSession(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
         $request->validate([
-            'subscription_id' => 'required|integer'
+            'player_subscription_id' => 'required|integer'
         ]);
 
         try {
-            $subscriptionId = $request->input('subscription_id');
+            $subscriptionId = $request->input('player_subscription_id');
             $attendance = $sessionDeductionService->deductSession($attendanceId, $subscriptionId);
-            
+
             return $this->successResponse(new AttendanceResource($attendance), __('Session deducted successfully.'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
