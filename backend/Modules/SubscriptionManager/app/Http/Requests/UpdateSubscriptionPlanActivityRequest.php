@@ -9,8 +9,7 @@ class UpdateSubscriptionPlanActivityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'activity_id' => 'nullable|integer|exists:activities,id',
-            'coach_id' => 'nullable|integer|exists:staff,id',
+            'staff_activity_id' => 'nullable|integer|exists:staff_activities,id',
         ];
     }
 }

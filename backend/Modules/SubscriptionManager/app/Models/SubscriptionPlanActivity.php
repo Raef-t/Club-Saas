@@ -10,14 +10,11 @@ class SubscriptionPlanActivity extends Model
 
     protected $fillable = [
         'plan_id',
-        'activity_id',
-        'coach_id',
-
+        'staff_activity_id',
     ];
 
     protected $casts = [
-        'activity_id' => 'integer',
-        'coach_id' => 'integer',
+        'staff_activity_id' => 'integer',
     ];
 
     public function plan()
@@ -25,8 +22,8 @@ class SubscriptionPlanActivity extends Model
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
     }
 
-    public function coach()
+    public function staffActivity()
     {
-        return $this->belongsTo(\Modules\StaffManager\Models\Staff::class, 'coach_id');
+        return $this->belongsTo(\Modules\Sports\Models\StaffActivity::class, 'staff_activity_id');
     }
 }

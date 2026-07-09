@@ -17,7 +17,6 @@ class ActivityTypeController extends BaseController
         tags: ['Activity Types'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة أنواع الأنشطة',
@@ -36,11 +35,7 @@ class ActivityTypeController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = ActivityType::query();
-        if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
-        $types = $query->get();
+        $types = ActivityType::all();
         return $this->successResponse(
             ActivityTypeResource::collection($types),
             __('Activity types retrieved successfully')
@@ -57,9 +52,8 @@ class ActivityTypeController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'branch_id'],
+            required: ['name'],
             properties: [
-                new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 1),
                 new OA\Property(property: 'name', type: 'object', properties: [
                     new OA\Property(property: 'ar', type: 'string', example: 'صالة مفتوحة'),
                     new OA\Property(property: 'en', type: 'string', example: 'open_gym')

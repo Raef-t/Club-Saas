@@ -15,8 +15,8 @@ class UpdateCoachRequest extends FormRequest
     {
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
-                'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',') 
-                    ? explode(',', $this->branch_ids) 
+                'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',')
+                    ? explode(',', $this->branch_ids)
                     : [$this->branch_ids]
             ]);
         }
@@ -44,7 +44,7 @@ class UpdateCoachRequest extends FormRequest
             'is_active'               => ['nullable', 'boolean'],
             'branch_ids'              => ['nullable', 'array'],
             'branch_ids.*'            => ['exists:branches,id'],
-            
+
             // Details Info
             'bio'                     => ['nullable', 'string'],
             'experience_years'        => ['nullable', 'integer', 'min:0'],
