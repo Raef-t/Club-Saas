@@ -3168,10 +3168,6 @@
                                                     "type": "integer",
                                                     "example": 30
                                                 },
-                                                "remaining_sessions": {
-                                                    "type": "integer",
-                                                    "example": 12
-                                                },
                                                 "is_inside_facility": {
                                                     "type": "boolean",
                                                     "example": false
@@ -3577,11 +3573,11 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "subscription_id"
+                                    "player_subscription_id"
                                 ],
                                 "properties": {
-                                    "subscription_id": {
-                                        "description": "معرف الاشتراك المراد الخصم منه",
+                                    "player_subscription_id": {
+                                        "description": "معرف اشتراك اللاعب المراد الخصم منه",
                                         "type": "integer",
                                         "example": 5
                                     }
@@ -20885,14 +20881,6 @@
                                         "description": "(مطلوب) المدرب المشرف",
                                         "type": "integer",
                                         "example": 5
-                                    },
-                                    "sessions_count": {
-                                        "type": "integer",
-                                        "example": 12
-                                    },
-                                    "is_unlimited": {
-                                        "type": "boolean",
-                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -21087,14 +21075,6 @@
                                         "description": "(مطلوب) المدرب المشرف",
                                         "type": "integer",
                                         "example": 5
-                                    },
-                                    "sessions_count": {
-                                        "type": "integer",
-                                        "example": 12
-                                    },
-                                    "is_unlimited": {
-                                        "type": "boolean",
-                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -23296,6 +23276,13 @@
                         "format": "date",
                         "nullable": true
                     },
+                    "experience_years": {
+                        "type": "integer"
+                    },
+                    "payment_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
                     "contract_type": {
                         "type": "string",
                         "nullable": true
@@ -23304,9 +23291,11 @@
                         "type": "string",
                         "nullable": true
                     },
-                    "work_type": {
-                        "type": "string",
-                        "nullable": true
+                    "work_types": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     },
                     "work_status": {
                         "type": "string",

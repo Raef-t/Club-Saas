@@ -38,18 +38,17 @@ class UpdateCoachRequest extends FormRequest
             // Basic Info
             'base_salary'             => ['nullable', 'numeric', 'min:0'],
             'employment_type'         => ['nullable', 'string', 'in:fixed_salary,commission_based,hybrid'],
-            'shift_type'              => ['nullable', 'string'],
+            'work_types'              => ['nullable', 'array'],
+            'work_types.*'            => ['string', 'in:equipment,activities'],
             'work_status'             => ['nullable', 'string'],
             'is_active'               => ['nullable', 'boolean'],
             'branch_ids'              => ['nullable', 'array'],
             'branch_ids.*'            => ['exists:branches,id'],
             
-            // Details
-            'specialization'          => ['nullable', 'string', 'max:255'],
+            // Details Info
             'bio'                     => ['nullable', 'string'],
             'experience_years'        => ['nullable', 'integer', 'min:0'],
-            'working_hours_per_week'  => ['nullable', 'numeric', 'min:0'],
-            'gym_type'                => ['nullable', 'string'],
+            'gym_type'                => ['nullable', 'string', 'in:male,female,mixed'],
             'payment_type'            => ['nullable', 'string'],
             'commission_type'         => ['nullable', 'string'],
             'default_commission_rate' => ['nullable', 'numeric', 'min:0'],

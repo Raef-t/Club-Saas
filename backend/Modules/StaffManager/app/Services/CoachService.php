@@ -94,7 +94,7 @@ class CoachService
                 'end_date'        => $data['end_date'] ?? null,
                 'contract_type'   => $data['contract_type'] ?? null,
                 'shift_type'      => $data['shift_type'] ?? null,
-                'work_type'       => $data['work_type'] ?? null,
+                'work_types'      => $data['work_types'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
             ]);
 
@@ -106,13 +106,10 @@ class CoachService
             // 7. Create Coach Detail
             CoachDetail::create([
                 'staff_id'               => $staff->id,
-                'specialization'         => $data['specialization'] ?? null,
-                'bio'                    => $data['bio'] ?? null,
                 'experience_years'       => $data['experience_years'] ?? 0,
                 'payment_type'           => $data['payment_type'] ?? null,
                 'commission_type'        => $data['commission_type'] ?? null,
                 'default_commission_rate' => $data['default_commission_rate'] ?? 0,
-                'working_hours_per_week' => $data['working_hours_per_week'] ?? 0,
                 'gym_type'               => $data['gym_type'] ?? null,
             ]);
 
@@ -222,7 +219,7 @@ class CoachService
             }
 
             // Update Basic Info
-            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active'];
+            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active', 'work_types'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
@@ -238,8 +235,11 @@ class CoachService
                 $coachDetail = new CoachDetail(['staff_id' => $staff->id]);
             }
 
-            $detailsFillable = ['specialization', 'bio', 'experience_years', 'working_hours_per_week', 'gym_type', 'payment_type', 'commission_type', 'default_commission_rate'];
-            $detailsData = array_intersect_key($data, array_flip($detailsFillable));
+            $detailFillable = [
+                'bio', 'experience_years', 'payment_type', 
+                'commission_type', 'default_commission_rate', 'gym_type'
+            ];
+            $detailsData = array_intersect_key($data, array_flip($detailFillable));
 
             if (!empty($detailsData) || !$coachDetail->exists) {
                 foreach ($detailsData as $key => $value) {

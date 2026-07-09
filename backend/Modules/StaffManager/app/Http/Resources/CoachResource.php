@@ -19,9 +19,11 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "start_date", type: "string", format: "date", example: "2023-01-01"),
         new OA\Property(property: "end_date", type: "string", format: "date", nullable: true),
+        new OA\Property(property: "experience_years", type: "integer"),
+        new OA\Property(property: "payment_type", type: "string", nullable: true),
         new OA\Property(property: "contract_type", type: "string", nullable: true),
         new OA\Property(property: "shift_type", type: "string", nullable: true),
-        new OA\Property(property: "work_type", type: "string", nullable: true),
+        new OA\Property(property: "work_types", type: "array", items: new OA\Items(type: "string")),
         new OA\Property(property: "work_status", type: "string", example: "active"),
         new OA\Property(property: "created_at", type: "string", format: "date-time"),
         new OA\Property(property: "updated_at", type: "string", format: "date-time"),
@@ -49,7 +51,7 @@ class CoachResource extends JsonResource
             'end_date'        => $this->end_date,
             'contract_type'   => $this->contract_type,
             'shift_type'      => $this->shift_type,
-            'work_type'       => $this->work_type,
+            'work_types'      => $this->work_types,
             'work_status'     => $this->work_status,
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,
@@ -59,6 +61,7 @@ class CoachResource extends JsonResource
             'username'       => $this->user ? $this->user->username : null,
             'details'        => $this->coachDetail,
             'activities'     => $this->activities,
+            'experience_years'       => $this->coachDetail?->experience_years,
         ];
     }
 }
