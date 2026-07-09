@@ -20,11 +20,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'store']);
     Route::delete('staff/{staff}/unavailabilities/{unavailability}', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'destroy']);
 
-    // Staff Working Hours
-    Route::get('staff/{staff}/working-hours', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffWorkingHourController::class, 'index']);
-    Route::post('staff/{staff}/working-hours', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffWorkingHourController::class, 'store']);
-    Route::delete('staff/{staff}/working-hours/{working_hour}', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffWorkingHourController::class, 'destroy']);
-
 
     // Payroll & Payslips
     Route::post('payroll-runs/{id}/generate-payslips', [PayrollController::class, 'generatePayslips']);
