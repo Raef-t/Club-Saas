@@ -17,7 +17,6 @@ class SportSessionTemplate extends Model
         'day_of_week',
         'start_time',
         'end_time',
-        'max_players',
         'gender_allowed',
         'is_active',
     ];
@@ -26,7 +25,6 @@ class SportSessionTemplate extends Model
         'day_of_week' => 'integer',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
-        'max_players' => 'integer',
         'is_active' => 'boolean',
     ];
 
