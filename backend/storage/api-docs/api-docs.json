@@ -13102,25 +13102,15 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "branch_id",
-                                    "activity_id",
+                                    "plan_id",
                                     "day_of_week",
                                     "start_time",
                                     "end_time"
                                 ],
                                 "properties": {
-                                    "branch_id": {
+                                    "plan_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "activity_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "staff_id": {
-                                        "type": "integer",
-                                        "example": 2,
-                                        "nullable": true
                                     },
                                     "facility_id": {
                                         "type": "integer",
@@ -13251,7 +13241,7 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "staff_id": {
+                                    "plan_id": {
                                         "type": "integer",
                                         "example": 2,
                                         "nullable": true

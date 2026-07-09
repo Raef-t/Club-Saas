@@ -30,7 +30,7 @@ class SessionTemplateController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $templates = SportSessionTemplate::with(['activity'])->get();
+        $templates = SportSessionTemplate::with(['plan'])->get();
         return $this->successResponse($templates, __('Templates retrieved successfully'));
     }
 
@@ -44,11 +44,9 @@ class SessionTemplateController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['branch_id', 'activity_id', 'day_of_week', 'start_time', 'end_time'],
+            required: ['plan_id', 'day_of_week', 'start_time', 'end_time'],
             properties: [
-                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                new OA\Property(property: 'activity_id', type: 'integer', example: 1),
-                new OA\Property(property: 'staff_id', type: 'integer', nullable: true, example: 2),
+                new OA\Property(property: 'plan_id', type: 'integer', example: 1),
                 new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                 new OA\Property(property: 'day_of_week', type: 'integer', description: '0=Sunday, 1=Monday, ..., 6=Saturday', example: 0),
                 new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '08:00'),
@@ -74,9 +72,7 @@ class SessionTemplateController extends BaseController
     public function store(Request $request)
     {
         $data = $request->validate([
-            'branch_id' => 'required|integer',
-            'activity_id' => 'required|integer',
-            'staff_id' => 'nullable|integer',
+            'plan_id' => 'required|integer',
             'facility_id' => 'nullable|integer',
             'day_of_week' => 'required|integer|min:0|max:6',
             'start_time' => 'required|date_format:H:i',
@@ -100,21 +96,6 @@ class SessionTemplateController extends BaseController
             }
         }
 
-        // Check staff overlap
-        if (!empty($data['staff_id'])) {
-            $staffConflict = SportSessionTemplate::where('staff_id', $data['staff_id'])
-                ->where('day_of_week', $data['day_of_week'])
-                ->where('start_time', '<', $data['end_time'])
-                ->where('end_time', '>', $data['start_time'])
-                ->exists();
-
-            if ($staffConflict) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'start_time' => __('يوجد تعارض في الوقت للمدرب، فهو مرتبط بجلسة أخرى في نفس الوقت.')
-                ]);
-            }
-        }
-
         $template = SportSessionTemplate::create($data);
         return $this->successResponse($template, __('Template created successfully'), 201);
     }
@@ -131,7 +112,7 @@ class SessionTemplateController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'staff_id', type: 'integer', nullable: true, example: 2),
+                new OA\Property(property: 'plan_id', type: 'integer', nullable: true, example: 2),
                 new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                 new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
                 new OA\Property(property: 'start_time', type: 'string', example: '10:00'),
@@ -149,7 +130,7 @@ class SessionTemplateController extends BaseController
         $template = SportSessionTemplate::findOrFail($id);
 
         $data = $request->validate([
-            'staff_id' => 'nullable|integer',
+            'plan_id' => 'nullable|integer',
             'facility_id' => 'nullable|integer',
             'day_of_week' => 'nullable|integer|min:0|max:6',
             'start_time' => 'nullable|date_format:H:i',
@@ -159,7 +140,6 @@ class SessionTemplateController extends BaseController
         ]);
 
         $checkFacility = array_key_exists('facility_id', $data) ? $data['facility_id'] : $template->facility_id;
-        $checkStaff = array_key_exists('staff_id', $data) ? $data['staff_id'] : $template->staff_id;
         $checkDay = $data['day_of_week'] ?? $template->day_of_week;
         $checkStart = $data['start_time'] ?? $template->start_time;
         $checkEnd = $data['end_time'] ?? $template->end_time;
@@ -176,22 +156,6 @@ class SessionTemplateController extends BaseController
             if ($facilityConflict) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'start_time' => __('يوجد تعارض في الوقت مع جلسة أخرى في نفس المرفق (القاعة).')
-                ]);
-            }
-        }
-
-        // Check staff overlap
-        if (!empty($checkStaff)) {
-            $staffConflict = SportSessionTemplate::where('id', '!=', $id)
-                ->where('staff_id', $checkStaff)
-                ->where('day_of_week', $checkDay)
-                ->where('start_time', '<', $checkEnd)
-                ->where('end_time', '>', $checkStart)
-                ->exists();
-
-            if ($staffConflict) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'start_time' => __('يوجد تعارض في الوقت للمدرب، فهو مرتبط بجلسة أخرى في نفس الوقت.')
                 ]);
             }
         }

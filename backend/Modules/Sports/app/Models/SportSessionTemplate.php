@@ -12,9 +12,7 @@ class SportSessionTemplate extends Model
     protected $table = 'sport_session_templates';
 
     protected $fillable = [
-        'branch_id',
-        'activity_id',
-        'staff_id',
+        'plan_id',
         'facility_id',
         'day_of_week',
         'start_time',
@@ -32,17 +30,8 @@ class SportSessionTemplate extends Model
         'is_active' => 'boolean',
     ];
 
-    // --- Same-module relationships ---
-
-    public function activity()
-    {
-        return $this->belongsTo(Activity::class);
-    }
-
     // --- Cross-module data resolved via DTOs in Service layer ---
-
-    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
-    public ?\Modules\Core\DTOs\StaffDTO $staff = null;
+    public ?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan = null;
 
     /**
      * Scopes
@@ -50,10 +39,5 @@ class SportSessionTemplate extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    public function scopeForBranch($query, int $branchId)
-    {
-        return $query->where('branch_id', $branchId);
     }
 }

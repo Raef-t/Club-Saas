@@ -15,17 +15,17 @@ class ScheduleGeneratorService
      *
      * @param string $startDate (Y-m-d)
      * @param string $endDate (Y-m-d)
-     * @param int|null $branchId Optional filter
+     * @param int|null $planId Optional filter
      * @return int Number of generated sessions
      */
-    public function generateSessions(string $startDate, string $endDate, ?int $branchId = null): int
+    public function generateSessions(string $startDate, string $endDate, ?int $planId = null): int
     {
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
         $query = SportSessionTemplate::active();
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
+        if ($planId) {
+            $query->where('plan_id', $planId);
         }
         $templates = $query->get();
 
@@ -47,9 +47,7 @@ class ScheduleGeneratorService
 
                         if (!$exists) {
                             SportSession::create([
-                                'branch_id' => $template->branch_id,
-                                'activity_id' => $template->activity_id,
-                                'staff_id' => $template->staff_id,
+                                'plan_id' => $template->plan_id,
                                 'facility_id' => $template->facility_id,
                                 'start_time' => $sessionStartTime,
                                 'end_time' => $sessionEndTime,
