@@ -85,6 +85,36 @@ class SessionTemplateController extends BaseController
             'gender_allowed' => 'nullable|string',
         ]);
 
+        // Check facility overlap
+        if (!empty($data['facility_id'])) {
+            $facilityConflict = SportSessionTemplate::where('facility_id', $data['facility_id'])
+                ->where('day_of_week', $data['day_of_week'])
+                ->where('start_time', '<', $data['end_time'])
+                ->where('end_time', '>', $data['start_time'])
+                ->exists();
+
+            if ($facilityConflict) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'start_time' => __('يوجد تعارض في الوقت مع جلسة أخرى في نفس المرفق (القاعة).')
+                ]);
+            }
+        }
+
+        // Check staff overlap
+        if (!empty($data['staff_id'])) {
+            $staffConflict = SportSessionTemplate::where('staff_id', $data['staff_id'])
+                ->where('day_of_week', $data['day_of_week'])
+                ->where('start_time', '<', $data['end_time'])
+                ->where('end_time', '>', $data['start_time'])
+                ->exists();
+
+            if ($staffConflict) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'start_time' => __('يوجد تعارض في الوقت للمدرب، فهو مرتبط بجلسة أخرى في نفس الوقت.')
+                ]);
+            }
+        }
+
         $template = SportSessionTemplate::create($data);
         return $this->successResponse($template, __('Template created successfully'), 201);
     }
@@ -127,6 +157,44 @@ class SessionTemplateController extends BaseController
             'max_players' => 'nullable|integer',
             'is_active' => 'nullable|boolean',
         ]);
+
+        $checkFacility = array_key_exists('facility_id', $data) ? $data['facility_id'] : $template->facility_id;
+        $checkStaff = array_key_exists('staff_id', $data) ? $data['staff_id'] : $template->staff_id;
+        $checkDay = $data['day_of_week'] ?? $template->day_of_week;
+        $checkStart = $data['start_time'] ?? $template->start_time;
+        $checkEnd = $data['end_time'] ?? $template->end_time;
+
+        // Check facility overlap
+        if (!empty($checkFacility)) {
+            $facilityConflict = SportSessionTemplate::where('id', '!=', $id)
+                ->where('facility_id', $checkFacility)
+                ->where('day_of_week', $checkDay)
+                ->where('start_time', '<', $checkEnd)
+                ->where('end_time', '>', $checkStart)
+                ->exists();
+
+            if ($facilityConflict) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'start_time' => __('يوجد تعارض في الوقت مع جلسة أخرى في نفس المرفق (القاعة).')
+                ]);
+            }
+        }
+
+        // Check staff overlap
+        if (!empty($checkStaff)) {
+            $staffConflict = SportSessionTemplate::where('id', '!=', $id)
+                ->where('staff_id', $checkStaff)
+                ->where('day_of_week', $checkDay)
+                ->where('start_time', '<', $checkEnd)
+                ->where('end_time', '>', $checkStart)
+                ->exists();
+
+            if ($staffConflict) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'start_time' => __('يوجد تعارض في الوقت للمدرب، فهو مرتبط بجلسة أخرى في نفس الوقت.')
+                ]);
+            }
+        }
 
         $template->update($data);
         return $this->successResponse($template, __('Template updated successfully'));

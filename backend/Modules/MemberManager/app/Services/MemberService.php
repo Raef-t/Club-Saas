@@ -141,7 +141,7 @@ class MemberService
 
             if ($autoGenerate) {
                 // Generate User Account for Mobile App
-                $username = 'player_' . $personId . '_' . Str::random(4);
+                $username = 'Mem-' . $personId . '-' . strtolower(Str::random(6));
                 $password = 'password123'; // Default password
                 
                 $user = User::create([

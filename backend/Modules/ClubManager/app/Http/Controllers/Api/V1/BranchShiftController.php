@@ -27,9 +27,12 @@ class BranchShiftController extends BaseController
                 new OA\Property(property: 'message', type: 'string', example: 'Branch shifts retrieved'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
                     new OA\Property(property: 'id', type: 'integer', example: 1),
-                    new OA\Property(property: 'name', type: 'string', example: 'الوردية الصباحية'),
+                    new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'activity_id', type: 'integer', example: 5),
+                    new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
                     new OA\Property(property: 'start_time', type: 'string', example: '08:00:00'),
-                    new OA\Property(property: 'end_time', type: 'string', example: '16:00:00')
+                    new OA\Property(property: 'end_time', type: 'string', example: '16:00:00'),
+                    new OA\Property(property: 'gender_allowed', type: 'string', example: 'mixed')
                 ]))
             ]
         )
@@ -52,11 +55,13 @@ class BranchShiftController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'start_time', 'end_time'],
+            required: ['activity_id', 'day_of_week', 'start_time', 'end_time', 'gender_allowed'],
             properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'الوردية المسائية'),
+                new OA\Property(property: 'activity_id', type: 'integer', description: 'معرف النشاط (يجب أن يكون تدريب جماعي أو خاص)', example: 5),
+                new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم الأسبوع (0-6)', example: 0),
                 new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '16:00:00'),
-                new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '23:59:59')
+                new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '23:59:59'),
+                new OA\Property(property: 'gender_allowed', type: 'string', description: 'male, female, mixed', example: 'mixed')
             ]
         )
     )]

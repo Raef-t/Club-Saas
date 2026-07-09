@@ -18,7 +18,6 @@ class StoreActivityRequest extends FormRequest
             'name' => 'required|string|max:150',
             'description' => 'nullable|string',
             'activity_type_id' => 'required|exists:activity_types,id',
-            'default_capacity' => 'nullable|integer|min:1',
             'is_private_equipment' => 'nullable|boolean',
             'gender_allowed' => 'nullable|in:male,female,mixed',
         ];

@@ -5460,6 +5460,506 @@
                 ]
             }
         },
+        "/v1/branches/{branch}/holidays": {
+            "get": {
+                "tags": [
+                    "Branch Holidays"
+                ],
+                "summary": "🗓️ عرض عطلات الفرع",
+                "description": "استرجاع قائمة بجميع أيام العطل الخاصة بفرع محدد.",
+                "operationId": "ce23362d05b274687df42b94685d2c06",
+                "parameters": [
+                    {
+                        "name": "branch",
+                        "in": "path",
+                        "description": "معرف الفرع",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع العطلات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Holidays retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/BranchHolidayResource"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Branch Holidays"
+                ],
+                "summary": "➕ إضافة عطلة جديدة",
+                "description": "إضافة يوم عطلة جديد لفرع محدد.",
+                "operationId": "ab45656698cd8e4a2a7f3747f52b2178",
+                "parameters": [
+                    {
+                        "name": "branch",
+                        "in": "path",
+                        "description": "معرف الفرع",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "نوع العطلة: weekly, specific_dates",
+                                        "type": "string",
+                                        "example": "specific_dates"
+                                    },
+                                    "day_of_week": {
+                                        "description": "يوم العطلة (0=Sunday, 6=Saturday) في حال كان النوع weekly",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "start_date": {
+                                        "description": "تاريخ البداية (للإغلاق المفاجئ/الصيانة)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-10"
+                                    },
+                                    "end_date": {
+                                        "description": "تاريخ النهاية",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-15"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إضافة العطلة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Holiday created successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BranchHolidayResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/holidays/{holiday}": {
+            "get": {
+                "tags": [
+                    "Branch Holidays"
+                ],
+                "summary": "🔍 تفاصيل العطلة",
+                "description": "استرجاع تفاصيل عطلة محددة.",
+                "operationId": "1aa882c3013a2fe12eb15322b7abbfad",
+                "parameters": [
+                    {
+                        "name": "holiday",
+                        "in": "path",
+                        "description": "معرف العطلة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع العطلة",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Holiday retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BranchHolidayResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على العطلة"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Branch Holidays"
+                ],
+                "summary": "📝 تعديل العطلة",
+                "description": "تعديل بيانات عطلة مسجلة.",
+                "operationId": "50d1f11c243d2815104f31ce3cc4002e",
+                "parameters": [
+                    {
+                        "name": "holiday",
+                        "in": "path",
+                        "description": "معرف العطلة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "example": "specific_dates"
+                                    },
+                                    "day_of_week": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-10"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-12"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التعديل بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Holiday updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BranchHolidayResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في البيانات"
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على العطلة"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Branch Holidays"
+                ],
+                "summary": "🗑️ حذف العطلة",
+                "description": "إزالة عطلة من النظام.",
+                "operationId": "75372f00e68573972930499e5ea51a42",
+                "parameters": [
+                    {
+                        "name": "holiday",
+                        "in": "path",
+                        "description": "معرف العطلة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الحذف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Holiday deleted successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على العطلة"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/branches/{branch}/settings": {
+            "get": {
+                "tags": [
+                    "Branch Settings"
+                ],
+                "summary": "⚙️ عرض إعدادات الفرع",
+                "description": "استرجاع إعدادات فرع محدد (نسبة النادي، نسبة المدرب، والراتب الافتراضي).",
+                "operationId": "9588bc18592bfc2f2178c589be578b02",
+                "parameters": [
+                    {
+                        "name": "branch",
+                        "in": "path",
+                        "description": "معرف الفرع",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الإعدادات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Settings retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BranchSettingResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الفرع غير موجود"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Branch Settings"
+                ],
+                "summary": "📝 تحديث إعدادات الفرع",
+                "description": "تحديث إعدادات فرع محدد.",
+                "operationId": "6096750a531d0e3551238a99baff14f9",
+                "parameters": [
+                    {
+                        "name": "branch",
+                        "in": "path",
+                        "description": "معرف الفرع",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "default_club_commission_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 40
+                                    },
+                                    "default_coach_commission_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 60
+                                    },
+                                    "default_employee_salary": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 3500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التحديث بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Settings updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BranchSettingResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في البيانات"
+                    },
+                    "404": {
+                        "description": "🚫 الفرع غير موجود"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/branches/{branch}/shifts": {
             "get": {
                 "tags": [
@@ -5503,9 +6003,17 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "الوردية الصباحية"
+                                                    "branch_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "activity_id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "day_of_week": {
+                                                        "type": "integer",
+                                                        "example": 0
                                                     },
                                                     "start_time": {
                                                         "type": "string",
@@ -5514,6 +6022,10 @@
                                                     "end_time": {
                                                         "type": "string",
                                                         "example": "16:00:00"
+                                                    },
+                                                    "gender_allowed": {
+                                                        "type": "string",
+                                                        "example": "mixed"
                                                     }
                                                 },
                                                 "type": "object"
@@ -5573,14 +6085,22 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name",
+                                    "activity_id",
+                                    "day_of_week",
                                     "start_time",
-                                    "end_time"
+                                    "end_time",
+                                    "gender_allowed"
                                 ],
                                 "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "الوردية المسائية"
+                                    "activity_id": {
+                                        "description": "معرف النشاط (يجب أن يكون تدريب جماعي أو خاص)",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "day_of_week": {
+                                        "description": "يوم الأسبوع (0-6)",
+                                        "type": "integer",
+                                        "example": 0
                                     },
                                     "start_time": {
                                         "type": "string",
@@ -5591,6 +6111,11 @@
                                         "type": "string",
                                         "format": "time",
                                         "example": "23:59:59"
+                                    },
+                                    "gender_allowed": {
+                                        "description": "male, female, mixed",
+                                        "type": "string",
+                                        "example": "mixed"
                                     }
                                 },
                                 "type": "object"
@@ -6394,9 +6919,39 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "setting_key": {
+                                    "theme_colors": {
+                                        "type": "object"
+                                    },
+                                    "language": {
                                         "type": "string",
-                                        "example": "value"
+                                        "example": "ar"
+                                    },
+                                    "allowed_debt_limit": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "grace_period_days": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "allow_partial_payment": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "enabled_features": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "attendance",
+                                            "subscriptions"
+                                        ]
+                                    },
+                                    "bg_image_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/bg.jpg"
                                     }
                                 },
                                 "type": "object"
@@ -11032,22 +11587,8 @@
                                     },
                                     "name": {
                                         "description": "اسم النشاط (مطلوب)",
-                                        "required": [
-                                            "ar"
-                                        ],
-                                        "properties": {
-                                            "ar": {
-                                                "description": "(مطلوب) الاسم بالعربية",
-                                                "type": "string",
-                                                "example": "يوغا"
-                                            },
-                                            "en": {
-                                                "description": "(اختياري) الاسم بالإنجليزية",
-                                                "type": "string",
-                                                "example": "Yoga"
-                                            }
-                                        },
-                                        "type": "object"
+                                        "type": "string",
+                                        "example": "يوغا"
                                     },
                                     "description": {
                                         "description": "(اختياري) وصف النشاط",
@@ -11059,15 +11600,15 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "default_capacity": {
-                                        "description": "(اختياري) السعة الافتراضية للنشاط",
-                                        "type": "integer",
-                                        "example": 20
-                                    },
-                                    "is_private_equipment": {
-                                        "description": "(اختياري) هل يتطلب معدات خاصة؟",
+                                    "is_active": {
                                         "type": "boolean",
-                                        "example": false
+                                        "example": true
+                                    },
+                                    "duration_minutes": {
+                                        "description": "المدة الافتراضية للنشاط (بالدقائق)",
+                                        "type": "integer",
+                                        "example": 60,
+                                        "nullable": true
                                     },
                                     "gender_allowed": {
                                         "description": "(اختياري) الجنس المسموح: male, female, mixed",
@@ -11325,17 +11866,9 @@
                             "schema": {
                                 "properties": {
                                     "name": {
-                                        "properties": {
-                                            "ar": {
-                                                "type": "string",
-                                                "example": "سباحة متقدمة"
-                                            },
-                                            "en": {
-                                                "type": "string",
-                                                "example": "Advanced Swimming"
-                                            }
-                                        },
-                                        "type": "object"
+                                        "description": "اسم النشاط",
+                                        "type": "string",
+                                        "example": "سباحة متقدمة"
                                     },
                                     "activity_type_id": {
                                         "description": "(اختياري) معرف نوع النشاط",
@@ -11526,22 +12059,11 @@
         "/v1/activity-types": {
             "get": {
                 "tags": [
-                    "Activity Types"
+                    "Sports & Activities"
                 ],
                 "summary": "📋 عرض جميع أنواع الأنشطة",
-                "description": "استرجاع قائمة بجميع أنواع الأنشطة الرياضية.",
+                "description": "استرجاع قائمة بجميع أنواع الأنشطة (تُستخدم لتحديد النشاط عند إضافة وردية أو نشاط جديد).",
                 "operationId": "d1bf4f6b012823495143265eabbc5aaf",
-                "parameters": [
-                    {
-                        "name": "branch_id",
-                        "in": "query",
-                        "description": "تصفية حسب معرف الفرع",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة أنواع الأنشطة",
@@ -11562,427 +12084,6 @@
                                             "items": {
                                                 "$ref": "#/components/schemas/ActivityTypeResource"
                                             }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Activity Types"
-                ],
-                "summary": "➕ إنشاء نوع نشاط جديد",
-                "description": "إضافة نوع نشاط رياضي جديد إلى النظام.",
-                "operationId": "371e5a4660a948959de5c1c127b6e8bb",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "branch_id"
-                                ],
-                                "properties": {
-                                    "branch_id": {
-                                        "description": "(مطلوب) معرف الفرع",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "name": {
-                                        "properties": {
-                                            "ar": {
-                                                "type": "string",
-                                                "example": "صالة مفتوحة"
-                                            },
-                                            "en": {
-                                                "type": "string",
-                                                "example": "open_gym"
-                                            }
-                                        },
-                                        "type": "object"
-                                    },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم إنشاء نوع النشاط بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activity type created successfully"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/ActivityTypeResource"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/activity-types/{activity_type}": {
-            "get": {
-                "tags": [
-                    "Activity Types"
-                ],
-                "summary": "🔍 عرض تفاصيل نوع النشاط",
-                "description": "استرجاع بيانات نوع نشاط محدد.",
-                "operationId": "24c9d258a57d342825127ee81a4aadd7",
-                "parameters": [
-                    {
-                        "name": "activity_type",
-                        "in": "path",
-                        "description": "معرف نوع النشاط",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تفاصيل نوع النشاط",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activity type retrieved successfully"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/ActivityTypeResource"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على نوع النشاط",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Activity Types"
-                ],
-                "summary": "📝 تحديث نوع نشاط",
-                "description": "تعديل بيانات نوع نشاط محدد.",
-                "operationId": "2ee16e17bad63ecc8026b48396f97469",
-                "parameters": [
-                    {
-                        "name": "activity_type",
-                        "in": "path",
-                        "description": "معرف نوع النشاط",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "name": {
-                                        "properties": {
-                                            "ar": {
-                                                "type": "string",
-                                                "example": "صالة مفتوحة"
-                                            },
-                                            "en": {
-                                                "type": "string",
-                                                "example": "open_gym"
-                                            }
-                                        },
-                                        "type": "object"
-                                    },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم التحديث بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activity type updated successfully"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/ActivityTypeResource"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على نوع النشاط",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Activity Types"
-                ],
-                "summary": "🗑️ حذف نوع نشاط",
-                "description": "إزالة نوع نشاط من النظام.",
-                "operationId": "c219900ea00d4d2fb22d3e741db1cea6",
-                "parameters": [
-                    {
-                        "name": "activity_type",
-                        "in": "path",
-                        "description": "معرف نوع النشاط",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الحذف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activity type deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على نوع النشاط",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
                                         }
                                     },
                                     "type": "object"
@@ -21386,17 +21487,9 @@
                                         "example": 1
                                     },
                                     "name": {
-                                        "properties": {
-                                            "ar": {
-                                                "type": "string",
-                                                "example": "الاشتراك الذهبي"
-                                            },
-                                            "en": {
-                                                "type": "string",
-                                                "example": "Gold Subscription"
-                                            }
-                                        },
-                                        "type": "object"
+                                        "description": "اسم الخطة",
+                                        "type": "string",
+                                        "example": "الاشتراك الذهبي"
                                     },
                                     "type": {
                                         "type": "string",
@@ -21770,17 +21863,9 @@
                             "schema": {
                                 "properties": {
                                     "name": {
-                                        "properties": {
-                                            "ar": {
-                                                "type": "string",
-                                                "example": "الاشتراك الماسي"
-                                            },
-                                            "en": {
-                                                "type": "string",
-                                                "example": "Diamond Subscription"
-                                            }
-                                        },
-                                        "type": "object"
+                                        "description": "اسم الخطة",
+                                        "type": "string",
+                                        "example": "الاشتراك الماسي"
                                     },
                                     "type": {
                                         "type": "string",
@@ -23022,6 +23107,97 @@
                 },
                 "type": "object"
             },
+            "BranchHolidayResource": {
+                "title": "Branch Holiday Resource",
+                "description": "Branch holiday resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "type": {
+                        "description": "weekly or specific_dates",
+                        "type": "string",
+                        "example": "specific_dates"
+                    },
+                    "day_of_week": {
+                        "description": "0 for Sunday, 6 for Saturday",
+                        "type": "integer",
+                        "example": 5,
+                        "nullable": true
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-08-10",
+                        "nullable": true
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-08-15",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "BranchSettingResource": {
+                "title": "Branch Setting Resource",
+                "description": "Branch settings representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "working_hours_start": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "08:00:00",
+                        "nullable": true
+                    },
+                    "working_hours_end": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "22:00:00",
+                        "nullable": true
+                    },
+                    "default_club_commission_percentage": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 40,
+                        "nullable": true
+                    },
+                    "default_coach_commission_percentage": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 60,
+                        "nullable": true
+                    },
+                    "default_employee_salary": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 3500,
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "StoreMemberRequest": {
                 "title": "StoreMemberRequest",
                 "required": [
@@ -23214,10 +23390,6 @@
                             }
                         },
                         "type": "object"
-                    },
-                    "branch_id": {
-                        "type": "integer",
-                        "example": 1
                     },
                     "is_active": {
                         "type": "boolean",
@@ -23436,6 +23608,14 @@
             "description": "Branch Management"
         },
         {
+            "name": "Branch Holidays",
+            "description": "Branch Holidays"
+        },
+        {
+            "name": "Branch Settings",
+            "description": "Branch Settings"
+        },
+        {
             "name": "Branch Shifts",
             "description": "Branch Shifts"
         },
@@ -23486,10 +23666,6 @@
         {
             "name": "Sports & Activities",
             "description": "Sports & Activities"
-        },
-        {
-            "name": "Activity Types",
-            "description": "Activity Types"
         },
         {
             "name": "Session Bookings",
