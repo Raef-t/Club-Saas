@@ -26,4 +26,9 @@ class SubscriptionPlanActivity extends Model
     {
         return $this->belongsTo(\Modules\Sports\Models\StaffActivity::class, 'staff_activity_id');
     }
+
+    public function sessionTemplate()
+    {
+        return $this->belongsTo(\Modules\Sports\Models\SportSessionTemplate::class, 'session_template_id');
+    }
 }
