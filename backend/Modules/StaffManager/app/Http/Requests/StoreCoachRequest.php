@@ -55,6 +55,56 @@ class StoreCoachRequest extends FormRequest
             'work_types.*'            => ['string', 'in:equipment,activities'],
             'work_status'             => ['nullable', 'string'],
             'is_active'               => ['nullable', 'boolean'],
+            'activity_ids'            => ['nullable', 'array'],
+            'activity_ids.*'          => ['exists:activities,id'],
+            'shifts'                  => ['nullable', 'array'],
+            'shifts.*'                => ['exists:branch_shifts,id'],
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->has('shifts') && !empty($this->shifts)) {
+                if (!$this->has('activity_ids') || empty($this->activity_ids)) {
+                    $validator->errors()->add('shifts', 'لا يمكن تحديد شفتات بدون تحديد أنشطة للمدرب.');
+                    return;
+                }
+
+                $activities = \Modules\Sports\Models\Activity::whereIn('id', $this->activity_ids)
+                    ->with('activityType')
+                    ->get();
+
+                $hasValidType = false;
+                $validNames = ['تدريب جماعي', 'تدريب خاص', 'group training', 'private training'];
+
+                foreach ($activities as $activity) {
+                    if ($activity->activityType) {
+                        $nameData = $activity->activityType->name;
+                        if (is_string($nameData)) {
+                            $nameData = json_decode($nameData, true) ?? $nameData;
+                        }
+                        
+                        if (is_array($nameData)) {
+                            foreach ($nameData as $value) {
+                                if (in_array(strtolower(trim($value)), $validNames)) {
+                                    $hasValidType = true;
+                                    break 2;
+                                }
+                            }
+                        } elseif (is_string($nameData)) {
+                             if (in_array(strtolower(trim($nameData)), $validNames)) {
+                                 $hasValidType = true;
+                                 break;
+                             }
+                        }
+                    }
+                }
+
+                if (!$hasValidType) {
+                    $validator->errors()->add('shifts', 'لا يمكن تعيين شفتات للمدرب إلا إذا كان النشاط من نوع تدريب جماعي أو تدريب خاص.');
+                }
+            }
+        });
     }
 }

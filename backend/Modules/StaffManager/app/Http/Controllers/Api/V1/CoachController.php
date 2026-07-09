@@ -65,6 +65,8 @@ class CoachController extends Controller
                         new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 20.5),
                         new OA\Property(property: 'work_types', type: 'array', items: new OA\Items(type: 'string', example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة، فعاليات)'),
                         new OA\Property(property: 'experience_years', type: 'integer', example: 5),
+                        new OA\Property(property: 'activity_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الأنشطة (اختياري)'),
+                        new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)'),
                     ]
                 )
             )

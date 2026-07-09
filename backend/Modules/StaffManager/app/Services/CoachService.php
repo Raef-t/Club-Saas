@@ -94,7 +94,6 @@ class CoachService
             // 6. Generate 7 QR codes for this coach
             $this->qrCodeService->generateForPerson($person->id);
 
-            // 7. Create Coach Detail
             CoachDetail::create([
                 'staff_id'               => $staff->id,
                 'experience_years'       => $data['experience_years'] ?? 0,
@@ -104,6 +103,18 @@ class CoachService
                 'gym_type'               => $data['gym_type'] ?? null,
                 'work_types'             => $data['work_types'] ?? null,
             ]);
+
+            // 8. Assign Activities if provided
+            if (!empty($data['activity_ids']) && is_array($data['activity_ids'])) {
+                $staff->activities()->syncWithoutDetaching($data['activity_ids']);
+            }
+
+            // 9. Assign Shifts if provided
+            if (!empty($data['shifts']) && is_array($data['shifts'])) {
+                foreach ($data['shifts'] as $branchShiftId) {
+                    $staff->shifts()->create(['branch_shift_id' => $branchShiftId]);
+                }
+            }
 
             return $this->getSingleCoach($staff->id);
         });
