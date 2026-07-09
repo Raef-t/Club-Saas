@@ -115,7 +115,6 @@ class SessionDeductionService
     {
         $metadata['subscription_id'] = $subscription->id;
         $metadata['deduction_status'] = 'completed';
-        $metadata['sessions_before_checkin'] = $subscription->remaining_sessions;
         $metadata['deducted_by_staff_id'] = Auth::id();
 
         $attendance->update([

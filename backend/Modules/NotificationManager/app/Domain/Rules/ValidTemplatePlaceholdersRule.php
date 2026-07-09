@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Rule;
 
 class ValidTemplatePlaceholdersRule implements Rule
 {
-    protected $allowedPlaceholders = ['member_name', 'expiry_date', 'plan_name', 'remaining_sessions', 'paid_amount'];
+    protected $allowedPlaceholders = ['member_name', 'expiry_date', 'plan_name', 'paid_amount'];
 
     public function passes($attribute, $value): bool
     {

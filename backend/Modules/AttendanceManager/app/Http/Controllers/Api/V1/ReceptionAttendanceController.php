@@ -50,7 +50,6 @@ class ReceptionAttendanceController extends BaseController
                     'ps.start_date',
                     'ps.end_date',
                     'ps.status',
-                    'ps.remaining_sessions',
                     'ps.total_amount',
                     'ps.paid_amount',
                     'ps.remaining_amount',

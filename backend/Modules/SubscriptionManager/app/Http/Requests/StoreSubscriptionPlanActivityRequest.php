@@ -16,8 +16,6 @@ class StoreSubscriptionPlanActivityRequest extends FormRequest
             'plan_id' => 'required|integer|exists:subscription_plans,id',
             'activity_id' => 'required|integer|exists:activities,id',
             'coach_id' => 'required|integer|exists:staff,id',
-            'sessions_count' => 'nullable|integer|min:1',
-            'is_unlimited' => 'nullable|boolean',
         ];
     }
 }

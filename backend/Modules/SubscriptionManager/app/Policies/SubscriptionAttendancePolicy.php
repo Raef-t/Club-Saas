@@ -61,10 +61,8 @@ class SubscriptionAttendancePolicy implements AttendancePolicy
             return AttendanceDecision::deny("Subscription is currently frozen.");
         }
 
-        // Check remaining sessions if session-based
-        if ($subscription->remaining_sessions !== null && $subscription->remaining_sessions <= 0) {
-            return AttendanceDecision::deny("No remaining sessions left on this subscription.");
-        }
+        // Removed overall remaining sessions check since it's activity-based now
+
 
         // Verify remaining amount (debt) and grace period
         if ($subscription->remaining_amount > 0) {
@@ -84,7 +82,6 @@ class SubscriptionAttendancePolicy implements AttendancePolicy
         return AttendanceDecision::allow([
             'member_id' => $subscription->member_id,
             'plan_id' => $subscription->plan_id,
-            'remaining_sessions_before' => $subscription->remaining_sessions,
         ]);
     }
 }

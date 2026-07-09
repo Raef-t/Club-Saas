@@ -125,7 +125,7 @@ class MemberDashboardService
                 'membership_number' => $member->member_number ?? null,
                 'price' => (float) ($subscription->total_amount ?? $subscription->plan->base_price ?? 0),
                 'formatted_price' => ($subscription->total_amount ?? $subscription->plan->base_price ?? 0) . '$',
-                'remaining_sessions' => $subscription->remaining_sessions,
+                'remaining_sessions' => $activities->where('is_unlimited', false)->sum('remaining_sessions'),
                 'activities' => $activities->toArray(),
             ];
         })->toArray();
@@ -137,9 +137,12 @@ class MemberDashboardService
     protected function getStats(int $memberId): array
     {
         // Remaining sessions from active subscription
-        $remainingSessions = PlayerSubscription::where('member_id', $memberId)
-            ->where('status', 'active')
-            ->sum('remaining_sessions');
+        $remainingSessions = \Illuminate\Support\Facades\DB::table('player_subscription_items')
+            ->join('player_subscriptions', 'player_subscription_items.player_subscription_id', '=', 'player_subscriptions.id')
+            ->where('player_subscriptions.member_id', $memberId)
+            ->where('player_subscriptions.status', 'active')
+            ->where('player_subscription_items.is_unlimited', false)
+            ->sum(\Illuminate\Support\Facades\DB::raw('player_subscription_items.sessions_allocated - player_subscription_items.sessions_consumed'));
 
         // Total attendance count
         $totalAttendance = Attendance::where('attendable_type', 'player_subscription')

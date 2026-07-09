@@ -18,7 +18,6 @@ class PlayerSubscription extends Model
         'start_date',
         'end_date',
         'status',
-        'remaining_sessions',
         'notes',
     ];
 

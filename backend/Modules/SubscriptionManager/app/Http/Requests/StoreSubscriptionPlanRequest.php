@@ -13,10 +13,19 @@ class StoreSubscriptionPlanRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+        $merge = [];
         if ($this->has('is_unlimited_subscribers') && filter_var($this->is_unlimited_subscribers, FILTER_VALIDATE_BOOLEAN)) {
-            $this->merge([
-                'max_subscribers' => 0
-            ]);
+            $merge['max_subscribers'] = 0;
+        }
+
+        if (empty($this->duration_days) && $this->start_date && $this->end_date) {
+            $start = \Carbon\Carbon::parse($this->start_date);
+            $end = \Carbon\Carbon::parse($this->end_date);
+            $merge['duration_days'] = $start->diffInDays($end);
+        }
+
+        if (!empty($merge)) {
+            $this->merge($merge);
         }
     }
 

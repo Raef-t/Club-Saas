@@ -110,16 +110,12 @@ class RealPlansAndActivitiesSeeder extends Seeder
         SubscriptionPlanActivity::create([
             'plan_id' => $goldPlan->id,
             'activity_id' => $ironActivity->id,
-            'is_unlimited' => true,
-            'sessions_count' => null,
         ]);
         
         // - يحق له دخول المسبح بشكل "مفتوح"
         SubscriptionPlanActivity::create([
             'plan_id' => $goldPlan->id,
             'activity_id' => $poolActivity->id,
-            'is_unlimited' => true,
-            'sessions_count' => null,
         ]);
 
         // بالنسبة لاشتراك الـ 10 حصص:
@@ -127,8 +123,6 @@ class RealPlansAndActivitiesSeeder extends Seeder
         SubscriptionPlanActivity::create([
             'plan_id' => $sessionsPlan->id,
             'activity_id' => $crossFitActivity->id,
-            'is_unlimited' => false,
-            'sessions_count' => 10,
         ]);
 
     }

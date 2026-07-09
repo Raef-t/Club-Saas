@@ -38,13 +38,7 @@ class CheckSubscriptionStatus extends Command
         // 1. Find subscriptions to expire
         $toExpire = PlayerSubscription::where('status', 'active')
             ->where(function ($query) {
-                $query->whereNotNull('end_date')->where('end_date', '<=', now()->toDateString())
-                    ->orWhere(function ($q) {
-                        $q->where('remaining_sessions', '<=', 0)
-                          ->whereHas('plan', function ($qp) {
-                              $qp->where('type', 'session_based');
-                          });
-                    });
+                $query->whereNotNull('end_date')->where('end_date', '<=', now()->toDateString());
             })
             ->get();
 
@@ -75,10 +69,15 @@ class CheckSubscriptionStatus extends Command
                 if ($member) {
                     $fullName = $member->person_id ? DB::table('people')->where('id', $member->person_id)->value('full_name') : 'Member';
                     try {
-                        $notificationService->notifySubscriptionExpired($member, [
-                            'name' => $fullName,
-                            'plan_name' => $sub->plan->getTranslation('name', app()->getLocale()) ?? 'Plan',
-                        ]);
+                        $userId = $member->person && $member->person->user ? $member->person->user->id : null;
+                        if ($userId) {
+                            $notificationService->createNotification([
+                                'title' => 'انتهاء الاشتراك',
+                                'body' => "عزيزي {$fullName}، لقد انتهى اشتراكك في خطة {$sub->plan->getTranslation('name', app()->getLocale())}. نأمل تجديد اشتراكك قريباً.",
+                                'user_ids' => [$userId],
+                                'sender_type' => 'system'
+                            ]);
+                        }
                     } catch (\Exception $e) {
                         Log::error("Failed to send subscription expired notification: " . $e->getMessage());
                     }
@@ -100,11 +99,15 @@ class CheckSubscriptionStatus extends Command
             if ($member) {
                 $fullName = $member->person_id ? DB::table('people')->where('id', $member->person_id)->value('full_name') : 'Member';
                 try {
-                    $notificationService->notifySubscriptionExpiring($member, [
-                        'name' => $fullName,
-                        'plan_name' => $sub->plan->getTranslation('name', app()->getLocale()) ?? 'Plan',
-                        'days_left' => 3,
-                    ]);
+                    $userId = $member->person && $member->person->user ? $member->person->user->id : null;
+                    if ($userId) {
+                        $notificationService->createNotification([
+                            'title' => 'اقتراب انتهاء الاشتراك',
+                            'body' => "عزيزي {$fullName}، نود تذكيرك بأن اشتراكك في خطة {$sub->plan->getTranslation('name', app()->getLocale())} سينتهي بعد 3 أيام.",
+                            'user_ids' => [$userId],
+                            'sender_type' => 'system'
+                        ]);
+                    }
                 } catch (\Exception $e) {
                     Log::error("Failed to send subscription expiring soon notification: " . $e->getMessage());
                 }
