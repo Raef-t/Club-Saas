@@ -44,6 +44,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
         Route::delete('/{id}/activities/{activityId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeActivity']);
         Route::post('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'uploadCertification']);
         Route::get('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'getCertifications']);
+        Route::post('/{id}/schedule', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'setSchedule']);
+        Route::post('/{id}/shifts', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'addShift']);
+        Route::put('/{id}/shifts/{shiftId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updateShift']);
+        Route::delete('/{id}/shifts/{shiftId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeShift']);
         Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
     });
 

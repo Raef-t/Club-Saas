@@ -13,6 +13,7 @@ class BranchShift extends Model
     protected $fillable = [
         'branch_id',
         'activity_id',
+        'facility_id',
         'day_of_week',
         'start_time',
         'end_time',
