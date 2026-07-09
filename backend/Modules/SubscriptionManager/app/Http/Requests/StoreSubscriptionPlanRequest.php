@@ -46,11 +46,10 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'activities' => 'nullable|array',
             'activities.*.staff_activity_id' => 'required_with:activities|exists:staff_activities,id',
             'session_templates' => 'nullable|array',
-            'session_templates.*.facility_id' => 'required_with:session_templates|exists:facilities,id',
+            'session_templates.*.facility_id' => 'nullable|exists:facilities,id',
             'session_templates.*.day_of_week' => 'required_with:session_templates|integer|between:0,6',
             'session_templates.*.start_time' => 'required_with:session_templates|date_format:H:i',
             'session_templates.*.end_time' => 'required_with:session_templates|date_format:H:i|after:session_templates.*.start_time',
-            'session_templates.*.max_players' => 'required_with:session_templates|integer|min:1',
             'session_templates.*.gender_allowed' => 'required_with:session_templates|in:male,female,both',
         ];
     }

@@ -151,11 +151,10 @@ class SubscriptionPlanController extends BaseController
                     items: new OA\Items(
                         type: 'object',
                         properties: [
-                            new OA\Property(property: 'facility_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                             new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
                             new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
                             new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
-                            new OA\Property(property: 'max_players', type: 'integer', example: 20),
                             new OA\Property(property: 'gender_allowed', type: 'string', example: 'both')
                         ]
                     )
@@ -280,11 +279,10 @@ class SubscriptionPlanController extends BaseController
                     items: new OA\Items(
                         type: 'object',
                         properties: [
-                            new OA\Property(property: 'facility_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                             new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
                             new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
                             new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
-                            new OA\Property(property: 'max_players', type: 'integer', example: 20),
                             new OA\Property(property: 'gender_allowed', type: 'string', example: 'both')
                         ]
                     )

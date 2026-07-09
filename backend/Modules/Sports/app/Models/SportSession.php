@@ -16,7 +16,6 @@ class SportSession extends Model
         'facility_id',
         'start_time',
         'end_time',
-        'max_players',
         'gender_allowed',
         'status',
         'booked_count',
@@ -26,7 +25,6 @@ class SportSession extends Model
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
-        'max_players' => 'integer',
         'booked_count' => 'integer',
     ];
 

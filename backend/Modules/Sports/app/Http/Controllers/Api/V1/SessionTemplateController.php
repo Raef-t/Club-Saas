@@ -51,7 +51,6 @@ class SessionTemplateController extends BaseController
                 new OA\Property(property: 'day_of_week', type: 'integer', description: '0=Sunday, 1=Monday, ..., 6=Saturday', example: 0),
                 new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '08:00'),
                 new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '09:00'),
-                new OA\Property(property: 'max_players', type: 'integer', nullable: true, example: 20),
                 new OA\Property(property: 'gender_allowed', type: 'string', enum: ['male', 'female', 'both'], example: 'both'),
             ]
         )
@@ -77,7 +76,6 @@ class SessionTemplateController extends BaseController
             'day_of_week' => 'required|integer|min:0|max:6',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'max_players' => 'nullable|integer',
             'gender_allowed' => 'nullable|string',
         ]);
 
@@ -117,7 +115,6 @@ class SessionTemplateController extends BaseController
                 new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
                 new OA\Property(property: 'start_time', type: 'string', example: '10:00'),
                 new OA\Property(property: 'end_time', type: 'string', example: '11:00'),
-                new OA\Property(property: 'max_players', type: 'integer', nullable: true, example: 25),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true),
             ]
         )
@@ -135,7 +132,6 @@ class SessionTemplateController extends BaseController
             'day_of_week' => 'nullable|integer|min:0|max:6',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'max_players' => 'nullable|integer',
             'is_active' => 'nullable|boolean',
         ]);
 
