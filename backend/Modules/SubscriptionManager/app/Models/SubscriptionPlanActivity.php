@@ -12,13 +12,12 @@ class SubscriptionPlanActivity extends Model
         'plan_id',
         'activity_id',
         'coach_id',
-        'sessions_count',
-        'is_unlimited',
+
     ];
 
     protected $casts = [
-        'is_unlimited' => 'boolean',
-        'sessions_count' => 'integer',
+        'activity_id' => 'integer',
+        'coach_id' => 'integer',
     ];
 
     public function plan()

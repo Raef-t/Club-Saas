@@ -38,13 +38,7 @@ class CheckSubscriptionStatus extends Command
         // 1. Find subscriptions to expire
         $toExpire = PlayerSubscription::where('status', 'active')
             ->where(function ($query) {
-                $query->whereNotNull('end_date')->where('end_date', '<=', now()->toDateString())
-                    ->orWhere(function ($q) {
-                        $q->where('remaining_sessions', '<=', 0)
-                          ->whereHas('plan', function ($qp) {
-                              $qp->where('type', 'session_based');
-                          });
-                    });
+                $query->whereNotNull('end_date')->where('end_date', '<=', now()->toDateString());
             })
             ->get();
 

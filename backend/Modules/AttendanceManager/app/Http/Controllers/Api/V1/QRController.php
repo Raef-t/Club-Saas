@@ -86,7 +86,6 @@ class QRController extends BaseController
                     new OA\Property(property: 'avatar_url', type: 'string', nullable: true, example: 'https://example.com/avatar.jpg'),
                     new OA\Property(property: 'qr_code_value', type: 'string', example: 'eyJ0eXAi...'),
                     new OA\Property(property: 'expires_in_seconds', type: 'integer', example: 30),
-                    new OA\Property(property: 'remaining_sessions', type: 'integer', example: 12),
                     new OA\Property(property: 'is_inside_facility', type: 'boolean', example: false)
                 ])
             ]
@@ -118,7 +117,6 @@ class QRController extends BaseController
             ->where('player_subscriptions.member_id', $member->id)
             ->where('player_subscriptions.status', 'active')
             ->select(
-                'player_subscriptions.remaining_sessions',
                 'subscription_plans.name as plan_name'
             )
             ->first();
@@ -141,7 +139,6 @@ class QRController extends BaseController
             'avatar_url' => $person->photo_url ?? null,
             'qr_code_value' => $qrToken,
             'expires_in_seconds' => 30,
-            'remaining_sessions' => $subscription ? (int) $subscription->remaining_sessions : 0,
             'is_inside_facility' => $activeCheckIn,
         ], __('QR data retrieved successfully.'));
     }

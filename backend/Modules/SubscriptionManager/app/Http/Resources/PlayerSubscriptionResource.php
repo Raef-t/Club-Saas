@@ -25,7 +25,6 @@ class PlayerSubscriptionResource extends JsonResource
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
             'status' => $this->status,
-            'remaining_sessions' => $this->remaining_sessions,
             'total_amount' => $this->total_amount,
             'paid_amount' => $this->paid_amount,
             'remaining_amount' => $this->remaining_amount,

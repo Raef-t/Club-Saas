@@ -150,7 +150,6 @@ class SubscriptionService
                 'remaining_amount' => $remainingAmount,
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate ? $endDate->toDateString() : null,
-                'remaining_sessions' => $plan->session_count,
                 'status' => 'active',
                 'notes' => $options['notes'] ?? null,
             ]);
@@ -165,8 +164,8 @@ class SubscriptionService
                 $subscription->items()->create([
                     'activity_id' => $planActivity->activity_id,
                     'coach_id' => $coachId,
-                    'sessions_allocated' => $planActivity->sessions_count,
-                    'is_unlimited' => $planActivity->is_unlimited,
+                    'sessions_allocated' => $plan->session_count,
+                    'is_unlimited' => is_null($plan->session_count),
                 ]);
             }
 
