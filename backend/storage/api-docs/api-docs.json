@@ -14517,9 +14517,13 @@
                                         "format": "float",
                                         "example": 20.5
                                     },
-                                    "specialization": {
-                                        "type": "string",
-                                        "example": "Bodybuilding"
+                                    "work_types": {
+                                        "description": "أنواع عمل المدرب (أجهزة، فعاليات)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "equipment"
+                                        }
                                     },
                                     "experience_years": {
                                         "type": "integer",
@@ -15077,9 +15081,13 @@
                                         "format": "float",
                                         "example": 25
                                     },
-                                    "specialization": {
-                                        "type": "string",
-                                        "example": "CrossFit"
+                                    "work_types": {
+                                        "description": "أنواع عمل المدرب (أجهزة، فعاليات)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "equipment"
+                                        }
                                     },
                                     "experience_years": {
                                         "type": "integer",
