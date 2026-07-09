@@ -63,15 +63,7 @@ class CoachService
             }
 
             // 2. Generate unique username
-            $firstNameStr = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $data['first_name']));
-            if (empty($firstNameStr)) {
-                $firstNameStr = 'coach';
-            }
-
-            do {
-                $randomNumber = rand(100, 999);
-                $username = $firstNameStr . $randomNumber;
-            } while (User::where('username', $username)->exists());
+            $username = 'Coa-' . $person->id . '-' . strtolower(Str::random(6));
 
 
             // 4. Create User
