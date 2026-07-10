@@ -20,6 +20,15 @@ class UpdateCoachRequest extends FormRequest
                     : [$this->branch_ids]
             ]);
         }
+
+        // Filter empty values from arrays sent via multipart/form-data
+        $arrayFields = ['branch_ids', 'work_types'];
+        foreach ($arrayFields as $field) {
+            if ($this->has($field) && is_array($this->input($field))) {
+                $filtered = array_filter($this->input($field), fn($value) => !is_null($value) && $value !== '');
+                $this->merge([$field => array_values($filtered)]);
+            }
+        }
     }
 
     public function rules(): array

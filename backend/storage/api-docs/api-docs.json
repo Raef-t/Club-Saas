@@ -5547,28 +5547,44 @@
                                 "properties": {
                                     "type": {
                                         "description": "نوع العطلة: weekly, specific_dates",
-                                        "type": "string",
-                                        "example": "specific_dates"
+                                        "type": "string"
                                     },
                                     "day_of_week": {
                                         "description": "يوم العطلة (0=Sunday, 6=Saturday) في حال كان النوع weekly",
                                         "type": "integer",
-                                        "example": 5
+                                        "nullable": true
                                     },
                                     "start_date": {
-                                        "description": "تاريخ البداية (للإغلاق المفاجئ/الصيانة)",
+                                        "description": "تاريخ البداية (في حال specific_dates)",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-08-10"
+                                        "nullable": true
                                     },
                                     "end_date": {
-                                        "description": "تاريخ النهاية",
+                                        "description": "تاريخ النهاية (في حال specific_dates)",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-08-15"
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
+                            },
+                            "examples": {
+                                "Weekly Holiday": {
+                                    "summary": "عطلة أسبوعية متكررة (مثال: كل جمعة)",
+                                    "value": {
+                                        "type": "weekly",
+                                        "day_of_week": 5
+                                    }
+                                },
+                                "Specific Dates Holiday": {
+                                    "summary": "عطلة في تواريخ محددة",
+                                    "value": {
+                                        "type": "specific_dates",
+                                        "start_date": "2026-08-10",
+                                        "end_date": "2026-08-15"
+                                    }
+                                }
                             }
                         }
                     }
@@ -5694,25 +5710,45 @@
                             "schema": {
                                 "properties": {
                                     "type": {
-                                        "type": "string",
-                                        "example": "specific_dates"
+                                        "description": "نوع العطلة: weekly, specific_dates",
+                                        "type": "string"
                                     },
                                     "day_of_week": {
+                                        "description": "يوم العطلة",
                                         "type": "integer",
                                         "nullable": true
                                     },
                                     "start_date": {
+                                        "description": "تاريخ البداية",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-08-10"
+                                        "nullable": true
                                     },
                                     "end_date": {
+                                        "description": "تاريخ النهاية",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-08-12"
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
+                            },
+                            "examples": {
+                                "Update to Weekly Holiday": {
+                                    "summary": "تحويل العطلة إلى أسبوعية متكررة",
+                                    "value": {
+                                        "type": "weekly",
+                                        "day_of_week": 5
+                                    }
+                                },
+                                "Update to Specific Dates": {
+                                    "summary": "تحويل العطلة إلى تواريخ محددة",
+                                    "value": {
+                                        "type": "specific_dates",
+                                        "start_date": "2026-08-10",
+                                        "end_date": "2026-08-12"
+                                    }
+                                }
                             }
                         }
                     }
@@ -14694,7 +14730,7 @@
                                 "required": [
                                     "first_name",
                                     "last_name",
-                                    "branch_ids",
+                                    "branch_ids[]",
                                     "age"
                                 ],
                                 "properties": {
@@ -14733,7 +14769,7 @@
                                         "format": "binary",
                                         "nullable": true
                                     },
-                                    "branch_ids": {
+                                    "branch_ids[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
@@ -14760,7 +14796,7 @@
                                         "format": "float",
                                         "example": 20.5
                                     },
-                                    "work_types": {
+                                    "work_types[]": {
                                         "description": "أنواع عمل المدرب (أجهزة، فعاليات)",
                                         "type": "array",
                                         "items": {
@@ -14772,7 +14808,7 @@
                                         "type": "integer",
                                         "example": 5
                                     },
-                                    "activity_ids": {
+                                    "activity_ids[]": {
                                         "description": "مصفوفة معرفات الأنشطة (اختياري)",
                                         "type": "array",
                                         "items": {
@@ -14780,7 +14816,7 @@
                                             "example": 1
                                         }
                                     },
-                                    "shifts": {
+                                    "shifts[]": {
                                         "description": "مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)",
                                         "type": "array",
                                         "items": {
@@ -15313,7 +15349,7 @@
                                         "format": "binary",
                                         "nullable": true
                                     },
-                                    "branch_ids": {
+                                    "branch_ids[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
@@ -15340,7 +15376,7 @@
                                         "format": "float",
                                         "example": 25
                                     },
-                                    "work_types": {
+                                    "work_types[]": {
                                         "description": "أنواع عمل المدرب (أجهزة، فعاليات)",
                                         "type": "array",
                                         "items": {
