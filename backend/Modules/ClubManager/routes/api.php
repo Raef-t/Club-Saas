@@ -27,6 +27,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Branch Shifts
     Route::get('branches/{branch}/shifts', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'index']);
     Route::post('branches/{branch}/shifts', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'store']);
+    Route::put('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'update']);
     Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
 
     Route::apiResource('lockers', LockerController::class);

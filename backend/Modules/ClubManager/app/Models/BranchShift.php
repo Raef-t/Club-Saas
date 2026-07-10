@@ -12,7 +12,6 @@ class BranchShift extends Model
 
     protected $fillable = [
         'branch_id',
-        'activity_id',
         'facility_id',
         'day_of_week',
         'start_time',
@@ -25,8 +24,4 @@ class BranchShift extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function activity(): BelongsTo
-    {
-        return $this->belongsTo(\Modules\Sports\Models\Activity::class);
-    }
 }

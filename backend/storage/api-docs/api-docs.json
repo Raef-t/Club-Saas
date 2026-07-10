@@ -5911,7 +5911,19 @@
                                     "default_employee_salary": {
                                         "type": "number",
                                         "format": "float",
-                                        "example": 3500
+                                        "example": 30000
+                                    },
+                                    "working_hours_start": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "working_hours_end": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": null,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -6007,21 +6019,17 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
-                                                    "activity_id": {
-                                                        "type": "integer",
-                                                        "example": 5
-                                                    },
                                                     "day_of_week": {
                                                         "type": "integer",
                                                         "example": 0
                                                     },
                                                     "start_time": {
                                                         "type": "string",
-                                                        "example": "08:00:00"
+                                                        "example": "08:00"
                                                     },
                                                     "end_time": {
                                                         "type": "string",
-                                                        "example": "16:00:00"
+                                                        "example": "16:00"
                                                     },
                                                     "gender_allowed": {
                                                         "type": "string",
@@ -6085,18 +6093,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "activity_id",
                                     "day_of_week",
                                     "start_time",
                                     "end_time",
                                     "gender_allowed"
                                 ],
                                 "properties": {
-                                    "activity_id": {
-                                        "description": "معرف النشاط (يجب أن يكون تدريب جماعي أو خاص)",
-                                        "type": "integer",
-                                        "example": 5
-                                    },
                                     "day_of_week": {
                                         "description": "يوم الأسبوع (0-6)",
                                         "type": "integer",
@@ -6105,12 +6107,12 @@
                                     "start_time": {
                                         "type": "string",
                                         "format": "time",
-                                        "example": "16:00:00"
+                                        "example": "16:00"
                                     },
                                     "end_time": {
                                         "type": "string",
                                         "format": "time",
-                                        "example": "23:59:59"
+                                        "example": "23:59"
                                     },
                                     "gender_allowed": {
                                         "description": "male, female, mixed",
@@ -6191,6 +6193,153 @@
             }
         },
         "/v1/branches/{branch}/shifts/{shift}": {
+            "put": {
+                "tags": [
+                    "Branch Shifts"
+                ],
+                "summary": "✏️ تعديل وردية",
+                "description": "تعديل وردية فرع موجودة.",
+                "operationId": "77c0401a5521b2e3871bace78e172861",
+                "parameters": [
+                    {
+                        "name": "branch",
+                        "in": "path",
+                        "description": "معرف الفرع",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "in": "path",
+                        "description": "معرف الوردية",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "day_of_week": {
+                                        "description": "يوم الأسبوع (0-6)",
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": "16:00"
+                                    },
+                                    "end_time": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": "23:59"
+                                    },
+                                    "gender_allowed": {
+                                        "description": "male, female, mixed",
+                                        "type": "string",
+                                        "example": "mixed"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعديل الوردية بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Branch shift updated"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على الوردية",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Branch Shifts"
@@ -11604,12 +11753,6 @@
                                         "type": "boolean",
                                         "example": true
                                     },
-                                    "duration_minutes": {
-                                        "description": "المدة الافتراضية للنشاط (بالدقائق)",
-                                        "type": "integer",
-                                        "example": 60,
-                                        "nullable": true
-                                    },
                                     "gender_allowed": {
                                         "description": "(اختياري) الجنس المسموح: male, female, mixed",
                                         "type": "string",
@@ -11865,15 +12008,34 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "branch_id": {
+                                        "description": "(مطلوب) معرف الفرع",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
                                     "name": {
                                         "description": "اسم النشاط",
                                         "type": "string",
-                                        "example": "سباحة متقدمة"
+                                        "example": "اجهزة عام"
+                                    },
+                                    "description": {
+                                        "description": "(اختياري) وصف النشاط",
+                                        "type": "string",
+                                        "example": "جلسة يوغا للمبتدئين"
                                     },
                                     "activity_type_id": {
                                         "description": "(اختياري) معرف نوع النشاط",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 4
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "gender_allowed": {
+                                        "description": "(اختياري) الجنس المسموح: male, female, mixed",
+                                        "type": "string",
+                                        "example": "mixed"
                                     }
                                 },
                                 "type": "object"
@@ -13132,11 +13294,6 @@
                                         "format": "time",
                                         "example": "09:00"
                                     },
-                                    "max_players": {
-                                        "type": "integer",
-                                        "example": 20,
-                                        "nullable": true
-                                    },
                                     "gender_allowed": {
                                         "type": "string",
                                         "example": "both",
@@ -13262,11 +13419,6 @@
                                     "end_time": {
                                         "type": "string",
                                         "example": "11:00"
-                                    },
-                                    "max_players": {
-                                        "type": "integer",
-                                        "example": 25,
-                                        "nullable": true
                                     },
                                     "is_active": {
                                         "type": "boolean",
@@ -21620,7 +21772,8 @@
                                             "properties": {
                                                 "facility_id": {
                                                     "type": "integer",
-                                                    "example": 1
+                                                    "example": 1,
+                                                    "nullable": true
                                                 },
                                                 "day_of_week": {
                                                     "type": "integer",
@@ -21633,10 +21786,6 @@
                                                 "end_time": {
                                                     "type": "string",
                                                     "example": "09:00"
-                                                },
-                                                "max_players": {
-                                                    "type": "integer",
-                                                    "example": 20
                                                 },
                                                 "gender_allowed": {
                                                     "type": "string",
@@ -22031,7 +22180,8 @@
                                             "properties": {
                                                 "facility_id": {
                                                     "type": "integer",
-                                                    "example": 1
+                                                    "example": 1,
+                                                    "nullable": true
                                                 },
                                                 "day_of_week": {
                                                     "type": "integer",
@@ -22044,10 +22194,6 @@
                                                 "end_time": {
                                                     "type": "string",
                                                     "example": "09:00"
-                                                },
-                                                "max_players": {
-                                                    "type": "integer",
-                                                    "example": 20
                                                 },
                                                 "gender_allowed": {
                                                     "type": "string",

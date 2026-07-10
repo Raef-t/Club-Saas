@@ -125,7 +125,6 @@ class ActivityController extends BaseController
                 new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
                 new OA\Property(property: 'activity_type_id', description: '(مطلوب) معرف نوع النشاط', type: 'integer', example: 1),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                new OA\Property(property: 'duration_minutes', type: 'integer', description: 'المدة الافتراضية للنشاط (بالدقائق)', nullable: true, example: 60),
                 new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
             ]
         )
@@ -191,8 +190,12 @@ class ActivityController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط', example: 'سباحة متقدمة'),
-                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 1),
+                new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 2),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط', example: 'اجهزة عام'),
+                new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
+                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 4),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
             ]
         )
     )]
