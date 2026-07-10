@@ -54,10 +54,22 @@ class BranchHolidayController extends BaseController
         content: new OA\JsonContent(
             required: ['type'],
             properties: [
-                new OA\Property(property: 'type', type: 'string', description: 'نوع العطلة: weekly, specific_dates', example: 'specific_dates'),
-                new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم العطلة (0=Sunday, 6=Saturday) في حال كان النوع weekly', example: 5),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', description: 'تاريخ البداية (للإغلاق المفاجئ/الصيانة)', example: '2026-08-10'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية', example: '2026-08-15')
+                new OA\Property(property: 'type', type: 'string', description: 'نوع العطلة: weekly, specific_dates'),
+                new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم العطلة (0=Sunday, 6=Saturday) في حال كان النوع weekly', nullable: true),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', description: 'تاريخ البداية (في حال specific_dates)', nullable: true),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية (في حال specific_dates)', nullable: true)
+            ],
+            examples: [
+                new OA\Examples(
+                    example: 'Weekly Holiday',
+                    summary: 'عطلة أسبوعية متكررة (مثال: كل جمعة)',
+                    value: ['type' => 'weekly', 'day_of_week' => 5]
+                ),
+                new OA\Examples(
+                    example: 'Specific Dates Holiday',
+                    summary: 'عطلة في تواريخ محددة',
+                    value: ['type' => 'specific_dates', 'start_date' => '2026-08-10', 'end_date' => '2026-08-15']
+                )
             ]
         )
     )]
@@ -132,10 +144,22 @@ class BranchHolidayController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'type', type: 'string', example: 'specific_dates'),
-                new OA\Property(property: 'day_of_week', type: 'integer', nullable: true),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-08-10'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-08-12')
+                new OA\Property(property: 'type', type: 'string', description: 'نوع العطلة: weekly, specific_dates'),
+                new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم العطلة', nullable: true),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', description: 'تاريخ البداية', nullable: true),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية', nullable: true)
+            ],
+            examples: [
+                new OA\Examples(
+                    example: 'Update to Weekly Holiday',
+                    summary: 'تحويل العطلة إلى أسبوعية متكررة',
+                    value: ['type' => 'weekly', 'day_of_week' => 5]
+                ),
+                new OA\Examples(
+                    example: 'Update to Specific Dates',
+                    summary: 'تحويل العطلة إلى تواريخ محددة',
+                    value: ['type' => 'specific_dates', 'start_date' => '2026-08-10', 'end_date' => '2026-08-12']
+                )
             ]
         )
     )]
