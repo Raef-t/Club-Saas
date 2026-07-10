@@ -21,7 +21,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "is_private_equipment", type: "boolean", example: false),
         new OA\Property(property: "gender_allowed", type: "string", example: "mixed"),
         new OA\Property(property: "is_active", type: "boolean", example: true),
-        new OA\Property(property: "created_at", type: "string", format: "date-time")
+        new OA\Property(property: "created_at", type: "string", format: "date-time"),
+        new OA\Property(property: "staff_activity_id", type: "integer", nullable: true, description: "ID of the pivot record (if accessed via staff)")
     ]
 )]
 class ActivityResource extends JsonResource
@@ -38,6 +39,9 @@ class ActivityResource extends JsonResource
             'gender_allowed' => $this->gender_allowed,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),
+            'staff_activity_id' => $this->whenPivotLoaded('staff_activities', function () {
+                return $this->pivot->id;
+            }),
         ];
     }
 }

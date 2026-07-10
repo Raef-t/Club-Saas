@@ -94,7 +94,7 @@ class Staff extends Model
             'staff_activities',
             'staff_id',
             'activity_id'
-        );
+        )->withPivot('id');
     }
 
     /**
