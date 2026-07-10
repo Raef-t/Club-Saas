@@ -51,10 +51,11 @@ class SubscriptionPlanActivityController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['plan_id', 'staff_activity_id'],
+            required: ['plan_id', 'activity_id'],
             properties: [
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1),
-                new OA\Property(property: 'staff_activity_id', type: 'integer', example: 1)
+                new OA\Property(property: 'activity_id', type: 'integer', example: 1),
+                new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 2)
             ]
         )
     )]
@@ -113,7 +114,8 @@ class SubscriptionPlanActivityController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'staff_activity_id', type: 'integer', example: 2)
+                new OA\Property(property: 'activity_id', type: 'integer', example: 2),
+                new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 3)
             ]
         )
     )]
