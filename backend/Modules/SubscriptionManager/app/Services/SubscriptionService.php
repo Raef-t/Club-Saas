@@ -158,9 +158,8 @@ class SubscriptionService
             $requestedActivities = collect($options['activities'] ?? []);
 
             foreach ($plan->planActivities as $planActivity) {
-                $staffActivity = $planActivity->staffActivity;
-                $activityId = $staffActivity ? $staffActivity->activity_id : null;
-                $coachId = $staffActivity ? $staffActivity->staff_id : null;
+                $activityId = $planActivity->activity_id;
+                $coachId = $planActivity->coach_id;
 
                 $subscription->items()->create([
                     'activity_id' => $activityId,

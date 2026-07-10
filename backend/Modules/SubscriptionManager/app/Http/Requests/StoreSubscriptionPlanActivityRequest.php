@@ -14,7 +14,8 @@ class StoreSubscriptionPlanActivityRequest extends FormRequest
     {
         return [
             'plan_id' => 'required|integer|exists:subscription_plans,id',
-            'staff_activity_id' => 'required|integer|exists:staff_activities,id',
+            'activity_id' => 'required|integer|exists:activities,id',
+            'coach_id' => 'nullable|integer|exists:staff,id',
         ];
     }
 }

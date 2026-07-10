@@ -3,6 +3,7 @@
 namespace Modules\StaffManager\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Sports\Http\Resources\ActivityResource;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
@@ -59,7 +60,7 @@ class CoachResource extends JsonResource
             'person'         => $this->person,
             'username'       => $this->user ? $this->user->username : null,
             'details'        => $this->coachDetail,
-            'activities'     => $this->activities,
+            'activities'     => ActivityResource::collection($this->activities),
             'experience_years'       => $this->coachDetail?->experience_years,
             'work_types'     => $this->coachDetail?->work_types,
         ];

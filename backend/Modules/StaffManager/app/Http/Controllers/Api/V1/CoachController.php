@@ -63,7 +63,7 @@ class CoachController extends Controller
                         new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                         new OA\Property(property: 'base_salary', type: 'number', example: 5000),
                         new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 20.5),
-                        new OA\Property(property: 'work_types[]', type: 'array', items: new OA\Items(type: 'string', example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة، فعاليات)'),
+                        new OA\Property(property: 'work_types[]', type: 'array', items: new OA\Items(type: 'string', enum: ['equipment', 'activities'], example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة: equipment، فعاليات/حصص: activities)'),
                         new OA\Property(property: 'experience_years', type: 'integer', example: 5),
                         new OA\Property(property: 'activity_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الأنشطة (اختياري)'),
                         new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)'),
@@ -364,7 +364,7 @@ class CoachController extends Controller
                         new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
                         new OA\Property(property: 'base_salary', type: 'number', example: 6000),
                         new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 25.0),
-                        new OA\Property(property: 'work_types[]', type: 'array', items: new OA\Items(type: 'string', example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة، فعاليات)'),
+                        new OA\Property(property: 'work_types[]', type: 'array', items: new OA\Items(type: 'string', enum: ['equipment', 'activities'], example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة: equipment، فعاليات/حصص: activities)'),
                         new OA\Property(property: 'experience_years', type: 'integer', example: 7),
                         new OA\Property(property: 'is_active', type: 'boolean', example: true),
                     ]

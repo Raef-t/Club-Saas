@@ -197,11 +197,11 @@ class SessionService
     public function getPlayerSchedule(int $memberId)
     {
         $activityIds = \Illuminate\Support\Facades\DB::table('player_subscriptions')
-            ->join('subscription_plan_activities', 'player_subscriptions.plan_id', '=', 'subscription_plan_activities.plan_id')
+            ->join('plan_activities', 'player_subscriptions.plan_id', '=', 'plan_activities.plan_id')
             ->where('player_subscriptions.member_id', $memberId)
             ->where('player_subscriptions.status', 'active')
             ->where('player_subscriptions.end_date', '>=', now()->toDateString())
-            ->pluck('subscription_plan_activities.activity_id')
+            ->pluck('plan_activities.activity_id')
             ->unique();
 
         $sessions = SportSession::whereIn('activity_id', $activityIds)

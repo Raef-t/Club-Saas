@@ -14797,11 +14797,15 @@
                                         "example": 20.5
                                     },
                                     "work_types[]": {
-                                        "description": "أنواع عمل المدرب (أجهزة، فعاليات)",
+                                        "description": "أنواع عمل المدرب (أجهزة: equipment، فعاليات/حصص: activities)",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "example": "equipment"
+                                            "example": "equipment",
+                                            "enum": [
+                                                "equipment",
+                                                "activities"
+                                            ]
                                         }
                                     },
                                     "experience_years": {
@@ -15377,11 +15381,15 @@
                                         "example": 25
                                     },
                                     "work_types[]": {
-                                        "description": "أنواع عمل المدرب (أجهزة، فعاليات)",
+                                        "description": "أنواع عمل المدرب (أجهزة: equipment، فعاليات/حصص: activities)",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "example": "equipment"
+                                            "example": "equipment",
+                                            "enum": [
+                                                "equipment",
+                                                "activities"
+                                            ]
                                         }
                                     },
                                     "experience_years": {
@@ -21222,16 +21230,21 @@
                             "schema": {
                                 "required": [
                                     "plan_id",
-                                    "staff_activity_id"
+                                    "activity_id"
                                 ],
                                 "properties": {
                                     "plan_id": {
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "staff_activity_id": {
+                                    "activity_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "coach_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -21418,9 +21431,14 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "staff_activity_id": {
+                                    "activity_id": {
                                         "type": "integer",
                                         "example": 2
+                                    },
+                                    "coach_id": {
+                                        "type": "integer",
+                                        "example": 3,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -21742,6 +21760,7 @@
                                         "example": "الاشتراك الذهبي"
                                     },
                                     "type": {
+                                        "description": "نوع الخطة: fixed_period (اشتراك بفترة زمنية محددة مثل شهر)، session_based (اشتراك يعتمد على عدد الجلسات)",
                                         "type": "string",
                                         "example": "fixed_period",
                                         "enum": [
@@ -21793,9 +21812,14 @@
                                         "type": "array",
                                         "items": {
                                             "properties": {
-                                                "staff_activity_id": {
+                                                "activity_id": {
                                                     "type": "integer",
                                                     "example": 1,
+                                                    "nullable": false
+                                                },
+                                                "coach_id": {
+                                                    "type": "integer",
+                                                    "example": 2,
                                                     "nullable": true
                                                 }
                                             },
@@ -22150,6 +22174,7 @@
                                         "example": "الاشتراك الماسي"
                                     },
                                     "type": {
+                                        "description": "نوع الخطة: fixed_period (اشتراك بفترة زمنية محددة مثل شهر)، session_based (اشتراك يعتمد على عدد الجلسات)",
                                         "type": "string",
                                         "example": "fixed_period",
                                         "enum": [
@@ -22201,9 +22226,14 @@
                                         "type": "array",
                                         "items": {
                                             "properties": {
-                                                "staff_activity_id": {
+                                                "activity_id": {
                                                     "type": "integer",
                                                     "example": 1,
+                                                    "nullable": false
+                                                },
+                                                "coach_id": {
+                                                    "type": "integer",
+                                                    "example": 2,
                                                     "nullable": true
                                                 }
                                             },
