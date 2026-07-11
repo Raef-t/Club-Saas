@@ -16,6 +16,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "day_of_week", type: "integer", nullable: true, description: "0 for Sunday, 6 for Saturday", example: 5),
         new OA\Property(property: "start_date", type: "string", format: "date", nullable: true, example: "2026-08-10"),
         new OA\Property(property: "end_date", type: "string", format: "date", nullable: true, example: "2026-08-15"),
+        new OA\Property(property: "reason", type: "string", nullable: true, example: "Maintenance"),
         new OA\Property(property: "created_at", type: "string", format: "date-time")
     ]
 )]
@@ -30,6 +31,7 @@ class BranchHolidayResource extends JsonResource
             'day_of_week' => $this->day_of_week,
             'start_date' => $this->start_date ? $this->start_date->toDateString() : null,
             'end_date' => $this->end_date ? $this->end_date->toDateString() : null,
+            'reason' => $this->reason,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

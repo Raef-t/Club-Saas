@@ -5565,6 +5565,11 @@
                                         "type": "string",
                                         "format": "date",
                                         "nullable": true
+                                    },
+                                    "reason": {
+                                        "description": "السبب (في حال specific_dates)",
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5728,6 +5733,11 @@
                                         "description": "تاريخ النهاية",
                                         "type": "string",
                                         "format": "date",
+                                        "nullable": true
+                                    },
+                                    "reason": {
+                                        "description": "السبب",
+                                        "type": "string",
                                         "nullable": true
                                     }
                                 },
@@ -5949,6 +5959,11 @@
                                         "format": "float",
                                         "example": 30000
                                     },
+                                    "daily_entry_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
                                     "working_hours_start": {
                                         "type": "string",
                                         "format": "time",
@@ -6051,6 +6066,10 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Morning Shift"
+                                                    },
                                                     "branch_id": {
                                                         "type": "integer",
                                                         "example": 1
@@ -6129,12 +6148,18 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "name",
                                     "day_of_week",
                                     "start_time",
                                     "end_time",
                                     "gender_allowed"
                                 ],
                                 "properties": {
+                                    "name": {
+                                        "description": "اسم الوردية",
+                                        "type": "string",
+                                        "example": "وردية الصباح"
+                                    },
                                     "day_of_week": {
                                         "description": "يوم الأسبوع (0-6)",
                                         "type": "integer",
@@ -6264,6 +6289,11 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "name": {
+                                        "description": "اسم الوردية",
+                                        "type": "string",
+                                        "example": "وردية المساء"
+                                    },
                                     "day_of_week": {
                                         "description": "يوم الأسبوع (0-6)",
                                         "type": "integer",
@@ -23486,6 +23516,11 @@
                         "example": "2026-08-15",
                         "nullable": true
                     },
+                    "reason": {
+                        "type": "string",
+                        "example": "Maintenance",
+                        "nullable": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
@@ -23533,6 +23568,12 @@
                         "type": "number",
                         "format": "float",
                         "example": 3500,
+                        "nullable": true
+                    },
+                    "daily_entry_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50,
                         "nullable": true
                     },
                     "updated_at": {

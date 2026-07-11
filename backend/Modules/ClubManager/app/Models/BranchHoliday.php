@@ -13,6 +13,7 @@ class BranchHoliday extends Model
         'day_of_week', // 0-6 (Sunday-Saturday) for weekly holidays
         'start_date', // for specific_dates
         'end_date', // for specific_dates
+        'reason', // for specific_dates
     ];
 
     protected $casts = [
