@@ -245,6 +245,12 @@ export function useSubscriptionPlans({
         activity_id: String(a.activity_id),
         coach_id: String(a.coach_id),
       })) || [],
+      session_templates: plan.session_templates?.map((s) => ({
+        day_of_week: String(s.day_of_week),
+        start_time: s.start_time || "",
+        end_time: s.end_time || "",
+        gender_allowed: s.gender_allowed || "both",
+      })) || [],
     };
   }
 

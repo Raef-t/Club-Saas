@@ -54,6 +54,17 @@ export const subscriptionPlanSchema = z.object({
     })
   ).optional(),
 
+  session_templates: z.array(
+    z.object({
+      day_of_week: z.number().min(0).max(6, "يوم الأسبوع غير صالح"),
+      start_time: z.string().min(1, "وقت البدء مطلوب"),
+      end_time: z.string().min(1, "وقت الانتهاء مطلوب"),
+      gender_allowed: z.enum(["male", "female", "both"], {
+        required_error: "الفئة المستهدفة مطلوبة",
+      }),
+    })
+  ).optional(),
+
   is_active: z.boolean().optional(),
 }).superRefine((data, ctx) => {
   if (data.type === "fixed_period") {
