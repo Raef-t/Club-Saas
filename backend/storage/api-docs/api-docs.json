@@ -23905,6 +23905,18 @@
                     "is_active": {
                         "type": "boolean",
                         "example": true
+                    },
+                    "is_session_based": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "has_unlimited_subscribers": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "has_shifts": {
+                        "type": "boolean",
+                        "example": false
                     }
                 },
                 "type": "object"

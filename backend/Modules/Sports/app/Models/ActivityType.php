@@ -15,6 +15,9 @@ class ActivityType extends Model
     protected $fillable = [
         'name',
         'is_active',
+        'is_session_based',
+        'has_unlimited_subscribers',
+        'has_shifts',
     ];
 
     /**
@@ -22,6 +25,9 @@ class ActivityType extends Model
      */
     protected $casts = [
         'is_active' => 'boolean',
+        'is_session_based' => 'boolean',
+        'has_unlimited_subscribers' => 'boolean',
+        'has_shifts' => 'boolean',
     ];
 
     /**
