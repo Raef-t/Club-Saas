@@ -114,16 +114,23 @@ export function UploadBox({
       {value.length > 0 && (
         <div className="mt-4 space-y-2 max-h-36 overflow-y-auto pr-1">
           {value.map((file, index) => {
-            const isImage = file.type?.startsWith("image/") || file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-            const fileSizeStr = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+            const isImage = file.type?.startsWith("image/") || file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || (typeof file === "string" && file.match(/\.(jpg|jpeg|png|gif|webp)/i)) || (file?.url && file.url.match(/\.(jpg|jpeg|png|gif|webp)/i));
+            const fileSizeStr = file.size ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "";
+            const fileName = file.name || (file?.url ? file.url.split("/").pop() : typeof file === "string" ? file.split("/").pop() : "file");
             
             // Safe helper for image preview object URL
             let previewUrl = "";
-            if (isImage && file instanceof File) {
-              try {
-                previewUrl = URL.createObjectURL(file);
-              } catch (e) {
-                console.error(e);
+            if (isImage) {
+              if (file instanceof File) {
+                try {
+                  previewUrl = URL.createObjectURL(file);
+                } catch (e) {
+                  console.error(e);
+                }
+              } else if (typeof file === "string") {
+                previewUrl = file.startsWith("http") || file.startsWith("blob:") ? file : `http://31.70.108.63/${file.replace(/^\//, '')}`;
+              } else if (file?.url) {
+                previewUrl = file.url.startsWith("http") || file.url.startsWith("blob:") ? file.url : `http://31.70.108.63/${file.url.replace(/^\//, '')}`;
               }
             }
 
@@ -138,15 +145,15 @@ export function UploadBox({
                   ) : (
                     <div className="size-9 rounded bg-app-card-soft flex items-center justify-center shrink-0 border border-app-line/30">
                       <span className="text-[10px] font-bold text-app-yellow">
-                        {file.name?.split(".").pop()?.toUpperCase() || "FILE"}
+                        {fileName?.split(".").pop()?.toUpperCase() || "FILE"}
                       </span>
                     </div>
                   )}
                   <div className="flex flex-col text-right overflow-hidden">
-                    <span className="truncate text-xs font-medium text-white/90" title={file.name}>
-                      {file.name}
+                    <span className="truncate text-xs font-medium text-white/90" title={fileName}>
+                      {fileName}
                     </span>
-                    <span className="text-[10px] text-app-muted-light">{fileSizeStr}</span>
+                    {fileSizeStr && <span className="text-[10px] text-app-muted-light">{fileSizeStr}</span>}
                   </div>
                 </div>
                 
