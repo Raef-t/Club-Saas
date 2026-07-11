@@ -9,6 +9,7 @@ use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanActivity
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionServiceController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\InvoiceController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\OfferController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
@@ -19,6 +20,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Subscription Plans CRUD
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
+
+    // Offers CRUD & Actions
+    Route::post('offers/{id}/subscribe', [OfferController::class, 'subscribe']);
+    Route::apiResource('offers', OfferController::class);
 
     // Player Subscriptions — Actions
     Route::post('player-subscriptions/{id}/freeze', [PlayerSubscriptionController::class, 'freeze']);

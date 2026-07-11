@@ -19,6 +19,7 @@ class PlayerSubscription extends Model
         'end_date',
         'status',
         'notes',
+        'offer_id',
     ];
 
     protected $casts = [
@@ -33,6 +34,11 @@ class PlayerSubscription extends Model
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+    }
+
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class, 'offer_id');
     }
 
     public function freezes()
