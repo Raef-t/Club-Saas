@@ -515,4 +515,140 @@ class SubscriptionService
             ->whereBetween('end_date', [now(), now()->addDays($days)])
             ->get();
     }
+
+    /**
+     * Subscribe a member to an offer, enrolling them in all included plans.
+     */
+    public function subscribeMemberToOffer(int $memberId, int $offerId, array $options = [])
+    {
+        $offer = \Modules\SubscriptionManager\Models\Offer::with(['plans.planActivities'])->findOrFail($offerId);
+
+        if (!$offer->is_active) {
+            throw new Exception(__('This offer is no longer active.'));
+        }
+
+        // Check capacity for all plans
+        foreach ($offer->plans as $plan) {
+            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                throw new Exception(__('The plan :plan within this offer has reached its maximum capacity. Offer cannot be purchased.', ['plan' => $plan->name]));
+            }
+        }
+
+        return DB::transaction(function () use ($memberId, $offer, $options) {
+            // Increment subscribers for all plans
+            foreach ($offer->plans as $plan) {
+                if ($plan->max_subscribers > 0) {
+                    $plan->increment('current_subscribers');
+                    if ($plan->current_subscribers >= $plan->max_subscribers) {
+                        $plan->update(['is_active' => false]);
+                    }
+                }
+            }
+
+            $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
+
+            $totalAmount = (float) $offer->price;
+            $paidAmount = isset($options['paid_amount']) ? (float) $options['paid_amount'] : $totalAmount;
+            $remainingAmount = max(0, $totalAmount - $paidAmount);
+
+            // Fetch member details for financials
+            $memberDTO = $this->memberSharedService->getMemberById($memberId);
+            $branchId = $memberDTO->branchId;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
+
+            // Create Invoice linked to Offer
+            $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
+                'member_id' => $memberId,
+                'branch_id' => $branchId,
+                'offer_id' => $offer->id,
+                'player_subscription_id' => null,
+                'total' => $totalAmount,
+                'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
+            ]);
+
+            $createdSubscriptions = collect();
+
+            // Create individual PlayerSubscriptions for each plan in the offer
+            foreach ($offer->plans as $plan) {
+                $endDate = null;
+                if ($plan->type === 'fixed_period' && $plan->duration_days) {
+                    $endDate = $startDate->copy()->addDays($plan->duration_days);
+                }
+
+                $subscription = $this->subscriptionRepository->create([
+                    'member_id' => $memberId,
+                    'coach_id' => $options['coach_id'] ?? null,
+                    'plan_id' => $plan->id,
+                    'offer_id' => $offer->id,
+                    'total_amount' => 0, // Zero because it's part of the offer
+                    'paid_amount' => 0,
+                    'remaining_amount' => 0,
+                    'start_date' => $startDate->toDateString(),
+                    'end_date' => $endDate ? $endDate->toDateString() : null,
+                    'status' => 'active',
+                    'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
+                ]);
+
+                foreach ($plan->planActivities as $planActivity) {
+                    $subscription->items()->create([
+                        'activity_id' => $planActivity->activity_id,
+                        'coach_id' => $planActivity->coach_id,
+                        'sessions_allocated' => $plan->session_count,
+                        'is_unlimited' => is_null($plan->session_count),
+                    ]);
+                }
+
+                $createdSubscriptions->push($subscription);
+            }
+
+            // Record Payment if paid_amount > 0
+            if ($paidAmount > 0) {
+                if (($options['payment_method'] ?? 'cash') === 'wallet') {
+                    $walletService = app(\Modules\WalletManager\Services\WalletService::class);
+                    $walletService->pay(
+                        $memberDTO->personId,
+                        $paidAmount,
+                        'Offer Payment for Invoice #' . $invoice->id,
+                        \Modules\SubscriptionManager\Models\Invoice::class,
+                        $invoice->id
+                    );
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => null,
+                        'amount' => $paidAmount,
+                        'payment_method' => 'wallet',
+                        'status' => 'completed',
+                    ]);
+                } else {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                        ->where('branch_id', $branchId)
+                        ->value('default_safe_id');
+
+                    if (!$safeId) {
+                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                            ->where('branch_id', $branchId)
+                            ->value('id');
+                    }
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => $safeId,
+                        'amount' => $paidAmount,
+                        'payment_method' => $options['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+                }
+
+                event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
+            }
+
+            return [
+                'invoice' => $invoice,
+                'subscriptions' => $createdSubscriptions
+            ];
+        });
+    }
 }

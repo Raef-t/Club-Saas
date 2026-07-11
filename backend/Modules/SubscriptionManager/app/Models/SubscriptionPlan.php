@@ -88,4 +88,9 @@ class SubscriptionPlan extends Model
     {
         return $this->belongsTo(\Modules\ClubManager\Models\Branch::class);
     }
+
+    public function offers()
+    {
+        return $this->belongsToMany(Offer::class, 'offer_subscription_plan');
+    }
 }
