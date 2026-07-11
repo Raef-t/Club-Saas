@@ -32,6 +32,7 @@ const initialForm = {
   max_subscribers: "50",
   is_active: true,
   activities: [],
+  session_templates: [],
   is_unlimited_subscribers: false,
 };
 
@@ -173,6 +174,12 @@ export function PlanForm({
       activities: form.activities?.map(a => ({
         activity_id: Number(a.activity_id),
         coach_id: Number(a.coach_id),
+      })) || [],
+      session_templates: form.session_templates?.map(s => ({
+        day_of_week: Number(s.day_of_week),
+        start_time: s.start_time,
+        end_time: s.end_time,
+        gender_allowed: s.gender_allowed,
       })) || [],
     };
 
@@ -382,6 +389,115 @@ export function PlanForm({
           </>
         );
       })()}
+
+      <div className="border-t border-app-line pt-4 mt-2">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-white">
+            جدول أوقات الفعالية
+          </h4>
+          <Button
+            type="button"
+            tone="outline"
+            className="h-8 px-3 text-xs"
+            onClick={() => updateField("session_templates", [...(form.session_templates || []), { day_of_week: "0", start_time: "", end_time: "", gender_allowed: "both" }])}
+          >
+            <PlusIcon className="size-3 ml-1" />
+            إضافة وقت
+          </Button>
+        </div>
+
+        {(!form.session_templates || form.session_templates.length === 0) ? (
+          <p className="text-xs text-app-muted-light">لم يتم إضافة أي أوقات للفعالية بعد.</p>
+        ) : (
+          <div className="space-y-3">
+            {form.session_templates.map((item, idx) => (
+              <div key={idx} className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newTemplates = [...form.session_templates];
+                    newTemplates.splice(idx, 1);
+                    updateField("session_templates", newTemplates);
+                  }}
+                  className="absolute top-2 left-3 text-app-muted hover:text-app-red text-xs"
+                >
+                  إزالة
+                </button>
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <label className="block text-right text-xs text-app-muted-light">
+                    اليوم
+                    <Dropdown
+                      className="mt-1 text-white"
+                      buttonClassName="bg-black/35 h-9"
+                      value={String(item.day_of_week)}
+                      onChange={(val) => {
+                        const newTemplates = [...form.session_templates];
+                        newTemplates[idx].day_of_week = val;
+                        updateField("session_templates", newTemplates);
+                      }}
+                      options={[
+                        { value: "0", label: "الأحد" },
+                        { value: "1", label: "الإثنين" },
+                        { value: "2", label: "الثلاثاء" },
+                        { value: "3", label: "الأربعاء" },
+                        { value: "4", label: "الخميس" },
+                        { value: "5", label: "الجمعة" },
+                        { value: "6", label: "السبت" },
+                      ]}
+                      placeholder="اختر اليوم"
+                    />
+                  </label>
+                  <label className="block text-right text-xs text-app-muted-light">
+                    الفئة المستهدفة
+                    <Dropdown
+                      className="mt-1 text-white"
+                      buttonClassName="bg-black/35 h-9"
+                      value={item.gender_allowed}
+                      onChange={(val) => {
+                        const newTemplates = [...form.session_templates];
+                        newTemplates[idx].gender_allowed = val;
+                        updateField("session_templates", newTemplates);
+                      }}
+                      options={[
+                        { value: "both", label: "مختلط" },
+                        { value: "male", label: "ذكور" },
+                        { value: "female", label: "إناث" },
+                      ]}
+                      placeholder="اختر الفئة"
+                    />
+                  </label>
+                  <Field
+                    label="وقت البدء"
+                    type="time"
+                    value={item.start_time}
+                    onChange={(val) => {
+                      const newTemplates = [...form.session_templates];
+                      newTemplates[idx].start_time = val && val.target ? val.target.value : val;
+                      updateField("session_templates", newTemplates);
+                    }}
+                    required
+                    className="h-9"
+                    labelClassName="text-xs text-app-muted-light"
+                  />
+                  <Field
+                    label="وقت الانتهاء"
+                    type="time"
+                    value={item.end_time}
+                    onChange={(val) => {
+                      const newTemplates = [...form.session_templates];
+                      newTemplates[idx].end_time = val && val.target ? val.target.value : val;
+                      updateField("session_templates", newTemplates);
+                    }}
+                    required
+                    className="h-9"
+                    labelClassName="text-xs text-app-muted-light"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <CheckboxField
         label="الفعالية فعالة ونشطة حالياً"
