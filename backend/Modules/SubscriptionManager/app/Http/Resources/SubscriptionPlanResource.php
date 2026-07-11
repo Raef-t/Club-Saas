@@ -22,6 +22,7 @@ class SubscriptionPlanResource extends JsonResource
             'max_subscribers' => $this->max_subscribers,
             'current_subscribers' => $this->current_subscribers,
             'is_unlimited_subscribers' => $this->max_subscribers == 0,
+            'is_active' => (bool) $this->is_active,
             'activities' => SubscriptionPlanActivityResource::collection($this->whenLoaded('planActivities')),
             'session_templates' => $this->whenLoaded('sessionTemplates'),
         ];
