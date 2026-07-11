@@ -74,4 +74,48 @@ class ActivityTypeController extends BaseController
         $activity_type->delete();
         return $this->successResponse(null, __('Activity type deleted successfully'));
     }
+    #[OA\Patch(
+        path: '/v1/activity-types/{activity_type}/settings',
+        summary: '⚙️ تحديث إعدادات نوع النشاط',
+        description: 'تحديث الحقول الخاصة بإعدادات نوع النشاط (يعتمد على جلسات، عدد المشتركين لا نهائي، أو نظام الورديات) فقط.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'activity_type', description: 'ID of the activity type', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'is_session_based', type: 'boolean', example: true),
+                new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: false),
+                new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الإعدادات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity type settings updated successfully'),
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityTypeResource')
+            ]
+        )
+    )]
+    public function updateSettings(\Modules\Sports\Http\Requests\UpdateActivityTypeSettingsRequest $request, ActivityType $activity_type)
+    {
+        $activity_type->update($request->only([
+            'is_session_based',
+            'has_unlimited_subscribers',
+            'has_shifts',
+        ]));
+
+        return $this->successResponse(
+            new ActivityTypeResource($activity_type),
+            __('Activity type settings updated successfully')
+        );
+    }
 }
