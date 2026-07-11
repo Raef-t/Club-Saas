@@ -42,6 +42,7 @@ class UpdateCoachRequest extends FormRequest
             'dob'                     => ['nullable', 'date'],
             'phone_number'            => ['nullable', 'string', 'max:20'],
             'country_code'            => ['nullable', 'string', 'max:5'],
+            'national_id'             => ['nullable', 'string', 'max:20'],
             'photo'                   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
 
             // Basic Info

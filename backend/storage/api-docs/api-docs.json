@@ -14793,6 +14793,12 @@
                                         "type": "string",
                                         "example": "+966"
                                     },
+                                    "national_id": {
+                                        "description": "الرقم الوطني",
+                                        "type": "string",
+                                        "example": "1234567890",
+                                        "nullable": true
+                                    },
                                     "photo": {
                                         "description": "صورة المدرب",
                                         "type": "string",
@@ -15376,6 +15382,12 @@
                                     "country_code": {
                                         "type": "string",
                                         "example": "+966"
+                                    },
+                                    "national_id": {
+                                        "description": "الرقم الوطني",
+                                        "type": "string",
+                                        "example": "1234567890",
+                                        "nullable": true
                                     },
                                     "photo": {
                                         "description": "صورة المدرب",
