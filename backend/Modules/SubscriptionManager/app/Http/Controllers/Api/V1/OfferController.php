@@ -32,7 +32,46 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: 'Successful operation')]
+    #[OA\Parameter(
+        name: 'branch_id',
+        in: 'query',
+        required: false,
+        description: 'تصفية العروض بناءً على معرف الفرع',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful operation',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Offers retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'name', type: 'string', example: 'عرض الصيف'),
+                            new OA\Property(property: 'description', type: 'string', example: 'خصم خاص على الاشتراك'),
+                            new OA\Property(property: 'price', type: 'number', example: 500.5),
+                            new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01'),
+                            new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-08-31'),
+                            new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                            new OA\Property(
+                                property: 'plans',
+                                type: 'array',
+                                items: new OA\Items(type: 'object')
+                            ),
+                            new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+                            new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
     public function index(Request $request)
     {
         $offers = $this->offerService->getAllOffers($request->all());
@@ -50,7 +89,43 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 201, description: 'Offer created successfully')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['branch_id', 'name', 'price', 'plans'],
+            properties: [
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                new OA\Property(property: 'name', type: 'string', example: 'عرض رمضان'),
+                new OA\Property(property: 'description', type: 'string', example: 'عرض خاص بشهر رمضان'),
+                new OA\Property(property: 'price', type: 'number', example: 1200),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-02-01'),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-03-01'),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'plans', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Offer created successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Offer created successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 2),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'name', type: 'string', example: 'عرض رمضان'),
+                        new OA\Property(property: 'price', type: 'number', example: 1200)
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: 'Validation Error')]
     public function store(StoreOfferRequest $request)
     {
         try {
@@ -73,7 +148,45 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: 'Successful operation')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'معرف العرض',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful operation',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Offer retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'name', type: 'string', example: 'عرض الصيف'),
+                        new OA\Property(property: 'description', type: 'string', example: 'خصم خاص على الاشتراك'),
+                        new OA\Property(property: 'price', type: 'number', example: 500.5),
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01'),
+                        new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-08-31'),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'plans',
+                            type: 'array',
+                            items: new OA\Items(type: 'object')
+                        ),
+                        new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+                        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: 'Offer not found')]
     public function show(int $id)
     {
         $offer = $this->offerService->getOfferById($id);
@@ -91,7 +204,43 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: 'Offer updated successfully')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'معرف العرض',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'عرض الشتاء'),
+                new OA\Property(property: 'description', type: 'string', example: 'وصف العرض بعد التعديل'),
+                new OA\Property(property: 'price', type: 'number', example: 800),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-12-01'),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2027-01-31'),
+                new OA\Property(property: 'is_active', type: 'boolean', example: false),
+                new OA\Property(property: 'plans', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Offer updated successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Offer updated successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'name', type: 'string', example: 'عرض الشتاء'),
+                    new OA\Property(property: 'price', type: 'number', example: 800)
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: 'Offer not found')]
     public function update(UpdateOfferRequest $request, int $id)
     {
         try {
@@ -113,7 +262,25 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 200, description: 'Offer deleted successfully')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'معرف العرض',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Offer deleted successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Offer deleted successfully'),
+                new OA\Property(property: 'data', type: 'string', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: 'Offer not found')]
     public function destroy(int $id)
     {
         $this->offerService->deleteOffer($id);
@@ -127,11 +294,49 @@ class OfferController extends BaseController
     #[OA\Post(
         path: '/v1/offers/{id}/subscribe',
         summary: '📝 اشتراك في عرض',
-        description: 'اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط).',
+        description: 'اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط التابعة للعرض).',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 201, description: 'Subscribed to offer successfully')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'معرف العرض',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['member_id', 'paid_amount'],
+            properties: [
+                new OA\Property(property: 'member_id', type: 'integer', example: 1, description: 'معرف اللاعب'),
+                new OA\Property(property: 'paid_amount', type: 'number', example: 500, description: 'المبلغ المدفوع'),
+                new OA\Property(property: 'payment_method', type: 'string', enum: ['cash', 'card', 'wallet', 'bank_transfer'], example: 'cash', description: 'طريقة الدفع'),
+                new OA\Property(property: 'notes', type: 'string', example: 'اشتراك جديد', description: 'ملاحظات'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-15', description: 'تاريخ بداية الاشتراك'),
+                new OA\Property(property: 'coach_id', type: 'integer', example: 2, description: 'معرف المدرب (اختياري)')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Subscribed to offer successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Member subscribed to offer successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    description: 'Array of created subscriptions and invoices',
+                    items: new OA\Items(type: 'object')
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: 'Bad Request / Validation Error')]
+    #[OA\Response(response: 404, description: 'Offer or Member not found')]
     public function subscribe(SubscribeOfferRequest $request, int $id)
     {
         $data = $request->validated();

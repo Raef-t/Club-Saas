@@ -12343,6 +12343,81 @@
                 ]
             }
         },
+        "/v1/activity-types/{activity_type}/settings": {
+            "patch": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "⚙️ تحديث إعدادات نوع النشاط",
+                "description": "تحديث الحقول الخاصة بإعدادات نوع النشاط (يعتمد على جلسات، عدد المشتركين لا نهائي، أو نظام الورديات) فقط.",
+                "operationId": "4165971277b0b046db6606e3024c0f22",
+                "parameters": [
+                    {
+                        "name": "activity_type",
+                        "in": "path",
+                        "description": "ID of the activity type",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "is_session_based": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "has_unlimited_subscribers": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "has_shifts": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث الإعدادات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity type settings updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ActivityTypeResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/sessions/{id}/book": {
             "post": {
                 "tags": [
@@ -19480,9 +19555,93 @@
                 "summary": "👥 عرض الباقات/العروض",
                 "description": "استرجاع قائمة بجميع العروض المتاحة. يمكن التصفية حسب الفرع.",
                 "operationId": "8d8e70d4316b6cb74bbefa982462c88f",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية العروض بناءً على معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation"
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Offers retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "branch_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "عرض الصيف"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "خصم خاص على الاشتراك"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "example": 500.5
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2026-07-01"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2026-08-31"
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "plans": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -19498,9 +19657,105 @@
                 "summary": "➕ إضافة عرض جديد",
                 "description": "إنشاء عرض جديد وربطه بعدة خطط.",
                 "operationId": "a868cf3516258dce81eaee9658832e98",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_id",
+                                    "name",
+                                    "price",
+                                    "plans"
+                                ],
+                                "properties": {
+                                    "branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "عرض رمضان"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "عرض خاص بشهر رمضان"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 1200
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-02-01"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-03-01"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "plans": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
-                        "description": "Offer created successfully"
+                        "description": "Offer created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Offer created successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "branch_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "عرض رمضان"
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "example": 1200
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error"
                     }
                 },
                 "security": [
@@ -19518,9 +19773,93 @@
                 "summary": "🔍 تفاصيل العرض",
                 "description": "استرجاع تفاصيل العرض المحددة.",
                 "operationId": "4147d1eaf659851659a897458b74c5b0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف العرض",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation"
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Offer retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "branch_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "عرض الصيف"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "خصم خاص على الاشتراك"
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "example": 500.5
+                                                },
+                                                "start_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-07-01"
+                                                },
+                                                "end_date": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-08-31"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "plans": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Offer not found"
                     }
                 },
                 "security": [
@@ -19536,9 +19875,102 @@
                 "summary": "✏️ تحديث العرض",
                 "description": "تحديث بيانات العرض والخطط المرتبطة به.",
                 "operationId": "f2a8e4ab45d365fb1556fb31cc7888c1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف العرض",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "عرض الشتاء"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "وصف العرض بعد التعديل"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 800
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-12-01"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-31"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "plans": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Offer updated successfully"
+                        "description": "Offer updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Offer updated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "عرض الشتاء"
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "example": 800
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Offer not found"
                     }
                 },
                 "security": [
@@ -19554,9 +19986,45 @@
                 "summary": "🗑️ حذف العرض",
                 "description": "حذف العرض (Soft Delete).",
                 "operationId": "ac56b2aeae1339fab5474866ead00329",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف العرض",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Offer deleted successfully"
+                        "description": "Offer deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Offer deleted successfully"
+                                        },
+                                        "data": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Offer not found"
                     }
                 },
                 "security": [
@@ -19572,11 +20040,105 @@
                     "Subscription Management"
                 ],
                 "summary": "📝 اشتراك في عرض",
-                "description": "اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط).",
+                "description": "اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط التابعة للعرض).",
                 "operationId": "52c457dba42cc012fbe4086f775588b9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف العرض",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "member_id",
+                                    "paid_amount"
+                                ],
+                                "properties": {
+                                    "member_id": {
+                                        "description": "معرف اللاعب",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "paid_amount": {
+                                        "description": "المبلغ المدفوع",
+                                        "type": "number",
+                                        "example": 500
+                                    },
+                                    "payment_method": {
+                                        "description": "طريقة الدفع",
+                                        "type": "string",
+                                        "example": "cash",
+                                        "enum": [
+                                            "cash",
+                                            "card",
+                                            "wallet",
+                                            "bank_transfer"
+                                        ]
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات",
+                                        "type": "string",
+                                        "example": "اشتراك جديد"
+                                    },
+                                    "start_date": {
+                                        "description": "تاريخ بداية الاشتراك",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-15"
+                                    },
+                                    "coach_id": {
+                                        "description": "معرف المدرب (اختياري)",
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
-                        "description": "Subscribed to offer successfully"
+                        "description": "Subscribed to offer successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Member subscribed to offer successfully"
+                                        },
+                                        "data": {
+                                            "description": "Array of created subscriptions and invoices",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request / Validation Error"
+                    },
+                    "404": {
+                        "description": "Offer or Member not found"
                     }
                 },
                 "security": [
