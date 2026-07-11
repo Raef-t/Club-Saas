@@ -19472,6 +19472,120 @@
                 ]
             }
         },
+        "/v1/offers": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "👥 عرض الباقات/العروض",
+                "description": "استرجاع قائمة بجميع العروض المتاحة. يمكن التصفية حسب الفرع.",
+                "operationId": "8d8e70d4316b6cb74bbefa982462c88f",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "➕ إضافة عرض جديد",
+                "description": "إنشاء عرض جديد وربطه بعدة خطط.",
+                "operationId": "a868cf3516258dce81eaee9658832e98",
+                "responses": {
+                    "201": {
+                        "description": "Offer created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/offers/{id}": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🔍 تفاصيل العرض",
+                "description": "استرجاع تفاصيل العرض المحددة.",
+                "operationId": "4147d1eaf659851659a897458b74c5b0",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "✏️ تحديث العرض",
+                "description": "تحديث بيانات العرض والخطط المرتبطة به.",
+                "operationId": "f2a8e4ab45d365fb1556fb31cc7888c1",
+                "responses": {
+                    "200": {
+                        "description": "Offer updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🗑️ حذف العرض",
+                "description": "حذف العرض (Soft Delete).",
+                "operationId": "ac56b2aeae1339fab5474866ead00329",
+                "responses": {
+                    "200": {
+                        "description": "Offer deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/offers/{id}/subscribe": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "📝 اشتراك في عرض",
+                "description": "اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط).",
+                "operationId": "52c457dba42cc012fbe4086f775588b9",
+                "responses": {
+                    "201": {
+                        "description": "Subscribed to offer successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/player-subscriptions": {
             "get": {
                 "tags": [
