@@ -17,6 +17,7 @@ class BranchSetting extends Model
         'default_club_commission_percentage',
         'default_coach_commission_percentage',
         'default_employee_salary',
+        'daily_entry_price',
     ];
 
     protected $casts = [
@@ -25,6 +26,7 @@ class BranchSetting extends Model
         'default_club_commission_percentage' => 'decimal:2',
         'default_coach_commission_percentage' => 'decimal:2',
         'default_employee_salary' => 'decimal:2',
+        'daily_entry_price' => 'decimal:2',
     ];
 
     public function branch(): BelongsTo

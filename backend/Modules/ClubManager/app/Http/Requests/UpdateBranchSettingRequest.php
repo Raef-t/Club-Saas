@@ -19,6 +19,7 @@ class UpdateBranchSettingRequest extends FormRequest
             'default_club_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'default_coach_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'default_employee_salary' => 'nullable|numeric|min:0',
+            'daily_entry_price' => 'nullable|numeric|min:0',
         ];
     }
 }
