@@ -22,6 +22,8 @@ export default function SubscriptionPlansCreateClient() {
     handleUpdate,
     getEditInitialValues,
     branches,
+    activities,
+    coaches,
   } = useSubscriptionPlans({ selectedPlanId: isEdit ? Number(editId) : null });
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
@@ -32,18 +34,18 @@ export default function SubscriptionPlansCreateClient() {
 
   return (
     <ManagementCreatePage
-      title={isEdit ? "تعديل خطة اشتراك" : "إضافة اشتراك"}
-      subtitle={isEdit ? "إدارة الأعضاء > تعديل خطة اشتراك" : "إدارة الأعضاء > إضافة اشتراك"}
+      title={isEdit ? "تعديل فعالية" : "إضافة فعالية"}
+      subtitle={isEdit ? "إدارة النادي > تعديل فعالية" : "إدارة النادي > إضافة فعالية"}
       formId={FORM_ID}
       backHref="/management/subscription-plans"
       isSubmitting={isEdit ? isUpdating : isCreating}
       submitLabel={isEdit ? "حفظ التعديل" : "حفظ"}
       maxWidth="720px"
     >
-      <FormCard title="تفاصيل الاشتراك" className="entry-form-card p-5">
+      <FormCard title="تفاصيل الفعالية" className="entry-form-card p-5">
         {isEdit && !editInitialValues ? (
           <p className="py-8 text-center text-sm text-app-muted-light">
-            جاري تحميل بيانات الخطة...
+            جاري تحميل بيانات الفعالية...
           </p>
         ) : (
           <PlanForm
@@ -57,6 +59,8 @@ export default function SubscriptionPlansCreateClient() {
             errorMessage={formError}
             showFooterActions={false}
             branches={branches}
+            activities={activities}
+            coaches={coaches}
           />
         )}
       </FormCard>

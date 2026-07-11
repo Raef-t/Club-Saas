@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -29,10 +29,10 @@ const initialForm = {
   duration_in_days: "30",
   session_count: "",
   price: "",
-  max_freeze_count: "2",
-  max_freeze_days: "14",
   max_subscribers: "50",
   is_active: true,
+  activities: [],
+  is_unlimited_subscribers: false,
 };
 
 function formatMoney(value) {
@@ -76,7 +76,7 @@ function PlanDetails({ plan, isLoading, error }) {
   if (error) {
     return (
       <div className="rounded-xl border border-app-red/30 bg-app-red/10 p-5 text-right text-sm text-app-red">
-        تعذر تحميل تفاصيل الخطة.
+        تعذر تحميل تفاصيل الفعالية.
       </div>
     );
   }
@@ -84,7 +84,7 @@ function PlanDetails({ plan, isLoading, error }) {
   if (!plan) {
     return (
       <div className="rounded-xl border border-app-line bg-app-card-soft/60 p-6 text-center text-sm text-app-muted-light">
-        لا توجد تفاصيل لهذه الخطة.
+        لا توجد تفاصيل لهذه الفعالية.
       </div>
     );
   }
@@ -106,7 +106,7 @@ function PlanDetails({ plan, isLoading, error }) {
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <DetailItem label="نوع الخطة" value={planTypeLabel(plan.type)} />
+        <DetailItem label="نوع الفعالية" value={planTypeLabel(plan.type)} />
         <DetailItem
           label="السعر"
           value={formatMoney(plan.base_price)}
@@ -114,8 +114,6 @@ function PlanDetails({ plan, isLoading, error }) {
         />
         <DetailItem label="المدة" value={`${plan.duration_days || 0} يوم`} />
         <DetailItem label="عدد الجلسات" value={plan.session_count} />
-        <DetailItem label="عدد مرات التجميد" value={plan.max_freeze_count} />
-        <DetailItem label="أيام التجميد" value={plan.max_freeze_days} />
       </section>
     </div>
   );
@@ -132,9 +130,28 @@ export function PlanForm({
   showFooterActions = true,
   formClassName = "space-y-4",
   branches = [],
+  activities = [],
+  coaches = [],
 }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    let shouldBeUnlimited = false;
+    form.activities?.forEach((item) => {
+      const act = activities.find((a) => String(a.id) === String(item.activity_id));
+      if (act) {
+        const actName = typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "";
+        if (actName.includes("تدريب عام") || actName.includes("تدريب خاص")) {
+          shouldBeUnlimited = true;
+        }
+      }
+    });
+
+    if (shouldBeUnlimited && !form.is_unlimited_subscribers) {
+      updateField("is_unlimited_subscribers", true);
+    }
+  }, [form.activities, activities]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -150,10 +167,13 @@ export function PlanForm({
       duration_in_days: form.duration_in_days,
       session_count: form.type === "session_based" ? form.session_count : null,
       price: form.price,
-      max_freeze_count: form.max_freeze_count,
-      max_freeze_days: form.max_freeze_days,
-      max_subscribers: form.max_subscribers,
+      max_subscribers: form.is_unlimited_subscribers ? null : form.max_subscribers,
       is_active: !!form.is_active,
+      is_unlimited_subscribers: !!form.is_unlimited_subscribers,
+      activities: form.activities?.map(a => ({
+        activity_id: Number(a.activity_id),
+        coach_id: Number(a.coach_id),
+      })) || [],
     };
 
     const result = subscriptionPlanSchema.safeParse(rawData);
@@ -194,7 +214,7 @@ export function PlanForm({
       </label>
 
       <Field
-        label="اسم الخطة"
+        label="اسم الفعالية"
         value={form.name}
         onChange={(event) => updateField("name", event.target.value)}
         placeholder="الاشتراك الفضي"
@@ -204,7 +224,7 @@ export function PlanForm({
       />
 
       <label className="block text-right text-sm text-app-muted-light">
-        نوع الخطة *
+        نوع الفعالية *
         <Dropdown
           className="mt-2 text-white"
           buttonClassName="bg-app-card-soft h-11"
@@ -214,7 +234,7 @@ export function PlanForm({
             { value: "fixed_period", label: "محددة بمدة" },
             { value: "session_based", label: "محددة بعدد جلسات" },
           ]}
-          placeholder="اختر نوع الخطة"
+          placeholder="اختر نوع الفعالية"
           error={errors.type}
         />
       </label>
@@ -255,38 +275,116 @@ export function PlanForm({
         error={errors.price}
       />
 
-      <Field
-        label="أقصى عدد مرات التجميد"
-        value={form.max_freeze_count}
-        onChange={(event) => updateField("max_freeze_count", event.target.value)}
-        type="number"
-        min="0"
-        required
-        error={errors.max_freeze_count}
-      />
+      <div className="border-t border-app-line pt-4 mt-2">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-white">
+            الأنشطة والمدربين
+          </h4>
+          <Button
+            type="button"
+            tone="outline"
+            className="h-8 px-3 text-xs"
+            onClick={() => updateField("activities", [...(form.activities || []), { activity_id: "", coach_id: "" }])}
+          >
+            <PlusIcon className="size-3 ml-1" />
+            إضافة نشاط
+          </Button>
+        </div>
 
-      <Field
-        label="أقصى إجمالي أيام التجميد"
-        value={form.max_freeze_days}
-        onChange={(event) => updateField("max_freeze_days", event.target.value)}
-        type="number"
-        min="0"
-        required
-        error={errors.max_freeze_days}
-      />
+        {(!form.activities || form.activities.length === 0) ? (
+          <p className="text-xs text-app-muted-light">لم يتم إضافة أي نشاط بعد.</p>
+        ) : (
+          <div className="space-y-3">
+            {form.activities.map((item, idx) => (
+              <div key={idx} className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newActs = [...form.activities];
+                    newActs.splice(idx, 1);
+                    updateField("activities", newActs);
+                  }}
+                  className="absolute top-2 left-3 text-app-muted hover:text-app-red text-xs"
+                >
+                  إزالة
+                </button>
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <label className="block text-right text-xs text-app-muted-light">
+                    النشاط الرياضي
+                    <Dropdown
+                      className="mt-1 text-white"
+                      buttonClassName="bg-black/35 h-9"
+                      value={String(item.activity_id)}
+                      onChange={(val) => {
+                        const newActs = [...form.activities];
+                        newActs[idx].activity_id = val;
+                        newActs[idx].coach_id = "";
+                        updateField("activities", newActs);
+                      }}
+                      options={activities.map((a) => ({
+                        value: String(a.id),
+                        label: typeof a.name === "string" ? a.name : a.name?.ar || a.name?.en || "",
+                      }))}
+                      placeholder="اختر النشاط"
+                    />
+                  </label>
+                  <label className="block text-right text-xs text-app-muted-light">
+                    المدرب
+                    <Dropdown
+                      className="mt-1 text-white"
+                      buttonClassName="bg-black/35 h-9"
+                      value={String(item.coach_id)}
+                      onChange={(val) => {
+                        const newActs = [...form.activities];
+                        newActs[idx].coach_id = val;
+                        updateField("activities", newActs);
+                      }}
+                      options={coaches.map((c) => ({
+                        value: String(c.id),
+                        label: c.person?.full_name || String(c.id),
+                      }))}
+                      placeholder="اختر المدرب"
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      <Field
-        label="الحد الأقصى للمشتركين"
-        value={form.max_subscribers}
-        onChange={(event) => updateField("max_subscribers", event.target.value)}
-        type="number"
-        min="1"
-        required
-        error={errors.max_subscribers}
-      />
+      {(() => {
+        const shouldShowMaxSubscribers = form.activities?.some((item) => {
+          const act = activities.find((a) => String(a.id) === String(item.activity_id));
+          return act?.activity_type?.is_session_based === true;
+        });
+
+        if (!shouldShowMaxSubscribers) return null;
+
+        return (
+          <>
+            <CheckboxField
+              label="مفتوح المشتركين (غير محدود)"
+              checked={form.is_unlimited_subscribers}
+              onChange={(e) => updateField("is_unlimited_subscribers", e.target.checked)}
+            />
+
+            <Field
+              label="الحد الأقصى للمشتركين"
+              value={form.is_unlimited_subscribers ? "غير محدود" : form.max_subscribers}
+              onChange={(event) => updateField("max_subscribers", event.target.value)}
+              type={form.is_unlimited_subscribers ? "text" : "number"}
+              min="1"
+              disabled={form.is_unlimited_subscribers}
+              required={!form.is_unlimited_subscribers}
+              error={!form.is_unlimited_subscribers ? errors.max_subscribers : null}
+            />
+          </>
+        );
+      })()}
 
       <CheckboxField
-        label="الخطة فعالة ونشطة حالياً"
+        label="الفعالية فعالة ونشطة حالياً"
         checked={form.is_active}
         onChange={(e) => updateField("is_active", e.target.checked)}
       />
@@ -314,7 +412,7 @@ export function PlanForm({
           loading={isLoading}
           style={{ color: "#000000" }}
         >
-          {mode === "edit" ? "حفظ التعديل" : "إنشاء الخطة"}
+          {mode === "edit" ? "حفظ التعديل" : "إنشاء الفعالية"}
         </Button>
       </div>
     </form>
@@ -360,7 +458,7 @@ export default function SubscriptionPlansClient() {
     () => [
       {
         key: "name",
-        label: "الخطة",
+        label: "الفعالية",
         align: "center",
         render: (_, plan) => (
           <div className="min-w-0 text-center">
@@ -402,11 +500,13 @@ export default function SubscriptionPlansClient() {
         ),
       },
       {
-        key: "freeze",
-        label: "التجميد",
+        key: "subscribers",
+        label: "المشتركين",
         align: "center",
         render: (_, plan) =>
-          `${plan.max_freeze_count || 0} مرة / ${plan.max_freeze_days || 0} يوم`,
+          plan.is_unlimited_subscribers
+            ? `${plan.current_subscribers || 0} / غير محدود`
+            : `${plan.current_subscribers || 0} / ${plan.max_subscribers || 0}`,
       },
       {
         key: "is_active",
@@ -434,15 +534,15 @@ export default function SubscriptionPlansClient() {
     <div className="space-y-6" dir="rtl">
       <PageHeader
         eyebrow="إدارة النادي"
-        title="خطط الاشتراك"
-        subtitle="إنشاء وتعديل خطط الاشتراك وربطها مع مدة الخطة والسعر وعدد الجلسات."
+        title="الفعاليات"
+        subtitle="إنشاء وتعديل الفعاليات وربطها مع مدة الفعالية والسعر وعدد الجلسات."
         action={
           <Button
             href="/management/subscription-plans/create"
             icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
             style={{ color: "#000000" }}
           >
-            إنشاء خطة
+            إنشاء فعالية
           </Button>
         }
       />
@@ -450,7 +550,7 @@ export default function SubscriptionPlansClient() {
       <StatsGrid items={stats} />
 
       <DataTable
-        title="قائمة خطط الاشتراك"
+        title="قائمة الفعاليات"
         columns={columns}
         rows={filteredPlans}
         minWidth="850px"
@@ -463,7 +563,7 @@ export default function SubscriptionPlansClient() {
         emptyMessage={
           error ? (
             <div className="space-y-3 text-center">
-              <p className="text-app-red">تعذر تحميل خطط الاشتراك.</p>
+              <p className="text-app-red">تعذر تحميل الفعاليات.</p>
               <Button
                 tone="outline"
                 className="h-9 px-3 text-xs"
@@ -473,7 +573,7 @@ export default function SubscriptionPlansClient() {
               </Button>
             </div>
           ) : (
-            "لا توجد خطط مطابقة للبحث الحالي."
+            "لا توجد فعاليات مطابقة للبحث الحالي."
           )
         }
         rowClassName="gap-2 px-3 py-4"
@@ -488,7 +588,7 @@ export default function SubscriptionPlansClient() {
           <SearchInput
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="بحث باسم الخطة أو السعر"
+            placeholder="بحث باسم الفعالية أو السعر"
             className="min-w-72"
           />
         }
@@ -505,7 +605,7 @@ export default function SubscriptionPlansClient() {
       <Drawer
         open={drawerMode === "edit"}
         onClose={closeDrawer}
-        title="تعديل خطة الاشتراك"
+        title="تعديل الفعالية"
         subtitle={planName(selectedPlan)}
       >
         <PlanForm
@@ -523,7 +623,7 @@ export default function SubscriptionPlansClient() {
       <Drawer
         open={drawerMode === "details"}
         onClose={closeDrawer}
-        title="تفاصيل خطة الاشتراك"
+        title="تفاصيل الفعالية"
         subtitle={planName(detailsPlan || selectedPlan)}
       >
         <PlanDetails
@@ -537,8 +637,8 @@ export default function SubscriptionPlansClient() {
         open={deleteConfirmOpen}
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
-        title="تأكيد حذف خطة الاشتراك"
-        message={`هل أنت متأكد من رغبتك في حذف خطة "${itemToDelete ? planName(itemToDelete) : ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        title="تأكيد حذف الفعالية"
+        message={`هل أنت متأكد من رغبتك في حذف فعالية "${itemToDelete ? planName(itemToDelete) : ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
         isLoading={isDeleting}
       />
     </div>

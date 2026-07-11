@@ -46,7 +46,7 @@ export default function ManagementSidebar({ className }) {
       dir="ltr"
     >
       <div className="mx-auto grid h-[59px] w-[159px] place-items-center">
-        <Image src={"/img/logo.jpeg"} alt="Logo" width={159} height={59} />
+        <Image src={"/img/Logo11.jpeg"} alt="Logo" width={159} height={59} />
       </div>
 
       <h3 className="mt-6 text-center text-base font-medium text-app-text">
