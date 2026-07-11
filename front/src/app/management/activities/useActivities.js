@@ -19,10 +19,11 @@ function activityName(act) {
   return act.name.ar || act.name.en || "-";
 }
 
-export function useActivities() {
+export function useActivities(params = {}) {
+  const { selectedActivityId: initialSelectedId } = params;
   const [search, setSearch] = useState("");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedActivityId, setSelectedActivityId] = useState(null);
+  const [selectedActivityId, setSelectedActivityId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -87,8 +88,7 @@ export function useActivities() {
 
   const stats = useMemo(() => {
     const activeCount = activities.filter((a) => a.is_active !== false).length;
-    const privateCount = activities.filter((a) => a.is_private_equipment === 1 || a.is_private_equipment === true).length;
-    const groupCount = activities.filter((a) => a.is_private_equipment === 0 || a.is_private_equipment === false).length;
+    const inactiveCount = activities.length - activeCount;
 
     return [
       {
@@ -106,17 +106,10 @@ export function useActivities() {
         compact: true,
       },
       {
-        title: "أنشطة جماعية",
-        value: groupCount.toLocaleString("ar"),
-        helper: "تمارين جماعية عامة",
-        tone: "blue",
-        compact: true,
-      },
-      {
-        title: "تدريب خاص / أجهزة خاصة",
-        value: privateCount.toLocaleString("ar"),
-        helper: "أجهزة وتدريبات خاصة",
-        tone: "purple",
+        title: "أنشطة غير نشطة",
+        value: inactiveCount.toLocaleString("ar"),
+        helper: "الأنشطة الموقوفة مؤقتاً",
+        tone: "default",
         compact: true,
       },
     ];
@@ -191,23 +184,27 @@ export function useActivities() {
   function getEditInitialValues() {
     if (!selectedActivity) return null;
 
-    const nameAr =
+    const name =
       typeof selectedActivity.name === "object"
-        ? selectedActivity.name?.ar
-        : selectedActivity.name;
-    const nameEn =
-      typeof selectedActivity.name === "object" ? selectedActivity.name?.en : "";
+        ? selectedActivity.name?.ar || selectedActivity.name?.en || ""
+        : selectedActivity.name || "";
+
+    const shiftIds = Array.isArray(selectedActivity.shifts)
+      ? selectedActivity.shifts.map((s) => (typeof s === "object" ? s.id : s))
+      : [];
 
     return {
-      name_ar: nameAr || "",
-      name_en: nameEn || "",
+      name: name,
       description: selectedActivity.description || "",
-      type: selectedActivity.type || "group_class",
-      default_capacity: String(selectedActivity.default_capacity || 20),
-      is_private_equipment: selectedActivity.is_private_equipment ? "1" : "0",
       gender_allowed: selectedActivity.gender_allowed || "mixed",
       branch_id: selectedActivity.branch_id ? String(selectedActivity.branch_id) : "",
-      activity_type_id: selectedActivity.activity_type_id ? String(selectedActivity.activity_type_id) : "",
+      activity_type_id: selectedActivity.activity_type_id
+        ? String(selectedActivity.activity_type_id)
+        : selectedActivity.activity_type?.id
+        ? String(selectedActivity.activity_type.id)
+        : "",
+      is_active: selectedActivity.is_active !== false,
+      shifts: shiftIds,
     };
   }
 

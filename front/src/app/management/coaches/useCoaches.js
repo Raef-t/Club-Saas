@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useGetCoachesQuery,
   useGetCoachQuery,
@@ -11,7 +11,6 @@ import {
 } from "@/lib/api/coachesApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
-import { useToast } from "@/components/ui/Toast";
 
 function getCoachesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -25,27 +24,29 @@ function getActivitiesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
 }
 
-export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = {}) {
-  const toast = useToast();
+export function useCoaches(params = {}) {
+  const { selectedCoachId: initialSelectedId } = params;
   const [search, setSearch] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [employmentFilter, setEmploymentFilter] = useState("all");
+  const [activityFilter, setActivityFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedCoachId);
+  const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [selectedActivityId, setSelectedActivityId] = useState("");
 
-  const { data, error, isLoading, refetch } = useGetCoachesQuery();
+  const queryParams = useMemo(() => {
+    const params = {};
+    if (branchFilter !== "all") params.branch_id = Number(branchFilter);
+    if (activityFilter !== "all") params.activity_id = Number(activityFilter);
+    return params;
+  }, [branchFilter, activityFilter]);
+
+  const { data, error, isLoading, refetch } = useGetCoachesQuery(queryParams);
   const { data: branchesData } = useGetBranchesQuery();
   const { data: activitiesData } = useGetActivitiesQuery();
-
-  useEffect(() => {
-    if (error) {
-      console.error("Coaches list query error:", error);
-    }
-  }, [error]);
 
   const {
     data: detailsData,
@@ -54,12 +55,6 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
   } = useGetCoachQuery(selectedCoachId, {
     skip: !selectedCoachId || drawerMode !== "details",
   });
-
-  useEffect(() => {
-    if (detailsError) {
-      console.error("Coach details query error:", detailsError);
-    }
-  }, [detailsError]);
 
   const [createCoach, { isLoading: isCreating }] = useCreateCoachMutation();
   const [updateCoachBasic, { isLoading: isUpdatingBasic }] =
@@ -95,7 +90,15 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
       const phoneVal = coach.person?.phone || "";
 
       const matchesBranch =
-        branchFilter === "all" || String(coach.branch_id) === String(branchFilter);
+        branchFilter === "all" ||
+        (Array.isArray(coach.branch_ids) &&
+          coach.branch_ids.map(String).includes(String(branchFilter)));
+
+      const matchesActivity =
+        activityFilter === "all" ||
+        (Array.isArray(coach.activities) &&
+          coach.activities.some((act) => String(act.id) === String(activityFilter)));
+
       const matchesEmployment =
         employmentFilter === "all" || coach.employment_type === employmentFilter;
 
@@ -107,9 +110,9 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
             String(value).toLowerCase().includes(normalizedSearch),
           );
 
-      return matchesBranch && matchesEmployment && matchesSearch;
+      return matchesBranch && matchesActivity && matchesEmployment && matchesSearch;
     });
-  }, [coaches, search, branchFilter, employmentFilter]);
+  }, [coaches, search, branchFilter, activityFilter, employmentFilter]);
 
   const stats = useMemo(() => {
     const activeCount = coaches.filter((c) => c.is_active).length;
@@ -139,7 +142,7 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
         compact: true,
       },
       {
-        title: "عمولات أو هجين",
+        title: "نسبة أو هجين",
         value: commCount.toLocaleString("ar"),
         helper: "أجور نسبية أو هجينة",
         tone: "purple",
@@ -176,11 +179,6 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
         }
       }
 
-      let employment_type = values.employment_type || "fixed_salary";
-      if (employment_type === "commission") {
-        employment_type = "commission_based";
-      }
-
       const payload = {
         first_name,
         last_name,
@@ -191,22 +189,21 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
         country_code: values.country_code || "+963",
         email: values.email || null,
         address: values.address || null,
-        branch_ids: values.branch_id ? [Number(values.branch_id)] : [],
+        branch_ids: Array.isArray(values.branch_ids) ? values.branch_ids.map(Number) : [],
         specialization: values.specialization || null,
         experience_years: Number(values.experience_years) || 0,
-        employment_type,
+        employment_type: values.employment_type || "fixed_salary",
         base_salary: Number(values.base_salary) || 0,
+        default_commission_rate: Number(values.default_commission_rate) || 0,
+        work_types: Array.isArray(values.work_types) ? values.work_types : [],
+        activity_ids: Array.isArray(values.activity_ids) ? values.activity_ids.map(Number) : [],
       };
 
       await createCoach(payload).unwrap();
-      toast.success("تم إضافة المدرب بنجاح!");
       closeDrawer();
       return true;
     } catch (submitError) {
       console.error("Create coach validation/API error:", submitError);
-      if (submitError?.data?.errors) {
-        console.error("Detailed validation errors:", submitError.data.errors);
-      }
       setFormError(
         submitError?.data?.message ||
           "تعذر إضافة المدرب. تحقق من البيانات وحاول مرة أخرى.",
@@ -216,41 +213,27 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
   }
 
   async function handleUpdate(basicValues, detailsValues) {
-    if (!selectedCoachId) return false;
+    if (!selectedCoachId) return;
     setFormError("");
     try {
-      let employment_type = basicValues.employment_type || "fixed_salary";
-      if (employment_type === "commission") {
-        employment_type = "commission_based";
-      }
-
-      const mergedBody = {
-        base_salary: Number(basicValues.base_salary) || 0,
-        employment_type,
-        is_active: basicValues.is_active,
-        specialization: detailsValues.specialization || null,
-        experience_years: Number(detailsValues.experience_years) || 0,
-      };
-
-      // The backend updates both basic info and details via the single PUT/PATCH endpoint
+      // 1. Update basic parameters
       await updateCoachBasic({
         id: selectedCoachId,
-        body: mergedBody,
+        body: basicValues,
       }).unwrap();
 
-      toast.success("تم تعديل بيانات المدرب بنجاح!");
+      // 2. Update specialization and experience details
+      await updateCoachDetails({
+        id: selectedCoachId,
+        body: detailsValues,
+      }).unwrap();
+
       closeDrawer();
-      return true;
     } catch (submitError) {
-      console.error("Update coach validation/API error:", submitError);
-      if (submitError?.data?.errors) {
-        console.error("Detailed validation errors:", submitError.data.errors);
-      }
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل بيانات المدرب. تحقق من البيانات وحاول مرة أخرى.",
       );
-      return false;
     }
   }
 
@@ -268,9 +251,8 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
     if (!itemToDelete) return;
     try {
       await deleteCoach(itemToDelete.id).unwrap();
-      toast.success("تم حذف المدرب بنجاح!");
     } catch {
-      toast.error("تعذر حذف المدرب. حاول مرة أخرى.");
+      window.alert("تعذر حذف المدرب. حاول مرة أخرى.");
     } finally {
       closeDeleteConfirm();
     }
@@ -283,10 +265,9 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
         id: selectedCoachId,
         activity_ids: [Number(selectedActivityId)],
       }).unwrap();
-      toast.success("تم إسناد النشاط للمدرب بنجاح!");
       setSelectedActivityId("");
     } catch {
-      toast.error("تعذر إسناد النشاط للمدرب.");
+      window.alert("تعذر إسناد النشاط للمدرب.");
     }
   }
 
@@ -297,9 +278,8 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
         id: selectedCoachId,
         activityId,
       }).unwrap();
-      toast.success("تم إلغاء إسناد النشاط من المدرب!");
     } catch {
-      toast.error("تعذر إزالة النشاط من المدرب.");
+      window.alert("تعذر إزالة النشاط من المدرب.");
     }
   }
 
@@ -326,6 +306,8 @@ export function useCoaches({ selectedCoachId: initialSelectedCoachId = null } = 
     setBranchFilter,
     employmentFilter,
     setEmploymentFilter,
+    activityFilter,
+    setActivityFilter,
     drawerMode,
     setDrawerMode,
     selectedCoachId,

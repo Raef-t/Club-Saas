@@ -57,13 +57,13 @@ export function useSubscriptionPlans({
 
   useEffect(() => {
     if (error) {
-      console.error("[useSubscriptionPlans] Error fetching subscription plans:", error);
+      console.warn("[useSubscriptionPlans] Error fetching subscription plans:", error);
     }
     if (detailsError) {
-      console.error("[useSubscriptionPlans] Error fetching subscription plan details:", detailsError);
+      console.warn("[useSubscriptionPlans] Error fetching subscription plan details:", detailsError);
     }
     if (branchesError) {
-      console.error("[useSubscriptionPlans] Error fetching branches:", branchesError);
+      console.warn("[useSubscriptionPlans] Error fetching branches:", branchesError);
     }
   }, [error, detailsError, branchesError]);
 

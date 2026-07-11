@@ -18,20 +18,20 @@ import { useActivities } from "./useActivities";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { genderLabels } from "@/lib/constants";
 import { activitySchema } from "@/lib/validations/activitiesSchema";
+import Checkbox from "@/components/ui/Checkbox";
+import { useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 
 const TABLE_GRID_COLUMNS =
-  "minmax(180px,1.2fr) minmax(200px,1.8fr) 110px 130px 90px 100px";
+  "minmax(180px,1.2fr) minmax(200px,1.8fr) 120px 120px 100px";
 
 const initialForm = {
-  name_ar: "",
-  name_en: "",
+  name: "",
   description: "",
-  type: "group_class",
-  default_capacity: "20",
-  is_private_equipment: "0",
   gender_allowed: "mixed",
   branch_id: "",
   activity_type_id: "",
+  is_active: true,
+  shifts: [],
 };
 
 const activityName = (act) => formatLocalizedName(act?.name);
@@ -74,12 +74,6 @@ function ActivityDetails({ activity, isLoading, error }) {
 
       <section className="grid gap-3 sm:grid-cols-2">
         <DetailItem
-          label="نوع النشاط"
-          value={
-            activity.type === "group_class" ? "حصة جماعية" : "تدريب فردي / خاص"
-          }
-        />
-        <DetailItem
           label="الجمهور المسموح"
           value={
             genderLabels[activity.gender_allowed] || activity.gender_allowed
@@ -87,19 +81,13 @@ function ActivityDetails({ activity, isLoading, error }) {
           tone="yellow"
         />
         <DetailItem
-          label="السعة الافتراضية"
-          value={
-            activity.default_capacity ? `${activity.default_capacity} شخص` : "-"
-          }
+          label="الحالة"
+          value={activity.is_active ? "نشط" : "غير نشط"}
+          tone={activity.is_active ? "green" : "default"}
         />
         <DetailItem
-          label="طبيعة الأجهزة"
-          value={
-            activity.is_private_equipment
-              ? "تدريب خاص / أجهزة خاصة"
-              : "أجهزة عامة"
-          }
-          tone={activity.is_private_equipment ? "yellow" : "default"}
+          label="نوع الفئة / التصنيف"
+          value={activity.activity_type?.name || "-"}
         />
         <DetailItem
           label="تاريخ الإنشاء"
@@ -119,6 +107,16 @@ function ActivityDetails({ activity, isLoading, error }) {
   );
 }
 
+const daysOfWeek = {
+  0: "الأحد",
+  1: "الإثنين",
+  2: "الثلاثاء",
+  3: "الأربعاء",
+  4: "الخميس",
+  5: "الجمعة",
+  6: "السبت",
+};
+
 export function ActivityForm({
   mode,
   initialValues = initialForm,
@@ -135,23 +133,38 @@ export function ActivityForm({
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
 
+  const branchIdNum = Number(form.branch_id);
+  const { data: shiftsResponse, isFetching: isLoadingShifts } = useGetBranchShiftsQuery(
+    branchIdNum,
+    { skip: !branchIdNum }
+  );
+  const branchShifts = useMemo(() => {
+    return Array.isArray(shiftsResponse?.data) ? shiftsResponse.data : [];
+  }, [shiftsResponse]);
+
+  const showShifts = Number(form.activity_type_id) === 4 || Number(form.activity_type_id) === 5;
+
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const updated = { ...current, [field]: value };
+      if (field === "branch_id") {
+        updated.shifts = [];
+      }
+      return updated;
+    });
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
     const validationData = {
-      name_ar: form.name_ar.trim(),
-      name_en: form.name_en.trim(),
-      description: form.description.trim() || null,
-      type: form.type,
-      default_capacity: Number(form.default_capacity) || 20,
-      is_private_equipment: form.is_private_equipment,
-      gender_allowed: form.gender_allowed,
+      name: (form.name || "").trim(),
+      description: (form.description || "").trim() || null,
+      gender_allowed: form.gender_allowed || "mixed",
       branch_id: form.branch_id,
       activity_type_id: form.activity_type_id,
+      is_active: !!form.is_active,
+      shifts: form.shifts || [],
     };
 
     const result = activitySchema.safeParse(validationData);
@@ -166,14 +179,13 @@ export function ActivityForm({
 
     setErrors({});
     onSubmit({
-      name: form.name_ar.trim(),
-      description: form.description.trim() || null,
-      type: form.type,
-      default_capacity: Number(form.default_capacity) || 20,
-      is_private_equipment: form.is_private_equipment === "1",
-      gender_allowed: form.gender_allowed,
+      name: (form.name || "").trim(),
+      description: (form.description || "").trim() || null,
+      gender_allowed: form.gender_allowed || "mixed",
       branch_id: Number(form.branch_id),
       activity_type_id: Number(form.activity_type_id),
+      is_active: !!form.is_active,
+      shifts: showShifts ? (form.shifts || []).map(Number) : [],
     });
   }
 
@@ -186,24 +198,13 @@ export function ActivityForm({
       dir="rtl"
     >
       <Field
-        label="اسم النشاط بالعربية"
-        value={form.name_ar}
-        onChange={(event) => updateField("name_ar", event.target.value)}
-        placeholder="مثال: صالة حديد حرة"
+        label="اسم النشاط"
+        value={form.name || ""}
+        onChange={(event) => updateField("name", event.target.value)}
+        placeholder="مثال: صالة حديد حرة أو يوغا"
         required
         type="text"
-        error={errors.name_ar}
-      />
-
-      <Field
-        label="اسم النشاط بالإنجليزية"
-        value={form.name_en}
-        onChange={(event) => updateField("name_en", event.target.value)}
-        placeholder="Open Gym"
-        dir="ltr"
-        required
-        type="text"
-        error={errors.name_en}
+        error={errors.name}
       />
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -211,7 +212,7 @@ export function ActivityForm({
         <Dropdown
           className="mt-2 text-white"
           buttonClassName="bg-app-card-soft h-11"
-          value={form.branch_id}
+          value={form.branch_id || ""}
           onChange={(val) => updateField("branch_id", val)}
           options={branches.map((b) => {
             const label = typeof b.name === "string" ? b.name : b.name?.ar || b.name?.en || "-";
@@ -227,7 +228,7 @@ export function ActivityForm({
         <Dropdown
           className="mt-2 text-white"
           buttonClassName="bg-app-card-soft h-11"
-          value={form.activity_type_id}
+          value={form.activity_type_id || ""}
           onChange={(val) => updateField("activity_type_id", val)}
           options={activityTypes.map((type) => {
             const label = typeof type.name === "string" ? type.name : type.name?.ar || type.name?.en || "-";
@@ -238,52 +239,57 @@ export function ActivityForm({
         />
       </label>
 
+      {showShifts && (
+        <div className="block text-right text-sm text-app-muted-light">
+          الورديات / الشفتات المتاحة
+          <div className="mt-2 grid grid-cols-2 gap-3 p-3 bg-app-card-soft rounded-lg border border-app-line max-h-48 overflow-y-auto">
+            {isLoadingShifts ? (
+              <p className="text-xs text-app-muted-light text-center py-2 col-span-2">جاري تحميل الورديات...</p>
+            ) : branchShifts.length === 0 ? (
+              <p className="text-xs text-app-muted-light text-center py-2 col-span-2">لا توجد ورديات مسجلة لهذا الفرع</p>
+            ) : (
+              branchShifts.map((shift) => {
+                const isChecked = form.shifts?.includes(shift.id);
+                const dayName = daysOfWeek[shift.day_of_week] || "يوم غير معروف";
+                const startTime = shift.start_time ? shift.start_time.slice(0, 5) : "";
+                const endTime = shift.end_time ? shift.end_time.slice(0, 5) : "";
+                const gender = genderLabels[shift.gender_allowed] || shift.gender_allowed || "مختلط";
+                const label = `${dayName} | من ${startTime} إلى ${endTime} (${gender})`;
+                
+                return (
+                  <Checkbox
+                    key={shift.id}
+                    label={label}
+                    checked={isChecked}
+                    onChange={() => {
+                      const id = shift.id;
+                      const newShifts = isChecked
+                        ? (form.shifts || []).filter((x) => x !== id)
+                        : [...(form.shifts || []), id];
+                      updateField("shifts", newShifts);
+                    }}
+                  />
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
       <TextAreaField
         label="الوصف"
-        value={form.description}
+        value={form.description || ""}
         onChange={(event) => updateField("description", event.target.value)}
         placeholder="أدخل وصفاً مختصراً للنشاط والتمارين..."
         error={errors.description}
       />
 
       <label className="block text-right text-sm text-app-muted-light">
-        نوع النشاط
-        <Dropdown
-          className="mt-2 text-white"
-          buttonClassName="bg-app-card-soft h-11"
-          value={form.type}
-          onChange={(val) => updateField("type", val)}
-          options={[
-            { value: "group_class", label: "حصة تدريبية جماعية" },
-            { value: "personal_training", label: "تدريب خاص / فردي" },
-          ]}
-          placeholder="اختر النوع"
-          error={errors.type}
-        />
-      </label>
-
-      <label className="block text-right text-sm text-app-muted-light">
-        نوع الأجهزة المشمولة
-        <Dropdown
-          className="mt-2 text-white"
-          buttonClassName="bg-app-card-soft h-11"
-          value={form.is_private_equipment}
-          onChange={(val) => updateField("is_private_equipment", val)}
-          options={[
-            { value: "0", label: "أجهزة عامة ومفتوحة للكل" },
-            { value: "1", label: "أجهزة خاصة / تدريب خاص" },
-          ]}
-          placeholder="نوع التجهيز"
-          error={errors.is_private_equipment}
-        />
-      </label>
-
-      <label className="block text-right text-sm text-app-muted-light">
         الجمهور المستهدف
         <Dropdown
           className="mt-2 text-white"
           buttonClassName="bg-app-card-soft h-11"
-          value={form.gender_allowed}
+          value={form.gender_allowed || "mixed"}
           onChange={(val) => updateField("gender_allowed", val)}
           options={[
             { value: "mixed", label: "مختلط" },
@@ -295,17 +301,20 @@ export function ActivityForm({
         />
       </label>
 
-      <Field
-        label="السعة الافتراضية للنشاط"
-        value={form.default_capacity}
-        onChange={(event) =>
-          updateField("default_capacity", event.target.value)
-        }
-        type="number"
-        min="1"
-        required
-        error={errors.default_capacity}
-      />
+      <div className="flex items-center gap-3 pt-2">
+        <label className="relative inline-flex cursor-pointer items-center">
+          <input
+            type="checkbox"
+            checked={!!form.is_active}
+            onChange={(e) => updateField("is_active", e.target.checked)}
+            className="peer sr-only"
+          />
+          <div className="peer h-6 w-11 rounded-full bg-app-line after:absolute after:top-[2px] after:right-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]"></div>
+        </label>
+        <span className="text-sm font-medium text-white">
+          نشط في النظام
+        </span>
+      </div>
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -400,22 +409,18 @@ export default function ActivitiesClient() {
         ),
       },
       {
-        key: "is_private_equipment",
-        label: "نوع التجهيز",
+        key: "is_active",
+        label: "الحالة",
         align: "center",
         render: (value) => (
-          <span className="text-xs text-app-muted-light">
-            {value ? "تدريب / جهاز خاص" : "عام"}
-          </span>
-        ),
-      },
-      {
-        key: "default_capacity",
-        label: "السعة",
-        align: "center",
-        render: (value) => (
-          <span className="text-xs text-app-text font-medium">
-            {value ? `${value} شخص` : "-"}
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+              value
+                ? "bg-app-green/10 text-app-green"
+                : "bg-app-red/10 text-app-red"
+            }`}
+          >
+            {value ? "نشط" : "غير نشط"}
           </span>
         ),
       },

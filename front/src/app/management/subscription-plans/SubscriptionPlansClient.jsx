@@ -16,7 +16,7 @@ import { Field } from "@/components/forms/FormControls";
 import { CheckboxField } from "@/components/forms/CheckboxField";
 import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
-import { formatLocalizedName } from "@/lib/utils";
+import { formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
 
 const TABLE_GRID_COLUMNS =
@@ -36,9 +36,7 @@ const initialForm = {
 };
 
 function formatMoney(value) {
-  // Use our centralized formatMoney with '$' symbol
-  const { formatMoney: baseFormat } = require("@/lib/utils");
-  return baseFormat(value, "$");
+  return baseFormatMoney(value, "$");
 }
 
 const planName = (plan) => formatLocalizedName(plan?.name);

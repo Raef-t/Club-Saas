@@ -18,7 +18,10 @@ export const coachesApi = createApi({
   tagTypes: ["Coaches"],
   endpoints: (builder) => ({
     getCoaches: builder.query({
-      query: () => "coaches",
+      query: (params) => ({
+        url: "coaches",
+        params,
+      }),
       providesTags: ["Coaches"],
     }),
     getCoach: builder.query({
