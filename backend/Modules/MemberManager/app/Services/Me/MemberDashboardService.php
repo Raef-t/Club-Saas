@@ -227,18 +227,16 @@ class MemberDashboardService
      */
     protected function getUpcomingEvents(int $memberId): array
     {
-        // Get upcoming sessions from sports_sessions with their activities
+        // Get upcoming sessions from sports_sessions with their plans
         $sessions = DB::table('sports_sessions')
-            ->join('activities', 'sports_sessions.activity_id', '=', 'activities.id')
+            ->join('subscription_plans', 'sports_sessions.plan_id', '=', 'subscription_plans.id')
             ->where('sports_sessions.start_time', '>', now())
             ->where('sports_sessions.status', 'scheduled')
             ->orderBy('sports_sessions.start_time')
             ->limit(5)
             ->select([
                 'sports_sessions.id',
-                'activities.name as activity_name',
-                'activities.exercises_count',
-                'activities.estimated_calories',
+                'subscription_plans.name as plan_name',
                 'sports_sessions.start_time',
                 'sports_sessions.end_time',
                 'sports_sessions.max_players',
@@ -250,18 +248,18 @@ class MemberDashboardService
             $durationMinutes = Carbon::parse($session->start_time)
                 ->diffInMinutes(Carbon::parse($session->end_time));
 
-            $activityName = $session->activity_name;
-            if (is_string($activityName) && json_decode($activityName)) {
-                $decoded = json_decode($activityName, true);
-                $activityName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $activityName;
+            $planName = $session->plan_name;
+            if (is_string($planName) && json_decode($planName)) {
+                $decoded = json_decode($planName, true);
+                $planName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $planName;
             }
 
             return [
                 'id' => $session->id,
-                'title' => $activityName,
-                'exercises_count' => $session->exercises_count ?? 0,
+                'title' => $planName,
+                'exercises_count' => 0,
                 'duration_minutes' => $durationMinutes,
-                'calories' => $session->estimated_calories ?? 0,
+                'calories' => 0,
                 'available_spots' => max(0, ($session->max_players ?? 0) - ($session->booked_count ?? 0)),
             ];
         })->toArray();
