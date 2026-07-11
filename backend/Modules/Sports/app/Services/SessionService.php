@@ -198,10 +198,11 @@ class SessionService
     {
         $activityIds = \Illuminate\Support\Facades\DB::table('player_subscriptions')
             ->join('plan_activities', 'player_subscriptions.plan_id', '=', 'plan_activities.plan_id')
+            ->join('staff_activities', 'plan_activities.staff_activity_id', '=', 'staff_activities.id')
             ->where('player_subscriptions.member_id', $memberId)
             ->where('player_subscriptions.status', 'active')
             ->where('player_subscriptions.end_date', '>=', now()->toDateString())
-            ->pluck('plan_activities.activity_id')
+            ->pluck('staff_activities.activity_id')
             ->unique();
 
         $sessions = SportSession::whereIn('activity_id', $activityIds)
