@@ -239,7 +239,7 @@ class MemberDashboardService
                 'subscription_plans.name as plan_name',
                 'sports_sessions.start_time',
                 'sports_sessions.end_time',
-                'sports_sessions.max_players',
+                'subscription_plans.max_subscribers as max_players',
                 'sports_sessions.booked_count',
             ])
             ->get();
