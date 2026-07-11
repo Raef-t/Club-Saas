@@ -32,6 +32,7 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(response: 200, description: 'Successful operation')]
     public function index(Request $request)
     {
         $offers = $this->offerService->getAllOffers($request->all());
@@ -49,6 +50,7 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(response: 201, description: 'Offer created successfully')]
     public function store(StoreOfferRequest $request)
     {
         try {
@@ -71,6 +73,7 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(response: 200, description: 'Successful operation')]
     public function show(int $id)
     {
         $offer = $this->offerService->getOfferById($id);
@@ -88,6 +91,7 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(response: 200, description: 'Offer updated successfully')]
     public function update(UpdateOfferRequest $request, int $id)
     {
         try {
@@ -109,6 +113,7 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(response: 200, description: 'Offer deleted successfully')]
     public function destroy(int $id)
     {
         $this->offerService->deleteOffer($id);
@@ -126,6 +131,7 @@ class OfferController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(response: 201, description: 'Subscribed to offer successfully')]
     public function subscribe(SubscribeOfferRequest $request, int $id)
     {
         $data = $request->validated();
