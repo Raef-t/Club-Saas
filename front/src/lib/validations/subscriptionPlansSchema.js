@@ -38,20 +38,21 @@ export const subscriptionPlanSchema = z.object({
     .nonnegative("لا يمكن أن يكون السعر سالباً")
     .or(z.string().min(1, "السعر مطلوب").transform(Number)),
 
-  max_freeze_count: z
-    .number({ invalid_type_error: "أقصى عدد مرات تجميد مطلوب" })
-    .nonnegative("لا يمكن أن يكون عدد مرات التجميد سالباً")
-    .or(z.string().min(1, "أقصى عدد مرات تجميد مطلوب").transform(Number)),
-
-  max_freeze_days: z
-    .number({ invalid_type_error: "أقصى إجمالي أيام تجميد مطلوب" })
-    .nonnegative("لا يمكن أن يكون إجمالي أيام التجميد سالباً")
-    .or(z.string().min(1, "أقصى إجمالي أيام تجميد مطلوب").transform(Number)),
-
   max_subscribers: z
     .number({ invalid_type_error: "الحد الأقصى للمشتركين مطلوب" })
     .nonnegative("لا يمكن أن يكون الحد الأقصى للمشتركين سالباً")
-    .or(z.string().min(1, "الحد الأقصى للمشتركين مطلوب").transform(Number)),
+    .or(z.string().min(1, "الحد الأقصى للمشتركين مطلوب").transform(Number))
+    .nullable()
+    .optional(),
+
+  is_unlimited_subscribers: z.boolean().optional(),
+  
+  activities: z.array(
+    z.object({
+      activity_id: z.number().positive("يرجى اختيار نشاط صالح"),
+      coach_id: z.number().positive("يرجى اختيار مدرب صالح"),
+    })
+  ).optional(),
 
   is_active: z.boolean().optional(),
 }).superRefine((data, ctx) => {

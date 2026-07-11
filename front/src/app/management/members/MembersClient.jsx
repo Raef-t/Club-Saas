@@ -485,7 +485,7 @@ export function MemberForm({
               }}
               options={plans.map((p) => ({
                 value: String(p.id),
-                label: p.name?.ar || p.name?.en || "",
+                label: typeof p.name === "string" ? p.name : p.name?.ar || p.name?.en || "",
               }))}
               placeholder="اختر خطة الاشتراك"
               error={errors && errors.plan_id}

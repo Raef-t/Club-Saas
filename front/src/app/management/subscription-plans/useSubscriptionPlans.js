@@ -7,6 +7,8 @@ import {
   useUpdateSubscriptionPlanMutation,
 } from "@/lib/api/subscriptionPlansApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
+import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
+import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 
 import {
@@ -49,11 +51,17 @@ export function useSubscriptionPlans({
     isFetching: isFetchingDetails,
     isLoading: isLoadingDetails,
   } = useGetSubscriptionPlanQuery(selectedPlanId, {
-    skip: !selectedPlanId || drawerMode !== "details",
+    skip: !selectedPlanId,
   });
 
   const { data: branchesData, error: branchesError } = useGetBranchesQuery();
   const branches = useMemo(() => branchesData?.data || [], [branchesData]);
+
+  const { data: activitiesData } = useGetActivitiesQuery();
+  const activities = useMemo(() => Array.isArray(activitiesData?.data) ? activitiesData.data : [], [activitiesData]);
+
+  const { data: coachesData } = useGetCoachesQuery({});
+  const coaches = useMemo(() => Array.isArray(coachesData?.data) ? coachesData.data : [], [coachesData]);
 
   useEffect(() => {
     if (error) {
@@ -216,19 +224,27 @@ export function useSubscriptionPlans({
   }
 
   function getEditInitialValues() {
-    if (!selectedPlan) return null;
+    const plan = detailsPlan || selectedPlan;
+    if (!plan) return null;
+
+    let normalizedType = plan.type;
+    if (normalizedType === "duration") normalizedType = "fixed_period";
+    if (normalizedType === "session") normalizedType = "session_based";
 
     return {
-      branch_id: selectedPlan.branch_id ? String(selectedPlan.branch_id) : "",
-      name: planName(selectedPlan) === "-" ? "" : planName(selectedPlan),
-      type: selectedPlan.type || "fixed_period",
-      duration_in_days: String(selectedPlan?.duration_days ?? ""),
-      session_count: selectedPlan.session_count ? String(selectedPlan.session_count) : "",
-      price: String(parseAmount(selectedPlan?.base_price || "")),
-      max_freeze_count: String(selectedPlan?.max_freeze_count ?? "0"),
-      max_freeze_days: String(selectedPlan?.max_freeze_days ?? "0"),
-      max_subscribers: String(selectedPlan?.max_subscribers ?? "0"),
-      is_active: selectedPlan?.is_active ?? true,
+      branch_id: plan.branch_id ? String(plan.branch_id) : "",
+      name: planName(plan) === "-" ? "" : planName(plan),
+      type: normalizedType || "fixed_period",
+      duration_in_days: String(plan.duration_days ?? ""),
+      session_count: plan.session_count ? String(plan.session_count) : "",
+      price: String(parseAmount(plan.base_price || "")),
+      max_subscribers: String(plan.max_subscribers ?? "0"),
+      is_active: plan.is_active ?? true,
+      is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
+      activities: plan.activities?.map((a) => ({
+        activity_id: String(a.activity_id),
+        coach_id: String(a.coach_id),
+      })) || [],
     };
   }
 
@@ -264,5 +280,7 @@ export function useSubscriptionPlans({
     closeDeleteConfirm,
     confirmDelete,
     branches,
+    activities,
+    coaches,
   };
 }
