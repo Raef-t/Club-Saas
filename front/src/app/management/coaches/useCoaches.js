@@ -3,8 +3,7 @@ import {
   useGetCoachesQuery,
   useGetCoachQuery,
   useCreateCoachMutation,
-  useUpdateCoachBasicMutation,
-  useUpdateCoachDetailsMutation,
+  useUpdateCoachMutation,
   useDeleteCoachMutation,
   useAddCoachActivitiesMutation,
   useDeleteCoachActivityMutation,
@@ -25,13 +24,15 @@ function getActivitiesArray(response) {
 }
 
 export function useCoaches(params = {}) {
-  const { selectedCoachId: initialSelectedId } = params;
+  const { selectedCoachId: initialSelectedId, fetchDetails = false } = params;
   const [search, setSearch] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [employmentFilter, setEmploymentFilter] = useState("all");
   const [activityFilter, setActivityFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedId || null);
+  const [selectedCoachId, setSelectedCoachId] = useState(
+    initialSelectedId || null,
+  );
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -53,14 +54,11 @@ export function useCoaches(params = {}) {
     error: detailsError,
     isFetching: isFetchingDetails,
   } = useGetCoachQuery(selectedCoachId, {
-    skip: !selectedCoachId || drawerMode !== "details",
+    skip: !selectedCoachId || (!fetchDetails && drawerMode !== "details"),
   });
 
   const [createCoach, { isLoading: isCreating }] = useCreateCoachMutation();
-  const [updateCoachBasic, { isLoading: isUpdatingBasic }] =
-    useUpdateCoachBasicMutation();
-  const [updateCoachDetails, { isLoading: isUpdatingDetails }] =
-    useUpdateCoachDetailsMutation();
+  const [updateCoach, { isLoading: isUpdating }] = useUpdateCoachMutation();
   const [deleteCoach, { isLoading: isDeleting }] = useDeleteCoachMutation();
   const [addCoachActivity, { isLoading: isAddingActivity }] =
     useAddCoachActivitiesMutation();
@@ -68,15 +66,18 @@ export function useCoaches(params = {}) {
     useDeleteCoachActivityMutation();
 
   const coaches = useMemo(() => getCoachesArray(data), [data]);
-  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
+  const branches = useMemo(
+    () => getBranchesArray(branchesData),
+    [branchesData],
+  );
   const activities = useMemo(
     () => getActivitiesArray(activitiesData),
     [activitiesData],
   );
 
   const selectedCoach = useMemo(
-    () => coaches.find((c) => c.id === selectedCoachId) || null,
-    [coaches, selectedCoachId],
+    () => detailsData?.data || coaches.find((c) => c.id === selectedCoachId) || null,
+    [coaches, selectedCoachId, detailsData],
   );
 
   const detailsCoach = useMemo(() => detailsData?.data || null, [detailsData]);
@@ -97,10 +98,13 @@ export function useCoaches(params = {}) {
       const matchesActivity =
         activityFilter === "all" ||
         (Array.isArray(coach.activities) &&
-          coach.activities.some((act) => String(act.id) === String(activityFilter)));
+          coach.activities.some(
+            (act) => String(act.id) === String(activityFilter),
+          ));
 
       const matchesEmployment =
-        employmentFilter === "all" || coach.employment_type === employmentFilter;
+        employmentFilter === "all" ||
+        coach.employment_type === employmentFilter;
 
       const matchesSearch =
         !normalizedSearch ||
@@ -110,14 +114,21 @@ export function useCoaches(params = {}) {
             String(value).toLowerCase().includes(normalizedSearch),
           );
 
-      return matchesBranch && matchesActivity && matchesEmployment && matchesSearch;
+      return (
+        matchesBranch && matchesActivity && matchesEmployment && matchesSearch
+      );
     });
   }, [coaches, search, branchFilter, activityFilter, employmentFilter]);
 
   const stats = useMemo(() => {
     const activeCount = coaches.filter((c) => c.is_active).length;
-    const fixedCount = coaches.filter((c) => c.employment_type === "fixed_salary").length;
-    const commCount = coaches.filter((c) => c.employment_type === "commission" || c.employment_type === "hybrid").length;
+    const fixedCount = coaches.filter(
+      (c) => c.employment_type === "fixed_salary",
+    ).length;
+    const commCount = coaches.filter(
+      (c) =>
+        c.employment_type === "commission" || c.employment_type === "hybrid",
+    ).length;
 
     return [
       {
@@ -161,45 +172,64 @@ export function useCoaches(params = {}) {
   async function handleCreate(values) {
     setFormError("");
     try {
-      const nameParts = (values.full_name || "").trim().split(" ");
+      const nameParts = (values.full_name || "").trim().split(/\s+/);
       const first_name = nameParts[0] || "";
       const last_name = nameParts.slice(1).join(" ") || ".";
 
-      let age = 25;
-      if (values.dob) {
-        const birthDate = new Date(values.dob);
-        const today = new Date();
-        let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-          calculatedAge--;
-        }
-        if (!isNaN(calculatedAge) && calculatedAge >= 18 && calculatedAge <= 100) {
-          age = calculatedAge;
-        }
+      const formData = new FormData();
+      formData.append("first_name", first_name);
+      formData.append("last_name", last_name);
+      formData.append("gender", values.gender || "male");
+      formData.append("age", String(Number(values.age) || 25));
+
+      if (values.phone_number)
+        formData.append("phone_number", values.phone_number);
+      else if (values.phone) formData.append("phone_number", values.phone);
+      formData.append("country_code", values.country_code || "+963");
+      formData.append("email", ""); // backend email placeholder
+      if (values.address) formData.append("address", values.address);
+
+      if (Array.isArray(values.branch_ids)) {
+        values.branch_ids.forEach((id) =>
+          formData.append("branch_ids[]", String(id)),
+        );
+      }
+      if (values.specialization)
+        formData.append("specialization", values.specialization);
+      formData.append(
+        "experience_years",
+        String(Number(values.experience_years) || 0),
+      );
+      formData.append(
+        "employment_type",
+        values.employment_type || "fixed_salary",
+      );
+      formData.append("base_salary", String(Number(values.base_salary) || 0));
+      formData.append(
+        "default_commission_rate",
+        String(Number(values.default_commission_rate) || 0),
+      );
+
+      if (Array.isArray(values.work_types)) {
+        values.work_types.forEach((type) =>
+          formData.append("work_types[]", type),
+        );
+      }
+      if (Array.isArray(values.activity_ids)) {
+        values.activity_ids.forEach((id) =>
+          formData.append("activity_ids[]", String(id)),
+        );
+      }
+      if (Array.isArray(values.shifts)) {
+        values.shifts.forEach((shift) =>
+          formData.append("shifts[]", String(shift)),
+        );
+      }
+      if (values.photo) {
+        formData.append("photo", values.photo);
       }
 
-      const payload = {
-        first_name,
-        last_name,
-        gender: values.gender || "male",
-        age,
-        dob: values.dob || null,
-        phone_number: values.phone || null,
-        country_code: values.country_code || "+963",
-        email: values.email || null,
-        address: values.address || null,
-        branch_ids: Array.isArray(values.branch_ids) ? values.branch_ids.map(Number) : [],
-        specialization: values.specialization || null,
-        experience_years: Number(values.experience_years) || 0,
-        employment_type: values.employment_type || "fixed_salary",
-        base_salary: Number(values.base_salary) || 0,
-        default_commission_rate: Number(values.default_commission_rate) || 0,
-        work_types: Array.isArray(values.work_types) ? values.work_types : [],
-        activity_ids: Array.isArray(values.activity_ids) ? values.activity_ids.map(Number) : [],
-      };
-
-      await createCoach(payload).unwrap();
+      await createCoach(formData).unwrap();
       closeDrawer();
       return true;
     } catch (submitError) {
@@ -212,29 +242,120 @@ export function useCoaches(params = {}) {
     }
   }
 
-  async function handleUpdate(basicValues, detailsValues) {
+  async function handleUpdate(values) {
     if (!selectedCoachId) return;
     setFormError("");
     try {
-      // 1. Update basic parameters
-      await updateCoachBasic({
-        id: selectedCoachId,
-        body: basicValues,
-      }).unwrap();
+      const nameParts = (values.full_name || "").trim().split(/\s+/);
+      const first_name = nameParts[0] || "";
+      const last_name = nameParts.slice(1).join(" ") || ".";
 
-      // 2. Update specialization and experience details
-      await updateCoachDetails({
+      const formData = new FormData();
+      formData.append("_method", "PATCH"); // Laravel POST method spoofing
+      formData.append("first_name", first_name);
+      formData.append("last_name", last_name);
+      formData.append("gender", values.gender || "male");
+      formData.append("age", String(Number(values.age) || 25));
+
+      if (values.phone_number)
+        formData.append("phone_number", values.phone_number);
+      else if (values.phone) formData.append("phone_number", values.phone);
+      formData.append("country_code", values.country_code || "+963");
+      formData.append("email", ""); // backend email placeholder
+      formData.append("address", values.address || "");
+
+      if (Array.isArray(values.branch_ids)) {
+        values.branch_ids.forEach((id) =>
+          formData.append("branch_ids[]", String(id)),
+        );
+      }
+      if (values.specialization)
+        formData.append("specialization", values.specialization);
+      formData.append(
+        "experience_years",
+        String(Number(values.experience_years) || 0),
+      );
+      formData.append(
+        "employment_type",
+        values.employment_type || "fixed_salary",
+      );
+      formData.append("base_salary", String(Number(values.base_salary) || 0));
+      formData.append(
+        "default_commission_rate",
+        String(Number(values.default_commission_rate) || 0),
+      );
+
+      if (Array.isArray(values.work_types)) {
+        values.work_types.forEach((type) =>
+          formData.append("work_types[]", type),
+        );
+      }
+      if (Array.isArray(values.activity_ids)) {
+        values.activity_ids.forEach((id) =>
+          formData.append("activity_ids[]", String(id)),
+        );
+      }
+      if (Array.isArray(values.shifts)) {
+        values.shifts.forEach((shift) =>
+          formData.append("shifts[]", String(shift)),
+        );
+      }
+
+      if (values.photo instanceof File) {
+        formData.append("photo", values.photo);
+      }
+
+      await updateCoach({
         id: selectedCoachId,
-        body: detailsValues,
+        body: formData,
       }).unwrap();
 
       closeDrawer();
+      return true;
     } catch (submitError) {
+      console.error("Update coach validation/API error:", submitError);
       setFormError(
         submitError?.data?.message ||
           "تعذر تعديل بيانات المدرب. تحقق من البيانات وحاول مرة أخرى.",
       );
+      return false;
     }
+  }
+
+  function getEditInitialValues() {
+    if (!selectedCoach || (fetchDetails && !detailsData)) return null;
+
+    const branchIds = Array.isArray(selectedCoach.branch_ids)
+      ? selectedCoach.branch_ids.map(Number)
+      : Array.isArray(selectedCoach.branches)
+      ? selectedCoach.branches.map((b) => Number(b.id))
+      : [];
+    const activityIds = Array.isArray(selectedCoach.activities)
+      ? selectedCoach.activities.map((a) => Number(a.id))
+      : [];
+    const shiftIds = Array.isArray(selectedCoach.shifts)
+      ? selectedCoach.shifts.map((s) => Number(s.id))
+      : [];
+    const workTypes = selectedCoach.work_types || selectedCoach.details?.work_types || [];
+
+    return {
+      full_name: selectedCoach.person?.full_name || "",
+      gender: selectedCoach.person?.gender || "male",
+      age: selectedCoach.person?.age ? String(selectedCoach.person.age) : "",
+      phone: selectedCoach.person?.phone_number || selectedCoach.person?.phone || "",
+      country_code: selectedCoach.person?.country_code || "+963",
+      address: selectedCoach.person?.address || "",
+      branch_ids: branchIds,
+      specialization: selectedCoach.details?.specialization || selectedCoach.specialization || "",
+      experience_years: String(selectedCoach.experience_years || selectedCoach.details?.experience_years || 0),
+      employment_type: selectedCoach.employment_type || "fixed_salary",
+      base_salary: String(Number(selectedCoach.base_salary) || 0),
+      default_commission_rate: String(Number(selectedCoach.details?.default_commission_rate) || 0),
+      work_types: Array.isArray(workTypes) ? workTypes : [],
+      activity_ids: activityIds,
+      shift_ids: shiftIds,
+      photo: selectedCoach.person?.photo_url || selectedCoach.person?.photo || null,
+    };
   }
 
   function handleDelete(coach) {
@@ -283,21 +404,8 @@ export function useCoaches(params = {}) {
     }
   }
 
-  function getEditInitialValues() {
-    if (!selectedCoach) return null;
 
-    return {
-      basic: {
-        base_salary: Number(selectedCoach.base_salary) || 0,
-        employment_type: selectedCoach.employment_type || "fixed_salary",
-        is_active: selectedCoach.is_active !== false,
-      },
-      details: {
-        specialization: selectedCoach.details?.specialization || "",
-        experience_years: selectedCoach.details?.experience_years || 0,
-      },
-    };
-  }
+
 
   return {
     search,
@@ -324,7 +432,7 @@ export function useCoaches(params = {}) {
     isFetchingDetails,
     detailsError,
     isCreating,
-    isUpdating: isUpdatingBasic || isUpdatingDetails,
+    isUpdating,
     isDeleting,
     isAddingActivity,
     isDeletingActivity,

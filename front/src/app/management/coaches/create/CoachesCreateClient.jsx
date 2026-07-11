@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard, UploadBox } from "@/components/forms/FormControls";
-import { CoachCreateForm, CoachEditForm } from "../CoachesClient";
+import { CoachCreateForm } from "../CoachesClient";
 import { useCoaches } from "../useCoaches";
 
 const FORM_ID = "create-coach-form";
@@ -24,11 +24,21 @@ export default function CoachesCreateClient() {
     handleCreate,
     handleUpdate,
     getEditInitialValues,
-  } = useCoaches({ selectedCoachId: isEdit ? Number(editId) : null });
+  } = useCoaches({
+    selectedCoachId: isEdit ? Number(editId) : null,
+    fetchDetails: !!isEdit,
+  });
   const firstBranchId = branches[0]?.id || "none";
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
   const [photo, setPhoto] = useState([]);
+
+  const initialPhoto = editInitialValues?.photo;
+  useEffect(() => {
+    if (initialPhoto) {
+      setPhoto([initialPhoto]);
+    }
+  }, [initialPhoto]);
 
   async function submit(values) {
     const payload = {
@@ -39,12 +49,12 @@ export default function CoachesCreateClient() {
     if (ok) router.push("/management/coaches");
   }
 
-  async function submitEdit(basicValues, detailsValues) {
-    const payloadBasic = {
-      ...basicValues,
+  async function submitEdit(values) {
+    const payload = {
+      ...values,
       photo: photo[0] || null,
     };
-    const ok = await handleUpdate(payloadBasic, detailsValues);
+    const ok = await handleUpdate(payload);
     if (ok) router.push("/management/coaches");
   }
 
@@ -65,10 +75,12 @@ export default function CoachesCreateClient() {
                 جاري تحميل بيانات المدرب...
               </p>
             ) : (
-              <CoachEditForm
+              <CoachCreateForm
                 key={`coach-edit-${editId}`}
                 formId={FORM_ID}
                 initialValues={editInitialValues}
+                branches={branches}
+                activities={activities}
                 onSubmit={submitEdit}
                 onCancel={() => router.push("/management/coaches")}
                 isLoading={isUpdating}

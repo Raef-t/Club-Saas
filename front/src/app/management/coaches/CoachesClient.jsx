@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -20,8 +20,9 @@ import Checkbox from "@/components/ui/Checkbox";
 import { useCoaches } from "./useCoaches";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
-import { useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
+import { useGetBranchShiftsQuery, useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
 import { UploadBox } from "@/components/forms/UploadBox";
+import { Field } from "@/components/forms/Field";
 
 const daysOfWeek = {
   0: "الأحد",
@@ -297,29 +298,32 @@ function CoachDetails({
 }
 
 export function CoachCreateForm({
+  formId,
   branches = [],
   activities = [],
   onSubmit,
   onCancel,
   isLoading,
   errorMessage,
+  showFooterActions = true,
+  initialValues = null,
 }) {
   const [form, setForm] = useState({
-    full_name: "",
-    gender: "male",
-    age: "",
-    phone: "",
-    country_code: "+963",
-    address: "",
-    branch_ids: branches[0]?.id ? [Number(branches[0].id)] : [],
-    specialization: "",
-    experience_years: "0",
-    employment_type: "fixed_salary",
-    base_salary: "3000",
-    default_commission_rate: "0",
-    work_types: [],
-    activity_ids: [],
-    shift_ids: [],
+    full_name: initialValues?.full_name || "",
+    gender: initialValues?.gender || "male",
+    age: initialValues?.age || "",
+    phone: initialValues?.phone || "",
+    country_code: initialValues?.country_code || "+963",
+    address: initialValues?.address || "",
+    branch_ids: initialValues?.branch_ids || (branches[0]?.id ? [Number(branches[0].id)] : []),
+    specialization: initialValues?.specialization || "",
+    experience_years: initialValues?.experience_years || "0",
+    employment_type: initialValues?.employment_type || "fixed_salary",
+    base_salary: initialValues?.base_salary || "0",
+    default_commission_rate: initialValues?.default_commission_rate || "0",
+    work_types: initialValues?.work_types || [],
+    activity_ids: initialValues?.activity_ids || [],
+    shift_ids: initialValues?.shift_ids || [],
   });
 
   const branchId1 = form.branch_ids?.[0];
@@ -340,6 +344,25 @@ export function CoachCreateForm({
   );
 
   const isLoadingShifts = isLoadingShifts1 || isLoadingShifts2 || isLoadingShifts3;
+
+  const { data: branchSettingsRes } = useGetBranchSettingsQuery(branchId1, {
+    skip: !branchId1,
+  });
+  const branchSettings = branchSettingsRes?.data;
+
+  useEffect(() => {
+    if (branchSettings && !initialValues) {
+      setForm((prev) => ({
+        ...prev,
+        base_salary: branchSettings.default_employee_salary
+          ? String(Number(branchSettings.default_employee_salary))
+          : prev.base_salary,
+        default_commission_rate: branchSettings.default_coach_commission_percentage
+          ? String(Number(branchSettings.default_coach_commission_percentage))
+          : prev.default_commission_rate,
+      }));
+    }
+  }, [branchSettings, initialValues]);
 
   const branchShifts = useMemo(() => {
     const all = [];
@@ -362,7 +385,7 @@ export function CoachCreateForm({
       const isSelected = form.activity_ids.includes(Number(act.id));
       if (!isSelected) return false;
       const nameStr = typeof act.name === "object" ? act.name?.ar || act.name?.en || "" : act.name || "";
-      return nameStr.includes("أجهزة عام") || nameStr.includes("أجهزة خاص");
+      return nameStr.includes("أجهزة عام");
     });
   }, [activities, form.activity_ids]);
 
@@ -420,7 +443,7 @@ export function CoachCreateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form id={formId} onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
         الاسم الكامل للمدرب
         <input
@@ -500,25 +523,50 @@ export function CoachCreateForm({
 
       <div className="block text-right text-sm text-app-muted-light">
         الأنشطة والرياضات المنسوبة للمدرب (اختياري)
-        <div className="mt-2 grid grid-cols-2 gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line max-h-36 overflow-y-auto">
-          {activities.map((act) => {
-            const checked = form.activity_ids.includes(Number(act.id));
-            const actName = typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name;
-            return (
-              <Checkbox
-                key={act.id}
-                label={actName}
-                checked={checked}
-                onChange={() => {
-                  const id = Number(act.id);
-                  const newIds = checked
-                    ? form.activity_ids.filter((x) => x !== id)
-                    : [...form.activity_ids, id];
-                  updateField("activity_ids", newIds);
-                }}
-              />
-            );
-          })}
+        <div className="mt-2">
+          <Dropdown
+            options={activities
+              .filter((act) => !form.activity_ids.includes(Number(act.id)))
+              .map((act) => ({
+                value: act.id,
+                label: typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name,
+              }))}
+            value={null}
+            onChange={(val) => {
+              const id = Number(val);
+              if (id && !form.activity_ids.includes(id)) {
+                updateField("activity_ids", [...form.activity_ids, id]);
+              }
+            }}
+            placeholder="اختر نشاطاً لإضافته..."
+            buttonClassName="h-11 border border-app-line bg-black/35 hover:border-app-yellow/50"
+          />
+
+          {form.activity_ids.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line">
+              {form.activity_ids.map((id) => {
+                const act = activities.find((a) => Number(a.id) === id);
+                if (!act) return null;
+                const actName = typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name;
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-2 bg-black/40 border border-app-line rounded-lg px-3 py-1.5"
+                  >
+                    <span className="text-xs text-white">{actName}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateField("activity_ids", form.activity_ids.filter((x) => x !== id))}
+                      className="text-app-muted hover:text-app-red transition-colors"
+                      title="إزالة"
+                    >
+                      <TrashIcon className="size-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -682,129 +730,7 @@ export function CoachCreateForm({
           إلغاء
         </Button>
         <Button type="submit" className="h-11 flex-1" loading={isLoading}>
-          إضافة المدرب
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-export function CoachEditForm({
-  initialValues,
-  onSubmit,
-  onCancel,
-  isLoading,
-  errorMessage,
-}) {
-  const [form, setForm] = useState({
-    base_salary: String(initialValues.basic?.base_salary || 0),
-    employment_type: initialValues.basic?.employment_type || "fixed_salary",
-    is_active: initialValues.basic?.is_active !== false,
-    specialization: initialValues.details?.specialization || "",
-    experience_years: String(initialValues.details?.experience_years || 0),
-  });
-
-  function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    onSubmit(
-      {
-        base_salary: Number(form.base_salary) || 0,
-        employment_type: form.employment_type,
-        is_active: form.is_active,
-      },
-      {
-        specialization: form.specialization.trim() || null,
-        experience_years: Number(form.experience_years) || 0,
-      },
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-      <label className="block text-right text-sm text-app-muted-light">
-        التخصص التدريبي
-        <input
-          value={form.specialization}
-          onChange={(event) =>
-            updateField("specialization", event.target.value)
-          }
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          placeholder="مثال: Yoga, CrossFit"
-        />
-      </label>
-
-      <label className="block text-right text-sm text-app-muted-light">
-        سنوات الخبرة
-        <input
-          value={form.experience_years}
-          onChange={(event) =>
-            updateField("experience_years", event.target.value)
-          }
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          type="number"
-          min="0"
-        />
-      </label>
-
-      <label className="block text-right text-sm text-app-muted-light">
-        نوع التوظيف
-        <Dropdown
-          className="mt-2 text-white"
-          buttonClassName="bg-app-card-soft h-11"
-          value={form.employment_type}
-          onChange={(val) => updateField("employment_type", val)}
-          options={employmentTypes}
-        />
-      </label>
-
-      <label className="block text-right text-sm text-app-muted-light">
-        الراتب الأساسي ({CURRENCY_SYMBOL})
-        <input
-          value={form.base_salary}
-          onChange={(event) => updateField("base_salary", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-          type="number"
-          min="0"
-          required
-        />
-      </label>
-
-      <div className="flex items-center gap-3 pt-2">
-        <label className="relative inline-flex cursor-pointer items-center">
-          <input
-            type="checkbox"
-            checked={form.is_active}
-            onChange={(e) => updateField("is_active", e.target.checked)}
-            className="peer sr-only"
-          />
-          <div className="peer h-6 w-11 rounded-full bg-app-line after:absolute after:top-[2px] after:right-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]"></div>
-        </label>
-        <span className="text-sm font-medium text-white">
-          مدرب نشط في النظام
-        </span>
-      </div>
-
-      {errorMessage && (
-        <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
-          {errorMessage}
-        </p>
-      )}
-
-      <div className="flex gap-3 pt-2">
-        <Button
-          type="button"
-          tone="outline"
-          className="h-11 flex-1"
-          onClick={onCancel}
-        >
-          إلغاء
-        </Button>
-        <Button type="submit" className="h-11 flex-1" loading={isLoading}>
-          حفظ التعديل
+          {initialValues ? "حفظ التعديل" : "إضافة المدرب"}
         </Button>
       </div>
     </form>
@@ -863,12 +789,33 @@ export default function CoachesClient() {
       {
         key: "name",
         label: "المدرب",
-        align: "center",
-        render: (_, coach) => (
-          <span className="text-sm font-medium text-white">
-            {coach.person?.full_name || "-"}
-          </span>
-        ),
+        align: "start",
+        render: (_, coach) => {
+          let photoUrl = coach.person?.photo_url || coach.person?.photo;
+          if (photoUrl && !photoUrl.startsWith("http") && !photoUrl.startsWith("blob:")) {
+            photoUrl = `http://31.70.108.63/${photoUrl.replace(/^\//, '')}`;
+          }
+
+          return (
+            <div className="flex items-center gap-3 justify-start px-4">
+              {photoUrl ? (
+                <div
+                  className="size-8 rounded-full bg-cover bg-center border border-app-line/30 shrink-0"
+                  style={{ backgroundImage: `url(${photoUrl})` }}
+                />
+              ) : (
+                <div className="size-8 rounded-full bg-app-card-soft flex items-center justify-center shrink-0 border border-app-line/30">
+                  <span className="text-[11px] font-bold text-app-yellow">
+                    {coach.person?.full_name?.charAt(0) || "-"}
+                  </span>
+                </div>
+              )}
+              <span className="text-sm font-medium text-white text-right">
+                {coach.person?.full_name || "-"}
+              </span>
+            </div>
+          );
+        },
       },
       // {
       //   key: "specialization",

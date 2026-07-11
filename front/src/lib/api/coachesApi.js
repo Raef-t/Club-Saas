@@ -58,6 +58,17 @@ export const coachesApi = createApi({
         { type: "Coaches", id },
       ],
     }),
+    updateCoach: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `coaches/${id}`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        "Coaches",
+        { type: "Coaches", id },
+      ],
+    }),
     deleteCoach: builder.mutation({
       query: (id) => ({
         url: `coaches/${id}`,
@@ -95,6 +106,7 @@ export const {
   useCreateCoachMutation,
   useUpdateCoachBasicMutation,
   useUpdateCoachDetailsMutation,
+  useUpdateCoachMutation,
   useDeleteCoachMutation,
   useAddCoachActivitiesMutation,
   useDeleteCoachActivityMutation,
