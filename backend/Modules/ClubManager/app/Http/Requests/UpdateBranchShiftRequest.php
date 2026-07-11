@@ -14,6 +14,7 @@ class UpdateBranchShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => 'sometimes|required|string|max:255',
             'day_of_week' => 'sometimes|integer|min:0|max:6',
             'start_time' => 'sometimes|date_format:H:i',
             'end_time' => 'sometimes|date_format:H:i|after:start_time',

@@ -15,6 +15,7 @@ class StoreBranchShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => 'required|string|max:255',
             'day_of_week' => 'required|integer|min:0|max:6',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',

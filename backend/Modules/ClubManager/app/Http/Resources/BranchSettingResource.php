@@ -17,6 +17,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "default_club_commission_percentage", type: "number", format: "float", nullable: true, example: 40.00),
         new OA\Property(property: "default_coach_commission_percentage", type: "number", format: "float", nullable: true, example: 60.00),
         new OA\Property(property: "default_employee_salary", type: "number", format: "float", nullable: true, example: 3500.00),
+        new OA\Property(property: "daily_entry_price", type: "number", format: "float", nullable: true, example: 50.00),
         new OA\Property(property: "updated_at", type: "string", format: "date-time")
     ]
 )]
@@ -32,6 +33,7 @@ class BranchSettingResource extends JsonResource
             'default_club_commission_percentage' => $this->default_club_commission_percentage,
             'default_coach_commission_percentage' => $this->default_coach_commission_percentage,
             'default_employee_salary' => $this->default_employee_salary,
+            'daily_entry_price' => $this->daily_entry_price,
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

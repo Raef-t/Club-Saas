@@ -57,7 +57,8 @@ class BranchHolidayController extends BaseController
                 new OA\Property(property: 'type', type: 'string', description: 'نوع العطلة: weekly, specific_dates'),
                 new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم العطلة (0=Sunday, 6=Saturday) في حال كان النوع weekly', nullable: true),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', description: 'تاريخ البداية (في حال specific_dates)', nullable: true),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية (في حال specific_dates)', nullable: true)
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية (في حال specific_dates)', nullable: true),
+                new OA\Property(property: 'reason', type: 'string', description: 'السبب (في حال specific_dates)', nullable: true)
             ],
             examples: [
                 new OA\Examples(
@@ -94,6 +95,7 @@ class BranchHolidayController extends BaseController
             'day_of_week' => $request->type === 'weekly' ? $request->day_of_week : null,
             'start_date' => $request->type === 'specific_dates' ? $request->start_date : null,
             'end_date' => $request->type === 'specific_dates' ? $request->end_date : null,
+            'reason' => $request->type === 'specific_dates' ? $request->reason : null,
         ]);
 
         return $this->successResponse(
@@ -147,7 +149,8 @@ class BranchHolidayController extends BaseController
                 new OA\Property(property: 'type', type: 'string', description: 'نوع العطلة: weekly, specific_dates'),
                 new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم العطلة', nullable: true),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', description: 'تاريخ البداية', nullable: true),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية', nullable: true)
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'تاريخ النهاية', nullable: true),
+                new OA\Property(property: 'reason', type: 'string', description: 'السبب', nullable: true)
             ],
             examples: [
                 new OA\Examples(
@@ -184,6 +187,7 @@ class BranchHolidayController extends BaseController
             if ($data['type'] === 'weekly') {
                 $data['start_date'] = null;
                 $data['end_date'] = null;
+                $data['reason'] = null;
             } else {
                 $data['day_of_week'] = null;
             }
