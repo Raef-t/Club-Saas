@@ -54,7 +54,7 @@ export const coachSchema = z.object({
     .nonnegative("لا يمكن أن تكون سنوات الخبرة سالبة")
     .or(z.string().transform(val => Number(val) || 0)),
 
-  employment_type: z.enum(["fixed_salary", "commission", "hourly", "hybrid"], {
+  employment_type: z.enum(["fixed_salary", "commission", "commission_based", "hourly", "hybrid"], {
     required_error: "يرجى تحديد نوع التوظيف",
   }),
 

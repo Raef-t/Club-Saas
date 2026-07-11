@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import StoreProvider from "@/lib/StoreProvider";
 import { ToastProvider } from "@/components/ui/Toast";
+import { TimeFormatProvider } from "@/lib/TimeFormatContext";
 
 const tajawal = Tajawal({
   subsets: ["arabic"],
@@ -21,9 +22,11 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${tajawal.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <StoreProvider>
-            <ToastProvider>{children}</ToastProvider>
-          </StoreProvider>
+          <TimeFormatProvider>
+            <StoreProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </StoreProvider>
+          </TimeFormatProvider>
         </ThemeProvider>
       </body>
     </html>

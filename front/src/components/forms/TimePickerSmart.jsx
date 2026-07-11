@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClockIcon as Clock, XIcon as X, TagIcon } from "@/components/icons/Icons";
+import { useTimeFormat } from "@/lib/TimeFormatContext";
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -44,8 +45,9 @@ export default function TimePickerSmart({
   required = false,
   disabled = false,
   allowClear = true,
-  autoDefault = true,
+  autoDefault = false,
 }) {
+  const { timeFormat, formatTime } = useTimeFormat();
   const inputWrapRef = useRef(null);
   const dropdownRef = useRef(null);
   
@@ -71,10 +73,16 @@ export default function TimePickerSmart({
     return "";
   });
 
-  const inputText = useMemo(() => applyMask(digits), [digits]);
+  const inputText = useMemo(() => {
+    if (open) {
+      return applyMask(digits);
+    }
+    return formatTime(value);
+  }, [value, digits, open, formatTime]);
 
   // internal state for the pickers
   const [viewTime, setViewTime] = useState({ hour: 12, minute: 0 });
+  const [period, setPeriod] = useState("ص"); // "ص" or "م"
 
   useEffect(() => {
     setMounted(true);
@@ -99,15 +107,33 @@ export default function TimePickerSmart({
       if (value) {
         const parsed = parseTyped(value);
         if (parsed) {
-          const [h, m] = parsed.split(":");
-          setViewTime({ hour: Number(h), minute: Number(m) });
+          const [hStr, mStr] = parsed.split(":");
+          const h24 = Number(hStr);
+          const m = Number(mStr);
+          if (timeFormat === "12") {
+            const isPm = h24 >= 12;
+            const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+            setViewTime({ hour: h12, minute: m });
+            setPeriod(isPm ? "م" : "ص");
+          } else {
+            setViewTime({ hour: h24, minute: m });
+          }
         }
       } else {
         const now = new Date();
-        setViewTime({ hour: now.getHours(), minute: Math.floor(now.getMinutes() / 5) * 5 });
+        const h24 = now.getHours();
+        const m = Math.floor(now.getMinutes() / 5) * 5;
+        if (timeFormat === "12") {
+          const isPm = h24 >= 12;
+          const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+          setViewTime({ hour: h12, minute: m });
+          setPeriod(isPm ? "م" : "ص");
+        } else {
+          setViewTime({ hour: h24, minute: m });
+        }
       }
     }
-  }, [open, value]);
+  }, [open, value, timeFormat]);
 
   const updatePosition = () => {
     if (!inputWrapRef.current) return;
@@ -115,7 +141,7 @@ export default function TimePickerSmart({
     const rect = inputWrapRef.current.getBoundingClientRect();
     const margin = 10;
 
-    const desiredW = 220; // smaller width for time picker
+    const desiredW = timeFormat === "12" ? 280 : 220; // wider width for time picker with period column
     const width = Math.min(desiredW, window.innerWidth - margin * 2);
 
     const estimatedH = dropdownRef.current?.offsetHeight || 260;
@@ -126,8 +152,7 @@ export default function TimePickerSmart({
 
     let top = shouldFlip ? rect.top - estimatedH - 8 : rect.bottom + 8;
     
-    // In RTL, we might want to align to the physical right of the input (which is the logical start)
-    // Assuming rect.right is the physical right.
+    // In RTL, align to the physical right of the input (which is the logical start)
     let left = rect.right - width; 
 
     if (left + width > window.innerWidth - margin)
@@ -155,7 +180,7 @@ export default function TimePickerSmart({
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll, true);
     };
-  }, [open]);
+  }, [open, timeFormat]);
 
   useEffect(() => {
     if (!open) return;
@@ -171,13 +196,16 @@ export default function TimePickerSmart({
     if (!open) return;
     requestAnimationFrame(() => {
       if (hoursRef.current) {
-        hoursRef.current.scrollTop = viewTime.hour * 36 - 80;
+        const offset = timeFormat === "12"
+          ? (viewTime.hour - 1) * 36 - 80
+          : viewTime.hour * 36 - 80;
+        hoursRef.current.scrollTop = offset;
       }
       if (minutesRef.current) {
         minutesRef.current.scrollTop = viewTime.minute * 36 - 80;
       }
     });
-  }, [open, viewTime.hour, viewTime.minute]);
+  }, [open, viewTime.hour, viewTime.minute, timeFormat]);
 
   const commitTyped = () => {
     const time = parseTyped(inputText);
@@ -191,8 +219,16 @@ export default function TimePickerSmart({
     }
   };
 
-  const pickTime = (h, m) => {
-    const timeStr = `${pad2(h)}:${pad2(m)}`;
+  const pickTime = (h, m, p) => {
+    let finalH = h;
+    if (timeFormat === "12") {
+      if (p === "م") {
+        if (h < 12) finalH += 12;
+      } else {
+        if (h === 12) finalH = 0;
+      }
+    }
+    const timeStr = `${pad2(finalH)}:${pad2(m)}`;
     onChange?.(timeStr);
     setDigits(cleanTyped(timeStr));
     setOpen(false);
@@ -227,7 +263,9 @@ export default function TimePickerSmart({
     setOpen(false);
   };
 
-  const hoursList = Array.from({ length: 24 }, (_, i) => i);
+  const hoursList = timeFormat === "12"
+    ? Array.from({ length: 12 }, (_, i) => i + 1)
+    : Array.from({ length: 24 }, (_, i) => i);
   const minutesList = Array.from({ length: 60 }, (_, i) => i);
 
   return (
@@ -329,12 +367,13 @@ export default function TimePickerSmart({
               <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-3 flex flex-col gap-3">
                 <div className="flex justify-between items-center px-2 text-white font-medium border-b border-app-line pb-2" dir="rtl">
                   <span>الساعات</span>
+                  {timeFormat === "12" && <span>الفترة</span>}
                   <span>الدقائق</span>
                 </div>
                 
-                <div className="flex justify-between h-[200px]" dir="ltr">
+                <div className="flex justify-between h-[200px]" dir="rtl">
                   {/* Hours */}
-                  <div ref={hoursRef} className="flex-1 overflow-y-auto scrollbar-hidden border-r border-app-line/50 pr-1 space-y-1">
+                  <div ref={hoursRef} className="flex-1 overflow-y-auto scrollbar-hidden border-l border-app-line/50 pl-1 space-y-1">
                     {hoursList.map((h) => {
                       const isActive = h === viewTime.hour;
                       return (
@@ -353,8 +392,34 @@ export default function TimePickerSmart({
                     })}
                   </div>
 
+                  {/* Period Column (AM/PM) */}
+                  {timeFormat === "12" && (
+                    <div className="flex-1 border-l border-app-line/50 px-1 flex flex-col justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPeriod("ص")}
+                        className={[
+                          "w-full h-9 rounded-lg text-xs flex items-center justify-center transition-colors",
+                          period === "ص" ? "bg-app-yellow text-app-bg font-bold" : "text-app-text hover:bg-app-card-soft"
+                        ].join(" ")}
+                      >
+                        صباحاً (ص)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPeriod("م")}
+                        className={[
+                          "w-full h-9 rounded-lg text-xs flex items-center justify-center transition-colors",
+                          period === "م" ? "bg-app-yellow text-app-bg font-bold" : "text-app-text hover:bg-app-card-soft"
+                        ].join(" ")}
+                      >
+                        مساءً (م)
+                      </button>
+                    </div>
+                  )}
+
                   {/* Minutes */}
-                  <div ref={minutesRef} className="flex-1 overflow-y-auto scrollbar-hidden pl-1 space-y-1">
+                  <div ref={minutesRef} className="flex-1 overflow-y-auto scrollbar-hidden pr-1 space-y-1">
                     {minutesList.map((m) => {
                       const isActive = m === viewTime.minute;
                       return (
@@ -377,7 +442,7 @@ export default function TimePickerSmart({
                 <div className="pt-2 border-t border-app-line">
                   <button 
                     type="button"
-                    onClick={() => pickTime(viewTime.hour, viewTime.minute)}
+                    onClick={() => pickTime(viewTime.hour, viewTime.minute, period)}
                     className="w-full bg-app-yellow text-app-bg rounded-lg py-2 text-sm font-medium hover:bg-yellow-400 transition"
                   >
                     تأكيد الوقت

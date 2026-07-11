@@ -143,7 +143,7 @@ export default function DatePickerSmart({
   required = false,
   disabled = false,
   allowClear = true,
-  autoDefault = true,
+  autoDefault = false,
   compact = false,
   error,
 }) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard, UploadBox } from "@/components/forms/FormControls";
@@ -16,6 +17,7 @@ export default function CoachesCreateClient() {
   const isEdit = mode === "edit" && editId;
   const {
     branches,
+    activities,
     formError,
     isCreating,
     isUpdating,
@@ -26,13 +28,23 @@ export default function CoachesCreateClient() {
   const firstBranchId = branches[0]?.id || "none";
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
+  const [photo, setPhoto] = useState([]);
+
   async function submit(values) {
-    const ok = await handleCreate(values);
+    const payload = {
+      ...values,
+      photo: photo[0] || null,
+    };
+    const ok = await handleCreate(payload);
     if (ok) router.push("/management/coaches");
   }
 
   async function submitEdit(basicValues, detailsValues) {
-    const ok = await handleUpdate(basicValues, detailsValues);
+    const payloadBasic = {
+      ...basicValues,
+      photo: photo[0] || null,
+    };
+    const ok = await handleUpdate(payloadBasic, detailsValues);
     if (ok) router.push("/management/coaches");
   }
 
@@ -69,6 +81,7 @@ export default function CoachesCreateClient() {
               key={firstBranchId}
               formId={FORM_ID}
               branches={branches}
+              activities={activities}
               onSubmit={submit}
               onCancel={() => router.push("/management/coaches")}
               isLoading={isCreating}
@@ -77,7 +90,15 @@ export default function CoachesCreateClient() {
             />
           )}
         </FormCard>
-        <UploadBox compact className="entry-form-card" />
+        <UploadBox
+          className="entry-form-card"
+          label="صورة المدرب"
+          subtitle="الصورة الشخصية للمدرب"
+          accept=".png,.jpg,.jpeg"
+          multiple={false}
+          value={photo}
+          onChange={setPhoto}
+        />
       </div>
     </ManagementCreatePage>
   );
