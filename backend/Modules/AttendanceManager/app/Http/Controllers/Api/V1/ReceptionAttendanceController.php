@@ -155,7 +155,6 @@ class ReceptionAttendanceController extends BaseController
         try {
             $query = DB::table('lockers')
                 ->where('branch_id', $request->input('branch_id'))
-                ->whereNull('deleted_at')
                 ->select(
                     'id',
                     'locker_number',
@@ -194,14 +193,10 @@ class ReceptionAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'lockerId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['holder_type', 'holder_name'],
-        properties: [
-            new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'staff'),
-            new OA\Property(property: 'holder_id', type: 'integer', nullable: true, example: 7, description: 'ID العضو أو الموظف – مطلوب إذا holder_type ≠ guest'),
-            new OA\Property(property: 'holder_name', type: 'string', example: 'المدرب خالد'),
-        ]
-    ))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(ref: '#/components/schemas/UpdateLockerHolderRequest')
+    )]
     #[OA\Response(response: 200, description: '✅ تم تحديث حامل المفتاح', content: new OA\JsonContent())]
     #[OA\Response(response: 404, description: '❌ الخزانة غير موجودة')]
     #[OA\Response(response: 422, description: '⚠️ بيانات غير صالحة')]
@@ -212,7 +207,6 @@ class ReceptionAttendanceController extends BaseController
 
                 $locker = DB::table('lockers')
                     ->where('id', $lockerId)
-                    ->whereNull('deleted_at')
                     ->first();
 
                 if (!$locker) {
@@ -273,7 +267,6 @@ class ReceptionAttendanceController extends BaseController
         try {
             $locker = DB::table('lockers')
                 ->where('id', $lockerId)
-                ->whereNull('deleted_at')
                 ->first();
 
             if (!$locker) {

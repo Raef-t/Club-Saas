@@ -3,15 +3,27 @@
 namespace Modules\AttendanceManager\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use OpenApi\Attributes as OA;
 
 /**
  * Validates requests to update who currently holds a locker key.
- *
- * holder_type:
- *   - 'member' → a registered member holds the key (holder_id required)
- *   - 'staff'  → a staff/coach holds the key (holder_id required)
- *   - 'guest'  → an unregistered guest holds the key (holder_name required, holder_id ignored)
  */
+#[OA\Schema(
+    title: "UpdateLockerHolderRequest",
+    description: "البيانات المطلوبة لتحديث حامل مفتاح الخزانة",
+    required: ["holder_type", "holder_name"],
+    properties: [
+        new OA\Property(
+            property: "holder_type", 
+            type: "string", 
+            enum: ["member", "staff", "guest"], 
+            example: "staff",
+            description: "نوع الشخص الذي يحمل المفتاح. الأنواع المسموحة:\n- `member`: عضو مسجل بالنادي (يتطلب `holder_id`)\n- `staff`: موظف أو كوتش (يتطلب `holder_id`)\n- `guest`: زائر خارجي (لا يتطلب `holder_id`، يكفي الاسم)"
+        ),
+        new OA\Property(property: "holder_id", type: "integer", nullable: true, example: 7, description: "معرف العضو أو الموظف في قاعدة البيانات (يترك فارغاً للزوار)"),
+        new OA\Property(property: "holder_name", type: "string", example: "المدرب خالد", description: "اسم الحامل الفعلي للمفتاح (يستخدم لعرضه في الواجهة)")
+    ]
+)]
 class UpdateLockerHolderRequest extends FormRequest
 {
     public function authorize(): bool

@@ -182,8 +182,8 @@ class QRController extends BaseController
         try {
             $personId = $this->qrService->validateCode($validated['qr_token']);
 
-            $member = DB::table('members')->where('person_id', $personId)->whereNull('deleted_at')->first();
-            $staff = DB::table('staff')->where('person_id', $personId)->whereNull('deleted_at')->first();
+            $member = DB::table('members')->where('person_id', $personId)->first();
+            $staff = DB::table('staff')->where('person_id', $personId)->first();
 
             $type = null;
             $entityId = null;
@@ -262,8 +262,8 @@ class QRController extends BaseController
         try {
             $personId = $this->qrService->validateCode($validated['qr_token']);
 
-            $member = DB::table('members')->where('person_id', $personId)->whereNull('deleted_at')->first();
-            $staff = DB::table('staff')->where('person_id', $personId)->whereNull('deleted_at')->first();
+            $member = DB::table('members')->where('person_id', $personId)->first();
+            $staff = DB::table('staff')->where('person_id', $personId)->first();
 
             $type = null;
             $entityId = null;
@@ -308,7 +308,6 @@ class QRController extends BaseController
         if (isset($user->person_id)) {
             return DB::table('members')
                 ->where('person_id', $user->person_id)
-                ->whereNull('deleted_at')
                 ->first();
         }
 

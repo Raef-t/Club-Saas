@@ -3718,32 +3718,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "holder_type",
-                                    "holder_name"
-                                ],
-                                "properties": {
-                                    "holder_type": {
-                                        "type": "string",
-                                        "example": "staff",
-                                        "enum": [
-                                            "member",
-                                            "staff",
-                                            "guest"
-                                        ]
-                                    },
-                                    "holder_id": {
-                                        "description": "ID العضو أو الموظف – مطلوب إذا holder_type ≠ guest",
-                                        "type": "integer",
-                                        "example": 7,
-                                        "nullable": true
-                                    },
-                                    "holder_name": {
-                                        "type": "string",
-                                        "example": "المدرب خالد"
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/UpdateLockerHolderRequest"
                             }
                         }
                     }
@@ -8095,8 +8070,19 @@
                     "Locker Management"
                 ],
                 "summary": "🔐 عرض جميع الخزائن",
-                "description": "استرجاع قائمة بجميع الخزائن المتاحة للاستخدام من قبل الأعضاء.",
+                "description": "استرجاع قائمة بجميع الخزائن مع إمكانية الفلترة حسب الفرع.",
                 "operationId": "2b37bdb8c411391596e6ab9e7422f380",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية الخزائن حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الخزائن بنجاح",
@@ -8115,24 +8101,6 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "locker_number": {
-                                                        "type": "string",
-                                                        "example": "L-101"
-                                                    },
-                                                    "branch_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "is_active": {
-                                                        "type": "boolean",
-                                                        "example": true
-                                                    }
-                                                },
                                                 "type": "object"
                                             }
                                         }
@@ -8177,26 +8145,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "locker_number",
-                                    "branch_id",
-                                    "facility_id"
-                                ],
-                                "properties": {
-                                    "locker_number": {
-                                        "type": "string",
-                                        "example": "L-102"
-                                    },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "facility_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/StoreLockerRequest"
                             }
                         }
                     }
@@ -8226,39 +8175,10 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
                     },
                     "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -8269,12 +8189,137 @@
             }
         },
         "/v1/lockers/{id}": {
+            "get": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🔍 عرض خزانة محددة",
+                "description": "استرجاع تفاصيل خزانة محددة بواسطة معرفها.",
+                "operationId": "253ebc9f3ad12c5e804962db7dde3b04",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الخزانة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الخزانة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Locker retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على الخزانة"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "✏️ تعديل بيانات خزانة",
+                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها أو حامل مفتاحها.",
+                "operationId": "f35adb439a6ed9d1ed54c46deba80adf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الخزانة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLockerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث الخزانة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Locker updated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على الخزانة"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Locker Management"
                 ],
-                "summary": "🗑️ حذف الخزانة",
-                "description": "إزالة خزانة محددة من النظام.",
+                "summary": "🗑️ حذف خزانة",
+                "description": "إزالة خزانة محددة من النظام. لا يمكن حذف خزانة وهي مشغولة.",
                 "operationId": "849979252fdb3ee314725226a799e838",
                 "parameters": [
                     {
@@ -8315,128 +8360,10 @@
                         }
                     },
                     "404": {
-                        "description": "🚫 لم يتم العثور على الخزانة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Locker not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "🚫 لم يتم العثور على الخزانة"
                     },
                     "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/lockers/{id}/toggle-status": {
-            "patch": {
-                "tags": [
-                    "Locker Management"
-                ],
-                "summary": "🔄 تفعيل / تعطيل الخزانة",
-                "description": "تغيير حالة الخزانة لتكون متاحة للاستخدام أو معطلة.",
-                "operationId": "ac371f3a735961982e6114f3120b35c4",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف الخزانة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تحديث حالة الخزانة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Locker status updated"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على الخزانة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Locker not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -23911,6 +23838,38 @@
                 },
                 "type": "object"
             },
+            "UpdateLockerHolderRequest": {
+                "title": "UpdateLockerHolderRequest",
+                "description": "البيانات المطلوبة لتحديث حامل مفتاح الخزانة",
+                "required": [
+                    "holder_type",
+                    "holder_name"
+                ],
+                "properties": {
+                    "holder_type": {
+                        "description": "نوع الشخص الذي يحمل المفتاح. الأنواع المسموحة:\n- `member`: عضو مسجل بالنادي (يتطلب `holder_id`)\n- `staff`: موظف أو كوتش (يتطلب `holder_id`)\n- `guest`: زائر خارجي (لا يتطلب `holder_id`، يكفي الاسم)",
+                        "type": "string",
+                        "example": "staff",
+                        "enum": [
+                            "member",
+                            "staff",
+                            "guest"
+                        ]
+                    },
+                    "holder_id": {
+                        "description": "معرف العضو أو الموظف في قاعدة البيانات (يترك فارغاً للزوار)",
+                        "type": "integer",
+                        "example": 7,
+                        "nullable": true
+                    },
+                    "holder_name": {
+                        "description": "اسم الحامل الفعلي للمفتاح (يستخدم لعرضه في الواجهة)",
+                        "type": "string",
+                        "example": "المدرب خالد"
+                    }
+                },
+                "type": "object"
+            },
             "StorePersonContactRequest": {
                 "title": "Store Person Contact Request",
                 "required": [
@@ -24090,7 +24049,6 @@
                 "title": "StoreLockerRequest",
                 "required": [
                     "branch_id",
-                    "facility_id",
                     "locker_number"
                 ],
                 "properties": {
@@ -24098,13 +24056,19 @@
                         "type": "integer",
                         "example": 1
                     },
-                    "facility_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
                     "locker_number": {
                         "type": "string",
                         "example": "L-101"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "available",
+                        "enum": [
+                            "available",
+                            "with_member",
+                            "with_staff",
+                            "with_guest"
+                        ]
                     }
                 },
                 "type": "object"
@@ -24166,6 +24130,46 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateLockerRequest": {
+                "title": "UpdateLockerRequest",
+                "properties": {
+                    "locker_number": {
+                        "type": "string",
+                        "example": "L-101"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "available",
+                        "enum": [
+                            "available",
+                            "with_member",
+                            "with_staff",
+                            "with_guest"
+                        ]
+                    },
+                    "holder_id": {
+                        "type": "integer",
+                        "example": 5,
+                        "nullable": true
+                    },
+                    "holder_type": {
+                        "type": "string",
+                        "example": "member",
+                        "nullable": true,
+                        "enum": [
+                            "member",
+                            "staff",
+                            "guest"
+                        ]
+                    },
+                    "holder_name": {
+                        "type": "string",
+                        "example": "أحمد محمد",
+                        "nullable": true
                     }
                 },
                 "type": "object"
