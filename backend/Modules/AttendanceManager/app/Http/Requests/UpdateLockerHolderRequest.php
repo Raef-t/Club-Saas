@@ -14,9 +14,9 @@ use OpenApi\Attributes as OA;
     required: ["holder_type", "holder_name"],
     properties: [
         new OA\Property(
-            property: "holder_type", 
-            type: "string", 
-            enum: ["member", "staff", "guest"], 
+            property: "holder_type",
+            type: "string",
+            enum: ["member", "staff", "guest"],
             example: "staff",
             description: "نوع الشخص الذي يحمل المفتاح. الأنواع المسموحة:\n- `member`: عضو مسجل بالنادي (يتطلب `holder_id`)\n- `staff`: موظف أو كوتش (يتطلب `holder_id`)\n- `guest`: زائر خارجي (لا يتطلب `holder_id`، يكفي الاسم)"
         ),
