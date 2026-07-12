@@ -3,10 +3,10 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+
 class PlayerSubscription extends Model
 {
-    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy;
 
     protected $fillable = [
         'member_id',

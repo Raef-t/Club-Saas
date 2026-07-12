@@ -3,12 +3,12 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Modules\ClubManager\Models\Branch;
 
 class Offer extends Model
 {
-    use SoftDeletes;
+
 
     protected $fillable = [
         'branch_id',

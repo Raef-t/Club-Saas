@@ -3,11 +3,11 @@
 namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class SportSession extends Model
 {
-    use SoftDeletes;
+
 
     protected $table = 'sports_sessions';
 
