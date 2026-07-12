@@ -19,8 +19,7 @@ class SubscribeOfferRequest extends FormRequest
             'payment_method' => 'nullable|string|in:cash,card,wallet,bank_transfer',
             'notes' => 'nullable|string',
             'start_date' => 'nullable|date',
-            // Coach ID or other preferences can be added here if needed, but for offers they apply to all plans or have defaults
-            'coach_id' => 'nullable|exists:coaches,id', 
+
         ];
     }
 }

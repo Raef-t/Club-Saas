@@ -314,8 +314,7 @@ class OfferController extends BaseController
                 new OA\Property(property: 'paid_amount', type: 'number', example: 500, description: 'المبلغ المدفوع'),
                 new OA\Property(property: 'payment_method', type: 'string', enum: ['cash', 'card', 'wallet', 'bank_transfer'], example: 'cash', description: 'طريقة الدفع'),
                 new OA\Property(property: 'notes', type: 'string', example: 'اشتراك جديد', description: 'ملاحظات'),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-15', description: 'تاريخ بداية الاشتراك'),
-                new OA\Property(property: 'coach_id', type: 'integer', example: 2, description: 'معرف المدرب (اختياري)')
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-15', description: 'تاريخ بداية الاشتراك')
             ]
         )
     )]

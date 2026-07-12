@@ -579,7 +579,7 @@ class SubscriptionService
 
                 $subscription = $this->subscriptionRepository->create([
                     'member_id' => $memberId,
-                    'coach_id' => $options['coach_id'] ?? null,
+                    'coach_id' => null,
                     'plan_id' => $plan->id,
                     'offer_id' => $offer->id,
                     'total_amount' => 0, // Zero because it's part of the offer
