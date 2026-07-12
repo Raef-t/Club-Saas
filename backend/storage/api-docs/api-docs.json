@@ -3993,6 +3993,7 @@
                                         "description": "معلومات الجهاز",
                                         "type": "object",
                                         "example": {
+                                            "device_id": "unique_id_123",
                                             "sdk": 33,
                                             "brand": "Redmi",
                                             "model": "M2101K6G",
