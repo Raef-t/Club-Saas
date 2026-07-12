@@ -31,7 +31,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
 
     Route::apiResource('lockers', LockerController::class);
-    Route::patch('lockers/{id}/toggle-status', [LockerController::class, 'toggleStatus']);
 
     // Club Settings
     Route::get('clubs/{club}/settings', [ClubSettingController::class, 'show']);

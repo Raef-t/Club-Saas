@@ -155,7 +155,6 @@ class ReceptionAttendanceController extends BaseController
         try {
             $query = DB::table('lockers')
                 ->where('branch_id', $request->input('branch_id'))
-                ->whereNull('deleted_at')
                 ->select(
                     'id',
                     'locker_number',
@@ -189,19 +188,15 @@ class ReceptionAttendanceController extends BaseController
     #[OA\Patch(
         path: '/v1/lockers/{lockerId}/holder',
         summary: '🔄 تغيير حامل المفتاح',
-        description: "يتيح تغيير مَن يحمل المفتاح في أي وقت بدون الحاجة لعمل check-out.\n\nالاستخدامات:\n- تحويل المفتاح من عضو لآخر\n- منح كوتش خزانة ثابتة\n- تسجيل ضيف حمل المفتاح يدوياً",
+        description: "يتيح تغيير مَن يحمل المفتاح في أي وقت بدون الحاجة لعمل check-out.\n\n**أنواع حاملي المفاتيح المسموحة (holder_type):**\n- `member`: عضو مسجل بالنادي (يتطلب إرسال رقم العضو في `holder_id`)\n- `staff`: موظف أو مدرب (يتطلب إرسال رقم الموظف في `holder_id`)\n- `guest`: زائر خارجي (لا يتطلب `holder_id`، يكفي إرسال اسم الزائر في `holder_name`)\n\nالاستخدامات:\n- تحويل المفتاح من عضو لآخر\n- منح كوتش خزانة ثابتة\n- تسجيل ضيف حمل المفتاح يدوياً",
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'lockerId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['holder_type', 'holder_name'],
-        properties: [
-            new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'staff'),
-            new OA\Property(property: 'holder_id', type: 'integer', nullable: true, example: 7, description: 'ID العضو أو الموظف – مطلوب إذا holder_type ≠ guest'),
-            new OA\Property(property: 'holder_name', type: 'string', example: 'المدرب خالد'),
-        ]
-    ))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(ref: UpdateLockerHolderRequest::class)
+    )]
     #[OA\Response(response: 200, description: '✅ تم تحديث حامل المفتاح', content: new OA\JsonContent())]
     #[OA\Response(response: 404, description: '❌ الخزانة غير موجودة')]
     #[OA\Response(response: 422, description: '⚠️ بيانات غير صالحة')]
@@ -212,7 +207,6 @@ class ReceptionAttendanceController extends BaseController
 
                 $locker = DB::table('lockers')
                     ->where('id', $lockerId)
-                    ->whereNull('deleted_at')
                     ->first();
 
                 if (!$locker) {
@@ -273,7 +267,6 @@ class ReceptionAttendanceController extends BaseController
         try {
             $locker = DB::table('lockers')
                 ->where('id', $lockerId)
-                ->whereNull('deleted_at')
                 ->first();
 
             if (!$locker) {

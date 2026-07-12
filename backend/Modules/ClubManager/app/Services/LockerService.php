@@ -18,9 +18,9 @@ class LockerService
         $this->uniquenessRule = $uniquenessRule;
     }
 
-    public function getAllLockers()
+    public function getAllLockers(array $filters = [])
     {
-        return $this->repository->all();
+        return $this->repository->all($filters);
     }
 
     public function createLocker(array $data)
@@ -46,13 +46,5 @@ class LockerService
         return $this->repository->delete($id);
     }
 
-    /**
-     * Toggle the active status of a locker.
-     */
-    public function toggleStatus($id)
-    {
-        $locker = $this->getLockerById($id);
-        $locker->update(['is_active' => !$locker->is_active]);
-        return $locker;
-    }
+
 }
