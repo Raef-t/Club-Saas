@@ -3,12 +3,12 @@
 namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Modules\Authentication\Models\Person;
 
 class Member extends Model
 {
-    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy;
 
     protected $fillable = [
         'branch_id',
