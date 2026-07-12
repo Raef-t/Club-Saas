@@ -38,7 +38,7 @@ class AuthController extends BaseController
                     type: 'object', 
                     description: 'معلومات الجهاز', 
                     nullable: true,
-                    example: ["sdk" => 33, "brand" => "Redmi", "model" => "M2101K6G", "version" => "13", "manufacturer" => "Xiaomi", "isPhysicalDevice" => true]
+                    example: ["device_id" => "unique_id_123", "sdk" => 33, "brand" => "Redmi", "model" => "M2101K6G", "version" => "13", "manufacturer" => "Xiaomi", "isPhysicalDevice" => true]
                 ),
             ]
         )
@@ -130,13 +130,42 @@ class AuthController extends BaseController
         }
 
         if (!empty($validated['fcm_token'])) {
-            \Modules\Authentication\Models\UserDevice::updateOrCreate(
-                ['fcm_token' => $validated['fcm_token']],
-                [
-                    'user_id' => $user->id,
-                    'device_info' => $validated['device_info'] ?? null,
-                ]
-            );
+            $deviceInfo = $validated['device_info'] ?? null;
+            $deviceId = $deviceInfo['device_id'] ?? null;
+
+            if ($deviceId) {
+                $existingDevice = \Modules\Authentication\Models\UserDevice::where('user_id', $user->id)
+                    ->where('device_info->device_id', $deviceId)
+                    ->first();
+
+                if ($existingDevice) {
+                    // Prevent unique constraint error if this exact FCM token is somehow assigned to another row
+                    \Modules\Authentication\Models\UserDevice::where('fcm_token', $validated['fcm_token'])
+                        ->where('id', '!=', $existingDevice->id)
+                        ->delete();
+
+                    $existingDevice->update([
+                        'fcm_token' => $validated['fcm_token'],
+                        'device_info' => $deviceInfo,
+                    ]);
+                } else {
+                    \Modules\Authentication\Models\UserDevice::updateOrCreate(
+                        ['fcm_token' => $validated['fcm_token']],
+                        [
+                            'user_id' => $user->id,
+                            'device_info' => $deviceInfo,
+                        ]
+                    );
+                }
+            } else {
+                \Modules\Authentication\Models\UserDevice::updateOrCreate(
+                    ['fcm_token' => $validated['fcm_token']],
+                    [
+                        'user_id' => $user->id,
+                        'device_info' => $deviceInfo,
+                    ]
+                );
+            }
         }
 
         // Generate Token
