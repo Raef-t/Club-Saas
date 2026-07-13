@@ -18,6 +18,9 @@ class ReserveLockerRequest extends FormRequest
             'holder_type' => 'required|string|in:member,staff,guest',
             'holder_id' => 'nullable|integer',
             'holder_name' => 'nullable|string|max:255',
+            'price' => 'required_if:reservation_type,rental|numeric|min:0',
+            'start_date' => 'required_if:reservation_type,rental|date',
+            'end_date' => 'required_if:reservation_type,rental|date|after_or_equal:start_date',
         ];
     }
 }

@@ -30,6 +30,16 @@ class LockerController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الخزائن حسب الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(
+        name: 'status',
+        in: 'query',
+        required: false,
+        description: 'تصفية الخزائن حسب الحالة (متاحة أو مشغولة)',
+        schema: new OA\Schema(
+            type: 'string',
+            enum: ['available', 'occupied']
+        )
+    )]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الخزائن بنجاح',
@@ -170,7 +180,7 @@ class LockerController extends BaseController
     #[OA\Post(
         path: '/v1/lockers/{locker}/reservations',
         summary: '📥 حجز خزانة / إسناد مجاني',
-        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type`.',
+        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `guest`).',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -178,12 +188,31 @@ class LockerController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['reservation_type', 'holder_type'],
-            properties: [
-                new OA\Property(property: 'reservation_type', type: 'string', enum: ['rental', 'assign'], example: 'rental'),
-                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'member'),
-                new OA\Property(property: 'holder_id', type: 'integer', example: 120),
-                new OA\Property(property: 'holder_name', type: 'string', example: 'أحمد'),
+            examples: [
+                'rental_example' => new OA\Examples(
+                    example: 'rental',
+                    summary: 'حالة التأجير (Rental)',
+                    description: 'تتطلب تحديد السعر وتاريخ البداية والنهاية، ويجب أن يكون المستلم عضواً (member).',
+                    value: [
+                        'reservation_type' => 'rental',
+                        'holder_type' => 'member',
+                        'holder_id' => 120,
+                        'price' => 30000,
+                        'start_date' => '2026-07-13',
+                        'end_date' => '2026-08-13'
+                    ]
+                ),
+                'assign_example' => new OA\Examples(
+                    example: 'assign',
+                    summary: 'حالة التخصيص (Assign)',
+                    description: 'تخصيص الخزانة بدون مقابل مادي. لا تتطلب سعر أو تواريخ، ويمكن إسنادها لأي نوع.',
+                    value: [
+                        'reservation_type' => 'assign',
+                        'holder_type' => 'staff',
+                        'holder_id' => 5,
+                        'holder_name' => 'أحمد الموظف'
+                    ]
+                )
             ]
         )
     )]

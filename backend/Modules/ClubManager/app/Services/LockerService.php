@@ -53,8 +53,6 @@ class LockerService
                 $query->where('lockers.status', 'available');
             } elseif ($filters['status'] === 'occupied') {
                 $query->where('lockers.status', '!=', 'available');
-            } else {
-                $query->where('lockers.status', $filters['status']);
             }
         }
 
@@ -96,6 +94,7 @@ class LockerService
             $reservationType = $data['reservation_type']; // 'rental' or 'assign'
             
             $price = 0;
+            $startDate = now();
             $endDate = null;
             $invoiceId = null;
 
@@ -105,9 +104,9 @@ class LockerService
                     throw new Exception(__('Rentals are only available for members.'));
                 }
 
-                $branchSetting = BranchSetting::where('branch_id', $locker->branch_id)->first();
-                $price = $branchSetting ? $branchSetting->locker_price : 30000;
-                $endDate = now()->addMonth();
+                $price = $data['price'];
+                $startDate = $data['start_date'];
+                $endDate = $data['end_date'];
 
                 // Create Invoice
                 $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
@@ -125,7 +124,7 @@ class LockerService
                 'member_id' => ($data['holder_type'] ?? '') === 'member' ? $data['holder_id'] : null,
                 'staff_id' => ($data['holder_type'] ?? '') === 'staff' ? $data['holder_id'] : null,
                 'invoice_id' => $invoiceId,
-                'start_date' => now(),
+                'start_date' => $startDate,
                 'end_date' => $endDate,
                 'price' => $price,
                 'status' => 'active',
