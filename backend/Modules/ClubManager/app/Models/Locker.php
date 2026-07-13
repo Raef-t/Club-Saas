@@ -14,18 +14,9 @@ class Locker extends Model
     protected $fillable = [
         'branch_id',
         'locker_number',
-        // Availability status: available | with_member | with_staff | with_guest
         'status',
-        // Polymorphic holder – who currently holds this key
-        'holder_id',    // ID of the member/staff record (null for guests)
-        'holder_type',  // 'member' | 'staff' | 'guest'
-        'holder_name',  // cached display name or raw guest name
-        'assigned_at',  // timestamp when the key was handed out
     ];
 
-    protected $casts = [
-        'assigned_at' => 'datetime',
-    ];
 
     // ──────────────────────────────────────────────────────────────────────────
     //  Relationships

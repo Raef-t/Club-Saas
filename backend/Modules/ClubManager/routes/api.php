@@ -31,6 +31,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
 
     Route::apiResource('lockers', LockerController::class);
+    Route::post('lockers/{locker}/reservations', [LockerController::class, 'reserve']);
+    Route::delete('lockers/{locker}/reservations/current', [LockerController::class, 'releaseCurrentReservation']);
+    Route::patch('locker-reservations/{reservation}/holder', [LockerController::class, 'transferReservationHolder']);
 
     // Club Settings
     Route::get('clubs/{club}/settings', [ClubSettingController::class, 'show']);

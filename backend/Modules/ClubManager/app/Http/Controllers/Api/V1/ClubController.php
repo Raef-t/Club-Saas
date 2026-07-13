@@ -163,6 +163,7 @@ class ClubController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على النادي', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    #[OA\Response(response: 409, description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به.')]))]
     public function destroy($id)
     {
         $this->service->delete($id);

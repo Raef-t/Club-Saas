@@ -5,10 +5,13 @@ namespace Modules\ClubManager\Http\Controllers\Api\V1;
 use Illuminate\Http\Request;
 use Modules\ClubManager\Http\Requests\StoreLockerRequest;
 use Modules\ClubManager\Http\Requests\UpdateLockerRequest;
+use Modules\ClubManager\Http\Requests\ReserveLockerRequest;
+use Modules\ClubManager\Http\Requests\TransferLockerReservationRequest;
 use Modules\ClubManager\Http\Resources\LockerResource;
 use Modules\ClubManager\Services\LockerService;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use OpenApi\Attributes as OA;
+use Exception;
 
 class LockerController extends BaseController
 {
@@ -156,6 +159,7 @@ class LockerController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 409, description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به.')]))]
     public function destroy($id)
     {
         $this->lockerService->deleteLocker($id);
@@ -163,4 +167,86 @@ class LockerController extends BaseController
     }
 
 
+    #[OA\Post(
+        path: '/v1/lockers/{locker}/reservations',
+        summary: '📥 حجز خزانة / إسناد مجاني',
+        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type`.',
+        tags: ['Locker Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'locker', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['reservation_type', 'holder_type'],
+            properties: [
+                new OA\Property(property: 'reservation_type', type: 'string', enum: ['rental', 'assign'], example: 'rental'),
+                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'member'),
+                new OA\Property(property: 'holder_id', type: 'integer', example: 120),
+                new OA\Property(property: 'holder_name', type: 'string', example: 'أحمد'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم تخصيص الخزانة', content: new OA\JsonContent())]
+    #[OA\Response(response: 400, description: '❌ الخزانة غير متاحة أو بيانات غير صحيحة')]
+    public function reserve(int $locker, ReserveLockerRequest $request)
+    {
+        try {
+            $reservation = $this->lockerService->reserveLocker($locker, $request->validated());
+            return $this->successResponse($reservation, __('Locker reserved successfully.'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/v1/lockers/{locker}/reservations/current',
+        summary: '🔓 فك الحجز وإخلاء الخزانة',
+        description: 'ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available).',
+        tags: ['Locker Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'locker', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم تحرير الخزانة', content: new OA\JsonContent())]
+    #[OA\Response(response: 400, description: '❌ الخزانة متاحة بالفعل أو حدث خطأ')]
+    public function releaseCurrentReservation(int $locker)
+    {
+        try {
+            $this->lockerService->releaseLocker($locker);
+            return $this->successResponse(null, __('Locker released successfully.'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    #[OA\Patch(
+        path: '/v1/locker-reservations/{reservation}/holder',
+        summary: '🔄 نقل مفتاح الخزانة لحامل آخر',
+        description: 'يسمح بتغيير بيانات الشخص الذي يحمل المفتاح دون إنهاء الحجز الأصلي.',
+        tags: ['Locker Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'reservation', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['holder_type'],
+            properties: [
+                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'guest'),
+                new OA\Property(property: 'holder_id', type: 'integer', example: 120),
+                new OA\Property(property: 'holder_name', type: 'string', example: 'صديق اللاعب'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم نقل عهدة المفتاح', content: new OA\JsonContent())]
+    #[OA\Response(response: 400, description: '❌ الحجز غير نشط أو حدث خطأ')]
+    public function transferReservationHolder(int $reservation, TransferLockerReservationRequest $request)
+    {
+        try {
+            $updatedReservation = $this->lockerService->transferReservationHolder($reservation, $request->validated());
+            return $this->successResponse($updatedReservation, __('Locker holder transferred successfully.'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
 }

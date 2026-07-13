@@ -3607,145 +3607,6 @@
                 ]
             }
         },
-        "/v1/reception/lockers": {
-            "get": {
-                "tags": [
-                    "Reception"
-                ],
-                "summary": "🔑 خزائن الفرع مع حالة كل مفتاح",
-                "description": "يعرض جميع خزائن الفرع مع حالتها الكاملة:\n- **available**: المفتاح في الاستقبال\n- **with_member**: عضو مسجّل يحمله\n- **with_staff**: موظف/كوتش يحمله\n- **with_guest**: ضيف غير مسجّل يحمله\n\nيُعرض أيضاً اسم الحامل ووقت التخصيص.",
-                "operationId": "21a0a569e2d8c1354c3084bd8776286f",
-                "parameters": [
-                    {
-                        "name": "branch_id",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "available_only",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "false",
-                            "enum": [
-                                "true",
-                                "false",
-                                "all"
-                            ]
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الخزائن",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/lockers/{lockerId}/holder": {
-            "delete": {
-                "tags": [
-                    "Reception"
-                ],
-                "summary": "🔓 إلغاء تخصيص الخزانة مباشرة",
-                "description": "يُحرِّر الخزانة ويجعلها متاحة فوراً بغض النظر عن سجل الحضور.\n\nمفيد في حالات:\n- إلغاء خزانة مخصصة لكوتش/موظف بشكل دائم\n- تحرير خزانة يدوياً من لوحة الاستقبال\n- تصحيح تخصيص خاطئ",
-                "operationId": "106766073f877bc0ab12da95221489dc",
-                "parameters": [
-                    {
-                        "name": "lockerId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تحرير الخزانة",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "❌ الخزانة غير موجودة"
-                    },
-                    "409": {
-                        "description": "⚠️ الخزانة متاحة بالفعل"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "patch": {
-                "tags": [
-                    "Reception"
-                ],
-                "summary": "🔄 تغيير حامل المفتاح",
-                "description": "يتيح تغيير مَن يحمل المفتاح في أي وقت بدون الحاجة لعمل check-out.\n\n**أنواع حاملي المفاتيح المسموحة (holder_type):**\n- `member`: عضو مسجل بالنادي (يتطلب إرسال رقم العضو في `holder_id`)\n- `staff`: موظف أو مدرب (يتطلب إرسال رقم الموظف في `holder_id`)\n- `guest`: زائر خارجي (لا يتطلب `holder_id`، يكفي إرسال اسم الزائر في `holder_name`)\n\nالاستخدامات:\n- تحويل المفتاح من عضو لآخر\n- منح كوتش خزانة ثابتة\n- تسجيل ضيف حمل المفتاح يدوياً",
-                "operationId": "14a6d5b209bed03fa9f5110eeef2d0e8",
-                "parameters": [
-                    {
-                        "name": "lockerId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateLockerHolderRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تحديث حامل المفتاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "❌ الخزانة غير موجودة"
-                    },
-                    "422": {
-                        "description": "⚠️ بيانات غير صالحة"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/attendances/check-in": {
             "post": {
                 "tags": [
@@ -5333,6 +5194,26 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
                                         }
                                     },
                                     "type": "object"
@@ -6930,6 +6811,26 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -7661,6 +7562,26 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -8364,6 +8285,216 @@
                     },
                     "401": {
                         "description": "❌ غير مصرح"
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/{locker}/reservations": {
+            "post": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "📥 حجز خزانة / إسناد مجاني",
+                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type`.",
+                "operationId": "65e120e9e683833ce3738608a90b4ab7",
+                "parameters": [
+                    {
+                        "name": "locker",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reservation_type",
+                                    "holder_type"
+                                ],
+                                "properties": {
+                                    "reservation_type": {
+                                        "type": "string",
+                                        "example": "rental",
+                                        "enum": [
+                                            "rental",
+                                            "assign"
+                                        ]
+                                    },
+                                    "holder_type": {
+                                        "type": "string",
+                                        "example": "member",
+                                        "enum": [
+                                            "member",
+                                            "staff",
+                                            "guest"
+                                        ]
+                                    },
+                                    "holder_id": {
+                                        "type": "integer",
+                                        "example": 120
+                                    },
+                                    "holder_name": {
+                                        "type": "string",
+                                        "example": "أحمد"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تخصيص الخزانة",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الخزانة غير متاحة أو بيانات غير صحيحة"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/{locker}/reservations/current": {
+            "delete": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🔓 فك الحجز وإخلاء الخزانة",
+                "description": "ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available).",
+                "operationId": "258d59fb8490e29cee2eb5e3b1761fc2",
+                "parameters": [
+                    {
+                        "name": "locker",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحرير الخزانة",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الخزانة متاحة بالفعل أو حدث خطأ"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/locker-reservations/{reservation}/holder": {
+            "patch": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🔄 نقل مفتاح الخزانة لحامل آخر",
+                "description": "يسمح بتغيير بيانات الشخص الذي يحمل المفتاح دون إنهاء الحجز الأصلي.",
+                "operationId": "31646a2846a9b4211c3a3c559c714a58",
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "holder_type"
+                                ],
+                                "properties": {
+                                    "holder_type": {
+                                        "type": "string",
+                                        "example": "guest",
+                                        "enum": [
+                                            "member",
+                                            "staff",
+                                            "guest"
+                                        ]
+                                    },
+                                    "holder_id": {
+                                        "type": "integer",
+                                        "example": 120
+                                    },
+                                    "holder_name": {
+                                        "type": "string",
+                                        "example": "صديق اللاعب"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم نقل عهدة المفتاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ الحجز غير نشط أو حدث خطأ"
                     }
                 },
                 "security": [
@@ -20292,10 +20423,16 @@
                                         "example": 50
                                     },
                                     "start_date": {
-                                        "description": "تاريخ بداية الاشتراك (اختياري)",
+                                        "description": "تاريخ بداية الاشتراك",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-07-01"
+                                    },
+                                    "end_date": {
+                                        "description": "تاريخ نهاية الاشتراك",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01"
                                     },
                                     "notes": {
                                         "description": "ملاحظات (اختياري)",
@@ -20306,47 +20443,6 @@
                                         "description": "طريقة الدفع (اختياري)",
                                         "type": "string",
                                         "example": "cash"
-                                    },
-                                    "coach_id": {
-                                        "description": "معرف المدرب العام للاشتراك (اختياري)",
-                                        "type": "integer",
-                                        "example": 3
-                                    },
-                                    "activities": {
-                                        "description": "(اختياري) مصفوفة الأنشطة لاختيار المدربين لكل نشاط",
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "activity_id": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "extra_services": {
-                                        "description": "(اختياري) خدمات إضافية مع الاشتراك (مثل استئجار خزانة)",
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "extra_service_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "price_charged": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 10
-                                                },
-                                                "locker_id": {
-                                                    "description": "معرف الخزانة إذا كانت الخدمة عبارة عن استئجار خزانة",
-                                                    "type": "integer",
-                                                    "example": 5
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
                                     }
                                 },
                                 "type": "object"

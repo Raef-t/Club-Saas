@@ -22,14 +22,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // 1.5. Deduct session from a specific subscription after check-in
     Route::post('reception/attendances/{attendanceId}/deduct', [ReceptionAttendanceController::class, 'deductSession']);
 
-    // 2. List all lockers in a branch (pass ?branch_id=1&available_only=1)
-    Route::get('reception/lockers', [ReceptionAttendanceController::class, 'availableLockers']);
 
-    // 3. Update locker holder at any time (change who currently holds the key)
-    Route::patch('lockers/{lockerId}/holder', [ReceptionAttendanceController::class, 'updateLockerHolder']);
-
-    // 4. Free a locker directly – regardless of attendance (e.g. staff/coach permanent locker)
-    Route::delete('lockers/{lockerId}/holder', [ReceptionAttendanceController::class, 'freeLocker']);
     // ────────────────────────────────────────────────────────────────────────────
 
 
