@@ -19,129 +19,7 @@ class QRController extends BaseController
         protected UnifiedAttendanceService $attendanceService
     ) {}
 
-    #[OA\Post(
-        path: '/v1/qr/generate',
-        summary: 'توليد رمز QR الخاص بالعضو',
-        description: 'توليد رمز QR فريد وصالح لمدة قصيرة (30 ثانية) ليستخدمه العضو في تسجيل الدخول عبر البوابة.',
-        tags: ['Attendance'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم توليد الرمز بنجاح',
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'QR code generated successfully.'),
-                new OA\Property(property: 'data', type: 'object', properties: [
-                    new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'),
-                    new OA\Property(property: 'expires_in_seconds', type: 'integer', example: 30)
-                ])
-            ]
-        )
-    )]
-    #[OA\Response(response: 403, description: '🚫 غير مصرح أو نوع المستخدم غير صالح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Unauthorized or invalid user type.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function generate(Request $request)
-    {
-        $user = $request->user();
-        $member = $this->resolveMember($user);
-        
-        if (!$member) {
-            return $this->errorResponse('Unauthorized or invalid user type.', 403);
-        }
 
-        $personId = $member->person_id;
-        $qrCodes = app(\Modules\Authentication\Services\PersonQrCodeService::class)->getCodesForPerson($personId);
-        $today = (int) \Carbon\Carbon::now()->format('w');
-        $token = $qrCodes[$today] ?? null;
-
-        if (!$token) {
-            return $this->errorResponse('No QR code generated for today.', 404);
-        }
-
-        return $this->successResponse([
-            'qr_token' => $token,
-            'expires_in_seconds' => 86400
-        ], 'QR code retrieved successfully.');
-    }
-
-    #[OA\Get(
-        path: '/v1/qr/screen',
-        summary: '📱 عرض شاشة الـ QR',
-        description: 'استرجاع البيانات اللازمة لعرض شاشة مسح QR في تطبيق العضو (الاسم، الباقة، الصورة، رمز الـ QR، الرصيد، حالة الدخول).',
-        tags: ['Attendance'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم استرجاع البيانات بنجاح',
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'QR data retrieved successfully.'),
-                new OA\Property(property: 'data', type: 'object', properties: [
-                    new OA\Property(property: 'member_name', type: 'string', example: 'أحمد محمود'),
-                    new OA\Property(property: 'plan_name', type: 'string', example: 'باقة شهرية'),
-                    new OA\Property(property: 'avatar_url', type: 'string', nullable: true, example: 'https://example.com/avatar.jpg'),
-                    new OA\Property(property: 'qr_code_value', type: 'string', example: 'eyJ0eXAi...'),
-                    new OA\Property(property: 'expires_in_seconds', type: 'integer', example: 30),
-                    new OA\Property(property: 'is_inside_facility', type: 'boolean', example: false)
-                ])
-            ]
-        )
-    )]
-    #[OA\Response(response: 403, description: '🚫 الملف الشخصي للعضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Member profile not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function show(Request $request)
-    {
-        $user = $request->user();
-        $member = $this->resolveMember($user);
-
-        if (!$member) {
-            return $this->errorResponse(__('Member profile not found.'), 403);
-        }
-
-        // Retrieve today's static QR code
-        $personId = $member->person_id;
-        $qrCodes = app(\Modules\Authentication\Services\PersonQrCodeService::class)->getCodesForPerson($personId);
-        $today = (int) \Carbon\Carbon::now()->format('w');
-        $qrToken = $qrCodes[$today] ?? null;
-
-        // Get person data
-        $person = DB::table('people')->where('id', $member->person_id)->first();
-
-        // Get active subscription
-        $subscription = DB::table('player_subscriptions')
-            ->join('subscription_plans', 'player_subscriptions.plan_id', '=', 'subscription_plans.id')
-            ->where('player_subscriptions.member_id', $member->id)
-            ->where('player_subscriptions.status', 'active')
-            ->select(
-                'subscription_plans.name as plan_name'
-            )
-            ->first();
-
-        // Check if member is currently inside facility (has check-in without check-out today)
-        $activeCheckIn = DB::table('attendances')
-            ->where('attendable_type', 'player_subscription')
-            ->whereIn('attendable_id', function ($query) use ($member) {
-                $query->select('id')
-                    ->from('player_subscriptions')
-                    ->where('member_id', $member->id);
-            })
-            ->where('status', 'checked_in')
-            ->whereNull('check_out_at')
-            ->exists();
-
-        return $this->successResponse([
-            'member_name' => $person->full_name ?? null,
-            'plan_name' => $subscription->plan_name ?? null,
-            'avatar_url' => $person->photo_url ?? null,
-            'qr_code_value' => $qrToken,
-            'expires_in_seconds' => 30,
-            'is_inside_facility' => $activeCheckIn,
-        ], __('QR data retrieved successfully.'));
-    }
 
     #[OA\Post(
         path: '/v1/qr/check-in',
@@ -212,7 +90,11 @@ class QRController extends BaseController
             );
 
             return $this->successResponse(
-                ['attendance_id' => $attendance->id, 'type' => $type],
+                [
+                    'attendance_id' => $attendance->id,
+                    'type' => $type,
+                    'member_id' => $type === 'member' ? (int) $entityId : null
+                ],
                 'Check-in successful.'
             );
 
