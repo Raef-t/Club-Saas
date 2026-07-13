@@ -110,15 +110,10 @@ class SubscriptionService
 
             // 2. Dates Calculation
             $startDate = Carbon::parse($options['start_date']);
-            $endDate = Carbon::parse($options['end_date']);
+            $endDate = null;
 
-            if ($plan->type === 'fixed_period' && $plan->duration_days) {
-                $expectedEndDate = $startDate->copy()->addDays($plan->duration_days);
-                // Allow some minor flexibility or strict match based on requirements.
-                // Strict match for now as requested.
-                if ($endDate->toDateString() !== $expectedEndDate->toDateString()) {
-                    throw new Exception(__('End date must be exactly :date according to the plan duration.', ['date' => $expectedEndDate->toDateString()]));
-                }
+            if ($plan->duration_days) {
+                $endDate = $startDate->copy()->addDays($plan->duration_days);
             }
 
             // 3. Financials
@@ -536,7 +531,7 @@ class SubscriptionService
             // Create individual PlayerSubscriptions for each plan in the offer
             foreach ($offer->plans as $plan) {
                 $endDate = null;
-                if ($plan->type === 'fixed_period' && $plan->duration_days) {
+                if ($plan->duration_days) {
                     $endDate = $startDate->copy()->addDays($plan->duration_days);
                 }
 
