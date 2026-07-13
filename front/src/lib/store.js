@@ -7,6 +7,7 @@ import { branchesApi } from "@/lib/api/branchesApi";
 import { coachesApi } from "@/lib/api/coachesApi";
 import { activitiesApi } from "@/lib/api/activitiesApi";
 import { membersApi } from "@/lib/api/membersApi";
+import { lockersApi } from "@/lib/api/lockersApi";
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     [coachesApi.reducerPath]: coachesApi.reducer,
     [activitiesApi.reducerPath]: activitiesApi.reducer,
     [membersApi.reducerPath]: membersApi.reducer,
+    [lockersApi.reducerPath]: lockersApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -29,5 +31,6 @@ export const store = configureStore({
       coachesApi.middleware,
       activitiesApi.middleware,
       membersApi.middleware,
+      lockersApi.middleware,
     ),
 });
