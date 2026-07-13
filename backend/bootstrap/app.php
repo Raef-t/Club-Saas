@@ -41,4 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 404);
             }
         });
+
+        $exceptions->render(function (\Modules\Core\Exceptions\CannotDeleteException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                    'details' => $e->getDetails()
+                ], 409);
+            }
+        });
     })->create();

@@ -2,14 +2,14 @@
 
 namespace Modules\SubscriptionManager\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\SubscriptionManager\Models\ExtraService;
 use Modules\SubscriptionManager\Http\Requests\StoreExtraServiceRequest;
 use Modules\SubscriptionManager\Http\Requests\UpdateExtraServiceRequest;
 use Modules\SubscriptionManager\Http\Resources\ExtraServiceResource;
 use OpenApi\Attributes as OA;
 
-class ExtraServiceController extends Controller
+class ExtraServiceController extends BaseController
 {
     #[OA\Get(
         path: '/v1/extra-services',
@@ -83,7 +83,7 @@ class ExtraServiceController extends Controller
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخدمة', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function show($id)
+    public function show(int $id)
     {
         $service = ExtraService::findOrFail($id);
         return new ExtraServiceResource($service);
@@ -113,7 +113,7 @@ class ExtraServiceController extends Controller
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخدمة', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function update(UpdateExtraServiceRequest $request, $id)
+    public function update(UpdateExtraServiceRequest $request, int $id)
     {
         $service = ExtraService::findOrFail($id);
         $service->update($request->validated());
@@ -132,13 +132,24 @@ class ExtraServiceController extends Controller
         response: 204,
         description: '✅ تم حذف الخدمة بنجاح'
     )]
+    #[OA\Response(response: 409, description: '🚫 لا يمكن الحذف — الخدمة مرتبطة باشتراكات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف الخدمة.')]))]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخدمة', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $service = ExtraService::findOrFail($id);
+
+        // Check if this extra service is linked to any active player subscriptions
+        $subscriptionsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionService::where('extra_service_id', $id)->count();
+
+        if ($subscriptionsCount > 0) {
+            return $this->errorResponse(
+                "لا يمكن حذف الخدمة الإضافية لارتباطها بـ {$subscriptionsCount} " . ($subscriptionsCount === 1 ? 'اشتراك' : 'اشتراكات') . " حالية. يمكنك تعطيل الخدمة بدلاً من الحذف.",
+                409
+            );
+        }
+
         $service->delete();
         return response()->json(null, 204);
     }
 }
-

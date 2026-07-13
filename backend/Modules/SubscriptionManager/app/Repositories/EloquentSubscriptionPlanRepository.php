@@ -49,9 +49,24 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
         });
     }
 
+    /**
+     * Delete a subscription plan only if no one has subscribed to it.
+     *
+     * @throws \Modules\Core\Exceptions\CannotDeleteException
+     */
     public function delete(int $id)
     {
         $plan = $this->find($id);
+
+        $subscribersCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $id)->count();
+
+        if ($subscribersCount > 0) {
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف خطة الاشتراك لأن {$subscribersCount} " . ($subscribersCount === 1 ? 'عضو قد اشترك' : 'أعضاء قد اشتركوا') . " فيها. يمكنك تعطيل الخطة (is_active = false) بدلاً من حذفها.",
+                ['subscribers_count' => $subscribersCount]
+            );
+        }
+
         return $plan->delete();
     }
 
