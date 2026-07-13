@@ -424,6 +424,7 @@ export function SubscriptionCreateForm({
       plan_id: Number(form.plan_id),
       paid_amount: Number(form.paid_amount) || 0,
       start_date: form.start_date || undefined,
+      payment_method: "cash",
       activities: selectedActivities.map((act) => ({
         activity_id: act.activity_id,
         coach_id: act.coach_id,

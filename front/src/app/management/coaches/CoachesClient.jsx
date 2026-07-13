@@ -581,11 +581,11 @@ export function CoachCreateForm({
             ) : (
               branchShifts.map((shift) => {
                 const isChecked = form.shift_ids?.includes(shift.id);
-                const dayName = daysOfWeek[shift.day_of_week] || "يوم غير معروف";
+                const shiftNameStr = shift.name || "وردية بدون اسم";
                 const startTime = shift.start_time ? shift.start_time.slice(0, 5) : "";
                 const endTime = shift.end_time ? shift.end_time.slice(0, 5) : "";
                 const gender = shiftGenderLabels[shift.gender_allowed] || shift.gender_allowed || "مختلط";
-                const label = `${dayName} | من ${startTime} إلى ${endTime} (${gender})`;
+                const label = `${shiftNameStr} | من ${startTime} إلى ${endTime} (${gender})`;
                 
                 return (
                   <Checkbox
