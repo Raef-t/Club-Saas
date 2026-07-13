@@ -14,7 +14,7 @@ class QRCheckInRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'qr_token' => 'required|string',
+            'qr_code' => 'required|string',
             'branch_id' => 'required|integer',
         ];
     }
