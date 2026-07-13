@@ -31,9 +31,9 @@ class GateController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_token'],
+            required: ['qr_code'],
             properties: [
-                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...')
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...')
             ]
         )
     )]
@@ -79,7 +79,7 @@ class GateController extends BaseController
 
         try {
             // 2. Validate QR Token (Fast, Cache-First Validation inside QRSecurityService)
-            $memberId = $this->qrService->validateToken($validated['qr_token']);
+            $memberId = $this->qrService->validateToken($validated['qr_code']);
             
             // 3. Concurrency Protection (Redis Atomic Lock)
             // Lock for 2 seconds to prevent double scans from bouncing signals

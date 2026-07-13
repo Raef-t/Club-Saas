@@ -31,9 +31,9 @@ class QRController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_token', 'branch_id'],
+            required: ['qr_code', 'branch_id'],
             properties: [
-                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAi...'),
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1)
             ]
         )
@@ -58,7 +58,7 @@ class QRController extends BaseController
         $validated = $request->validated();
 
         try {
-            $personId = $this->qrService->validateCode($validated['qr_token']);
+            $personId = $this->qrService->validateCode($validated['qr_code']);
 
             $member = DB::table('members')->where('person_id', $personId)->first();
             $staff = DB::table('staff')->where('person_id', $personId)->first();
@@ -113,9 +113,9 @@ class QRController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_token', 'branch_id'],
+            required: ['qr_code', 'branch_id'],
             properties: [
-                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAi...'),
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1)
             ]
         )
@@ -142,7 +142,7 @@ class QRController extends BaseController
         $validated = $request->validated();
 
         try {
-            $personId = $this->qrService->validateCode($validated['qr_token']);
+            $personId = $this->qrService->validateCode($validated['qr_code']);
 
             $member = DB::table('members')->where('person_id', $personId)->first();
             $staff = DB::table('staff')->where('person_id', $personId)->first();
