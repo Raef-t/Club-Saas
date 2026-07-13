@@ -212,7 +212,11 @@ class QRController extends BaseController
             );
 
             return $this->successResponse(
-                ['attendance_id' => $attendance->id, 'type' => $type],
+                [
+                    'attendance_id' => $attendance->id,
+                    'type' => $type,
+                    'member_id' => $type === 'member' ? (int) $entityId : null
+                ],
                 'Check-in successful.'
             );
 
