@@ -4,8 +4,8 @@ namespace Modules\SubscriptionManager\Console;
 
 use Illuminate\Console\Command;
 use Modules\SubscriptionManager\Models\PlayerSubscription;
-use Modules\MemberManager\Models\Member;
-use Modules\NotificationManager\Services\NotificationService;
+use Modules\SubscriptionManager\Models\LockerReservation;
+use Modules\ClubManager\Models\Locker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -23,96 +23,82 @@ class CheckSubscriptionStatus extends Command
      *
      * @var string
      */
-    protected $description = 'Scan active subscriptions and transition them to expired if their end date has passed or sessions have run out.';
+    protected $description = 'Scan active subscriptions and transition them to expired if their end date has passed or sessions have run out. Also expire locker reservations.';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Scanning subscriptions for expiration...');
-        Log::info('Subscription status scan started.');
+        $this->info('Scanning subscriptions and lockers for expiration...');
+        Log::info('Subscription and locker status scan started.');
 
-        $notificationService = app(NotificationService::class);
+        $today = now()->toDateString();
 
-        // 1. Find subscriptions to expire
-        $toExpire = PlayerSubscription::where('status', 'active')
-            ->where(function ($query) {
-                $query->whereNotNull('end_date')->where('end_date', '<=', now()->toDateString());
-            })
+        // 1. Find subscriptions to expire by date
+        $toExpireByDate = PlayerSubscription::where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $today)
             ->get();
+
+        // 2. Find subscriptions to expire by sessions (all items fully consumed)
+        $activeSubscriptions = PlayerSubscription::with('items')->where('status', 'active')->get();
+        $toExpireBySessions = collect();
+
+        foreach ($activeSubscriptions as $sub) {
+            if ($sub->items->isEmpty()) {
+                continue;
+            }
+
+            $allConsumed = true;
+            foreach ($sub->items as $item) {
+                if ($item->is_unlimited || $item->sessions_consumed < $item->sessions_allocated) {
+                    $allConsumed = false;
+                    break;
+                }
+            }
+
+            if ($allConsumed) {
+                $toExpireBySessions->push($sub);
+            }
+        }
+
+        // Merge both collections
+        $toExpire = $toExpireByDate->merge($toExpireBySessions)->unique('id');
 
         $expiredCount = 0;
         foreach ($toExpire as $sub) {
-            DB::transaction(function () use ($sub, $notificationService, &$expiredCount) {
+            DB::transaction(function () use ($sub, &$expiredCount) {
                 // Update status
                 $sub->update(['status' => 'expired']);
                 $expiredCount++;
-
-                // Release lockers associated with the subscription
-                $rentedLockerIds = $sub->services()
-                    ->whereNotNull('locker_id')
-                    ->pluck('locker_id')
-                    ->toArray();
-
-                if (!empty($rentedLockerIds)) {
-                    DB::table('lockers')
-                        ->whereIn('id', $rentedLockerIds)
-                        ->update([
-                            'status' => 'available',
-                            'updated_at' => now(),
-                        ]);
-                }
-
-                // Notify member
-                $member = Member::find($sub->member_id);
-                if ($member) {
-                    $fullName = $member->person_id ? DB::table('people')->where('id', $member->person_id)->value('full_name') : 'Member';
-                    try {
-                        $userId = $member->person && $member->person->user ? $member->person->user->id : null;
-                        if ($userId) {
-                            $notificationService->createNotification([
-                                'title' => 'انتهاء الاشتراك',
-                                'body' => "عزيزي {$fullName}، لقد انتهى اشتراكك في خطة {$sub->plan->getTranslation('name', app()->getLocale())}. نأمل تجديد اشتراكك قريباً.",
-                                'user_ids' => [$userId],
-                                'sender_type' => 'system'
-                            ]);
-                        }
-                    } catch (\Exception $e) {
-                        Log::error("Failed to send subscription expired notification: " . $e->getMessage());
-                    }
-                }
             });
         }
 
         $this->info("Successfully expired {$expiredCount} subscriptions.");
         Log::info("Subscription status scan completed. Expired {$expiredCount} subscriptions.");
 
-        // 2. Find subscriptions expiring in 3 days for alert notification
-        $expiringSoon = PlayerSubscription::where('status', 'active')
+        // 3. Find locker reservations to expire by date
+        $expiredLockersCount = 0;
+        $toExpireLockers = LockerReservation::where('status', 'active')
             ->whereNotNull('end_date')
-            ->where('end_date', '=', now()->addDays(3)->toDateString())
+            ->whereDate('end_date', '<', $today)
             ->get();
 
-        foreach ($expiringSoon as $sub) {
-            $member = Member::find($sub->member_id);
-            if ($member) {
-                $fullName = $member->person_id ? DB::table('people')->where('id', $member->person_id)->value('full_name') : 'Member';
-                try {
-                    $userId = $member->person && $member->person->user ? $member->person->user->id : null;
-                    if ($userId) {
-                        $notificationService->createNotification([
-                            'title' => 'اقتراب انتهاء الاشتراك',
-                            'body' => "عزيزي {$fullName}، نود تذكيرك بأن اشتراكك في خطة {$sub->plan->getTranslation('name', app()->getLocale())} سينتهي بعد 3 أيام.",
-                            'user_ids' => [$userId],
-                            'sender_type' => 'system'
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Failed to send subscription expiring soon notification: " . $e->getMessage());
+        foreach ($toExpireLockers as $reservation) {
+            DB::transaction(function () use ($reservation, &$expiredLockersCount) {
+                $reservation->update(['status' => 'expired']); // or completed/cancelled based on your status enum
+
+                $locker = Locker::find($reservation->locker_id);
+                if ($locker) {
+                    $locker->update(['status' => 'available']);
                 }
-            }
+                $expiredLockersCount++;
+            });
         }
+        
+        $this->info("Successfully expired {$expiredLockersCount} locker reservations.");
+        Log::info("Locker reservation status scan completed. Expired {$expiredLockersCount} reservations.");
 
         return Command::SUCCESS;
     }
