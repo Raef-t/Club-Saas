@@ -111,18 +111,18 @@ class SessionService
         if ($staffId && $startTimeStr && $endTimeStr) {
             $startTime = Carbon::parse($startTimeStr);
             $endTime = Carbon::parse($endTimeStr);
-            
+
             // Check availability (Note: This might conflict with itself if not handled in the service, 
             // but the service currently checks overlap. For a real update, we'd need to exclude the current session ID in the service.
             // For now, we will assume updating works or we wrap it in a try-catch for same session).
             // Actually, we should probably add an $excludeSessionId to the service, but since it's an MVP, we can keep the basic check.
-            
+
             $query = SportSession::where('staff_id', $staffId)
                 ->where('id', '!=', $id)
                 ->where('status', 'scheduled')
                 ->where(function ($q) use ($startTime, $endTime) {
                     $q->where('start_time', '<', $endTime)
-                      ->where('end_time', '>', $startTime);
+                        ->where('end_time', '>', $startTime);
                 });
 
             if ($query->exists()) {
@@ -163,10 +163,23 @@ class SessionService
     }
 
     /**
-     * Delete a session.
+     * Delete a session only if it has no bookings.
+     *
+     * @throws \Modules\Core\Exceptions\CannotDeleteException
      */
     public function deleteSession(int $id)
     {
+        $session = $this->sessionRepository->find($id);
+
+        $bookingsCount = $session->bookings()->count();
+
+        if ($bookingsCount > 0) {
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف الجلسة لأنه يوجد {$bookingsCount} " . ($bookingsCount === 1 ? 'حجز' : 'حجوزات') . " مرتبطة بها. يمكنك تغيير حالة الجلسة (مثلاً إلى cancelled) بدلاً من الحذف.",
+                ['bookings_count' => $bookingsCount]
+            );
+        }
+
         return $this->sessionRepository->delete($id);
     }
 
@@ -276,11 +289,11 @@ class SessionService
             ->where('sports_sessions.status', 'scheduled')
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->whereBetween('sports_sessions.start_time', [$startTime, $endTime])
-                  ->orWhereBetween('sports_sessions.end_time', [$startTime, $endTime])
-                  ->orWhere(function ($sub) use ($startTime, $endTime) {
-                      $sub->where('sports_sessions.start_time', '<=', $startTime)
-                          ->where('sports_sessions.end_time', '>=', $endTime);
-                  });
+                    ->orWhereBetween('sports_sessions.end_time', [$startTime, $endTime])
+                    ->orWhere(function ($sub) use ($startTime, $endTime) {
+                        $sub->where('sports_sessions.start_time', '<=', $startTime)
+                            ->where('sports_sessions.end_time', '>=', $endTime);
+                    });
             })
             ->exists();
 

@@ -245,9 +245,40 @@ class MemberService
         });
     }
 
-    public function deleteMember(int $id)
+    public function deleteMember(int $id): void
     {
-        return $this->repository->delete($id);
+        $member = $this->repository->find($id);
+
+        // Check for financial records
+        $invoicesCount = \Modules\SubscriptionManager\Models\Invoice::where('member_id', $id)->count();
+
+        // Check for attendance records (polymorphic: attendable_type = Member class)
+        $attendanceCount = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
+            ->where('attendable_id', $id)
+            ->count();
+
+        $blocked = [];
+
+        if ($invoicesCount > 0) {
+            $blocked[] = "يوجد {$invoicesCount} " . ($invoicesCount === 1 ? 'فاتورة' : 'فواتير') . " مالية مرتبطة بهذا العضو";
+        }
+        if ($attendanceCount > 0) {
+            $blocked[] = "يوجد {$attendanceCount} " . ($attendanceCount === 1 ? 'سجل حضور' : 'سجلات حضور') . " مرتبطة بهذا العضو";
+        }
+
+        if (!empty($blocked)) {
+            $reasons = implode('، و', $blocked);
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف هذا العضو لأن: {$reasons}. يمكنك تغيير حالة العضو إلى 'غير نشط' بدلاً من الحذف.",
+                [
+                    'invoices_count'   => $invoicesCount,
+                    'attendance_count' => $attendanceCount,
+                ]
+            );
+        }
+
+        // Safe to delete — cascade will clean up non-financial child records
+        $this->repository->delete($id);
     }
 
     public function getMeasurements(int $memberId)

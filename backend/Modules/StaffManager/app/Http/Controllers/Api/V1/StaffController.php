@@ -319,7 +319,7 @@ class StaffController extends BaseController
     #[OA\Delete(
         path: '/v1/staff/{staff}',
         summary: '🗑️ حذف موظف',
-        description: 'حذف موظف (Soft Delete) من النظام.',
+        description: 'حذف موظف من النظام. لا يمكن حذفه إذا كان مرتبطاً ببيانات مالية، حضور، أو أنشطة.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -335,11 +335,12 @@ class StaffController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 409, description: '🚫 لا يمكن الحذف — الموظف مرتبط ببيانات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف الموظف.')]))]
     #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
-        $this->staffRepository->delete($id);
+        $this->staffService->deleteStaff($id);
         return $this->successResponse(null, __('Staff deleted successfully'));
     }
 }

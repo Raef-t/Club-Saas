@@ -190,7 +190,7 @@ class OfferController extends BaseController
     public function show(int $id)
     {
         $offer = $this->offerService->getOfferById($id);
-        
+
         return $this->successResponse(
             new OfferResource($offer),
             __('Offer retrieved successfully')
@@ -256,39 +256,42 @@ class OfferController extends BaseController
     }
 
     #[OA\Delete(
-        path: '/v1/offers/{id}',
+        path: '/v1/offers/{offer}',
         summary: '🗑️ حذف العرض',
-        description: 'حذف العرض (Soft Delete).',
+        description: 'حذف العرض من النظام. لا يمكن حذفه إذا كان هناك أعضاء اشتركوا من خلاله.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(
-        name: 'id',
-        in: 'path',
-        required: true,
-        description: 'معرف العرض',
-        schema: new OA\Schema(type: 'integer')
-    )]
+    #[OA\Parameter(name: 'offer', in: 'path', required: true, description: 'معرف العرض', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: 'Offer deleted successfully',
+        description: '✅ تم حذف العرض بنجاح',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Offer deleted successfully'),
-                new OA\Property(property: 'data', type: 'string', nullable: true, example: null)
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
             ]
         )
     )]
-    #[OA\Response(response: 404, description: 'Offer not found')]
+    #[OA\Response(response: 409, description: '🚫 لا يمكن الحذف — العرض مرتبط باشتراكات', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف العرض.')]))]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على العرض', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id)
     {
-        $this->offerService->deleteOffer($id);
+        $offer = \Modules\SubscriptionManager\Models\Offer::findOrFail($id);
 
-        return $this->successResponse(
-            null,
-            __('Offer deleted successfully')
-        );
+        $subscriptionsCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('offer_id', $id)->count();
+
+        if ($subscriptionsCount > 0) {
+            return $this->errorResponse(
+                "لا يمكن حذف هذا العرض لوجود {$subscriptionsCount} " . ($subscriptionsCount === 1 ? 'اشتراك مرتبط' : 'اشتراكات مرتبطة') . " به. يمكنك تعطيل العرض بدلاً من حذفه.",
+                409
+            );
+        }
+
+        $offer->delete();
+        return $this->successResponse(null, __('Offer deleted successfully'));
     }
 
     #[OA\Post(
@@ -339,7 +342,7 @@ class OfferController extends BaseController
     public function subscribe(SubscribeOfferRequest $request, int $id)
     {
         $data = $request->validated();
-        
+
         try {
             $invoicesAndSubscriptions = $this->subscriptionService->subscribeMemberToOffer(
                 $data['member_id'],

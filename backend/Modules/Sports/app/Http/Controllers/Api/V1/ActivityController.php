@@ -226,7 +226,7 @@ class ActivityController extends BaseController
     #[OA\Delete(
         path: '/v1/activities/{activity}',
         summary: '🗑️ حذف النشاط',
-        description: 'إزالة نشاط رياضي من النظام.',
+        description: 'إزالة نشاط رياضي من النظام. لا يمكن حذف النشاط إذا كان مرتبطاً بخطة اشتراك أو مدرب.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
@@ -242,11 +242,44 @@ class ActivityController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 409, description: '🚫 لا يمكن الحذف — النشاط مرتبط ببيانات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا النشاط.')]))]
     #[OA\Response(response: 404, description: '🚫 النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id)
     {
         $activity = Activity::findOrFail($id);
+
+        // Check if activity is linked to any subscription plan (via staff_activities → plan_activities)
+        $planActivitiesCount = \Modules\Sports\Models\StaffActivity::where('activity_id', $id)
+            ->whereHas('planActivities')
+            ->count();
+
+        // Check if activity is linked to any staff (coach assignment)
+        $staffActivitiesCount = \Modules\Sports\Models\StaffActivity::where('activity_id', $id)->count();
+
+        // Check if activity is linked to any player subscription items
+        $subscriptionItemsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)->count();
+
+        $blocked = [];
+
+        if ($planActivitiesCount > 0) {
+            $blocked[] = "مرتبط بـ {$planActivitiesCount} " . ($planActivitiesCount === 1 ? 'خطة اشتراك' : 'خطط اشتراك');
+        }
+        if ($staffActivitiesCount > 0) {
+            $blocked[] = "مرتبط بـ {$staffActivitiesCount} " . ($staffActivitiesCount === 1 ? 'مدرب' : 'مدربين');
+        }
+        if ($subscriptionItemsCount > 0) {
+            $blocked[] = "مرتبط بـ {$subscriptionItemsCount} " . ($subscriptionItemsCount === 1 ? 'اشتراك عضو' : 'اشتراكات أعضاء');
+        }
+
+        if (!empty($blocked)) {
+            $reasons = implode('، و', $blocked);
+            return $this->errorResponse(
+                "لا يمكن حذف هذا النشاط لأنه {$reasons}. يمكنك تعطيل النشاط (is_active = false) بدلاً من حذفه.",
+                409
+            );
+        }
+
         $activity->delete();
         return $this->successResponse(null, __('Activity deleted successfully'));
     }
