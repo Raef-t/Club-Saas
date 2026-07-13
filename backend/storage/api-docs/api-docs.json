@@ -12128,7 +12128,7 @@
                     "Sports & Activities"
                 ],
                 "summary": "🗑️ حذف النشاط",
-                "description": "إزالة نشاط رياضي من النظام.",
+                "description": "إزالة نشاط رياضي من النظام. لا يمكن حذف النشاط إذا كان مرتبطاً بخطة اشتراك أو مدرب.",
                 "operationId": "fdf7d0704d687d2700dc5ef6a6eb5d9d",
                 "parameters": [
                     {
@@ -12161,6 +12161,26 @@
                                             "type": "object",
                                             "example": null,
                                             "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — النشاط مرتبط ببيانات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف هذا النشاط."
                                         }
                                     },
                                     "type": "object"
@@ -18000,7 +18020,7 @@
                     "Staff Management"
                 ],
                 "summary": "🗑️ حذف موظف",
-                "description": "حذف موظف (Soft Delete) من النظام.",
+                "description": "حذف موظف من النظام. لا يمكن حذفه إذا كان مرتبطاً ببيانات مالية، حضور، أو أنشطة.",
                 "operationId": "29e68e331d2e6548b81ee1f38a226345",
                 "parameters": [
                     {
@@ -18033,6 +18053,26 @@
                                             "type": "object",
                                             "example": null,
                                             "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — الموظف مرتبط ببيانات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف الموظف."
                                         }
                                     },
                                     "type": "object"
@@ -19337,6 +19377,22 @@
                     "204": {
                         "description": "✅ تم حذف الخدمة بنجاح"
                     },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — الخدمة مرتبطة باشتراكات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف الخدمة."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "🚫 لم يتم العثور على الخدمة",
                         "content": {
@@ -19906,42 +19962,45 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/v1/offers/{offer}": {
             "delete": {
                 "tags": [
                     "Subscription Management"
                 ],
                 "summary": "🗑️ حذف العرض",
-                "description": "حذف العرض (Soft Delete).",
-                "operationId": "ac56b2aeae1339fab5474866ead00329",
+                "description": "حذف العرض من النظام. لا يمكن حذفه إذا كان هناك أعضاء اشتركوا من خلاله.",
+                "operationId": "525625f5119d1143669dd223a9e001b9",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "offer",
                         "in": "path",
                         "description": "معرف العرض",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Offer deleted successfully",
+                        "description": "✅ تم حذف العرض بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
                                         },
                                         "message": {
                                             "type": "string",
                                             "example": "Offer deleted successfully"
                                         },
                                         "data": {
-                                            "type": "string",
+                                            "type": "object",
                                             "example": null,
                                             "nullable": true
                                         }
@@ -19951,8 +20010,61 @@
                             }
                         }
                     },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — العرض مرتبط باشتراكات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف العرض."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "description": "Offer not found"
+                        "description": "🚫 لم يتم العثور على العرض",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -20022,11 +20134,6 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-07-15"
-                                    },
-                                    "coach_id": {
-                                        "description": "معرف المدرب (اختياري)",
-                                        "type": "integer",
-                                        "example": 2
                                     }
                                 },
                                 "type": "object"
