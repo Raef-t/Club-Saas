@@ -18,6 +18,32 @@ import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
+import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+
+function CoachDropdown({ branchId, activityId, value, onChange }) {
+  const { data, isLoading } = useGetCoachesQuery({
+    branch_id: branchId || undefined,
+    activity_id: activityId || undefined,
+  }, {
+    skip: !branchId && !activityId
+  });
+
+  const coaches = useMemo(() => Array.isArray(data?.data) ? data.data : [], [data]);
+
+  return (
+    <Dropdown
+      className="mt-1 text-white"
+      buttonClassName="bg-black/35 h-9"
+      value={String(value || "")}
+      onChange={onChange}
+      options={coaches.map((c) => ({
+        value: String(c.id),
+        label: c.person?.full_name || String(c.id),
+      }))}
+      placeholder={isLoading ? "جاري التحميل..." : "اختر المدرب"}
+    />
+  );
+}
 
 const TABLE_GRID_COLUMNS =
   "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 88px";
@@ -337,20 +363,15 @@ export function PlanForm({
                   </label>
                   <label className="block text-right text-xs text-app-muted-light">
                     المدرب
-                    <Dropdown
-                      className="mt-1 text-white"
-                      buttonClassName="bg-black/35 h-9"
-                      value={String(item.coach_id)}
+                    <CoachDropdown
+                      branchId={form.branch_id}
+                      activityId={item.activity_id}
+                      value={item.coach_id}
                       onChange={(val) => {
                         const newActs = [...form.activities];
                         newActs[idx].coach_id = val;
                         updateField("activities", newActs);
                       }}
-                      options={coaches.map((c) => ({
-                        value: String(c.id),
-                        label: c.person?.full_name || String(c.id),
-                      }))}
-                      placeholder="اختر المدرب"
                     />
                   </label>
                 </div>
@@ -399,7 +420,38 @@ export function PlanForm({
             type="button"
             tone="outline"
             className="h-8 px-3 text-xs"
-            onClick={() => updateField("session_templates", [...(form.session_templates || []), { day_of_week: "0", start_time: "", end_time: "", gender_allowed: "both" }])}
+            onClick={() => {
+              let nextDay = "0";
+              let defaultStartTime = "";
+              let defaultEndTime = "";
+              let defaultGender = "both";
+
+              if (form.session_templates && form.session_templates.length > 0) {
+                const lastTemplate = form.session_templates[form.session_templates.length - 1];
+                
+                const hasAutoSequenceActivity = form.activities?.length > 0 && form.activities.some((item) => {
+                  const act = activities.find((a) => String(a.id) === String(item.activity_id));
+                  if (act) {
+                    const actName = typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "";
+                    const isGeneralOrPrivate = actName.includes("أجهزة عام") || actName.includes("أجهزة خاص") || actName.includes("تدريب عام") || actName.includes("تدريب خاص");
+                    return !isGeneralOrPrivate;
+                  }
+                  return false;
+                });
+
+                if (hasAutoSequenceActivity) {
+                  nextDay = String((parseInt(lastTemplate.day_of_week) + 2) % 7);
+                  defaultStartTime = lastTemplate.start_time || "";
+                  defaultEndTime = lastTemplate.end_time || "";
+                  defaultGender = lastTemplate.gender_allowed || "both";
+                }
+              }
+
+              updateField("session_templates", [
+                ...(form.session_templates || []), 
+                { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime, gender_allowed: defaultGender }
+              ]);
+            }}
           >
             <PlusIcon className="size-3 ml-1" />
             إضافة وقت

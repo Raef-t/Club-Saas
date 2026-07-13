@@ -16,6 +16,7 @@ const navGroups = [
       { title: "المشتركين", href: "/management/members" },
       { title: "الاشتراكات", href: "/management/subscriptions" },
       { title: "الحضور والغياب", href: "/management/attendance" },
+      { title: "جدول الدوام", href: "/management/schedule" },
     ],
   },
   {

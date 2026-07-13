@@ -113,7 +113,7 @@ export default function SettingsClient() {
   const [drawerMode, setDrawerMode] = useState("create"); // "create" or "edit"
   const [editingShift, setEditingShift] = useState(null);
 
-  const [shiftDay, setShiftDay] = useState("0");
+  const [shiftName, setShiftName] = useState("");
   const [shiftStartTime, setShiftStartTime] = useState("");
   const [shiftEndTime, setShiftEndTime] = useState("");
   const [shiftGender, setShiftGender] = useState("mixed");
@@ -121,12 +121,7 @@ export default function SettingsClient() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingShiftId, setDeletingShiftId] = useState(null);
 
-  const [filterDay, setFilterDay] = useState("all");
-
-  const filteredShifts = useMemo(() => {
-    if (filterDay === "all") return shifts;
-    return shifts.filter((s) => s.day_of_week.toString() === filterDay);
-  }, [shifts, filterDay]);
+  const filteredShifts = shifts;
 
   const handlePrint = () => {
     const activeBranch = branches.find((b) => b.id.toString() === selectedBranchId);
@@ -138,7 +133,7 @@ export default function SettingsClient() {
       .map(
         (s) => `
       <tr>
-        <td>${DAYS_MAP[s.day_of_week] || s.day_of_week}</td>
+        <td>${s.name || "-"}</td>
         <td>${formatTime(s.start_time)}</td>
         <td>${formatTime(s.end_time)}</td>
         <td>${GENDER_MAP[s.gender_allowed] || s.gender_allowed}</td>
@@ -262,7 +257,7 @@ export default function SettingsClient() {
         <table>
           <thead>
             <tr>
-              <th>اليوم</th>
+              <th>اسم الوردية</th>
               <th>وقت البدء</th>
               <th>وقت الانتهاء</th>
               <th>الفئة المسموح بها</th>
@@ -486,7 +481,7 @@ export default function SettingsClient() {
   // Shifts Actions handlers
   const handleOpenAddDrawer = () => {
     setDrawerMode("create");
-    setShiftDay("0");
+    setShiftName("");
     setShiftStartTime("08:00");
     setShiftEndTime("16:00");
     setShiftGender("mixed");
@@ -497,7 +492,7 @@ export default function SettingsClient() {
   const handleOpenEditDrawer = (shift) => {
     setDrawerMode("edit");
     setEditingShift(shift);
-    setShiftDay(shift.day_of_week.toString());
+    setShiftName(shift.name || "");
     setShiftStartTime(shift.start_time ? shift.start_time.slice(0, 5) : "");
     setShiftEndTime(shift.end_time ? shift.end_time.slice(0, 5) : "");
     setShiftGender(shift.gender_allowed || "mixed");
@@ -518,7 +513,8 @@ export default function SettingsClient() {
 
     try {
       const body = {
-        day_of_week: parseInt(shiftDay),
+        name: shiftName,
+        day_of_week: 0,
         start_time: formatTimeForApi(shiftStartTime),
         end_time: formatTimeForApi(shiftEndTime),
         gender_allowed: shiftGender,
@@ -827,26 +823,6 @@ export default function SettingsClient() {
                   </div>
                   {selectedBranchId && (
                     <div className="flex flex-wrap items-center gap-3">
-                      {/* Filter Dropdown */}
-                      <div className="w-36">
-                        <Dropdown
-                          options={[
-                            { value: "all", label: "كل الأيام" },
-                            { value: "0", label: "الأحد" },
-                            { value: "1", label: "الاثنين" },
-                            { value: "2", label: "الثلاثاء" },
-                            { value: "3", label: "الأربعاء" },
-                            { value: "4", label: "الخميس" },
-                            { value: "5", label: "الجمعة" },
-                            { value: "6", label: "السبت" },
-                          ]}
-                          value={filterDay}
-                          onChange={(val) => setFilterDay(val)}
-                          placeholder="تصفية حسب اليوم"
-                          buttonClassName="h-10 text-xs"
-                        />
-                      </div>
-
                       {/* Print Button */}
                       <Button
                         type="button"
@@ -909,11 +885,11 @@ export default function SettingsClient() {
                   <DataTable
                     columns={[
                       {
-                        key: "day_of_week",
-                        label: "اليوم",
-                        align: "center",
-                        width: "120px",
-                        render: (val) => DAYS_MAP[val] ?? val,
+                        key: "name",
+                        label: "اسم الوردية",
+                        align: "right",
+                        width: "150px",
+                        render: (val) => val || "-",
                       },
                       {
                         key: "start_time",
@@ -1124,27 +1100,16 @@ export default function SettingsClient() {
         }
       >
         <div className="space-y-4">
-          <label className="block text-right">
-            <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
-              <TagIcon className="size-4 shrink-0 text-app-yellow" />
-              <span>اليوم</span>
-            </span>
-            <Dropdown
-              options={[
-                { value: "0", label: "الأحد" },
-                { value: "1", label: "الاثنين" },
-                { value: "2", label: "الثلاثاء" },
-                { value: "3", label: "الأربعاء" },
-                { value: "4", label: "الخميس" },
-                { value: "5", label: "الجمعة" },
-                { value: "6", label: "السبت" },
-              ]}
-              value={shiftDay}
-              onChange={(val) => setShiftDay(val)}
-              placeholder="اختر اليوم"
-              buttonClassName="h-[46px]"
-            />
-          </label>
+          <Field
+            label="اسم الوردية"
+            type="text"
+            required={false}
+            value={shiftName}
+            onChange={(e) => setShiftName(e.target.value)}
+            placeholder="مثال: وردية الصباح"
+          />
+
+
 
           <Field
             label="وقت البدء"

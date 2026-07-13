@@ -143,6 +143,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
           paid_amount: plan.paid_amount,
           start_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
           payment_method: "cash",
+          activities: [],
         };
 
         console.log("Creating subscription with payload:", subscriptionPayload);

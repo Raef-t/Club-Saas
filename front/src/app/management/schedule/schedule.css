@@ -1,0 +1,291 @@
+/* ─── Schedule Table ─── */
+
+.schedule-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-yellow) transparent;
+}
+
+.schedule-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: separate;
+  border-spacing: 0;
+  direction: rtl;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--app-line);
+}
+
+.schedule-table caption {
+  caption-side: top;
+  text-align: center;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--app-text);
+  background: var(--app-card);
+  border: 1px solid var(--app-line);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  letter-spacing: 0.5px;
+}
+
+.schedule-table th,
+.schedule-table td {
+  padding: 10px 6px;
+  text-align: center;
+  font-size: 13px;
+  border: 1px solid var(--app-line);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.schedule-table th {
+  background: var(--app-card-soft);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--app-muted);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Day column (first column - right side in RTL) */
+.schedule-table .day-cell {
+  background: var(--app-card-soft);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--app-text);
+  min-width: 90px;
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  border-left: 2px solid var(--app-line);
+}
+
+/* Alternating row colors like the paper schedule */
+.schedule-table tbody tr:nth-child(odd) {
+  background: var(--app-card);
+}
+
+.schedule-table tbody tr:nth-child(even) {
+  background: var(--app-yellow-soft);
+}
+
+.schedule-table tbody tr:nth-child(even) .day-cell {
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.schedule-table tbody tr:nth-child(odd) .day-cell {
+  background: var(--app-card-soft);
+}
+
+/* Editable cells */
+.schedule-cell {
+  cursor: pointer;
+  min-width: 100px;
+  min-height: 44px;
+  position: relative;
+}
+
+.schedule-cell:hover {
+  background: var(--app-yellow-soft) !important;
+  box-shadow: inset 0 0 0 2px var(--app-yellow);
+}
+
+.schedule-cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  font-size: 12px;
+  color: var(--app-text);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.schedule-cell-empty {
+  color: var(--app-muted-light);
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 18px;
+}
+
+.schedule-cell:hover .schedule-cell-empty {
+  opacity: 0.6;
+}
+
+/* Cell edit input */
+.schedule-cell-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-text);
+  padding: 4px 2px;
+  resize: none;
+  overflow: hidden;
+  min-height: 32px;
+}
+
+.schedule-cell-input::placeholder {
+  color: var(--app-muted-light);
+}
+
+/* ─── Settings Panel ─── */
+
+.schedule-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .schedule-settings {
+    grid-template-columns: 1fr;
+  }
+}
+
+.schedule-period-config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--app-card-soft);
+  border: 1px solid var(--app-line);
+}
+
+.schedule-period-config h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--app-yellow);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-period-config h3 .period-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--app-yellow);
+  display: inline-block;
+}
+
+.schedule-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.schedule-time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedule-time-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--app-muted);
+  margin: 0;
+}
+
+.schedule-time-field input[type="time"],
+.schedule-time-field select {
+  height: 38px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-panel);
+  color: var(--app-text);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  direction: ltr;
+  text-align: center;
+}
+
+.schedule-time-field input[type="time"]:focus,
+.schedule-time-field select:focus {
+  border-color: var(--app-yellow);
+  box-shadow: 0 0 0 3px var(--app-yellow-soft);
+}
+
+/* ─── Duration selector ─── */
+.schedule-duration-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-duration-row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-muted);
+  white-space: nowrap;
+}
+
+.schedule-duration-row select {
+  height: 36px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-panel);
+  color: var(--app-text);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+
+.schedule-duration-row select:focus {
+  border-color: var(--app-yellow);
+  box-shadow: 0 0 0 3px var(--app-yellow-soft);
+}
+
+/* ─── Animations ─── */
+@keyframes schedule-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schedule-table-enter {
+  animation: schedule-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Print Styles ─── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .schedule-print-area,
+  .schedule-print-area * {
+    visibility: visible;
+  }
+  .schedule-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .schedule-no-print {
+    display: none !important;
+  }
+}
