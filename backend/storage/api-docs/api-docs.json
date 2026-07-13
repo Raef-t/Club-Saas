@@ -8002,6 +8002,19 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية الخزائن حسب الحالة (متاحة أو مشغولة)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "available",
+                                "occupied"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -8320,7 +8333,7 @@
                     "Locker Management"
                 ],
                 "summary": "📥 حجز خزانة / إسناد مجاني",
-                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type`.",
+                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `guest`).",
                 "operationId": "65e120e9e683833ce3738608a90b4ab7",
                 "parameters": [
                     {
@@ -8337,39 +8350,30 @@
                     "required": true,
                     "content": {
                         "application/json": {
-                            "schema": {
-                                "required": [
-                                    "reservation_type",
-                                    "holder_type"
-                                ],
-                                "properties": {
-                                    "reservation_type": {
-                                        "type": "string",
-                                        "example": "rental",
-                                        "enum": [
-                                            "rental",
-                                            "assign"
-                                        ]
-                                    },
-                                    "holder_type": {
-                                        "type": "string",
-                                        "example": "member",
-                                        "enum": [
-                                            "member",
-                                            "staff",
-                                            "guest"
-                                        ]
-                                    },
-                                    "holder_id": {
-                                        "type": "integer",
-                                        "example": 120
-                                    },
-                                    "holder_name": {
-                                        "type": "string",
-                                        "example": "أحمد"
+                            "schema": {},
+                            "examples": {
+                                "rental": {
+                                    "summary": "حالة التأجير (Rental)",
+                                    "description": "تتطلب تحديد السعر وتاريخ البداية والنهاية، ويجب أن يكون المستلم عضواً (member).",
+                                    "value": {
+                                        "reservation_type": "rental",
+                                        "holder_type": "member",
+                                        "holder_id": 120,
+                                        "price": 30000,
+                                        "start_date": "2026-07-13",
+                                        "end_date": "2026-08-13"
                                     }
                                 },
-                                "type": "object"
+                                "assign": {
+                                    "summary": "حالة التخصيص (Assign)",
+                                    "description": "تخصيص الخزانة بدون مقابل مادي. لا تتطلب سعر أو تواريخ، ويمكن إسنادها لأي نوع.",
+                                    "value": {
+                                        "reservation_type": "assign",
+                                        "holder_type": "staff",
+                                        "holder_id": 5,
+                                        "holder_name": "أحمد الموظف"
+                                    }
+                                }
                             }
                         }
                     }
