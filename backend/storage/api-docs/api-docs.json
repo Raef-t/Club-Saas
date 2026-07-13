@@ -5200,6 +5200,26 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -6791,6 +6811,26 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -7522,6 +7562,26 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -8225,6 +8285,26 @@
                     },
                     "401": {
                         "description": "❌ غير مصرح"
+                    },
+                    "409": {
+                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

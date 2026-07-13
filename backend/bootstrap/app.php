@@ -51,4 +51,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 409);
             }
         });
+
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
+            if ($e->getCode() == "23000" && ($request->isMethod('delete') || str_contains($e->getMessage(), 'foreign key constraint'))) {
+                if ($request->is('api/*') || $request->expectsJson()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'لا يمكن حذف السجل لارتباطه بسجلات أخرى في النظام.'
+                    ], 409);
+                }
+            }
+        });
     })->create();
