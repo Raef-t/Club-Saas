@@ -109,11 +109,16 @@ class SubscriptionService
 
 
             // 2. Dates Calculation
-            $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
-            $endDate = null;
+            $startDate = Carbon::parse($options['start_date']);
+            $endDate = Carbon::parse($options['end_date']);
 
             if ($plan->type === 'fixed_period' && $plan->duration_days) {
-                $endDate = $startDate->copy()->addDays($plan->duration_days);
+                $expectedEndDate = $startDate->copy()->addDays($plan->duration_days);
+                // Allow some minor flexibility or strict match based on requirements.
+                // Strict match for now as requested.
+                if ($endDate->toDateString() !== $expectedEndDate->toDateString()) {
+                    throw new Exception(__('End date must be exactly :date according to the plan duration.', ['date' => $expectedEndDate->toDateString()]));
+                }
             }
 
             // 3. Financials
@@ -143,7 +148,7 @@ class SubscriptionService
             // 4. Create Subscription
             $subscription = $this->subscriptionRepository->create([
                 'member_id' => $memberId,
-                'coach_id' => $options['coach_id'] ?? null,
+                'coach_id' => null,
                 'plan_id' => $plan->id,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
@@ -227,36 +232,7 @@ class SubscriptionService
                 event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
 
-            // 8. Create Extra Services (including Lockers)
-            if (!empty($options['extra_services']) && is_array($options['extra_services'])) {
-                foreach ($options['extra_services'] as $serviceData) {
-                    $priceCharged = $serviceData['price_charged'] ?? 0;
-                    $lockerId = $serviceData['locker_id'] ?? null;
 
-                    if ($lockerId) {
-                        $locker = \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->first();
-                        if (!$locker) {
-                            throw new Exception(__('Selected locker not found.'));
-                        }
-                        if ($locker->status !== 'available') {
-                            throw new Exception(__('Locker :number is already rented.', ['number' => $locker->locker_number]));
-                        }
-
-                        \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->update([
-                            'status' => 'rented',
-                            'updated_at' => now(),
-                        ]);
-                    }
-
-                    $subscription->services()->create([
-                        'extra_service_id' => $serviceData['extra_service_id'],
-                        'price_charged' => $priceCharged,
-                        'start_date' => $startDate->toDateString(),
-                        'end_date' => $endDate ? $endDate->toDateString() : null,
-                        'locker_id' => $lockerId,
-                    ]);
-                }
-            }
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -446,20 +422,7 @@ class SubscriptionService
                     : __('Cancellation reason: ') . $reason,
             ]);
 
-            // Release any rented lockers tied to this subscription
-            $rentedLockerIds = $subscription->services()
-                ->whereNotNull('locker_id')
-                ->pluck('locker_id')
-                ->toArray();
 
-            if (!empty($rentedLockerIds)) {
-                \Illuminate\Support\Facades\DB::table('lockers')
-                    ->whereIn('id', $rentedLockerIds)
-                    ->update([
-                        'status' => 'available',
-                        'updated_at' => now(),
-                    ]);
-            }
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 

@@ -4,6 +4,10 @@ namespace Modules\ClubManager\Services;
 
 use Modules\ClubManager\Repositories\LockerRepositoryInterface;
 use Modules\ClubManager\Domain\Rules\LockerUniquenessRule;
+use Modules\ClubManager\Models\BranchSetting;
+use Illuminate\Support\Facades\DB;
+use Exception;
+use Carbon\Carbon;
 
 class LockerService
 {
@@ -20,14 +24,46 @@ class LockerService
 
     public function getAllLockers(array $filters = [])
     {
-        return $this->repository->all($filters);
+        // Instead of just relying on the repository's all(), we want to fetch the active reservation details
+        $query = DB::table('lockers')
+            ->leftJoin('locker_reservations', function($join) {
+                $join->on('lockers.id', '=', 'locker_reservations.locker_id')
+                     ->where('locker_reservations.status', '=', 'active');
+            })
+            ->select(
+                'lockers.id',
+                'lockers.locker_number',
+                'lockers.status',
+                'lockers.branch_id',
+                'locker_reservations.id as active_reservation_id',
+                'locker_reservations.member_id as holder_member_id',
+                'locker_reservations.staff_id as holder_staff_id',
+                'locker_reservations.start_date',
+                'locker_reservations.end_date',
+                'locker_reservations.price'
+            )
+            ->orderBy('lockers.locker_number');
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('lockers.branch_id', $filters['branch_id']);
+        }
+
+        if (!empty($filters['status'])) {
+            if ($filters['status'] === 'available') {
+                $query->where('lockers.status', 'available');
+            } elseif ($filters['status'] === 'occupied') {
+                $query->where('lockers.status', '!=', 'available');
+            } else {
+                $query->where('lockers.status', $filters['status']);
+            }
+        }
+
+        return $query->get();
     }
 
     public function createLocker(array $data)
     {
-        // Execute Domain Business Rule
         $this->uniquenessRule->validate($data['branch_id'], $data['locker_number']);
-
         return $this->repository->create($data);
     }
 
@@ -46,5 +82,124 @@ class LockerService
         return $this->repository->delete($id);
     }
 
+    // --- New Unified API Methods ---
 
+    public function reserveLocker(int $lockerId, array $data)
+    {
+        return DB::transaction(function () use ($lockerId, $data) {
+            $locker = $this->getLockerById($lockerId);
+
+            if ($locker->status !== 'available') {
+                throw new Exception(__('Locker is already occupied.'));
+            }
+
+            $reservationType = $data['reservation_type']; // 'rental' or 'assign'
+            
+            $price = 0;
+            $endDate = null;
+            $invoiceId = null;
+
+            if ($reservationType === 'rental') {
+                // Must be member
+                if (($data['holder_type'] ?? '') !== 'member' || empty($data['holder_id'])) {
+                    throw new Exception(__('Rentals are only available for members.'));
+                }
+
+                $branchSetting = BranchSetting::where('branch_id', $locker->branch_id)->first();
+                $price = $branchSetting ? $branchSetting->locker_price : 30000;
+                $endDate = now()->addMonth();
+
+                // Create Invoice
+                $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
+                    'member_id' => $data['holder_id'],
+                    'branch_id' => $locker->branch_id,
+                    'total' => $price,
+                    'status' => 'unpaid',
+                ]);
+                $invoiceId = $invoice->id;
+            }
+
+            // Create reservation
+            $reservationId = DB::table('locker_reservations')->insertGetId([
+                'locker_id' => $lockerId,
+                'member_id' => ($data['holder_type'] ?? '') === 'member' ? $data['holder_id'] : null,
+                'staff_id' => ($data['holder_type'] ?? '') === 'staff' ? $data['holder_id'] : null,
+                'invoice_id' => $invoiceId,
+                'start_date' => now(),
+                'end_date' => $endDate,
+                'price' => $price,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Update locker status
+            $statusMap = [
+                'member' => 'with_member',
+                'staff' => 'with_staff',
+                'guest' => 'with_guest',
+            ];
+            $newStatus = $statusMap[$data['holder_type'] ?? 'member'] ?? 'with_member';
+
+            $this->repository->update($lockerId, ['status' => $newStatus]);
+
+            return DB::table('locker_reservations')->where('id', $reservationId)->first();
+        });
+    }
+
+    public function releaseLocker(int $lockerId)
+    {
+        return DB::transaction(function () use ($lockerId) {
+            $locker = $this->getLockerById($lockerId);
+
+            if ($locker->status === 'available') {
+                throw new Exception(__('Locker is already available.'));
+            }
+
+            // End active reservation
+            DB::table('locker_reservations')
+                ->where('locker_id', $lockerId)
+                ->where('status', 'active')
+                ->update([
+                    'status' => 'expired',
+                    'end_date' => DB::raw('COALESCE(end_date, NOW())'),
+                    'updated_at' => now(),
+                ]);
+
+            $this->repository->update($lockerId, ['status' => 'available']);
+
+            return true;
+        });
+    }
+
+    public function transferReservationHolder(int $reservationId, array $data)
+    {
+        return DB::transaction(function () use ($reservationId, $data) {
+            $reservation = DB::table('locker_reservations')->where('id', $reservationId)->first();
+            
+            if (!$reservation || $reservation->status !== 'active') {
+                throw new Exception(__('Active reservation not found.'));
+            }
+
+            $holderType = $data['holder_type'];
+            
+            DB::table('locker_reservations')->where('id', $reservationId)->update([
+                'member_id' => $holderType === 'member' ? $data['holder_id'] : null,
+                'staff_id' => $holderType === 'staff' ? $data['holder_id'] : null,
+                'updated_at' => now(),
+            ]);
+
+            // Update locker status
+            $statusMap = [
+                'member' => 'with_member',
+                'staff' => 'with_staff',
+                'guest' => 'with_guest',
+            ];
+            $newStatus = $statusMap[$holderType] ?? 'with_member';
+
+            $this->repository->update($reservation->locker_id, ['status' => $newStatus]);
+
+            return DB::table('locker_reservations')->where('id', $reservationId)->first();
+        });
+    }
 }
