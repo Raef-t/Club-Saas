@@ -3,6 +3,7 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\StaffManager\Models\Staff;
 
 class LockerReservation extends Model
 {
@@ -32,6 +33,6 @@ class LockerReservation extends Model
     // Assuming staff relation
     public function staff()
     {
-        return $this->belongsTo(\Modules\ClubManager\Models\Staff::class);
+        return $this->belongsTo(Staff::class);
     }
 }

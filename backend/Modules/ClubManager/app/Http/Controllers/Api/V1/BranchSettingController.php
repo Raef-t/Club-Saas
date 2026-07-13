@@ -60,6 +60,7 @@ class BranchSettingController extends BaseController
                 new OA\Property(property: 'default_coach_commission_percentage', type: 'number', format: 'float', example: 60.00),
                 new OA\Property(property: 'default_employee_salary', type: 'number', format: 'float', example: 30000.00),
                 new OA\Property(property: 'daily_entry_price', type: 'number', format: 'float', example: 50.00),
+                new OA\Property(property: 'locker_price', type: 'number', format: 'float', example: 100.00),
                 new OA\Property(property: 'working_hours_start', type: 'string', format: 'time', nullable: true, example: null),
                 new OA\Property(property: 'working_hours_end', type: 'string', format: 'time', nullable: true, example: null)
             ]

@@ -20,6 +20,7 @@ class UpdateBranchSettingRequest extends FormRequest
             'default_coach_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'default_employee_salary' => 'nullable|numeric|min:0',
             'daily_entry_price' => 'nullable|numeric|min:0',
+            'locker_price' => 'nullable|numeric|min:0',
         ];
     }
 }
