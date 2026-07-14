@@ -3036,195 +3036,6 @@
                 ]
             }
         },
-        "/v1/qr/generate": {
-            "post": {
-                "tags": [
-                    "Attendance"
-                ],
-                "summary": "توليد رمز QR الخاص بالعضو",
-                "description": "توليد رمز QR فريد وصالح لمدة قصيرة (30 ثانية) ليستخدمه العضو في تسجيل الدخول عبر البوابة.",
-                "operationId": "cc10198d822265acccf4765a9a75163f",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم توليد الرمز بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "QR code generated successfully."
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "qr_token": {
-                                                    "type": "string",
-                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                                                },
-                                                "expires_in_seconds": {
-                                                    "type": "integer",
-                                                    "example": 30
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 غير مصرح أو نوع المستخدم غير صالح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized or invalid user type."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/qr/screen": {
-            "get": {
-                "tags": [
-                    "Attendance"
-                ],
-                "summary": "📱 عرض شاشة الـ QR",
-                "description": "استرجاع البيانات اللازمة لعرض شاشة مسح QR في تطبيق العضو (الاسم، الباقة، الصورة، رمز الـ QR، الرصيد، حالة الدخول).",
-                "operationId": "b82d89c8de1de29f18a6fa7b3c7be999",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع البيانات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "QR data retrieved successfully."
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "member_name": {
-                                                    "type": "string",
-                                                    "example": "أحمد محمود"
-                                                },
-                                                "plan_name": {
-                                                    "type": "string",
-                                                    "example": "باقة شهرية"
-                                                },
-                                                "avatar_url": {
-                                                    "type": "string",
-                                                    "example": "https://example.com/avatar.jpg",
-                                                    "nullable": true
-                                                },
-                                                "qr_code_value": {
-                                                    "type": "string",
-                                                    "example": "eyJ0eXAi..."
-                                                },
-                                                "expires_in_seconds": {
-                                                    "type": "integer",
-                                                    "example": 30
-                                                },
-                                                "is_inside_facility": {
-                                                    "type": "boolean",
-                                                    "example": false
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الملف الشخصي للعضو غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/qr/check-in": {
             "post": {
                 "tags": [
@@ -3239,11 +3050,11 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "qr_token",
+                                    "qr_code",
                                     "branch_id"
                                 ],
                                 "properties": {
-                                    "qr_token": {
+                                    "qr_code": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
                                     },
@@ -3380,11 +3191,11 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "qr_token",
+                                    "qr_code",
                                     "branch_id"
                                 ],
                                 "properties": {
-                                    "qr_token": {
+                                    "qr_code": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
                                     },
@@ -3598,6 +3409,44 @@
                     },
                     "400": {
                         "description": "❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/reception/attendances/{attendanceId}/rollback": {
+            "delete": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "↩️ إلغاء الحضور وإرجاع الجلسة",
+                "description": "يقوم موظف الاستقبال بالتراجع عن تسجيل حضور اللاعب، مما يعيد الجلسة المخصومة لاشتراكه ويمسح سجل الحضور.",
+                "operationId": "51fdf23443c8a41da1becdec63e72a25",
+                "parameters": [
+                    {
+                        "name": "attendanceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إلغاء الحضور بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن إلغاء الحضور"
                     }
                 },
                 "security": [
@@ -5820,6 +5669,11 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 50
+                                    },
+                                    "locker_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     },
                                     "working_hours_start": {
                                         "type": "string",
@@ -12501,922 +12355,6 @@
                 ]
             }
         },
-        "/v1/sessions/{id}/book": {
-            "post": {
-                "tags": [
-                    "Session Bookings"
-                ],
-                "summary": "🎟️ حجز جلسة للعضو",
-                "description": "تسجيل حجز جديد لعضو في جلسة رياضية محددة.",
-                "operationId": "769de141d5677391301b0b310bbd3550",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف الجلسة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "member_id"
-                                ],
-                                "properties": {
-                                    "member_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم الحجز بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Session booked successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 الجلسة أو العضو غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/bookings/{id}/cancel": {
-            "post": {
-                "tags": [
-                    "Session Bookings"
-                ],
-                "summary": "❌ إلغاء حجز الجلسة",
-                "description": "إلغاء حجز جلسة رياضية مسجل مسبقاً لعضو.",
-                "operationId": "cc80bcdf64e8532a21dabb1dffce09d0",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف الحجز",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم إلغاء الحجز بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Booking cancelled successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 الحجز غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/bookings": {
-            "get": {
-                "tags": [
-                    "Session Bookings"
-                ],
-                "summary": "📋 عرض قائمة الحجوزات",
-                "description": "استرجاع جميع حجوزات الجلسات مع إمكانية الفلترة.",
-                "operationId": "09c6870517166ae243347ffcd28fbb2d",
-                "parameters": [
-                    {
-                        "name": "member_id",
-                        "in": "query",
-                        "description": "معرف العضو",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "sports_session_id",
-                        "in": "query",
-                        "description": "معرف الجلسة",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "حالة الحجز (مثال: confirmed, cancelled)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الحجوزات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bookings retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/sessions": {
-            "get": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "📅 عرض الجلسات الرياضية",
-                "description": "استرجاع جميع الجلسات الرياضية المتاحة (كالتدريب الشخصي والحصص الجماعية).",
-                "operationId": "5afe0c13c2d4e65ba002dc0b0ec767dd",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الجلسات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Sessions retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "➕ إنشاء جلسة رياضية",
-                "description": "إضافة جلسة رياضية جديدة للنظام.",
-                "operationId": "f47d6481dd29a7ba8346ca494cb2093c",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "activity_id",
-                                    "facility_id",
-                                    "start_time",
-                                    "end_time",
-                                    "capacity"
-                                ],
-                                "properties": {
-                                    "activity_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "facility_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "start_time": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-11-01 10:00:00"
-                                    },
-                                    "end_time": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-11-01 11:00:00"
-                                    },
-                                    "capacity": {
-                                        "type": "integer",
-                                        "example": 20
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم إنشاء الجلسة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Session created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/sessions/{session}": {
-            "get": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "🔍 تفاصيل الجلسة",
-                "description": "استرجاع كافة تفاصيل جلسة رياضية محددة.",
-                "operationId": "b45c9479bc8198ed44566db73508e339",
-                "parameters": [
-                    {
-                        "name": "session",
-                        "in": "path",
-                        "description": "معرف الجلسة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تفاصيل الجلسة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Session retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 الجلسة غير موجودة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "✏️ تعديل الجلسة",
-                "description": "تحديث بيانات جلسة رياضية مسجلة.",
-                "operationId": "0cc1d5f4870cb679e5cac97205c6a6ce",
-                "parameters": [
-                    {
-                        "name": "session",
-                        "in": "path",
-                        "description": "معرف الجلسة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "capacity": {
-                                        "type": "integer",
-                                        "example": 25
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم التعديل بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Session updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 الجلسة غير موجودة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "🗑️ حذف الجلسة",
-                "description": "إزالة الجلسة الرياضية من النظام.",
-                "operationId": "6c1ed4bf017362e558acf3ac9af44df2",
-                "parameters": [
-                    {
-                        "name": "session",
-                        "in": "path",
-                        "description": "معرف الجلسة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الحذف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Session deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 الجلسة غير موجودة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/sessions/weekly-schedule": {
-            "get": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "📆 الجدول الأسبوعي",
-                "description": "استرجاع الجدول الأسبوعي للجلسات في فرع معين.",
-                "operationId": "a8a47cde78a89f0c1d7717d3829dd814",
-                "parameters": [
-                    {
-                        "name": "branch_id",
-                        "in": "query",
-                        "description": "معرف الفرع",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "start_date",
-                        "in": "query",
-                        "description": "تاريخ بداية الأسبوع",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الجدول بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Weekly schedule retrieved"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/sessions/{session}/complete": {
-            "patch": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "✅ إكمال الجلسة",
-                "description": "تأكيد حضور المدرب وإكمال الجلسة.",
-                "operationId": "c2cb66497d44613e5832e2a7694c556d",
-                "parameters": [
-                    {
-                        "name": "session",
-                        "in": "path",
-                        "description": "معرف الجلسة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم التحديث"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/sessions/my-schedule": {
-            "get": {
-                "tags": [
-                    "Session Management"
-                ],
-                "summary": "📆 جدولي (للاعب)",
-                "description": "استرجاع جلسات الأنشطة التي يشترك بها اللاعب.",
-                "operationId": "9e36a047b63e962d49cad173a4128af0",
-                "parameters": [
-                    {
-                        "name": "member_id",
-                        "in": "query",
-                        "description": "معرف اللاعب",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "تم الاسترجاع"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/session-templates": {
             "get": {
                 "tags": [
@@ -13791,24 +12729,44 @@
                 ]
             }
         },
-        "/v1/session-templates/generate": {
+        "/v1/session-templates/{id}/cancel": {
             "post": {
                 "tags": [
                     "Session Templates"
                 ],
-                "summary": "⚙️ توليد الجلسات",
-                "description": "توليد جلسات فعلية من القوالب النشطة للأسابيع القادمة.",
-                "operationId": "39955eaa7ef24e37ffdb4815767fdd15",
+                "summary": "🚫 إلغاء جلسة",
+                "description": "إلغاء جلسة معينة في تاريخ محدد.",
+                "operationId": "b4551e473ff7c2acd8790ddbf743bd13",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف قالب الجلسة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "requestBody": {
-                    "required": false,
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "date"
+                                ],
                                 "properties": {
-                                    "weeks": {
-                                        "description": "عدد الأسابيع المراد توليدها (الافتراضي: 1)",
-                                        "type": "integer",
-                                        "example": 1
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-20"
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "اعتذار الكوتش",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -13818,7 +12776,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "✅ تم توليد الجلسات بنجاح",
+                        "description": "✅ تم إلغاء الجلسة بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -13829,15 +12787,9 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "5 sessions generated successfully from templates"
+                                            "example": "Session canceled successfully"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "generated_count": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                }
-                                            },
                                             "type": "object"
                                         }
                                     },
@@ -20432,12 +19384,6 @@
                                         "format": "date",
                                         "example": "2026-07-01"
                                     },
-                                    "end_date": {
-                                        "description": "تاريخ نهاية الاشتراك",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2026-08-01"
-                                    },
                                     "notes": {
                                         "description": "ملاحظات (اختياري)",
                                         "type": "string",
@@ -24476,6 +23422,12 @@
                         "example": 50,
                         "nullable": true
                     },
+                    "locker_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 100,
+                        "nullable": true
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
@@ -24963,14 +23915,6 @@
         {
             "name": "Sports & Activities",
             "description": "Sports & Activities"
-        },
-        {
-            "name": "Session Bookings",
-            "description": "Session Bookings"
-        },
-        {
-            "name": "Session Management",
-            "description": "Session Management"
         },
         {
             "name": "Session Templates",

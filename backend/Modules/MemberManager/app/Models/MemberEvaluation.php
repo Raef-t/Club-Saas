@@ -31,7 +31,7 @@ class MemberEvaluation extends Model
     }
 
     /**
-     * Get the parent evaluatable model (SportSession or Staff).
+     * Get the parent evaluatable model (SportSessionTemplate or Staff).
      */
     public function evaluatable(): MorphTo
     {

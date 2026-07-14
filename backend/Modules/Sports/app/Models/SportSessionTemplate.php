@@ -31,6 +31,11 @@ class SportSessionTemplate extends Model
     // --- Cross-module data resolved via DTOs in Service layer ---
     public ?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan = null;
 
+    public function exceptions()
+    {
+        return $this->hasMany(SessionException::class, 'sport_session_template_id');
+    }
+
     /**
      * Scopes
      */

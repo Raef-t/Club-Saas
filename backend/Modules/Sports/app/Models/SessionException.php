@@ -1,0 +1,37 @@
+<?php
+
+namespace Modules\Sports\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Modules\StaffManager\Models\Staff;
+
+class SessionException extends Model
+{
+    use HasFactory;
+
+    protected $table = 'session_exceptions';
+
+    protected $fillable = [
+        'sport_session_template_id',
+        'coach_id',
+        'date',
+        'status',
+        'reason',
+    ];
+
+    protected $casts = [
+        'date' => 'date',
+    ];
+
+    public function template()
+    {
+        return $this->belongsTo(SportSessionTemplate::class, 'sport_session_template_id');
+    }
+
+    public function coach()
+    {
+        // Assuming there is a Staff model in Modules\Core\Models\Staff or somewhere else
+        return $this->belongsTo(Staff::class, 'coach_id'); // Fallback: try checking if it exists
+    }
+}

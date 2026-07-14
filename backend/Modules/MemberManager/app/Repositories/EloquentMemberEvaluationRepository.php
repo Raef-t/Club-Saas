@@ -24,7 +24,7 @@ class EloquentMemberEvaluationRepository implements MemberEvaluationRepositoryIn
     public function hasEvaluatedSession(int $memberId, int $sessionId): bool
     {
         return MemberEvaluation::where('member_id', $memberId)
-            ->where('evaluatable_type', \Modules\Sports\Models\SportSession::class)
+            ->where('evaluatable_type', \Modules\Sports\Models\SportSessionTemplate::class)
             ->where('evaluatable_id', $sessionId)
             ->exists();
     }
