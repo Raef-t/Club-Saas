@@ -117,18 +117,93 @@ class PayrollService
             return 0;
         }
 
-        // Get completed sessions grouped by activity and join with activities to get session_price
-        $sessions = DB::table('sports_sessions')
-            ->join('activities', 'sports_sessions.activity_id', '=', 'activities.id')
-            ->select('sports_sessions.activity_id', DB::raw('count(sports_sessions.id) as total_sessions'), 'activities.session_price')
-            ->where('sports_sessions.staff_id', $staff->id)
-            ->where('sports_sessions.status', 'completed')
-            ->whereBetween('sports_sessions.start_time', [$payrollRun->period_start, $payrollRun->period_end])
-            ->groupBy('sports_sessions.activity_id', 'activities.session_price')
+        $periodStart = \Carbon\Carbon::parse($payrollRun->period_start)->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($payrollRun->period_end)->endOfDay();
+
+        // Get templates associated with this coach
+        $templates = DB::table('sport_session_templates')
+            ->join('plan_activities', 'sport_session_templates.id', '=', 'plan_activities.session_template_id')
+            ->join('staff_activities', 'plan_activities.staff_activity_id', '=', 'staff_activities.id')
+            ->join('activities', 'staff_activities.activity_id', '=', 'activities.id')
+            ->where('staff_activities.staff_id', $staff->id)
+            ->select([
+                'sport_session_templates.id',
+                'sport_session_templates.day_of_week',
+                'sport_session_templates.start_time',
+                'sport_session_templates.created_at',
+                'activities.id as activity_id',
+                'activities.session_price',
+            ])
             ->get();
 
-        if ($sessions->isEmpty()) {
+        // Get canceled exceptions in this period
+        $exceptions = DB::table('session_exceptions')
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->where('status', 'canceled')
+            ->get()
+            ->groupBy('sport_session_template_id');
+
+        $activityCounts = [];
+        $activityPrices = [];
+
+        foreach ($templates as $template) {
+            $occurrences = 0;
+            $currentDate = $periodStart->copy();
+            
+            // Do not count before template was created
+            $templateCreated = \Carbon\Carbon::parse($template->created_at)->startOfDay();
+            if ($currentDate < $templateCreated) {
+                $currentDate = $templateCreated->copy();
+            }
+
+            while ($currentDate->dayOfWeek !== (int)$template->day_of_week) {
+                $currentDate->addDay();
+            }
+
+            while ($currentDate <= $periodEnd) {
+                $dateString = $currentDate->toDateString();
+                
+                $isCanceled = false;
+                if ($exceptions->has($template->id)) {
+                    foreach ($exceptions->get($template->id) as $exc) {
+                        if ($exc->date === $dateString) {
+                            $isCanceled = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$isCanceled) {
+                    $startDateTime = \Carbon\Carbon::parse($dateString . ' ' . $template->start_time);
+                    if ($startDateTime <= now()) {
+                        $occurrences++;
+                    }
+                }
+
+                $currentDate->addWeek();
+            }
+
+            if ($occurrences > 0) {
+                $activityId = $template->activity_id;
+                if (!isset($activityCounts[$activityId])) {
+                    $activityCounts[$activityId] = 0;
+                    $activityPrices[$activityId] = $template->session_price;
+                }
+                $activityCounts[$activityId] += $occurrences;
+            }
+        }
+
+        if (empty($activityCounts)) {
             return 0;
+        }
+
+        $sessions = collect();
+        foreach ($activityCounts as $activityId => $count) {
+            $sessions->push((object)[
+                'activity_id' => $activityId,
+                'total_sessions' => $count,
+                'session_price' => $activityPrices[$activityId]
+            ]);
         }
 
         // Get commission rules for this staff

@@ -227,22 +227,66 @@ class MemberDashboardService
      */
     protected function getUpcomingEvents(int $memberId): array
     {
-        // Get upcoming sessions from sports_sessions with their plans
-        $sessions = DB::table('sports_sessions')
-            ->join('subscription_plans', 'sports_sessions.plan_id', '=', 'subscription_plans.id')
-            ->where('sports_sessions.start_time', '>', now())
-            ->where('sports_sessions.status', 'scheduled')
-            ->orderBy('sports_sessions.start_time')
-            ->limit(5)
+        // Get active templates with their plans
+        $templates = DB::table('sport_session_templates')
+            ->join('subscription_plans', 'sport_session_templates.plan_id', '=', 'subscription_plans.id')
+            ->where('sport_session_templates.is_active', true)
             ->select([
-                'sports_sessions.id',
+                'sport_session_templates.id',
                 'subscription_plans.name as plan_name',
-                'sports_sessions.start_time',
-                'sports_sessions.end_time',
+                'sport_session_templates.day_of_week',
+                'sport_session_templates.start_time',
+                'sport_session_templates.end_time',
                 'subscription_plans.max_subscribers as max_players',
-                'sports_sessions.booked_count',
             ])
             ->get();
+
+        // Get future canceled exceptions
+        $exceptions = DB::table('session_exceptions')
+            ->where('date', '>=', now()->toDateString())
+            ->where('status', 'canceled')
+            ->get()
+            ->groupBy('sport_session_template_id');
+
+        $upcoming = collect();
+        $startDate = now();
+
+        // Generate sessions for the next 14 days based on templates
+        foreach ($templates as $template) {
+            for ($i = 0; $i < 14; $i++) {
+                $date = $startDate->copy()->addDays($i);
+                if ($date->dayOfWeek === (int)$template->day_of_week) {
+                    $dateString = $date->toDateString();
+                    
+                    $hasException = false;
+                    if ($exceptions->has($template->id)) {
+                        foreach ($exceptions->get($template->id) as $exc) {
+                            if ($exc->date === $dateString) {
+                                $hasException = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!$hasException) {
+                        $startDateTime = Carbon::parse($dateString . ' ' . $template->start_time);
+                        if ($startDateTime > now()) {
+                            $upcoming->push((object)[
+                                'id' => $template->id,
+                                'plan_name' => $template->plan_name,
+                                'start_time' => $startDateTime->toDateTimeString(),
+                                'end_time' => Carbon::parse($dateString . ' ' . $template->end_time)->toDateTimeString(),
+                                'max_players' => $template->max_players,
+                                'booked_count' => 0,
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort by start_time and take top 5
+        $sessions = $upcoming->sortBy('start_time')->take(5);
 
         return $sessions->map(function ($session) {
             $durationMinutes = Carbon::parse($session->start_time)
@@ -262,6 +306,6 @@ class MemberDashboardService
                 'calories' => 0,
                 'available_spots' => max(0, ($session->max_players ?? 0) - ($session->booked_count ?? 0)),
             ];
-        })->toArray();
+        })->values()->toArray();
     }
 }

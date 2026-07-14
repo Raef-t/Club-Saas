@@ -179,44 +179,103 @@ class SessionTemplateController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/session-templates/generate',
-        summary: '⚙️ توليد الجلسات',
-        description: 'توليد جلسات فعلية من القوالب النشطة للأسابيع القادمة.',
+        path: '/v1/session-templates/{id}/cancel',
+        summary: '🚫 إلغاء جلسة',
+        description: 'إلغاء جلسة معينة في تاريخ محدد.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف قالب الجلسة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
-        required: false,
+        required: true,
         content: new OA\JsonContent(
+            required: ['date'],
             properties: [
-                new OA\Property(property: 'weeks', type: 'integer', description: 'عدد الأسابيع المراد توليدها (الافتراضي: 1)', example: 1),
+                new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-07-20'),
+                new OA\Property(property: 'reason', type: 'string', nullable: true, example: 'اعتذار الكوتش'),
             ]
         )
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ تم توليد الجلسات بنجاح',
+        description: '✅ تم إلغاء الجلسة بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: '5 sessions generated successfully from templates'),
-                new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'generated_count', type: 'integer', example: 5)]),
+                new OA\Property(property: 'message', type: 'string', example: 'Session canceled successfully'),
+                new OA\Property(property: 'data', type: 'object')
             ]
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function generate(Request $request, \Modules\Sports\Services\ScheduleGeneratorService $generatorService)
+    public function cancelSession(Request $request, int $id)
     {
+        $template = SportSessionTemplate::with('plan')->findOrFail($id);
+        
         $request->validate([
-            'weeks' => 'nullable|integer|min:1|max:10',
+            'date' => 'required|date',
+            'reason' => 'required|string'
         ]);
 
-        $weeks = $request->input('weeks', 1);
-        $startDate = now()->startOfWeek();
-        $endDate = now()->addWeeks($weeks - 1)->endOfWeek();
+        $coachId = $request->user()->staff?->id ?? null;
 
-        $count = $generatorService->generateSessions($startDate->toDateString(), $endDate->toDateString());
+        $exception = \Modules\Sports\Models\SessionException::create([
+            'sport_session_template_id' => $template->id,
+            'coach_id' => $coachId,
+            'date' => $request->date,
+            'reason' => $request->reason,
+            'status' => 'canceled'
+        ]);
 
-        return $this->successResponse(['generated_count' => $count], __(':count sessions generated successfully from templates', ['count' => $count]));
+        // إرسال الإشعار للمشتركين
+        if ($template->plan_id) {
+            $members = \Illuminate\Support\Facades\DB::table('player_subscriptions')
+                ->join('members', 'player_subscriptions.member_id', '=', 'members.id')
+                ->join('people', 'members.person_id', '=', 'people.id')
+                ->where('player_subscriptions.plan_id', $template->plan_id)
+                ->where('player_subscriptions.status', 'active')
+                ->where('player_subscriptions.end_date', '>=', now()->toDateString())
+                ->select('members.user_id', 'people.first_name', 'people.last_name')
+                ->get();
+
+            if ($members->isNotEmpty()) {
+                $notificationTemplate = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'session_canceled')->first();
+                $notificationService = app(\Modules\NotificationManager\Services\NotificationService::class);
+                
+                $coachName = $request->user()->person->full_name ?? 'المدرب';
+                $planName = $template->plan->name ?? 'الاشتراك';
+                $dayName = \Carbon\Carbon::parse($request->date)->locale('ar')->translatedFormat('l');
+
+                foreach ($members as $member) {
+                    if (!$member->user_id) continue;
+                    
+                    $playerName = trim($member->first_name . ' ' . $member->last_name);
+                    
+                    if ($notificationTemplate) {
+                        $body = $notificationTemplate->parseBody([
+                            'اسم اللاعب' => $playerName,
+                            'اسم الاشتراك' => $planName,
+                            'اليوم' => $dayName,
+                            'التاريخ' => $request->date,
+                            'اسم الكوتش' => $coachName,
+                            'السبب' => $request->reason,
+                        ]);
+                        $title = $notificationTemplate->subject ?? 'اعتذار عن إلغاء جلسة تمرين ⚠️';
+                    } else {
+                        $title = 'اعتذار عن إلغاء جلسة تمرين ⚠️';
+                        $body = "عزيزي {$playerName}، نعتذر منك بشدة عن إلغاء جلستك الخاصة باشتراك {$planName} والمقررة يوم {$dayName} بتاريخ {$request->date} مع الكوتش {$coachName}. سبب الإلغاء: {$request->reason}. نتمنى تفهمكم ونراكم قريباً!";
+                    }
+
+                    $notificationService->createNotification([
+                        'title' => $title,
+                        'body' => $body,
+                        'user_ids' => [$member->user_id],
+                        'sender_type' => 'system'
+                    ]);
+                }
+            }
+        }
+
+        return $this->successResponse($exception, __('Session canceled successfully for the specified date.'));
     }
 }
