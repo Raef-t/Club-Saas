@@ -130,6 +130,28 @@ class ReceptionAttendanceController extends BaseController
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    //  2. Rollback Attendance
+    // ──────────────────────────────────────────────────────────────────────────
 
+    #[OA\Delete(
+        path: '/v1/reception/attendances/{attendanceId}/rollback',
+        summary: '↩️ إلغاء الحضور وإرجاع الجلسة',
+        description: 'يقوم موظف الاستقبال بالتراجع عن تسجيل حضور اللاعب، مما يعيد الجلسة المخصومة لاشتراكه ويمسح سجل الحضور.',
+        tags: ['Reception'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: '✅ تم إلغاء الحضور بنجاح', content: new OA\JsonContent())]
+    #[OA\Response(response: 400, description: '❌ لا يمكن إلغاء الحضور')]
+    public function rollbackAttendance(int $attendanceId, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
+    {
+        try {
+            $sessionDeductionService->rollbackDeduction($attendanceId);
+            return $this->successResponse(null, __('Attendance rolled back and session returned successfully.'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
 
 }

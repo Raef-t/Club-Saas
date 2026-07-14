@@ -18,7 +18,7 @@ class StoreBranchHolidayRequest extends FormRequest
             'day_of_week' => 'required_if:type,weekly|nullable|integer|min:0|max:6',
             'start_date' => 'required_if:type,specific_dates|nullable|date',
             'end_date' => 'required_if:type,specific_dates|nullable|date|after_or_equal:start_date',
-            'reason' => 'nullable|string|max:255',
+            'reason' => 'required_if:type,specific_dates|string|max:255',
         ];
     }
 }

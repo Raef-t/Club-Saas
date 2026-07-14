@@ -57,9 +57,10 @@ class SessionDeductionService
 
             $deductedItem = $this->decrementSessionsConsumed($items);
 
-            $attendance = $this->updateAttendanceMetadata($attendance, $subscription, $metadata);
+            $attendance = $this->updateAttendanceMetadata($attendance, $subscription, $metadata, $deductedItem);
 
-            $this->sendNotification($attendance, $deductedItem);
+            $planName = DB::table('subscription_plans')->where('id', $subscription->plan_id)->value('name') ?? 'اشتراك';
+            $this->sendNotification($attendance, $planName, $deductedItem);
 
             return $attendance;
         });
@@ -111,11 +112,15 @@ class SessionDeductionService
         return $deductedItem;
     }
 
-    private function updateAttendanceMetadata(Attendance $attendance, $subscription, array $metadata): Attendance
+    private function updateAttendanceMetadata(Attendance $attendance, $subscription, array $metadata, $deductedItem): Attendance
     {
         $metadata['subscription_id'] = $subscription->id;
         $metadata['deduction_status'] = 'completed';
         $metadata['deducted_by_staff_id'] = Auth::id();
+        
+        if ($deductedItem) {
+            $metadata['deducted_item_id'] = $deductedItem->id;
+        }
 
         $attendance->update([
             'metadata' => $metadata
@@ -124,28 +129,138 @@ class SessionDeductionService
         return $attendance;
     }
 
-    private function sendNotification(Attendance $attendance, $deductedItem): void
+    /**
+     * Rollbacks a session deduction and cancels the attendance.
+     *
+     * @param int $attendanceId
+     * @return void
+     * @throws Exception
+     */
+    public function rollbackDeduction(int $attendanceId): void
     {
-        $member = Member::with('person.user')->find($attendance->attendable_id);
-        $userId = $member?->person?->user?->id;
+        DB::transaction(function () use ($attendanceId) {
+            $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
+            $metadata = $attendance->metadata ?? [];
 
-        if ($userId) {
-            if ($deductedItem) {
-                $remaining = $deductedItem->sessions_allocated - ($deductedItem->sessions_consumed + 1);
+            $member = Member::with('person.user')->find($attendance->attendable_id);
+            $userId = $member?->person?->user?->id;
+            $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+
+            $remainingSessions = null;
+            $isSessionBased = false;
+
+            if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
+                if (isset($metadata['deducted_item_id'])) {
+                    $isSessionBased = true;
+                    $item = DB::table('player_subscription_items')
+                        ->where('id', $metadata['deducted_item_id'])
+                        ->first();
+
+                    if ($item && $item->sessions_consumed > 0) {
+                        DB::table('player_subscription_items')
+                            ->where('id', $metadata['deducted_item_id'])
+                            ->decrement('sessions_consumed');
+                        
+                        $remainingSessions = $item->sessions_allocated - ($item->sessions_consumed - 1);
+                    } elseif ($item) {
+                        $remainingSessions = $item->sessions_allocated - $item->sessions_consumed;
+                    }
+                }
+            }
+
+            // Finally, delete the attendance record
+            $attendance->delete();
+
+            if ($userId) {
+                if ($isSessionBased && $remainingSessions !== null) {
+                    $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_session')->first();
+                    if ($template) {
+                        $body = $template->parseBody([
+                            'اسم اللاعب' => $playerName,
+                            'الجلسات المتبقية' => $remainingSessions
+                        ]);
+                        $title = $template->subject ?? 'إلغاء دخول واسترجاع جلسة 🔄';
+                    } else {
+                        $title = 'إلغاء دخول واسترجاع جلسة 🔄';
+                        $body = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingSessions} جلسة.";
+                    }
+                } else {
+                    $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_time')->first();
+                    if ($template) {
+                        $body = $template->parseBody([
+                            'اسم اللاعب' => $playerName
+                        ]);
+                        $title = $template->subject ?? 'إلغاء تسجيل الدخول 🔄';
+                    } else {
+                        $title = 'إلغاء تسجيل الدخول 🔄';
+                        $body = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير بنجاح. نتمنى رؤيتك قريباً!";
+                    }
+                }
+
                 $this->notificationService->createNotification([
-                    'title' => 'تم خصم جلسة',
-                    'body' => "تم تسجيل حضورك وخصم جلسة من اشتراكك بنجاح. الجلسات المتبقية: {$remaining}",
-                    'user_ids' => [$userId],
-                    'sender_type' => 'system'
-                ]);
-            } else {
-                $this->notificationService->createNotification([
-                    'title' => 'تسجيل حضور',
-                    'body' => 'تم تسجيل حضورك بنجاح. نتمنى لك تمريناً ممتعاً!',
+                    'title' => $title,
+                    'body' => $body,
                     'user_ids' => [$userId],
                     'sender_type' => 'system'
                 ]);
             }
+        });
+    }
+
+    private function sendNotification(Attendance $attendance, string $planName, $deductedItem): void
+    {
+        $member = Member::with('person.user')->find($attendance->attendable_id);
+        $userId = $member?->person?->user?->id;
+        $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+
+        if ($userId) {
+            $now = \Carbon\Carbon::now();
+            $date = $now->format('Y-m-d');
+            $dayName = $now->locale('ar')->translatedFormat('l');
+            $time = $now->locale('ar')->translatedFormat('h:i A');
+
+            if ($deductedItem) {
+                $remaining = $deductedItem->sessions_allocated - ($deductedItem->sessions_consumed + 1);
+                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_session_based')->first();
+
+                if ($template) {
+                    $body = $template->parseBody([
+                        'اسم اللاعب' => $playerName,
+                        'التاريخ' => $date,
+                        'اليوم' => $dayName,
+                        'الوقت' => $time,
+                        'اسم الاشتراك' => $planName,
+                        'الجلسات المتبقية' => $remaining,
+                    ]);
+                    $title = $template->subject ?? 'خصم جلسة تسجيل حضور';
+                } else {
+                    $title = 'خصم جلسة تسجيل حضور';
+                    $body = "أهلاً بك {$playerName}، تم تسجيل حضورك وخصم جلسة من اشتراكك بنجاح. الجلسات المتبقية: {$remaining}";
+                }
+            } else {
+                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_time_based')->first();
+
+                if ($template) {
+                    $body = $template->parseBody([
+                        'اسم اللاعب' => $playerName,
+                        'التاريخ' => $date,
+                        'اليوم' => $dayName,
+                        'الوقت' => $time,
+                        'اسم الاشتراك' => $planName,
+                    ]);
+                    $title = $template->subject ?? 'تسجيل حضور ناجح';
+                } else {
+                    $title = 'تسجيل حضور ناجح';
+                    $body = "أهلاً بك {$playerName}، تم تسجيل حضورك بنجاح. نتمنى لك تمريناً ممتعاً!";
+                }
+            }
+
+            $this->notificationService->createNotification([
+                'title' => $title,
+                'body' => $body,
+                'user_ids' => [$userId],
+                'sender_type' => 'system'
+            ]);
         }
     }
 }

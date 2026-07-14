@@ -24,4 +24,11 @@ class EventServiceProvider extends ServiceProvider
      * Configure the proper event listeners for email verification.
      */
     protected function configureEmailVerification(): void {}
+
+    public function boot(): void
+    {
+        parent::boot();
+        
+        \Modules\ClubManager\Models\BranchHoliday::observe(\Modules\ClubManager\Observers\BranchHolidayObserver::class);
+    }
 }

@@ -22,6 +22,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // 1.5. Deduct session from a specific subscription after check-in
     Route::post('reception/attendances/{attendanceId}/deduct', [ReceptionAttendanceController::class, 'deductSession']);
 
+    // 1.6. Rollback attendance and return deducted session
+    Route::delete('reception/attendances/{attendanceId}/rollback', [ReceptionAttendanceController::class, 'rollbackAttendance']);
+
 
     // ────────────────────────────────────────────────────────────────────────────
 
