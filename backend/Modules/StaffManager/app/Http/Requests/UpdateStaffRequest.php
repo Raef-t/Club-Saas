@@ -46,7 +46,6 @@ class UpdateStaffRequest extends FormRequest
             'social_status' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'photo_url' => 'nullable|string|max:255',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'secondary_country_code' => 'nullable|string|max:5',
             'secondary_phone_number' => 'nullable|string|max:20',
             'landline' => 'nullable|string|max:20',

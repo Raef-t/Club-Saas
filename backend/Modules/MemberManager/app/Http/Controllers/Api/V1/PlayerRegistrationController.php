@@ -96,7 +96,7 @@ class PlayerRegistrationController extends BaseController
     #[OA\Put(
         path: '/v1/members/{id}',
         summary: '📝 تعديل بيانات لاعب (متدرب)',
-        description: 'تعديل البيانات الأساسية للاعب مثل الاسم ورقم الجوال والفرع وجهات الاتصال.',
+        description: 'تعديل البيانات الأساسية للاعب مثل الاسم ورقم الجوال والفرع وجهات الاتصال. لتحديث الصورة استخدم endpoint منفصل: POST /v1/members/{id}/photo',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -107,7 +107,6 @@ class PlayerRegistrationController extends BaseController
             mediaType: 'multipart/form-data',
             schema: new OA\Schema(
                 properties: [
-                    new OA\Property(property: '_method', type: 'string', example: 'PUT', description: 'يجب إرسال هذه القيمة عند رفع ملفات عبر POST method spoofing'),
                     new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
                     new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
                     new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
@@ -116,7 +115,6 @@ class PlayerRegistrationController extends BaseController
                     new OA\Property(property: 'age', type: 'integer', description: '(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات', example: 25),
                     new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
                     new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
-                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة اللاعب', nullable: true),
                     new OA\Property(property: 'branch_id', type: 'integer', example: 1),
                     new OA\Property(
                         property: 'additional_contacts',
@@ -157,6 +155,41 @@ class PlayerRegistrationController extends BaseController
         return $this->successResponse(
             new \Modules\MemberManager\Http\Resources\MemberResource($result),
             __('Player updated successfully'),
+            200
+        );
+    }
+
+    #[OA\Post(
+        path: '/v1/members/{id}/photo',
+        summary: '🖼️ تحديث صورة العضو',
+        description: 'رفع أو تحديث صورة الملف الشخصي للعضو (اللاعب). يجب استخدام هذا الـ endpoint المخصص بدلاً من إرسال الصورة ضمن طلب التعديل العام.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['photo'],
+                properties: [
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة العضو')
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم تحديث الصورة بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Member photo updated successfully'), new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')]))]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function updatePhoto(\Modules\MemberManager\Http\Requests\UpdateMemberPhotoRequest $request, $id)
+    {
+        $result = $this->registrationService->updateMemberPhoto($id, $request->file('photo'));
+
+        return $this->successResponse(
+            new \Modules\MemberManager\Http\Resources\MemberResource($result),
+            __('Member photo updated successfully'),
             200
         );
     }

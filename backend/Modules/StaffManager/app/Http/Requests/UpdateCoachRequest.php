@@ -44,7 +44,6 @@ class UpdateCoachRequest extends FormRequest
             'country_code'            => ['nullable', 'string', 'max:5'],
             'national_id'             => ['nullable', 'string', 'max:20'],
             'address'                 => ['nullable', 'string', 'max:500'],
-            'photo'                   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
 
             // Basic Info
             'base_salary'             => ['nullable', 'numeric', 'min:0'],

@@ -341,7 +341,7 @@ class CoachController extends Controller
     #[OA\Patch(
         path: '/v1/coaches/{id}',
         summary: 'Update Coach Data',
-        description: 'Update base salary, employment type, status, specialization, bio, experience, etc.',
+        description: 'Update base salary, employment type, status, specialization, bio, experience, etc. لتحديث الصورة استخدم endpoint منفصل: POST /v1/coaches/{id}/photo',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -353,7 +353,6 @@ class CoachController extends Controller
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
                     properties: [
-                        new OA\Property(property: '_method', type: 'string', example: 'PATCH', description: 'يجب إرسال هذه القيمة عند رفع ملفات عبر POST method spoofing'),
                         new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
                         new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
                         new OA\Property(property: 'gender', type: 'string', example: 'male'),
@@ -363,7 +362,6 @@ class CoachController extends Controller
                         new OA\Property(property: 'country_code', type: 'string', example: '+966'),
                         new OA\Property(property: 'national_id', type: 'string', description: 'الرقم الوطني', example: '1234567890', nullable: true),
                         new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
-                        new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب', nullable: true),
                         new OA\Property(property: 'branch_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                         new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
                         new OA\Property(property: 'base_salary', type: 'number', example: 6000),
@@ -439,6 +437,7 @@ class CoachController extends Controller
     )]
     public function update(\Modules\StaffManager\Http\Requests\UpdateCoachRequest $request, $id)
     {
+
         try {
             $coach = $this->coachService->updateCoach($id, $request->validated());
 
@@ -458,6 +457,63 @@ class CoachController extends Controller
             return response()->json([
                 'message' => 'An error occurred while updating the coach.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/photo',
+        summary: 'Update Coach Photo',
+        description: 'Upload or update the profile photo of a coach. Use this dedicated endpoint instead of sending the photo in the general update request.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['photo'],
+                    properties: [
+                        new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Photo updated successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach photo updated successfully')
+                ])
+            ),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')])),
+            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')])),
+            new OA\Response(response: 422, description: 'Validation errors', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'), new OA\Property(property: 'errors', type: 'object')])),
+            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'An error occurred while updating the photo.')])),
+        ]
+    )]
+    public function updatePhoto(\Modules\StaffManager\Http\Requests\UpdateCoachPhotoRequest $request, $id)
+    {
+        try {
+            $coach = $this->coachService->updateCoachPhoto($id, $request->file('photo'));
+
+            return response()->json([
+                'data'    => new CoachResource($coach),
+                'message' => 'Coach photo updated successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the photo.',
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
