@@ -49,6 +49,7 @@ class CoachService
                 'age'       => $data['age'] ?? null,
                 'dob'       => $data['dob'] ?? null,
                 'national_id'=> $data['national_id'] ?? null,
+                'address'   => $data['address'] ?? null,
                 'photo_url' => $photoUrl,
             ]);
 
@@ -185,7 +186,7 @@ class CoachService
             // Update Person Info
             $person = $staff->person;
             if ($person) {
-                $personFillable = ['gender', 'age', 'dob', 'national_id'];
+                $personFillable = ['gender', 'age', 'dob', 'national_id', 'address'];
                 $personData = array_intersect_key($data, array_flip($personFillable));
 
                 if (isset($data['first_name']) || isset($data['last_name'])) {

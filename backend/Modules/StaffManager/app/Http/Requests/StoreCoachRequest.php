@@ -44,6 +44,7 @@ class StoreCoachRequest extends FormRequest
             'phone_number'            => ['nullable', 'string', 'max:20'],
             'country_code'            => ['nullable', 'string', 'max:5'],
             'national_id'             => ['nullable', 'string', 'max:20'],
+            'address'                 => ['nullable', 'string', 'max:500'],
             'photo'                   => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
 
             // Staff & Coach Details
@@ -87,7 +88,7 @@ class StoreCoachRequest extends FormRequest
                     ->get();
 
                 $hasValidType = false;
-                $validNames = ['تدريب جماعي', 'تدريب خاص', 'group training', 'private training'];
+                $validNames = ['تدريب عام', 'تدريب خاص', 'group training', 'private training', 'public training', 'تدريب جماعي'];
 
                 foreach ($activities as $activity) {
                     if ($activity->activityType) {
@@ -113,7 +114,7 @@ class StoreCoachRequest extends FormRequest
                 }
 
                 if (!$hasValidType) {
-                    $validator->errors()->add('shifts', 'لا يمكن تعيين شفتات للمدرب إلا إذا كان النشاط من نوع تدريب جماعي أو تدريب خاص.');
+                    $validator->errors()->add('shifts', 'لا يمكن تعيين شفتات للمدرب إلا إذا كان النشاط من نوع تدريب عام أو تدريب خاص.');
                 }
             }
         });
