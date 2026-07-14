@@ -280,6 +280,40 @@ class SubscriptionService
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
+            // إرسال إشعار التجميد
+            $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+            $userId = $member?->person?->user?->id;
+            
+            if ($userId) {
+                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_frozen')->first();
+                if ($template) {
+                    $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+                    $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
+                    
+                    $startCarbon = \Carbon\Carbon::parse($startDate);
+                    $endCarbon = \Carbon\Carbon::parse($endDate);
+                    
+                    $startDay = $startCarbon->locale('ar')->translatedFormat('l');
+                    $endDay = $endCarbon->locale('ar')->translatedFormat('l');
+
+                    $body = $template->parseBody([
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                        'تاريخ البداية' => $startDate,
+                        'يوم البداية' => $startDay,
+                        'تاريخ النهاية' => $endDate,
+                        'يوم النهاية' => $endDay,
+                    ]);
+
+                    app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+                        'title' => $template->subject ?? 'تم تجميد اشتراكك مؤقتاً ❄️',
+                        'body' => $body,
+                        'user_ids' => [$userId],
+                        'sender_type' => 'system'
+                    ]);
+                }
+            }
+
             return $subscription;
         });
     }
@@ -458,6 +492,30 @@ class SubscriptionService
             $subscription->update(['status' => 'active']);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            // إرسال إشعار فك التجميد
+            $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+            $userId = $member?->person?->user?->id;
+
+            if ($userId) {
+                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_unfrozen')->first();
+                if ($template) {
+                    $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+                    $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
+
+                    $body = $template->parseBody([
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                    ]);
+
+                    app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+                        'title' => $template->subject ?? 'انتهاء فترة التجميد وتفعيل الاشتراك 🟢',
+                        'body' => $body,
+                        'user_ids' => [$userId],
+                        'sender_type' => 'system'
+                    ]);
+                }
+            }
 
             return $subscription;
         });
