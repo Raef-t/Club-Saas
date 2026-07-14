@@ -3,23 +3,40 @@
 namespace Modules\NotificationManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Translatable\HasTranslations;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class NotificationTemplate extends Model
 {
-    use HasTranslations;
+    use HasFactory;
 
     protected $fillable = [
-        'slug',
+        'name',
+        'system_key',
         'subject',
-        'content',
-        'channel',
+        'body',
+        'variables',
         'is_active',
     ];
 
-    public $translatable = ['subject', 'content'];
-
     protected $casts = [
+        'variables' => 'array',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * معالجة نص القالب واستبدال المتغيرات بالقيم الممررة
+     * 
+     * @param array $data المصفوفة التي تحوي القيم (مثال: ['club_name' => 'تكنوجيم', ...])
+     * @return string
+     */
+    public function parseBody(array $data): string
+    {
+        $parsedBody = $this->body;
+
+        foreach ($data as $key => $value) {
+            $parsedBody = str_replace('{' . $key . '}', $value, $parsedBody);
+        }
+
+        return $parsedBody;
+    }
 }

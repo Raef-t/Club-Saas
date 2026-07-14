@@ -18,7 +18,7 @@ class UpdateBranchHolidayRequest extends FormRequest
             'day_of_week' => 'nullable|integer|min:0|max:6',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'reason' => 'nullable|string|max:255',
+            'reason' => 'required_if:type,specific_dates|string|max:255',
         ];
     }
 }

@@ -28,10 +28,14 @@ class CheckSubscriptionStatus extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(\Modules\SubscriptionManager\Services\SubscriptionNotificationService $notificationService)
     {
         $this->info('Scanning subscriptions and lockers for expiration...');
         Log::info('Subscription and locker status scan started.');
+
+        // Send expiration warnings (3 days before)
+        $this->info('Sending expiration warning notifications...');
+        $notificationService->sendUpcomingExpirationWarnings(3);
 
         $today = now()->toDateString();
 
