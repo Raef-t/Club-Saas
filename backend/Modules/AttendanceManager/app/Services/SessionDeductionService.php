@@ -57,7 +57,7 @@ class SessionDeductionService
 
             $deductedItem = $this->decrementSessionsConsumed($items);
 
-            $attendance = $this->updateAttendanceMetadata($attendance, $subscription, $metadata);
+            $attendance = $this->updateAttendanceMetadata($attendance, $subscription, $metadata, $deductedItem);
 
             $this->sendNotification($attendance, $deductedItem);
 
@@ -111,17 +111,48 @@ class SessionDeductionService
         return $deductedItem;
     }
 
-    private function updateAttendanceMetadata(Attendance $attendance, $subscription, array $metadata): Attendance
+    private function updateAttendanceMetadata(Attendance $attendance, $subscription, array $metadata, $deductedItem): Attendance
     {
         $metadata['subscription_id'] = $subscription->id;
         $metadata['deduction_status'] = 'completed';
         $metadata['deducted_by_staff_id'] = Auth::id();
+        
+        if ($deductedItem) {
+            $metadata['deducted_item_id'] = $deductedItem->id;
+        }
 
         $attendance->update([
             'metadata' => $metadata
         ]);
 
         return $attendance;
+    }
+
+    /**
+     * Rollbacks a session deduction and cancels the attendance.
+     *
+     * @param int $attendanceId
+     * @return void
+     * @throws Exception
+     */
+    public function rollbackDeduction(int $attendanceId): void
+    {
+        DB::transaction(function () use ($attendanceId) {
+            $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
+            $metadata = $attendance->metadata ?? [];
+
+            if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
+                if (isset($metadata['deducted_item_id'])) {
+                    DB::table('player_subscription_items')
+                        ->where('id', $metadata['deducted_item_id'])
+                        ->where('sessions_consumed', '>', 0)
+                        ->decrement('sessions_consumed');
+                }
+            }
+
+            // Finally, delete the attendance record
+            $attendance->delete();
+        });
     }
 
     private function sendNotification(Attendance $attendance, $deductedItem): void
