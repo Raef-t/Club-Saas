@@ -19,6 +19,31 @@ class SessionDeductionService
     }
 
     /**
+     * Automatically find an active subscription for a member and deduct a session.
+     * Used mainly for Gate entries where there's no receptionist to pick a subscription.
+     *
+     * @param int $attendanceId
+     * @param int $memberId
+     * @return Attendance
+     * @throws Exception
+     */
+    public function autoDeductSessionForGate(int $attendanceId, int $memberId): Attendance
+    {
+        $subscription = DB::table('player_subscriptions')
+            ->where('member_id', $memberId)
+            ->where('status', 'active')
+            ->whereDate('end_date', '>=', now())
+            ->orderBy('id', 'asc') // You can sort by closest expiry date later if needed
+            ->first();
+
+        if (!$subscription) {
+            throw new Exception(__('No active subscription found. Access denied (Subscription might be frozen or expired).'));
+        }
+
+        return $this->deductSession($attendanceId, $subscription->id);
+    }
+
+    /**
      * Deducts a session from the specified subscription for the given attendance record.
      * 
      * @param int $attendanceId

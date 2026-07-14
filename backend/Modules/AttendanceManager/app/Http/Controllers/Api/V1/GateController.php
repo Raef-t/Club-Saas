@@ -101,7 +101,17 @@ class GateController extends BaseController
                     metadata: ['source' => 'gate_hardware', 'gate_id' => $gate->id]
                 );
 
-                // 5. Success - Instruct Gate to Unlock
+                try {
+                    // 5. Attempt auto-deduction and validation (this throws if frozen/expired/debt)
+                    $deductionService = app(\Modules\AttendanceManager\Services\SessionDeductionService::class);
+                    $deductionService->autoDeductSessionForGate($attendance->id, $memberId);
+                } catch (\Exception $e) {
+                    // 6. If deduction fails, we rollback the attendance and deny entry
+                    $attendance->delete();
+                    return $this->errorResponse($e->getMessage(), 403);
+                }
+
+                // 7. Success - Instruct Gate to Unlock
                 return $this->successResponse([
                     'member_id' => $memberId,
                     'action'    => 'unlock_door',
