@@ -302,6 +302,33 @@ class StaffService
     }
 
     /**
+     * Update staff profile photo.
+     */
+    public function updateStaffPhoto($id, \Illuminate\Http\UploadedFile $photo)
+    {
+        return DB::transaction(function () use ($id, $photo) {
+            $staff = $this->staffRepository->find($id);
+            $person = \Modules\Authentication\Models\Person::find($staff->person_id);
+
+            if (!$person) {
+                throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Staff person record not found.');
+            }
+
+            // Delete old photo if exists
+            if ($person->photo_url) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            }
+
+            $person->update([
+                'photo_url' => $photo->store('people/photos', 'public'),
+            ]);
+
+            $staff->load('coachDetail.certifications');
+            return $this->attachSharedDTOs($staff->fresh());
+        });
+    }
+
+    /**
      * Toggle staff active status.
      */
     public function toggleStatus($id)

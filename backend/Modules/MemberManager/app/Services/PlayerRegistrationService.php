@@ -137,14 +137,6 @@ class PlayerRegistrationService
             if (!$person) {
                 abort(404, 'لا يمكن تعديل العضو: لا يوجد سجل بيانات شخصية مرتبط بهذا العضو.');
             }
-            // Handle Photo Upload
-            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
-                if ($person->photo_url) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
-                }
-                $data['photo_url'] = $data['photo']->store('people/photos', 'public');
-            }
-
             // Update Person
             $personData = [];
             if (isset($data['first_name']) || isset($data['last_name'])) {
@@ -191,6 +183,30 @@ class PlayerRegistrationService
             if (isset($data['branch_id'])) {
                 $member->update(['branch_id' => $data['branch_id']]);
             }
+
+            $member->load('person.contacts', 'measurements', 'healthProfile');
+            return $member;
+        });
+    }
+
+    public function updateMemberPhoto(int $memberId, \Illuminate\Http\UploadedFile $photo)
+    {
+        return DB::transaction(function () use ($memberId, $photo) {
+            $member = Member::findOrFail($memberId);
+            $person = $member->person()->first();
+
+            if (!$person) {
+                abort(404, 'لا يمكن تعديل العضو: لا يوجد سجل بيانات شخصية مرتبط بهذا العضو.');
+            }
+
+            // Delete old photo if exists
+            if ($person->photo_url) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            }
+
+            $person->update([
+                'photo_url' => $photo->store('people/photos', 'public'),
+            ]);
 
             $member->load('person.contacts', 'measurements', 'healthProfile');
             return $member;

@@ -13,6 +13,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('members/register', [PlayerRegistrationController::class, 'register']);
     Route::get('members/{id}', [PlayerRegistrationController::class, 'show']);
     Route::put('members/{id}', [PlayerRegistrationController::class, 'update']);
+    Route::post('members/{id}/photo', [PlayerRegistrationController::class, 'updatePhoto']);
     Route::delete('members/{id}', [PlayerRegistrationController::class, 'destroy']);
 
 

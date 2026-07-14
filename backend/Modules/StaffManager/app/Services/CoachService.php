@@ -195,10 +195,6 @@ class CoachService
                     $personData['full_name'] = trim($firstName . ' ' . $lastName);
                 }
 
-                if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
-                    $personData['photo_url'] = $data['photo']->store('people/photos', 'public');
-                }
-
                 if (!empty($personData)) {
                     $person->update($personData);
                 }
@@ -319,6 +315,32 @@ class CoachService
         ]);
 
         return $certification;
+    }
+
+    /**
+     * Update coach profile photo.
+     */
+    public function updateCoachPhoto($id, \Illuminate\Http\UploadedFile $photo)
+    {
+        return DB::transaction(function () use ($id, $photo) {
+            $staff = Staff::where('role', 'coach')->findOrFail($id);
+            $person = $staff->person;
+
+            if (!$person) {
+                throw new \Exception('Coach person record not found.');
+            }
+
+            // Delete old photo if exists
+            if ($person->photo_url) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            }
+
+            $person->update([
+                'photo_url' => $photo->store('people/photos', 'public'),
+            ]);
+
+            return $this->getSingleCoach($staff->id);
+        });
     }
 
     /**

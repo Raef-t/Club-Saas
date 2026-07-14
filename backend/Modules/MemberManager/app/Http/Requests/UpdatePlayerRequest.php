@@ -22,7 +22,6 @@ class UpdatePlayerRequest extends FormRequest
             'age' => 'nullable|integer|min:0',
             'dob' => 'nullable|date',
             'address' => 'nullable|string|max:500',
-            'photo' => 'nullable|image|max:2048',
             
             'additional_contacts' => 'nullable|array',
             'additional_contacts.*.name' => 'required_with:additional_contacts|string|max:100',
