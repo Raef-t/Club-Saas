@@ -90,6 +90,8 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
 
             event(new MemberCheckedOut($attendance));
 
+            $this->sendCheckoutNotification($attendance);
+
             return $attendance->fresh();
         });
     }
@@ -125,5 +127,57 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
         }
 
         return $query;
+    }
+
+    private function sendCheckoutNotification(Attendance $attendance): void
+    {
+        $member = \Modules\MemberManager\Models\Member::with('person.user')->find($attendance->attendable_id);
+        $userId = $member?->person?->user?->id;
+        $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+
+        if ($userId) {
+            $now = \Carbon\Carbon::now();
+            $date = $now->format('Y-m-d');
+            $dayName = $now->locale('ar')->translatedFormat('l');
+            $time = $now->locale('ar')->translatedFormat('h:i A');
+            $duration = $attendance->duration_minutes;
+
+            $planName = 'اشتراك غير محدد';
+            $metadata = $attendance->metadata ?? [];
+            if (isset($metadata['subscription_id'])) {
+                $subscription = \Illuminate\Support\Facades\DB::table('player_subscriptions')
+                    ->where('id', $metadata['subscription_id'])
+                    ->first();
+                if ($subscription) {
+                    $planName = \Illuminate\Support\Facades\DB::table('subscription_plans')
+                        ->where('id', $subscription->plan_id)
+                        ->value('name') ?? 'اشتراك';
+                }
+            }
+
+            $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_checkout')->first();
+
+            if ($template) {
+                $body = $template->parseBody([
+                    'اسم اللاعب' => $playerName,
+                    'التاريخ' => $date,
+                    'اليوم' => $dayName,
+                    'الوقت' => $time,
+                    'مدة التدريب' => $duration,
+                    'اسم الاشتراك' => $planName,
+                ]);
+                $title = $template->subject ?? 'تسجيل خروج ناجح';
+            } else {
+                $title = 'تسجيل خروج ناجح';
+                $body = "عزيزي {$playerName}، نتمنى أن تكون قد حظيت بتمرين رائع! تم تسجيل خروجك بنجاح بتاريخ {$date} الموافق ليوم {$dayName} الساعة {$time}. لقد استمر تدريبك لمدة {$duration} دقيقة ضمن اشتراكك الحالي: {$planName}. نشكر التزامك ونتطلع لرؤيتك قريباً.";
+            }
+
+            app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+                'title' => $title,
+                'body' => $body,
+                'user_ids' => [$userId],
+                'sender_type' => 'system'
+            ]);
+        }
     }
 }
