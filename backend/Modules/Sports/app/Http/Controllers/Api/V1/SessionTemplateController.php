@@ -30,8 +30,84 @@ class SessionTemplateController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $templates = SportSessionTemplate::with(['plan'])->get();
+        $templates = SportSessionTemplate::with(['subscriptionPlan'])->get();
         return $this->successResponse($templates, __('Templates retrieved successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/session-templates/schedule',
+        summary: '🗓️ جدول الجلسات',
+        description: 'استرجاع جدول دوام الجلسات الأسبوعية.',
+        tags: ['Session Templates'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الجدول بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Session schedule retrieved successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function schedule(Request $request)
+    {
+        $sessions = SportSessionTemplate::active()
+            ->with([
+                'facility',
+                'subscriptionPlan.planActivities.staffActivity.activity',
+                'subscriptionPlan.planActivities.staffActivity.staff'
+            ])
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
+        $daysMap = [
+            0 => 'Sunday',
+            1 => 'Monday',
+            2 => 'Tuesday',
+            3 => 'Wednesday',
+            4 => 'Thursday',
+            5 => 'Friday',
+            6 => 'Saturday',
+        ];
+
+        $schedule = [];
+
+        foreach ($sessions as $session) {
+            $dayName = $daysMap[$session->day_of_week] ?? 'Unknown Day';
+            
+            $planActivity = $session->subscriptionPlan ? $session->subscriptionPlan->planActivities->first() : null;
+            $staffActivity = $planActivity ? $planActivity->staffActivity : null;
+            
+            $coach = $staffActivity ? $staffActivity->staff : null;
+            $activity = $staffActivity ? $staffActivity->activity : null;
+
+            $schedule[$dayName][] = [
+                'id' => $session->id,
+                'start_time' => $session->start_time->format('H:i'),
+                'end_time' => $session->end_time->format('H:i'),
+                'gender_allowed' => $session->gender_allowed,
+                'plan_name' => $session->subscriptionPlan ? $session->subscriptionPlan->name : null,
+                'facility' => $session->facility ? [
+                    'id' => $session->facility->id,
+                    'name' => $session->facility->name,
+                ] : null,
+                'coach' => $coach ? [
+                    'id' => $coach->id,
+                    'name' => trim(($coach->first_name ?? '') . ' ' . ($coach->last_name ?? '')),
+                ] : null,
+                'activity' => $activity ? [
+                    'id' => $activity->id,
+                    'name' => $activity->name,
+                ] : null,
+            ];
+        }
+
+        return $this->successResponse($schedule, __('Session schedule retrieved successfully'));
     }
 
     #[OA\Post(
@@ -210,7 +286,7 @@ class SessionTemplateController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function cancelSession(Request $request, int $id)
     {
-        $template = SportSessionTemplate::with('plan')->findOrFail($id);
+        $template = SportSessionTemplate::with('subscriptionPlan')->findOrFail($id);
         
         $request->validate([
             'date' => 'required|date',
@@ -243,7 +319,7 @@ class SessionTemplateController extends BaseController
                 $notificationService = app(\Modules\NotificationManager\Services\NotificationService::class);
                 
                 $coachName = $request->user()->person->full_name ?? 'المدرب';
-                $planName = $template->plan->name ?? 'الاشتراك';
+                $planName = $template->subscriptionPlan->name ?? 'الاشتراك';
                 $dayName = \Carbon\Carbon::parse($request->date)->locale('ar')->translatedFormat('l');
 
                 foreach ($members as $member) {

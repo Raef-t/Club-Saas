@@ -18,6 +18,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('activities', ActivityController::class);
 
     // Session Templates
+    Route::get('session-templates/schedule', [Modules\Sports\Http\Controllers\Api\V1\SessionTemplateController::class, 'schedule']);
     Route::post('session-templates/{id}/cancel', [Modules\Sports\Http\Controllers\Api\V1\SessionTemplateController::class, 'cancelSession']);
     Route::apiResource('session-templates', Modules\Sports\Http\Controllers\Api\V1\SessionTemplateController::class);
 

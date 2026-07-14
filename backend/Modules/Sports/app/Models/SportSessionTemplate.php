@@ -43,4 +43,14 @@ class SportSessionTemplate extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function subscriptionPlan()
+    {
+        return $this->belongsTo(\Modules\SubscriptionManager\Models\SubscriptionPlan::class, 'plan_id');
+    }
+
+    public function facility()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Facility::class, 'facility_id');
+    }
 }

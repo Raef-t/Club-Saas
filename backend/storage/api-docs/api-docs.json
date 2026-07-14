@@ -12534,6 +12534,62 @@
                 ]
             }
         },
+        "/v1/session-templates/schedule": {
+            "get": {
+                "tags": [
+                    "Session Templates"
+                ],
+                "summary": "🗓️ جدول الجلسات",
+                "description": "استرجاع جدول دوام الجلسات الأسبوعية.",
+                "operationId": "22f43a5b77e7893029da2ff22365ba77",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الجدول بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Session schedule retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/session-templates/{id}": {
             "put": {
                 "tags": [
