@@ -201,4 +201,31 @@ class LockerService
             return DB::table('locker_reservations')->where('id', $reservationId)->first();
         });
     }
+
+    public function getLockersByHolder($holderType, $holderId)
+    {
+        return DB::table('lockers')
+            ->join('locker_reservations', 'lockers.id', '=', 'locker_reservations.locker_id')
+            ->where('locker_reservations.status', '=', 'active')
+            ->where(function($query) use ($holderType, $holderId) {
+                if ($holderType === 'member') {
+                    $query->where('locker_reservations.member_id', $holderId);
+                } elseif ($holderType === 'staff') {
+                    $query->where('locker_reservations.staff_id', $holderId);
+                }
+            })
+            ->select(
+                'lockers.id',
+                'lockers.locker_number',
+                'lockers.status',
+                'lockers.branch_id',
+                'locker_reservations.id as active_reservation_id',
+                'locker_reservations.start_date',
+                'locker_reservations.end_date',
+                'locker_reservations.price',
+                'locker_reservations.member_id',
+                'locker_reservations.staff_id'
+            )
+            ->get();
+    }
 }

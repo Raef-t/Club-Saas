@@ -278,4 +278,36 @@ class LockerController extends BaseController
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
+
+    #[OA\Get(
+        path: '/v1/lockers/holder/active',
+        summary: '🧑 جلب الخزائن المسجلة باسم شخص',
+        description: 'استرجاع الخزائن المحجوزة حالياً باسم لاعب (member) أو موظف (staff) بناءً على معرفه. ترجع مصفوفة فارغة إذا لم يوجد أي خزانة.',
+        tags: ['Locker Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'holder_type', in: 'query', required: true, description: 'نوع الشخص (member أو staff)', schema: new OA\Schema(type: 'string', enum: ['member', 'staff']))]
+    #[OA\Parameter(name: 'holder_id', in: 'query', required: true, description: 'معرف الشخص', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الخزائن بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Lockers retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    public function getByHolder(Request $request)
+    {
+        $request->validate([
+            'holder_type' => 'required|in:member,staff',
+            'holder_id' => 'required|integer',
+        ]);
+
+        $lockers = $this->lockerService->getLockersByHolder($request->holder_type, $request->holder_id);
+
+        return $this->successResponse($lockers, __('Lockers retrieved successfully'));
+    }
 }
