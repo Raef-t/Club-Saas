@@ -27,7 +27,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('payroll-runs/{id}/approve', [PayrollController::class, 'approve']);
     Route::post('payroll-runs/{id}/process', [PayrollController::class, 'process']);
     Route::apiResource('payroll-runs', PayrollController::class)->except(['update', 'destroy']);
-    Route::apiResource('payslips', PayslipController::class);
+    Route::get('payslips', [PayslipController::class, 'index']);
+    Route::put('payslips/{payslip}', [PayslipController::class, 'update']);
+    Route::put('payslips/settings/{staff}', [PayslipController::class, 'updateSettings']);
 
     // Coach Management
     Route::prefix('coaches')->group(function () {
