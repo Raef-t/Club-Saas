@@ -231,6 +231,9 @@ class SubscriptionService
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
+            // Dispatch SubscriptionCreated event so other modules (like StaffManager) can react
+            event(new \Modules\SubscriptionManager\Events\SubscriptionCreated($subscription, $plan));
+
             return $subscription;
         });
     }
