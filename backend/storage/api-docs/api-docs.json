@@ -16380,12 +16380,12 @@
                 "tags": [
                     "Payslips"
                 ],
-                "summary": "📄 عرض إيصالات الدفع",
-                "description": "استرجاع جميع إيصالات الدفع (Payslips) الصادرة للموظفين.",
+                "summary": "📄 عرض سجلات الرواتب",
+                "description": "استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات.",
                 "operationId": "ad90293a6ae0700fc8ebd09b515c780e",
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع إيصالات الدفع بنجاح",
+                        "description": "✅ تم استرجاع السجلات بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -16432,216 +16432,21 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "post": {
-                "tags": [
-                    "Payslips"
-                ],
-                "summary": "➕ إضافة إيصال دفع",
-                "description": "إنشاء إيصال دفع جديد يدوياً.",
-                "operationId": "4392eabf97e6c92cfbedaa4c3baae7df",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "payroll_run_id",
-                                    "staff_id",
-                                    "basic_salary",
-                                    "net_salary"
-                                ],
-                                "properties": {
-                                    "payroll_run_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "staff_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "basic_salary": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5000
-                                    },
-                                    "net_salary": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 4500
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم الإنشاء بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/v1/payslips/{payslip}": {
-            "get": {
-                "tags": [
-                    "Payslips"
-                ],
-                "summary": "🔍 تفاصيل إيصال الدفع",
-                "description": "استرجاع تفاصيل إيصال الدفع مع الراتب والخصومات والمكافآت.",
-                "operationId": "7e7ac285ac7c014662098245d77d8f0a",
-                "parameters": [
-                    {
-                        "name": "payslip",
-                        "in": "path",
-                        "description": "معرف الإيصال",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تفاصيل الإيصال",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على الإيصال",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
             "put": {
                 "tags": [
                     "Payslips"
                 ],
-                "summary": "📝 تعديل إيصال دفع",
-                "description": "تحديث بيانات إيصال دفع موجود.",
+                "summary": "📝 تعديل سجل راتب (إضافة خصم أو مكافأة)",
+                "description": "تحديث بيانات الراتب لشهر معين مثل الراتب الأساسي، العمولات، المكافآت مع سببها، والخصومات مع سببها.",
                 "operationId": "ffac5cdc4d359393729f66668c8ee98b",
                 "parameters": [
                     {
                         "name": "payslip",
                         "in": "path",
-                        "description": "معرف الإيصال",
+                        "description": "معرف سجل الراتب",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -16655,10 +16460,33 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "net_salary": {
+                                    "base_pay": {
                                         "type": "number",
                                         "format": "float",
-                                        "example": 4800
+                                        "example": 4000
+                                    },
+                                    "commission_pay": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500
+                                    },
+                                    "deductions": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "deduction_reason": {
+                                        "type": "string",
+                                        "example": "غياب يوم"
+                                    },
+                                    "bonuses": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
+                                    "bonus_reason": {
+                                        "type": "string",
+                                        "example": "أداء ممتاز"
                                     }
                                 },
                                 "type": "object"
@@ -16691,7 +16519,7 @@
                         }
                     },
                     "404": {
-                        "description": "🚫 لم يتم العثور على الإيصال",
+                        "description": "🚫 لم يتم العثور على السجل",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -16711,39 +16539,10 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
                     },
                     "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -16751,19 +16550,21 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "delete": {
+            }
+        },
+        "/v1/payslips/settings/{staff}": {
+            "put": {
                 "tags": [
                     "Payslips"
                 ],
-                "summary": "🗑️ حذف إيصال دفع",
-                "description": "حذف إيصال دفع من النظام.",
-                "operationId": "d21cbee0ee2ada3dda6107def742e8c8",
+                "summary": "⚙️ تعديل إعدادات الراتب للموظف",
+                "description": "تعديل الراتب الأساسي الثابت ونسبة العمولة (للكوتش) في إعدادات الموظف لتطبيقها في الأشهر القادمة.",
+                "operationId": "6aadeb83132113ff5987e94aeae9a3ca",
                 "parameters": [
                     {
-                        "name": "payslip",
+                        "name": "staff",
                         "in": "path",
-                        "description": "معرف الإيصال",
+                        "description": "معرف الموظف",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -16771,9 +16572,31 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "base_salary": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000
+                                    },
+                                    "percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 40
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم تحديث إعدادات الموظف بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -16784,12 +16607,10 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Deleted successfully"
+                                            "example": "Settings updated successfully"
                                         },
                                         "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -16798,40 +16619,13 @@
                         }
                     },
                     "404": {
-                        "description": "🚫 لم يتم العثور على الإيصال",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "🚫 لم يتم العثور على الموظف"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
                     },
                     "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [

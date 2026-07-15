@@ -2,30 +2,25 @@
 namespace Modules\StaffManager\Http\Controllers\Api\V1;
 
 use Modules\Core\Http\Controllers\Api\BaseController;
-use Modules\StaffManager\Services\PayslipService;
-use Modules\StaffManager\Http\Requests\StorePayslipRequest;
+use Modules\StaffManager\Models\Payslip;
+use Modules\StaffManager\Models\Staff;
 use Modules\StaffManager\Http\Requests\UpdatePayslipRequest;
+use Modules\StaffManager\Http\Requests\UpdateStaffSalarySettingsRequest;
 use Modules\StaffManager\Http\Resources\PayslipResource;
 use OpenApi\Attributes as OA;
 
 class PayslipController extends BaseController
 {
-    protected $service;
-
-    public function __construct(PayslipService $service) {
-        $this->service = $service;
-    }
-
     #[OA\Get(
         path: '/v1/payslips',
-        summary: '📄 عرض إيصالات الدفع',
-        description: 'استرجاع جميع إيصالات الدفع (Payslips) الصادرة للموظفين.',
+        summary: '📄 عرض سجلات الرواتب',
+        description: 'استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ تم استرجاع إيصالات الدفع بنجاح',
+        description: '✅ تم استرجاع السجلات بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -36,84 +31,28 @@ class PayslipController extends BaseController
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index() {
-        return $this->successResponse(PayslipResource::collection($this->service->getAll()), 'Retrieved successfully');
-    }
-
-    #[OA\Post(
-        path: '/v1/payslips',
-        summary: '➕ إضافة إيصال دفع',
-        description: 'إنشاء إيصال دفع جديد يدوياً.',
-        tags: ['Payslips'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            required: ['payroll_run_id', 'staff_id', 'basic_salary', 'net_salary'],
-            properties: [
-                new OA\Property(property: 'payroll_run_id', type: 'integer', example: 1),
-                new OA\Property(property: 'staff_id', type: 'integer', example: 1),
-                new OA\Property(property: 'basic_salary', type: 'number', format: 'float', example: 5000.00),
-                new OA\Property(property: 'net_salary', type: 'number', format: 'float', example: 4500.00)
-            ]
-        )
-    )]
-    #[OA\Response(
-        response: 201,
-        description: '✅ تم الإنشاء بنجاح',
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Created successfully'),
-                new OA\Property(property: 'data', type: 'object')
-            ]
-        )
-    )]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function store(StorePayslipRequest $request) {
-        $record = $this->service->create($request->validated());
-        return $this->successResponse(new PayslipResource($record), 'Created successfully', 201);
-    }
-
-    #[OA\Get(
-        path: '/v1/payslips/{payslip}',
-        summary: '🔍 تفاصيل إيصال الدفع',
-        description: 'استرجاع تفاصيل إيصال الدفع مع الراتب والخصومات والمكافآت.',
-        tags: ['Payslips'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تفاصيل الإيصال',
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
-            ]
-        )
-    )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الإيصال', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function show($id) {
-        return $this->successResponse(new PayslipResource($this->service->getById($id)), 'Retrieved successfully');
+        $payslips = Payslip::with(['staff.person', 'staff.coachDetail', 'payrollRun'])->get();
+        return $this->successResponse(PayslipResource::collection($payslips), 'Retrieved successfully');
     }
 
     #[OA\Put(
         path: '/v1/payslips/{payslip}',
-        summary: '📝 تعديل إيصال دفع',
-        description: 'تحديث بيانات إيصال دفع موجود.',
+        summary: '📝 تعديل سجل راتب (إضافة خصم أو مكافأة)',
+        description: 'تحديث بيانات الراتب لشهر معين مثل الراتب الأساسي، العمولات، المكافآت مع سببها، والخصومات مع سببها.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف سجل الراتب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'net_salary', type: 'number', format: 'float', example: 4800.00)
+                new OA\Property(property: 'base_pay', type: 'number', format: 'float', example: 4000.00),
+                new OA\Property(property: 'commission_pay', type: 'number', format: 'float', example: 500.00),
+                new OA\Property(property: 'deductions', type: 'number', format: 'float', example: 100.00),
+                new OA\Property(property: 'deduction_reason', type: 'string', example: 'غياب يوم'),
+                new OA\Property(property: 'bonuses', type: 'number', format: 'float', example: 200.00),
+                new OA\Property(property: 'bonus_reason', type: 'string', example: 'أداء ممتاز')
             ]
         )
     )]
@@ -128,37 +67,69 @@ class PayslipController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الإيصال', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على السجل', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function update(UpdatePayslipRequest $request, $id) {
-        $record = $this->service->update($id, $request->validated());
-        return $this->successResponse(new PayslipResource($record), 'Updated successfully');
+        $payslip = Payslip::findOrFail($id);
+        
+        $data = $request->validated();
+        $payslip->fill($data);
+
+        // Recalculate net_pay
+        $payslip->net_pay = $payslip->base_pay + $payslip->commission_pay + $payslip->bonuses - $payslip->deductions;
+        $payslip->save();
+
+        // Reload relationships for the resource
+        $payslip->load(['staff.person', 'staff.coachDetail']);
+        
+        return $this->successResponse(new PayslipResource($payslip), 'Updated successfully');
     }
 
-    #[OA\Delete(
-        path: '/v1/payslips/{payslip}',
-        summary: '🗑️ حذف إيصال دفع',
-        description: 'حذف إيصال دفع من النظام.',
+    #[OA\Put(
+        path: '/v1/payslips/settings/{staff}',
+        summary: '⚙️ تعديل إعدادات الراتب للموظف',
+        description: 'تعديل الراتب الأساسي الثابت ونسبة العمولة (للكوتش) في إعدادات الموظف لتطبيقها في الأشهر القادمة.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'payslip', in: 'path', required: true, description: 'معرف الإيصال', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم الحذف بنجاح',
+    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Deleted successfully'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'base_salary', type: 'number', format: 'float', example: 5000.00),
+                new OA\Property(property: 'percentage', type: 'number', format: 'float', example: 40.00)
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الإيصال', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy($id) {
-        $this->service->delete($id);
-        return $this->successResponse(null, 'Deleted successfully');
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث إعدادات الموظف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Settings updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الموظف')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function updateSettings(UpdateStaffSalarySettingsRequest $request, $id) {
+        $staff = Staff::with('coachDetail')->findOrFail($id);
+        
+        if ($request->has('base_salary')) {
+            $staff->base_salary = $request->base_salary;
+            $staff->save();
+        }
+
+        if ($request->has('percentage') && $staff->isCoach() && $staff->coachDetail) {
+            $staff->coachDetail->default_commission_rate = $request->percentage;
+            $staff->coachDetail->save();
+        }
+        
+        return $this->successResponse(null, 'Settings updated successfully');
     }
 }
