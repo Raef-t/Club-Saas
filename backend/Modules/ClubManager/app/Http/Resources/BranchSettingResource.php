@@ -19,6 +19,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "default_employee_salary", type: "number", format: "float", nullable: true, example: 3500.00),
         new OA\Property(property: "daily_entry_price", type: "number", format: "float", nullable: true, example: 50.00),
         new OA\Property(property: "locker_price", type: "number", format: "float", nullable: true, example: 100.00),
+        new OA\Property(property: "allow_freeze", type: "boolean", nullable: true, example: false),
+        new OA\Property(property: "display_mixed_activities", type: "boolean", nullable: true, example: false),
         new OA\Property(property: "updated_at", type: "string", format: "date-time")
     ]
 )]
@@ -36,6 +38,8 @@ class BranchSettingResource extends JsonResource
             'default_employee_salary' => $this->default_employee_salary,
             'daily_entry_price' => $this->daily_entry_price,
             'locker_price' => $this->locker_price,
+            'allow_freeze' => (bool)$this->allow_freeze,
+            'display_mixed_activities' => (bool)$this->display_mixed_activities,
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

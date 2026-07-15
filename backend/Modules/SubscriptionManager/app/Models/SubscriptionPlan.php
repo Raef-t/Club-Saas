@@ -17,8 +17,7 @@ class SubscriptionPlan extends Model
         'end_date',
         'duration_days',
         'session_count',
-        'max_freeze_count',
-        'max_freeze_days',
+        'sessions_per_week',
         'base_price',
         'is_active',
         'max_subscribers',
@@ -48,10 +47,9 @@ class SubscriptionPlan extends Model
         'end_date' => 'date',
         'is_active' => 'boolean',
         'base_price' => 'decimal:2',
-        'max_freeze_count' => 'integer',
-        'max_freeze_days' => 'integer',
         'max_subscribers' => 'integer',
         'current_subscribers' => 'integer',
+        'sessions_per_week' => 'integer',
     ];
 
     /**

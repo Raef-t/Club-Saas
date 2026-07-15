@@ -138,23 +138,64 @@ class ReceptionAttendanceController extends BaseController
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  2. Rollback Attendance
+    //  2. Rollback Attendance (Full or Partial)
     // ──────────────────────────────────────────────────────────────────────────
 
     #[OA\Delete(
         path: '/v1/reception/attendances/{attendanceId}/rollback',
-        summary: '↩️ إلغاء الحضور وإرجاع الجلسة',
-        description: 'يقوم موظف الاستقبال بالتراجع عن تسجيل حضور اللاعب، مما يعيد الجلسة المخصومة لاشتراكه ويمسح سجل الحضور.',
+        summary: '↩️ إلغاء الحضور وإرجاع الجلسة (كلي أو جزئي)',
+        description: <<<'DESC'
+يتيح هذا المسار لموظف الاستقبال التراجع عن خصم جلسة واحدة أو أكثر لاشتراكات محددة ضمن نفس سجل الحضور، أو إلغاء الحضور بالكامل.
+
+**السلوك:**
+- **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.
+- **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.
+  - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.
+  - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.
+DESC,
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Response(response: 200, description: '✅ تم إلغاء الحضور بنجاح', content: new OA\JsonContent())]
-    #[OA\Response(response: 400, description: '❌ لا يمكن إلغاء الحضور')]
-    public function rollbackAttendance(int $attendanceId, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(
+                    property: 'player_subscription_ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer'),
+                    nullable: true,
+                    example: [7],
+                    description: <<<'DESC'
+(اختياري) مصفوفة معرّفات اشتراكات اللاعب المراد إرجاع خصمها فقط.
+- إذا أُرسلت → Partial Rollback: يُرجع فقط الخصومات المحددة.
+- إذا لم تُرسل → Full Rollback: يُرجع كل الخصومات ويحذف سجل الحضور.
+DESC
+                ),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم إرجاع الخصم بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Attendance rolled back and session returned successfully.'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ خطأ: الاشتراك غير موجود في سجل الخصومات أو لا يمكن إلغاء الحضور')]
+    public function rollbackAttendance(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
+        $request->validate([
+            'player_subscription_ids'   => 'sometimes|nullable|array|min:1',
+            'player_subscription_ids.*' => 'integer',
+        ]);
+
         try {
-            $sessionDeductionService->rollbackDeduction($attendanceId);
+            $subscriptionIds = $request->input('player_subscription_ids', []);
+            $sessionDeductionService->rollbackDeduction($attendanceId, $subscriptionIds);
             return $this->successResponse(null, __('Attendance rolled back and session returned successfully.'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);

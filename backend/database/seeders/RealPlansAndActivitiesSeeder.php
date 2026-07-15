@@ -83,9 +83,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
             'name' => 'الاشتراك الذهبي الشامل (شهر)',
             'type' => 'duration', // اشتراك يعتمد على المدة الزمنية
             'duration_days' => 30, // صالح لمدة 30 يوم
-            'session_count' => null, 
-            'max_freeze_count' => 1, // يسمح بتجميد الاشتراك مرة واحدة
-            'max_freeze_days' => 7,  // التجميد يكون لمدة 7 أيام كحد أقصى
+            'session_count' => null,
             'base_price' => 250.00,
             'is_active' => true,
         ]);
@@ -95,9 +93,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
             'name' => 'باقة 10 حصص كروس فيت',
             'type' => 'session', // اشتراك يعتمد على عدد الجلسات
             'duration_days' => 90, // الجلسات صالحة للاستخدام خلال 90 يوم
-            'session_count' => 10, // 10 جلسات
-            'max_freeze_count' => 0,
-            'max_freeze_days' => 0,
+            'session_count' => 10,
             'base_price' => 150.00,
             'is_active' => true,
         ]);

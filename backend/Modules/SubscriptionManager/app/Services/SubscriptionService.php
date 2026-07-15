@@ -241,44 +241,24 @@ class SubscriptionService
     /**
      * Freeze a subscription.
      */
-    public function freezeSubscription(int $subscriptionId, string $startDate, string $endDate, ?string $reason = null)
+    public function freezeSubscription(int $subscriptionId, string $startDate, ?string $reason = null)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        return DB::transaction(function () use ($subscription, $startDate, $endDate, $reason) {
-            $plan = $subscription->plan;
+        return DB::transaction(function () use ($subscription, $startDate, $reason) {
+            $memberModel = \Modules\MemberManager\Models\Member::with('branch.settings')->find($subscription->member_id);
+            $allowFreeze = $memberModel?->branch?->settings?->allow_freeze ?? false;
 
-            if ($plan) {
-                // Validate max freeze count
-                if ($plan->max_freeze_count !== null) {
-                    $freezeCount = $subscription->freezes()->count();
-                    if ($freezeCount >= $plan->max_freeze_count) {
-                        throw new Exception(__('Freezing limit exceeded. This subscription plan allows at most :count freeze(s).', ['count' => $plan->max_freeze_count]));
-                    }
-                }
-
-                // Validate max freeze days
-                if ($plan->max_freeze_days !== null) {
-                    $requestedDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
-
-                    $previousFreezeDays = 0;
-                    foreach ($subscription->freezes as $freeze) {
-                        $end = $freeze->actual_end_date ?? $freeze->freeze_end_date;
-                        $previousFreezeDays += Carbon::parse($freeze->freeze_start_date)->diffInDays(Carbon::parse($end)) + 1;
-                    }
-
-                    if ($previousFreezeDays + $requestedDays > $plan->max_freeze_days) {
-                        throw new Exception(__('Total freezing days limit exceeded. This subscription plan allows at most :days days of freezing.', ['days' => $plan->max_freeze_days]));
-                    }
-                }
+            if (!$allowFreeze) {
+                throw new Exception(__('Freezing is not allowed in this branch.'));
             }
 
             $subscription->freezes()->create([
                 'freeze_start_date' => $startDate,
-                'freeze_end_date' => $endDate,
+                'freeze_end_date' => null,
                 'reason' => $reason,
             ]);
-
+            
             $subscription->update(['status' => 'frozen']);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
@@ -294,18 +274,14 @@ class SubscriptionService
                     $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
                     
                     $startCarbon = \Carbon\Carbon::parse($startDate);
-                    $endCarbon = \Carbon\Carbon::parse($endDate);
                     
                     $startDay = $startCarbon->locale('ar')->translatedFormat('l');
-                    $endDay = $endCarbon->locale('ar')->translatedFormat('l');
 
                     $body = $template->parseBody([
                         'اسم اللاعب' => $playerName,
                         'اسم الاشتراك' => $planName,
                         'تاريخ البداية' => $startDate,
                         'يوم البداية' => $startDay,
-                        'تاريخ النهاية' => $endDate,
-                        'يوم النهاية' => $endDay,
                     ]);
 
                     app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
@@ -506,9 +482,14 @@ class SubscriptionService
                     $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
                     $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
 
+                    $endDate = now();
+                    $endDay = $endDate->locale('ar')->translatedFormat('l');
+
                     $body = $template->parseBody([
                         'اسم اللاعب' => $playerName,
                         'اسم الاشتراك' => $planName,
+                        'تاريخ النهاية' => $endDate->toDateString(),
+                        'يوم النهاية' => $endDay,
                     ]);
 
                     app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([

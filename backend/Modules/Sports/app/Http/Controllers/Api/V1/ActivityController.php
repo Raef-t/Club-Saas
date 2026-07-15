@@ -39,10 +39,19 @@ class ActivityController extends BaseController
 
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+            $branch = \Modules\ClubManager\Models\Branch::with('settings')->find($request->branch_id);
+            if ($branch && $branch->gender_restriction !== 'mixed') {
+                $allowMixed = $branch->settings?->display_mixed_activities ?? false;
+                if ($allowMixed) {
+                    $query->whereIn('gender_allowed', [$branch->gender_restriction, 'mixed']);
+                } else {
+                    $query->where('gender_allowed', $branch->gender_restriction);
+                }
+            }
         }
 
         if ($request->has('facility_id')) {
-            $facility = Facility::find($request->facility_id);
+            $facility = \Modules\ClubManager\Models\Facility::find($request->facility_id);
             if ($facility && $facility->gender_restriction !== 'mixed') {
                 $query->whereIn('gender_allowed', [$facility->gender_restriction, 'mixed']);
             }

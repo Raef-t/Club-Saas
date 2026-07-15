@@ -171,10 +171,9 @@ class PlayerSubscriptionController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['freeze_start_date', 'freeze_end_date'],
+            required: ['freeze_start_date'],
             properties: [
                 new OA\Property(property: 'freeze_start_date', type: 'string', format: 'date', example: '2023-11-01'),
-                new OA\Property(property: 'freeze_end_date', type: 'string', format: 'date', example: '2023-11-15'),
                 new OA\Property(property: 'reason', type: 'string', example: 'السفر')
             ]
         )
@@ -204,7 +203,6 @@ class PlayerSubscriptionController extends BaseController
         $subscription = $this->subscriptionService->freezeSubscription(
             $id,
             $data['freeze_start_date'],
-            $data['freeze_end_date'],
             $data['reason'] ?? null
         );
 
