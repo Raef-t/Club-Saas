@@ -16552,6 +16552,100 @@
                 ]
             }
         },
+        "/v1/payslips/generate": {
+            "post": {
+                "tags": [
+                    "Payslips"
+                ],
+                "summary": "⚙️ توليد رواتب الموظفين",
+                "description": "يقوم بحساب وتوليد سجلات الرواتب لجميع الموظفين النشطين لفترة محددة (شهر). إذا لم يتم تحديد الشهر يُستخدم الشهر الحالي تلقائياً.",
+                "operationId": "1d3c70ae1971f780b1edded2344536b5",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "period": {
+                                        "description": "الشهر بصيغة YYYY-MM، اتركه فارغاً للشهر الحالي",
+                                        "type": "string",
+                                        "example": "2026-07"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم توليد الرواتب بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payroll generated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "period": {
+                                                    "type": "string",
+                                                    "example": "2026-07"
+                                                },
+                                                "payroll_run_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "staff_count": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "⚠️ الرواتب لهذه الفترة تم توليدها مسبقاً",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payroll for this period already exists."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/staff": {
             "get": {
                 "tags": [
