@@ -88,6 +88,7 @@ class SessionTemplateController extends BaseController
 
             $schedule[$dayName][] = [
                 'id' => $session->id,
+                'plan_id' => $session->plan_id,
                 'start_time' => $session->start_time->format('H:i'),
                 'end_time' => $session->end_time->format('H:i'),
                 'gender_allowed' => $session->gender_allowed,
