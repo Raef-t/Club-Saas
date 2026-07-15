@@ -5,7 +5,6 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\StaffManager\Models\Payslip;
 use Modules\StaffManager\Models\Staff;
 use Modules\StaffManager\Http\Requests\UpdatePayslipRequest;
-use Modules\StaffManager\Http\Requests\UpdateStaffSalarySettingsRequest;
 use Modules\StaffManager\Http\Resources\PayslipResource;
 use OpenApi\Attributes as OA;
 
@@ -86,50 +85,5 @@ class PayslipController extends BaseController
         return $this->successResponse(new PayslipResource($payslip), 'Updated successfully');
     }
 
-    #[OA\Put(
-        path: '/v1/payslips/settings/{staff}',
-        summary: '⚙️ تعديل إعدادات الراتب للموظف',
-        description: 'تعديل الراتب الأساسي الثابت ونسبة العمولة (للكوتش) في إعدادات الموظف لتطبيقها في الأشهر القادمة.',
-        tags: ['Payslips'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'base_salary', type: 'number', format: 'float', example: 5000.00),
-                new OA\Property(property: 'percentage', type: 'number', format: 'float', example: 40.00)
-            ]
-        )
-    )]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم تحديث إعدادات الموظف بنجاح',
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Settings updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
-            ]
-        )
-    )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الموظف')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    public function updateSettings(UpdateStaffSalarySettingsRequest $request, $id) {
-        $staff = Staff::with('coachDetail')->findOrFail($id);
-        
-        if ($request->has('base_salary')) {
-            $staff->base_salary = $request->base_salary;
-            $staff->save();
-        }
-
-        if ($request->has('percentage') && $staff->isCoach() && $staff->coachDetail) {
-            $staff->coachDetail->default_commission_rate = $request->percentage;
-            $staff->coachDetail->save();
-        }
-        
-        return $this->successResponse(null, 'Settings updated successfully');
-    }
+    // Removed updateSettings
 }
