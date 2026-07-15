@@ -21,6 +21,8 @@ class UpdateBranchSettingRequest extends FormRequest
             'default_employee_salary' => 'nullable|numeric|min:0',
             'daily_entry_price' => 'nullable|numeric|min:0',
             'locker_price' => 'nullable|numeric|min:0',
+            'allow_freeze' => 'nullable|boolean',
+            'display_mixed_activities' => 'nullable|boolean',
         ];
     }
 }

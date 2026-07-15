@@ -19,6 +19,8 @@ class BranchSetting extends Model
         'default_employee_salary',
         'daily_entry_price',
         'locker_price',
+        'allow_freeze',
+        'display_mixed_activities',
     ];
 
     protected $casts = [
@@ -29,6 +31,8 @@ class BranchSetting extends Model
         'default_employee_salary' => 'decimal:2',
         'daily_entry_price' => 'decimal:2',
         'locker_price' => 'decimal:2',
+        'allow_freeze' => 'boolean',
+        'display_mixed_activities' => 'boolean',
     ];
 
     public function branch(): BelongsTo

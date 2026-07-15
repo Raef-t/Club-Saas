@@ -82,9 +82,22 @@ class SessionDeductionService
 
             $deductedItem = $this->decrementSessionsConsumed($items);
 
-            $attendance = $this->updateAttendanceMetadata($attendance, $subscription, $metadata, $deductedItem);
-
             $planName = DB::table('subscription_plans')->where('id', $subscription->plan_id)->value('name') ?? 'اشتراك';
+
+            $metadata['deduction_status'] = 'completed';
+            $metadata['deductions'] = [
+                [
+                    'subscription_id'      => $subscription->id,
+                    'plan_id'              => $subscription->plan_id,
+                    'plan_name'            => $planName,
+                    'deducted_item_id'     => $deductedItem?->id,
+                    'deducted_by_staff_id' => Auth::id(),
+                ]
+            ];
+
+            $attendance->update(['metadata' => $metadata]);
+            $attendance = $attendance->fresh();
+
             $this->sendNotification($attendance, $planName, $deductedItem);
 
             return $attendance;
@@ -136,6 +149,8 @@ class SessionDeductionService
 
                 $deductions[] = [
                     'subscription_id'      => $subscription->id,
+                    'plan_id'              => $subscription->plan_id,
+                    'plan_name'            => $planName,
                     'deducted_item_id'     => $deductedItem?->id,
                     'deducted_by_staff_id' => Auth::id(),
                 ];
@@ -199,52 +214,59 @@ class SessionDeductionService
         return $deductedItem;
     }
 
-    private function updateAttendanceMetadata(Attendance $attendance, $subscription, array $metadata, $deductedItem): Attendance
-    {
-        $metadata['subscription_id'] = $subscription->id;
-        $metadata['deduction_status'] = 'completed';
-        $metadata['deducted_by_staff_id'] = Auth::id();
-        
-        if ($deductedItem) {
-            $metadata['deducted_item_id'] = $deductedItem->id;
-        }
 
-        $attendance->update([
-            'metadata' => $metadata
-        ]);
-
-        return $attendance;
-    }
 
     /**
-     * Rollbacks a session deduction and cancels the attendance.
+     * Rollbacks session deductions for a given attendance.
      *
-     * @param int $attendanceId
+     * Behaviour depends on whether specific subscription IDs are provided:
+     *  - No IDs supplied  → rollback ALL deductions and DELETE the attendance record (original behaviour).
+     *  - IDs supplied     → rollback only the matched deductions.
+     *                       If all deductions are now rolled back the attendance is also deleted;
+     *                       otherwise the attendance record is kept with the remaining deductions.
+     *
+     * @param int   $attendanceId
+     * @param int[] $subscriptionIds  Optional list of player_subscription IDs to rollback selectively.
      * @return void
      * @throws Exception
      */
-    public function rollbackDeduction(int $attendanceId): void
+    public function rollbackDeduction(int $attendanceId, array $subscriptionIds = []): void
     {
-        DB::transaction(function () use ($attendanceId) {
+        DB::transaction(function () use ($attendanceId, $subscriptionIds) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
-            $metadata = $attendance->metadata ?? [];
+            $metadata   = $attendance->metadata ?? [];
 
-            $member = Member::with('person.user')->find($attendance->attendable_id);
-            $userId = $member?->person?->user?->id;
+            $member     = Member::with('person.user')->find($attendance->attendable_id);
+            $userId     = $member?->person?->user?->id;
             $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
 
             $remainingSessionsInfo = [];
-            $isSessionBased = false;
+            $isSessionBased        = false;
+            $isPartial             = !empty($subscriptionIds);
 
             if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
                 $deductions = $metadata['deductions'] ?? [];
-                
-                // Backward compatibility: If no 'deductions' array, convert single old format
-                if (empty($deductions) && isset($metadata['deducted_item_id'])) {
-                    $deductions[] = ['deducted_item_id' => $metadata['deducted_item_id']];
+
+                // ── Validate requested IDs exist inside the recorded deductions ──
+                if ($isPartial) {
+                    $deductedSubIds = array_column($deductions, 'subscription_id');
+                    foreach ($subscriptionIds as $subId) {
+                        if (!in_array($subId, $deductedSubIds)) {
+                            throw new Exception(__(
+                                'Subscription ID :id was not deducted in this attendance.',
+                                ['id' => $subId]
+                            ));
+                        }
+                    }
                 }
 
-                foreach ($deductions as $deduction) {
+                // ── Determine which deductions to rollback ──
+                $toRollback = $isPartial
+                    ? array_filter($deductions, fn($d) => in_array($d['subscription_id'], $subscriptionIds))
+                    : $deductions;
+
+                // ── Restore sessions_consumed for each targeted deduction ──
+                foreach ($toRollback as $deduction) {
                     if (isset($deduction['deducted_item_id'])) {
                         $isSessionBased = true;
                         $item = DB::table('player_subscription_items')
@@ -255,7 +277,7 @@ class SessionDeductionService
                             DB::table('player_subscription_items')
                                 ->where('id', $deduction['deducted_item_id'])
                                 ->decrement('sessions_consumed');
-                            
+
                             $remainingSessionsInfo[] = $item->sessions_allocated - ($item->sessions_consumed - 1);
                         } elseif ($item) {
                             $remainingSessionsInfo[] = $item->sessions_allocated - $item->sessions_consumed;
@@ -264,40 +286,59 @@ class SessionDeductionService
                 }
             }
 
-            $attendance->delete();
+            // ── Decide whether to delete attendance or just update its metadata ──
+            if ($isPartial) {
+                $remainingDeductions = array_values(
+                    array_filter(
+                        $metadata['deductions'] ?? [],
+                        fn($d) => !in_array($d['subscription_id'], $subscriptionIds)
+                    )
+                );
 
+                if (empty($remainingDeductions)) {
+                    // All deductions have been rolled back — remove the record entirely
+                    $attendance->delete();
+                } else {
+                    // Some deductions remain — keep the attendance and update metadata
+                    $metadata['deductions'] = $remainingDeductions;
+                    $attendance->update(['metadata' => $metadata]);
+                }
+            } else {
+                // Full rollback — delete the attendance record
+                $attendance->delete();
+            }
+
+            // ── Send notification ──
             if ($userId) {
                 if ($isSessionBased && !empty($remainingSessionsInfo)) {
-                    $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_session')->first();
+                    $template     = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_session')->first();
                     $remainingStr = implode(', ', $remainingSessionsInfo);
                     if ($template) {
-                        $body = $template->parseBody([
-                            'اسم اللاعب' => $playerName,
-                            'الجلسات المتبقية' => $remainingStr
+                        $body  = $template->parseBody([
+                            'اسم اللاعب'       => $playerName,
+                            'الجلسات المتبقية' => $remainingStr,
                         ]);
                         $title = $template->subject ?? 'إلغاء دخول واسترجاع جلسة 🔄';
                     } else {
                         $title = 'إلغاء دخول واسترجاع جلسة 🔄';
-                        $body = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingStr} جلسة.";
+                        $body  = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingStr} جلسة.";
                     }
                 } else {
                     $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_time')->first();
                     if ($template) {
-                        $body = $template->parseBody([
-                            'اسم اللاعب' => $playerName
-                        ]);
+                        $body  = $template->parseBody(['اسم اللاعب' => $playerName]);
                         $title = $template->subject ?? 'إلغاء تسجيل الدخول 🔄';
                     } else {
                         $title = 'إلغاء تسجيل الدخول 🔄';
-                        $body = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير بنجاح. نتمنى رؤيتك قريباً!";
+                        $body  = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير بنجاح. نتمنى رؤيتك قريباً!";
                     }
                 }
 
                 $this->notificationService->createNotification([
-                    'title' => $title,
-                    'body' => $body,
-                    'user_ids' => [$userId],
-                    'sender_type' => 'system'
+                    'title'       => $title,
+                    'body'        => $body,
+                    'user_ids'    => [$userId],
+                    'sender_type' => 'system',
                 ]);
             }
         });

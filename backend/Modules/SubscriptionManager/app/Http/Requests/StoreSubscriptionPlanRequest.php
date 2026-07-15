@@ -39,6 +39,7 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'duration_days' => 'required_if:type,fixed_period|nullable|integer|min:1',
             'session_count' => 'required_if:type,session_based|nullable|integer|min:1',
+            'sessions_per_week' => 'nullable|integer|min:1',
             'base_price' => 'required|numeric|min:0',
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',

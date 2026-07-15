@@ -3429,8 +3429,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "↩️ إلغاء الحضور وإرجاع الجلسة",
-                "description": "يقوم موظف الاستقبال بالتراجع عن تسجيل حضور اللاعب، مما يعيد الجلسة المخصومة لاشتراكه ويمسح سجل الحضور.",
+                "summary": "↩️ إلغاء الحضور وإرجاع الجلسة (كلي أو جزئي)",
+                "description": "يتيح هذا المسار لموظف الاستقبال التراجع عن خصم جلسة واحدة أو أكثر لاشتراكات محددة ضمن نفس سجل الحضور، أو إلغاء الحضور بالكامل.\n\n**السلوك:**\n- **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.\n- **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.\n  - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.\n  - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.",
                 "operationId": "51fdf23443c8a41da1becdec63e72a25",
                 "parameters": [
                     {
@@ -3442,17 +3442,48 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "player_subscription_ids": {
+                                        "description": "(اختياري) مصفوفة معرّفات اشتراكات اللاعب المراد إرجاع خصمها فقط.\n- إذا أُرسلت → Partial Rollback: يُرجع فقط الخصومات المحددة.\n- إذا لم تُرسل → Full Rollback: يُرجع كل الخصومات ويحذف سجل الحضور.",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            7
+                                        ],
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم إلغاء الحضور بنجاح",
+                        "description": "✅ تم إرجاع الخصم بنجاح",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Attendance rolled back and session returned successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
                             }
                         }
                     },
                     "400": {
-                        "description": "❌ لا يمكن إلغاء الحضور"
+                        "description": "❌ خطأ: الاشتراك غير موجود في سجل الخصومات أو لا يمكن إلغاء الحضور"
                     }
                 },
                 "security": [
@@ -5683,6 +5714,16 @@
                                         "format": "time",
                                         "example": null,
                                         "nullable": true
+                                    },
+                                    "allow_freeze": {
+                                        "description": "السماح بتجميد الاشتراكات في هذا الفرع",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "display_mixed_activities": {
+                                        "description": "السماح بعرض الفعاليات المختلطة في الفرع (إذا كان الفرع غير مختلط)",
+                                        "type": "boolean",
+                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -19654,19 +19695,13 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "freeze_start_date",
-                                    "freeze_end_date"
+                                    "freeze_start_date"
                                 ],
                                 "properties": {
                                     "freeze_start_date": {
                                         "type": "string",
                                         "format": "date",
                                         "example": "2023-11-01"
-                                    },
-                                    "freeze_end_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-11-15"
                                     },
                                     "reason": {
                                         "type": "string",
@@ -21282,6 +21317,11 @@
                                         "example": null,
                                         "nullable": true
                                     },
+                                    "sessions_per_week": {
+                                        "type": "integer",
+                                        "example": 3,
+                                        "nullable": true
+                                    },
                                     "base_price": {
                                         "type": "number",
                                         "format": "float",
@@ -21694,6 +21734,11 @@
                                     "session_count": {
                                         "type": "integer",
                                         "example": null,
+                                        "nullable": true
+                                    },
+                                    "sessions_per_week": {
+                                        "type": "integer",
+                                        "example": 3,
                                         "nullable": true
                                     },
                                     "base_price": {
@@ -23120,6 +23165,16 @@
                         "type": "number",
                         "format": "float",
                         "example": 100,
+                        "nullable": true
+                    },
+                    "allow_freeze": {
+                        "type": "boolean",
+                        "example": false,
+                        "nullable": true
+                    },
+                    "display_mixed_activities": {
+                        "type": "boolean",
+                        "example": false,
                         "nullable": true
                     },
                     "updated_at": {
