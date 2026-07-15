@@ -95,36 +95,43 @@ class ReceptionAttendanceController extends BaseController
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  1.5 Assign Subscription and Deduct Session
+    //  1.5 Assign Subscriptions and Deduct Sessions
     // ──────────────────────────────────────────────────────────────────────────
 
     #[OA\Post(
         path: '/v1/reception/attendances/{attendanceId}/deduct',
-        summary: '💰 خصم جلسة من اشتراك محدد',
-        description: 'بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار الاشتراك وتأكيد الخصم عبر هذا المسار.',
+        summary: '💰 خصم جلسات من اشتراكات محددة',
+        description: 'بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار اشتراك واحد أو أكثر وتأكيد الخصم عبر هذا المسار. يتم خصم جلسة من كل اشتراك في المصفوفة بنفس المنطق.',
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['player_subscription_id'],
+        required: ['player_subscription_ids'],
         properties: [
-            new OA\Property(property: 'player_subscription_id', type: 'integer', example: 5, description: 'معرف اشتراك اللاعب المراد الخصم منه'),
+            new OA\Property(
+                property: 'player_subscription_ids',
+                type: 'array',
+                items: new OA\Items(type: 'integer'),
+                example: [5, 7],
+                description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم منها (يمكن إرسال اشتراك واحد أو أكثر)'
+            ),
         ]
     ))]
-    #[OA\Response(response: 200, description: '✅ تم خصم الجلسة بنجاح', content: new OA\JsonContent())]
+    #[OA\Response(response: 200, description: '✅ تم خصم الجلسات بنجاح', content: new OA\JsonContent())]
     #[OA\Response(response: 400, description: '❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)')]
     public function deductSession(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
         $request->validate([
-            'player_subscription_id' => 'required|integer'
+            'player_subscription_ids'   => 'required|array|min:1',
+            'player_subscription_ids.*' => 'required|integer',
         ]);
 
         try {
-            $subscriptionId = $request->input('player_subscription_id');
-            $attendance = $sessionDeductionService->deductSession($attendanceId, $subscriptionId);
+            $subscriptionIds = $request->input('player_subscription_ids');
+            $attendance = $sessionDeductionService->deductMultipleSessions($attendanceId, $subscriptionIds);
 
-            return $this->successResponse(new AttendanceResource($attendance), __('Session deducted successfully.'));
+            return $this->successResponse(new AttendanceResource($attendance), __('Sessions deducted successfully.'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }

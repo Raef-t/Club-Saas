@@ -91,6 +91,68 @@ class SessionDeductionService
         });
     }
 
+    /**
+     * Deducts a session from each of the specified subscriptions for the given attendance record.
+     * All deductions are performed inside a single transaction; any failure rolls back everything.
+     *
+     * @param int   $attendanceId
+     * @param int[] $subscriptionIds
+     * @return Attendance
+     * @throws Exception
+     */
+    public function deductMultipleSessions(int $attendanceId, array $subscriptionIds): Attendance
+    {
+        return DB::transaction(function () use ($attendanceId, $subscriptionIds) {
+            $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
+            $metadata   = $attendance->metadata ?? [];
+
+            if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
+                throw new Exception(__('Session already deducted for this attendance.'));
+            }
+
+            $deductions = [];
+
+            foreach ($subscriptionIds as $subscriptionId) {
+                $subscription = DB::table('player_subscriptions')
+                    ->where('id', $subscriptionId)
+                    ->where('member_id', $attendance->attendable_id)
+                    ->where('status', 'active')
+                    ->first();
+
+                if (!$subscription) {
+                    throw new Exception(__('The selected subscription (ID: :id) is not active or does not belong to this member.', ['id' => $subscriptionId]));
+                }
+
+                $this->validateDebt($subscription, $attendance->club_id);
+
+                $items = DB::table('player_subscription_items')
+                    ->where('player_subscription_id', $subscription->id)
+                    ->where('is_unlimited', false)
+                    ->get();
+
+                $this->validateRemainingSessions($items);
+
+                $deductedItem = $this->decrementSessionsConsumed($items);
+
+                $deductions[] = [
+                    'subscription_id'      => $subscription->id,
+                    'deducted_item_id'     => $deductedItem?->id,
+                    'deducted_by_staff_id' => Auth::id(),
+                ];
+
+                $planName = DB::table('subscription_plans')->where('id', $subscription->plan_id)->value('name') ?? 'اشتراك';
+                $this->sendNotification($attendance, $planName, $deductedItem);
+            }
+
+            $metadata['deduction_status'] = 'completed';
+            $metadata['deductions']       = $deductions;
+
+            $attendance->update(['metadata' => $metadata]);
+
+            return $attendance->fresh();
+        });
+    }
+
     private function validateDebt($subscription, $clubId): void
     {
         if ($subscription->remaining_amount > 0) {
@@ -171,43 +233,52 @@ class SessionDeductionService
             $userId = $member?->person?->user?->id;
             $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
 
-            $remainingSessions = null;
+            $remainingSessionsInfo = [];
             $isSessionBased = false;
 
             if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
-                if (isset($metadata['deducted_item_id'])) {
-                    $isSessionBased = true;
-                    $item = DB::table('player_subscription_items')
-                        ->where('id', $metadata['deducted_item_id'])
-                        ->first();
+                $deductions = $metadata['deductions'] ?? [];
+                
+                // Backward compatibility: If no 'deductions' array, convert single old format
+                if (empty($deductions) && isset($metadata['deducted_item_id'])) {
+                    $deductions[] = ['deducted_item_id' => $metadata['deducted_item_id']];
+                }
 
-                    if ($item && $item->sessions_consumed > 0) {
-                        DB::table('player_subscription_items')
-                            ->where('id', $metadata['deducted_item_id'])
-                            ->decrement('sessions_consumed');
-                        
-                        $remainingSessions = $item->sessions_allocated - ($item->sessions_consumed - 1);
-                    } elseif ($item) {
-                        $remainingSessions = $item->sessions_allocated - $item->sessions_consumed;
+                foreach ($deductions as $deduction) {
+                    if (isset($deduction['deducted_item_id'])) {
+                        $isSessionBased = true;
+                        $item = DB::table('player_subscription_items')
+                            ->where('id', $deduction['deducted_item_id'])
+                            ->first();
+
+                        if ($item && $item->sessions_consumed > 0) {
+                            DB::table('player_subscription_items')
+                                ->where('id', $deduction['deducted_item_id'])
+                                ->decrement('sessions_consumed');
+                            
+                            $remainingSessionsInfo[] = $item->sessions_allocated - ($item->sessions_consumed - 1);
+                        } elseif ($item) {
+                            $remainingSessionsInfo[] = $item->sessions_allocated - $item->sessions_consumed;
+                        }
                     }
                 }
             }
 
-            // Finally, delete the attendance record
             $attendance->delete();
 
             if ($userId) {
-                if ($isSessionBased && $remainingSessions !== null) {
+                if ($isSessionBased && !empty($remainingSessionsInfo)) {
                     $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_session')->first();
+                    $remainingStr = implode(', ', $remainingSessionsInfo);
                     if ($template) {
                         $body = $template->parseBody([
                             'اسم اللاعب' => $playerName,
-                            'الجلسات المتبقية' => $remainingSessions
+                            'الجلسات المتبقية' => $remainingStr
                         ]);
                         $title = $template->subject ?? 'إلغاء دخول واسترجاع جلسة 🔄';
                     } else {
                         $title = 'إلغاء دخول واسترجاع جلسة 🔄';
-                        $body = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingSessions} جلسة.";
+                        $body = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingStr} جلسة.";
                     }
                 } else {
                     $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_time')->first();
