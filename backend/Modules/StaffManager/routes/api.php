@@ -29,7 +29,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('payroll-runs', PayrollController::class)->except(['update', 'destroy']);
     Route::get('payslips', [PayslipController::class, 'index']);
     Route::put('payslips/{payslip}', [PayslipController::class, 'update']);
-    Route::put('payslips/settings/{staff}', [PayslipController::class, 'updateSettings']);
 
     // Coach Management
     Route::prefix('coaches')->group(function () {
