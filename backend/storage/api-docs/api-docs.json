@@ -3365,8 +3365,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "💰 خصم جلسة من اشتراك محدد",
-                "description": "بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار الاشتراك وتأكيد الخصم عبر هذا المسار.",
+                "summary": "💰 خصم جلسات من اشتراكات محددة",
+                "description": "بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار اشتراك واحد أو أكثر وتأكيد الخصم عبر هذا المسار. يتم خصم جلسة من كل اشتراك في المصفوفة بنفس المنطق.",
                 "operationId": "0e5a59577ea71c8ec3245d44606662b6",
                 "parameters": [
                     {
@@ -3384,13 +3384,19 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "player_subscription_id"
+                                    "player_subscription_ids"
                                 ],
                                 "properties": {
-                                    "player_subscription_id": {
-                                        "description": "معرف اشتراك اللاعب المراد الخصم منه",
-                                        "type": "integer",
-                                        "example": 5
+                                    "player_subscription_ids": {
+                                        "description": "مصفوفة معرفات اشتراكات اللاعب المراد الخصم منها (يمكن إرسال اشتراك واحد أو أكثر)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            5,
+                                            7
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -3400,7 +3406,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "✅ تم خصم الجلسة بنجاح",
+                        "description": "✅ تم خصم الجلسات بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {}
@@ -3500,15 +3506,6 @@
                                         "type": "string",
                                         "format": "date-time",
                                         "example": "2026-06-26 15:30:00"
-                                    },
-                                    "subscription_id": {
-                                        "description": "معرف الاشتراك لخصم الجلسة منه (اختياري)",
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "metadata": {
-                                        "description": "بيانات إضافية (اختياري)",
-                                        "type": "object"
                                     }
                                 },
                                 "type": "object"

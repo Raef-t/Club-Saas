@@ -30,9 +30,7 @@ class UnifiedAttendanceController extends BaseController
                 new OA\Property(property: 'attendable_id', type: 'integer', example: 1), 
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1), 
                 new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'), 
-                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00'),
-                new OA\Property(property: 'subscription_id', type: 'integer', example: 5, description: 'معرف الاشتراك لخصم الجلسة منه (اختياري)'),
-                new OA\Property(property: 'metadata', type: 'object', description: 'بيانات إضافية (اختياري)')
+                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00')
             ]
         )
     )]
