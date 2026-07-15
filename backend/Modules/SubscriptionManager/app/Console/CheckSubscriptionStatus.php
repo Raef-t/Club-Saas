@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 class CheckSubscriptionStatus extends Command
 {
+    use \Modules\Core\Traits\TracksCommandExecution;
+
     /**
      * The name and signature of the console command.
      *
@@ -30,6 +32,15 @@ class CheckSubscriptionStatus extends Command
      */
     public function handle(\Modules\SubscriptionManager\Services\SubscriptionNotificationService $notificationService)
     {
+        $today = now();
+        $period = $today->format('Y-m-d'); // Daily period tracking
+
+        // Check if we already executed successfully today using our tracking table
+        if ($this->hasExecutedForPeriod($period)) {
+            $this->info("Subscription status check for {$period} was already executed successfully. Skipping.");
+            return Command::SUCCESS;
+        }
+
         $this->info('Scanning subscriptions and lockers for expiration...');
         Log::info('Subscription and locker status scan started.');
 
@@ -103,6 +114,9 @@ class CheckSubscriptionStatus extends Command
         
         $this->info("Successfully expired {$expiredLockersCount} locker reservations.");
         Log::info("Locker reservation status scan completed. Expired {$expiredLockersCount} reservations.");
+
+        // Mark this command as successfully executed for this period
+        $this->markAsExecuted($period);
 
         return Command::SUCCESS;
     }
