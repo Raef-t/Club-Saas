@@ -254,9 +254,9 @@ class ActivityController extends BaseController
         $activity = Activity::findOrFail($id);
 
         // Check if activity is linked to any subscription plan (via staff_activities → plan_activities)
-        $planActivitiesCount = \Modules\Sports\Models\StaffActivity::where('activity_id', $id)
-            ->whereHas('planActivities')
-            ->count();
+        $planActivitiesCount = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::whereHas('staffActivity', function ($query) use ($id) {
+            $query->where('activity_id', $id);
+        })->count();
 
         // Check if activity is linked to any staff (coach assignment)
         $staffActivitiesCount = \Modules\Sports\Models\StaffActivity::where('activity_id', $id)->count();
