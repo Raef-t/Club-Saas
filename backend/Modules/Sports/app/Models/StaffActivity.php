@@ -20,5 +20,8 @@ class StaffActivity extends Model
         return $this->belongsTo(Activity::class);
     }
 
-    // staff_id resolved via Core contracts — no belongsTo(Staff::class)
+    public function staff()
+    {
+        return $this->belongsTo(\Modules\StaffManager\Models\Staff::class, 'staff_id');
+    }
 }
