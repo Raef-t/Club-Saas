@@ -92,9 +92,7 @@ class ReceptionAttendanceController extends BaseController
                         'psi.activity_id',
                         'a.name as activity_name',
                         'psi.coach_id',
-                        'p.first_name as coach_first_name',
-                        'p.last_name as coach_last_name',
-                        'p.phone as coach_phone',
+                        'p.full_name as coach_name',
                         's.role as coach_role',
                         'psi.sessions_allocated',
                         'psi.sessions_consumed',
@@ -109,17 +107,14 @@ class ReceptionAttendanceController extends BaseController
                         if ($item->coach_id) {
                             $item->coach = [
                                 'id' => $item->coach_id,
-                                'first_name' => $item->coach_first_name,
-                                'last_name' => $item->coach_last_name,
-                                'name' => trim($item->coach_first_name . ' ' . $item->coach_last_name),
-                                'phone' => $item->coach_phone,
+                                'name' => $item->coach_name,
                                 'role' => $item->coach_role,
                             ];
                         } else {
                             $item->coach = null;
                         }
                         
-                        unset($item->coach_first_name, $item->coach_last_name, $item->coach_phone, $item->coach_role);
+                        unset($item->coach_name, $item->coach_role);
 
                         return $item;
                     });
