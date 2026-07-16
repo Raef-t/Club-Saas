@@ -87,7 +87,10 @@ class StaffController extends BaseController
                     new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
                     new OA\Property(property: 'role', type: 'string', enum: ['admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
                     new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
-                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                    new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                    new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
                     new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
                     new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
@@ -209,7 +212,10 @@ class StaffController extends BaseController
                     new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
                     new OA\Property(property: 'role', type: 'string', enum: ['admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
                     new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
-                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                    new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                    new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
                     new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                     new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
                 ]

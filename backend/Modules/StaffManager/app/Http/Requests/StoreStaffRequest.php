@@ -39,7 +39,6 @@ class StoreStaffRequest extends FormRequest
             'phone_number' => 'required|string',
             'gender' => 'nullable|in:male,female',
             'dob' => 'nullable|date',
-            'email' => 'nullable|email',
             'national_id' => 'nullable|string|max:50',
             'social_status' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
@@ -70,7 +69,10 @@ class StoreStaffRequest extends FormRequest
             'shift_type' => 'nullable|string|max:50',
             'work_type' => 'nullable|in:part_time,full_time',
             'work_status' => 'nullable|in:active,suspended,on_leave',
+            'is_active' => 'nullable|boolean',
             'other_tasks' => 'nullable|string|max:500',
+            'shifts' => 'nullable|array',
+            'shifts.*' => 'exists:branch_shifts,id',
 
             // ── Coach Details (coach_details table, only when role=coach) ──
             'specialization' => 'nullable|required_if:role,coach|string|max:100',

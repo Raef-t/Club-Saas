@@ -14207,6 +14207,15 @@
                                         "type": "integer",
                                         "example": 5
                                     },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-16"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "activity_ids[]": {
                                         "description": "مصفوفة معرفات الأنشطة (اختياري)",
                                         "type": "array",
@@ -14791,6 +14800,11 @@
                                     "experience_years": {
                                         "type": "integer",
                                         "example": 7
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-16"
                                     },
                                     "is_active": {
                                         "type": "boolean",
@@ -16835,10 +16849,26 @@
                                             "hybrid"
                                         ]
                                     },
-                                    "email": {
+                                    "base_salary": {
+                                        "type": "number",
+                                        "example": 5000
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "start_date": {
                                         "type": "string",
-                                        "format": "email",
-                                        "example": "john@example.com"
+                                        "format": "date",
+                                        "example": "2026-07-16"
+                                    },
+                                    "shifts[]": {
+                                        "description": "مصفوفة معرفات الشفتات",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     },
                                     "address": {
                                         "description": "العنوان",
@@ -17230,10 +17260,26 @@
                                             "hybrid"
                                         ]
                                     },
-                                    "email": {
+                                    "base_salary": {
+                                        "type": "number",
+                                        "example": 5000
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "start_date": {
                                         "type": "string",
-                                        "format": "email",
-                                        "example": "john@example.com"
+                                        "format": "date",
+                                        "example": "2026-07-16"
+                                    },
+                                    "shifts[]": {
+                                        "description": "مصفوفة معرفات الشفتات",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     },
                                     "address": {
                                         "description": "العنوان",
