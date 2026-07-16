@@ -29,6 +29,12 @@ class UpdateCoachRequest extends FormRequest
                 $this->merge([$field => array_values($filtered)]);
             }
         }
+
+        if ($this->has('is_active')) {
+            $this->merge([
+                'is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
     }
 
     public function rules(): array
