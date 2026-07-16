@@ -59,8 +59,7 @@ class StaffService
                         ->orWhereHas('contacts', function ($cq) use ($search) {
                             $cq->where('phone_number', 'like', "%{$search}%");
                         })
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('national_id', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%");
                 });
             }
 
@@ -71,8 +70,7 @@ class StaffService
         // Eager-load coach details and branches and user
         $query->with(['coachDetail', 'branches', 'user']);
 
-        $perPage = $filters['per_page'] ?? 15;
-        $staffMembers = $query->latest()->paginate($perPage);
+        $staffMembers = $query->latest()->get();
 
         foreach ($staffMembers as $staff) {
             $this->attachSharedDTOs($staff);

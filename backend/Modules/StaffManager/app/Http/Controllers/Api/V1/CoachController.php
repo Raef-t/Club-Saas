@@ -206,7 +206,7 @@ class CoachController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['branch_id', 'activity_id']);
+            $filters = $request->only(['branch_id', 'activity_id', 'gender']);
             $coaches = $this->coachService->getAllCoaches($filters);
 
             return CoachResource::collection($coaches);
