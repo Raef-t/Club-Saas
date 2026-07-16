@@ -28,6 +28,12 @@ class UpdateStaffRequest extends FormRequest
                     : [$this->branch_ids]
             ]);
         }
+
+        if ($this->has('is_active')) {
+            $this->merge([
+                'is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
     }
 
     public function rules(): array
