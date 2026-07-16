@@ -12,7 +12,50 @@ export const lockerSchema = z.object({
     .or(z.string().min(1, "الفرع مطلوب").transform(Number)),
 });
 
+export const updateLockerSchema = z.object({
+  locker_number: z
+    .string({ required_error: "رقم الخزانة مطلوب" })
+    .min(1, "رقم الخزانة مطلوب")
+    .max(50, "رقم الخزانة طويل جداً"),
+  status: z.string({ required_error: "الحالة مطلوبة" }).min(1, "الحالة مطلوبة"),
+  holder_type: z.string().optional(),
+  holder_id: z.union([z.number(), z.string().transform(Number)]).optional(),
+  holder_name: z.string().optional(),
+});
+
+export const reserveLockerSchema = z.object({
+  reservation_type: z.string({ required_error: "نوع الحجز مطلوب" }).min(1, "نوع الحجز مطلوب"),
+  holder_type: z.string({ required_error: "نوع المستفيد مطلوب" }).min(1, "نوع المستفيد مطلوب"),
+  holder_id: z.union([
+    z.number({ invalid_type_error: "رقم المستفيد مطلوب" }).positive("رقم المستفيد مطلوب"),
+    z.string().min(1, "رقم المستفيد مطلوب").transform(Number),
+  ]),
+  price: z.union([
+    z.number({ invalid_type_error: "السعر مطلوب" }).min(0, "السعر يجب أن يكون أكبر من أو يساوي الصفر"),
+    z.string().min(1, "السعر مطلوب").transform(Number),
+  ]).optional(),
+  start_date: z.string({ required_error: "تاريخ البداية مطلوب" }).min(1, "تاريخ البداية مطلوب"),
+  end_date: z.string().optional(),
+});
+
 export const initialLockerForm = {
   locker_number: "",
   branch_id: "",
+};
+
+export const initialUpdateLockerForm = {
+  locker_number: "",
+  status: "available",
+  holder_type: "",
+  holder_id: "",
+  holder_name: "",
+};
+
+export const initialReserveLockerForm = {
+  reservation_type: "rental",
+  holder_type: "member",
+  holder_id: "",
+  price: "",
+  start_date: "",
+  end_date: "",
 };

@@ -1,6 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import {
+  useQrCheckInMutation,
+  useGetMemberSubscriptionsQuery,
+} from "@/lib/api/attendanceApi";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -248,9 +253,50 @@ function ScannerCard({
   alwaysOn,
   scannerActive,
   onAlwaysOnChange,
-  onScan,
+  onScanClick,
+  onScanSuccess,
   onStop,
 }) {
+  const onScanSuccessRef = useRef(onScanSuccess);
+
+  useEffect(() => {
+    onScanSuccessRef.current = onScanSuccess;
+  }, [onScanSuccess]);
+
+  useEffect(() => {
+    let html5QrCode;
+    if (scannerActive) {
+      html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrCode
+        .start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            if (onScanSuccessRef.current) onScanSuccessRef.current(decodedText);
+          },
+          () => {}, // ignore errors (usually just means no QR code in view)
+        )
+        .catch((err) => {
+          console.error("Camera error:", err);
+        });
+    }
+
+    return () => {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode
+          .stop()
+          .then(() => {
+            try {
+              html5QrCode.clear();
+            } catch (e) {
+              console.warn("Failed to clear html5QrCode:", e);
+            }
+          })
+          .catch(console.error);
+      }
+    };
+  }, [scannerActive]);
+
   return (
     <section
       className="w-full max-w-[520px] overflow-hidden rounded-xl border border-app-line bg-app-yellow text-[#1b1b1b]"
@@ -286,24 +332,35 @@ function ScannerCard({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onScan}
-        className="group mx-3 mb-3 grid min-h-[145px] w-[calc(100%-1.5rem)] place-items-center overflow-hidden rounded-xl border border-dashed border-white/70 bg-[#957a04] text-[#1b1b1b] transition hover:bg-[#8a7104]"
+      <div
+        onClick={!scannerActive ? onScanClick : undefined}
+        className={`group mx-3 mb-3 grid min-h-[145px] w-[calc(100%-1.5rem)] place-items-center overflow-hidden rounded-xl border border-dashed border-white/70 bg-[#957a04] text-[#1b1b1b] transition ${!scannerActive ? "cursor-pointer hover:bg-[#8a7104]" : ""}`}
       >
-        <div className="relative flex w-full max-w-xs flex-col items-center">
-          {scannerActive && (
-            <span className="absolute -top-6 h-1 w-48 rounded-full bg-black/45 shadow-[0_0_22px_rgba(0,0,0,0.45)] animate-pulse" />
+        <div className="relative flex w-full flex-col items-center justify-center">
+          <div
+            id="qr-reader"
+            className={
+              scannerActive
+                ? "w-full max-w-[300px] overflow-hidden rounded-lg"
+                : "hidden"
+            }
+          />
+
+          {!scannerActive && (
+            <div className="flex flex-col items-center">
+              <CameraIcon className="size-12 transition group-hover:scale-105" />
+              <span className="mt-3 text-base font-medium">
+                انقر لتفعيل قارئ QR
+              </span>
+              <span className="mt-1 text-xs">
+                {alwaysOn
+                  ? "سيبقى المسح فعالاً بشكل دائم"
+                  : "سيتم المسح عند النقر"}
+              </span>
+            </div>
           )}
-          <CameraIcon className="size-12 transition group-hover:scale-105" />
-          <span className="mt-3 text-base font-medium">
-            {scannerActive ? "قرب البطاقة من الكاميرا" : "انقر لتفعيل قارئ QR"}
-          </span>
-          <span className="mt-1 text-xs">
-            {alwaysOn ? "سيبقى المسح فعالاً بشكل دائم" : "سيتم المسح عند النقر"}
-          </span>
         </div>
-      </button>
+      </div>
 
       {scannerActive && !alwaysOn && (
         <div className="flex justify-end px-3 pb-3">
@@ -421,6 +478,22 @@ function PlayerCard({
 
 export default function AttendanceClient() {
   const toast = useToast();
+  const [qrCheckIn] = useQrCheckInMutation();
+  const [scannedMemberId, setScannedMemberId] = useState(null);
+  const { data: memberSubscriptionsResponse, error: subsError, isLoading: subsLoading } = useGetMemberSubscriptionsQuery(
+    scannedMemberId,
+    {
+      skip: !scannedMemberId,
+    },
+  );
+
+  useEffect(() => {
+    if (scannedMemberId) {
+      console.log("Scanned Member ID:", scannedMemberId);
+      console.log("Subscriptions Response:", memberSubscriptionsResponse);
+      if (subsError) console.error("Subscriptions Error:", subsError);
+    }
+  }, [scannedMemberId, memberSubscriptionsResponse, subsError]);
   const [alwaysOn, setAlwaysOn] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
   const [activeMemberId, setActiveMemberId] = useState("m-433");
@@ -431,18 +504,46 @@ export default function AttendanceClient() {
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
   const [attendanceRows, setAttendanceRows] = useState(initialAttendanceRows);
 
-  const activeMember = useMemo(
-    () => members.find((member) => member.id === activeMemberId) || members[0],
-    [activeMemberId],
-  );
+  const activeMember = useMemo(() => {
+    if (scannedMemberId) {
+      return {
+        id: scannedMemberId,
+        name: `عضو #${scannedMemberId}`,
+        number: `M-${scannedMemberId}`,
+        avatar: "ع",
+        age: "-",
+      };
+    }
+    return members.find((member) => member.id === activeMemberId) || members[0];
+  }, [activeMemberId, scannedMemberId]);
 
-  const playerSubscriptions = useMemo(
-    () =>
-      subscriptions.filter(
-        (subscription) => subscription.memberId === activeMember.id,
-      ),
-    [activeMember.id],
-  );
+  const apiSubscriptions = useMemo(() => {
+    if (!memberSubscriptionsResponse?.data) return [];
+    return memberSubscriptionsResponse.data.map((sub) => ({
+      id: sub.player_subscription_id,
+      memberId: sub.member_id,
+      label: sub.plan_name,
+      activity: sub.plan_name,
+      coach: "-",
+      remaining: "-",
+      endsAt: sub.end_date,
+      activities: [{ id: sub.plan_id, label: sub.plan_name, coach: "-" }],
+    }));
+  }, [memberSubscriptionsResponse]);
+
+  const playerSubscriptions = useMemo(() => {
+    if (scannedMemberId) return apiSubscriptions;
+    return subscriptions.filter(
+      (subscription) => subscription.memberId === activeMember.id,
+    );
+  }, [activeMember.id, scannedMemberId, apiSubscriptions]);
+
+  useEffect(() => {
+    if (scannedMemberId && apiSubscriptions.length > 0) {
+      setSelectedSubscriptionId(apiSubscriptions[0].id);
+      setSelectedActivityId(apiSubscriptions[0].activities?.[0]?.id || "");
+    }
+  }, [apiSubscriptions, scannedMemberId]);
 
   const selectedSubscription = useMemo(
     () =>
@@ -483,23 +584,52 @@ export default function AttendanceClient() {
     setScannerActive(checked);
   }
 
-  function handleScan() {
+  function handleScanClick() {
     setScannerActive(true);
-    const nextMemberId = activeMemberId === "m-433" ? "m-219" : "m-433";
-    const nextMemberSubscriptions = subscriptions.filter(
-      (subscription) => subscription.memberId === nextMemberId,
-    );
-    const nextSubscription = nextMemberSubscriptions[0];
-    const nextActivity = nextSubscription?.activities?.[0];
+  }
 
-    setActiveMemberId(nextMemberId);
-    setSelectedSubscriptionId(nextSubscription?.id || "");
-    setSelectedActivityId(nextActivity?.id || "");
-    setRegisteredMemberId(null);
-
+  function handleScanSuccess(decodedText) {
     if (!alwaysOn) {
-      window.setTimeout(() => setScannerActive(false), 700);
+      setScannerActive(false);
     }
+
+    qrCheckIn({ qr_code: decodedText, branch_id: 3 })
+      .unwrap()
+      .then((res) => {
+        toast.success("تم تسجيل الدخول بنجاح");
+
+        const memberId = res?.data?.member_id;
+        if (memberId) {
+          setScannedMemberId(memberId);
+        }
+
+        const nextId = attendanceRows.length + 1;
+        const now = new Date();
+        const time = now
+          .toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          })
+          .toLowerCase();
+
+        setAttendanceRows((current) => [
+          {
+            id: nextId,
+            number: `#${nextId}`,
+            time,
+            member: memberId ? `عضو #${memberId}` : "عضو جديد (من الـ QR)",
+            activity: "-",
+            coach: "-",
+            locker: "-",
+            status: "دخول",
+          },
+          ...current,
+        ]);
+      })
+      .catch((err) => {
+        toast.error(err?.data?.message || "فشل تسجيل الدخول");
+      });
   }
 
   function handleSubscriptionChange(value) {
@@ -576,7 +706,8 @@ export default function AttendanceClient() {
           alwaysOn={alwaysOn}
           scannerActive={scannerActive}
           onAlwaysOnChange={handleAlwaysOnChange}
-          onScan={handleScan}
+          onScanClick={handleScanClick}
+          onScanSuccess={handleScanSuccess}
           onStop={() => setScannerActive(false)}
         />
       </section>

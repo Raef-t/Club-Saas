@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import SectionCard from "@/components/ui/SectionCard";
 import Dropdown from "@/components/ui/Dropdown";
 import { ClockIcon, SettingsIcon } from "@/components/icons/Icons";
+import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
 import "./schedule.css";
 
 // ─── Constants ───
@@ -266,6 +267,49 @@ export default function ScheduleClient() {
 
   // Schedule data
   const [scheduleData, setScheduleData] = useState({});
+
+  // API Data
+  const { data: apiScheduleResponse, isLoading } = useGetScheduleQuery();
+
+  // Populate scheduleData from API
+  useEffect(() => {
+    if (apiScheduleResponse?.data) {
+      const apiData = apiScheduleResponse.data;
+      const apiToLocalDays = {
+        Sunday: "sun",
+        Monday: "mon",
+        Tuesday: "tue",
+        Wednesday: "wed",
+        Thursday: "thu",
+        Friday: "fri",
+        Saturday: "sat",
+      };
+
+      setScheduleData((prev) => {
+        const newData = { ...prev };
+        
+        Object.entries(apiData).forEach(([apiDay, sessions]) => {
+          const localDay = apiToLocalDays[apiDay];
+          if (!localDay) return;
+          
+          if (!newData[localDay]) newData[localDay] = {};
+          
+          sessions.forEach(session => {
+            if (!session.start_time) return;
+            const [h, m] = session.start_time.split(":");
+            const slotKey = `${pad2(h)}${pad2(m)}`;
+            
+            const cellText = [session.plan_name, session.coach?.name].filter(Boolean).join(" - ");
+            
+            newData[localDay][`morning_${slotKey}`] = cellText;
+            newData[localDay][`evening_${slotKey}`] = cellText;
+          });
+        });
+
+        return newData;
+      });
+    }
+  }, [apiScheduleResponse]);
 
   // UI state
   const [showSettings, setShowSettings] = useState(false);
@@ -566,7 +610,7 @@ export default function ScheduleClient() {
     printWindow.document.close();
   };
 
-  if (!loaded) {
+  if (!loaded || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-app-muted text-sm">جاري التحميل...</div>

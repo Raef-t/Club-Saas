@@ -97,6 +97,10 @@ export default function SettingsClient() {
   const [defaultEmployeeSalary, setDefaultEmployeeSalary] = useState("3500");
   const [workingHoursStart, setWorkingHoursStart] = useState("");
   const [workingHoursEnd, setWorkingHoursEnd] = useState("");
+  const [dailyEntryPrice, setDailyEntryPrice] = useState("0");
+  const [lockerPrice, setLockerPrice] = useState("0");
+  const [allowFreeze, setAllowFreeze] = useState(false);
+  const [displayMixedActivities, setDisplayMixedActivities] = useState(false);
 
   // States for shifts management
   const { data: shiftsResponse, isFetching: isLoadingShifts } = useGetBranchShiftsQuery(
@@ -413,6 +417,10 @@ export default function SettingsClient() {
       setDefaultEmployeeSalary(s.default_employee_salary || "0");
       setWorkingHoursStart(s.working_hours_start ? s.working_hours_start.slice(0, 5) : "");
       setWorkingHoursEnd(s.working_hours_end ? s.working_hours_end.slice(0, 5) : "");
+      setDailyEntryPrice(s.daily_entry_price || "0");
+      setLockerPrice(s.locker_price || "0");
+      setAllowFreeze(!!s.allow_freeze);
+      setDisplayMixedActivities(!!s.display_mixed_activities);
     }
   }, [settingsResponse]);
 
@@ -452,6 +460,10 @@ export default function SettingsClient() {
             default_employee_salary: parseFloat(defaultEmployeeSalary) || 0,
             working_hours_start: formatTimeForApi(workingHoursStart),
             working_hours_end: formatTimeForApi(workingHoursEnd),
+            daily_entry_price: parseFloat(dailyEntryPrice) || 0,
+            locker_price: parseFloat(lockerPrice) || 0,
+            allow_freeze: allowFreeze,
+            display_mixed_activities: displayMixedActivities,
           },
         }).unwrap();
       }
@@ -735,6 +747,57 @@ export default function SettingsClient() {
                             value={workingHoursEnd}
                             onChange={(val) => setWorkingHoursEnd(val)}
                           />
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <Field
+                            label="سعر الدخول اليومي"
+                            type="number"
+                            required
+                            min="0"
+                            step="0.01"
+                            value={dailyEntryPrice}
+                            onChange={(e) => setDailyEntryPrice(e.target.value)}
+                            placeholder="0"
+                          />
+                          <Field
+                            label="سعر الخزانة"
+                            type="number"
+                            required
+                            min="0"
+                            step="0.01"
+                            value={lockerPrice}
+                            onChange={(e) => setLockerPrice(e.target.value)}
+                            placeholder="30000"
+                          />
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="flex items-center gap-3 bg-app-panel-soft p-4 rounded-xl border border-app-line cursor-pointer transition-colors hover:border-app-yellow/50">
+                            <input
+                              type="checkbox"
+                              checked={allowFreeze}
+                              onChange={(e) => setAllowFreeze(e.target.checked)}
+                              className="size-5 rounded border-app-line bg-app-panel text-app-yellow focus:ring-app-yellow focus:ring-offset-app-bg"
+                            />
+                            <div className="flex flex-col text-right">
+                              <span className="font-medium text-app-text">السماح بالتجميد</span>
+                              <span className="text-sm text-app-muted-light mt-0.5">السماح للمشتركين بتجميد اشتراكاتهم</span>
+                            </div>
+                          </label>
+
+                          <label className="flex items-center gap-3 bg-app-panel-soft p-4 rounded-xl border border-app-line cursor-pointer transition-colors hover:border-app-yellow/50">
+                            <input
+                              type="checkbox"
+                              checked={displayMixedActivities}
+                              onChange={(e) => setDisplayMixedActivities(e.target.checked)}
+                              className="size-5 rounded border-app-line bg-app-panel text-app-yellow focus:ring-app-yellow focus:ring-offset-app-bg"
+                            />
+                            <div className="flex flex-col text-right">
+                              <span className="font-medium text-app-text">عرض الأنشطة المختلطة</span>
+                              <span className="text-sm text-app-muted-light mt-0.5">إظهار الأنشطة المختلطة في جدول الحصص</span>
+                            </div>
+                          </label>
                         </div>
                       </>
                     )}

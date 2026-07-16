@@ -28,10 +28,22 @@ export const lockersApi = createApi({
       },
       providesTags: ["Lockers"],
     }),
+    getLocker: builder.query({
+      query: (id) => `lockers/${id}`,
+      providesTags: ["Lockers"],
+    }),
     createLocker: builder.mutation({
       query: (body) => ({
         url: "lockers",
         method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Lockers"],
+    }),
+    updateLocker: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `lockers/${id}`,
+        method: "PUT", // or PATCH depending on the API, usually PUT for update
         body,
       }),
       invalidatesTags: ["Lockers"],
@@ -50,12 +62,31 @@ export const lockersApi = createApi({
       }),
       invalidatesTags: ["Lockers"],
     }),
+    reserveLocker: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `lockers/${id}/reservations`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Lockers"],
+    }),
+    releaseLockerReservation: builder.mutation({
+      query: (id) => ({
+        url: `lockers/${id}/reservations/current`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Lockers"],
+    }),
   }),
 });
 
 export const {
   useGetLockersQuery,
+  useGetLockerQuery,
   useCreateLockerMutation,
+  useUpdateLockerMutation,
   useDeleteLockerMutation,
   useToggleLockerStatusMutation,
+  useReserveLockerMutation,
+  useReleaseLockerReservationMutation,
 } = lockersApi;

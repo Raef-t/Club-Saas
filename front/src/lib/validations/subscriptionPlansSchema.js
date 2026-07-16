@@ -47,6 +47,8 @@ export const subscriptionPlanSchema = z.object({
 
   is_unlimited_subscribers: z.boolean().optional(),
   
+  gender_restriction: z.enum(["mixed", "male", "female"]).optional(),
+  
   activities: z.array(
     z.object({
       activity_id: z.number().positive("يرجى اختيار نشاط صالح"),
@@ -59,9 +61,6 @@ export const subscriptionPlanSchema = z.object({
       day_of_week: z.number().min(0).max(6, "يوم الأسبوع غير صالح"),
       start_time: z.string().min(1, "وقت البدء مطلوب"),
       end_time: z.string().min(1, "وقت الانتهاء مطلوب"),
-      gender_allowed: z.enum(["male", "female", "both"], {
-        required_error: "الفئة المستهدفة مطلوبة",
-      }),
     })
   ).optional(),
 

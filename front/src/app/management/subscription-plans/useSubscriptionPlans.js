@@ -240,6 +240,7 @@ export function useSubscriptionPlans({
       price: String(parseAmount(plan.base_price || "")),
       max_subscribers: String(plan.max_subscribers ?? "0"),
       is_active: plan.is_active ?? true,
+      gender_restriction: plan.gender_restriction || "mixed",
       is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
       activities: plan.activities?.map((a) => ({
         activity_id: String(a.activity_id),
@@ -249,7 +250,6 @@ export function useSubscriptionPlans({
         day_of_week: String(s.day_of_week),
         start_time: s.start_time || "",
         end_time: s.end_time || "",
-        gender_allowed: s.gender_allowed || "both",
       })) || [],
     };
   }
