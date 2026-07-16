@@ -64,6 +64,8 @@ class StoreStaffRequest extends FormRequest
             'branch_ids.*' => 'exists:branches,id',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
             'contract_type' => 'nullable|in:probation,permanent',
             'shift_type' => 'nullable|string|max:50',
             'work_type' => 'nullable|in:part_time,full_time',

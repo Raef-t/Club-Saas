@@ -19,6 +19,8 @@ class Staff extends Model
         'is_active',
         'start_date',
         'end_date',
+        'start_time',
+        'end_time',
         'contract_type',
         'shift_type',
         'work_status',
