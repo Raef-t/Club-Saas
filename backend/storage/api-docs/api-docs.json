@@ -23360,6 +23360,18 @@
                         "format": "date",
                         "nullable": true
                     },
+                    "start_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "09:00",
+                        "nullable": true
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "17:00",
+                        "nullable": true
+                    },
                     "experience_years": {
                         "type": "integer"
                     },
