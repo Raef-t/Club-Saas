@@ -15,7 +15,6 @@ class QRCheckOutRequest extends FormRequest
     {
         return [
             'qr_code' => 'required|string',
-            'branch_id' => 'required|integer',
         ];
     }
 }

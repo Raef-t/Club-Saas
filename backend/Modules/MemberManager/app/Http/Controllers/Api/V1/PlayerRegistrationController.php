@@ -204,7 +204,6 @@ class PlayerRegistrationController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female']))]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة العضوية', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'frozen']))]
-    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم أو الجوال', schema: new OA\Schema(type: 'string'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم جلب الأعضاء بنجاح',
