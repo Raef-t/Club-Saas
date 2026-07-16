@@ -32,6 +32,11 @@ class StaffController extends BaseController
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'role', in: 'query', required: false, description: 'تصفية حسب الدور', schema: new OA\Schema(type: 'string', enum: ['admin', 'manager', 'coach', 'receptionist', 'cleaner']))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
+    #[OA\Parameter(name: 'is_active', in: 'query', required: false, description: 'تصفية حسب الحالة النشطة', schema: new OA\Schema(type: 'boolean'))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم، الهاتف، الايميل أو الرقم الوطني', schema: new OA\Schema(type: 'string'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الموظفين بنجاح',

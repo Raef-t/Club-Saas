@@ -52,11 +52,7 @@ class ActivityController extends BaseController
 
         if ($request->has('facility_id')) {
             $facility = \Modules\ClubManager\Models\Facility::find($request->facility_id);
-            if ($facility && $facility->gender_restriction !== 'mixed') {
-                $query->whereIn('gender_allowed', [$facility->gender_restriction, 'mixed']);
-            }
-        } elseif ($request->has('gender_allowed')) {
-            $query->where('gender_allowed', $request->gender_allowed);
+            // Gender restrictions for facility are applied at the facility/session level.
         }
 
         $activities = $query->orderBy('id')->get();
@@ -133,8 +129,7 @@ class ActivityController extends BaseController
                 new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط (مطلوب)', example: 'يوغا'),
                 new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
                 new OA\Property(property: 'activity_type_id', description: '(مطلوب) معرف نوع النشاط', type: 'integer', example: 1),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]
@@ -203,8 +198,7 @@ class ActivityController extends BaseController
                 new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط', example: 'اجهزة عام'),
                 new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
                 new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 4),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]

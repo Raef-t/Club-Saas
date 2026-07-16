@@ -135,6 +135,12 @@ class CoachService
             });
         }
 
+        if (!empty($filters['gender'])) {
+            $query->whereHas('person', function ($q) use ($filters) {
+                $q->where('gender', $filters['gender']);
+            });
+        }
+
         if (!empty($filters['activity_id'])) {
             $query->withCount(['activities as has_specific_activity' => function ($q) use ($filters) {
                 $q->where('activities.id', $filters['activity_id']);

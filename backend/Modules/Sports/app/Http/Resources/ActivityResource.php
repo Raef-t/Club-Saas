@@ -19,7 +19,6 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "activity_type", type: "object", description: "Activity type details"),
         new OA\Property(property: "description", type: "string", nullable: true),
         new OA\Property(property: "is_private_equipment", type: "boolean", example: false),
-        new OA\Property(property: "gender_allowed", type: "string", example: "mixed"),
         new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "created_at", type: "string", format: "date-time")
     ]
@@ -35,7 +34,6 @@ class ActivityResource extends JsonResource
             'activity_type' => new ActivityTypeResource($this->activityType),
             'description' => $this->description,
             'is_private_equipment' => $this->is_private_equipment,
-            'gender_allowed' => $this->gender_allowed,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
