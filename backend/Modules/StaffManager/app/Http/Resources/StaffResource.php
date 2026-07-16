@@ -79,7 +79,7 @@ class StaffResource extends JsonResource
             'username' => $this->whenLoaded('user', fn() => $this->user?->username),
             'generated_username' => $this->generated_username ?? null,
             'generated_password' => $this->generated_password ?? null,
-            'branch_name' => $this->branchDto->name ?? null,
+            'branch_name' => $this->branchDto?->name ?? null,
             'shifts' => $this->whenLoaded('shifts'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
