@@ -899,7 +899,7 @@ class CoachController extends Controller
     #[OA\Delete(
         path: '/v1/coaches/{id}',
         summary: 'Delete Coach',
-        description: 'Soft delete a coach.',
+        description: 'Delete a coach. Cannot be deleted if associated with players, shifts, or activities.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -911,6 +911,14 @@ class CoachController extends Controller
                 description: 'Coach deleted successfully',
                 content: new OA\JsonContent(properties: [
                     new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 409, 
+                description: 'Conflict - Cannot delete coach',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'status', type: 'string', example: 'error'),
+                    new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا المدرب لأنه مرتبط بـ 2 اشتراكات لاعبين. يمكنك إيقاف حساب المدرب بدلاً من حذفه.')
                 ])
             ),
             new OA\Response(
@@ -962,6 +970,8 @@ class CoachController extends Controller
             return response()->json([
                 'message' => 'Coach not found.'
             ], 404);
+        } catch (\Modules\Core\Exceptions\CannotDeleteException $e) {
+            throw $e; // Handled by global exception handler
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while deleting the coach.',

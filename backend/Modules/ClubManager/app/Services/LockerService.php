@@ -75,8 +75,23 @@ class LockerService
         return $this->repository->update($id, $data);
     }
 
+    /**
+     * Delete a locker.
+     *
+     * @throws \Modules\Core\Exceptions\CannotDeleteException
+     */
     public function deleteLocker($id)
     {
+        $locker = \Modules\ClubManager\Models\Locker::findOrFail($id);
+        
+        $reservationsCount = \Modules\ClubManager\Models\LockerReservation::where('locker_id', $id)->count();
+        if ($reservationsCount > 0) {
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف الخزانة لوجود {$reservationsCount} " . ($reservationsCount === 1 ? 'حجز' : 'حجوزات') . " مرتبطة بها. يُنصح بإلغاء الحجز أو تعطيل الخزانة بدلاً من حذفها.",
+                ['reservations_count' => $reservationsCount]
+            );
+        }
+
         return $this->repository->delete($id);
     }
 

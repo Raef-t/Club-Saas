@@ -237,7 +237,16 @@ class ActivityController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 409, description: '🚫 لا يمكن الحذف — النشاط مرتبط ببيانات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا النشاط.')]))]
+    #[OA\Response(
+        response: 409, 
+        description: '🚫 لا يمكن الحذف — النشاط مرتبط ببيانات أخرى', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا النشاط لأنه مرتبط بـ 2 خطة اشتراك، و 1 مدرب. يمكنك تعطيل النشاط (is_active = false) بدلاً من حذفه.')
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id)

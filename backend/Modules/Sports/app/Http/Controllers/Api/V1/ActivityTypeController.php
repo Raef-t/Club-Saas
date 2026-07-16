@@ -69,8 +69,46 @@ class ActivityTypeController extends BaseController
         );
     }
 
+    #[OA\Delete(
+        path: '/v1/activity-types/{activity_type}',
+        summary: '🗑️ حذف نوع نشاط',
+        description: 'حذف نوع نشاط من النظام. لا يمكن حذفه إذا كان هناك أنشطة تابعة له.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'activity_type', in: 'path', required: true, description: 'معرف نوع النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف نوع النشاط بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity type deleted successfully')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 409, 
+        description: '🚫 لا يمكن الحذف — نوع النشاط مرتبط بأنشطة أخرى', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف نوع النشاط لوجود 5 أنشطة تندرج تحته. يمكنك تعطيله بدلاً من حذفه.')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 نوع النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(ActivityType $activity_type)
     {
+        $activitiesCount = \Modules\Sports\Models\Activity::where('activity_type_id', $activity_type->id)->count();
+        if ($activitiesCount > 0) {
+            return $this->errorResponse(
+                "لا يمكن حذف نوع النشاط لوجود {$activitiesCount} " . ($activitiesCount === 1 ? 'نشاط يندرج' : 'أنشطة تندرج') . " تحته. يمكنك تعطيله بدلاً من حذفه.",
+                409
+            );
+        }
+
         $activity_type->delete();
         return $this->successResponse(null, __('Activity type deleted successfully'));
     }

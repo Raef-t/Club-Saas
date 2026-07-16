@@ -274,7 +274,16 @@ class OfferController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 409, description: '🚫 لا يمكن الحذف — العرض مرتبط باشتراكات', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف العرض.')]))]
+    #[OA\Response(
+        response: 409, 
+        description: '🚫 لا يمكن الحذف — العرض مرتبط باشتراكات', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا العرض لوجود 3 اشتراكات مرتبطة به. يمكنك تعطيل العرض بدلاً من حذفه.')
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على العرض', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id)

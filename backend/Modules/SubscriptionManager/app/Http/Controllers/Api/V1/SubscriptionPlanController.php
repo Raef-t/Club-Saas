@@ -363,6 +363,23 @@ class SubscriptionPlanController extends BaseController
         )
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(
+        response: 409, 
+        description: '🚫 لا يمكن الحذف — الفعالية مرتبطة بلاعبين', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (is_active = false) بدلاً من حذفها.'),
+                new OA\Property(
+                    property: 'details', 
+                    type: 'object', 
+                    properties: [
+                        new OA\Property(property: 'subscribers_count', type: 'integer', example: 5)
+                    ]
+                )
+            ]
+        )
+    )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
