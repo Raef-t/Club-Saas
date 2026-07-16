@@ -31,10 +31,9 @@ class QRController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_code', 'branch_id'],
+            required: ['qr_code'],
             properties: [
-                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...'),
-                new OA\Property(property: 'branch_id', type: 'integer', example: 1)
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...')
             ]
         )
     )]
@@ -76,7 +75,19 @@ class QRController extends BaseController
                 throw new Exception('No active profile found for this QR code.');
             }
 
-            $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $validated['branch_id'])->first();
+            $authUser = request()->user();
+            $scannerStaff = \Illuminate\Support\Facades\DB::table('staff')->where('person_id', $authUser->person_id)->first();
+
+            if (!$scannerStaff) {
+                return $this->errorResponse('Authenticated user is not a staff member.', 403);
+            }
+
+            $staffBranch = \Illuminate\Support\Facades\DB::table('staff_branches')->where('staff_id', $scannerStaff->id)->first();
+            if (!$staffBranch) {
+                return $this->errorResponse('Scanner staff is not assigned to any branch.', 403);
+            }
+
+            $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $staffBranch->branch_id)->first();
             if (!$branch) {
                 return $this->errorResponse('Branch not found.', 404);
             }
@@ -113,10 +124,9 @@ class QRController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_code', 'branch_id'],
+            required: ['qr_code'],
             properties: [
-                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...'),
-                new OA\Property(property: 'branch_id', type: 'integer', example: 1)
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...')
             ]
         )
     )]

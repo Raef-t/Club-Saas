@@ -3050,17 +3050,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "qr_code",
-                                    "branch_id"
+                                    "qr_code"
                                 ],
                                 "properties": {
                                     "qr_code": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
-                                    },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
                                     }
                                 },
                                 "type": "object"
@@ -3191,17 +3186,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "qr_code",
-                                    "branch_id"
+                                    "qr_code"
                                 ],
                                 "properties": {
                                     "qr_code": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
-                                    },
-                                    "branch_id": {
-                                        "type": "integer",
-                                        "example": 1
                                     }
                                 },
                                 "type": "object"
