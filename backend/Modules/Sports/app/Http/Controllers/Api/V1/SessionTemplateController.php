@@ -91,7 +91,6 @@ class SessionTemplateController extends BaseController
                 'plan_id' => $session->plan_id,
                 'start_time' => $session->start_time->format('H:i'),
                 'end_time' => $session->end_time->format('H:i'),
-                'gender_allowed' => $session->gender_allowed,
                 'plan_name' => $session->subscriptionPlan ? $session->subscriptionPlan->name : null,
                 'facility' => $session->facility ? [
                     'id' => $session->facility->id,
@@ -127,8 +126,7 @@ class SessionTemplateController extends BaseController
                 new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                 new OA\Property(property: 'day_of_week', type: 'integer', description: '0=Sunday, 1=Monday, ..., 6=Saturday', example: 0),
                 new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '08:00'),
-                new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '09:00'),
-                new OA\Property(property: 'gender_allowed', type: 'string', enum: ['male', 'female', 'both'], example: 'both'),
+                new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '09:00')
             ]
         )
     )]
@@ -153,7 +151,6 @@ class SessionTemplateController extends BaseController
             'day_of_week' => 'required|integer|min:0|max:6',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'gender_allowed' => 'nullable|string',
         ]);
 
         // Check facility overlap
@@ -192,7 +189,7 @@ class SessionTemplateController extends BaseController
                 new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
                 new OA\Property(property: 'start_time', type: 'string', example: '10:00'),
                 new OA\Property(property: 'end_time', type: 'string', example: '11:00'),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]

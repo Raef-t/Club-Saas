@@ -20,7 +20,6 @@ class UpdateActivityRequest extends FormRequest
             'activity_type_id' => 'nullable|exists:activity_types,id',
             'is_private_equipment' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
-            'gender_allowed' => 'nullable|in:male,female,mixed',
         ];
     }
 }

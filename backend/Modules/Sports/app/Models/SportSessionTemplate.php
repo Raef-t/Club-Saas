@@ -17,7 +17,6 @@ class SportSessionTemplate extends Model
         'day_of_week',
         'start_time',
         'end_time',
-        'gender_allowed',
         'is_active',
     ];
 

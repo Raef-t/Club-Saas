@@ -18,7 +18,6 @@ class Activity extends Model
         'branch_id',
         'activity_type_id',
         'is_private_equipment',
-        'gender_allowed',
         'is_active',
         'session_price',
         'exercises_count',

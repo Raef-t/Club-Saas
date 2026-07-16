@@ -22,6 +22,7 @@ class SubscriptionPlan extends Model
         'is_active',
         'max_subscribers',
         'current_subscribers',
+        'gender_restriction',
     ];
 
     protected static function booted()

@@ -26,6 +26,7 @@ class SubscriptionPlanController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك',
@@ -46,6 +47,7 @@ class SubscriptionPlanController extends BaseController
                             new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                             new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                             new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                            new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
                             new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
@@ -60,6 +62,10 @@ class SubscriptionPlanController extends BaseController
         
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->has('gender')) {
+            $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
         }
 
         if ($request->boolean('available', true)) {
@@ -81,6 +87,7 @@ class SubscriptionPlanController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك المتاحة',
@@ -101,6 +108,10 @@ class SubscriptionPlanController extends BaseController
             
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->has('gender')) {
+            $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
         }
 
         $plans = $query->get();
@@ -135,6 +146,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
+                new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true),
                 new OA\Property(
                     property: 'activities', 
@@ -156,8 +168,7 @@ class SubscriptionPlanController extends BaseController
                             new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                             new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
                             new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
-                            new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
-                            new OA\Property(property: 'gender_allowed', type: 'string', example: 'both')
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00')
                         ]
                     )
                 )
@@ -181,7 +192,8 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false)
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed')
                     ]
                 )
             ]
@@ -225,6 +237,7 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
                         new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
@@ -265,6 +278,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 400.00),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
+                new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true),
                 new OA\Property(
                     property: 'activities', 
@@ -286,8 +300,7 @@ class SubscriptionPlanController extends BaseController
                             new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
                             new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
                             new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
-                            new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
-                            new OA\Property(property: 'gender_allowed', type: 'string', example: 'both')
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00')
                         ]
                     )
                 )
@@ -311,7 +324,8 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false)
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed')
                     ]
                 )
             ]

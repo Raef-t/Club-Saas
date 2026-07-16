@@ -10059,6 +10059,42 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "description": "تصفية حسب الجنس",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "frozen"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث بالاسم، الجوال أو الرقم الوطني",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -11910,11 +11946,6 @@
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
-                                    },
-                                    "gender_allowed": {
-                                        "description": "(اختياري) الجنس المسموح: male, female, mixed",
-                                        "type": "string",
-                                        "example": "mixed"
                                     }
                                 },
                                 "type": "object"
@@ -12189,11 +12220,6 @@
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
-                                    },
-                                    "gender_allowed": {
-                                        "description": "(اختياري) الجنس المسموح: male, female, mixed",
-                                        "type": "string",
-                                        "example": "mixed"
                                     }
                                 },
                                 "type": "object"
@@ -12630,15 +12656,6 @@
                                         "type": "string",
                                         "format": "time",
                                         "example": "09:00"
-                                    },
-                                    "gender_allowed": {
-                                        "type": "string",
-                                        "example": "both",
-                                        "enum": [
-                                            "male",
-                                            "female",
-                                            "both"
-                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -13989,6 +14006,20 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "description": "تصفية حسب الجنس",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female",
+                                "mixed"
+                            ]
                         }
                     }
                 ],
@@ -16654,6 +16685,65 @@
                 "summary": "👥 عرض جميع الموظفين والمدربين",
                 "description": "استرجاع قائمة بجميع الموظفين والمدربين المسجلين في النظام.",
                 "operationId": "38db582bc7fab639cc88c4c4f9df2c2c",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "تصفية حسب الدور",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "admin",
+                                "manager",
+                                "coach",
+                                "receptionist",
+                                "cleaner"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "description": "تصفية حسب الجنس",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female",
+                                "mixed"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة النشطة",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث بالاسم، الهاتف، الايميل أو الرقم الوطني",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الموظفين بنجاح",
@@ -20971,6 +21061,20 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "description": "تصفية حسب الجنس المسموح",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female",
+                                "mixed"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -21023,6 +21127,10 @@
                                                     "is_unlimited_subscribers": {
                                                         "type": "boolean",
                                                         "example": false
+                                                    },
+                                                    "gender_restriction": {
+                                                        "type": "string",
+                                                        "example": "mixed"
                                                     },
                                                     "activities": {
                                                         "type": "array",
@@ -21142,6 +21250,16 @@
                                         "example": false,
                                         "nullable": true
                                     },
+                                    "gender_restriction": {
+                                        "description": "(اختياري) الجنس المسموح: male, female, mixed",
+                                        "type": "string",
+                                        "example": "mixed",
+                                        "enum": [
+                                            "male",
+                                            "female",
+                                            "mixed"
+                                        ]
+                                    },
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
@@ -21184,10 +21302,6 @@
                                                 "end_time": {
                                                     "type": "string",
                                                     "example": "09:00"
-                                                },
-                                                "gender_allowed": {
-                                                    "type": "string",
-                                                    "example": "both"
                                                 }
                                             },
                                             "type": "object"
@@ -21247,6 +21361,10 @@
                                                 "is_unlimited_subscribers": {
                                                     "type": "boolean",
                                                     "example": false
+                                                },
+                                                "gender_restriction": {
+                                                    "type": "string",
+                                                    "example": "mixed"
                                                 }
                                             },
                                             "type": "object"
@@ -21316,6 +21434,20 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "description": "تصفية حسب الجنس المسموح",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female",
+                                "mixed"
+                            ]
                         }
                     }
                 ],
@@ -21422,6 +21554,10 @@
                                                 "is_unlimited_subscribers": {
                                                     "type": "boolean",
                                                     "example": false
+                                                },
+                                                "gender_restriction": {
+                                                    "type": "string",
+                                                    "example": "mixed"
                                                 },
                                                 "activities": {
                                                     "type": "array",
@@ -21561,6 +21697,16 @@
                                         "example": false,
                                         "nullable": true
                                     },
+                                    "gender_restriction": {
+                                        "description": "(اختياري) الجنس المسموح: male, female, mixed",
+                                        "type": "string",
+                                        "example": "mixed",
+                                        "enum": [
+                                            "male",
+                                            "female",
+                                            "mixed"
+                                        ]
+                                    },
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
@@ -21603,10 +21749,6 @@
                                                 "end_time": {
                                                     "type": "string",
                                                     "example": "09:00"
-                                                },
-                                                "gender_allowed": {
-                                                    "type": "string",
-                                                    "example": "both"
                                                 }
                                             },
                                             "type": "object"
@@ -21666,6 +21808,10 @@
                                                 "is_unlimited_subscribers": {
                                                     "type": "boolean",
                                                     "example": false
+                                                },
+                                                "gender_restriction": {
+                                                    "type": "string",
+                                                    "example": "mixed"
                                                 }
                                             },
                                             "type": "object"
@@ -23145,10 +23291,6 @@
                     "is_private_equipment": {
                         "type": "boolean",
                         "example": false
-                    },
-                    "gender_allowed": {
-                        "type": "string",
-                        "example": "mixed"
                     },
                     "is_active": {
                         "type": "boolean",
