@@ -65,8 +65,7 @@ class MemberService
                        ->orWhereHas('contacts', function($cq) use ($search) {
                            $cq->where('phone_number', 'like', "%{$search}%");
                        })
-                       ->orWhere('email', 'like', "%{$search}%")
-                       ->orWhere('national_id', 'like', "%{$search}%");
+                       ->orWhere('email', 'like', "%{$search}%");
                 });
             }
 

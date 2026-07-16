@@ -10090,7 +10090,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "بحث بالاسم، الجوال أو الرقم الوطني",
+                        "description": "بحث بالاسم أو الجوال",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -16737,7 +16737,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "بحث بالاسم، الهاتف، الايميل أو الرقم الوطني",
+                        "description": "بحث بالاسم، الهاتف، الايميل",
                         "required": false,
                         "schema": {
                             "type": "string"
