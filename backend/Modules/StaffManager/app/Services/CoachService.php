@@ -350,12 +350,35 @@ class CoachService
     }
 
     /**
-     * Soft delete a coach.
+     * Delete a coach.
      */
     public function deleteCoach($id)
     {
         $staff = Staff::where('role', 'coach')->findOrFail($id);
-        $staff->delete(); // Soft delete
+        
+        $subscriptionItemsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('coach_id', $id)->count();
+        $staffActivitiesCount = \Modules\Sports\Models\StaffActivity::where('staff_id', $id)->count();
+        $shiftsCount = \Modules\StaffManager\Models\StaffShift::where('staff_id', $id)->count();
+
+        $blocked = [];
+        if ($subscriptionItemsCount > 0) {
+            $blocked[] = "مرتبط بـ {$subscriptionItemsCount} " . ($subscriptionItemsCount === 1 ? 'اشتراك لاعب' : 'اشتراكات لاعبين');
+        }
+        if ($staffActivitiesCount > 0) {
+            $blocked[] = "مرتبط بـ {$staffActivitiesCount} " . ($staffActivitiesCount === 1 ? 'نشاط رياضي' : 'أنشطة رياضية');
+        }
+        if ($shiftsCount > 0) {
+            $blocked[] = "مرتبط بـ {$shiftsCount} " . ($shiftsCount === 1 ? 'شفت عمل' : 'شفتات عمل');
+        }
+
+        if (!empty($blocked)) {
+            $reasons = implode('، و', $blocked);
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف هذا المدرب لأنه {$reasons}. يمكنك إيقاف حساب المدرب بدلاً من حذفه."
+            );
+        }
+
+        $staff->delete(); // Soft delete or hard delete depending on config
 
         // Optional: deactivate user
         if ($staff->user) {

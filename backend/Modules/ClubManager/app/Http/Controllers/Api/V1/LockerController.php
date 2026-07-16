@@ -169,7 +169,16 @@ class LockerController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    #[OA\Response(response: 409, description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به.')]))]
+    #[OA\Response(
+        response: 409, 
+        description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف الخزانة لوجود 1 حجوزات مرتبطة بها. يُنصح بإلغاء الحجز أو تعطيل الخزانة بدلاً من حذفها.')
+            ]
+        )
+    )]
     public function destroy($id)
     {
         $this->lockerService->deleteLocker($id);

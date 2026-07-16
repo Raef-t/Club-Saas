@@ -237,17 +237,36 @@ class SessionTemplateController extends BaseController
     #[OA\Delete(
         path: '/v1/session-templates/{id}',
         summary: '🗑️ حذف قالب جلسة',
-        description: 'حذف قالب جلسة رياضية أسبوعية.',
+        description: 'حذف قالب جلسة رياضية أسبوعية. لا يمكن حذفه إذا كان مرتبطاً باستثناءات أو إعفاءات مسجلة.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Template deleted successfully')]))]
+    #[OA\Response(
+        response: 409, 
+        description: '🚫 لا يمكن الحذف — القالب مرتبط ببيانات أخرى', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف القالب لوجود 2 استثناءات/تعديلات مرتبطة به. يمكنك تعطيله بدلاً من حذفه.')
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id)
     {
         $template = SportSessionTemplate::findOrFail($id);
+
+        $exceptionsCount = \Modules\Sports\Models\SessionException::where('sport_session_template_id', $id)->count();
+        if ($exceptionsCount > 0) {
+            return $this->errorResponse(
+                "لا يمكن حذف هذا القالب لوجود {$exceptionsCount} " . ($exceptionsCount === 1 ? 'استثناء مرتبط' : 'استثناءات مرتبطة') . " به. يمكنك تعطيله بدلاً من حذفه.",
+                409
+            );
+        }
+
         $template->delete();
         return $this->successResponse(null, __('Template deleted successfully'));
     }

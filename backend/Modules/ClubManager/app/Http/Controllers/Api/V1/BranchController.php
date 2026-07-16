@@ -192,7 +192,16 @@ class BranchController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    #[OA\Response(response: 409, description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به.')]))]
+    #[OA\Response(
+        response: 409, 
+        description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'), 
+                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف الفرع لأن: يوجد 10 أعضاء مسجل في هذا الفرع، يوجد 5 اشتراكات مرتبط بهذا الفرع، يوجد 12 فاتورة مرتبطة بهذا الفرع. يُنصح بتعطيل الفرع بدلاً من حذفه للحفاظ على سلامة البيانات.')
+            ]
+        )
+    )]
     public function destroy($id)
     {
         $this->branchService->deleteBranch($id);

@@ -5080,7 +5080,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                            "example": "لا يمكن حذف الفرع لأن: يوجد 10 أعضاء مسجل في هذا الفرع، يوجد 5 اشتراكات مرتبط بهذا الفرع، يوجد 12 فاتورة مرتبطة بهذا الفرع. يُنصح بتعطيل الفرع بدلاً من حذفه للحفاظ على سلامة البيانات."
                                         }
                                     },
                                     "type": "object"
@@ -6706,7 +6706,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                            "example": "لا يمكن حذف النادي لأنه يحتوي على 2 فروع. يرجى حذف جميع الفروع أولاً أو تعطيل النادي بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -7457,7 +7457,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                            "example": "لا يمكن حذف هذا المرفق لأنه: يوجد 2 قوالب جلسات تدريبية تعتمد على هذا المرفق، و يحتوي على 5 خزائن. يُنصح بتعطيل المرفق بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -8193,7 +8193,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف السجل لوجود سجلات أخرى مرتبطة به."
+                                            "example": "لا يمكن حذف الخزانة لوجود 1 حجوزات مرتبطة بها. يُنصح بإلغاء الحجز أو تعطيل الخزانة بدلاً من حذفها."
                                         }
                                     },
                                     "type": "object"
@@ -12351,7 +12351,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف هذا النشاط."
+                                            "example": "لا يمكن حذف هذا النشاط لأنه مرتبط بـ 2 خطة اشتراك، و 1 مدرب. يمكنك تعطيل النشاط (is_active = false) بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -12431,6 +12431,111 @@
                                             "items": {
                                                 "$ref": "#/components/schemas/ActivityTypeResource"
                                             }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activity-types/{activity_type}": {
+            "delete": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "🗑️ حذف نوع نشاط",
+                "description": "حذف نوع نشاط من النظام. لا يمكن حذفه إذا كان هناك أنشطة تابعة له.",
+                "operationId": "c219900ea00d4d2fb22d3e741db1cea6",
+                "parameters": [
+                    {
+                        "name": "activity_type",
+                        "in": "path",
+                        "description": "معرف نوع النشاط",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف نوع النشاط بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity type deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — نوع النشاط مرتبط بأنشطة أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف نوع النشاط لوجود 5 أنشطة تندرج تحته. يمكنك تعطيله بدلاً من حذفه."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 نوع النشاط غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
                                         }
                                     },
                                     "type": "object"
@@ -12884,7 +12989,7 @@
                     "Session Templates"
                 ],
                 "summary": "🗑️ حذف قالب جلسة",
-                "description": "حذف قالب جلسة رياضية أسبوعية.",
+                "description": "حذف قالب جلسة رياضية أسبوعية. لا يمكن حذفه إذا كان مرتبطاً باستثناءات أو إعفاءات مسجلة.",
                 "operationId": "6f131a4fd0d38075c585cb5ee94dec39",
                 "parameters": [
                     {
@@ -12912,6 +13017,26 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Template deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — القالب مرتبط ببيانات أخرى",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف القالب لوجود 2 استثناءات/تعديلات مرتبطة به. يمكنك تعطيله بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -14574,7 +14699,7 @@
                     "Coach Management"
                 ],
                 "summary": "Delete Coach",
-                "description": "Soft delete a coach.",
+                "description": "Delete a coach. Cannot be deleted if associated with players, shifts, or activities.",
                 "operationId": "cb8e2568da2ec2b147d7d150d61b88af",
                 "parameters": [
                     {
@@ -14596,6 +14721,26 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Coach deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Cannot delete coach",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن حذف هذا المدرب لأنه مرتبط بـ 2 اشتراكات لاعبين. يمكنك إيقاف حساب المدرب بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -17645,7 +17790,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف الموظف."
+                                            "example": "لا يمكن حذف هذا الموظف/المدرب لأنه: يوجد 2 قسائم رواتب، و مرتبط بـ 1 أنشطة رياضية. يرجى تغيير حالته إلى 'غير نشط' بدلاً من الحذف."
                                         }
                                     },
                                     "type": "object"
@@ -19326,7 +19471,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف العرض."
+                                            "example": "لا يمكن حذف هذا العرض لوجود 3 اشتراكات مرتبطة به. يمكنك تعطيل العرض بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -22162,6 +22307,35 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "🚫 لا يمكن الحذف — الفعالية مرتبطة بلاعبين",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (is_active = false) بدلاً من حذفها."
+                                        },
+                                        "details": {
+                                            "properties": {
+                                                "subscribers_count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
