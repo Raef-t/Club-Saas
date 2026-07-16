@@ -10,7 +10,7 @@ readonly class PersonDTO
         public int $id,
         public string $fullName,
         public ?Gender $gender,
-        public string $mobile1,
+        public ?string $mobile1 = null,
         public ?string $mobile1CountryCode = null,
         public ?string $email = null,
         public ?string $nationalId = null,
