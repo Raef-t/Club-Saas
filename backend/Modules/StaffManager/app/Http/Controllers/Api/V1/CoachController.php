@@ -1027,14 +1027,34 @@ class CoachController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Shift created successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+            new OA\Response(
+                response: 201, 
+                description: 'Shift created successfully', 
+                content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])
+            ),
+            new OA\Response(
+                response: 422, 
+                description: 'Validation errors (e.g., invalid branch_shift_id)', 
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'The selected branch shift id is invalid.'),
+                    new OA\Property(property: 'errors', type: 'object', example: ['branch_shift_id' => ['The selected branch shift id is invalid.']])
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error', 
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            )
         ]
     )]
     public function addShift(Request $request, $id)
     {
         try {
             $data = $request->validate([
-                'branch_shift_id' => 'required|integer',
+                'branch_shift_id' => 'required|integer|exists:branch_shifts,id',
                 'date' => 'required|date'
             ]);
             $data['staff_id'] = $id;
