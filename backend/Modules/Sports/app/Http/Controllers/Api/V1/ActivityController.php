@@ -43,9 +43,9 @@ class ActivityController extends BaseController
             if ($branch && $branch->gender_restriction !== 'mixed') {
                 $allowMixed = $branch->settings?->display_mixed_activities ?? false;
                 if ($allowMixed) {
-                    $query->whereIn('gender_allowed', [$branch->gender_restriction, 'mixed']);
+                    $query->whereIn('gender', [$branch->gender_restriction, 'mixed']);
                 } else {
-                    $query->where('gender_allowed', $branch->gender_restriction);
+                    $query->where('gender', $branch->gender_restriction);
                 }
             }
         }
