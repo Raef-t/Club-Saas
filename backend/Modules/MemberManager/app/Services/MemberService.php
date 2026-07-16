@@ -50,32 +50,10 @@ class MemberService
             $query->where('membership_status', $filters['status']);
         }
 
-        // 3. Filtering by Gender or Search (Full name, phone, email, national_id)
-        if (!empty($filters['gender']) || !empty($filters['search'])) {
-            $peopleQuery = \Modules\Authentication\Models\Person::query();
-            
-            if (!empty($filters['gender'])) {
-                $peopleQuery->where('gender', $filters['gender']);
-            }
-            
-            if (!empty($filters['search'])) {
-                $search = $filters['search'];
-                $peopleQuery->where(function($sq) use ($search) {
-                    $sq->where('full_name', 'like', "%{$search}%")
-                       ->orWhereHas('contacts', function($cq) use ($search) {
-                           $cq->where('phone_number', 'like', "%{$search}%");
-                       })
-                       ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
-
-            $personIds = $peopleQuery->pluck('id')->toArray();
-
-            $query->where(function($q) use ($personIds, $filters) {
-                $q->whereIn('person_id', $personIds);
-                if (!empty($filters['search'])) {
-                    $q->orWhere('member_number', 'like', "%{$filters['search']}%");
-                }
+        // 3. Filtering by Gender
+        if (!empty($filters['gender'])) {
+            $query->whereHas('person', function ($q) use ($filters) {
+                $q->where('gender', $filters['gender']);
             });
         }
 

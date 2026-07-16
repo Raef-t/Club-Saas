@@ -36,7 +36,6 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'role', in: 'query', required: false, description: 'تصفية حسب الدور', schema: new OA\Schema(type: 'string', enum: ['admin', 'manager', 'coach', 'receptionist', 'cleaner']))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Parameter(name: 'is_active', in: 'query', required: false, description: 'تصفية حسب الحالة النشطة', schema: new OA\Schema(type: 'boolean'))]
-    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم، الهاتف، الايميل', schema: new OA\Schema(type: 'string'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الموظفين بنجاح',

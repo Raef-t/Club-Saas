@@ -45,26 +45,10 @@ class StaffService
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
-        if (!empty($filters['gender']) || !empty($filters['search'])) {
-            $peopleQuery = \Modules\Authentication\Models\Person::query();
-
-            if (!empty($filters['gender'])) {
-                $peopleQuery->where('gender', $filters['gender']);
-            }
-
-            if (!empty($filters['search'])) {
-                $search = $filters['search'];
-                $peopleQuery->where(function ($sq) use ($search) {
-                    $sq->where('full_name', 'like', "%{$search}%")
-                        ->orWhereHas('contacts', function ($cq) use ($search) {
-                            $cq->where('phone_number', 'like', "%{$search}%");
-                        })
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
-
-            $personIds = $peopleQuery->pluck('id')->toArray();
-            $query->whereIn('person_id', $personIds);
+        if (!empty($filters['gender'])) {
+            $query->whereHas('person', function ($q) use ($filters) {
+                $q->where('gender', $filters['gender']);
+            });
         }
 
         // Eager-load coach details and branches and user
