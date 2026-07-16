@@ -37,6 +37,22 @@ class ReceptionAttendanceController extends BaseController
     public function memberSubscriptions(int $memberId)
     {
         try {
+            // 1. Fetch member's active lockers
+            $activeLockers = DB::table('locker_reservations as lr')
+                ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
+                ->where('lr.member_id', $memberId)
+                ->where('lr.status', 'active')
+                ->select(
+                    'lr.id as reservation_id',
+                    'lr.locker_id',
+                    'l.locker_number',
+                    'l.branch_id',
+                    'lr.start_date',
+                    'lr.end_date',
+                    'lr.price'
+                )
+                ->get();
+
             $subscriptions = DB::table('player_subscriptions as ps')
                 ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
                 ->where('ps.member_id', $memberId)
@@ -63,17 +79,23 @@ class ReceptionAttendanceController extends BaseController
             }
 
             // Attach items (session breakdown per activity) for each subscription
-            $subscriptions->transform(function ($sub) {
+            $subscriptions->transform(function ($sub) use ($activeLockers) {
                 $sub->plan_name = json_decode($sub->plan_name, true) ?? $sub->plan_name;
 
                 $sub->items = DB::table('player_subscription_items as psi')
                     ->leftJoin('activities as a', 'a.id', '=', 'psi.activity_id')
+                    ->leftJoin('staff as s', 's.id', '=', 'psi.coach_id')
+                    ->leftJoin('people as p', 'p.id', '=', 's.person_id')
                     ->where('psi.player_subscription_id', $sub->player_subscription_id)
                     ->select(
                         'psi.id',
                         'psi.activity_id',
                         'a.name as activity_name',
                         'psi.coach_id',
+                        'p.first_name as coach_first_name',
+                        'p.last_name as coach_last_name',
+                        'p.phone as coach_phone',
+                        's.role as coach_role',
                         'psi.sessions_allocated',
                         'psi.sessions_consumed',
                         'psi.is_unlimited',
@@ -82,8 +104,33 @@ class ReceptionAttendanceController extends BaseController
                     ->get()
                     ->map(function ($item) {
                         $item->activity_name = json_decode($item->activity_name, true) ?? $item->activity_name;
+                        
+                        // 2. Structure coach details
+                        if ($item->coach_id) {
+                            $item->coach = [
+                                'id' => $item->coach_id,
+                                'first_name' => $item->coach_first_name,
+                                'last_name' => $item->coach_last_name,
+                                'name' => trim($item->coach_first_name . ' ' . $item->coach_last_name),
+                                'phone' => $item->coach_phone,
+                                'role' => $item->coach_role,
+                            ];
+                        } else {
+                            $item->coach = null;
+                        }
+                        
+                        unset($item->coach_first_name, $item->coach_last_name, $item->coach_phone, $item->coach_role);
+
                         return $item;
                     });
+
+                // 3. Calculate total sessions for the subscription
+                $sub->total_sessions_allocated = $sub->items->sum('sessions_allocated');
+                $sub->total_sessions_consumed = $sub->items->sum('sessions_consumed');
+                $sub->total_sessions_remaining = $sub->items->sum('sessions_remaining');
+
+                // Attach general active lockers
+                $sub->active_lockers = $activeLockers;
 
                 return $sub;
             });
