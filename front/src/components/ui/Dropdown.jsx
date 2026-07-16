@@ -14,9 +14,12 @@ export default function Dropdown({
   menuClassName = "",
   disabled = false,
   error,
+  searchable = false,
 }) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value),
@@ -47,10 +50,28 @@ export default function Dropdown({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (open && searchable && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    }
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open, searchable]);
+
   function selectOption(option) {
     onChange?.(option.value);
     setOpen(false);
   }
+
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchQuery.trim()) return options;
+    return options.filter(opt => 
+      opt.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [options, searchable, searchQuery]);
 
   return (
     <div ref={containerRef} className={`relative ${className}`} dir="rtl">
@@ -91,11 +112,24 @@ export default function Dropdown({
 
       {open && (
         <div
-          className={`absolute right-0 z-50 mt-2 max-h-72 w-full overflow-hidden rounded-xl border border-app-line bg-app-card shadow-[0_18px_50px_rgba(0,0,0,0.35)] ${menuClassName}`}
+          className={`absolute right-0 z-50 mt-2 max-h-72 w-full flex flex-col overflow-hidden rounded-xl border border-app-line bg-app-card shadow-[0_18px_50px_rgba(0,0,0,0.35)] ${menuClassName}`}
           role="listbox"
         >
-          <div className="max-h-72 overflow-y-auto p-1 scrollbar-thin">
-            {options.map((option) => {
+          {searchable && (
+            <div className="p-2 border-b border-app-line shrink-0">
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="w-full bg-app-panel-soft/40 border border-app-muted/50 rounded-lg h-9 px-3 text-sm text-white placeholder-app-muted-light outline-none focus:border-app-yellow transition"
+                placeholder="ابحث..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          <div className="max-h-60 overflow-y-auto p-1 scrollbar-thin">
+            {filteredOptions.length > 0 ? filteredOptions.map((option) => {
               const selected = option.value === value;
 
               return (
@@ -109,7 +143,10 @@ export default function Dropdown({
                   }`}
                   role="option"
                   aria-selected={selected}
-                  onClick={() => selectOption(option)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectOption(option);
+                  }}
                 >
                   <span className="truncate">{option.label}</span>
                   {selected && (
@@ -117,7 +154,11 @@ export default function Dropdown({
                   )}
                 </button>
               );
-            })}
+            }) : (
+              <div className="flex h-10 items-center justify-center text-sm text-app-muted-light">
+                لا توجد نتائج
+              </div>
+            )}
           </div>
         </div>
       )}

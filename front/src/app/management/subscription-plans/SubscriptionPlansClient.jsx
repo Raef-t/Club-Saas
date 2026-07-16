@@ -57,6 +57,7 @@ const initialForm = {
   price: "",
   max_subscribers: "50",
   is_active: true,
+  gender_restriction: "mixed",
   activities: [],
   session_templates: [],
   is_unlimited_subscribers: false,
@@ -191,6 +192,7 @@ export function PlanForm({
       branch_id: form.branch_id,
       name: form.name?.trim(),
       type: form.type,
+      gender_restriction: form.gender_restriction,
       duration_in_days: form.duration_in_days,
       session_count: form.type === "session_based" ? form.session_count : null,
       price: form.price,
@@ -205,7 +207,6 @@ export function PlanForm({
         day_of_week: Number(s.day_of_week),
         start_time: s.start_time,
         end_time: s.end_time,
-        gender_allowed: s.gender_allowed,
       })) || [],
     };
 
@@ -269,6 +270,23 @@ export function PlanForm({
           ]}
           placeholder="اختر نوع الفعالية"
           error={errors.type}
+        />
+      </label>
+
+      <label className="block text-right text-sm text-app-muted-light">
+        تخصيص الجنس *
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="bg-app-card-soft h-11"
+          value={form.gender_restriction}
+          onChange={(val) => updateField("gender_restriction", val)}
+          options={[
+            { value: "mixed", label: "مختلط" },
+            { value: "male", label: "ذكور" },
+            { value: "female", label: "إناث" },
+          ]}
+          placeholder="اختر تخصيص الجنس"
+          error={errors.gender_restriction}
         />
       </label>
 
@@ -424,7 +442,6 @@ export function PlanForm({
               let nextDay = "0";
               let defaultStartTime = "";
               let defaultEndTime = "";
-              let defaultGender = "both";
 
               if (form.session_templates && form.session_templates.length > 0) {
                 const lastTemplate = form.session_templates[form.session_templates.length - 1];
@@ -443,13 +460,12 @@ export function PlanForm({
                   nextDay = String((parseInt(lastTemplate.day_of_week) + 2) % 7);
                   defaultStartTime = lastTemplate.start_time || "";
                   defaultEndTime = lastTemplate.end_time || "";
-                  defaultGender = lastTemplate.gender_allowed || "both";
                 }
               }
 
               updateField("session_templates", [
                 ...(form.session_templates || []), 
-                { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime, gender_allowed: defaultGender }
+                { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime }
               ]);
             }}
           >
@@ -476,7 +492,7 @@ export function PlanForm({
                   إزالة
                 </button>
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <label className="block text-right text-xs text-app-muted-light">
+                  <label className="block text-right text-xs text-app-muted-light col-span-2">
                     اليوم
                     <Dropdown
                       className="mt-1 text-white"
@@ -497,25 +513,6 @@ export function PlanForm({
                         { value: "6", label: "السبت" },
                       ]}
                       placeholder="اختر اليوم"
-                    />
-                  </label>
-                  <label className="block text-right text-xs text-app-muted-light">
-                    الفئة المستهدفة
-                    <Dropdown
-                      className="mt-1 text-white"
-                      buttonClassName="bg-black/35 h-9"
-                      value={item.gender_allowed}
-                      onChange={(val) => {
-                        const newTemplates = [...form.session_templates];
-                        newTemplates[idx].gender_allowed = val;
-                        updateField("session_templates", newTemplates);
-                      }}
-                      options={[
-                        { value: "both", label: "مختلط" },
-                        { value: "male", label: "ذكور" },
-                        { value: "female", label: "إناث" },
-                      ]}
-                      placeholder="اختر الفئة"
                     />
                   </label>
                   <Field

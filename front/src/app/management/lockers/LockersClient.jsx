@@ -1,24 +1,54 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
-import Drawer from "@/components/ui/Drawer";
+// import Drawer from "@/components/ui/Drawer";
 import SkeletonPage from "@/components/ui/Skeleton";
-import { PlusIcon, FilterIcon, LockerIcon, SearchIcon, TrashIcon } from "@/components/icons/Icons";
+import {
+  PlusIcon,
+  FilterIcon,
+  LockerIcon,
+  SearchIcon,
+  TrashIcon,
+  PencilIcon,
+  CalendarIcon,
+  XIcon,
+} from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SearchInput from "@/components/ui/SearchInput";
 import Dropdown from "@/components/ui/Dropdown";
+import Drawer from "@/components/ui/Drawer";
 import { Field } from "@/components/forms/FormControls";
+import {
+  useGetLockersQuery,
+  useCreateLockerMutation,
+  useDeleteLockerMutation,
+  useToggleLockerStatusMutation,
+  useUpdateLockerMutation,
+  useReserveLockerMutation,
+  useReleaseLockerReservationMutation,
+} from "@/lib/api/lockersApi";
+import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useLockers } from "./useLockers";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { formatLocalizedName } from "@/lib/utils";
-import { initialLockerForm, lockerSchema } from "@/lib/validations/lockersSchema";
+import {
+  initialLockerForm,
+  lockerSchema,
+  initialUpdateLockerForm,
+  updateLockerSchema,
+  initialReserveLockerForm,
+  reserveLockerSchema,
+} from "@/lib/validations/lockersSchema";
 
 const statusLabels = {
   available: "متاح",
   assigned: "محجوز",
+  with_member: "محجوز",
+  with_staff: "محجوز",
   maintenance: "صيانة",
   disabled: "معطل",
 };
@@ -26,16 +56,22 @@ const statusLabels = {
 const statusColors = {
   available: "bg-app-green/20 text-app-green border-app-green/30",
   assigned: "bg-app-blue/20 text-app-blue border-app-blue/30",
+  with_member: "bg-app-blue/20 text-app-blue border-app-blue/30",
+  with_staff: "bg-app-blue/20 text-app-blue border-app-blue/30",
   maintenance: "bg-app-orange/20 text-app-orange border-app-orange/30",
   disabled: "bg-app-muted/20 text-app-muted-light border-app-muted/30",
 };
 
 export default function LockersClient() {
+  const router = useRouter();
+  const { data: membersData } = useGetMembersQuery();
   const {
     search,
     setSearch,
     branchFilter,
     setBranchFilter,
+    statusFilter,
+    setStatusFilter,
     drawerOpen,
     setDrawerOpen,
     formError,
@@ -50,6 +86,27 @@ export default function LockersClient() {
     closeDeleteConfirm,
     confirmDelete,
     isDeleting,
+    
+    updateModalOpen,
+    itemToUpdate,
+    handleUpdateClick,
+    closeUpdateModal,
+    handleUpdate,
+    isUpdating,
+
+    reserveModalOpen,
+    itemToReserve,
+    handleReserveClick,
+    closeReserveModal,
+    handleReserve,
+    isReserving,
+
+    releaseConfirmOpen,
+    itemToRelease,
+    handleReleaseClick,
+    closeReleaseConfirm,
+    confirmRelease,
+    isReleasing,
   } = useLockers();
 
   const { data: branchesData } = useGetBranchesQuery({});
@@ -63,7 +120,7 @@ export default function LockersClient() {
         label: formatLocalizedName(b.name),
       })),
     ],
-    [branches]
+    [branches],
   );
 
   return (
@@ -82,7 +139,6 @@ export default function LockersClient() {
         }
       />
 
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-app-line bg-app-card p-4">
         <div className="flex flex-1 items-center gap-4">
           <div className="w-full sm:max-w-xs">
@@ -100,6 +156,16 @@ export default function LockersClient() {
               options={branchOptions}
               value={branchFilter}
               onChange={setBranchFilter}
+              className="w-[180px]"
+            />
+            <Dropdown
+              options={[
+                { value: "all", label: "كل الحالات" },
+                { value: "available", label: "متاحة" },
+                { value: "occupied", label: "مشغولة" },
+              ]}
+              value={statusFilter}
+              onChange={setStatusFilter}
               className="w-[180px]"
             />
           </div>
@@ -134,22 +200,68 @@ export default function LockersClient() {
                 </div>
                 <div className="text-xs text-app-muted-light">
                   {branches.find((b) => b.id === locker.branch_id)
-                    ? formatLocalizedName(branches.find((b) => b.id === locker.branch_id).name)
+                    ? formatLocalizedName(
+                        branches.find((b) => b.id === locker.branch_id).name,
+                      )
                     : `فرع #${locker.branch_id}`}
                 </div>
               </div>
 
               <div className="mt-6 flex w-full flex-col items-center gap-3">
-                <span
-                  className={`rounded-full border px-3 py-1 text-[11px] font-medium ${
-                    statusColors[locker.status] || statusColors.disabled
-                  }`}
-                >
-                  {statusLabels[locker.status] || locker.status}
-                </span>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-[11px] font-medium ${
+                      statusColors[locker.status] || statusColors.disabled
+                    }`}
+                  >
+                    {(() => {
+                      if (["assigned", "with_member", "with_staff"].includes(locker.status) || locker.holder_id) {
+                        if (locker.holder_type === "member" && locker.holder_id) {
+                          const m = membersData?.data?.find((m) => String(m.id) === String(locker.holder_id));
+                          if (m) {
+                            const person = m.person || {};
+                            return (person.full_name || `${m.first_name || ""} ${m.last_name || ""}`).trim() || `لاعب #${m.id}`;
+                          }
+                          return `لاعب #${locker.holder_id}`;
+                        } else if (locker.holder_type === "staff" && locker.holder_id) {
+                          return `موظف #${locker.holder_id}`;
+                        } else if (locker.holder_name) {
+                          return locker.holder_name;
+                        }
+                      }
+                      return statusLabels[locker.status] || locker.status;
+                    })()}
+                  </span>
 
                 {/* Hover Actions */}
                 <div className="absolute inset-x-0 bottom-0 flex h-0 items-center justify-center gap-2 bg-app-card-hover/95 opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:h-16 group-hover:opacity-100 border-t border-app-line">
+                  <Link
+                    href={`/management/lockers/${locker.id}/edit`}
+                    className="flex size-8 items-center justify-center rounded-full bg-app-muted/30 text-white transition-colors hover:bg-app-blue hover:text-white"
+                    title="تعديل الخزانة"
+                  >
+                    <PencilIcon className="size-4" />
+                  </Link>
+                  
+                  {locker.status === "available" && (
+                    <button
+                      onClick={() => handleReserveClick(locker)}
+                      className="flex size-8 items-center justify-center rounded-full bg-app-muted/30 text-white transition-colors hover:bg-app-green hover:text-white"
+                      title="حجز الخزانة"
+                    >
+                      <CalendarIcon className="size-4" />
+                    </button>
+                  )}
+
+                  {locker.status === "assigned" && (
+                    <button
+                      onClick={() => handleReleaseClick(locker)}
+                      className="flex size-8 items-center justify-center rounded-full bg-app-muted/30 text-white transition-colors hover:bg-app-orange hover:text-white"
+                      title="فك الحجز"
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  )}
+                  
                   <button
                     onClick={() => handleDeleteClick(locker)}
                     className="flex size-8 items-center justify-center rounded-full bg-app-muted/30 text-white transition-colors hover:bg-app-red hover:text-white"
@@ -172,6 +284,31 @@ export default function LockersClient() {
         message={`هل أنت متأكد من رغبتك في حذف الخزانة "${itemToDelete?.locker_number}"؟ لا يمكن التراجع عن هذا الإجراء.`}
         isLoading={isDeleting}
       />
+
+      <ConfirmDialog
+        open={releaseConfirmOpen}
+        onClose={closeReleaseConfirm}
+        onConfirm={confirmRelease}
+        title="فك الحجز"
+        message={`هل أنت متأكد من رغبتك في فك حجز الخزانة "${itemToRelease?.locker_number}"؟`}
+        isLoading={isReleasing}
+      />
+
+      <Drawer
+        open={reserveModalOpen}
+        onClose={closeReserveModal}
+        title="حجز خزانة"
+        subtitle={`حجز الخزانة ${itemToReserve?.locker_number}`}
+      >
+        {itemToReserve && (
+          <LockerReserveForm
+            formId="reserve-locker-form"
+            onSubmit={handleReserve}
+            onCancel={closeReserveModal}
+            isLoading={isReserving}
+          />
+        )}
+      </Drawer>
     </div>
   );
 }
@@ -227,7 +364,7 @@ export function LockerCreateForm({
           {errorMessage}
         </div>
       )}
-      
+
       <div className="grid gap-5 md:grid-cols-2">
         <div className="flex flex-col gap-1.5 text-start">
           <label className="text-sm font-medium text-white flex items-center gap-1">
@@ -239,44 +376,371 @@ export function LockerCreateForm({
             onChange={(val) => updateField("branch_id", val)}
             error={errors.branch_id}
           />
-          {errors.branch_id && (
-            <span className="text-xs text-app-red">{errors.branch_id}</span>
-          )}
         </div>
 
-        <div className="flex flex-col gap-1.5 text-start">
-          <label className="text-sm font-medium text-white flex items-center gap-1">
-            رقم الخزانة <span className="text-app-red">*</span>
-          </label>
-          <div className="relative w-full">
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <LockerIcon className="size-4 text-app-muted-light" />
-            </div>
-            <input
-              type="text"
-              className={`form-input pl-3 pr-10 ${errors.locker_number ? "border-app-red/50 focus:border-app-red focus:ring-app-red/20" : ""}`}
-              value={form.locker_number}
-              onChange={(e) => updateField("locker_number", e.target.value)}
-              placeholder="L-001"
-              dir="ltr"
-            />
-          </div>
-          {errors.locker_number && (
-            <span className="text-xs text-app-red">{errors.locker_number}</span>
-          )}
-        </div>
+        <Field
+          label="رقم الخزانة"
+          type="text"
+          required
+          icon={LockerIcon}
+          placeholder="L-001"
+          value={form.locker_number}
+          onChange={(e) => updateField("locker_number", e.target.value)}
+          error={errors.locker_number}
+          dir="ltr"
+        />
       </div>
 
       {showFooterActions && (
         <div className="mt-4 flex items-center justify-end gap-3 border-t border-app-line pt-4">
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>
+          <Button
+            type="button"
+            tone="ghost"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
             إلغاء
           </Button>
-          <Button type="submit" isLoading={isLoading}>
+          <Button type="submit" loading={isLoading}>
             حفظ
           </Button>
         </div>
       )}
+    </form>
+  );
+}
+
+export function LockerUpdateForm({
+  formId,
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading,
+  errorMessage,
+}) {
+  const [form, setForm] = useState({
+    locker_number: initialData?.locker_number || "",
+    status: initialData?.status || "available",
+    holder_type: initialData?.holder_type || "",
+    holder_id: initialData?.holder_id || "",
+    holder_name: initialData?.holder_name || "",
+  });
+  const [errors, setErrors] = useState({});
+
+  const { data: membersData } = useGetMembersQuery({}, { skip: form.holder_type !== "member" });
+  const membersOptions = (membersData?.data || []).map(m => {
+    const person = m.person || {};
+    const fullName = (person.full_name || `${m.first_name || ""} ${m.last_name || ""}`).trim() || `عضو #${m.id}`;
+    return {
+      value: m.id,
+      label: fullName
+    };
+  });
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (errors && errors[field])
+      setErrors((current) => ({ ...current, [field]: null }));
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const data = {
+      locker_number: form.locker_number.trim(),
+      status: form.status,
+    };
+    if (form.holder_type) data.holder_type = form.holder_type;
+    if (form.holder_id) data.holder_id = Number(form.holder_id);
+    if (form.holder_name) data.holder_name = form.holder_name.trim();
+
+    const result = updateLockerSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join("_")] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
+    onSubmit(data);
+  }
+
+  return (
+    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {errorMessage && (
+        <div className="rounded-xl border border-app-red/30 bg-app-red/10 p-4 text-sm text-app-red">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        <Field
+          label="رقم الخزانة"
+          type="text"
+          required
+          value={form.locker_number}
+          onChange={(e) => updateField("locker_number", e.target.value)}
+          error={errors.locker_number}
+          dir="ltr"
+        />
+
+        <div className="flex flex-col gap-1.5 text-start">
+          <label className="text-sm font-medium text-white flex items-center gap-1">
+            الحالة <span className="text-app-red">*</span>
+          </label>
+          <Dropdown
+            options={[
+              { value: "available", label: "متاح" },
+              { value: "assigned", label: "محجوز" },
+              { value: "with_member", label: "مع لاعب" },
+              { value: "with_staff", label: "مع موظف" },
+              { value: "maintenance", label: "صيانة" },
+              { value: "disabled", label: "معطل" },
+            ]}
+            value={form.status}
+            onChange={(val) => updateField("status", val)}
+            error={errors.status}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 text-start">
+          <label className="text-sm font-medium text-white">نوع المستفيد (اختياري)</label>
+          <Dropdown
+            options={[
+              { value: "", label: "لا يوجد" },
+              { value: "member", label: "لاعب" },
+              { value: "staff", label: "موظف" },
+              { value: "guest", label: "زائر" },
+            ]}
+            value={form.holder_type}
+            onChange={(val) => updateField("holder_type", val)}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 text-start">
+          <label className="text-sm font-medium text-white flex items-center gap-1">
+            المستفيد (اختياري)
+          </label>
+          {form.holder_type === "member" ? (
+            <Dropdown
+              searchable
+              options={membersOptions}
+              value={form.holder_id}
+              onChange={(val) => updateField("holder_id", val)}
+              placeholder="ابحث عن لاعب..."
+            />
+          ) : form.holder_type === "staff" ? (
+            <Dropdown
+              searchable
+              options={[]}
+              value={form.holder_id}
+              onChange={(val) => updateField("holder_id", val)}
+              placeholder="ابحث عن موظف... (قريباً)"
+            />
+          ) : (
+            <Field
+              type="number"
+              value={form.holder_id}
+              onChange={(e) => updateField("holder_id", e.target.value)}
+              placeholder="أدخل رقم المستفيد"
+            />
+          )}
+        </div>
+
+        <Field
+          label="اسم المستفيد (اختياري)"
+          type="text"
+          required={false}
+          value={form.holder_name}
+          onChange={(e) => updateField("holder_name", e.target.value)}
+        />
+      </div>
+
+      <div className="mt-4 flex items-center justify-end gap-3 border-t border-app-line pt-4">
+        <Button type="button" tone="ghost" onClick={onCancel} disabled={isLoading}>
+          إلغاء
+        </Button>
+        <Button type="submit" loading={isLoading}>
+          حفظ التعديلات
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export function LockerReserveForm({
+  formId,
+  onSubmit,
+  onCancel,
+  isLoading,
+  errorMessage,
+}) {
+  const [form, setForm] = useState({
+    reservation_type: "rental",
+    holder_type: "member",
+    holder_id: "",
+    price: "",
+    start_date: "",
+    end_date: "",
+  });
+  const [errors, setErrors] = useState({});
+
+  const { data: membersData } = useGetMembersQuery({}, { skip: form.holder_type !== "member" });
+  const membersOptions = (membersData?.data || []).map(m => {
+    const person = m.person || {};
+    const fullName = (person.full_name || `${m.first_name || ""} ${m.last_name || ""}`).trim() || `عضو #${m.id}`;
+    return {
+      value: m.id,
+      label: fullName
+    };
+  });
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (errors && errors[field])
+      setErrors((current) => ({ ...current, [field]: null }));
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const data = {
+      reservation_type: form.reservation_type,
+      holder_type: form.holder_type,
+      holder_id: Number(form.holder_id),
+      start_date: form.start_date,
+    };
+    if (form.price) data.price = Number(form.price);
+    if (form.end_date) data.end_date = form.end_date;
+
+    const result = reserveLockerSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path.join("_")] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
+    onSubmit(data);
+  }
+
+  return (
+    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {errorMessage && (
+        <div className="rounded-xl border border-app-red/30 bg-app-red/10 p-4 text-sm text-app-red">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5 text-start">
+          <label className="text-sm font-medium text-white flex items-center gap-1">
+            نوع الحجز <span className="text-app-red">*</span>
+          </label>
+          <Dropdown
+            options={[
+              { value: "rental", label: "إيجار" },
+              { value: "assign", label: "إسناد مجاني" },
+            ]}
+            value={form.reservation_type}
+            onChange={(val) => updateField("reservation_type", val)}
+            error={errors.reservation_type}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 text-start">
+          <label className="text-sm font-medium text-white flex items-center gap-1">
+            نوع المستفيد <span className="text-app-red">*</span>
+          </label>
+          <Dropdown
+            options={[
+              { value: "member", label: "لاعب" },
+              { value: "staff", label: "موظف" },
+              { value: "guest", label: "زائر" },
+            ]}
+            value={form.holder_type}
+            onChange={(val) => updateField("holder_type", val)}
+            error={errors.holder_type}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 text-start">
+          <label className="text-sm font-medium text-white flex items-center gap-1">
+            المستفيد <span className="text-app-red">*</span>
+          </label>
+          {form.holder_type === "member" ? (
+            <Dropdown
+              searchable
+              options={membersOptions}
+              value={form.holder_id}
+              onChange={(val) => updateField("holder_id", val)}
+              error={errors.holder_id}
+              placeholder="ابحث عن لاعب..."
+            />
+          ) : form.holder_type === "staff" ? (
+            <Dropdown
+              searchable
+              options={[]}
+              value={form.holder_id}
+              onChange={(val) => updateField("holder_id", val)}
+              error={errors.holder_id}
+              placeholder="ابحث عن موظف... (قريباً)"
+            />
+          ) : (
+            <Field
+              type="number"
+              value={form.holder_id}
+              onChange={(e) => updateField("holder_id", e.target.value)}
+              error={errors.holder_id}
+              placeholder="أدخل رقم المستفيد"
+            />
+          )}
+        </div>
+
+        {form.reservation_type === "rental" && (
+          <>
+            <Field
+              label="السعر"
+              type="number"
+              required={false}
+              value={form.price}
+              onChange={(e) => updateField("price", e.target.value)}
+              error={errors.price}
+            />
+
+            <Field
+              label="تاريخ البداية"
+              type="date"
+              required
+              value={form.start_date}
+              onChange={(val) => updateField("start_date", val)}
+              error={errors.start_date}
+            />
+
+            <Field
+              label="تاريخ النهاية (اختياري)"
+              type="date"
+              required={false}
+              value={form.end_date}
+              onChange={(val) => updateField("end_date", val)}
+              error={errors.end_date}
+            />
+          </>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-end gap-3 border-t border-app-line pt-4">
+        <Button type="button" tone="ghost" onClick={onCancel} disabled={isLoading}>
+          إلغاء
+        </Button>
+        <Button type="submit" loading={isLoading}>
+          تأكيد الحجز
+        </Button>
+      </div>
     </form>
   );
 }
