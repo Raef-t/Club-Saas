@@ -76,10 +76,7 @@ class Staff extends Model
         return $this->hasMany(StaffLeave::class);
     }
 
-    public function incomeEntries()
-    {
-        return $this->hasMany(StaffIncomeEntry::class, 'staff_id');
-    }
+
 
     // ── Helpers ─────────────────────────────────────────────────
 

@@ -55,9 +55,12 @@ class SessionDeductionService
     {
         return DB::transaction(function () use ($attendanceId, $subscriptionId) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
-            $metadata = $attendance->metadata ?? [];
 
-            if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
+            $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
+                ->where('player_subscription_id', $subscriptionId)
+                ->exists();
+
+            if ($alreadyConsumed) {
                 throw new Exception(__('Session already deducted for this attendance.'));
             }
 
@@ -84,18 +87,12 @@ class SessionDeductionService
 
             $planName = DB::table('subscription_plans')->where('id', $subscription->plan_id)->value('name') ?? 'اشتراك';
 
-            $metadata['deduction_status'] = 'completed';
-            $metadata['deductions'] = [
-                [
-                    'subscription_id'      => $subscription->id,
-                    'plan_id'              => $subscription->plan_id,
-                    'plan_name'            => $planName,
-                    'deducted_item_id'     => $deductedItem?->id,
-                    'deducted_by_staff_id' => Auth::id(),
-                ]
-            ];
+            \Modules\AttendanceManager\Models\AttendanceConsumption::create([
+                'attendance_id' => $attendance->id,
+                'player_subscription_id' => $subscription->id,
+                'subscription_plan_id' => $subscription->plan_id,
+            ]);
 
-            $attendance->update(['metadata' => $metadata]);
             $attendance = $attendance->fresh();
 
             $this->sendNotification($attendance, $planName, $deductedItem);
@@ -117,15 +114,16 @@ class SessionDeductionService
     {
         return DB::transaction(function () use ($attendanceId, $subscriptionIds) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
-            $metadata   = $attendance->metadata ?? [];
-
-            if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
-                throw new Exception(__('Session already deducted for this attendance.'));
-            }
-
-            $deductions = [];
 
             foreach ($subscriptionIds as $subscriptionId) {
+                $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
+                    ->where('player_subscription_id', $subscriptionId)
+                    ->exists();
+
+                if ($alreadyConsumed) {
+                    throw new Exception(__('Session already deducted for this attendance (Subscription ID: :id).', ['id' => $subscriptionId]));
+                }
+
                 $subscription = DB::table('player_subscriptions')
                     ->where('id', $subscriptionId)
                     ->where('member_id', $attendance->attendable_id)
@@ -147,22 +145,15 @@ class SessionDeductionService
 
                 $deductedItem = $this->decrementSessionsConsumed($items);
 
-                $deductions[] = [
-                    'subscription_id'      => $subscription->id,
-                    'plan_id'              => $subscription->plan_id,
-                    'plan_name'            => $planName,
-                    'deducted_item_id'     => $deductedItem?->id,
-                    'deducted_by_staff_id' => Auth::id(),
-                ];
+                \Modules\AttendanceManager\Models\AttendanceConsumption::create([
+                    'attendance_id' => $attendance->id,
+                    'player_subscription_id' => $subscription->id,
+                    'subscription_plan_id' => $subscription->plan_id,
+                ]);
 
                 $planName = DB::table('subscription_plans')->where('id', $subscription->plan_id)->value('name') ?? 'اشتراك';
                 $this->sendNotification($attendance, $planName, $deductedItem);
             }
-
-            $metadata['deduction_status'] = 'completed';
-            $metadata['deductions']       = $deductions;
-
-            $attendance->update(['metadata' => $metadata]);
 
             return $attendance->fresh();
         });
@@ -234,77 +225,51 @@ class SessionDeductionService
     {
         DB::transaction(function () use ($attendanceId, $subscriptionIds) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
-            $metadata   = $attendance->metadata ?? [];
-
             $member     = Member::with('person.user')->find($attendance->attendable_id);
             $userId     = $member?->person?->user?->id;
             $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
 
             $remainingSessionsInfo = [];
             $isSessionBased        = false;
-            $isPartial             = !empty($subscriptionIds);
 
-            if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
-                $deductions = $metadata['deductions'] ?? [];
-
-                // ── Validate requested IDs exist inside the recorded deductions ──
-                if ($isPartial) {
-                    $deductedSubIds = array_column($deductions, 'subscription_id');
-                    foreach ($subscriptionIds as $subId) {
-                        if (!in_array($subId, $deductedSubIds)) {
-                            throw new Exception(__(
-                                'Subscription ID :id was not deducted in this attendance.',
-                                ['id' => $subId]
-                            ));
-                        }
-                    }
-                }
-
-                // ── Determine which deductions to rollback ──
-                $toRollback = $isPartial
-                    ? array_filter($deductions, fn($d) => in_array($d['subscription_id'], $subscriptionIds))
-                    : $deductions;
-
-                // ── Restore sessions_consumed for each targeted deduction ──
-                foreach ($toRollback as $deduction) {
-                    if (isset($deduction['deducted_item_id'])) {
-                        $isSessionBased = true;
-                        $item = DB::table('player_subscription_items')
-                            ->where('id', $deduction['deducted_item_id'])
-                            ->first();
-
-                        if ($item && $item->sessions_consumed > 0) {
-                            DB::table('player_subscription_items')
-                                ->where('id', $deduction['deducted_item_id'])
-                                ->decrement('sessions_consumed');
-
-                            $remainingSessionsInfo[] = $item->sessions_allocated - ($item->sessions_consumed - 1);
-                        } elseif ($item) {
-                            $remainingSessionsInfo[] = $item->sessions_allocated - $item->sessions_consumed;
-                        }
-                    }
-                }
+            $consumptionsQuery = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId);
+            
+            if (!empty($subscriptionIds)) {
+                $consumptionsQuery->whereIn('player_subscription_id', $subscriptionIds);
             }
 
-            // ── Decide whether to delete attendance or just update its metadata ──
-            if ($isPartial) {
-                $remainingDeductions = array_values(
-                    array_filter(
-                        $metadata['deductions'] ?? [],
-                        fn($d) => !in_array($d['subscription_id'], $subscriptionIds)
-                    )
-                );
+            $consumptions = $consumptionsQuery->get();
 
-                if (empty($remainingDeductions)) {
-                    // All deductions have been rolled back — remove the record entirely
+            if ($consumptions->isEmpty()) {
+                // If there are no consumptions, maybe they were already rolled back, but we still want to clean up if a full rollback was requested.
+                if (empty($subscriptionIds)) {
                     $attendance->delete();
-                } else {
-                    // Some deductions remain — keep the attendance and update metadata
-                    $metadata['deductions'] = $remainingDeductions;
-                    $attendance->update(['metadata' => $metadata]);
                 }
-            } else {
-                // Full rollback — delete the attendance record
+                return;
+            }
+
+            foreach ($consumptions as $consumption) {
+                // Try to find a consumed item to rollback for this subscription
+                $item = DB::table('player_subscription_items')
+                    ->where('player_subscription_id', $consumption->player_subscription_id)
+                    ->where('sessions_consumed', '>', 0)
+                    ->first();
+
+                if ($item) {
+                    $isSessionBased = true;
+                    DB::table('player_subscription_items')
+                        ->where('id', $item->id)
+                        ->decrement('sessions_consumed');
+
+                    $remainingSessionsInfo[] = $item->sessions_allocated - ($item->sessions_consumed - 1);
+                }
+
+                $consumption->delete();
+            }
+
+            // Check if any consumptions remain for this attendance
+            $remainingConsumptions = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)->exists();
+            if (!$remainingConsumptions) {
                 $attendance->delete();
             }
 

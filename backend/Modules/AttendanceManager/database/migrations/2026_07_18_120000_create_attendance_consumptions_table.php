@@ -21,7 +21,6 @@ return new class extends Migration
             // The specific player's subscription instance
             $table->unsignedBigInteger('player_subscription_id')->index();
             
-            $table->string('status', 50)->default('consumed'); // consumed, rollback, etc.
             
             $table->timestamps();
         });
