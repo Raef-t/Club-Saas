@@ -17,6 +17,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('staff_id')->constrained('staff')->cascadeOnDelete();
             
+            $table->unsignedBigInteger('subscription_plan_id')->nullable()->index();
+            $table->unsignedBigInteger('session_template_id')->nullable()->index();
+            
             // Type of entry: 'base_salary', 'commission', 'bonus', 'deduction', etc.
             $table->string('type')->default('commission');
             

@@ -21,7 +21,7 @@ class StaffShiftResource extends JsonResource
             'branch_shift' => $this->whenLoaded('branchShift', function () {
                 return [
                     'id' => $this->branchShift->id,
-                    'day_of_week' => $this->branchShift->day_of_week,
+                    'name' => $this->branchShift->name,
                     'start_time' => $this->branchShift->start_time,
                     'end_time' => $this->branchShift->end_time,
                 ];

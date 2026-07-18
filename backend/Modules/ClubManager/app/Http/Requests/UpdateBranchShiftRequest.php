@@ -15,7 +15,6 @@ class UpdateBranchShiftRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|required|string|max:255',
-            'day_of_week' => 'sometimes|integer|min:0|max:6',
             'start_time' => 'sometimes|date_format:H:i',
             'end_time' => 'sometimes|date_format:H:i|after:start_time',
             'gender_allowed' => 'sometimes|string|in:male,female,mixed',
@@ -28,13 +27,11 @@ class UpdateBranchShiftRequest extends FormRequest
             if (!$validator->failed()) {
                 // If the fields are not provided in the update, use the existing shift's values for the overlap check
                 $shift = \Modules\ClubManager\Models\BranchShift::findOrFail($this->route('shift'));
-                $dayOfWeek = $this->input('day_of_week', $shift->day_of_week);
                 $startTime = $this->input('start_time', $shift->start_time);
                 $endTime = $this->input('end_time', $shift->end_time);
 
                 $overlap = \Modules\ClubManager\Models\BranchShift::where('branch_id', $this->route('branch'))
                     ->where('id', '!=', $this->route('shift'))
-                    ->where('day_of_week', $dayOfWeek)
                     ->where('start_time', '<', $endTime)
                     ->where('end_time', '>', $startTime)
                     ->exists();

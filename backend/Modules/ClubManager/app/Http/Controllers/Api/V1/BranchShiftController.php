@@ -30,7 +30,6 @@ class BranchShiftController extends BaseController
                     new OA\Property(property: 'id', type: 'integer', example: 1),
                     new OA\Property(property: 'name', type: 'string', example: 'Morning Shift'),
                     new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                    new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
                     new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
                     new OA\Property(property: 'end_time', type: 'string', example: '16:00'),
                     new OA\Property(property: 'gender_allowed', type: 'string', example: 'mixed')
@@ -56,10 +55,9 @@ class BranchShiftController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name', 'day_of_week', 'start_time', 'end_time', 'gender_allowed'],
+            required: ['name', 'start_time', 'end_time', 'gender_allowed'],
             properties: [
                 new OA\Property(property: 'name', type: 'string', description: 'اسم الوردية', example: 'وردية الصباح'),
-                new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم الأسبوع (0-6)', example: 0),
                 new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '16:00'),
                 new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '23:59'),
                 new OA\Property(property: 'gender_allowed', type: 'string', description: 'male, female, mixed', example: 'mixed')
@@ -83,6 +81,7 @@ class BranchShiftController extends BaseController
     {
         $validated = $request->validated();
         $validated['branch_id'] = $branchId;
+        $validated['day_of_week'] = 0; // Default for fixed daily shifts
 
         // Create shift
         $shift = BranchShift::create($validated);
@@ -134,7 +133,6 @@ class BranchShiftController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'name', type: 'string', description: 'اسم الوردية', example: 'وردية المساء'),
-                new OA\Property(property: 'day_of_week', type: 'integer', description: 'يوم الأسبوع (0-6)', example: 0),
                 new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '16:00'),
                 new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '23:59'),
                 new OA\Property(property: 'gender_allowed', type: 'string', description: 'male, female, mixed', example: 'mixed')
