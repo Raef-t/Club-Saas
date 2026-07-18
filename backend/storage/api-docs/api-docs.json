@@ -5813,10 +5813,6 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
-                                                    "day_of_week": {
-                                                        "type": "integer",
-                                                        "example": 0
-                                                    },
                                                     "start_time": {
                                                         "type": "string",
                                                         "example": "08:00"
@@ -5888,7 +5884,6 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "day_of_week",
                                     "start_time",
                                     "end_time",
                                     "gender_allowed"
@@ -5898,11 +5893,6 @@
                                         "description": "اسم الوردية",
                                         "type": "string",
                                         "example": "وردية الصباح"
-                                    },
-                                    "day_of_week": {
-                                        "description": "يوم الأسبوع (0-6)",
-                                        "type": "integer",
-                                        "example": 0
                                     },
                                     "start_time": {
                                         "type": "string",
@@ -6032,11 +6022,6 @@
                                         "description": "اسم الوردية",
                                         "type": "string",
                                         "example": "وردية المساء"
-                                    },
-                                    "day_of_week": {
-                                        "description": "يوم الأسبوع (0-6)",
-                                        "type": "integer",
-                                        "example": 0
                                     },
                                     "start_time": {
                                         "type": "string",

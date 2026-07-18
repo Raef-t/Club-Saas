@@ -10,6 +10,8 @@ class StaffIncomeEntry extends Model
 
     protected $fillable = [
         'staff_id',
+        'subscription_plan_id',
+        'session_template_id',
         'type',
         'source_type',
         'source_id',

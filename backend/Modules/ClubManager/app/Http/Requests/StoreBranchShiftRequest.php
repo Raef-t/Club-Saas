@@ -16,7 +16,6 @@ class StoreBranchShiftRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'day_of_week' => 'required|integer|min:0|max:6',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'gender_allowed' => 'required|string|in:male,female,mixed',
@@ -28,7 +27,6 @@ class StoreBranchShiftRequest extends FormRequest
         $validator->after(function ($validator) {
             if (!$validator->failed()) {
                 $overlap = \Modules\ClubManager\Models\BranchShift::where('branch_id', $this->route('branch'))
-                    ->where('day_of_week', $this->input('day_of_week'))
                     ->where('start_time', '<', $this->input('end_time'))
                     ->where('end_time', '>', $this->input('start_time'))
                     ->exists();

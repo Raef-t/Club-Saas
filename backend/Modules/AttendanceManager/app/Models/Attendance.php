@@ -10,7 +10,6 @@ class Attendance extends Model
     protected $table = 'attendances';
 
     protected $fillable = [
-        'club_id',
         'attendable_type',
         'attendable_id',
         'branch_id',
@@ -20,13 +19,11 @@ class Attendance extends Model
         'check_out_at',
         'duration_minutes',
         'status',
-        'metadata',
     ];
 
     protected $casts = [
         'check_in_at'  => 'datetime',
         'check_out_at' => 'datetime',
-        'metadata'     => 'array',
     ];
 
     /**
@@ -35,5 +32,13 @@ class Attendance extends Model
     public function attendable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Get the consumptions associated with this attendance.
+     */
+    public function consumptions()
+    {
+        return $this->hasMany(AttendanceConsumption::class, 'attendance_id');
     }
 }
