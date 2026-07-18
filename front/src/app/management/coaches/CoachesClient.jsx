@@ -20,7 +20,10 @@ import Checkbox from "@/components/ui/Checkbox";
 import { useCoaches } from "./useCoaches";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
-import { useGetBranchShiftsQuery, useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
+import {
+  useGetBranchShiftsQuery,
+  useGetBranchSettingsQuery,
+} from "@/lib/api/branchesApi";
 import { UploadBox } from "@/components/forms/UploadBox";
 import { Field } from "@/components/forms/Field";
 
@@ -315,7 +318,9 @@ export function CoachCreateForm({
     phone: initialValues?.phone || "",
     country_code: initialValues?.country_code || "+963",
     address: initialValues?.address || "",
-    branch_ids: initialValues?.branch_ids || (branches[0]?.id ? [Number(branches[0].id)] : []),
+    branch_ids:
+      initialValues?.branch_ids ||
+      (branches[0]?.id ? [Number(branches[0].id)] : []),
     specialization: initialValues?.specialization || "",
     experience_years: initialValues?.experience_years || "0",
     employment_type: initialValues?.employment_type || "fixed_salary",
@@ -330,20 +335,15 @@ export function CoachCreateForm({
   const branchId2 = form.branch_ids?.[1];
   const branchId3 = form.branch_ids?.[2];
 
-  const { data: shiftsResponse1, isFetching: isLoadingShifts1 } = useGetBranchShiftsQuery(
-    branchId1,
-    { skip: !branchId1 }
-  );
-  const { data: shiftsResponse2, isFetching: isLoadingShifts2 } = useGetBranchShiftsQuery(
-    branchId2,
-    { skip: !branchId2 }
-  );
-  const { data: shiftsResponse3, isFetching: isLoadingShifts3 } = useGetBranchShiftsQuery(
-    branchId3,
-    { skip: !branchId3 }
-  );
+  const { data: shiftsResponse1, isFetching: isLoadingShifts1 } =
+    useGetBranchShiftsQuery(branchId1, { skip: !branchId1 });
+  const { data: shiftsResponse2, isFetching: isLoadingShifts2 } =
+    useGetBranchShiftsQuery(branchId2, { skip: !branchId2 });
+  const { data: shiftsResponse3, isFetching: isLoadingShifts3 } =
+    useGetBranchShiftsQuery(branchId3, { skip: !branchId3 });
 
-  const isLoadingShifts = isLoadingShifts1 || isLoadingShifts2 || isLoadingShifts3;
+  const isLoadingShifts =
+    isLoadingShifts1 || isLoadingShifts2 || isLoadingShifts3;
 
   const { data: branchSettingsRes } = useGetBranchSettingsQuery(branchId1, {
     skip: !branchId1,
@@ -357,9 +357,10 @@ export function CoachCreateForm({
         base_salary: branchSettings.default_employee_salary
           ? String(Number(branchSettings.default_employee_salary))
           : prev.base_salary,
-        default_commission_rate: branchSettings.default_coach_commission_percentage
-          ? String(Number(branchSettings.default_coach_commission_percentage))
-          : prev.default_commission_rate,
+        default_commission_rate:
+          branchSettings.default_coach_commission_percentage
+            ? String(Number(branchSettings.default_coach_commission_percentage))
+            : prev.default_commission_rate,
       }));
     }
   }, [branchSettings, initialValues]);
@@ -384,7 +385,10 @@ export function CoachCreateForm({
     return activities.some((act) => {
       const isSelected = form.activity_ids.includes(Number(act.id));
       if (!isSelected) return false;
-      const nameStr = typeof act.name === "object" ? act.name?.ar || act.name?.en || "" : act.name || "";
+      const nameStr =
+        typeof act.name === "object"
+          ? act.name?.ar || act.name?.en || ""
+          : act.name || "";
       return nameStr.includes("أجهزة عام");
     });
   }, [activities, form.activity_ids]);
@@ -420,7 +424,9 @@ export function CoachCreateForm({
       dob = `${birthYear}-01-01`;
     }
 
-    const shiftsPayload = hasEquipmentActivity ? (form.shift_ids || []).map(Number) : [];
+    const shiftsPayload = hasEquipmentActivity
+      ? (form.shift_ids || []).map(Number)
+      : [];
 
     onSubmit({
       full_name: form.full_name.trim(),
@@ -502,7 +508,8 @@ export function CoachCreateForm({
         <div className="mt-2 grid grid-cols-2 gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line max-h-36 overflow-y-auto">
           {branches.map((b) => {
             const checked = form.branch_ids.includes(Number(b.id));
-            const bName = typeof b.name === "object" ? b.name?.ar || b.name?.en : b.name;
+            const bName =
+              typeof b.name === "object" ? b.name?.ar || b.name?.en : b.name;
             return (
               <Checkbox
                 key={b.id}
@@ -529,7 +536,10 @@ export function CoachCreateForm({
               .filter((act) => !form.activity_ids.includes(Number(act.id)))
               .map((act) => ({
                 value: act.id,
-                label: typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name,
+                label:
+                  typeof act.name === "object"
+                    ? act.name?.ar || act.name?.en
+                    : act.name,
               }))}
             value={null}
             onChange={(val) => {
@@ -547,7 +557,10 @@ export function CoachCreateForm({
               {form.activity_ids.map((id) => {
                 const act = activities.find((a) => Number(a.id) === id);
                 if (!act) return null;
-                const actName = typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name;
+                const actName =
+                  typeof act.name === "object"
+                    ? act.name?.ar || act.name?.en
+                    : act.name;
                 return (
                   <div
                     key={id}
@@ -556,7 +569,12 @@ export function CoachCreateForm({
                     <span className="text-xs text-white">{actName}</span>
                     <button
                       type="button"
-                      onClick={() => updateField("activity_ids", form.activity_ids.filter((x) => x !== id))}
+                      onClick={() =>
+                        updateField(
+                          "activity_ids",
+                          form.activity_ids.filter((x) => x !== id),
+                        )
+                      }
                       className="text-app-muted hover:text-app-red transition-colors"
                       title="إزالة"
                     >
@@ -575,18 +593,29 @@ export function CoachCreateForm({
           الورديات / الشفتات المتاحة
           <div className="mt-2 grid grid-cols-2 gap-3 p-3 bg-app-card-soft rounded-lg border border-app-line max-h-48 overflow-y-auto">
             {isLoadingShifts ? (
-              <p className="text-xs text-app-muted-light text-center py-2 col-span-2">جاري تحميل الورديات...</p>
+              <p className="text-xs text-app-muted-light text-center py-2 col-span-2">
+                جاري تحميل الورديات...
+              </p>
             ) : branchShifts.length === 0 ? (
-              <p className="text-xs text-app-muted-light text-center py-2 col-span-2">لا توجد ورديات مسجلة للفروع المحددة</p>
+              <p className="text-xs text-app-muted-light text-center py-2 col-span-2">
+                لا توجد ورديات مسجلة للفروع المحددة
+              </p>
             ) : (
               branchShifts.map((shift) => {
                 const isChecked = form.shift_ids?.includes(shift.id);
                 const shiftNameStr = shift.name || "وردية بدون اسم";
-                const startTime = shift.start_time ? shift.start_time.slice(0, 5) : "";
-                const endTime = shift.end_time ? shift.end_time.slice(0, 5) : "";
-                const gender = shiftGenderLabels[shift.gender_allowed] || shift.gender_allowed || "مختلط";
+                const startTime = shift.start_time
+                  ? shift.start_time.slice(0, 5)
+                  : "";
+                const endTime = shift.end_time
+                  ? shift.end_time.slice(0, 5)
+                  : "";
+                const gender =
+                  shiftGenderLabels[shift.gender_allowed] ||
+                  shift.gender_allowed ||
+                  "مختلط";
                 const label = `${shiftNameStr} | من ${startTime} إلى ${endTime} (${gender})`;
-                
+
                 return (
                   <Checkbox
                     key={shift.id}
@@ -686,12 +715,15 @@ export function CoachCreateForm({
         </label>
       )}
 
-      {(form.employment_type === "commission_based" || form.employment_type === "hybrid") && (
+      {(form.employment_type === "commission_based" ||
+        form.employment_type === "hybrid") && (
         <label className="block text-right text-sm text-app-muted-light">
           نسبة العمولة الافتراضية للمدرب (%)
           <input
             value={form.default_commission_rate}
-            onChange={(event) => updateField("default_commission_rate", event.target.value)}
+            onChange={(event) =>
+              updateField("default_commission_rate", event.target.value)
+            }
             className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
             type="number"
             min="0"
@@ -711,8 +743,6 @@ export function CoachCreateForm({
           placeholder="المدينة، الحي"
         />
       </label>
-
-
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -792,8 +822,12 @@ export default function CoachesClient() {
         align: "start",
         render: (_, coach) => {
           let photoUrl = coach.person?.photo_url || coach.person?.photo;
-          if (photoUrl && !photoUrl.startsWith("http") && !photoUrl.startsWith("blob:")) {
-            photoUrl = `http://31.70.108.63/${photoUrl.replace(/^\//, '')}`;
+          if (
+            photoUrl &&
+            !photoUrl.startsWith("http") &&
+            !photoUrl.startsWith("blob:")
+          ) {
+            photoUrl = `http://31.70.108.63/${photoUrl.replace(/^\//, "")}`;
           }
 
           return (
@@ -839,13 +873,37 @@ export default function CoachesClient() {
       },
       {
         key: "base_salary",
-        label: "الراتب الأساسي",
+        label: "الراتب / النسبة",
         align: "center",
-        render: (value) => (
-          <span className="text-xs font-semibold text-app-green">
-            {formatMoney(value)}
-          </span>
-        ),
+        render: (_, coach) => {
+          const type = coach.employment_type;
+          const salary = formatMoney(coach.base_salary);
+          const commission = Number(
+            coach.details?.default_commission_rate || 0,
+          );
+
+          if (type === "commission_based" || type === "commission") {
+            return (
+              <span className="text-xs font-semibold text-app-green" dir="ltr">
+                {commission}%
+              </span>
+            );
+          } else if (type === "hybrid") {
+            return (
+              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-app-green">
+                <span>{salary}</span>
+                <span className="text-app-muted-light">+</span>
+                <span dir="ltr">{commission}%</span>
+              </div>
+            );
+          }
+
+          return (
+            <span className="text-xs font-semibold text-app-green">
+              {salary}
+            </span>
+          );
+        },
       },
       {
         key: "is_active",
