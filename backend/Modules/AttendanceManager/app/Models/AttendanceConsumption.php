@@ -12,7 +12,6 @@ class AttendanceConsumption extends Model
         'attendance_id',
         'subscription_plan_id',
         'player_subscription_id',
-        'status',
     ];
 
     /**

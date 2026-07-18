@@ -5,7 +5,6 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\StaffManager\Models\Payslip;
 use Modules\StaffManager\Models\Staff;
 use Modules\StaffManager\Models\PayrollRun;
-use Modules\StaffManager\Models\StaffIncomeEntry;
 use Modules\StaffManager\Http\Requests\UpdatePayslipRequest;
 use Modules\StaffManager\Http\Resources\PayslipResource;
 use Illuminate\Http\Request;
@@ -173,11 +172,8 @@ class PayslipController extends BaseController
                 }
 
                 if (in_array($staff->employment_type, ['hybrid', 'percentage_only', 'commission'])) {
-                    $commissionPay = StaffIncomeEntry::where('staff_id', $staff->id)
-                        ->where('status', 'pending')
-                        ->where('type', 'commission')
-                        ->where('created_at', '<=', now())
-                        ->sum('amount');
+                    // TODO: Calculate commission using AttendanceConsumption (On-the-fly)
+                    $commissionPay = 0;
                 }
 
                 if ($basePay > 0 || $commissionPay > 0) {
