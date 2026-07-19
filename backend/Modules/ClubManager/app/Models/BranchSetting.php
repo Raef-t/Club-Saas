@@ -21,6 +21,9 @@ class BranchSetting extends Model
         'locker_price',
         'allow_freeze',
         'display_mixed_activities',
+        'payroll_start_day',
+        'payroll_end_day',
+        'include_terminated_subscriptions',
     ];
 
     protected $casts = [
@@ -33,6 +36,9 @@ class BranchSetting extends Model
         'locker_price' => 'decimal:2',
         'allow_freeze' => 'boolean',
         'display_mixed_activities' => 'boolean',
+        'payroll_start_day' => 'integer',
+        'payroll_end_day' => 'integer',
+        'include_terminated_subscriptions' => 'boolean',
     ];
 
     public function branch(): BelongsTo
