@@ -85,7 +85,7 @@ class CheckSubscriptionStatus extends Command
         foreach ($toExpire as $sub) {
             DB::transaction(function () use ($sub, &$expiredCount) {
                 // Update status
-                $sub->update(['status' => 'expired']);
+                $sub->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
                 $expiredCount++;
             });
         }

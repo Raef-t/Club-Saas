@@ -25,6 +25,7 @@ class PlayerSubscription extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'paid_amount' => 'decimal:2',
+        'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::class,
     ];
 
 

@@ -150,7 +150,7 @@ class SubscriptionService
                 'remaining_amount' => $remainingAmount,
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate ? $endDate->toDateString() : null,
-                'status' => 'active',
+                'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
                 'notes' => $options['notes'] ?? null,
             ]);
 
@@ -259,7 +259,7 @@ class SubscriptionService
                 'reason' => $reason,
             ]);
             
-            $subscription->update(['status' => 'frozen']);
+            $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value]);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -418,13 +418,13 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        if ($subscription->status === 'cancelled') {
+        if ($subscription->status->value === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value) {
             throw new Exception(__('Subscription is already cancelled.'));
         }
 
         return DB::transaction(function () use ($subscription, $reason) {
             $subscription->update([
-                'status' => 'cancelled',
+                'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value,
                 'notes' => $subscription->notes
                     ? $subscription->notes . "\n" . __('Cancellation reason: ') . $reason
                     : __('Cancellation reason: ') . $reason,
@@ -445,7 +445,7 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        if ($subscription->status !== 'frozen') {
+        if ($subscription->status->value !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
             throw new Exception(__('Subscription is not frozen.'));
         }
 
@@ -468,7 +468,7 @@ class SubscriptionService
                 }
             }
 
-            $subscription->update(['status' => 'active']);
+            $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value]);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -587,7 +587,7 @@ class SubscriptionService
                     'remaining_amount' => 0,
                     'start_date' => $startDate->toDateString(),
                     'end_date' => $endDate ? $endDate->toDateString() : null,
-                    'status' => 'active',
+                    'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
                     'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
                 ]);
 
