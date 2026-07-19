@@ -16798,109 +16798,14 @@
                     "Payslips"
                 ],
                 "summary": "📝 تعديل سجل راتب (إضافة خصم أو مكافأة)",
-                "description": "تحديث بيانات الراتب لشهر معين مثل الراتب الأساسي، العمولات، المكافآت مع سببها، والخصومات مع سببها.",
+                "description": "تحديث بيانات الراتب لشهر معين بإضافة أو تعديل الحسومات والمكافآت وتحديث الصافي.",
                 "operationId": "ffac5cdc4d359393729f66668c8ee98b",
-                "parameters": [
-                    {
-                        "name": "payslip",
-                        "in": "path",
-                        "description": "معرف سجل الراتب",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "base_pay": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 4000
-                                    },
-                                    "commission_pay": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 500
-                                    },
-                                    "deductions": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 100
-                                    },
-                                    "deduction_reason": {
-                                        "type": "string",
-                                        "example": "غياب يوم"
-                                    },
-                                    "bonuses": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 200
-                                    },
-                                    "bonus_reason": {
-                                        "type": "string",
-                                        "example": "أداء ممتاز"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم التعديل بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "✅ تم تحديث السجل بنجاح"
                     },
                     "404": {
-                        "description": "🚫 لم يتم العثور على السجل",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات"
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح"
+                        "description": "❌ السجل غير موجود"
                     }
                 },
                 "security": [
@@ -16915,86 +16820,41 @@
                 "tags": [
                     "Payslips"
                 ],
-                "summary": "⚙️ توليد رواتب الموظفين",
-                "description": "يقوم بحساب وتوليد سجلات الرواتب لجميع الموظفين النشطين لفترة محددة (شهر). إذا لم يتم تحديد الشهر يُستخدم الشهر الحالي تلقائياً.",
+                "summary": "⚙️ توليد مسودة الرواتب",
+                "description": "يقوم بحساب وتوليد الرواتب كمسودة ترجع للواجهة الأمامية بدون حفظها في قاعدة البيانات.",
                 "operationId": "1d3c70ae1971f780b1edded2344536b5",
-                "requestBody": {
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "period": {
-                                        "description": "الشهر بصيغة YYYY-MM، اتركه فارغاً للشهر الحالي",
-                                        "type": "string",
-                                        "example": "2026-07"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم توليد الرواتب بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Payroll generated successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "period": {
-                                                    "type": "string",
-                                                    "example": "2026-07"
-                                                },
-                                                "payroll_run_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "staff_count": {
-                                                    "type": "integer",
-                                                    "example": 12
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "✅ تم حساب المسودة بنجاح"
+                    },
+                    "400": {
+                        "description": "❌ إعدادات غير مكتملة أو يوم عطلة"
                     },
                     "409": {
-                        "description": "⚠️ الرواتب لهذه الفترة تم توليدها مسبقاً",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Payroll for this period already exists."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "❌ مسير الرواتب موجود مسبقاً"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/payslips/confirm": {
+            "post": {
+                "tags": [
+                    "Payslips"
+                ],
+                "summary": "تثبيت وحفظ الرواتب",
+                "description": "استقبال الرواتب النهائية بعد التعديل وحفظها مع الحسومات والزيادات في قاعدة البيانات",
+                "operationId": "afe831fe7f545f5ed4fcb185c3f3c5c1",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تثبيت الرواتب بنجاح"
                     },
-                    "401": {
-                        "description": "❌ غير مصرح"
+                    "409": {
+                        "description": "❌ الرواتب مثبتة مسبقاً"
                     }
                 },
                 "security": [

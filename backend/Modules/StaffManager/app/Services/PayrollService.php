@@ -2,240 +2,260 @@
 
 namespace Modules\StaffManager\Services;
 
-use Modules\StaffManager\Models\PayrollRun;
 use Modules\StaffManager\Models\Payslip;
 use Modules\StaffManager\Models\Staff;
+use Modules\StaffManager\Models\PayrollRun;
+use Modules\StaffManager\Models\StaffContract;
+use Modules\ClubManager\Models\BranchSetting;
+use Modules\ClubManager\Models\BranchHoliday;
+use Modules\SubscriptionManager\Models\PlayerSubscriptionItem;
+use Modules\NotificationManager\Models\NotificationTemplate;
+use Modules\NotificationManager\Services\NotificationService;
+use Modules\Authentication\Models\User;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Exception;
 
 class PayrollService
 {
     /**
-     * Create a new payroll run.
+     * Checks if a given date is a holiday for the branch.
      */
-    public function createPayrollRun(string $periodStart, string $periodEnd): PayrollRun
+    public function isHoliday(int $branchId, Carbon $date): bool
     {
-        return PayrollRun::create([
-            'period_start' => $periodStart,
-            'period_end' => $periodEnd,
-            'status' => 'draft',
-        ]);
+        $holidays = BranchHoliday::where('branch_id', $branchId)->get();
+        foreach ($holidays as $holiday) {
+            if ($holiday->type === 'weekly' && $holiday->day_of_week == $date->dayOfWeek) {
+                return true;
+            }
+            if ($holiday->type === 'specific_dates' && $date->between($holiday->start_date, $holiday->end_date)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
-     * Get all payroll runs.
+     * Calculate fixed or hybrid salary base.
      */
-    public function getAllPayrollRuns()
+    public function calculateFixedSalary(StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, int $totalDaysInPeriod, Carbon $staffStartDate): float
     {
-        return PayrollRun::with('payslips')->latest('period_start')->get();
-    }
-
-    /**
-     * Get a single payroll run with payslips.
-     */
-    public function getPayrollRunById(int $id): PayrollRun
-    {
-        return PayrollRun::with(['payslips.staff'])->findOrFail($id);
-    }
-
-    /**
-     * Generate payslips for all active staff in a payroll run.
-     * Calculates base_pay from staff salary and commission_pay from commission rules.
-     */
-    public function generatePayslips(int $payrollRunId): PayrollRun
-    {
-        $payrollRun = PayrollRun::findOrFail($payrollRunId);
-
-        if ($payrollRun->status !== 'draft') {
-            throw new Exception(__('Payslips can only be generated for draft payroll runs.'));
+        if (!in_array($contract->employment_type, ['fixed_salary', 'hybrid'])) {
+            return 0;
         }
 
-        return DB::transaction(function () use ($payrollRun) {
-            // Remove any existing payslips for this run
-            $payrollRun->payslips()->delete();
+        if ($staffStartDate->greaterThan($periodStart)) {
+            $daysWorked = $staffStartDate->diffInDays($periodEnd) + 1;
+            if ($daysWorked < 0) $daysWorked = 0;
+            if ($daysWorked > $totalDaysInPeriod) $daysWorked = $totalDaysInPeriod;
+            return ($contract->base_salary / $totalDaysInPeriod) * $daysWorked;
+        }
 
-            // Get all active staff
-            $staffMembers = Staff::where('is_active', true)->get();
+        return (float) ($contract->base_salary ?? 0);
+    }
 
-            foreach ($staffMembers as $staff) {
-                $basePay = $this->calculateBasePay($staff);
-                $commissionPay = $this->calculateCommissionPay($staff, $payrollRun);
-                $netPay = $basePay + $commissionPay;
+    /**
+     * Calculate commission pay based on subscriptions.
+     */
+    public function calculateCommissionPay(int $staffId, StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, BranchSetting $branchSetting): float
+    {
+        if (!in_array($contract->employment_type, ['hybrid', 'percentage_only', 'commission'])) {
+            return 0;
+        }
 
-                Payslip::create([
-                    'payroll_run_id' => $payrollRun->id,
+        $rate = $contract->commission_rate ?? 0;
+        $commissionPay = 0;
+
+        $items = PlayerSubscriptionItem::with('subscription')
+            ->where('coach_id', $staffId)
+            ->where('sessions_consumed', '>', 0)
+            ->get();
+
+        foreach ($items as $item) {
+            $sub = $item->subscription;
+            if (!$sub) continue;
+
+            $subStartDate = Carbon::parse($sub->start_date);
+            
+            if ($subStartDate->between($periodStart, $periodEnd)) {
+                $validStatus = false;
+                $statusValue = is_object($sub->status) ? $sub->status->value : $sub->status;
+
+                if (in_array($statusValue, ['active', 'frozen'])) {
+                    $validStatus = true;
+                } elseif ($statusValue === 'terminated' && $branchSetting->include_terminated_subscriptions) {
+                    $validStatus = true;
+                }
+
+                if ($validStatus) {
+                    $commissionPay += ($sub->total_amount * ($rate / 100));
+                }
+            }
+        }
+
+        return $commissionPay;
+    }
+
+    /**
+     * Generate the payroll preview array.
+     */
+    public function generatePreview(int $branchId)
+    {
+        $branchSetting = BranchSetting::where('branch_id', $branchId)->first();
+        if (!$branchSetting || !$branchSetting->payroll_start_day || !$branchSetting->payroll_end_day) {
+            throw new Exception('إعدادات حساب الرواتب (payroll_start_day, payroll_end_day) غير مكتملة لهذا الفرع.');
+        }
+
+        $today = now();
+
+        if ($this->isHoliday($branchId, $today)) {
+            $this->notifySuperAdminsHolidayError();
+            throw new Exception('لا يمكن حساب الرواتب لتاريخ اليوم، نرجو إعادة المحاولة في يوم عمل آخر لأنه يوم عطلة في النادي.', 400);
+        }
+
+        if ($today->day < $branchSetting->payroll_end_day) {
+            throw new Exception("لا يمكن حساب الراتب في الوقت الحالي. التواريخ المسموحة تبدأ من يوم {$branchSetting->payroll_end_day} من كل شهر.", 400);
+        }
+
+        $periodEnd = clone $today;
+        $periodEnd->setDay($branchSetting->payroll_end_day)->subDay()->endOfDay();
+        
+        $periodStart = clone $today;
+        $periodStart->setDay($branchSetting->payroll_start_day)->startOfDay();
+        if ($branchSetting->payroll_start_day > $branchSetting->payroll_end_day) {
+            $periodStart->subMonth();
+        }
+
+        $existingRun = PayrollRun::where('period_start', $periodStart->toDateString())
+            ->where('period_end', $periodEnd->toDateString())
+            ->first();
+
+        if ($existingRun) {
+            throw new Exception("تم حساب وحفظ الرواتب مسبقاً لهذه الفترة (Run ID: {$existingRun->id}).", 409);
+        }
+
+        $staffMembers = Staff::where('is_active', true)
+            ->whereHas('branches', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            })->with(['activeContract', 'person'])->get();
+
+        $totalDaysInPeriod = $periodStart->diffInDays($periodEnd) + 1;
+        if ($totalDaysInPeriod <= 0) $totalDaysInPeriod = 1;
+
+        $payslipsData = [];
+        $staffCount = 0;
+
+        foreach ($staffMembers as $staff) {
+            $contract = $staff->activeContract;
+            if (!$contract) continue;
+
+            $staffStartDate = Carbon::parse($staff->start_date);
+            $basePay = $this->calculateFixedSalary($contract, $periodStart, $periodEnd, $totalDaysInPeriod, $staffStartDate);
+            $commissionPay = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting);
+
+            if ($basePay > 0 || $commissionPay > 0) {
+                $payslipsData[] = [
                     'staff_id' => $staff->id,
-                    'base_pay' => $basePay,
-                    'commission_pay' => $commissionPay,
-                    'net_pay' => $netPay,
+                    'staff_name' => $staff->person?->fullName ?? 'Unknown',
+                    'base_pay' => round($basePay, 2),
+                    'commission_pay' => round($commissionPay, 2),
+                    'deductions' => 0, // Fallbacks for frontend
+                    'bonuses' => 0,    // Fallbacks for frontend
+                    'net_pay' => round($basePay + $commissionPay, 2),
+                    'adjustments' => []
+                ];
+                $staffCount++;
+            }
+        }
+
+        return [
+            'period_start' => $periodStart->toDateString(),
+            'period_end' => $periodEnd->toDateString(),
+            'staff_count' => $staffCount,
+            'payslips' => $payslipsData,
+        ];
+    }
+
+    /**
+     * Confirm and save payroll run.
+     */
+    public function confirmPayroll(array $data)
+    {
+        $existingRun = PayrollRun::where('period_start', $data['period_start'])
+            ->where('period_end', $data['period_end'])
+            ->first();
+
+        if ($existingRun) {
+            throw new Exception("تم تثبيت رواتب هذه الفترة مسبقاً.", 409);
+        }
+
+        DB::transaction(function () use ($data) {
+            $payrollRun = PayrollRun::create([
+                'period_start' => $data['period_start'],
+                'period_end' => $data['period_end'],
+                'status' => 'draft',
+            ]);
+
+            foreach ($data['payslips'] as $payslipData) {
+                $payslip = $payrollRun->payslips()->create([
+                    'staff_id' => $payslipData['staff_id'],
+                    'base_pay' => $payslipData['base_pay'],
+                    'commission_pay' => $payslipData['commission_pay'],
+                    'net_pay' => $payslipData['net_pay'],
                 ]);
+
+                if (!empty($payslipData['adjustments'])) {
+                    foreach ($payslipData['adjustments'] as $adj) {
+                        $payslip->adjustments()->create([
+                            'type' => $adj['type'],
+                            'amount' => $adj['amount'],
+                            'reason' => $adj['reason'] ?? null,
+                        ]);
+                    }
+                }
             }
 
-            return $payrollRun->load('payslips');
+            $this->notifySuperAdminsSuccess($data['period_start'], $data['period_end']);
         });
     }
 
-    /**
-     * Approve a payroll run (changes status from draft to approved).
-     */
-    public function approvePayrollRun(int $payrollRunId): PayrollRun
+    protected function notifySuperAdminsHolidayError()
     {
-        $payrollRun = PayrollRun::findOrFail($payrollRunId);
+        $superAdmins = User::role('super_admin')->pluck('id')->toArray();
+        if (empty($superAdmins)) return;
 
-        if ($payrollRun->status !== 'draft') {
-            throw new Exception(__('Only draft payroll runs can be approved.'));
-        }
-
-        if ($payrollRun->payslips()->count() === 0) {
-            throw new Exception(__('Cannot approve a payroll run without payslips. Generate payslips first.'));
-        }
-
-        $payrollRun->update(['status' => 'approved']);
-        return $payrollRun->load('payslips');
-    }
-
-    /**
-     * Calculate base pay based on staff employment type.
-     */
-    protected function calculateBasePay(Staff $staff): float
-    {
-        if ($staff->employment_type === 'commission_based') {
-            return 0;
-        }
-
-        return (float) $staff->base_salary;
-    }
-
-    /**
-     * Calculate commission pay based on staff commission rules.
-     * Commission is calculated from the staff_commission_rules table
-     * and the sessions they conducted during the payroll period.
-     */
-    protected function calculateCommissionPay(Staff $staff, PayrollRun $payrollRun): float
-    {
-        if ($staff->employment_type === 'fixed_salary') {
-            return 0;
-        }
-
-        $periodStart = \Carbon\Carbon::parse($payrollRun->period_start)->startOfDay();
-        $periodEnd = \Carbon\Carbon::parse($payrollRun->period_end)->endOfDay();
-
-        // Get templates associated with this coach
-        $templates = DB::table('sport_session_templates')
-            ->join('plan_activities', 'sport_session_templates.id', '=', 'plan_activities.session_template_id')
-            ->join('staff_activities', 'plan_activities.staff_activity_id', '=', 'staff_activities.id')
-            ->join('activities', 'staff_activities.activity_id', '=', 'activities.id')
-            ->where('staff_activities.staff_id', $staff->id)
-            ->select([
-                'sport_session_templates.id',
-                'sport_session_templates.day_of_week',
-                'sport_session_templates.start_time',
-                'sport_session_templates.created_at',
-                'activities.id as activity_id',
-                'activities.session_price',
-            ])
-            ->get();
-
-        // Get canceled exceptions in this period
-        $exceptions = DB::table('session_exceptions')
-            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-            ->where('status', 'canceled')
-            ->get()
-            ->groupBy('sport_session_template_id');
-
-        $activityCounts = [];
-        $activityPrices = [];
-
-        foreach ($templates as $template) {
-            $occurrences = 0;
-            $currentDate = $periodStart->copy();
-            
-            // Do not count before template was created
-            $templateCreated = \Carbon\Carbon::parse($template->created_at)->startOfDay();
-            if ($currentDate < $templateCreated) {
-                $currentDate = $templateCreated->copy();
-            }
-
-            while ($currentDate->dayOfWeek !== (int)$template->day_of_week) {
-                $currentDate->addDay();
-            }
-
-            while ($currentDate <= $periodEnd) {
-                $dateString = $currentDate->toDateString();
-                
-                $isCanceled = false;
-                if ($exceptions->has($template->id)) {
-                    foreach ($exceptions->get($template->id) as $exc) {
-                        if ($exc->date === $dateString) {
-                            $isCanceled = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!$isCanceled) {
-                    $startDateTime = \Carbon\Carbon::parse($dateString . ' ' . $template->start_time);
-                    if ($startDateTime <= now()) {
-                        $occurrences++;
-                    }
-                }
-
-                $currentDate->addWeek();
-            }
-
-            if ($occurrences > 0) {
-                $activityId = $template->activity_id;
-                if (!isset($activityCounts[$activityId])) {
-                    $activityCounts[$activityId] = 0;
-                    $activityPrices[$activityId] = $template->session_price;
-                }
-                $activityCounts[$activityId] += $occurrences;
-            }
-        }
-
-        if (empty($activityCounts)) {
-            return 0;
-        }
-
-        $sessions = collect();
-        foreach ($activityCounts as $activityId => $count) {
-            $sessions->push((object)[
-                'activity_id' => $activityId,
-                'total_sessions' => $count,
-                'session_price' => $activityPrices[$activityId]
+        $template = NotificationTemplate::where('system_key', 'payroll_generation_holiday_error')->first();
+        if ($template) {
+            app(NotificationService::class)->createNotification([
+                'title' => $template->subject ?? 'خطأ في إعداد الرواتب',
+                'body' => $template->parseBody([]),
+                'sender_id' => null,
+                'sender_type' => 'system',
+                'user_ids' => $superAdmins,
             ]);
         }
+    }
 
-        // Get commission rules for this staff
-        $rules = DB::table('staff_commission_rules')
-            ->where('staff_id', $staff->id)
-            ->get()
-            ->keyBy('activity_id');
+    protected function notifySuperAdminsSuccess($periodStart, $periodEnd)
+    {
+        $superAdmins = User::role('super_admin')->pluck('id')->toArray();
+        if (empty($superAdmins)) return;
 
-        $totalCommission = 0;
+        $template = NotificationTemplate::where('system_key', 'payroll_generation_success')->first();
+        if ($template) {
+            $body = $template->parseBody([
+                'شهر' => Carbon::parse($periodStart)->format('Y-m'),
+                'تاريخ_البداية' => $periodStart,
+                'تاريخ_النهاية' => $periodEnd,
+            ]);
 
-        foreach ($sessions as $session) {
-            $activityId = $session->activity_id;
-            $count = $session->total_sessions;
-            
-            // If there's a specific rule for this activity
-            if ($rules->has($activityId)) {
-                $rule = $rules->get($activityId);
-                
-                if ($rule->calculation_type === 'fixed_amount') {
-                    $totalCommission += $count * (float) $rule->rate_value;
-                } elseif ($rule->calculation_type === 'percentage') {
-                    $sessionPrice = (float) $session->session_price;
-                    $commissionPerSession = $sessionPrice * ((float) $rule->rate_value / 100);
-                    $totalCommission += $count * $commissionPerSession;
-                }
-            } else {
-                // Fallback to default commission rate if no specific rule is found
-                $defaultRate = $staff->coachDetail?->default_commission_rate ?? 0;
-                $totalCommission += $count * (float) $defaultRate;
-            }
+            app(NotificationService::class)->createNotification([
+                'title' => $template->subject ?? 'إعداد مسير الرواتب',
+                'body' => $body,
+                'sender_id' => null,
+                'sender_type' => 'system',
+                'user_ids' => $superAdmins,
+            ]);
         }
-
-        return $totalCommission;
     }
 }

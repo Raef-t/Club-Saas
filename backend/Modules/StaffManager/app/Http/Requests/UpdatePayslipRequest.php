@@ -10,10 +10,10 @@ class UpdatePayslipRequest extends FormRequest
         return [
             'base_pay' => 'sometimes|numeric|min:0',
             'commission_pay' => 'sometimes|numeric|min:0',
-            'deductions' => 'sometimes|numeric|min:0',
-            'deduction_reason' => 'nullable|string|max:255',
-            'bonuses' => 'sometimes|numeric|min:0',
-            'bonus_reason' => 'nullable|string|max:255',
+            'adjustments' => 'sometimes|array',
+            'adjustments.*.type' => 'required_with:adjustments|in:bonus,deduction',
+            'adjustments.*.amount' => 'required_with:adjustments|numeric|min:0',
+            'adjustments.*.reason' => 'nullable|string',
         ];
     }
 }
