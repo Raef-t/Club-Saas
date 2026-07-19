@@ -11,8 +11,8 @@ class StaffResource extends JsonResource
         return [
             'id' => $this->id,
             'role' => $this->role,
-            'employment_type' => $this->employment_type,
-            'base_salary' => $this->base_salary,
+            'employment_type' => $this->activeContract ? $this->activeContract->employment_type : null,
+            'base_salary' => $this->activeContract ? $this->activeContract->base_salary : 0,
             'contract_type' => $this->contract_type,
             'shift_type' => $this->shift_type,
             'work_status' => $this->work_status,
@@ -32,9 +32,9 @@ class StaffResource extends JsonResource
                     'specialization'          => $detail->specialization,
                     'bio'                     => $detail->bio,
                     'experience_years'        => $detail->experience_years,
-                    'payment_type'            => $detail->payment_type,
-                    'commission_type'         => $detail->commission_type,
-                    'default_commission_rate' => $detail->default_commission_rate,
+                    'payment_type'            => $this->activeContract?->employment_type,
+                    'commission_type'         => $this->activeContract?->commission_type,
+                    'default_commission_rate' => $this->activeContract?->commission_rate,
                     'working_hours_per_week'  => $detail->working_hours_per_week,
                     'gym_type'                => $detail->gym_type,
                     'certifications'          => $detail->relationLoaded('certifications')

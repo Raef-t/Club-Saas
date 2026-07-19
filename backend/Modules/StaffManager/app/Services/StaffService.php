@@ -51,8 +51,8 @@ class StaffService
             });
         }
 
-        // Eager-load coach details and branches and user and shifts
-        $query->with(['coachDetail', 'branches', 'user', 'shifts.branchShift']);
+        // Eager-load coach details, active contract, branches, user and shifts
+        $query->with(['coachDetail', 'activeContract', 'branches', 'user', 'shifts.branchShift']);
 
         $staffMembers = $query->latest()->get();
 
@@ -69,7 +69,7 @@ class StaffService
     public function getStaffById($id)
     {
         $staff = $this->staffRepository->find($id);
-        $staff->load(['coachDetail.certifications', 'user', 'shifts.branchShift']);
+        $staff->load(['coachDetail.certifications', 'activeContract', 'user', 'shifts.branchShift']);
         return $this->attachSharedDTOs($staff);
     }
 
@@ -117,6 +117,19 @@ class StaffService
                 'person_id' => $person->id,
             ]));
 
+            // Create Staff Contract
+            $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? 0);
+            $commissionType = $data['commission_type'] ?? ($commissionRate > 0 ? 'percentage' : null);
+
+            $staff->contracts()->create([
+                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
+                'base_salary' => $data['base_salary'] ?? 0,
+                'commission_type' => $commissionType,
+                'commission_rate' => $commissionRate,
+                'start_date' => now()->toDateString(),
+                'is_active' => true,
+            ]);
+
             if (!empty($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
             }
@@ -133,9 +146,6 @@ class StaffService
                     'specialization'          => $data['specialization'] ?? null,
                     'bio'                     => $data['bio'] ?? null,
                     'experience_years'        => $data['experience_years'] ?? 0,
-                    'payment_type'            => $data['payment_type'] ?? null,
-                    'commission_type'         => $data['commission_type'] ?? null,
-                    'default_commission_rate' => $data['default_commission_rate'] ?? null,
                     'working_hours_per_week'  => $data['working_hours_per_week'] ?? null,
                     'gym_type'                => $data['gym_type'] ?? null,
                 ]);
@@ -256,8 +266,44 @@ class StaffService
                 }
             }
 
-            // Update Staff record
+            // Update Staff record (fillable will ignore removed fields)
             $staff->update($data);
+
+            // Handle Contract Updates
+            $activeContract = $staff->activeContract;
+            
+            $newEmploymentType = $data['employment_type'] ?? ($activeContract ? $activeContract->employment_type : 'fixed_salary');
+            $newBaseSalary = $data['base_salary'] ?? ($activeContract ? $activeContract->base_salary : 0);
+            
+            $newCommissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? ($activeContract ? $activeContract->commission_rate : 0));
+            $newCommissionType = $data['commission_type'] ?? ($activeContract ? $activeContract->commission_type : null);
+            if (empty($newCommissionType) && $newCommissionRate > 0) {
+                $newCommissionType = 'percentage';
+            }
+
+            // Only create new contract if financial data actually changed
+            if (!$activeContract || 
+                $activeContract->employment_type !== $newEmploymentType ||
+                (float)$activeContract->base_salary !== (float)$newBaseSalary ||
+                $activeContract->commission_type !== $newCommissionType ||
+                (float)$activeContract->commission_rate !== (float)$newCommissionRate
+            ) {
+                if ($activeContract) {
+                    $activeContract->update([
+                        'end_date' => now()->toDateString(),
+                        'is_active' => false
+                    ]);
+                }
+
+                $staff->contracts()->create([
+                    'employment_type' => $newEmploymentType,
+                    'base_salary' => $newBaseSalary,
+                    'commission_type' => $newCommissionType,
+                    'commission_rate' => $newCommissionRate,
+                    'start_date' => now()->toDateString(),
+                    'is_active' => true,
+                ]);
+            }
 
             if (isset($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
@@ -276,9 +322,6 @@ class StaffService
                     'specialization'          => $data['specialization'] ?? null,
                     'bio'                     => $data['bio'] ?? null,
                     'experience_years'        => $data['experience_years'] ?? null,
-                    'payment_type'            => $data['payment_type'] ?? null,
-                    'commission_type'         => $data['commission_type'] ?? null,
-                    'default_commission_rate' => $data['default_commission_rate'] ?? null,
                     'working_hours_per_week'  => $data['working_hours_per_week'] ?? null,
                     'gym_type'                => $data['gym_type'] ?? null,
                 ], fn($value) => !is_null($value));
@@ -291,7 +334,7 @@ class StaffService
                 }
             }
 
-            $staff->load(['coachDetail.certifications', 'shifts.branchShift']);
+            $staff->load(['coachDetail.certifications', 'activeContract', 'shifts.branchShift']);
             return $this->attachSharedDTOs($staff->fresh());
         });
     }
