@@ -42,13 +42,16 @@ class CoachResource extends JsonResource
 {
     public function toArray($request)
     {
+        $contract = $this->activeContract;
+        $detail = $this->coachDetail;
+
         return [
             'id'              => $this->id,
             'person_id'       => $this->person_id,
             'branch_ids'      => $this->branches->pluck('id'),
             'role'            => $this->role,
-            'employment_type' => $this->employment_type,
-            'base_salary'     => $this->base_salary,
+            'employment_type' => $contract ? $contract->employment_type : null,
+            'base_salary'     => $contract ? $contract->base_salary : 0,
             'is_active'       => $this->is_active,
             'start_date'      => $this->start_date,
             'end_date'        => $this->end_date,
@@ -63,10 +66,23 @@ class CoachResource extends JsonResource
             // Relations
             'person'         => $this->person,
             'username'       => $this->user ? $this->user->username : null,
-            'details'        => $this->coachDetail,
+            'details'        => $detail ? [
+                'id' => $detail->id,
+                'staff_id' => $detail->staff_id,
+                'bio' => $detail->bio,
+                'experience_years' => $detail->experience_years,
+                'gym_type' => $detail->gym_type,
+                'work_types' => $detail->work_types,
+                'working_hours_per_week' => $detail->working_hours_per_week ?? null,
+                'payment_type' => $contract ? $contract->employment_type : null,
+                'commission_type' => $contract ? $contract->commission_type : null,
+                'default_commission_rate' => $contract ? $contract->commission_rate : 0,
+                'created_at' => $detail->created_at,
+                'updated_at' => $detail->updated_at,
+            ] : null,
             'activities'     => ActivityResource::collection($this->activities),
-            'experience_years'       => $this->coachDetail?->experience_years,
-            'work_types'     => $this->coachDetail?->work_types,
+            'experience_years'       => $detail?->experience_years,
+            'work_types'     => $detail?->work_types,
         ];
     }
 }
