@@ -14,8 +14,6 @@ class Staff extends Model
     protected $fillable = [
         'person_id',
         'role',
-        'employment_type',
-        'base_salary',
         'is_active',
         'start_date',
         'end_date',
@@ -31,7 +29,6 @@ class Staff extends Model
         'is_active'   => 'boolean',
         'start_date'  => 'date',
         'end_date'    => 'date',
-        'base_salary' => 'decimal:2',
     ];
 
     public ?\Modules\Core\DTOs\PersonDTO $personDto = null;
@@ -53,6 +50,16 @@ class Staff extends Model
     public function coachDetail()
     {
         return $this->hasOne(CoachDetail::class);
+    }
+
+    public function contracts()
+    {
+        return $this->hasMany(StaffContract::class);
+    }
+
+    public function activeContract()
+    {
+        return $this->hasOne(StaffContract::class)->where('is_active', true);
     }
 
     public function shifts()

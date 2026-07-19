@@ -12,16 +12,13 @@ class CoachDetail extends Model
         'staff_id',
         'bio',
         'experience_years',
-        'payment_type',
-        'commission_type',
-        'default_commission_rate',
+        'working_hours_per_week',
         'gym_type',
         'work_types',
     ];
 
     protected $casts = [
         'experience_years'        => 'integer',
-        'default_commission_rate' => 'decimal:2',
         'work_types'              => 'array',
     ];
 
@@ -40,5 +37,4 @@ class CoachDetail extends Model
     {
         return $this->hasMany(CoachCertification::class);
     }
-
 }
