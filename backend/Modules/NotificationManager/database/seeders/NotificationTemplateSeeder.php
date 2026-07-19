@@ -112,6 +112,15 @@ class NotificationTemplateSeeder extends Seeder
                 'variables' => ['شهر', 'تاريخ_البداية', 'تاريخ_النهاية'],
                 'is_active' => true,
             ],
+            // 12. خطأ إعداد الرواتب في يوم عطلة
+            [
+                'name' => 'خطأ مسير الرواتب بسبب يوم عطلة',
+                'system_key' => 'payroll_generation_holiday_error',
+                'subject' => 'خطأ إعداد مسير الرواتب 🛑',
+                'body' => 'عزيزي المدير، لا يمكن حساب الرواتب لتاريخ اليوم، نرجو إعادة المحاولة في يوم عمل آخر لأنه يوم عطلة في النادي.',
+                'variables' => [],
+                'is_active' => true,
+            ],
         ];
 
         foreach ($templates as $template) {

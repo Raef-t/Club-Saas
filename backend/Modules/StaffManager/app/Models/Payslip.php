@@ -11,18 +11,12 @@ class Payslip extends Model
         'staff_id',
         'base_pay',
         'commission_pay',
-        'deductions',
-        'deduction_reason',
-        'bonuses',
-        'bonus_reason',
         'net_pay',
     ];
 
     protected $casts = [
         'base_pay' => 'decimal:2',
         'commission_pay' => 'decimal:2',
-        'deductions' => 'decimal:2',
-        'bonuses' => 'decimal:2',
         'net_pay' => 'decimal:2',
     ];
 
@@ -36,5 +30,10 @@ class Payslip extends Model
     public function staff()
     {
         return $this->belongsTo(Staff::class);
+    }
+
+    public function adjustments()
+    {
+        return $this->hasMany(PayslipAdjustment::class);
     }
 }

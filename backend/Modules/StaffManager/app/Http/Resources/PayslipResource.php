@@ -16,10 +16,9 @@ class PayslipResource extends JsonResource
             'staff' => new StaffResource($this->whenLoaded('staff')),
             'base_pay' => $this->base_pay,
             'commission_pay' => $this->commission_pay,
-            'deductions' => $this->deductions,
-            'deduction_reason' => $this->deduction_reason,
-            'bonuses' => $this->bonuses,
-            'bonus_reason' => $this->bonus_reason,
+            'deductions' => $this->relationLoaded('adjustments') ? $this->adjustments->where('type', 'deduction')->sum('amount') : 0,
+            'bonuses' => $this->relationLoaded('adjustments') ? $this->adjustments->where('type', 'bonus')->sum('amount') : 0,
+            'adjustments' => $this->whenLoaded('adjustments'),
             'net_pay' => $this->net_pay,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
