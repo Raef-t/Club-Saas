@@ -81,14 +81,25 @@ class CoachService
             $staff = Staff::create([
                 'person_id'       => $person->id,
                 'role'            => 'coach',
-                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
-                'base_salary'     => $data['base_salary'] ?? 0,
                 'is_active'       => $data['is_active'] ?? true,
                 'start_date'      => $data['start_date'] ?? null,
                 'end_date'        => $data['end_date'] ?? null,
                 'contract_type'   => $data['contract_type'] ?? null,
                 'shift_type'      => $data['shift_type'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
+            ]);
+
+            // Create Staff Contract
+            $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? 0);
+            $commissionType = $data['commission_type'] ?? ($commissionRate > 0 ? 'percentage' : null);
+
+            $staff->contracts()->create([
+                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
+                'base_salary'     => $data['base_salary'] ?? 0,
+                'commission_type' => $commissionType,
+                'commission_rate' => $commissionRate,
+                'start_date'      => now()->toDateString(),
+                'is_active'       => true,
             ]);
 
             $staff->branches()->sync($data['branch_ids']);
@@ -99,9 +110,6 @@ class CoachService
             CoachDetail::create([
                 'staff_id'               => $staff->id,
                 'experience_years'       => $data['experience_years'] ?? 0,
-                'payment_type'           => $data['payment_type'] ?? null,
-                'commission_type'        => $data['commission_type'] ?? null,
-                'default_commission_rate' => $data['default_commission_rate'] ?? 0,
                 'gym_type'               => $data['gym_type'] ?? null,
                 'work_types'             => $data['work_types'] ?? null,
             ]);
@@ -127,7 +135,7 @@ class CoachService
      */
     public function getAllCoaches(array $filters = [])
     {
-        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user'])->where('role', 'coach');
+        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract'])->where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -165,9 +173,9 @@ class CoachService
         return [
             'total_coaches' => (clone $query)->count(),
             'active_coaches' => (clone $query)->where('is_active', true)->count(),
-            'fixed_salary_coaches' => (clone $query)->where('employment_type', 'fixed_salary')->count(),
-            'commission_based_coaches' => (clone $query)->where('employment_type', 'commission_based')->count(),
-            'hybrid_coaches' => (clone $query)->where('employment_type', 'hybrid')->count(),
+            'fixed_salary_coaches' => (clone $query)->whereHas('activeContract', fn($q) => $q->where('employment_type', 'fixed_salary'))->count(),
+            'commission_based_coaches' => (clone $query)->whereHas('activeContract', fn($q) => $q->where('employment_type', 'commission_based'))->count(),
+            'hybrid_coaches' => (clone $query)->whereHas('activeContract', fn($q) => $q->where('employment_type', 'hybrid'))->count(),
         ];
     }
 
@@ -176,7 +184,7 @@ class CoachService
      */
     public function getSingleCoach($id)
     {
-        return Staff::with(['coachDetail.certifications', 'activities', 'person.contacts', 'user', 'branches'])
+        return Staff::with(['coachDetail.certifications', 'activities', 'person.contacts', 'user', 'branches', 'activeContract'])
             ->where('role', 'coach')
             ->findOrFail($id);
     }
@@ -225,7 +233,7 @@ class CoachService
                 }
             }
 
-            $basicFillable = ['base_salary', 'employment_type', 'shift_type', 'work_status', 'is_active'];
+            $basicFillable = ['shift_type', 'work_status', 'is_active', 'start_date', 'end_date', 'contract_type'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
@@ -233,6 +241,30 @@ class CoachService
 
             if (isset($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
+            }
+
+            // Update Staff Contract
+            if (isset($data['employment_type']) || isset($data['base_salary']) || isset($data['default_commission_rate']) || isset($data['commission_type']) || isset($data['payment_type'])) {
+                $activeContract = $staff->activeContract;
+                
+                $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? ($activeContract ? $activeContract->commission_rate : 0));
+                // Use explicitly provided commission_type, otherwise fallback to activeContract's type, otherwise auto-determine
+                $commissionType = $data['commission_type'] ?? ($activeContract ? $activeContract->commission_type : ($commissionRate > 0 ? 'percentage' : null));
+
+                $contractData = [
+                    'employment_type' => $data['employment_type'] ?? ($data['payment_type'] ?? ($activeContract ? $activeContract->employment_type : 'fixed_salary')),
+                    'base_salary'     => $data['base_salary'] ?? ($activeContract ? $activeContract->base_salary : 0),
+                    'commission_type' => $commissionType,
+                    'commission_rate' => $commissionRate,
+                ];
+
+                if ($activeContract) {
+                    $activeContract->update($contractData);
+                } else {
+                    $contractData['start_date'] = now()->toDateString();
+                    $contractData['is_active'] = true;
+                    $staff->contracts()->create($contractData);
+                }
             }
 
             // Update Details
@@ -244,9 +276,6 @@ class CoachService
             $detailFillable = [
                 'bio',
                 'experience_years',
-                'payment_type',
-                'commission_type',
-                'default_commission_rate',
                 'gym_type',
                 'work_types'
             ];
