@@ -81,11 +81,15 @@ class CheckSubscriptionStatus extends Command
         // Merge both collections
         $toExpire = $toExpireByDate->merge($toExpireBySessions)->unique('id');
 
+        /** @var \Modules\SubscriptionManager\Services\SubscriptionService $subscriptionService */
+        $subscriptionService = app(\Modules\SubscriptionManager\Services\SubscriptionService::class);
         $expiredCount = 0;
         foreach ($toExpire as $sub) {
-            DB::transaction(function () use ($sub, &$expiredCount) {
+            DB::transaction(function () use ($sub, &$expiredCount, $subscriptionService) {
+                /** @var \Modules\SubscriptionManager\Services\SubscriptionService $subscriptionService */
                 // Update status
                 $sub->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
+                $subscriptionService->decrementPlanSubscribers($sub->plan);
                 $expiredCount++;
             });
         }
@@ -111,7 +115,7 @@ class CheckSubscriptionStatus extends Command
                 $expiredLockersCount++;
             });
         }
-        
+
         $this->info("Successfully expired {$expiredLockersCount} locker reservations.");
         Log::info("Locker reservation status scan completed. Expired {$expiredLockersCount} reservations.");
 

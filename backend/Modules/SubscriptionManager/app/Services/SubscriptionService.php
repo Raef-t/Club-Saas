@@ -98,14 +98,7 @@ class SubscriptionService
         }
 
         return DB::transaction(function () use ($memberId, $plan, $options) {
-            if ($plan->max_subscribers > 0) {
-                $plan->increment('current_subscribers');
-                
-                // Automatically deactivate the plan if it's now full
-                if ($plan->current_subscribers >= $plan->max_subscribers) {
-                    $plan->update(['is_active' => false]);
-                }
-            }
+            $this->incrementPlanSubscribers($plan);
 
 
             // 2. Dates Calculation
@@ -258,23 +251,24 @@ class SubscriptionService
                 'freeze_end_date' => null,
                 'reason' => $reason,
             ]);
-            
+
             $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value]);
+            $this->decrementPlanSubscribers($subscription->plan);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
             // إرسال إشعار التجميد
             $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
             $userId = $member?->person?->user?->id;
-            
+
             if ($userId) {
                 $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_frozen')->first();
                 if ($template) {
                     $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
                     $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
-                    
+
                     $startCarbon = \Carbon\Carbon::parse($startDate);
-                    
+
                     $startDay = $startCarbon->locale('ar')->translatedFormat('l');
 
                     $body = $template->parseBody([
@@ -430,6 +424,8 @@ class SubscriptionService
                     : __('Cancellation reason: ') . $reason,
             ]);
 
+            $this->decrementPlanSubscribers($subscription->plan);
+
 
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
@@ -450,6 +446,10 @@ class SubscriptionService
         }
 
         return DB::transaction(function () use ($subscription) {
+            if ($subscription->plan && $subscription->plan->max_subscribers > 0 && $subscription->plan->current_subscribers >= $subscription->plan->max_subscribers) {
+                throw new Exception(__('لا يمكن فك التجميد لأن الخطة ممتلئة بالكامل حالياً.'));
+            }
+
             // Find the active freeze
             $activeFreeze = $subscription->freezes()
                 ->whereNull('actual_end_date')
@@ -469,6 +469,7 @@ class SubscriptionService
             }
 
             $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value]);
+            $this->incrementPlanSubscribers($subscription->plan);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -537,12 +538,7 @@ class SubscriptionService
         return DB::transaction(function () use ($memberId, $offer, $options) {
             // Increment subscribers for all plans
             foreach ($offer->plans as $plan) {
-                if ($plan->max_subscribers > 0) {
-                    $plan->increment('current_subscribers');
-                    if ($plan->current_subscribers >= $plan->max_subscribers) {
-                        $plan->update(['is_active' => false]);
-                    }
-                }
+                $this->incrementPlanSubscribers($plan);
             }
 
             $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
@@ -650,5 +646,33 @@ class SubscriptionService
                 'subscriptions' => $createdSubscriptions
             ];
         });
+    }
+
+    /**
+     * Increment plan subscribers and deactivate if full.
+     */
+    public function incrementPlanSubscribers($plan)
+    {
+        if ($plan && $plan->max_subscribers > 0) {
+            $plan->increment('current_subscribers');
+            if ($plan->current_subscribers >= $plan->max_subscribers) {
+                $plan->update(['is_active' => false]);
+            }
+        }
+    }
+
+    /**
+     * Decrement plan subscribers and reactivate if space opens up.
+     */
+    public function decrementPlanSubscribers($plan)
+    {
+        if ($plan && $plan->max_subscribers > 0) {
+            if ($plan->current_subscribers > 0) {
+                $plan->decrement('current_subscribers');
+            }
+            if (!$plan->is_active && $plan->current_subscribers < $plan->max_subscribers) {
+                $plan->update(['is_active' => true]);
+            }
+        }
     }
 }
