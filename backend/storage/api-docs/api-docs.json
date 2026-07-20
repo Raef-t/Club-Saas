@@ -12904,6 +12904,16 @@
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "activity_id": {
+                                        "type": "integer",
+                                        "example": 10,
+                                        "nullable": true
+                                    },
+                                    "coach_id": {
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
