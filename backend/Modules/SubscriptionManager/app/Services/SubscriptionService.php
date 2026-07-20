@@ -253,7 +253,7 @@ class SubscriptionService
             ]);
 
             $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value]);
-            $this->decrementPlanSubscribers($subscription->plan);
+            // $this->decrementPlanSubscribers($subscription->plan);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -469,7 +469,7 @@ class SubscriptionService
             }
 
             $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value]);
-            $this->incrementPlanSubscribers($subscription->plan);
+            // $this->incrementPlanSubscribers($subscription->plan);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
