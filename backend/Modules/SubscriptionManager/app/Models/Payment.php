@@ -13,7 +13,10 @@ class Payment extends Model
     protected $table = 'payments';
 
     protected $fillable = [
-        'invoice_id',
+        'receipt_number',
+        'type',
+        'payable_id',
+        'payable_type',
         'safe_id',
         'amount',
         'payment_method',
@@ -24,8 +27,18 @@ class Payment extends Model
         'amount' => 'decimal:2',
     ];
 
-    public function invoice()
+    public function payable()
     {
-        return $this->belongsTo(Invoice::class, 'invoice_id');
+        return $this->morphTo();
+    }
+
+    public function scopeIncomes($query)
+    {
+        return $query->where('type', 'in');
+    }
+
+    public function scopeExpenses($query)
+    {
+        return $query->where('type', 'out');
     }
 }
