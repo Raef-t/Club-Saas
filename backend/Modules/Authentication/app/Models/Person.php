@@ -56,6 +56,14 @@ class Person extends Model
     }
 
     /**
+     * Get the person's full name using camelCase property (fullName).
+     */
+    public function getFullNameAttribute()
+    {
+        return $this->attributes['full_name'] ?? null;
+    }
+
+    /**
      * Prepare photo_url for frontend by prepending storage/
      */
     public function getPhotoUrlAttribute($value)
