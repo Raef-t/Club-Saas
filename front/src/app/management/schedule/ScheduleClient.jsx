@@ -236,7 +236,11 @@ function ScheduleTable({
             <tr key={day.key}>
               <td className="day-cell">{day.label}</td>
               {slots.map((slot) => (
-                <td key={`${day.key}-${slot.key}`} className="schedule-cell">
+                <td
+                  key={`${day.key}-${slot.key}`}
+                  className="schedule-cell"
+                  data-label={`${slot.from} - ${slot.to}`}
+                >
                   <EditableCell
                     value={
                       scheduleData?.[day.key]?.[`${periodKey}_${slot.key}`] ||
@@ -626,7 +630,7 @@ export default function ScheduleClient() {
         title="جدول الدوام الأسبوعي"
         subtitle="إدارة وتنظيم جدول دوام المدربين مع إمكانية تخصيص الأوقات والطباعة"
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button
               tone="outline"
               onClick={() => setShowSettings((v) => !v)}
