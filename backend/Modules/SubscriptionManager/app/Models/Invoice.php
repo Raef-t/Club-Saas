@@ -13,7 +13,6 @@ class Invoice extends Model
     protected $table = 'invoices';
 
     protected $fillable = [
-        'code',
         'member_id',
         'branch_id',
         'player_subscription_id',
@@ -25,16 +24,6 @@ class Invoice extends Model
     protected static function boot()
     {
         parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->code)) {
-                $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
-                while (static::where('code', $code)->exists()) {
-                    $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
-                }
-                $model->code = $code;
-            }
-        });
     }
 
     protected $casts = [
@@ -59,6 +48,6 @@ class Invoice extends Model
 
     public function payments()
     {
-        return $this->hasMany(Payment::class, 'invoice_id');
+        return $this->morphMany(Payment::class, 'payable');
     }
 }
