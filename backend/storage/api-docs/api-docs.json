@@ -5592,7 +5592,7 @@
                     "Branch Settings"
                 ],
                 "summary": "⚙️ عرض إعدادات الفرع",
-                "description": "استرجاع إعدادات فرع محدد (نسبة النادي، نسبة المدرب، والراتب الافتراضي).",
+                "description": "استرجاع إعدادات فرع محدد (نسبة النادي، نسبة المدرب، الراتب الافتراضي، الإجازات، الفعاليات المختلطة، وإعدادات الرواتب).",
                 "operationId": "9588bc18592bfc2f2178c589be578b02",
                 "parameters": [
                     {
@@ -5712,6 +5712,21 @@
                                     },
                                     "display_mixed_activities": {
                                         "description": "السماح بعرض الفعاليات المختلطة في الفرع (إذا كان الفرع غير مختلط)",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "payroll_start_day": {
+                                        "description": "يوم بداية الرواتب (1-31)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "payroll_end_day": {
+                                        "description": "يوم نهاية الرواتب (1-31)",
+                                        "type": "integer",
+                                        "example": 30
+                                    },
+                                    "include_terminated_subscriptions": {
+                                        "description": "تضمين الاشتراكات المنتهية",
                                         "type": "boolean",
                                         "example": false
                                     }

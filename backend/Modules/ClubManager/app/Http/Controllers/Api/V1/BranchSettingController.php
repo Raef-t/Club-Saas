@@ -15,7 +15,7 @@ class BranchSettingController extends BaseController
     #[OA\Get(
         path: '/v1/branches/{branch}/settings',
         summary: '⚙️ عرض إعدادات الفرع',
-        description: 'استرجاع إعدادات فرع محدد (نسبة النادي، نسبة المدرب، والراتب الافتراضي).',
+        description: 'استرجاع إعدادات فرع محدد (نسبة النادي، نسبة المدرب، الراتب الافتراضي، الإجازات، الفعاليات المختلطة، وإعدادات الرواتب).',
         tags: ['Branch Settings'],
         security: [['bearerAuth' => []]]
     )]
@@ -64,7 +64,10 @@ class BranchSettingController extends BaseController
                 new OA\Property(property: 'working_hours_start', type: 'string', format: 'time', nullable: true, example: null),
                 new OA\Property(property: 'working_hours_end', type: 'string', format: 'time', nullable: true, example: null),
                 new OA\Property(property: 'allow_freeze', type: 'boolean', description: 'السماح بتجميد الاشتراكات في هذا الفرع', example: false),
-                new OA\Property(property: 'display_mixed_activities', type: 'boolean', description: 'السماح بعرض الفعاليات المختلطة في الفرع (إذا كان الفرع غير مختلط)', example: false)
+                new OA\Property(property: 'display_mixed_activities', type: 'boolean', description: 'السماح بعرض الفعاليات المختلطة في الفرع (إذا كان الفرع غير مختلط)', example: false),
+                new OA\Property(property: 'payroll_start_day', type: 'integer', description: 'يوم بداية الرواتب (1-31)', example: 1),
+                new OA\Property(property: 'payroll_end_day', type: 'integer', description: 'يوم نهاية الرواتب (1-31)', example: 30),
+                new OA\Property(property: 'include_terminated_subscriptions', type: 'boolean', description: 'تضمين الاشتراكات المنتهية', example: false)
             ]
         )
     )]
