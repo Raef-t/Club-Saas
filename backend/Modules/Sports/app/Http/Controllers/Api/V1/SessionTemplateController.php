@@ -59,7 +59,7 @@ class SessionTemplateController extends BaseController
             ->with([
                 'facility',
                 'subscriptionPlan.planActivities.staffActivity.activity',
-                'subscriptionPlan.planActivities.staffActivity.staff'
+                'subscriptionPlan.planActivities.staffActivity.staff.person'
             ])
             ->orderBy('day_of_week')
             ->orderBy('start_time')
@@ -89,6 +89,8 @@ class SessionTemplateController extends BaseController
             $schedule[$dayName][] = [
                 'id' => $session->id,
                 'plan_id' => $session->plan_id,
+                'activity_id' => $activity ? $activity->id : null,
+                'coach_id' => $coach ? $coach->id : null,
                 'start_time' => $session->start_time->format('H:i'),
                 'end_time' => $session->end_time->format('H:i'),
                 'plan_name' => $session->subscriptionPlan ? $session->subscriptionPlan->name : null,
@@ -98,7 +100,7 @@ class SessionTemplateController extends BaseController
                 ] : null,
                 'coach' => $coach ? [
                     'id' => $coach->id,
-                    'name' => trim(($coach->first_name ?? '') . ' ' . ($coach->last_name ?? '')),
+                    'name' => $coach->person->full_name ?? '',
                 ] : null,
                 'activity' => $activity ? [
                     'id' => $activity->id,
@@ -207,6 +209,8 @@ class SessionTemplateController extends BaseController
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
             'is_active' => 'nullable|boolean',
+            'activity_id' => 'nullable|integer',
+            'coach_id' => 'nullable|integer',
         ]);
 
         $checkFacility = array_key_exists('facility_id', $data) ? $data['facility_id'] : $template->facility_id;
@@ -231,6 +235,35 @@ class SessionTemplateController extends BaseController
         }
 
         $template->update($data);
+
+        if (array_key_exists('activity_id', $data) || array_key_exists('coach_id', $data)) {
+            if ($template->plan_id) {
+                $planActivity = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::where('plan_id', $template->plan_id)->first();
+                
+                $currentActivityId = $planActivity && $planActivity->staffActivity ? $planActivity->staffActivity->activity_id : null;
+                $currentCoachId = $planActivity && $planActivity->staffActivity ? $planActivity->staffActivity->staff_id : null;
+
+                $newActivityId = array_key_exists('activity_id', $data) ? $data['activity_id'] : $currentActivityId;
+                $newCoachId = array_key_exists('coach_id', $data) ? $data['coach_id'] : $currentCoachId;
+
+                if ($newActivityId && $newCoachId) {
+                    $staffActivity = \Modules\Sports\Models\StaffActivity::firstOrCreate([
+                        'activity_id' => $newActivityId,
+                        'staff_id' => $newCoachId,
+                    ]);
+
+                    if ($planActivity) {
+                        $planActivity->update(['staff_activity_id' => $staffActivity->id]);
+                    } else {
+                        \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::create([
+                            'plan_id' => $template->plan_id,
+                            'staff_activity_id' => $staffActivity->id,
+                        ]);
+                    }
+                }
+            }
+        }
+
         return $this->successResponse($template, __('Template updated successfully'));
     }
 
