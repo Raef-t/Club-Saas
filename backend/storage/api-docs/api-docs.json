@@ -9335,9 +9335,9 @@
                                         "type": "number",
                                         "example": 32
                                     },
-                                    "activity_level": {
+                                    "physical_activity_level": {
                                         "type": "string",
-                                        "example": "High"
+                                        "example": "medium"
                                     }
                                 },
                                 "type": "object"
@@ -9489,9 +9489,9 @@
                                         "type": "number",
                                         "example": 33
                                     },
-                                    "activity_level": {
+                                    "physical_activity_level": {
                                         "type": "string",
-                                        "example": "Medium"
+                                        "example": "medium"
                                     }
                                 },
                                 "type": "object"
