@@ -191,7 +191,9 @@ class SessionTemplateController extends BaseController
                 new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
                 new OA\Property(property: 'start_time', type: 'string', example: '10:00'),
                 new OA\Property(property: 'end_time', type: 'string', example: '11:00'),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'activity_id', type: 'integer', nullable: true, example: 10),
+                new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 5)
             ]
         )
     )]
