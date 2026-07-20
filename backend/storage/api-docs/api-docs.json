@@ -16833,6 +16833,26 @@
                 "summary": "⚙️ توليد مسودة الرواتب",
                 "description": "يقوم بحساب وتوليد الرواتب كمسودة ترجع للواجهة الأمامية بدون حفظها في قاعدة البيانات.",
                 "operationId": "1d3c70ae1971f780b1edded2344536b5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_id"
+                                ],
+                                "properties": {
+                                    "branch_id": {
+                                        "description": "معرف الفرع الإلزامي لتوليد الرواتب",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم حساب المسودة بنجاح"

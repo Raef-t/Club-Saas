@@ -94,6 +94,15 @@ class PayslipController extends BaseController
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['branch_id'],
+            properties: [
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1, description: 'معرف الفرع الإلزامي لتوليد الرواتب')
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم حساب المسودة بنجاح')]
     #[OA\Response(response: 400, description: '❌ إعدادات غير مكتملة أو يوم عطلة')]
     #[OA\Response(response: 409, description: '❌ مسير الرواتب موجود مسبقاً')]
