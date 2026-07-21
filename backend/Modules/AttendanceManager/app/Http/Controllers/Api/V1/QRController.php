@@ -82,20 +82,34 @@ class QRController extends BaseController
                 return $this->errorResponse('Authenticated user is not a staff member.', 403);
             }
 
-            $staffBranch = \Illuminate\Support\Facades\DB::table('staff_branches')->where('staff_id', $scannerStaff->id)->first();
-            if (!$staffBranch) {
-                return $this->errorResponse('Scanner staff is not assigned to any branch.', 403);
+            $now = now();
+            $dayOfWeek = $now->dayOfWeek; // 0 = Sunday, 6 = Saturday
+            $time = $now->format('H:i:s');
+
+            $activeShift = \Illuminate\Support\Facades\DB::table('staff_shifts')
+                ->join('branch_shifts', 'staff_shifts.branch_shift_id', '=', 'branch_shifts.id')
+                ->where('staff_shifts.staff_id', $scannerStaff->id)
+                ->where('branch_shifts.day_of_week', $dayOfWeek)
+                ->where('branch_shifts.start_time', '<=', $time)
+                ->where('branch_shifts.end_time', '>=', $time)
+                ->select('branch_shifts.branch_id')
+                ->first();
+
+            if ($activeShift) {
+                $branchId = $activeShift->branch_id;
+            } else {
+                $staffBranch = \Illuminate\Support\Facades\DB::table('staff_branches')->where('staff_id', $scannerStaff->id)->first();
+                $branchId = $staffBranch ? $staffBranch->branch_id : null;
             }
 
-            $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $staffBranch->branch_id)->first();
-            if (!$branch) {
-                return $this->errorResponse('Branch not found.', 404);
+            if (!$branchId) {
+                return $this->errorResponse('Scanner staff is not assigned to any branch.', 403);
             }
 
             $attendance = $this->attendanceService->checkIn(
                 type: $type,
                 entityId: (int) $entityId,
-                branchId: (int) $branch->id
+                branchId: (int) $branchId
             );
 
             return $this->successResponse(
