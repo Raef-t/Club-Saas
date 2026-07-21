@@ -150,13 +150,13 @@ export default function LockersClient() {
           </div>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-2">
             <FilterIcon className="size-4 text-app-muted-light" />
             <Dropdown
               options={branchOptions}
               value={branchFilter}
               onChange={setBranchFilter}
-              className="w-[180px]"
+              className="w-full sm:w-[180px]"
             />
             <Dropdown
               options={[
@@ -166,7 +166,7 @@ export default function LockersClient() {
               ]}
               value={statusFilter}
               onChange={setStatusFilter}
-              className="w-[180px]"
+              className="w-full sm:w-[180px]"
             />
           </div>
         </div>

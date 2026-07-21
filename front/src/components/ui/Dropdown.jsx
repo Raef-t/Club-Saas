@@ -73,6 +73,10 @@ export default function Dropdown({
     );
   }, [options, searchable, searchQuery]);
 
+  const hasHeight = useMemo(() => {
+    return buttonClassName.split(' ').some(c => c.startsWith('h-'));
+  }, [buttonClassName]);
+
   return (
     <div ref={containerRef} className={`relative ${className}`} dir="rtl">
       <button
@@ -89,13 +93,13 @@ export default function Dropdown({
             : !buttonClassName.includes("border-") 
             ? "border border-app-muted/50 bg-app-panel-soft/40 hover:border-app-yellow/50 focus:border-app-yellow" 
             : ""
-        }`}
+        } ${!hasHeight ? "h-10" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
         onClick={() => !disabled && setOpen(!open)}
       >
-        <span className="flex items-center gap-2 px-3 h-10">
+        <span className="flex items-center gap-2 px-3 h-full">
           {Icon && <Icon className="size-5 text-app-muted-light" />}
           {selectedOption ? (
             <span className="text-white text-sm">{selectedOption.label}</span>

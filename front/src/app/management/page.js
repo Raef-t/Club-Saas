@@ -212,7 +212,7 @@ function IncomeMovement() {
 export default function ManagementPage() {
   return (
     <div className="space-y-5" dir="rtl">
-      <section className="grid grid-cols-[repeat(auto-fit,minmax(172px,1fr))] gap-5">
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,172px),1fr))] gap-3 sm:gap-5">
         {dashboardStats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}

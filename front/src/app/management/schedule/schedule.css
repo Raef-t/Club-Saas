@@ -154,6 +154,111 @@
   }
 }
 
+/* Card layout for tablets and phones */
+@media (max-width: 1279px) {
+  .schedule-wrapper {
+    overflow: visible;
+  }
+
+  .schedule-table {
+    display: block;
+    min-width: 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+  }
+
+  .schedule-table caption {
+    display: block;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .schedule-table thead {
+    display: none;
+  }
+
+  .schedule-table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .schedule-table tbody tr {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    background: var(--app-card) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  .schedule-table tbody tr > td {
+    border: 0;
+    border-bottom: 1px solid var(--app-line);
+  }
+
+  .schedule-table tbody tr > td:last-child {
+    border-bottom: 0;
+  }
+
+  .schedule-table .day-cell {
+    position: static;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border: 0;
+    border-bottom: 1px solid var(--app-line);
+    background: var(--app-yellow-soft) !important;
+    color: var(--app-yellow);
+    font-size: 15px;
+  }
+
+  .schedule-table .schedule-cell {
+    display: grid;
+    grid-template-columns: minmax(90px, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    text-align: start;
+    white-space: normal;
+  }
+
+  .schedule-table .schedule-cell::before {
+    content: attr(data-label);
+    color: var(--app-muted);
+    font-size: 11px;
+    font-weight: 700;
+    direction: ltr;
+    text-align: start;
+  }
+
+  .schedule-cell-content,
+  .schedule-cell-input {
+    justify-content: flex-start;
+    min-width: 0;
+    text-align: start;
+  }
+
+  .schedule-cell-empty {
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: 639px) {
+  .schedule-table tbody {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-time-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .schedule-period-config {
   display: flex;
   flex-direction: column;

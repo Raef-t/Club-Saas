@@ -65,7 +65,7 @@ export default function StatCard({
   const styles = toneMap[tone] || toneMap.yellow;
 
   return (
-    <article className="card-shell h-32 min-w-[186px] overflow-hidden rounded-2xl p-3.5" dir="rtl">
+    <article className="card-shell h-32 min-w-0 overflow-hidden rounded-2xl p-3.5" dir="rtl">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1 text-right">
           <h3 className="truncate text-sm font-medium text-app-text">

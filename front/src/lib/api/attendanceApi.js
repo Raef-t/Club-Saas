@@ -25,6 +25,14 @@ export const attendanceApi = createApi({
       }),
       invalidatesTags: ["Attendance"],
     }),
+    qrCheckOut: builder.mutation({
+      query: (body) => ({
+        url: "qr/check-out",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Attendance"],
+    }),
     getMemberSubscriptions: builder.query({
       query: (memberId) => `reception/members/${memberId}/subscriptions`,
       providesTags: ["Attendance"],
@@ -32,4 +40,4 @@ export const attendanceApi = createApi({
   }),
 });
 
-export const { useQrCheckInMutation, useGetMemberSubscriptionsQuery } = attendanceApi;
+export const { useQrCheckInMutation, useQrCheckOutMutation, useGetMemberSubscriptionsQuery } = attendanceApi;

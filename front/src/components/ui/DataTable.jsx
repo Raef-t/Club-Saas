@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import {
   DownloadIcon,
@@ -9,6 +10,7 @@ import {
 } from "@/components/icons/Icons";
 import { Field } from "@/components/forms/Field";
 import SkeletonPage from "@/components/ui/Skeleton";
+import Dropdown from "./Dropdown";
 
 const statusClass = {
   مدفوع: "bg-[rgba(19,172,73,0.18)] text-app-green",
@@ -31,7 +33,7 @@ function getAlignClass(align = "end") {
   return "justify-end text-end";
 }
 
-function CellValue({ column, row, value }) {
+function CellValue({ column, row, value, card = false }) {
   if (column.render) return column.render(value, row, column);
 
   if (column.type === "status") {
@@ -62,7 +64,11 @@ function CellValue({ column, row, value }) {
     return <span className="font-medium text-[#d99300]">{value}</span>;
   }
 
-  return <span className="min-w-0 truncate">{value}</span>;
+  return (
+    <span className={`min-w-0 ${card ? "break-words" : "truncate"}`}>
+      {value}
+    </span>
+  );
 }
 
 function Toolbar({
@@ -80,17 +86,17 @@ function Toolbar({
   toolbarMeta,
 }) {
   return (
-    <div className="flex flex-col gap-4 border-b border-app-line px-4 py-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="flex flex-col gap-4 border-b border-app-line px-4 py-4 xl:flex-row xl:items-start xl:justify-between">
       <div className="min-w-0 text-start">
         <h2 className="text-base font-medium text-app-text">{title}</h2>
         {subtitle && <p className="mt-1 text-xs text-app-muted">{subtitle}</p>}
 
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-4 grid grid-cols-2 items-center gap-3 sm:flex sm:flex-wrap sm:justify-end">
           {showAdd && (
             <Button
               onClick={onAdd}
               icon={<PlusIcon className="size-4" />}
-              className="h-9 px-3 text-xs"
+              className="h-9 w-full px-3 text-xs sm:w-auto"
             >
               {addLabel}
             </Button>
@@ -103,7 +109,7 @@ function Toolbar({
               type="search"
               placeholder="البحث"
               icon={SearchIcon}
-              className="min-w-48"
+              className="col-span-2 w-full sm:col-auto sm:min-w-48 sm:flex-1 xl:flex-none"
               dir="rtl"
               required={false}
               value={searchValue !== undefined ? searchValue : ""}
@@ -115,7 +121,7 @@ function Toolbar({
             <Button
               tone="ghost"
               icon={<FilterIcon className="size-4" />}
-              className="h-9 px-3 text-xs"
+              className="h-9 w-full px-3 text-xs sm:w-auto"
             >
               تصفية
             </Button>
@@ -125,7 +131,7 @@ function Toolbar({
             <Button
               tone="ghost"
               icon={<DownloadIcon className="size-4" />}
-              className="h-9 px-3 text-xs"
+              className="h-9 w-full px-3 text-xs sm:w-auto"
             >
               تصدير
             </Button>
@@ -134,7 +140,7 @@ function Toolbar({
       </div>
 
       {toolbarMeta && (
-        <div className="shrink-0 text-start lg:pt-1">{toolbarMeta}</div>
+        <div className="shrink-0 text-start xl:pt-1">{toolbarMeta}</div>
       )}
     </div>
   );
@@ -156,8 +162,8 @@ export default function DataTable({
   onSearchChange,
   toolbarActions,
   toolbarMeta,
-  currentPage = 1,
-  totalPages = 1,
+  currentPage,
+  totalPages,
   onPageChange,
   onRowClick,
   getRowKey,
@@ -165,15 +171,96 @@ export default function DataTable({
   minWidth = "780px",
   isLoading = false,
   loadingRows = 5,
+  pagination = true,
+  pageSize = 10,
+  pageSizeOptions = [5, 10, 20, 50],
+  totalItems,
   emptyMessage = "لا توجد بيانات",
   headerClassName = "",
   rowClassName = "",
   cellClassName = "",
 }) {
+  const [internalPage, setInternalPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(pageSize);
+
+  const dropdownOptions = useMemo(() => {
+    return pageSizeOptions.map(option => ({
+      value: option,
+      label: String(option)
+    }));
+  }, [pageSizeOptions]);
+  const rowsSignature = rows
+    .map(
+      (row, index) =>
+        getRowKey?.(row, index) ?? row.id ?? row.key ?? index,
+    )
+    .join("|");
+  const previousRowsSignature = useRef(rowsSignature);
+  const hasControlledPagination =
+    typeof onPageChange === "function" &&
+    Number.isFinite(totalPages) &&
+    totalPages > 0;
+  const internalTotalPages = Math.max(
+    1,
+    Math.ceil(rows.length / Math.max(rowsPerPage, 1)),
+  );
+  const resolvedTotalPages = hasControlledPagination
+    ? totalPages
+    : internalTotalPages;
+  const resolvedCurrentPage = hasControlledPagination
+    ? Math.min(Math.max(currentPage || 1, 1), resolvedTotalPages)
+    : Math.min(internalPage, resolvedTotalPages);
+  const displayedRows = hasControlledPagination
+    ? rows
+    : rows.slice(
+        (resolvedCurrentPage - 1) * rowsPerPage,
+        resolvedCurrentPage * rowsPerPage,
+      );
+  const hasKnownTotalItems =
+    !hasControlledPagination || Number.isFinite(totalItems);
+  const resolvedTotalItems = totalItems ?? rows.length;
+  const firstVisibleItem =
+    resolvedTotalItems > 0
+      ? (resolvedCurrentPage - 1) * rowsPerPage + 1
+      : 0;
+  const lastVisibleItem = hasControlledPagination
+    ? Math.min(
+        firstVisibleItem + Math.max(displayedRows.length - 1, 0),
+        resolvedTotalItems,
+      )
+    : Math.min(resolvedCurrentPage * rowsPerPage, resolvedTotalItems);
+
+  useEffect(() => {
+    if (!hasControlledPagination) {
+      setInternalPage((page) => Math.min(page, internalTotalPages));
+    }
+  }, [hasControlledPagination, internalTotalPages]);
+
+  useEffect(() => {
+    if (
+      !hasControlledPagination &&
+      previousRowsSignature.current !== rowsSignature
+    ) {
+      previousRowsSignature.current = rowsSignature;
+      setInternalPage(1);
+    }
+  }, [hasControlledPagination, rowsSignature]);
+
+  const changePage = (page) => {
+    const nextPage = Math.min(Math.max(page, 1), resolvedTotalPages);
+    if (hasControlledPagination) {
+      onPageChange(nextPage);
+      return;
+    }
+    setInternalPage(nextPage);
+  };
+
   const resolvedTableColumns =
     tableColumns || columns.map((column) => column.width || "1fr").join(" ");
   const visiblePages =
-    totalPages > 0 ? getVisiblePages(currentPage, totalPages) : [];
+    resolvedTotalPages > 0
+      ? getVisiblePages(resolvedCurrentPage, resolvedTotalPages)
+      : [];
 
   return (
     <section className="app-card overflow-hidden rounded-2xl">
@@ -194,7 +281,7 @@ export default function DataTable({
         />
       )}
 
-      <div className="overflow-x-auto scrollbar-thin px-4 pb-4">
+      <div className="hidden overflow-x-auto scrollbar-thin px-4 pb-4 xl:block">
         <div style={{ minWidth }}>
           <div
             className={`grid border-b border-app-line px-3 py-3 text-xs text-app-muted-light ${headerClassName}`}
@@ -217,13 +304,13 @@ export default function DataTable({
                 { type: "list", count: loadingRows, itemClassName: "h-16" },
               ]}
             />
-          ) : rows.length === 0 ? (
+          ) : displayedRows.length === 0 ? (
             <div className="mt-3 rounded-xl border border-app-line bg-app-card-soft/60 p-8 text-center text-sm text-app-muted-light">
               {emptyMessage}
             </div>
           ) : (
             <div className="space-y-3 pt-3">
-              {rows.map((row, index) => {
+              {displayedRows.map((row, index) => {
                 const key =
                   getRowKey?.(row, index) ?? `${row.id || index}-${index}`;
 
@@ -252,6 +339,11 @@ export default function DataTable({
                       <div
                         key={column.key}
                         className={`flex min-w-0 items-center ${getAlignClass(column.align)} ${cellClassName} ${column.className || ""}`}
+                        onClick={
+                          column.key === "actions"
+                            ? (event) => event.stopPropagation()
+                            : undefined
+                        }
                       >
                         <CellValue
                           column={column}
@@ -268,55 +360,155 @@ export default function DataTable({
         </div>
       </div>
 
-      {totalPages > 0 && (
-        <div
-          className="flex flex-wrap items-center justify-center gap-4 px-4 pb-5 text-xs text-app-muted-light sm:gap-5"
-          dir="ltr"
-        >
-          <button
-            className={`text-app-yellow transition-colors hover:text-app-yellow/80 ${
-              currentPage >= totalPages ? "cursor-not-allowed opacity-50" : ""
-            }`}
-            onClick={() =>
-              onPageChange &&
-              currentPage < totalPages &&
-              onPageChange(currentPage + 1)
-            }
-            disabled={currentPage >= totalPages}
-          >
-            التالي →
-          </button>
-          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
-            {visiblePages.map((page, index) => (
-              <span key={index}>
-                {page === "..." ? (
-                  <span className="px-1 py-1 sm:px-2">...</span>
-                ) : (
-                  <button
-                    onClick={() => onPageChange && onPageChange(page)}
-                    className={`rounded-md px-2 py-1 transition-colors ${
-                      currentPage === page
-                        ? "bg-app-card-soft text-white"
-                        : "hover:bg-[rgba(40,40,40,0.82)]"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )}
-              </span>
-            ))}
+      <div className="space-y-3 px-3 py-3 sm:px-4 xl:hidden">
+        {isLoading ? (
+          <SkeletonPage
+            className="space-y-3"
+            blocks={[
+              {
+                type: "list",
+                count: Math.min(loadingRows, rowsPerPage),
+                itemClassName: "h-44 rounded-xl",
+              },
+            ]}
+          />
+        ) : displayedRows.length === 0 ? (
+          <div className="rounded-xl border border-app-line bg-app-card-soft/60 p-8 text-center text-sm text-app-muted-light">
+            {emptyMessage}
           </div>
-          <button
-            className={`transition-colors hover:text-white ${
-              currentPage <= 1 ? "cursor-not-allowed opacity-50" : ""
-            }`}
-            onClick={() =>
-              onPageChange && currentPage > 1 && onPageChange(currentPage - 1)
-            }
-            disabled={currentPage <= 1}
+        ) : (
+          displayedRows.map((row, index) => {
+            const key =
+              getRowKey?.(row, index) ?? `${row.id || index}-${index}`;
+
+            return (
+              <article
+                key={key}
+                role={onRowClick ? "button" : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                className={`rounded-xl border border-app-line bg-app-card-soft/70 p-3 text-xs text-app-text shadow-sm transition hover:border-app-yellow/40 hover:bg-app-card-hover focus:outline-none focus:ring-2 focus:ring-app-yellow/50 ${onRowClick ? "cursor-pointer" : ""}`}
+                onClick={onRowClick ? () => onRowClick(row, index) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onRowClick(row, index);
+                        }
+                      }
+                    : undefined
+                }
+              >
+                <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {columns.map((column) => (
+                    <div
+                      key={column.key}
+                      className={`min-w-0 rounded-lg border border-app-line/70 bg-app-card/70 p-3 ${column.key === "actions" ? "sm:col-span-2" : ""}`}
+                      onClick={
+                        column.key === "actions"
+                          ? (event) => event.stopPropagation()
+                          : undefined
+                      }
+                    >
+                      <dt className="mb-2 text-[11px] font-medium text-app-muted">
+                        {column.label}
+                      </dt>
+                      <dd
+                        className={`flex min-h-6 min-w-0 items-center ${getAlignClass(column.align)} ${cellClassName} ${column.className || ""}`}
+                      >
+                        <CellValue
+                          column={column}
+                          row={row}
+                          value={row[column.key]}
+                          card
+                        />
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      {pagination &&
+        !isLoading &&
+        (resolvedTotalItems > 0 || hasControlledPagination) && (
+        <div
+          className="flex flex-col gap-4 border-t border-app-line px-3 py-4 text-xs text-app-muted-light sm:px-4 xl:flex-row xl:items-center xl:justify-between"
+          dir="rtl"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-3 xl:justify-start">
+            <span>
+              {hasKnownTotalItems
+                ? `عرض ${firstVisibleItem}–${lastVisibleItem} من ${resolvedTotalItems}`
+                : `الصفحة ${resolvedCurrentPage} من ${resolvedTotalPages}`}
+            </span>
+            {!hasControlledPagination && pageSizeOptions.length > 0 && (
+              <div className="inline-flex items-center gap-2">
+                <span>صفوف الصفحة</span>
+                <Dropdown
+                  value={rowsPerPage}
+                  onChange={(val) => {
+                    setRowsPerPage(Number(val));
+                    setInternalPage(1);
+                  }}
+                  options={dropdownOptions}
+                  className="w-16 text-white"
+                  buttonClassName="h-8 bg-app-panel-soft/40 border border-app-line rounded-lg px-2 text-xs"
+                  menuClassName="bottom-full mb-2 !mt-0"
+                />
+              </div>
+            )}
+          </div>
+
+          <nav
+            className="flex flex-wrap items-center justify-center gap-2"
+            aria-label="ترقيم صفحات الجدول"
+            dir="rtl"
           >
-            ← السابق
-          </button>
+            <button
+              className="app-input min-h-8 rounded-lg px-3 transition hover:border-app-yellow disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => changePage(resolvedCurrentPage - 1)}
+              disabled={resolvedCurrentPage <= 1}
+              aria-label="الصفحة السابقة"
+            >
+              السابق
+            </button>
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {visiblePages.map((page, index) => (
+                <span key={`${page}-${index}`}>
+                  {page === "..." ? (
+                    <span className="px-1 py-1 sm:px-2">...</span>
+                  ) : (
+                    <button
+                      onClick={() => changePage(page)}
+                      aria-current={
+                        resolvedCurrentPage === page ? "page" : undefined
+                      }
+                      aria-label={`الصفحة ${page}`}
+                      className={`min-h-8 min-w-8 rounded-lg px-2 py-1 transition-colors ${
+                        resolvedCurrentPage === page
+                          ? "bg-app-yellow text-app-bg"
+                          : "app-input hover:border-app-yellow"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+            <button
+              className="app-input min-h-8 rounded-lg px-3 transition hover:border-app-yellow disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => changePage(resolvedCurrentPage + 1)}
+              disabled={resolvedCurrentPage >= resolvedTotalPages}
+              aria-label="الصفحة التالية"
+            >
+              التالي
+            </button>
+          </nav>
         </div>
       )}
     </section>

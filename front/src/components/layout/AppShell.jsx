@@ -24,7 +24,7 @@ export default function AppShell({ children, sidebar }) {
     : null;
 
   return (
-    <div className="dashboard-bg min-h-screen p-4 text-app-text md:p-6">
+    <div className="dashboard-bg min-h-screen p-3 text-app-text sm:p-4 md:p-6">
       {/* Mobile Sidebar Off-canvas Drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex justify-start lg:hidden" dir="rtl">
@@ -65,9 +65,9 @@ export default function AppShell({ children, sidebar }) {
       <div className="app-layout-grid mx-auto grid max-w-[1440px] gap-3">
         <IconRail />
         {sidebar}
-        <main className="min-w-0 flex flex-col min-h-[calc(100vh-3rem)]">
+        <main className="flex min-h-[calc(100vh-3rem)] min-w-0 flex-col overflow-hidden lg:overflow-visible">
           <Navbar onMenuClick={() => setSidebarOpen(true)} />
-          <div className="mt-7 flex-1">{children}</div>
+          <div className="mt-5 min-w-0 flex-1 sm:mt-7">{children}</div>
 
           <footer className="mt-10 py-4 text-center text-xs text-app-muted-light" dir="ltr">
             &copy; {new Date().getFullYear()} <span className="text-app-orange font-medium">ISS Group</span>. All Rights Reserved.

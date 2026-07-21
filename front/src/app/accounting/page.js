@@ -64,7 +64,7 @@ export default function AccountingDashboardPage() {
         ))}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[343px_295px_339px]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
         <SectionCard title="الربح الشهري" className="h-[206px] xl:order-2">
           <BarChart data={monthlyProfit} />
         </SectionCard>

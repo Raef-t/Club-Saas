@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
   useQrCheckInMutation,
+  useQrCheckOutMutation,
   useGetMemberSubscriptionsQuery,
 } from "@/lib/api/attendanceApi";
 import PageHeader from "@/components/common/PageHeader";
@@ -13,101 +14,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import ToggleSwitch from "@/components/ui/ToggleSwitch";
 import { useToast } from "@/components/ui/Toast";
 
-const members = [
-  {
-    id: "m-433",
-    name: "محمد الاسعد",
-    number: "M-433",
-    avatar: "م",
-    age: 24,
-  },
-  {
-    id: "m-219",
-    name: "أحمد الزهراوي",
-    number: "M-219",
-    avatar: "أ",
-    age: 27,
-  },
-];
 
-const subscriptions = [
-  {
-    id: "sub-bodybuilding",
-    memberId: "m-433",
-    label: "اشتراك كمال أجسام",
-    activity: "كمال أجسام",
-    coach: "عمر السعيدي",
-    remaining: 18,
-    endsAt: "2026-12-23",
-    activities: [
-      { id: "bodybuilding", label: "كمال أجسام", coach: "عمر السعيدي" },
-      { id: "crossfit", label: "كروس فيت", coach: "محمد المحمد" },
-    ],
-  },
-  {
-    id: "sub-yoga",
-    memberId: "m-433",
-    label: "اشتراك يوغا شهري",
-    activity: "يوغا",
-    coach: "محمد الاسعد",
-    remaining: 7,
-    endsAt: "2026-09-18",
-    activities: [{ id: "yoga", label: "يوغا", coach: "محمد الاسعد" }],
-  },
-  {
-    id: "sub-boxing",
-    memberId: "m-219",
-    label: "اشتراك ملاكمة",
-    activity: "ملاكمة",
-    coach: "راما حصروني",
-    remaining: 11,
-    endsAt: "2026-10-04",
-    activities: [{ id: "boxing", label: "ملاكمة", coach: "راما حصروني" }],
-  },
-];
-
-const initialAttendanceRows = [
-  {
-    id: 1,
-    number: "#1",
-    time: "05:00 am",
-    member: "عمر السعيد",
-    activity: "كمال أجسام",
-    coach: "عمر السعيد",
-    locker: "12",
-    status: "دخول",
-  },
-  {
-    id: 2,
-    number: "#2",
-    time: "05:00 am",
-    member: "محمد الاسعد",
-    activity: "يوغا",
-    coach: "محمد الاسعد",
-    locker: "08",
-    status: "دخول",
-  },
-  {
-    id: 3,
-    number: "#3",
-    time: "05:00 am",
-    member: "محمد المحمد",
-    activity: "كروس فيت",
-    coach: "محمد المحمد",
-    locker: "21",
-    status: "خروج",
-  },
-  {
-    id: 4,
-    number: "#4",
-    time: "05:00 am",
-    member: "راما حصروني",
-    activity: "ملاكمة",
-    coach: "راما حصروني",
-    locker: "17",
-    status: "دخول",
-  },
-];
 
 const tableColumns = [
   { key: "number", label: "الرقم", align: "center", width: "72px" },
@@ -131,6 +38,13 @@ const tableColumns = [
     width: "minmax(130px,1fr)",
   },
   { key: "locker", label: "الخزانة", align: "center", width: "96px" },
+  {
+    key: "duration",
+    label: "المدة",
+    align: "center",
+    width: "96px",
+    render: (value) => (value ? `${value} دقيقة` : "-"),
+  },
   {
     key: "status",
     label: "الحالة",
@@ -252,6 +166,8 @@ function InfoRow({ label, value, tone = "default" }) {
 function ScannerCard({
   alwaysOn,
   scannerActive,
+  scanMode,
+  onScanModeChange,
   onAlwaysOnChange,
   onScanClick,
   onScanSuccess,
@@ -308,7 +224,9 @@ function ScannerCard({
             <QrCodeIcon className="size-5 shrink-0" />
             <h2 className="text-lg font-medium">قارئ QR</h2>
             <p className="mt-1 text-xs text-[#4b4b4b]">
-              قم بمسح بطاقة العضو لتسجيل الحضور
+              {scanMode === "check-in"
+                ? "قم بمسح بطاقة العضو لتسجيل الحضور"
+                : "قم بمسح بطاقة العضو لتسجيل الخروج"}
             </p>
           </div>
         </div>
@@ -329,6 +247,33 @@ function ScannerCard({
             onChange={(event) => onAlwaysOnChange(event.target.checked)}
             size="sm"
           />
+        </div>
+      </div>
+
+      <div className="px-3 pb-3">
+        <div className="flex rounded-lg bg-black/10 p-1">
+          <button
+            type="button"
+            onClick={() => onScanModeChange("check-in")}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${
+              scanMode === "check-in"
+                ? "bg-white text-black shadow-sm font-bold"
+                : "text-[#4b4b4b] hover:text-[#1b1b1b]"
+            }`}
+          >
+            تسجيل دخول
+          </button>
+          <button
+            type="button"
+            onClick={() => onScanModeChange("check-out")}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${
+              scanMode === "check-out"
+                ? "bg-white text-black shadow-sm font-bold"
+                : "text-[#4b4b4b] hover:text-[#1b1b1b]"
+            }`}
+          >
+            تسجيل خروج
+          </button>
         </div>
       </div>
 
@@ -394,6 +339,24 @@ function PlayerCard({
   onLockerChange,
   onRegister,
 }) {
+  const isPlaceholder = !member;
+
+  if (isPlaceholder) {
+    return (
+      <section className="app-card flex flex-col items-center justify-center w-full rounded-2xl p-6 min-h-[300px] border border-dashed border-app-line text-center" dir="rtl">
+        <div className="flex size-16 items-center justify-center rounded-full bg-app-panel-soft text-app-muted-light">
+          <svg className="size-8 animate-pulse text-app-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          </svg>
+        </div>
+        <h3 className="mt-4 text-base font-medium text-app-text">بانتظار مسح بطاقة اللاعب</h3>
+        <p className="mt-2 text-xs text-app-muted max-w-[260px] leading-relaxed">
+          يرجى استخدام قارئ الـ QR لمسح بطاقة العضو لعرض تفاصيل الاشتراك وتسجيل الحضور.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="app-card w-full rounded-2xl p-6" dir="rtl">
       <div className="flex items-center justify-center gap-2 text-app-green">
@@ -479,6 +442,8 @@ function PlayerCard({
 export default function AttendanceClient() {
   const toast = useToast();
   const [qrCheckIn] = useQrCheckInMutation();
+  const [qrCheckOut] = useQrCheckOutMutation();
+  const [scanMode, setScanMode] = useState("check-in"); // "check-in" | "check-out"
   const [scannedMemberId, setScannedMemberId] = useState(null);
   const { data: memberSubscriptionsResponse, error: subsError, isLoading: subsLoading } = useGetMemberSubscriptionsQuery(
     scannedMemberId,
@@ -496,13 +461,11 @@ export default function AttendanceClient() {
   }, [scannedMemberId, memberSubscriptionsResponse, subsError]);
   const [alwaysOn, setAlwaysOn] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
-  const [activeMemberId, setActiveMemberId] = useState("m-433");
-  const [selectedSubscriptionId, setSelectedSubscriptionId] =
-    useState("sub-bodybuilding");
-  const [selectedActivityId, setSelectedActivityId] = useState("bodybuilding");
-  const [lockerNumber, setLockerNumber] = useState("18");
+  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState("");
+  const [selectedActivityId, setSelectedActivityId] = useState("");
+  const [lockerNumber, setLockerNumber] = useState("");
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
-  const [attendanceRows, setAttendanceRows] = useState(initialAttendanceRows);
+  const [attendanceRows, setAttendanceRows] = useState([]);
 
   const activeMember = useMemo(() => {
     if (scannedMemberId) {
@@ -514,8 +477,8 @@ export default function AttendanceClient() {
         age: "-",
       };
     }
-    return members.find((member) => member.id === activeMemberId) || members[0];
-  }, [activeMemberId, scannedMemberId]);
+    return null;
+  }, [scannedMemberId]);
 
   const apiSubscriptions = useMemo(() => {
     if (!memberSubscriptionsResponse?.data) return [];
@@ -532,11 +495,8 @@ export default function AttendanceClient() {
   }, [memberSubscriptionsResponse]);
 
   const playerSubscriptions = useMemo(() => {
-    if (scannedMemberId) return apiSubscriptions;
-    return subscriptions.filter(
-      (subscription) => subscription.memberId === activeMember.id,
-    );
-  }, [activeMember.id, scannedMemberId, apiSubscriptions]);
+    return apiSubscriptions;
+  }, [apiSubscriptions]);
 
   useEffect(() => {
     if (scannedMemberId && apiSubscriptions.length > 0) {
@@ -593,43 +553,81 @@ export default function AttendanceClient() {
       setScannerActive(false);
     }
 
-    qrCheckIn({ qr_code: decodedText, branch_id: 3 })
-      .unwrap()
-      .then((res) => {
-        toast.success("تم تسجيل الدخول بنجاح");
+    if (scanMode === "check-out") {
+      qrCheckOut({ qr_code: decodedText })
+        .unwrap()
+        .then((res) => {
+          toast.success(res?.message || "تم تسجيل الخروج بنجاح");
 
-        const memberId = res?.data?.member_id;
-        if (memberId) {
-          setScannedMemberId(memberId);
-        }
+          const duration = res?.data?.duration_minutes || 0;
+          const nextId = attendanceRows.length + 1;
+          const now = new Date();
+          const time = now
+            .toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+            .toLowerCase();
 
-        const nextId = attendanceRows.length + 1;
-        const now = new Date();
-        const time = now
-          .toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          })
-          .toLowerCase();
+          setAttendanceRows((current) => [
+            {
+              id: nextId,
+              number: `#${nextId}`,
+              time,
+              member: res?.data?.member_name || res?.data?.member_id ? `عضو #${res?.data?.member_id}` : "عضو (من الـ QR)",
+              activity: "-",
+              coach: "-",
+              locker: "-",
+              status: "خروج",
+              duration: duration,
+            },
+            ...current,
+          ]);
+        })
+        .catch((err) => {
+          toast.error(err?.data?.message || "فشل تسجيل الخروج");
+        });
+    } else {
+      qrCheckIn({ qr_code: decodedText, branch_id: 3 })
+        .unwrap()
+        .then((res) => {
+          toast.success("تم تسجيل الدخول بنجاح");
 
-        setAttendanceRows((current) => [
-          {
-            id: nextId,
-            number: `#${nextId}`,
-            time,
-            member: memberId ? `عضو #${memberId}` : "عضو جديد (من الـ QR)",
-            activity: "-",
-            coach: "-",
-            locker: "-",
-            status: "دخول",
-          },
-          ...current,
-        ]);
-      })
-      .catch((err) => {
-        toast.error(err?.data?.message || "فشل تسجيل الدخول");
-      });
+          const memberId = res?.data?.member_id;
+          if (memberId) {
+            setScannedMemberId(memberId);
+          }
+
+          const nextId = attendanceRows.length + 1;
+          const now = new Date();
+          const time = now
+            .toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+            .toLowerCase();
+
+          setAttendanceRows((current) => [
+            {
+              id: nextId,
+              number: `#${nextId}`,
+              time,
+              member: memberId ? `عضو #${memberId}` : "عضو جديد (من الـ QR)",
+              activity: "-",
+              coach: "-",
+              locker: "-",
+              status: "دخول",
+              duration: null,
+            },
+            ...current,
+          ]);
+        })
+        .catch((err) => {
+          toast.error(err?.data?.message || "فشل تسجيل الدخول");
+        });
+    }
   }
 
   function handleSubscriptionChange(value) {
@@ -640,6 +638,7 @@ export default function AttendanceClient() {
   }
 
   function handleRegister() {
+    if (!activeMember) return;
     const nextId = attendanceRows.length + 1;
     const now = new Date();
     const time = now
@@ -665,7 +664,7 @@ export default function AttendanceClient() {
       ...current,
     ]);
     setRegisteredMemberId(activeMember.id);
-    toast.success("تم تسجيل الحضور في التصميم التجريبي.");
+    toast.success("تم تسجيل الحضور.");
   }
 
   return (
@@ -677,7 +676,7 @@ export default function AttendanceClient() {
       />
 
       <section
-        className="grid items-start justify-end gap-6 xl:grid-cols-[420px_520px]"
+        className="grid min-w-0 items-start justify-center gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,520px)] w-full max-w-5xl mx-auto"
         dir="ltr"
       >
         <PlayerCard
@@ -689,7 +688,7 @@ export default function AttendanceClient() {
           selectedSubscriptionId={selectedSubscriptionId}
           selectedActivityId={selectedActivityId}
           lockerNumber={lockerNumber}
-          isRegistered={registeredMemberId === activeMember.id}
+          isRegistered={activeMember ? registeredMemberId === activeMember.id : false}
           onSubscriptionChange={handleSubscriptionChange}
           onActivityChange={(value) => {
             setSelectedActivityId(value);
@@ -705,6 +704,8 @@ export default function AttendanceClient() {
         <ScannerCard
           alwaysOn={alwaysOn}
           scannerActive={scannerActive}
+          scanMode={scanMode}
+          onScanModeChange={setScanMode}
           onAlwaysOnChange={handleAlwaysOnChange}
           onScanClick={handleScanClick}
           onScanSuccess={handleScanSuccess}
@@ -717,7 +718,7 @@ export default function AttendanceClient() {
         columns={tableColumns}
         rows={attendanceRows}
         minWidth="900px"
-        tableColumns="72px 120px minmax(150px,1fr) minmax(130px,1fr) minmax(130px,1fr) 96px 96px"
+        tableColumns="72px 120px minmax(150px,1fr) minmax(130px,1fr) minmax(130px,1fr) 96px 96px 96px"
         showAdd={false}
         showSearch={false}
         showFilter={false}

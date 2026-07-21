@@ -772,7 +772,7 @@ export default function SubscriptionsClient() {
         title="اشتراكات الأعضاء"
         subtitle="متابعة خطط الأعضاء، حالة الاشتراك، التجميدات، وإلغاء وتعديل المدفوعات."
         action={
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button
               tone="outline"
               className="h-10 px-4"

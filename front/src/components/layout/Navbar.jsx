@@ -11,7 +11,7 @@ import ProfileDrawer from "./ProfileDrawer";
 
 function InfoChip({ icon: Icon, children }) {
   return (
-    <div className="app-panel flex h-9 items-center gap-2 rounded-lg bg-app-panel-soft px-3 text-[11px] text-app-muted-light">
+    <div className="app-panel flex min-h-9 min-w-0 items-center gap-2 rounded-lg bg-app-panel-soft px-2 py-1.5 text-[11px] text-app-muted-light sm:px-3">
       {Icon && <Icon className="size-4" />}
       {children}
     </div>
@@ -63,8 +63,8 @@ export default function Navbar({ onMenuClick }) {
 
   return (
     <div>
-      <header className="app-panel flex h-16 items-center justify-between gap-4 rounded-2xl px-4" dir="rtl">
-        <div className="flex flex-1 items-center gap-3 max-w-[373px] md:max-w-none">
+      <header className="app-panel flex h-16 items-center justify-between gap-2 rounded-2xl px-3 sm:gap-4 sm:px-4" dir="rtl">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:max-w-none">
           <button
             onClick={onMenuClick}
             type="button"
@@ -109,7 +109,7 @@ export default function Navbar({ onMenuClick }) {
         <div className="flex flex-col items-start gap-3">
           {/* We only render the time chips after mounting to avoid Next.js hydration mismatch */}
           {currentTime && currentDate && (
-            <div className="flex gap-3">
+          <div className="flex max-w-full flex-wrap gap-2 sm:gap-3">
               <InfoChip icon={CalendarIcon}>{currentDate}</InfoChip>
               <InfoChip icon={ClockIcon} dir="ltr">
                 {currentTime}
