@@ -22,14 +22,14 @@ class UnifiedAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
-        required: true, 
+        required: true,
         content: new OA\JsonContent(
-            required: ['attendable_type', 'attendable_id', 'branch_id'], 
+            required: ['attendable_type', 'attendable_id', 'branch_id'],
             properties: [
-                new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'), 
-                new OA\Property(property: 'attendable_id', type: 'integer', example: 1), 
-                new OA\Property(property: 'branch_id', type: 'integer', example: 1), 
-                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'), 
+                new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'),
+                new OA\Property(property: 'attendable_id', type: 'integer', example: 1),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'),
                 new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00')
             ]
         )
@@ -40,21 +40,6 @@ class UnifiedAttendanceController extends BaseController
         try {
             $type = $request->input('attendable_type');
             $id   = (int) $request->input('attendable_id');
-            $metadata = $request->input('metadata', []);
-
-            if ($request->has('facility_id')) {
-                $metadata['facility_id'] = $request->input('facility_id');
-            }
-
-            if ($request->has('check_in_at')) {
-                $metadata['check_in_at'] = \Carbon\Carbon::parse($request->input('check_in_at'))->toDateTimeString();
-            }
-
-            // Receptionist-selected subscription (for manual session deduction)
-            if ($request->has('subscription_id')) {
-                $metadata['subscription_id'] = (int) $request->input('subscription_id');
-            }
-
             $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();
             if (!$branch) {
                 return $this->errorResponse('Branch not found.', 404);
@@ -63,9 +48,7 @@ class UnifiedAttendanceController extends BaseController
             $attendance = $this->attendanceService->checkIn(
                 type: $type,
                 entityId: $id,
-                clubId: (int) $branch->club_id,
-                branchId: (int) $branch->id,
-                metadata: $metadata
+                branchId: (int) $branch->id
             );
 
             return $this->successResponse(new AttendanceResource($attendance), __('Checked in successfully'));

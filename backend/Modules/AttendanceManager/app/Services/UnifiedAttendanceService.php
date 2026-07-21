@@ -35,15 +35,13 @@ class UnifiedAttendanceService
      *
      * @param  string  $type      attendable_type ('member' | 'staff' | …)
      * @param  int     $entityId  The primary entity id
-     * @param  int     $clubId
      * @param  int     $branchId
-     * @param  array   $metadata  Extra context
      * @return Attendance
      * @throws Exception
      */
-    public function checkIn(string $type, int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance
+    public function checkIn(string $type, int $entityId, int $branchId): Attendance
     {
-        return $this->resolveHandler($type)->checkIn($entityId, $clubId, $branchId, $metadata);
+        return $this->resolveHandler($type)->checkIn($entityId, $branchId);
     }
 
     /**

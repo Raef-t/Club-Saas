@@ -96,9 +96,7 @@ class GateController extends BaseController
                 $attendance = $this->attendanceService->checkIn(
                     type: 'member',
                     entityId: (int) $memberId,
-                    clubId: (int) $gate->club_id,
-                    branchId: (int) $gate->branch_id,
-                    metadata: ['source' => 'gate_hardware', 'gate_id' => $gate->id]
+                    branchId: (int) $gate->branch_id
                 );
 
                 try {

@@ -27,9 +27,9 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
      *  5. Decrement sessions_consumed ONLY in player_subscription_items (per user's spec).
      *  6. Fire MemberCheckedIn event.
      */
-    public function checkIn(int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance
+    public function checkIn(int $entityId, int $branchId): Attendance
     {
-        return DB::transaction(function () use ($entityId, $clubId, $branchId, $metadata) {
+        return DB::transaction(function () use ($entityId, $branchId) {
 
             // ── 1. No double check-in ───────────────────────────────────────────────
             $open = $this->findOpenAttendance($entityId);
@@ -38,25 +38,15 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
             }
 
             // ── 2. Create Attendance record (Pending Deduction) ─────────────────────
-            $checkInAt = $metadata['check_in_at'] ?? now();
-            
-            // Strip fields we don't want straight in metadata
-            $storedMetadata = array_diff_key($metadata, array_flip([
-                'check_in_at',
-            ]));
-
-            // Mark this attendance as pending deduction so reception knows it needs action
-            $storedMetadata['deduction_status'] = 'pending';
+            $checkInAt = now();
 
             $attendance = Attendance::create([
-                'club_id'              => $clubId,
                 'attendable_type'      => 'member',
                 'attendable_id'        => $entityId,
                 'branch_id'            => $branchId,
                 'recorded_by_staff_id' => Auth::id(),   // The logged-in receptionist (if any)
                 'check_in_at'          => $checkInAt,
                 'status'               => 'checked_in',
-                'metadata'             => $storedMetadata,
             ]);
 
             event(new MemberCheckedIn($attendance));
@@ -143,10 +133,11 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
             $duration = $attendance->duration_minutes;
 
             $planName = 'اشتراك غير محدد';
-            $metadata = $attendance->metadata ?? [];
-            if (isset($metadata['subscription_id'])) {
+            
+            $consumption = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendance->id)->first();
+            if ($consumption) {
                 $subscription = \Illuminate\Support\Facades\DB::table('player_subscriptions')
-                    ->where('id', $metadata['subscription_id'])
+                    ->where('id', $consumption->player_subscription_id)
                     ->first();
                 if ($subscription) {
                     $planName = \Illuminate\Support\Facades\DB::table('subscription_plans')

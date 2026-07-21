@@ -95,9 +95,7 @@ class QRController extends BaseController
             $attendance = $this->attendanceService->checkIn(
                 type: $type,
                 entityId: (int) $entityId,
-                clubId: (int) $branch->club_id,
-                branchId: (int) $branch->id,
-                metadata: ['source' => 'qr_scan']
+                branchId: (int) $branch->id
             );
 
             return $this->successResponse(
