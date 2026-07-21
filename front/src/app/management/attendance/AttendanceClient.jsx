@@ -6,6 +6,8 @@ import {
   useQrCheckInMutation,
   useQrCheckOutMutation,
   useGetMemberSubscriptionsQuery,
+  useGetMemberQuery,
+  useDeductAttendanceMutation,
 } from "@/lib/api/attendanceApi";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
@@ -13,8 +15,6 @@ import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import ToggleSwitch from "@/components/ui/ToggleSwitch";
 import { useToast } from "@/components/ui/Toast";
-
-
 
 const tableColumns = [
   { key: "number", label: "الرقم", align: "center", width: "72px" },
@@ -334,6 +334,7 @@ function PlayerCard({
   selectedActivityId,
   lockerNumber,
   isRegistered,
+  isPendingDeduction,
   onSubscriptionChange,
   onActivityChange,
   onLockerChange,
@@ -343,19 +344,41 @@ function PlayerCard({
 
   if (isPlaceholder) {
     return (
-      <section className="app-card flex flex-col items-center justify-center w-full rounded-2xl p-6 min-h-[300px] border border-dashed border-app-line text-center" dir="rtl">
+      <section
+        className="app-card flex flex-col items-center justify-center w-full rounded-2xl p-6 min-h-[300px] border border-dashed border-app-line text-center"
+        dir="rtl"
+      >
         <div className="flex size-16 items-center justify-center rounded-full bg-app-panel-soft text-app-muted-light">
-          <svg className="size-8 animate-pulse text-app-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          <svg
+            className="size-8 animate-pulse text-app-muted"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+            />
           </svg>
         </div>
-        <h3 className="mt-4 text-base font-medium text-app-text">بانتظار مسح بطاقة اللاعب</h3>
+        <h3 className="mt-4 text-base font-medium text-app-text">
+          بانتظار مسح بطاقة اللاعب
+        </h3>
         <p className="mt-2 text-xs text-app-muted max-w-[260px] leading-relaxed">
-          يرجى استخدام قارئ الـ QR لمسح بطاقة العضو لعرض تفاصيل الاشتراك وتسجيل الحضور.
+          يرجى استخدام قارئ الـ QR لمسح بطاقة العضو لعرض تفاصيل الاشتراك وتسجيل
+          الحضور.
         </p>
       </section>
     );
   }
+
+  const photoSrc = member.photoUrl
+    ? member.photoUrl.startsWith("http")
+      ? member.photoUrl
+      : `http://31.70.108.63/${member.photoUrl.replace(/^\//, "")}`
+    : null;
 
   return (
     <section className="app-card w-full rounded-2xl p-6" dir="rtl">
@@ -367,9 +390,17 @@ function PlayerCard({
       </div>
 
       <div className="mt-4 flex flex-col items-center">
-        <div className="grid size-24 place-items-center rounded-full border border-app-line bg-app-card-soft text-3xl font-medium text-app-yellow">
-          {member.avatar}
-        </div>
+        {photoSrc ? (
+          <img
+            src={photoSrc}
+            alt={member.name}
+            className="size-24 rounded-full border border-app-line object-cover"
+          />
+        ) : (
+          <div className="grid size-24 place-items-center rounded-full border border-app-line bg-app-card-soft text-3xl font-medium text-app-yellow">
+            {member.avatar}
+          </div>
+        )}
         <h2 className="mt-3 text-xl font-medium text-app-text">
           {member.name}
         </h2>
@@ -432,7 +463,7 @@ function PlayerCard({
         </label>
 
         <Button type="button" className="h-11 w-full" onClick={onRegister}>
-          تسجيل حضور
+          {isPendingDeduction ? "خصم الجلسة وتأكيد الحضور" : "تسجيل حضور"}
         </Button>
       </div>
     </section>
@@ -443,14 +474,20 @@ export default function AttendanceClient() {
   const toast = useToast();
   const [qrCheckIn] = useQrCheckInMutation();
   const [qrCheckOut] = useQrCheckOutMutation();
+  const [deductAttendance] = useDeductAttendanceMutation();
+  const [lastAttendanceId, setLastAttendanceId] = useState(null);
   const [scanMode, setScanMode] = useState("check-in"); // "check-in" | "check-out"
   const [scannedMemberId, setScannedMemberId] = useState(null);
-  const { data: memberSubscriptionsResponse, error: subsError, isLoading: subsLoading } = useGetMemberSubscriptionsQuery(
-    scannedMemberId,
-    {
-      skip: !scannedMemberId,
-    },
-  );
+  const { data: memberResponse } = useGetMemberQuery(scannedMemberId, {
+    skip: !scannedMemberId,
+  });
+  const {
+    data: memberSubscriptionsResponse,
+    error: subsError,
+    isLoading: subsLoading,
+  } = useGetMemberSubscriptionsQuery(scannedMemberId, {
+    skip: !scannedMemberId,
+  });
 
   useEffect(() => {
     if (scannedMemberId) {
@@ -469,29 +506,54 @@ export default function AttendanceClient() {
 
   const activeMember = useMemo(() => {
     if (scannedMemberId) {
+      const person = memberResponse?.data?.person;
+      const fullName = person?.full_name || `عضو #${scannedMemberId}`;
       return {
         id: scannedMemberId,
-        name: `عضو #${scannedMemberId}`,
-        number: `M-${scannedMemberId}`,
-        avatar: "ع",
-        age: "-",
+        name: fullName,
+        number: memberResponse?.data?.member_number || `M-${scannedMemberId}`,
+        avatar: fullName ? fullName[0] : "ع",
+        photoUrl: person?.photo_url || null,
+        age: person?.age || "-",
       };
     }
     return null;
-  }, [scannedMemberId]);
+  }, [scannedMemberId, memberResponse]);
 
   const apiSubscriptions = useMemo(() => {
     if (!memberSubscriptionsResponse?.data) return [];
-    return memberSubscriptionsResponse.data.map((sub) => ({
-      id: sub.player_subscription_id,
-      memberId: sub.member_id,
-      label: sub.plan_name,
-      activity: sub.plan_name,
-      coach: "-",
-      remaining: "-",
-      endsAt: sub.end_date,
-      activities: [{ id: sub.plan_id, label: sub.plan_name, coach: "-" }],
-    }));
+    return memberSubscriptionsResponse.data.map((sub) => {
+      // Map items to activities
+      const activities = (sub.items || []).map((item) => ({
+        id: item.activity_id,
+        label: item.activity_name,
+        coach: item.coach?.name || "-",
+      }));
+
+      // Fallback if items is empty
+      if (activities.length === 0) {
+        activities.push({
+          id: sub.plan_id,
+          label: sub.plan_name,
+          coach: "-",
+        });
+      }
+
+      return {
+        id: sub.player_subscription_id,
+        memberId: sub.member_id,
+        label: sub.plan_name,
+        activity: sub.plan_name,
+        coach: activities[0]?.coach || "-",
+        remaining:
+          sub.total_sessions_remaining !== undefined
+            ? sub.total_sessions_remaining
+            : "-",
+        endsAt: sub.end_date,
+        activities,
+        activeLockers: sub.active_lockers || [],
+      };
+    });
   }, [memberSubscriptionsResponse]);
 
   const playerSubscriptions = useMemo(() => {
@@ -500,8 +562,11 @@ export default function AttendanceClient() {
 
   useEffect(() => {
     if (scannedMemberId && apiSubscriptions.length > 0) {
-      setSelectedSubscriptionId(apiSubscriptions[0].id);
-      setSelectedActivityId(apiSubscriptions[0].activities?.[0]?.id || "");
+      const firstSub = apiSubscriptions[0];
+      setSelectedSubscriptionId(firstSub.id);
+      setSelectedActivityId(firstSub.activities?.[0]?.id || "");
+      const firstLocker = firstSub.activeLockers?.[0]?.locker_number || "";
+      setLockerNumber(firstLocker);
     }
   }, [apiSubscriptions, scannedMemberId]);
 
@@ -575,7 +640,10 @@ export default function AttendanceClient() {
               id: nextId,
               number: `#${nextId}`,
               time,
-              member: res?.data?.member_name || res?.data?.member_id ? `عضو #${res?.data?.member_id}` : "عضو (من الـ QR)",
+              member:
+                res?.data?.member_name || res?.data?.member_id
+                  ? `عضو #${res?.data?.member_id}`
+                  : "عضو (من الـ QR)",
               activity: "-",
               coach: "-",
               locker: "-",
@@ -595,8 +663,13 @@ export default function AttendanceClient() {
           toast.success("تم تسجيل الدخول بنجاح");
 
           const memberId = res?.data?.member_id;
+          const attendanceId = res?.data?.attendance_id || res?.data?.id;
+
           if (memberId) {
             setScannedMemberId(memberId);
+          }
+          if (attendanceId) {
+            setLastAttendanceId(attendanceId);
           }
 
           const nextId = attendanceRows.length + 1;
@@ -612,6 +685,7 @@ export default function AttendanceClient() {
           setAttendanceRows((current) => [
             {
               id: nextId,
+              attendanceId: attendanceId,
               number: `#${nextId}`,
               time,
               member: memberId ? `عضو #${memberId}` : "عضو جديد (من الـ QR)",
@@ -634,47 +708,86 @@ export default function AttendanceClient() {
     const subscription = playerSubscriptions.find((item) => item.id === value);
     setSelectedSubscriptionId(value);
     setSelectedActivityId(subscription?.activities?.[0]?.id || "");
+    const firstLocker = subscription?.activeLockers?.[0]?.locker_number || "";
+    setLockerNumber(firstLocker);
     setRegisteredMemberId(null);
   }
 
   function handleRegister() {
     if (!activeMember) return;
-    const nextId = attendanceRows.length + 1;
-    const now = new Date();
-    const time = now
-      .toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .toLowerCase();
 
-    setAttendanceRows((current) => [
-      {
-        id: nextId,
-        number: `#${nextId}`,
-        time,
-        member: activeMember.name,
-        activity:
-          selectedActivity?.label || selectedSubscription?.activity || "-",
-        coach: selectedActivity?.coach || selectedSubscription?.coach || "-",
-        locker: lockerNumber || "-",
-        status: "دخول",
-      },
-      ...current,
-    ]);
-    setRegisteredMemberId(activeMember.id);
-    toast.success("تم تسجيل الحضور.");
+    if (lastAttendanceId && selectedSubscriptionId) {
+      deductAttendance({
+        attendanceId: lastAttendanceId,
+        body: {
+          player_subscription_ids: [Number(selectedSubscriptionId)],
+        },
+      })
+        .unwrap()
+        .then((res) => {
+          toast.success(res?.message || "تم خصم الجلسة بنجاح وتأكيد الحضور");
+
+          // Update the check-in row in the table with selected activity, coach, locker
+          setAttendanceRows((current) =>
+            current.map((row) => {
+              if (row.attendanceId === lastAttendanceId) {
+                return {
+                  ...row,
+                  member: activeMember.name,
+                  activity:
+                    selectedActivity?.label ||
+                    selectedSubscription?.activity ||
+                    "-",
+                  coach:
+                    selectedActivity?.coach ||
+                    selectedSubscription?.coach ||
+                    "-",
+                  locker: lockerNumber || "-",
+                };
+              }
+              return row;
+            }),
+          );
+
+          setRegisteredMemberId(activeMember.id);
+          setLastAttendanceId(null); // Reset
+        })
+        .catch((err) => {
+          toast.error(err?.data?.message || "فشل خصم الجلسة");
+        });
+    } else {
+      // Fallback for manual check-in when no QR code was scanned
+      const nextId = attendanceRows.length + 1;
+      const now = new Date();
+      const time = now
+        .toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+        .toLowerCase();
+
+      setAttendanceRows((current) => [
+        {
+          id: nextId,
+          number: `#${nextId}`,
+          time,
+          member: activeMember.name,
+          activity:
+            selectedActivity?.label || selectedSubscription?.activity || "-",
+          coach: selectedActivity?.coach || selectedSubscription?.coach || "-",
+          locker: lockerNumber || "-",
+          status: "دخول",
+        },
+        ...current,
+      ]);
+      setRegisteredMemberId(activeMember.id);
+      toast.success("تم تسجيل الحضور.");
+    }
   }
 
   return (
     <div className="space-y-6" dir="rtl">
-      <PageHeader
-        eyebrow="إدارة النادي"
-        title="تسجيل الحضور"
-        subtitle="قارئ QR، بيانات اللاعب، واختيار النشاط قبل تسجيل الحضور."
-      />
-
       <section
         className="grid min-w-0 items-start justify-center gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,520px)] w-full max-w-5xl mx-auto"
         dir="ltr"
@@ -688,7 +801,10 @@ export default function AttendanceClient() {
           selectedSubscriptionId={selectedSubscriptionId}
           selectedActivityId={selectedActivityId}
           lockerNumber={lockerNumber}
-          isRegistered={activeMember ? registeredMemberId === activeMember.id : false}
+          isRegistered={
+            activeMember ? registeredMemberId === activeMember.id : false
+          }
+          isPendingDeduction={!!lastAttendanceId}
           onSubscriptionChange={handleSubscriptionChange}
           onActivityChange={(value) => {
             setSelectedActivityId(value);
