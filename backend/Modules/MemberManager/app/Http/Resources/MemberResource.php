@@ -58,7 +58,7 @@ class MemberResource extends JsonResource
                     ];
                 }),
             ] : null,
-            'generated_username' => $this->generated_username ?? null,
+            'generated_username' => $this->generated_username ?? $this->person?->user?->username ?? null,
             'generated_password' => $this->generated_password ?? null,
             'branch' => $this->branch ? [
                 'id' => $this->branch->id,
