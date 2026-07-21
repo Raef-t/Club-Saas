@@ -3591,11 +3591,13 @@
                     "Attendance"
                 ],
                 "summary": "📆 سجل حضور موحد",
+                "description": "يجلب سجل حضور وانصراف (عضو / موظف) مع إمكانية الفلترة حسب تاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).",
                 "operationId": "3076ed071799f8e5c3593d9d7b5583be",
                 "parameters": [
                     {
                         "name": "attendable_type",
                         "in": "query",
+                        "description": "نوع المستخدم (عضو أو موظف)",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -3608,6 +3610,7 @@
                     {
                         "name": "attendable_id",
                         "in": "query",
+                        "description": "معرف المستخدم (ID)",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -3616,27 +3619,23 @@
                     {
                         "name": "from",
                         "in": "query",
+                        "description": "تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "format": "date"
+                            "format": "date",
+                            "example": "2026-07-01"
                         }
                     },
                     {
                         "name": "to",
                         "in": "query",
+                        "description": "تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
+                            "format": "date",
+                            "example": "2026-07-21"
                         }
                     }
                 ],

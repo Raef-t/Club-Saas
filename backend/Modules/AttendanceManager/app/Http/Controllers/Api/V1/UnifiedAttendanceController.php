@@ -78,14 +78,14 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Get(
         path: '/v1/attendances/history',
         summary: '📆 سجل حضور موحد',
+        description: 'يجلب سجل حضور وانصراف (عضو / موظف) مع إمكانية الفلترة حسب تاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).',
         tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'attendable_type', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['member', 'staff']))]
-    #[OA\Parameter(name: 'attendable_id', in: 'query', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date'))]
-    #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date'))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'attendable_type', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['member', 'staff']), description: 'نوع المستخدم (عضو أو موظف)')]
+    #[OA\Parameter(name: 'attendable_id', in: 'query', required: true, schema: new OA\Schema(type: 'integer'), description: 'معرف المستخدم (ID)')]
+    #[OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'), description: 'تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
+    #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-21'), description: 'تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Response(response: 200, description: '✅', content: new OA\JsonContent())]
     public function history(Request $request)
     {
@@ -101,7 +101,8 @@ class UnifiedAttendanceController extends BaseController
             $request->input('to')
         );
 
-        $history = $query->paginate($request->input('per_page', 15));
+        // إزالة Pagination وجلب جميع السجلات بناءً على الفلترة
+        $history = $query->get();
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
     }
