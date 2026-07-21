@@ -213,7 +213,7 @@ class MemberDashboardService
 
             return [
                 'id' => $record->id,
-                'title' => $record->metadata['activity_name'] ?? __('Training Session'),
+                'title' => __('Training Session'),
                 'description' => $record->check_in_at
                     ? Carbon::parse($record->check_in_at)->format('H:i')
                     : null,

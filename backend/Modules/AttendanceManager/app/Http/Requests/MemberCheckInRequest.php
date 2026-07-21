@@ -15,7 +15,6 @@ class MemberCheckInRequest extends FormRequest
     {
         return [
             'member_id' => 'required|integer',
-            'club_id' => 'required|integer',
             'branch_id' => 'required|integer',
             'facility_id' => 'nullable|integer'
         ];

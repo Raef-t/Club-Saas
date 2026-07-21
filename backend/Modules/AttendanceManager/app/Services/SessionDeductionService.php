@@ -74,7 +74,8 @@ class SessionDeductionService
                 throw new Exception(__('The selected subscription is not active or does not belong to this member.'));
             }
 
-            $this->validateDebt($subscription, $attendance->club_id);
+            $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
+            $this->validateDebt($subscription, $branch ? $branch->club_id : 1);
 
             $items = DB::table('player_subscription_items')
                 ->where('player_subscription_id', $subscription->id)
@@ -134,7 +135,8 @@ class SessionDeductionService
                     throw new Exception(__('The selected subscription (ID: :id) is not active or does not belong to this member.', ['id' => $subscriptionId]));
                 }
 
-                $this->validateDebt($subscription, $attendance->club_id);
+                $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
+                $this->validateDebt($subscription, $branch ? $branch->club_id : 1);
 
                 $items = DB::table('player_subscription_items')
                     ->where('player_subscription_id', $subscription->id)

@@ -11,12 +11,10 @@ interface AttendanceHandlerInterface
      * Record a check-in for the given entity.
      *
      * @param  int    $entityId  The primary entity (member_id or staff_id)
-     * @param  int    $clubId
      * @param  int    $branchId
-     * @param  array  $metadata  Extra context (facility_id, source, etc.)
      * @return Attendance
      */
-    public function checkIn(int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance;
+    public function checkIn(int $entityId, int $branchId): Attendance;
 
     /**
      * Record a check-out for the given attendance record.
