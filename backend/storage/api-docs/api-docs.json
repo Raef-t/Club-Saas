@@ -23705,14 +23705,6 @@
                         "type": "string",
                         "nullable": true
                     },
-                    "contract_type": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "shift_type": {
-                        "type": "string",
-                        "nullable": true
-                    },
                     "work_types": {
                         "type": "array",
                         "items": {

@@ -84,8 +84,6 @@ class CoachService
                 'is_active'       => $data['is_active'] ?? true,
                 'start_date'      => $data['start_date'] ?? null,
                 'end_date'        => $data['end_date'] ?? null,
-                'contract_type'   => $data['contract_type'] ?? null,
-                'shift_type'      => $data['shift_type'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
             ]);
 
@@ -236,7 +234,7 @@ class CoachService
                 }
             }
 
-            $basicFillable = ['shift_type', 'work_status', 'is_active', 'start_date', 'end_date', 'contract_type'];
+            $basicFillable = ['work_status', 'is_active', 'start_date', 'end_date'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);

@@ -67,8 +67,6 @@ class StoreCoachRequest extends FormRequest
             'gym_type'                => ['nullable', 'string', 'in:male,female,mixed'],
             'start_date'              => ['nullable', 'date'],
             'end_date'                => ['nullable', 'date', 'after_or_equal:start_date'],
-            'contract_type'           => ['nullable', 'string'],
-            'shift_type'              => ['nullable', 'string'],
             'work_types'              => ['nullable', 'array'],
             'work_types.*'            => ['string', 'in:equipment,activities'],
             'work_status'             => ['nullable', 'string'],
