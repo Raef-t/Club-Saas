@@ -19,10 +19,7 @@ class Staff extends Model
         'end_date',
         'start_time',
         'end_time',
-        'contract_type',
-        'shift_type',
         'work_status',
-        'other_tasks',
     ];
 
     protected $casts = [

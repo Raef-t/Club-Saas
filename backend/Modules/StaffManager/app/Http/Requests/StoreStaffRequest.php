@@ -71,12 +71,9 @@ class StoreStaffRequest extends FormRequest
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
-            'contract_type' => 'nullable|in:probation,permanent',
-            'shift_type' => 'nullable|string|max:50',
             'work_type' => 'nullable|in:part_time,full_time',
             'work_status' => 'nullable|in:active,suspended,on_leave',
             'is_active' => 'nullable|boolean',
-            'other_tasks' => 'nullable|string|max:500',
             'shifts' => 'nullable|array',
             'shifts.*' => 'exists:branch_shifts,id',
 
