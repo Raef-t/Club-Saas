@@ -154,6 +154,9 @@ class CoachService
                 $q->where('activities.id', $filters['activity_id']);
             }])->orderByDesc('has_specific_activity');
         }
+
+        $query->orderBy('id', 'desc');
+
         return $query->get();
     }
 
