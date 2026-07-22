@@ -72,7 +72,7 @@ class SubscriptionPlanController extends BaseController
             $query->available();
         }
         
-        $plans = $query->get();
+        $plans = $query->orderBy('id', 'desc')->get();
         return $this->successResponse(
             SubscriptionPlanResource::collection($plans),
             __('Subscription plans retrieved successfully')
