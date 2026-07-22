@@ -47,7 +47,7 @@ class ActivityController extends BaseController
             // Gender restrictions for facility are applied at the facility/session level.
         }
 
-        $activities = $query->orderBy('id')->get();
+        $activities = $query->orderBy('id', 'desc')->get();
         return $this->successResponse(ActivityResource::collection($activities), __('Activities retrieved successfully'));
     }
 
