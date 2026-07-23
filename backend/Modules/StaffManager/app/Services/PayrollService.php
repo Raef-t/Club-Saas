@@ -59,11 +59,17 @@ class PayrollService
      */
     public function calculateCommissionPay(int $staffId, StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, BranchSetting $branchSetting): float
     {
-        if (!in_array($contract->employment_type, ['hybrid', 'percentage_only', 'commission'])) {
+        if (!in_array($contract->employment_type, ['commission_based', 'hybrid'])) {
             return 0;
         }
 
-        $rate = $contract->commission_rate ?? 0;
+        $staff = Staff::with('coachDetail')->find($staffId);
+        $rate = $contract->commission_rate ?: ($staff?->coachDetail?->default_commission_rate ?? 0);
+
+        if ($rate <= 0) {
+            return 0;
+        }
+
         $commissionPay = 0;
 
         $items = PlayerSubscriptionItem::with('subscription')
@@ -137,7 +143,7 @@ class PayrollService
         $staffMembers = Staff::where('is_active', true)
             ->whereHas('branches', function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId);
-            })->with(['activeContract', 'person'])->get();
+            })->with(['activeContract', 'person', 'coachDetail'])->get();
 
         $totalDaysInPeriod = $periodStart->diffInDays($periodEnd) + 1;
         if ($totalDaysInPeriod <= 0) $totalDaysInPeriod = 1;
@@ -153,19 +159,17 @@ class PayrollService
             $basePay = $this->calculateFixedSalary($contract, $periodStart, $periodEnd, $totalDaysInPeriod, $staffStartDate);
             $commissionPay = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting);
 
-            if ($basePay > 0 || $commissionPay > 0) {
-                $payslipsData[] = [
-                    'staff_id' => $staff->id,
-                    'staff_name' => $staff->person?->fullName ?? 'Unknown',
-                    'base_pay' => round($basePay, 2),
-                    'commission_pay' => round($commissionPay, 2),
-                    'deductions' => 0, // Fallbacks for frontend
-                    'bonuses' => 0,    // Fallbacks for frontend
-                    'net_pay' => round($basePay + $commissionPay, 2),
-                    'adjustments' => []
-                ];
-                $staffCount++;
-            }
+            $payslipsData[] = [
+                'staff_id' => $staff->id,
+                'staff_name' => $staff->person?->fullName ?? 'Unknown',
+                'base_pay' => round($basePay, 2),
+                'commission_pay' => round($commissionPay, 2),
+                'deductions' => 0, // Fallbacks for frontend
+                'bonuses' => 0,    // Fallbacks for frontend
+                'net_pay' => round($basePay + $commissionPay, 2),
+                'adjustments' => []
+            ];
+            $staffCount++;
         }
 
         return [
