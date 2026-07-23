@@ -23,6 +23,10 @@ class SubscriptionPlanActivityService
     public function create(array $data) { 
         $this->validateBusinessRules($data);
 
+        $activityId = $data['activity_id'] ?? null;
+        $coachId = $data['coach_id'] ?? null;
+        $planId = $data['plan_id'] ?? null;
+
         if (isset($data['activity_id'])) {
             $staffActivity = \Modules\Sports\Models\StaffActivity::firstOrCreate([
                 'activity_id' => $data['activity_id'],
@@ -31,7 +35,19 @@ class SubscriptionPlanActivityService
             $data['staff_activity_id'] = $staffActivity->id;
             unset($data['activity_id'], $data['coach_id']);
         }
-        return $this->repository->create($data); 
+        $result = $this->repository->create($data); 
+
+        if ($planId && ($coachId || $activityId)) {
+            $updateData = [];
+            if ($coachId) $updateData['coach_id'] = $coachId;
+            if ($activityId) $updateData['activity_id'] = $activityId;
+
+            \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('subscription', function($q) use ($planId) {
+                $q->where('plan_id', $planId);
+            })->update($updateData);
+        }
+
+        return $result;
     }
 
     public function update($id, array $data) { 
@@ -55,7 +71,21 @@ class SubscriptionPlanActivityService
             $data['staff_activity_id'] = $staffActivity->id;
             unset($data['activity_id'], $data['coach_id']);
         }
-        return $this->repository->update($id, $data); 
+        $result = $this->repository->update($id, $data); 
+
+        if ($planId) {
+            $updateData = [];
+            if ($coachId !== null) $updateData['coach_id'] = $coachId;
+            if ($activityId !== null) $updateData['activity_id'] = $activityId;
+
+            if (!empty($updateData)) {
+                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('subscription', function($q) use ($planId) {
+                    $q->where('plan_id', $planId);
+                })->update($updateData);
+            }
+        }
+
+        return $result;
     }
 
     protected function validateBusinessRules(array $data)
@@ -76,12 +106,30 @@ class SubscriptionPlanActivityService
         $branchId = $plan ? $plan->branch_id : ($activity ? $activity->branch_id : null);
 
         if ($coachId) {
-            $coach = \Modules\StaffManager\Models\Staff::with('branches')->find($coachId);
+            $coach = \Modules\StaffManager\Models\Staff::with(['branches', 'activeContract'])->find($coachId);
             
             if ($coach && $branchId) {
                 if (!$coach->branches->contains('id', $branchId)) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'coach_id' => __('الكوتش المحدد لا ينتمي للفرع الخاص بهذه الخطة/النشاط.'),
+                    ]);
+                }
+            }
+
+            if ($coach && $activity) {
+                $activity->loadMissing('activityType');
+                $employmentType = $coach->activeContract?->employment_type ?? 'fixed_salary';
+                $isSessionBased = (bool) ($activity->activityType?->is_session_based ?? false);
+
+                if ($employmentType === 'fixed_salary' && $isSessionBased) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coach_id' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
+                    ]);
+                }
+
+                if ($employmentType === 'commission_based' && !$isSessionBased) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coach_id' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
                     ]);
                 }
             }
