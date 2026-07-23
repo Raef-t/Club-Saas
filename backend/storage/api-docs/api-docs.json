@@ -15470,17 +15470,22 @@
                         }
                     },
                     "422": {
-                        "description": "Validation errors",
+                        "description": "❌ خطأ في التحقق - لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "The given data was invalid."
+                                            "example": "لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية."
                                         },
                                         "errors": {
-                                            "type": "object"
+                                            "type": "object",
+                                            "example": {
+                                                "activity_ids": [
+                                                    "لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية."
+                                                ]
+                                            }
                                         }
                                     },
                                     "type": "object"

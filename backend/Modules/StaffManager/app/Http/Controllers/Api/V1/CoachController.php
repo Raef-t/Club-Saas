@@ -590,10 +590,10 @@ class CoachController extends Controller
             ),
             new OA\Response(
                 response: 422, 
-                description: 'Validation errors',
+                description: '❌ خطأ في التحقق - لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
-                    new OA\Property(property: 'errors', type: 'object')
+                    new OA\Property(property: 'message', type: 'string', example: 'لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.'),
+                    new OA\Property(property: 'errors', type: 'object', example: ['activity_ids' => ['لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.']])
                 ])
             ),
             new OA\Response(

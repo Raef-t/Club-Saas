@@ -293,12 +293,28 @@ class CoachService
         });
     }
 
-    /**
-     * Assign activities to a coach.
-     */
     public function assignActivities($id, array $activityIds)
     {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        $staff = Staff::where('role', 'coach')->with('activeContract')->findOrFail($id);
+        $employmentType = $staff->activeContract?->employment_type ?? 'fixed_salary';
+
+        $activities = \Modules\Sports\Models\Activity::with('activityType')->whereIn('id', $activityIds)->get();
+
+        foreach ($activities as $activity) {
+            $isSessionBased = (bool) ($activity->activityType?->is_session_based ?? false);
+
+            if ($employmentType === 'fixed_salary' && $isSessionBased) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'activity_ids' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
+                ]);
+            }
+
+            if ($employmentType === 'commission_based' && !$isSessionBased) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'activity_ids' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
+                ]);
+            }
+        }
 
         // syncWithoutDetaching avoids duplicates and keeps existing associations
         $staff->activities()->syncWithoutDetaching($activityIds);
