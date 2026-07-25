@@ -62,11 +62,10 @@ export default function MembersCreateClient() {
               onCancel={() => router.push("/management/members")}
               isLoading={isEdit ? isUpdating : isCreating}
               errorMessage={formError}
-              showFooterActions={false}
             />
           )}
         </FormCard>
-        <UploadBox compact className="entry-form-card" />
+        <UploadBox compact className="entry-form-card" maxSizeMB={2} />
       </div>
     </ManagementCreatePage>
   );

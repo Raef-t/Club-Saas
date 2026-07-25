@@ -8,7 +8,7 @@ export function UploadBox({
   subtitle = "إيصالات، فواتير، صور",
   accept = ".pdf,.png,.jpg,.jpeg",
   multiple = true,
-  maxSizeMB = 10,
+  maxSizeMB = 2,
   value = [],
   onChange,
   className = "",

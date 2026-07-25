@@ -5,15 +5,16 @@ export default function LoginPage() {
   return (
     <main className="dashboard-bg grid min-h-screen place-items-center px-4 py-10">
       <div className="w-full max-w-5xl">
-        <Link
-          href="/"
-          className="mb-6 inline-flex text-sm text-app-yellow hover:text-app-yellow/80"
-        >
-          العودة للصفحة الرئيسية
-        </Link>
-
-        <div className="grid items-center gap-8 lg:grid-cols-[440px_1fr]">
-          <LoginForm />
+        <div className="grid items-center justify-center gap-8 lg:grid-cols-[440px_1fr] lg:justify-normal">
+          <div className="mx-auto w-full max-w-md lg:mx-0">
+            <Link
+              href="/"
+              className="mb-6 inline-flex text-sm text-app-yellow hover:text-app-yellow/80"
+            >
+              العودة للصفحة الرئيسية
+            </Link>
+            <LoginForm />
+          </div>
 
           <section className="hidden text-start lg:mr-24 lg:block">
             <p className="text-sm text-app-yellow">TechnoGYM</p>

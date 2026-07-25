@@ -1,5 +1,36 @@
-import Button from "@/components/ui/Button";
-import { ChevronRight, PlusIcon } from "@/components/icons/Icons";
+import Link from "next/link";
+
+function CreatePageBreadcrumb({ subtitle, backHref }) {
+  if (!subtitle) return null;
+
+  const parts = subtitle
+    .split(">")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length < 2 || !backHref) {
+    return <p className="mt-1 text-sm text-app-muted-light">{subtitle}</p>;
+  }
+
+  return (
+    <nav className="mt-1" aria-label="مسار التنقل">
+      <ol className="flex flex-wrap items-center gap-1 text-sm text-app-muted-light">
+        <li>
+          <Link
+            href={backHref}
+            className="rounded-sm transition hover:text-app-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow"
+          >
+            {parts[0]}
+          </Link>
+        </li>
+        <li aria-hidden="true">&gt;</li>
+        <li className="text-app-yellow" aria-current="page">
+          {parts.slice(1).join(" > ")}
+        </li>
+      </ol>
+    </nav>
+  );
+}
 
 export default function ManagementCreatePage({
   title,
@@ -18,35 +49,9 @@ export default function ManagementCreatePage({
       dir="rtl"
       style={{ "--entry-page-max": maxWidth }}
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="text-right">
-          <h1 className="text-2xl font-medium text-app-text">{title}</h1>
-          {subtitle ? (
-            <p className="mt-1 text-sm text-app-muted-light">{subtitle}</p>
-          ) : null}
-        </div>
-
-        <div className="flex items-center gap-3 self-start md:self-auto">
-          <Button
-            type="submit"
-            form={formId}
-            className="h-[34px] px-7"
-            icon={<PlusIcon className="size-4" />}
-            loading={isSubmitting}
-          >
-            {submitLabel}
-          </Button>
-          {backHref ? (
-            <Button
-              href={backHref}
-              tone="dark"
-              className="h-[34px] px-5"
-              icon={<ChevronRight className="size-4" />}
-            >
-              {backLabel}
-            </Button>
-          ) : null}
-        </div>
+      <div className="text-right">
+        <h1 className="text-2xl font-medium text-app-text">{title}</h1>
+        <CreatePageBreadcrumb subtitle={subtitle} backHref={backHref} />
       </div>
 
       <div className="entry-form-surface">{children}</div>

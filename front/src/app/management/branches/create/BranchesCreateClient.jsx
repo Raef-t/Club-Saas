@@ -37,9 +37,7 @@ export default function BranchesCreateClient() {
       subtitle={isEdit ? "إدارة النادي > تعديل فرع" : "إدارة النادي > إضافة فرع"}
       formId={FORM_ID}
       backHref="/management/branches"
-      isSubmitting={isEdit ? isUpdating : isCreating}
       submitLabel={isEdit ? "حفظ التعديل" : "حفظ"}
-      maxWidth="760px"
     >
       <FormCard title="بيانات الفرع" className="entry-form-card p-5">
         {isEdit && !editInitialValues ? (
@@ -59,7 +57,6 @@ export default function BranchesCreateClient() {
             onCancel={() => router.push("/management/branches")}
             isLoading={isEdit ? isUpdating : isCreating}
             errorMessage={formError}
-            showFooterActions={false}
           />
         )}
       </FormCard>

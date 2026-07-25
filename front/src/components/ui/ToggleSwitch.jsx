@@ -25,7 +25,7 @@ export default function ToggleSwitch({
           className={`peer ${trackSize} rounded-full bg-app-line after:absolute after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow ${thumbSize}`}
         />
       </label>
-      {label && <span className="text-sm font-medium text-white">{label}</span>}
+      {label && <span className="text-sm font-medium text-app-text">{label}</span>}
     </div>
   );
 }

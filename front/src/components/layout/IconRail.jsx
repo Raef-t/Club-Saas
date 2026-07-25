@@ -59,7 +59,8 @@ export default function IconRail({ className, isMobile = false }) {
       // The local session should be removed even if the server token is expired.
     } finally {
       clearAuthStorage();
-      router.push("/login");
+      router.replace("/login");
+      router.refresh();
     }
   }
 

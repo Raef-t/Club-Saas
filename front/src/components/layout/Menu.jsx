@@ -19,7 +19,7 @@ export default function Menu({ items }) {
           <div key={item.title}>
             <Link
               href={item.href}
-              className={`mx-0 flex h-11 items-center justify-between rounded-lg px-5 transition ${active ? "gold-active" : "text-app-text hover:bg-white/5"}`}
+              className={`mx-0 flex h-11 items-center justify-between rounded-lg px-5 transition ${active ? "gold-active" : "text-app-text hover:bg-app-card-hover"}`}
             >
               <span className="text-lg text-app-yellow">‹</span>
               <span>{item.title}</span>
@@ -27,14 +27,14 @@ export default function Menu({ items }) {
             </Link>
 
             {item.children && active && (
-              <div className="mr-auto ml-7 mt-4 border-l border-white/40 py-1 pl-3">
+              <div className="mr-auto ml-7 mt-4 border-l border-app-line py-1 pl-3">
                 <div className="space-y-3">
                   {item.children.map((child) => {
                     const childActive = pathname === child.href;
                     return (
                       <Link key={child.title} href={child.href} className={`flex items-center justify-end gap-2 text-xs ${childActive ? "text-app-yellow" : "text-app-text"}`}>
                         <span>{child.title}</span>
-                        <span className={`size-2 rounded-full border ${childActive ? "border-transparent bg-app-yellow" : "border-white/60"}`} />
+                        <span className={`size-2 rounded-full border ${childActive ? "border-transparent bg-app-yellow" : "border-app-muted"}`} />
                       </Link>
                     );
                   })}

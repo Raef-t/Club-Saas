@@ -6,6 +6,7 @@ import { FormCard } from "@/components/forms/FormControls";
 import { LockerCreateForm } from "../LockersClient";
 import { useLockers } from "../useLockers";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
+import { getBranchesArray } from "@/lib/utils";
 
 const FORM_ID = "create-locker-form";
 
@@ -19,7 +20,7 @@ export default function LockersCreateClient() {
   } = useLockers();
 
   const { data: branchesData } = useGetBranchesQuery({});
-  const branches = branchesData?.data || [];
+  const branches = getBranchesArray(branchesData);
 
   async function submit(values) {
     const ok = await handleCreate(values);
@@ -44,7 +45,6 @@ export default function LockersCreateClient() {
             onCancel={() => router.push("/management/lockers")}
             isLoading={isCreating}
             errorMessage={formError}
-            showFooterActions={false}
           />
         </FormCard>
       </div>

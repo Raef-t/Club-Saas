@@ -16,4 +16,9 @@ export const subscriptionSchema = z.object({
     .number()
     .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر")
     .or(z.string().min(1, "المبلغ المدفوع مطلوب").transform(Number)),
+
+  start_date: z
+    .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
+    .min(1, "تاريخ بداية الاشتراك مطلوب"),
 });
+

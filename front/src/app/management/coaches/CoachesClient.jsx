@@ -17,6 +17,7 @@ import {
 } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Checkbox from "@/components/ui/Checkbox";
+import { coachFormSchema, coachEditSchema } from "@/lib/validations/coachesSchema";
 import { useCoaches } from "./useCoaches";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
@@ -382,6 +383,8 @@ export function CoachCreateForm({
   }, [shiftsResponse1, shiftsResponse2, shiftsResponse3]);
 
   const hasEquipmentActivity = useMemo(() => {
+    if (Array.isArray(form.shift_ids) && form.shift_ids.length > 0) return true;
+    if (Array.isArray(form.work_types) && form.work_types.includes("equipment")) return true;
     return activities.some((act) => {
       const isSelected = form.activity_ids.includes(Number(act.id));
       if (!isSelected) return false;
@@ -389,9 +392,15 @@ export function CoachCreateForm({
         typeof act.name === "object"
           ? act.name?.ar || act.name?.en || ""
           : act.name || "";
-      return nameStr.includes("أجهزة عام");
+      return (
+        nameStr.includes("أجهزة") ||
+        nameStr.includes("عام") ||
+        nameStr.toLowerCase().includes("equipment")
+      );
     });
-  }, [activities, form.activity_ids]);
+  }, [activities, form.activity_ids, form.work_types, form.shift_ids]);
+
+  const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => {
@@ -413,10 +422,28 @@ export function CoachCreateForm({
       }
       return updated;
     });
+    if (errors && errors[field]) {
+      setErrors((current) => ({ ...current, [field]: null }));
+    }
   }
 
   function handleSubmit(event) {
     event.preventDefault();
+
+    const result = coachFormSchema.safeParse(form);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach((issue) => {
+        const pathKey = issue.path.join("_");
+        if (!formattedErrors[pathKey]) {
+          formattedErrors[pathKey] = issue.message;
+        }
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
     const ageNum = Number(form.age);
     let dob = null;
     if (ageNum > 0) {
@@ -449,21 +476,31 @@ export function CoachCreateForm({
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+    <form id={formId} noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
       <label className="block text-right text-sm text-app-muted-light">
-        الاسم الكامل للمدرب
+        الاسم الكامل للمدرب *
         <input
           value={form.full_name}
           onChange={(event) => updateField("full_name", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+          aria-invalid={Boolean(errors && errors.full_name)}
+          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+            errors && errors.full_name
+              ? "border border-app-red focus:border-app-red"
+              : "focus:border-app-yellow/70"
+          }`}
           placeholder="الاسم الثلاثي للمدرب"
           required
         />
+        {errors && errors.full_name && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {errors.full_name}
+          </span>
+        )}
       </label>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
-          الجنس
+          الجنس *
           <Dropdown
             className="mt-2 text-white"
             buttonClassName="bg-app-card-soft h-11"
@@ -473,21 +510,32 @@ export function CoachCreateForm({
               { value: "male", label: "ذكر" },
               { value: "female", label: "أنثى" },
             ]}
+            error={errors && errors.gender}
           />
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
-          العمر (بالسنوات)
+          العمر (بالسنوات) *
           <input
             value={form.age}
             onChange={(event) => updateField("age", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+            aria-invalid={Boolean(errors && errors.age)}
+            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+              errors && errors.age
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
             placeholder="مثال: 30"
             type="number"
             min="15"
             max="100"
             required
           />
+          {errors && errors.age && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.age}
+            </span>
+          )}
         </label>
       </div>
 
@@ -500,12 +548,19 @@ export function CoachCreateForm({
           onCodeChange={(val) => updateField("country_code", val)}
           required={false}
           className="text-right w-full"
+          error={errors && (errors.phone || errors.country_code)}
         />
       </div>
 
       <div className="block text-right text-sm text-app-muted-light">
         الفروع التابع لها *
-        <div className="mt-2 grid grid-cols-2 gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line max-h-36 overflow-y-auto">
+        <div
+          className={`mt-2 grid grid-cols-2 gap-2 p-3 bg-app-card-soft rounded-lg max-h-36 overflow-y-auto ${
+            errors && errors.branch_ids
+              ? "border border-app-red"
+              : "border border-app-line"
+          }`}
+        >
           {branches.map((b) => {
             const checked = form.branch_ids.includes(Number(b.id));
             const bName =
@@ -526,6 +581,11 @@ export function CoachCreateForm({
             );
           })}
         </div>
+        {errors && errors.branch_ids && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {errors.branch_ids}
+          </span>
+        )}
       </div>
 
       <div className="block text-right text-sm text-app-muted-light">
@@ -602,7 +662,9 @@ export function CoachCreateForm({
               </p>
             ) : (
               branchShifts.map((shift) => {
-                const isChecked = form.shift_ids?.includes(shift.id);
+                const isChecked = form.shift_ids?.some(
+                  (id) => Number(id) === Number(shift.id),
+                );
                 const shiftNameStr = shift.name || "وردية بدون اسم";
                 const startTime = shift.start_time
                   ? shift.start_time.slice(0, 5)
@@ -622,10 +684,12 @@ export function CoachCreateForm({
                     label={label}
                     checked={isChecked}
                     onChange={() => {
-                      const id = shift.id;
+                      const idNum = Number(shift.id);
                       const newShifts = isChecked
-                        ? (form.shift_ids || []).filter((x) => x !== id)
-                        : [...(form.shift_ids || []), id];
+                        ? (form.shift_ids || []).filter(
+                            (x) => Number(x) !== idNum,
+                          )
+                        : [...(form.shift_ids || []), idNum];
                       updateField("shift_ids", newShifts);
                     }}
                   />
@@ -671,9 +735,19 @@ export function CoachCreateForm({
           onChange={(event) =>
             updateField("specialization", event.target.value)
           }
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+          aria-invalid={Boolean(errors && errors.specialization)}
+          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+            errors && errors.specialization
+              ? "border border-app-red focus:border-app-red"
+              : "focus:border-app-yellow/70"
+          }`}
           placeholder="مثال: Yoga, CrossFit, Bodybuilding"
         />
+        {errors && errors.specialization && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {errors.specialization}
+          </span>
+        )}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -683,10 +757,20 @@ export function CoachCreateForm({
           onChange={(event) =>
             updateField("experience_years", event.target.value)
           }
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+          aria-invalid={Boolean(errors && errors.experience_years)}
+          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+            errors && errors.experience_years
+              ? "border border-app-red focus:border-app-red"
+              : "focus:border-app-yellow/70"
+          }`}
           type="number"
           min="0"
         />
+        {errors && errors.experience_years && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {errors.experience_years}
+          </span>
+        )}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
@@ -698,39 +782,64 @@ export function CoachCreateForm({
           onChange={(val) => updateField("employment_type", val)}
           options={employmentTypes}
           disabled={true}
+          error={errors && errors.employment_type}
         />
       </label>
 
-      {form.employment_type !== "commission_based" && (
-        <label className="block text-right text-sm text-app-muted-light">
-          الراتب الأساسي ({CURRENCY_SYMBOL})
-          <input
-            value={form.base_salary}
-            onChange={(event) => updateField("base_salary", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            type="number"
-            min="0"
-            required
-          />
-        </label>
-      )}
+      {form.employment_type !== "commission_based" &&
+        form.employment_type !== "commission" && (
+          <label className="block text-right text-sm text-app-muted-light">
+            الراتب الأساسي ({CURRENCY_SYMBOL}) *
+            <input
+              value={form.base_salary}
+              onChange={(event) =>
+                updateField("base_salary", event.target.value)
+              }
+              aria-invalid={Boolean(errors && errors.base_salary)}
+              className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+                errors && errors.base_salary
+                  ? "border border-app-red focus:border-app-red"
+                  : "focus:border-app-yellow/70"
+              }`}
+              type="number"
+              min="0"
+              required
+            />
+            {errors && errors.base_salary && (
+              <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                {errors.base_salary}
+              </span>
+            )}
+          </label>
+        )}
 
       {(form.employment_type === "commission_based" ||
+        form.employment_type === "commission" ||
         form.employment_type === "hybrid") && (
         <label className="block text-right text-sm text-app-muted-light">
-          نسبة العمولة الافتراضية للمدرب (%)
+          نسبة العمولة الافتراضية للمدرب (%) *
           <input
             value={form.default_commission_rate}
             onChange={(event) =>
               updateField("default_commission_rate", event.target.value)
             }
-            className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+            aria-invalid={Boolean(errors && errors.default_commission_rate)}
+            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+              errors && errors.default_commission_rate
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
             type="number"
             min="0"
             max="100"
             step="0.1"
             required
           />
+          {errors && errors.default_commission_rate && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.default_commission_rate}
+            </span>
+          )}
         </label>
       )}
 
@@ -739,9 +848,19 @@ export function CoachCreateForm({
         <input
           value={form.address}
           onChange={(event) => updateField("address", event.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+          aria-invalid={Boolean(errors && errors.address)}
+          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+            errors && errors.address
+              ? "border border-app-red focus:border-app-red"
+              : "focus:border-app-yellow/70"
+          }`}
           placeholder="المدينة، الحي"
         />
+        {errors && errors.address && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {errors.address}
+          </span>
+        )}
       </label>
 
       {errorMessage && (
@@ -1017,8 +1136,8 @@ export default function CoachesClient() {
         }}
         getRowKey={(coach) => coach.id}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="relative block min-w-64">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+            <label className="relative block w-full sm:w-80 md:w-96">
               <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
                 className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"

@@ -13,6 +13,7 @@ import { PlusIcon, SearchIcon, FilterIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { memberSchema } from "@/lib/validations/membersSchema";
 import PhoneField from "@/components/forms/PhoneField";
+import { formatLocalizedName } from "@/lib/utils";
 import { useMembers } from "./useMembers";
 
 const TABLE_GRID_COLUMNS =
@@ -104,7 +105,7 @@ function MemberDetails({ member, branches = [] }) {
 
   const person = member.person || {};
   const branchName =
-    branches.find((b) => b.id === member.branch_id)?.name ||
+    formatLocalizedName(branches.find((b) => b.id === member.branch_id)?.name) ||
     `فرع #${member.branch_id}`;
 
   const personalContact = person.contacts?.find(
@@ -400,7 +401,7 @@ export function MemberForm({
           onChange={(val) => updateField("branch_id", val)}
           options={branches.map((b) => ({
             value: String(b.id),
-            label: b.name,
+            label: formatLocalizedName(b.name),
           }))}
           placeholder="اختر الفرع"
           error={errors && errors.branch_id}
@@ -651,7 +652,7 @@ export default function MembersClient() {
         align: "center",
         render: (value) => {
           const branchName =
-            branches.find((b) => b.id === value)?.name || `فرع #${value}`;
+            formatLocalizedName(branches.find((b) => b.id === value)?.name) || `فرع #${value}`;
           return (
             <span className="text-xs text-app-muted-light">{branchName}</span>
           );
@@ -696,7 +697,7 @@ export default function MembersClient() {
   const branchOptions = useMemo(
     () => [
       { value: "all", label: "كل الفروع" },
-      ...branches.map((b) => ({ value: String(b.id), label: b.name })),
+      ...branches.map((b) => ({ value: String(b.id), label: formatLocalizedName(b.name) })),
     ],
     [branches],
   );
@@ -762,8 +763,8 @@ export default function MembersClient() {
         }}
         getRowKey={(member) => member.id}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="relative block min-w-64">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+            <label className="relative block w-full sm:w-80 md:w-96">
               <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
                 className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"

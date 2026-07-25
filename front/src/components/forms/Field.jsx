@@ -55,10 +55,10 @@ export function Field({
       : error
       ? "border border-app-red bg-app-red/5 focus-within:ring-1 focus-within:ring-app-red"
       : variant === "search"
-      ? "border-transparent bg-white/5 focus-within:ring-1 focus-within:ring-app-yellow"
+      ? "border border-app-line bg-app-card-soft focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow/40"
       : compact
-      ? "border border-app-line bg-black/35 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow"
-      : "border border-app-muted/50 bg-app-panel-soft/40 focus:border-app-yellow focus-within:border-app-yellow";
+      ? "border border-app-line bg-app-card-soft focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow/40"
+      : "border border-app-muted/50 bg-app-panel-soft/40 focus:border-app-yellow focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow/40";
 
   const baseInputClass =
     `flex w-full items-center justify-between rounded-lg outline-none transition text-start ${
@@ -74,7 +74,7 @@ export function Field({
             {required ? <span className="text-app-red">*</span> : null}
           </span>
         ) : (
-          <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
+          <span className="mb-3 flex items-center gap-2 text-base font-medium text-app-text">
             <TagIcon className="size-4 shrink-0 text-app-yellow" />
             <span>{label}</span>
             {required ? <span className="text-app-red">*</span> : null}
@@ -86,9 +86,11 @@ export function Field({
           <select
             name={name}
             required={required}
-            defaultValue={value || ""}
+            value={onChange ? value ?? "" : undefined}
+            defaultValue={onChange ? undefined : value ?? ""}
             onChange={onChange}
-            className={`${baseInputClass} appearance-none pr-4 pl-10 ${value ? "text-white" : "text-app-muted-light"}`}
+            aria-invalid={Boolean(error)}
+            className={`${baseInputClass} appearance-none pr-4 pl-10 ${value ? "text-app-text" : "text-app-muted-light"}`}
             dir="rtl"
             {...props}
           >
@@ -106,17 +108,22 @@ export function Field({
             type={type}
             name={name}
             required={required}
-            defaultValue={value}
+            value={onChange ? value ?? "" : undefined}
+            defaultValue={onChange ? undefined : value}
             onChange={onChange}
             placeholder={placeholder}
-            className="w-full bg-transparent text-white placeholder-app-muted-light outline-none"
-            dir=""
+            aria-invalid={Boolean(error)}
+            className="w-full bg-transparent text-app-text placeholder-app-muted outline-none"
+            dir="rtl"
             {...props}
           />
         </div>
       )}
       {error && (
-        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+        <span
+          className="mt-1.5 block text-xs text-app-red text-right w-full"
+          role="alert"
+        >
           {error}
         </span>
       )}

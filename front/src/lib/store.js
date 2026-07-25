@@ -10,6 +10,28 @@ import { membersApi } from "@/lib/api/membersApi";
 import { lockersApi } from "@/lib/api/lockersApi";
 import { attendanceApi } from "@/lib/api/attendanceApi";
 import { scheduleApi } from "@/lib/api/scheduleApi";
+import { clearAuthStorage } from "@/lib/authStorage";
+
+const authErrorMiddleware = () => (next) => (action) => {
+  if (action?.type && action.type.endsWith("/rejected")) {
+    const status =
+      action.payload?.status ||
+      action.error?.status ||
+      action.meta?.baseQueryMeta?.response?.status;
+
+    if (status === 401) {
+      clearAuthStorage();
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/login") &&
+        !window.location.pathname.startsWith("/forgot-password")
+      ) {
+        window.location.replace("/login");
+      }
+    }
+  }
+  return next(action);
+};
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +49,7 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
+      authErrorMiddleware,
       authApi.middleware,
       playerSubscriptionsApi.middleware,
       subscriptionPlansApi.middleware,

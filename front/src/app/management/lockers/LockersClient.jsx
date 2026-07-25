@@ -34,7 +34,7 @@ import {
 import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useLockers } from "./useLockers";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
-import { formatLocalizedName } from "@/lib/utils";
+import { formatLocalizedName, getBranchesArray } from "@/lib/utils";
 import {
   initialLockerForm,
   lockerSchema,
@@ -110,7 +110,7 @@ export default function LockersClient() {
   } = useLockers();
 
   const { data: branchesData } = useGetBranchesQuery({});
-  const branches = useMemo(() => branchesData?.data || [], [branchesData]);
+  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
 
   const branchOptions = useMemo(
     () => [
@@ -358,7 +358,7 @@ export function LockerCreateForm({
   }));
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
       {errorMessage && (
         <div className="rounded-xl border border-app-red/30 bg-app-red/10 p-4 text-sm text-app-red">
           {errorMessage}
@@ -468,7 +468,7 @@ export function LockerUpdateForm({
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
       {errorMessage && (
         <div className="rounded-xl border border-app-red/30 bg-app-red/10 p-4 text-sm text-app-red">
           {errorMessage}
@@ -629,7 +629,7 @@ export function LockerReserveForm({
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
       {errorMessage && (
         <div className="rounded-xl border border-app-red/30 bg-app-red/10 p-4 text-sm text-app-red">
           {errorMessage}

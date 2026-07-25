@@ -10,7 +10,7 @@ export default function Tabs({ items = [], activeHref }) {
             key={item.href}
             href={item.href}
             className={`rounded-md px-4 py-2 text-xs transition ${
-              isActive ? "bg-[rgba(252,205,3,0.18)] text-app-yellow" : "text-app-muted-light hover:bg-white/5 hover:text-white"
+              isActive ? "bg-app-yellow-soft text-app-yellow" : "text-app-muted hover:bg-app-card-hover hover:text-app-text"
             }`}
           >
             {item.title}

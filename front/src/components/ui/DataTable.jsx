@@ -40,7 +40,7 @@ function CellValue({ column, row, value, card = false }) {
     return (
       <span
         className={`inline-flex rounded-md px-3 py-1 text-xs font-medium ${
-          statusClass[value] || "bg-white/10 text-app-muted-light"
+          statusClass[value] || "bg-app-card-hover text-app-muted"
         }`}
       >
         {value}
@@ -319,7 +319,7 @@ export default function DataTable({
                     key={key}
                     role={onRowClick ? "button" : undefined}
                     tabIndex={onRowClick ? 0 : undefined}
-                    className={`grid w-full items-center rounded-lg bg-[rgba(34,34,34,0.78)] px-3 py-3 text-xs text-app-text transition hover:bg-[rgba(40,40,40,0.82)] focus:outline-none focus:ring-1 focus:ring-app-yellow/60 ${onRowClick ? "cursor-pointer" : ""} ${rowClassName}`}
+                    className={`grid w-full items-center rounded-lg border border-transparent bg-app-card-soft px-3 py-3 text-xs text-app-text transition hover:border-app-line hover:bg-app-card-hover focus:outline-none focus:ring-1 focus:ring-app-yellow/60 ${onRowClick ? "cursor-pointer" : ""} ${rowClassName}`}
                     style={{ gridTemplateColumns: resolvedTableColumns }}
                     onClick={
                       onRowClick ? () => onRowClick(row, index) : undefined
@@ -455,7 +455,7 @@ export default function DataTable({
                     setInternalPage(1);
                   }}
                   options={dropdownOptions}
-                  className="w-16 text-white"
+                  className="w-16 text-app-text"
                   buttonClassName="h-8 bg-app-panel-soft/40 border border-app-line rounded-lg px-2 text-xs"
                   menuClassName="bottom-full mb-2 !mt-0"
                 />

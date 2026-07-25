@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Drawer from "@/components/ui/Drawer";
 import Button from "@/components/ui/Button";
-import { useGetProfileQuery, useChangePasswordMutation } from "@/lib/api/authApi";
+import { useGetProfileQuery, useChangePasswordMutation, useLogoutMutation } from "@/lib/api/authApi";
+import { clearAuthStorage } from "@/lib/authStorage";
 import { useToast } from "@/components/ui/Toast";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
 
@@ -13,6 +14,7 @@ export default function ProfileDrawer({ open, onClose }) {
     skip: !open,
   });
   const [changePassword, { isLoading: isChanging }] = useChangePasswordMutation();
+  const [logout] = useLogoutMutation();
 
   const [form, setForm] = useState({
     current_password: "",
@@ -67,13 +69,14 @@ export default function ProfileDrawer({ open, onClose }) {
         new_password_confirmation: form.new_password_confirmation,
       }).unwrap();
 
-      toast.success("تم تغيير كلمة المرور بنجاح!");
-      setForm({
-        current_password: "",
-        new_password: "",
-        new_password_confirmation: "",
-      });
-      onClose();
+      toast.success("تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول بكلمة المرور الجديدة.");
+      try {
+        await logout().unwrap();
+      } catch {
+        // Ignore error if session was already terminated by backend
+      }
+      clearAuthStorage();
+      window.location.replace("/login");
     } catch (err) {
       setFormError(err?.data?.message || "تعذر تغيير كلمة المرور. تأكد من صحة البيانات وحاول مرة أخرى.");
     }
@@ -109,7 +112,7 @@ export default function ProfileDrawer({ open, onClose }) {
               avatarLetter
             )}
           </div>
-          <h2 className="text-lg font-semibold text-white">{fullName}</h2>
+          <h2 className="text-lg font-semibold text-app-text">{fullName}</h2>
           <span className="rounded-full bg-app-yellow/10 px-3 py-1 text-xs text-app-yellow font-medium">
             {person.type === "staff" ? "مدير النظام" : "موظف"}
           </span>
@@ -122,26 +125,26 @@ export default function ProfileDrawer({ open, onClose }) {
           <div className="space-y-3.5">
             <div className="flex items-center justify-between rounded-xl bg-app-card-soft/40 px-4 py-3 text-sm">
               <span className="text-app-muted-light font-medium">اسم المستخدم</span>
-              <span className="text-white">{user.username || "-"}</span>
+              <span className="text-app-text">{user.username || "-"}</span>
             </div>
             <div className="flex items-center justify-between rounded-xl bg-app-card-soft/40 px-4 py-3 text-sm">
               <span className="text-app-muted-light font-medium">البريد الإلكتروني</span>
-              <span className="text-white">{email || "-"}</span>
+              <span className="text-app-text">{email || "-"}</span>
             </div>
             <div className="flex items-center justify-between rounded-xl bg-app-card-soft/40 px-4 py-3 text-sm">
               <span className="text-app-muted-light font-medium">رقم الهاتف</span>
-              <span className="text-white" dir="ltr">{phone || "-"}</span>
+              <span className="text-app-text" dir="ltr">{phone || "-"}</span>
             </div>
             <div className="flex items-center justify-between rounded-xl bg-app-card-soft/40 px-4 py-3 text-sm">
               <span className="text-app-muted-light font-medium">الجنس</span>
-              <span className="text-white">{gender}</span>
+              <span className="text-app-text">{gender}</span>
             </div>
           </div>
         )}
 
         {/* Change Password Form */}
         <div className="border-t border-app-line pt-6">
-          <h3 className="text-sm font-semibold text-white mb-4">تغيير كلمة المرور</h3>
+          <h3 className="text-sm font-semibold text-app-text mb-4">تغيير كلمة المرور</h3>
           
           <form noValidate onSubmit={handlePasswordSubmit} className="space-y-4">
             {/* current_password */}
@@ -151,8 +154,9 @@ export default function ProfileDrawer({ open, onClose }) {
                 <input
                   value={form.current_password}
                   type={showCurrent ? "text" : "password"}
+                  dir="ltr"
                   onChange={(e) => updateField("current_password", e.target.value)}
-                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-end text-white outline-none transition ${
+                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-app-text outline-none transition ${
                     fieldErrors.current_password ? "border-app-red focus:border-app-red" : "border-app-line focus:border-app-yellow"
                   }`}
                   placeholder="أدخل كلمة المرور الحالية"
@@ -160,7 +164,7 @@ export default function ProfileDrawer({ open, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition"
                 >
                   {showCurrent ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
                 </button>
@@ -177,8 +181,9 @@ export default function ProfileDrawer({ open, onClose }) {
                 <input
                   value={form.new_password}
                   type={showNew ? "text" : "password"}
+                  dir="ltr"
                   onChange={(e) => updateField("new_password", e.target.value)}
-                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-end text-white outline-none transition ${
+                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-app-text outline-none transition ${
                     fieldErrors.new_password ? "border-app-red focus:border-app-red" : "border-app-line focus:border-app-yellow"
                   }`}
                   placeholder="أدخل كلمة المرور الجديدة"
@@ -186,7 +191,7 @@ export default function ProfileDrawer({ open, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition"
                 >
                   {showNew ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
                 </button>
@@ -203,8 +208,9 @@ export default function ProfileDrawer({ open, onClose }) {
                 <input
                   value={form.new_password_confirmation}
                   type={showConfirm ? "text" : "password"}
+                  dir="ltr"
                   onChange={(e) => updateField("new_password_confirmation", e.target.value)}
-                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-end text-white outline-none transition ${
+                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-app-text outline-none transition ${
                     fieldErrors.new_password_confirmation ? "border-app-red focus:border-app-red" : "border-app-line focus:border-app-yellow"
                   }`}
                   placeholder="أعد كتابة كلمة المرور الجديدة"
@@ -212,7 +218,7 @@ export default function ProfileDrawer({ open, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition"
                 >
                   {showConfirm ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
                 </button>

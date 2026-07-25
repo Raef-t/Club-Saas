@@ -11,7 +11,10 @@ import { useGetClubsQuery } from "@/lib/api/clubsApi";
 import { useToast } from "@/components/ui/Toast";
 
 function getBranchesArray(response) {
-  return Array.isArray(response?.data) ? response.data : [];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
 }
 
 function getClubsArray(response) {

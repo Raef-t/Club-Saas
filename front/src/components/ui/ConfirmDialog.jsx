@@ -47,7 +47,7 @@ export default function ConfirmDialog({
       {/* Backdrop */}
       <button
         type="button"
-        className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-md transition-opacity"
+        className="absolute inset-0 cursor-default bg-[var(--app-overlay)] backdrop-blur-md transition-opacity"
         aria-label="إغلاق"
         onClick={isLoading ? undefined : onClose}
         disabled={isLoading}
@@ -72,7 +72,7 @@ export default function ConfirmDialog({
             <TrashIcon className="size-6" />
           </div>
 
-          <h3 className="text-center text-lg font-medium text-white">
+          <h3 className="text-center text-lg font-medium text-app-text">
             {title}
           </h3>
           <p className="mt-3 text-center text-sm leading-relaxed text-app-muted-light">

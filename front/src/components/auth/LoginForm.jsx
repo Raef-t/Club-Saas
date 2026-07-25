@@ -2,70 +2,97 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { useLoginMutation } from "@/lib/api/authApi";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
+import { saveAuthStorage } from "@/lib/authStorage";
+import { loginSchema } from "@/lib/validations/authSchema";
 
 const DEFAULT_FCM_TOKEN = "fcm_token_string_here";
-
-function saveAuthData(payload) {
-  const authData = payload?.data;
-
-  if (!authData?.access_token) {
-    throw new Error("Login response does not include an access token.");
-  }
-
-  window.localStorage.setItem("access_token", authData.access_token);
-  window.localStorage.setItem("token_type", authData.token_type || "Bearer");
-  window.localStorage.setItem("auth_user", JSON.stringify(authData.user || {}));
-  window.localStorage.setItem("auth_session", JSON.stringify(authData));
-}
 
 export default function LoginForm() {
   const router = useRouter();
   const [login, { isLoading }] = useLoginMutation();
   const [form, setForm] = useState({
-    username: "player",
-    password: "password123",
-    remember: true,
+    username: "",
+    password: "",
+    remember: false,
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  }
+
+  function validateForm() {
+    const result = loginSchema.safeParse(form);
+    if (!result.success) {
+      const errors = {};
+      result.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0];
+        if (fieldName && !errors[fieldName]) {
+          errors[fieldName] = issue.message;
+        }
+      });
+      setFieldErrors(errors);
+      return false;
+    }
+
+    setFieldErrors({});
+    return true;
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage("");
 
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const response = await login({
-        username: form.username,
+        username: form.username.trim(),
         password: form.password,
         fcm_token: DEFAULT_FCM_TOKEN,
+        remember: form.remember,
       }).unwrap();
 
-      saveAuthData(response);
-      router.push("/management/subscriptions");
+      saveAuthStorage(response, form.remember);
+      router.replace("/management/subscriptions");
+      router.refresh();
     } catch (error) {
       setErrorMessage(
-        error?.data?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.",
+        error?.data?.message ||
+          "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.",
       );
     }
   }
 
   return (
     <form
+      noValidate
       onSubmit={handleSubmit}
-      className="card-shell w-full max-w-md rounded-3xl p-6 md:p-8"
+      autoComplete="off"
+      className="card-shell mx-auto w-full max-w-md rounded-3xl p-6 md:p-8"
+      dir="rtl"
     >
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-5 grid h-16 w-40 place-items-center rounded-2xl bg-black/30 ring-1 ring-app-yellow/20">
-          <Image src="/img/logo.jpeg" alt="TechnoGYM" width={500} height={500} />
+        <div className="mx-auto mb-5 grid h-16 w-40 place-items-center rounded-2xl">
+          <Image
+            src="/img/test_logo.png"
+            alt="TechnoGYM"
+            width={500}
+            height={500}
+          />
         </div>
         <h1 className="text-2xl font-semibold text-white">تسجيل الدخول</h1>
         <p className="mt-2 text-sm text-app-muted-light">
@@ -74,35 +101,77 @@ export default function LoginForm() {
       </div>
 
       <div className="space-y-4">
-        <label className="block text-end text-sm text-app-muted-light">
-          اسم المستخدم
+        <label
+          htmlFor="username"
+          className="block w-full text-right text-sm text-app-muted-light"
+        >
+          <span className="block w-full text-right">اسم المستخدم</span>
           <input
+            id="username"
+            name="username"
             value={form.username}
             type="text"
-            autoComplete="username"
+            dir="rtl"
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={3}
+            maxLength={50}
+            required
             onChange={(event) => updateField("username", event.target.value)}
-            className="mt-2 h-12 w-full rounded-xl border border-app-line bg-app-card-soft px-4 text-end text-white outline-none transition focus:border-app-yellow"
+            className={`mt-2 h-12 w-full rounded-xl border bg-app-card-soft px-4 text-right text-white outline-none transition focus:border-app-yellow ${
+              fieldErrors.username ? "border-app-red" : "border-app-line"
+            }`}
           />
+          {fieldErrors.username && (
+            <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+              {fieldErrors.username}
+            </span>
+          )}
         </label>
 
-        <label className="block text-end text-sm text-app-muted-light relative">
-          كلمة المرور
+        <label
+          htmlFor="password"
+          className="relative block w-full text-right text-sm text-app-muted-light"
+        >
+          <span className="block w-full text-right">كلمة المرور</span>
           <div className="relative mt-2">
             <input
+              id="password"
+              name="password"
               value={form.password}
               type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
+              dir="ltr"
+              autoComplete="new-password"
+              minLength={6}
+              maxLength={100}
+              required
               onChange={(event) => updateField("password", event.target.value)}
-              className="h-12 w-full rounded-xl border border-app-line bg-app-card-soft pl-12 pr-4 text-end text-white outline-none transition focus:border-app-yellow"
+              className={`login-password-input h-12 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-white outline-none transition focus:border-app-yellow ${
+                fieldErrors.password ? "border-app-red" : "border-app-line"
+              }`}
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((current) => !current)}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
+              aria-label={
+                showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
+              }
+              aria-pressed={showPassword}
             >
-              {showPassword ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
+              {showPassword ? (
+                <EyeIcon className="size-5" />
+              ) : (
+                <EyeOffIcon className="size-5" />
+              )}
             </button>
           </div>
+          {fieldErrors.password && (
+            <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+              {fieldErrors.password}
+            </span>
+          )}
         </label>
       </div>
 
@@ -113,9 +182,12 @@ export default function LoginForm() {
       )}
 
       <div className="mt-4 flex items-center justify-between text-xs text-app-muted-light">
-        <a href="#" className="text-app-yellow hover:text-app-yellow/80">
+        <Link
+          href="/forgot-password"
+          className="text-app-yellow hover:text-app-yellow/80"
+        >
           نسيت كلمة المرور؟
-        </a>
+        </Link>
         <label className="inline-flex items-center gap-2">
           <span>تذكرني</span>
           <input
