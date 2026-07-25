@@ -4440,11 +4440,27 @@
                 ],
                 "summary": "Get all person contacts",
                 "operationId": "getPersonContacts",
+                "parameters": [
+                    {
+                        "name": "person_id",
+                        "in": "query",
+                        "description": "Filter contacts by Person ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "post": {
                 "tags": [
@@ -4466,7 +4482,45 @@
                     "201": {
                         "description": "Contact created successfully"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/persons/{person}/contacts": {
+            "get": {
+                "tags": [
+                    "Person Contacts"
+                ],
+                "summary": "Get all contacts for a specific person",
+                "operationId": "getContactsByPersonId",
+                "parameters": [
+                    {
+                        "name": "person",
+                        "in": "path",
+                        "description": "Person ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Person not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/contacts/{contact}": {
@@ -4494,7 +4548,12 @@
                     "404": {
                         "description": "Contact not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
@@ -4530,7 +4589,12 @@
                     "404": {
                         "description": "Contact not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -4556,7 +4620,12 @@
                     "404": {
                         "description": "Contact not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/branches": {
@@ -10535,54 +10604,156 @@
                 ]
             }
         },
-        "/v1/notification-logs": {
+        "/v1/notifications": {
             "get": {
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "📜 عرض سجل الإشعارات",
-                "description": "استرجاع جميع الإشعارات المرسلة مع إمكانية الفلترة.",
-                "operationId": "d72e0f2f9d91c446c4eec0013cdd3a87",
+                "summary": "📋 قائمة إشعاراتي",
+                "description": "جلب قائمة إشعارات المستخدم المسجل دخوله مع دعم الترقيم (Pagination).",
+                "operationId": "2be19718751671e97d2ef92ecbebffe8",
                 "parameters": [
                     {
-                        "name": "channel",
+                        "name": "per_page",
                         "in": "query",
-                        "description": "قناة الإرسال (مثال: email, sms)",
+                        "description": "عدد العناصر في الصفحة (الافتراضي: 15)",
                         "required": false,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "حالة الإشعار (مثال: sent, failed)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
+                            "type": "integer",
+                            "example": 15
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع السجل بنجاح",
+                        "description": "✅ تم جلب قائمة الإشعارات بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Logs retrieved"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "data": {
                                             "type": "array",
                                             "items": {
+                                                "properties": {
+                                                    "reception_id": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "تنبيه جديد"
+                                                    },
+                                                    "body": {
+                                                        "type": "string",
+                                                        "example": "محتوى الإشعار..."
+                                                    },
+                                                    "is_read": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "read_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "delivered_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-07-25T09:00:00Z",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-07-25T08:30:00Z"
+                                                    }
+                                                },
                                                 "type": "object"
                                             }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 72
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح (تطلب تسجيل الدخول)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/notifications/unread/count": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "🔢 عدد الإشعارات غير المقروءة",
+                "description": "استرجاع عدد الإشعارات غير المقروءة للمستخدم الحالي.",
+                "operationId": "d23a1057204154d6184f24b9415c6b06",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب العدد بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "unread_count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -10614,42 +10785,69 @@
                 ]
             }
         },
-        "/v1/notification-logs/{id}": {
+        "/v1/notifications/{reception}": {
             "get": {
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "🔍 تفاصيل الإشعار",
-                "description": "استرجاع تفاصيل سجل إشعار محدد.",
-                "operationId": "5342553fcc980d241790c5e9ab869a62",
+                "summary": "🔍 تفاصيل إشعار محدد للمستخدم",
+                "description": "استرجاع تفاصيل إشعار معين للمستخدم الحالي مع المرفقات، ويتم تحديث حالة الاستلام (delivered_at) تلقائياً.",
+                "operationId": "606830263db23615ca1ece1d50be7508",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "reception",
                         "in": "path",
-                        "description": "معرف السجل",
+                        "description": "معرّف سجل استلام الإشعار (reception_id)",
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 1
+                            "example": 10
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تفاصيل الإشعار",
+                        "description": "✅ تم جلب تفاصيل الإشعار بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Log retrieved"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "تنبيه جديد"
+                                                },
+                                                "body": {
+                                                    "type": "string",
+                                                    "example": "تفاصيل الإشعار..."
+                                                },
+                                                "delivered_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-07-25T09:30:00Z"
+                                                },
+                                                "read_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "attachments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -10659,18 +10857,18 @@
                         }
                     },
                     "404": {
-                        "description": "🚫 السجل غير موجود",
+                        "description": "🚫 الإشعار غير موجود أو لا تملك صلاحية الوصول إليه",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "error"
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Record not found."
+                                            "example": "الإشعار غير موجود أو لا تملك صلاحية الوصول إليه."
                                         }
                                     },
                                     "type": "object"
@@ -10705,285 +10903,35 @@
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "🗑️ حذف إشعار",
-                "description": "حذف سجل إشعار من النظام.",
-                "operationId": "6ded746a8e12806c20e4a8ba2bc02df7",
+                "summary": "🗑️ حذف إشعار من قائمة المستخدم",
+                "description": "حذف الإشعار المحدد من قائمة إشعارات المستخدم الحالي.",
+                "operationId": "3f6b772c5d61483ba492ada1125822da",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "reception",
                         "in": "path",
-                        "description": "معرف السجل",
+                        "description": "معرّف سجل استلام الإشعار (reception_id)",
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 1
+                            "example": 10
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم حذف الإشعار بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Log deleted"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 السجل غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/notification-stats": {
-            "get": {
-                "tags": [
-                    "Notification Management"
-                ],
-                "summary": "📊 إحصائيات الإشعارات",
-                "description": "عرض إحصائيات مفصلة عن حالة تسليم الإشعارات.",
-                "operationId": "32d5544daf0d3717cb2f4936063dfd26",
-                "responses": {
-                    "200": {
-                        "description": "✅ الإحصائيات المسترجعة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Stats retrieved"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/my-notifications": {
-            "get": {
-                "tags": [
-                    "Member Notifications"
-                ],
-                "summary": "🔔 إشعاراتي",
-                "description": "استرجاع قائمة الإشعارات الخاصة بالعضو المسجل للدخول.",
-                "operationId": "963838d843a10f4a42293a82b87ca6ed",
-                "parameters": [
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "عدد العناصر في الصفحة",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الإشعارات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Notifications retrieved successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "items": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "pagination": {
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الملف الشخصي للعضو غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/my-notifications/{id}/read": {
-            "post": {
-                "tags": [
-                    "Member Notifications"
-                ],
-                "summary": "✅ تحديد إشعار كمقروء",
-                "description": "تغيير حالة إشعار معين إلى مقروء.",
-                "operationId": "c7936eec79cb0c0bcd2e0190eb7f6b35",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف الإشعار",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم التحديد كمقروء",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Notification marked as read"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
+                                            "example": "تم حذف الإشعار من قائمتك."
                                         }
                                     },
                                     "type": "object"
@@ -10998,32 +10946,12 @@
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "error"
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Notification not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الملف الشخصي للعضو غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
+                                            "example": "الإشعار غير موجود."
                                         }
                                     },
                                     "type": "object"
@@ -11055,33 +10983,40 @@
                 ]
             }
         },
-        "/v1/my-notifications/read-all": {
-            "post": {
+        "/v1/notifications/{reception}/read": {
+            "patch": {
                 "tags": [
-                    "Member Notifications"
+                    "Notification Management"
                 ],
-                "summary": "✅ تحديد كل الإشعارات كمقروءة",
-                "description": "تغيير حالة جميع إشعارات العضو إلى مقروءة.",
-                "operationId": "69a7731e9376c2300b3180524b480b2d",
+                "summary": "✔ تعليم إشعار كمقروء",
+                "description": "تغيير حالة الإشعار إلى مقروء وتسجيل تاريخ القراءة.",
+                "operationId": "8ea8f89f6b77578b07b420e0c6d912bf",
+                "parameters": [
+                    {
+                        "name": "reception",
+                        "in": "path",
+                        "description": "معرّف سجل استلام الإشعار (reception_id)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم التحديد بنجاح",
+                        "description": "✅ تم تعليم الإشعار كمقروء",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "All notifications marked as read"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
+                                            "example": "تم تعليم الإشعار كمقروء."
                                         }
                                     },
                                     "type": "object"
@@ -11089,19 +11024,19 @@
                             }
                         }
                     },
-                    "403": {
-                        "description": "🚫 الملف الشخصي للعضو غير موجود",
+                    "404": {
+                        "description": "🚫 الإشعار غير موجود",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "error"
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Member profile not found."
+                                            "example": "الإشعار غير موجود."
                                         }
                                     },
                                     "type": "object"
@@ -11133,34 +11068,255 @@
                 ]
             }
         },
-        "/v1/notification-templates": {
+        "/v1/notifications/mark-all-as-read": {
+            "post": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "summary": "☑ تعليم جميع الإشعارات كمقروءة",
+                "description": "تغيير حالة جميع إشعارات المستخدم غير المقروءة إلى مقروءة بنقرة واحدة.",
+                "operationId": "fe09e9677dac93b12c4ede85ac20d2f2",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعليم جميع الإشعارات كمقروءة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تعليم 5 إشعار كمقروء."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "updated_count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/admin/notifications": {
             "get": {
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "📋 عرض قوالب الإشعارات",
-                "description": "استرجاع قائمة بجميع قوالب الإشعارات المتاحة في النظام.",
-                "operationId": "4dcfe778ed07a46185452dddc88bef96",
+                "summary": "📜 عرض جميع الإشعارات مع الفلترة (للأدمن)",
+                "description": "استرجاع قائمة الإشعارات المرسلة في النظام مع إمكانية الفلترة حسب نوع المرسل، النطاق الزمني، المرفقات، والصفحات.",
+                "operationId": "bdb213ffa5fadb91ca5fb7495458048a",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "تصفية حسب مستخدم معين",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "sender_type",
+                        "in": "query",
+                        "description": "نوع المرسل (admin, system, user)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "admin",
+                                "system",
+                                "user"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "من تاريخ (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "إلى تاريخ (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "has_attachments",
+                        "in": "query",
+                        "description": "تصفية الإشعارات التي تحتوي على مرفقات فقط (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "read",
+                        "in": "query",
+                        "description": "تصفية حسب حالة القراءة",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر بالصفحة (1-100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع القوالب بنجاح",
+                        "description": "✅ تم استرجاع قائمة إشعارات الأدمن بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Templates retrieved"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "data": {
                                             "type": "array",
                                             "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "تنبيه صيانة النادي"
+                                                    },
+                                                    "sender_type": {
+                                                        "type": "string",
+                                                        "example": "admin"
+                                                    },
+                                                    "recipients_count": {
+                                                        "type": "integer",
+                                                        "example": 50
+                                                    },
+                                                    "read_count": {
+                                                        "type": "integer",
+                                                        "example": 35
+                                                    },
+                                                    "delivered_count": {
+                                                        "type": "integer",
+                                                        "example": 48
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-07-25T08:00:00Z"
+                                                    }
+                                                },
                                                 "type": "object"
                                             }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في معلمات الاستعلام (Query Parameters)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "from": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "تاريخ البداية غير صالح"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -11177,6 +11333,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 غير مسموح (يتطلب صلاحيات الأدمن)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User does not have the right roles."
                                         }
                                     },
                                     "type": "object"
@@ -11195,35 +11367,79 @@
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "➕ إضافة قالب جديد",
-                "description": "إنشاء قالب إشعار جديد.",
-                "operationId": "9b988eb8fe57b6f6ad112e5a6c3f1244",
+                "summary": "➕ إنشاء وتوزيع إشعار جديد (للأدمن)",
+                "description": "إنشاء إشعار جديد وتوجيهه لمستخدمين محددين، لجميع المستخدمين، أو حسب الفرع، مع إمكانية إرفاق ملفات.",
+                "operationId": "bf9a6802d6df47bbb35bb1a8dab2ae25",
                 "requestBody": {
+                    "description": "بيانات الإشعار والمستهدفين والمرفقات",
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "slug",
-                                    "content"
+                                    "title",
+                                    "body",
+                                    "target_snapshot[type]"
                                 ],
                                 "properties": {
-                                    "name": {
+                                    "title": {
                                         "type": "string",
-                                        "example": "Welcome Email"
+                                        "example": "تنبيه صيانة النادي",
+                                        "maxLength": 255,
+                                        "minLength": 3
                                     },
-                                    "slug": {
+                                    "body": {
                                         "type": "string",
-                                        "example": "welcome_email"
+                                        "example": "سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة.",
+                                        "maxLength": 2000,
+                                        "minLength": 5
                                     },
-                                    "content": {
+                                    "sender_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "sender_type": {
                                         "type": "string",
-                                        "example": "Welcome to our club!"
+                                        "example": "admin",
+                                        "default": "admin",
+                                        "enum": [
+                                            "admin",
+                                            "system",
+                                            "user"
+                                        ]
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "target_snapshot[type]": {
+                                        "description": "نوع استهداف المستلمين",
+                                        "type": "string",
+                                        "example": "custom",
+                                        "enum": [
+                                            "all",
+                                            "branch",
+                                            "custom"
+                                        ]
+                                    },
+                                    "target_snapshot[user_ids][]": {
+                                        "description": "قائمة معرفات المستخدمين (مطلوب في حال اختيار custom)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "target_snapshot[branch_id]": {
+                                        "description": "معرف الفرع (مطلوب في حال اختيار branch)",
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "attachments[]": {
+                                        "description": "المرفقات (حد أقصى 5 ملفات، كل ملف 10MB كحد أقصى)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -11233,20 +11449,34 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "✅ تم إنشاء القالب بنجاح",
+                        "description": "✅ تم إنشاء الإشعار وإرساله بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Template created"
+                                            "example": "تم إنشاء الإشعار وإرساله بنجاح."
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "تنبيه صيانة النادي"
+                                                },
+                                                "recipients_count": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -11256,7 +11486,7 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات المدخلة (Validation Error)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11266,6 +11496,22 @@
                                             "example": "البيانات المدخلة غير صالحة."
                                         },
                                         "errors": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "حقل العنوان مطلوب."
+                                                    }
+                                                },
+                                                "target_snapshot.type": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "نوع المستهدفين يجب أن يكون (all, branch, custom)."
+                                                    }
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -11283,6 +11529,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 غير مسموح (يتطلب صلاحيات الأدمن/المدير)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User does not have the right roles."
                                         }
                                     },
                                     "type": "object"
@@ -11298,42 +11560,149 @@
                 ]
             }
         },
-        "/v1/notification-templates/{notification_template}": {
-            "get": {
+        "/v1/admin/notifications/send-to-users": {
+            "post": {
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "🔍 تفاصيل القالب",
-                "description": "استرجاع تفاصيل قالب إشعار محدد.",
-                "operationId": "4e26713556db8c00ae872f2218c7e95e",
-                "parameters": [
-                    {
-                        "name": "notification_template",
-                        "in": "path",
-                        "description": "معرف القالب",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
+                "summary": "🎯 إرسال إشعار لمجموعة مستخدمين مخصصة (User IDs)",
+                "description": "إرسال إشعار مباشر لمصفوفة محددة من معرّفات المستخدمين (user_ids) مع إمكانية إضافة مرفقات.",
+                "operationId": "80829fe1f678c794b05980cd1858a204",
+                "requestBody": {
+                    "description": "بيانات الإشعار وقائمة المستهدفين",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "body",
+                                    "user_ids"
+                                ],
+                                "properties": {
+                                    "user_ids": {
+                                        "description": "مصفوفة معرّفات المستخدمين المستهدفين",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 4
+                                        }
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "example": "تنبيه خاص للمستخدمين",
+                                        "maxLength": 255,
+                                        "minLength": 3
+                                    },
+                                    "body": {
+                                        "type": "string",
+                                        "example": "أهلاً بك، هذا إشعار موجه لك وللمجموعة المحددة.",
+                                        "maxLength": 2000,
+                                        "minLength": 5
+                                    },
+                                    "sender_type": {
+                                        "type": "string",
+                                        "example": "admin",
+                                        "default": "admin",
+                                        "enum": [
+                                            "admin",
+                                            "system",
+                                            "user"
+                                        ]
+                                    },
+                                    "attachments": {
+                                        "description": "المرفقات (اختيارية، حد أقصى 5 ملفات)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "body",
+                                    "user_ids"
+                                ],
+                                "properties": {
+                                    "user_ids": {
+                                        "description": "مصفوفة معرّفات المستخدمين المستهدفين",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 4
+                                        }
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "example": "تنبيه خاص للمستخدمين",
+                                        "maxLength": 255,
+                                        "minLength": 3
+                                    },
+                                    "body": {
+                                        "type": "string",
+                                        "example": "أهلاً بك، هذا إشعار موجه لك وللمجموعة المحددة.",
+                                        "maxLength": 2000,
+                                        "minLength": 5
+                                    },
+                                    "sender_type": {
+                                        "type": "string",
+                                        "example": "admin",
+                                        "default": "admin",
+                                        "enum": [
+                                            "admin",
+                                            "system",
+                                            "user"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
-                    "200": {
-                        "description": "✅ تفاصيل القالب",
+                    "201": {
+                        "description": "✅ تم إرسال الإشعار بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Template retrieved"
+                                            "example": "تم إرسال الإشعار إلى المستخدمين بنجاح."
                                         },
                                         "data": {
+                                            "properties": {
+                                                "notification_id": {
+                                                    "type": "integer",
+                                                    "example": 105
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "تنبيه خاص للمستخدمين"
+                                                },
+                                                "recipients_count": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "target_user_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 4
+                                                    }
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -11342,19 +11711,27 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "🚫 القالب غير موجود",
+                    "422": {
+                        "description": "⚠️ خطأ في البيانات المدخلة (مصفوفة user_ids أو المحتوى)",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Record not found."
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "user_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "حقل قائمة المستخدمين (user_ids) مطلوب."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -11371,6 +11748,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 غير مسموح (يتطلب صلاحيات الأدمن)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User does not have the right roles."
                                         }
                                     },
                                     "type": "object"
@@ -11384,58 +11777,76 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "put": {
+            }
+        },
+        "/v1/admin/notifications/{notification}": {
+            "get": {
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "✏️ تعديل القالب",
-                "description": "تحديث بيانات ومحتوى قالب إشعار.",
-                "operationId": "69d2b0a354fa5cb6e04d1292e70db272",
+                "summary": "🔍 تفاصيل إشعار مع المستلمين (للأدمن)",
+                "description": "عرض بيانات إشعار شاملة مع تفاصيل المستلمين والمرفقات.",
+                "operationId": "64351b5429b557fb7a32c293efadceab",
                 "parameters": [
                     {
-                        "name": "notification_template",
+                        "name": "notification",
                         "in": "path",
-                        "description": "معرف القالب",
+                        "description": "معرّف الإشعار (Notification ID)",
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 1
+                            "example": 101
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "content": {
-                                        "type": "string",
-                                        "example": "Welcome back to our club!"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم تحديث القالب بنجاح",
+                        "description": "✅ تم استرجاع تفاصيل الإشعار للإدارة بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Template updated"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "تنبيه صيانة النادي"
+                                                },
+                                                "body": {
+                                                    "type": "string",
+                                                    "example": "سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة."
+                                                },
+                                                "sender_type": {
+                                                    "type": "string",
+                                                    "example": "admin"
+                                                },
+                                                "target_snapshot": {
+                                                    "type": "object"
+                                                },
+                                                "recipients_count": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "attachments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-07-25T08:00:00Z"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -11445,37 +11856,14 @@
                         }
                     },
                     "404": {
-                        "description": "🚫 القالب غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "description": "🚫 الإشعار غير موجود في النظام",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
+                                            "example": "No query results for model [Modules\\NotificationManager\\Models\\Notification]."
                                         }
                                     },
                                     "type": "object"
@@ -11492,6 +11880,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 غير مسموح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User does not have the right roles."
                                         }
                                     },
                                     "type": "object"
@@ -11510,40 +11914,35 @@
                 "tags": [
                     "Notification Management"
                 ],
-                "summary": "🗑️ حذف القالب",
-                "description": "حذف قالب إشعار من النظام.",
-                "operationId": "807d82109370bf8ad46636b466afd7ae",
+                "summary": "🗑️ حذف إشعار بالكامل من النظام (للأدمن)",
+                "description": "حذف الإشعار وكافة سجلات استلامه والمرفقات التابعة له من النظام نهائياً.",
+                "operationId": "20a72ace1066dfd6d9131afd4cde91ba",
                 "parameters": [
                     {
-                        "name": "notification_template",
+                        "name": "notification",
                         "in": "path",
-                        "description": "معرف القالب",
+                        "description": "معرّف الإشعار (Notification ID)",
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "example": 1
+                            "example": 101
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم حذف الإشعار بالكامل من النظام",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Template deleted"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
+                                            "example": "تم حذف الإشعار من النظام بالكامل."
                                         }
                                     },
                                     "type": "object"
@@ -11552,18 +11951,14 @@
                         }
                     },
                     "404": {
-                        "description": "🚫 القالب غير موجود",
+                        "description": "🚫 الإشعار غير موجود",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Record not found."
+                                            "example": "No query results for model [Modules\\NotificationManager\\Models\\Notification]."
                                         }
                                     },
                                     "type": "object"
@@ -11586,221 +11981,16 @@
                                 }
                             }
                         }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/notification-templates/{id}/toggle": {
-            "post": {
-                "tags": [
-                    "Notification Management"
-                ],
-                "summary": "🔘 تفعيل/تعطيل القالب",
-                "description": "تبديل حالة القالب بين مفعل وغير مفعل.",
-                "operationId": "264cfcb9cb6de83ab8eb372f9fa87b59",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف القالب",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم تحديث الحالة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Status updated"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
                     },
-                    "404": {
-                        "description": "🚫 القالب غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
+                    "403": {
+                        "description": "🚫 غير مسموح",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/notification-templates/{slug}/test": {
-            "post": {
-                "tags": [
-                    "Notification Management"
-                ],
-                "summary": "🧪 إرسال إشعار تجريبي",
-                "description": "إرسال إشعار اختباري باستخدام قالب محدد.",
-                "operationId": "c589672df25790303d66e83849aa048a",
-                "parameters": [
-                    {
-                        "name": "slug",
-                        "in": "path",
-                        "description": "اسم القالب الفريد (Slug)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "welcome_email"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "person_id"
-                                ],
-                                "properties": {
-                                    "person_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "data": {
-                                        "type": "object",
-                                        "example": {
-                                            "name": "Test",
-                                            "plan_name": "Premium"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الإرسال بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Test notification dispatched"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 الشخص أو القالب غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Person not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
+                                            "example": "User does not have the right roles."
                                         }
                                     },
                                     "type": "object"
@@ -23910,10 +24100,6 @@
         {
             "name": "Notification Management",
             "description": "Notification Management"
-        },
-        {
-            "name": "Member Notifications",
-            "description": "Member Notifications"
         },
         {
             "name": "Sports & Activities",

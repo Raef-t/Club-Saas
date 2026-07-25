@@ -3,6 +3,7 @@
 namespace Modules\Authentication\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\PersonContact;
@@ -19,14 +20,42 @@ class PersonContactController extends BaseController
         operationId: "getPersonContacts",
         summary: "Get all person contacts",
         tags: ["Person Contacts"],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: "person_id", in: "query", required: false, description: "Filter contacts by Person ID", schema: new OA\Schema(type: "integer"))
+        ],
         responses: [
             new OA\Response(response: 200, description: "Successful operation")
         ]
     )]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $contacts = PersonContact::all();
+        $query = PersonContact::query();
+        if ($request->has('person_id')) {
+            $query->where('person_id', $request->query('person_id'));
+        }
+        $contacts = $query->get();
         return $this->successResponse(PersonContactResource::collection($contacts), 'Contacts retrieved successfully');
+    }
+
+    #[OA\Get(
+        path: "/v1/persons/{person}/contacts",
+        operationId: "getContactsByPersonId",
+        summary: "Get all contacts for a specific person",
+        tags: ["Person Contacts"],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: "person", in: "path", required: true, description: "Person ID", schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Successful operation"),
+            new OA\Response(response: 404, description: "Person not found")
+        ]
+    )]
+    public function getByPerson(Person $person): JsonResponse
+    {
+        $contacts = $person->contacts;
+        return $this->successResponse(PersonContactResource::collection($contacts), 'Person contacts retrieved successfully');
     }
 
     #[OA\Post(
@@ -34,6 +63,7 @@ class PersonContactController extends BaseController
         operationId: "storePersonContact",
         summary: "Add a new contact",
         tags: ["Person Contacts"],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(ref: "#/components/schemas/StorePersonContactRequest")
@@ -53,6 +83,7 @@ class PersonContactController extends BaseController
         operationId: "getPersonContact",
         summary: "Get a specific person contact",
         tags: ["Person Contacts"],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: "contact", in: "path", required: true, description: "Contact ID", schema: new OA\Schema(type: "integer"))
         ],
@@ -71,6 +102,7 @@ class PersonContactController extends BaseController
         operationId: "updatePersonContact",
         summary: "Update an existing person contact",
         tags: ["Person Contacts"],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: "contact", in: "path", required: true, description: "Contact ID", schema: new OA\Schema(type: "integer"))
         ],
@@ -94,6 +126,7 @@ class PersonContactController extends BaseController
         operationId: "deletePersonContact",
         summary: "Delete a person contact",
         tags: ["Person Contacts"],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: "contact", in: "path", required: true, description: "Contact ID", schema: new OA\Schema(type: "integer"))
         ],
