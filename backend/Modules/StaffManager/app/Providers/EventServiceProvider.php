@@ -10,9 +10,6 @@ class EventServiceProvider extends ServiceProvider
         \Modules\AttendanceManager\Events\CheckInRecorded::class => [
             \Modules\StaffManager\Listeners\CalculateStaffWorkHours::class,
         ],
-        \Modules\SubscriptionManager\Events\SubscriptionCreated::class => [
-            \Modules\StaffManager\Listeners\RecordCoachCommission::class,
-        ],
     ];
 
     /**
