@@ -3,8 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanController;
 
+
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionController;
-use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionFreezeController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanActivityController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\InvoiceController;
@@ -34,8 +34,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Player Subscriptions CRUD
     Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update', 'destroy']);
 
-    // Missing basic CRUD endpoints
-    Route::apiResource('subscription-freezes', SubscriptionFreezeController::class);
+
     Route::apiResource('subscription-plan-activities', SubscriptionPlanActivityController::class);
     Route::apiResource('player-subscription-items', PlayerSubscriptionItemController::class);
 
