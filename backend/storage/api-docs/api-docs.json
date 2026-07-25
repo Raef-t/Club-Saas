@@ -4490,39 +4490,6 @@
                 ]
             }
         },
-        "/v1/persons/{person}/contacts": {
-            "get": {
-                "tags": [
-                    "Person Contacts"
-                ],
-                "summary": "Get all contacts for a specific person",
-                "operationId": "getContactsByPersonId",
-                "parameters": [
-                    {
-                        "name": "person",
-                        "in": "path",
-                        "description": "Person ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation"
-                    },
-                    "404": {
-                        "description": "Person not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/contacts/{contact}": {
             "get": {
                 "tags": [

@@ -38,26 +38,6 @@ class PersonContactController extends BaseController
         return $this->successResponse(PersonContactResource::collection($contacts), 'Contacts retrieved successfully');
     }
 
-    #[OA\Get(
-        path: "/v1/persons/{person}/contacts",
-        operationId: "getContactsByPersonId",
-        summary: "Get all contacts for a specific person",
-        tags: ["Person Contacts"],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: "person", in: "path", required: true, description: "Person ID", schema: new OA\Schema(type: "integer"))
-        ],
-        responses: [
-            new OA\Response(response: 200, description: "Successful operation"),
-            new OA\Response(response: 404, description: "Person not found")
-        ]
-    )]
-    public function getByPerson(Person $person): JsonResponse
-    {
-        $contacts = $person->contacts;
-        return $this->successResponse(PersonContactResource::collection($contacts), 'Person contacts retrieved successfully');
-    }
-
     #[OA\Post(
         path: "/v1/contacts",
         operationId: "storePersonContact",
