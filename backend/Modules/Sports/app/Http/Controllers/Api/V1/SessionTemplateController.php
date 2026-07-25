@@ -321,7 +321,6 @@ class SessionTemplateController extends BaseController
             properties: [
                 new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-07-20'),
                 new OA\Property(property: 'reason', type: 'string', nullable: true, example: 'اعتذار الكوتش'),
-                new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 5),
             ]
         )
     )]
@@ -344,10 +343,10 @@ class SessionTemplateController extends BaseController
         $request->validate([
             'date' => 'required|date',
             'reason' => 'required|string',
-            'coach_id' => 'nullable|integer|exists:staff,id',
         ]);
 
-        $coachId = $request->coach_id
+        $planActivity = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::where('plan_id', $template->plan_id)->first();
+        $coachId = $planActivity?->staffActivity?->staff_id
             ?? \Modules\StaffManager\Models\Staff::where('person_id', $request->user()->person_id)->value('id');
 
         $exception = \Modules\Sports\Models\SessionException::create([
