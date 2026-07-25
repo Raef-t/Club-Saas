@@ -103,24 +103,28 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في عملية الاشتراك (مثل الخطة مكتملة أو خطأ في الفرع)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'This subscription plan has reached its maximum capacity.'), new OA\Property(property: 'data', type: 'null', example: null)]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(SubscribeMemberRequest $request)
     {
-        $data = $request->validated();
+        try {
+            $data = $request->validated();
 
-        $subscription = $this->subscriptionService->subscribeMember(
-            $data['member_id'],
-            $data['plan_id'],
-            $data
-        );
+            $subscription = $this->subscriptionService->subscribeMember(
+                $data['member_id'],
+                $data['plan_id'],
+                $data
+            );
 
-
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['plan', 'items.activity', 'items.coach.person'])),
-            __('Member subscribed successfully'),
-            201
-        );
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription->load(['plan', 'items.activity', 'items.coach.person'])),
+                __('Member subscribed successfully'),
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Get(
@@ -152,12 +156,16 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
-        $subscription = $this->subscriptionService->getSubscriptionById($id);
-        $subscription->load(['plan', 'items.activity', 'items.coach.person', 'freezes']);
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription),
-            __('Subscription retrieved successfully')
-        );
+        try {
+            $subscription = $this->subscriptionService->getSubscriptionById($id);
+            $subscription->load(['plan', 'items.activity', 'items.coach.person', 'freezes']);
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription),
+                __('Subscription retrieved successfully')
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Post(
@@ -195,21 +203,26 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في العملية (مثل: التجميد غير مسموح في هذا الفرع)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Freezing is not allowed in this branch.'), new OA\Property(property: 'data', type: 'null', example: null)]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function freeze(FreezeSubscriptionRequest $request, $id)
     {
-        $data = $request->validated();
-        $subscription = $this->subscriptionService->freezeSubscription(
-            $id,
-            $data['freeze_start_date'],
-            $data['reason'] ?? null
-        );
+        try {
+            $data = $request->validated();
+            $subscription = $this->subscriptionService->freezeSubscription(
+                $id,
+                $data['freeze_start_date'],
+                $data['reason'] ?? null
+            );
 
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['plan'])),
-            __('Subscription frozen successfully')
-        );
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                __('Subscription frozen successfully')
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Post(
@@ -237,15 +250,20 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في عملية إلغاء التجميد (مثل الاشتراك ليس مجمداً)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Subscription is not frozen.'), new OA\Property(property: 'data', type: 'null', example: null)]))]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الاشتراك', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function unfreeze(int $id)
     {
-        $subscription = $this->subscriptionService->unfreezeSubscription($id);
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['plan'])),
-            __('Subscription unfrozen successfully')
-        );
+        try {
+            $subscription = $this->subscriptionService->unfreezeSubscription($id);
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                __('Subscription unfrozen successfully')
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Post(
@@ -281,18 +299,23 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في عملية التجديد', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Invalid subscription renewal request.'), new OA\Property(property: 'data', type: 'null', example: null)]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function renew(RenewSubscriptionRequest $request, int $id)
     {
-        $options = $request->validated();
+        try {
+            $options = $request->validated();
 
-        $subscription = $this->subscriptionService->renewSubscription($id, $options);
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription->load(['plan'])),
-            __('Subscription renewed successfully'),
-            201
-        );
+            $subscription = $this->subscriptionService->renewSubscription($id, $options);
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                __('Subscription renewed successfully'),
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Post(
@@ -328,17 +351,22 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في عملية الإلغاء (مثل الاشتراك ملغى مسبقاً)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Subscription is already cancelled.'), new OA\Property(property: 'data', type: 'null', example: null)]))]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الاشتراك', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function cancel(CancelSubscriptionRequest $request, int $id)
     {
-        $data = $request->validated();
+        try {
+            $data = $request->validated();
 
-        $subscription = $this->subscriptionService->cancelSubscription($id, $data['reason'] ?? null);
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription),
-            __('Subscription cancelled successfully')
-        );
+            $subscription = $this->subscriptionService->cancelSubscription($id, $data['reason'] ?? null);
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription),
+                __('Subscription cancelled successfully')
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Post(
@@ -375,16 +403,21 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في تسجيل الدفعة المالية', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Payment error.'), new OA\Property(property: 'data', type: 'null', example: null)]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function recordPayment(RecordPaymentRequest $request, int $id)
     {
-        $data = $request->validated();
+        try {
+            $data = $request->validated();
 
-        $subscription = $this->subscriptionService->recordPayment($id, $data['amount']);
-        return $this->successResponse(
-            new PlayerSubscriptionResource($subscription),
-            __('Payment recorded successfully')
-        );
+            $subscription = $this->subscriptionService->recordPayment($id, $data['amount']);
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription),
+                __('Payment recorded successfully')
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 }
