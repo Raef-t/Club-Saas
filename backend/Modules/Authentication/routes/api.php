@@ -18,6 +18,5 @@ Route::prefix('v1/auth')->group(function () {
 });
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    Route::get('persons/{person}/contacts', [PersonContactController::class, 'getByPerson']);
     Route::apiResource('contacts', PersonContactController::class);
 });
