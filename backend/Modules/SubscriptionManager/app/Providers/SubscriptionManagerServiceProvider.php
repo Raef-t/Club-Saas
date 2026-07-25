@@ -59,11 +59,6 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
         );
 
         $this->app->bind(
-            \Modules\SubscriptionManager\Repositories\SubscriptionFreezeRepositoryInterface::class,
-            \Modules\SubscriptionManager\Repositories\EloquentSubscriptionFreezeRepository::class
-        );
-
-        $this->app->bind(
             \Modules\SubscriptionManager\Repositories\SubscriptionPlanActivityRepositoryInterface::class,
             \Modules\SubscriptionManager\Repositories\EloquentSubscriptionPlanActivityRepository::class
         );
