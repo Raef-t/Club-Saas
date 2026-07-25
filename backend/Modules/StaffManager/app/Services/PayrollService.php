@@ -262,4 +262,51 @@ class PayrollService
             ]);
         }
     }
+
+    /**
+     * Get all payroll runs.
+     */
+    public function getAllPayrollRuns()
+    {
+        return PayrollRun::with('payslips')->latest()->get();
+    }
+
+    /**
+     * Get payroll run by ID.
+     */
+    public function getPayrollRunById(int $id)
+    {
+        return PayrollRun::with(['payslips.staff.person', 'payslips.adjustments'])->findOrFail($id);
+    }
+
+    /**
+     * Create a new payroll run draft.
+     */
+    public function createPayrollRun(string $periodStart, string $periodEnd)
+    {
+        return PayrollRun::create([
+            'period_start' => $periodStart,
+            'period_end'   => $periodEnd,
+            'status'       => 'draft',
+        ]);
+    }
+
+    /**
+     * Generate/load payslips for a payroll run.
+     */
+    public function generatePayslips(int $id)
+    {
+        $run = PayrollRun::findOrFail($id);
+        return $run->load('payslips');
+    }
+
+    /**
+     * Approve a payroll run.
+     */
+    public function approvePayrollRun(int $id)
+    {
+        $run = PayrollRun::findOrFail($id);
+        $run->update(['status' => 'approved']);
+        return $run;
+    }
 }

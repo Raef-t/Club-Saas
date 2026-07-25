@@ -57,12 +57,19 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
-            if ($e->getCode() == "23000" && ($request->isMethod('delete') || str_contains($e->getMessage(), 'foreign key constraint'))) {
+            if ($e->getCode() == "23000" && str_contains($e->getMessage(), 'foreign key constraint')) {
                 if ($request->is('api/*') || $request->expectsJson()) {
+                    if ($request->isMethod('delete')) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'لا يمكن حذف السجل لارتباطه بسجلات أخرى في النظام.'
+                        ], 409);
+                    }
+
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'لا يمكن حذف السجل لارتباطه بسجلات أخرى في النظام.'
-                    ], 409);
+                        'message' => 'أحد المعرفات الممررة (ID) غير موجود أو مرتبط ببيانات مفتاح أجنبي غير صحيحة.'
+                    ], 422);
                 }
             }
         });
