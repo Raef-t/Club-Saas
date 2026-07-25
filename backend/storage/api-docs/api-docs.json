@@ -16514,6 +16514,98 @@
                 "summary": "تثبيت وحفظ الرواتب",
                 "description": "استقبال الرواتب النهائية بعد التعديل وحفظها مع الحسومات والزيادات في قاعدة البيانات",
                 "operationId": "afe831fe7f545f5ed4fcb185c3f3c5c1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_id",
+                                    "period_start",
+                                    "period_end",
+                                    "payslips"
+                                ],
+                                "properties": {
+                                    "branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "period_start": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-01"
+                                    },
+                                    "period_end": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-31"
+                                    },
+                                    "payslips": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "staff_id",
+                                                "base_pay",
+                                                "commission_pay",
+                                                "net_pay"
+                                            ],
+                                            "properties": {
+                                                "staff_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "base_pay": {
+                                                    "type": "number",
+                                                    "example": 5000
+                                                },
+                                                "commission_pay": {
+                                                    "type": "number",
+                                                    "example": 500
+                                                },
+                                                "net_pay": {
+                                                    "type": "number",
+                                                    "example": 5500
+                                                },
+                                                "adjustments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "required": [
+                                                            "type",
+                                                            "amount"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "bonus",
+                                                                "enum": [
+                                                                    "bonus",
+                                                                    "deduction"
+                                                                ]
+                                                            },
+                                                            "amount": {
+                                                                "type": "number",
+                                                                "example": 100
+                                                            },
+                                                            "reason": {
+                                                                "type": "string",
+                                                                "example": "مكافأة أداء",
+                                                                "nullable": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم تثبيت الرواتب بنجاح"
@@ -19302,6 +19394,30 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "❌ خطأ في عملية الاشتراك (مثل الخطة مكتملة أو خطأ في الفرع)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "This subscription plan has reached its maximum capacity."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "⚠️ خطأ في التحقق من صحة البيانات",
                         "content": {
@@ -19513,6 +19629,30 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "❌ خطأ في العملية (مثل: التجميد غير مسموح في هذا الفرع)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Freezing is not allowed in this branch."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "⚠️ خطأ في التحقق من صحة البيانات",
                         "content": {
@@ -19599,6 +19739,30 @@
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في عملية إلغاء التجميد (مثل الاشتراك ليس مجمداً)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription is not frozen."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
                                         }
                                     },
                                     "type": "object"
@@ -19717,6 +19881,30 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "❌ خطأ في عملية التجديد",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid subscription renewal request."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "⚠️ خطأ في التحقق من صحة البيانات",
                         "content": {
@@ -19819,6 +20007,30 @@
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في عملية الإلغاء (مثل الاشتراك ملغى مسبقاً)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription is already cancelled."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
                                         }
                                     },
                                     "type": "object"
@@ -19933,6 +20145,30 @@
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في تسجيل الدفعة المالية",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment error."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
                                         }
                                     },
                                     "type": "object"

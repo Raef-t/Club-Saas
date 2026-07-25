@@ -129,6 +129,45 @@ class PayslipController extends BaseController
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['branch_id', 'period_start', 'period_end', 'payslips'],
+            properties: [
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                new OA\Property(property: 'period_start', type: 'string', format: 'date', example: '2026-07-01'),
+                new OA\Property(property: 'period_end', type: 'string', format: 'date', example: '2026-07-31'),
+                new OA\Property(
+                    property: 'payslips',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        required: ['staff_id', 'base_pay', 'commission_pay', 'net_pay'],
+                        properties: [
+                            new OA\Property(property: 'staff_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'base_pay', type: 'number', example: 5000),
+                            new OA\Property(property: 'commission_pay', type: 'number', example: 500),
+                            new OA\Property(property: 'net_pay', type: 'number', example: 5500),
+                            new OA\Property(
+                                property: 'adjustments',
+                                type: 'array',
+                                nullable: true,
+                                items: new OA\Items(
+                                    type: 'object',
+                                    required: ['type', 'amount'],
+                                    properties: [
+                                        new OA\Property(property: 'type', type: 'string', enum: ['bonus', 'deduction'], example: 'bonus'),
+                                        new OA\Property(property: 'amount', type: 'number', example: 100),
+                                        new OA\Property(property: 'reason', type: 'string', nullable: true, example: 'مكافأة أداء')
+                                    ]
+                                )
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم تثبيت الرواتب بنجاح')]
     #[OA\Response(response: 409, description: '❌ الرواتب مثبتة مسبقاً')]
     public function confirm(Request $request) {
