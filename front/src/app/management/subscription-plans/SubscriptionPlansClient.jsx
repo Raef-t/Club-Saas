@@ -240,7 +240,7 @@ export function PlanForm({
           onChange={(val) => updateField("branch_id", val)}
           options={branches.map((b) => ({
             value: String(b.id),
-            label: b.name?.ar || b.name?.en || b.name,
+            label: formatLocalizedName(b.name),
           }))}
           placeholder="اختر الفرع"
           error={errors.branch_id}

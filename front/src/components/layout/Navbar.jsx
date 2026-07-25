@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { pageMeta } from "@/data/mockData";
 import Breadcrumb from "@/components/common/Breadcrumb";
-import { SearchIcon, CalendarIcon, ClockIcon, MenuIcon } from "@/components/icons/Icons";
+import {
+  SearchIcon,
+  CalendarIcon,
+  ClockIcon,
+  MenuIcon,
+} from "@/components/icons/Icons";
 import { Field } from "@/components/forms/Field";
 import { useGetProfileQuery } from "@/lib/api/authApi";
 import ProfileDrawer from "./ProfileDrawer";
@@ -21,7 +26,8 @@ function InfoChip({ icon: Icon, children }) {
 export default function Navbar({ onMenuClick }) {
   const pathname = usePathname();
   const meta =
-    pageMeta[pathname] || (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
+    pageMeta[pathname] ||
+    (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
   const isReports = pathname.startsWith("/reports");
 
   const [currentTime, setCurrentTime] = useState("");
@@ -42,6 +48,7 @@ export default function Navbar({ onMenuClick }) {
           .toLocaleTimeString("en-US", {
             hour: "numeric",
             minute: "2-digit",
+            second: "2-digit",
             hour12: true,
           })
           .toLowerCase(),
@@ -57,13 +64,16 @@ export default function Navbar({ onMenuClick }) {
     };
 
     updateDateTime();
-    const timer = setInterval(updateDateTime, 60000); // Update every minute
+    const timer = setInterval(updateDateTime, 1000); // Update every second
     return () => clearInterval(timer);
   }, []);
 
   return (
     <div>
-      <header className="app-panel flex h-16 items-center justify-between gap-2 rounded-2xl px-3 sm:gap-4 sm:px-4" dir="rtl">
+      <header
+        className="app-panel flex h-16 items-center justify-between gap-2 rounded-2xl px-3 sm:gap-4 sm:px-4"
+        dir="rtl"
+      >
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:max-w-none">
           <button
             onClick={onMenuClick}
@@ -73,14 +83,14 @@ export default function Navbar({ onMenuClick }) {
           >
             <MenuIcon className="size-6" />
           </button>
-          <Field
+          {/* <Field
             type="search"
             placeholder="البحث"
             icon={SearchIcon}
             variant="search"
             className="w-full md:w-[373px]"
             required={false}
-          />
+          /> */}
         </div>
 
         {/* Profile Avatar Button on the left */}
@@ -109,7 +119,7 @@ export default function Navbar({ onMenuClick }) {
         <div className="flex flex-col items-start gap-3">
           {/* We only render the time chips after mounting to avoid Next.js hydration mismatch */}
           {currentTime && currentDate && (
-          <div className="flex max-w-full flex-wrap gap-2 sm:gap-3">
+            <div className="flex max-w-full flex-wrap gap-2 sm:gap-3">
               <InfoChip icon={CalendarIcon}>{currentDate}</InfoChip>
               <InfoChip icon={ClockIcon} dir="ltr">
                 {currentTime}

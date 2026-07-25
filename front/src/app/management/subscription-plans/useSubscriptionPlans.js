@@ -10,6 +10,7 @@ import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
+import { getBranchesArray } from "@/lib/utils";
 
 import {
   formatMoney as baseFormatMoney,
@@ -55,7 +56,7 @@ export function useSubscriptionPlans({
   });
 
   const { data: branchesData, error: branchesError } = useGetBranchesQuery();
-  const branches = useMemo(() => branchesData?.data || [], [branchesData]);
+  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
 
   const { data: activitiesData } = useGetActivitiesQuery();
   const activities = useMemo(() => Array.isArray(activitiesData?.data) ? activitiesData.data : [], [activitiesData]);

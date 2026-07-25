@@ -35,12 +35,15 @@ export default function ActivitiesCreateClient() {
   return (
     <ManagementCreatePage
       title={isEdit ? "تعديل نشاط" : "إضافة نشاط"}
-      subtitle={isEdit ? "إدارة الأعضاء > تعديل نشاط" : "إدارة الأعضاء > إضافة نشاط"}
+      subtitle={
+        isEdit
+          ? "الأنشطة الرياضية > تعديل نشاط"
+          : "الأنشطة الرياضية > إضافة نشاط"
+      }
       formId={FORM_ID}
       backHref="/management/activities"
       isSubmitting={isEdit ? isUpdating : isCreating}
       submitLabel={isEdit ? "حفظ التعديل" : "حفظ"}
-      maxWidth="720px"
     >
       <FormCard title="معلومات النشاط" className="entry-form-card p-5">
         {isEdit && !editInitialValues ? (
@@ -59,7 +62,6 @@ export default function ActivitiesCreateClient() {
             onCancel={() => router.push("/management/activities")}
             isLoading={isEdit ? isUpdating : isCreating}
             errorMessage={formError}
-            showFooterActions={false}
           />
         )}
       </FormCard>

@@ -17,6 +17,7 @@ export default function Dropdown({
   searchable = false,
 }) {
   const [open, setOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -26,8 +27,22 @@ export default function Dropdown({
     [options, value],
   );
 
+  function checkPosition() {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setDropUp(spaceBelow < 300 && spaceAbove > spaceBelow);
+  }
+
   useEffect(() => {
     if (!open) return;
+
+    checkPosition();
+
+    function handleScroll() {
+      checkPosition();
+    }
 
     function handlePointerDown(event) {
       if (!containerRef.current?.contains(event.target)) {
@@ -43,10 +58,14 @@ export default function Dropdown({
 
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
 
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [open]);
 
@@ -97,12 +116,20 @@ export default function Dropdown({
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
-        onClick={() => !disabled && setOpen(!open)}
+        onClick={() => {
+          if (disabled) return;
+          if (!open) {
+            checkPosition();
+            setOpen(true);
+          } else {
+            setOpen(false);
+          }
+        }}
       >
         <span className="flex items-center gap-2 px-3 h-full">
           {Icon && <Icon className="size-5 text-app-muted-light" />}
           {selectedOption ? (
-            <span className="text-white text-sm">{selectedOption.label}</span>
+            <span className="text-app-text text-sm">{selectedOption.label}</span>
           ) : (
             <span className="text-app-muted-light text-sm">{placeholder}</span>
           )}
@@ -116,7 +143,7 @@ export default function Dropdown({
 
       {open && (
         <div
-          className={`absolute right-0 z-50 mt-2 max-h-72 w-full flex flex-col overflow-hidden rounded-xl border border-app-line bg-app-card shadow-[0_18px_50px_rgba(0,0,0,0.35)] ${menuClassName}`}
+          className={`absolute right-0 z-50 ${dropUp ? "bottom-full mb-2" : "top-full mt-2"} max-h-72 w-full flex flex-col overflow-hidden rounded-xl border border-app-line bg-app-card shadow-[var(--app-elevated-shadow)] ${menuClassName}`}
           role="listbox"
         >
           {searchable && (
@@ -124,7 +151,7 @@ export default function Dropdown({
               <input
                 ref={searchInputRef}
                 type="text"
-                className="w-full bg-app-panel-soft/40 border border-app-muted/50 rounded-lg h-9 px-3 text-sm text-white placeholder-app-muted-light outline-none focus:border-app-yellow transition"
+                className="w-full bg-app-card-soft border border-app-line rounded-lg h-9 px-3 text-sm text-app-text placeholder-app-muted outline-none focus:border-app-yellow transition"
                 placeholder="ابحث..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

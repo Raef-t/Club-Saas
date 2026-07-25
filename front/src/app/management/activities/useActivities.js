@@ -8,6 +8,7 @@ import {
   useGetActivityTypesQuery,
 } from "@/lib/api/activitiesApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
+import { getBranchesArray } from "@/lib/utils";
 
 function getActivitiesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -32,9 +33,7 @@ export function useActivities(params = {}) {
   const { data: branchesData } = useGetBranchesQuery();
   const { data: activityTypesData } = useGetActivityTypesQuery();
 
-  const branches = useMemo(() => {
-    return Array.isArray(branchesData?.data) ? branchesData.data : [];
-  }, [branchesData]);
+  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
 
   const activityTypes = useMemo(() => {
     return Array.isArray(activityTypesData?.data) ? activityTypesData.data : [];

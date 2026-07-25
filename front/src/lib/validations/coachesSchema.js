@@ -65,3 +65,111 @@ export const coachSchema = z.object({
 
   is_active: z.boolean().optional(),
 });
+
+const requiredCoachNumber = (label, { min = 0, max } = {}) => {
+  let schema = z
+    .union([z.string(), z.number()])
+    .refine(
+      (value) =>
+        String(value).trim() !== "" && Number.isFinite(Number(value)),
+      `${label} مطلوب ويجب أن يكون رقماً صالحاً`,
+    )
+    .transform(Number)
+    .refine((value) => value >= min, `${label} يجب ألا يقل عن ${min}`);
+
+  if (max !== undefined) {
+    schema = schema.refine(
+      (value) => value <= max,
+      `${label} يجب ألا يزيد عن ${max}`,
+    );
+  }
+
+  return schema;
+};
+
+export const coachFormSchema = z.object({
+  full_name: z
+    .string({ required_error: "الاسم الكامل للمدرب مطلوب" })
+    .trim()
+    .min(3, "الاسم يجب أن يكون 3 أحرف على الأقل")
+    .max(100, "الاسم يجب ألا يتجاوز 100 حرف"),
+  gender: z.enum(["male", "female"], {
+    message: "يرجى تحديد الجنس",
+  }),
+  age: requiredCoachNumber("العمر", { min: 15, max: 100 }),
+  phone: z
+    .string()
+    .trim()
+    .max(15, "رقم الهاتف يجب ألا يتجاوز 15 رقماً")
+    .regex(/^\d*$/, "رقم الهاتف يجب أن يحتوي على أرقام فقط")
+    .optional()
+    .or(z.literal("")),
+  country_code: z
+    .string()
+    .trim()
+    .min(1, "رمز الدولة مطلوب")
+    .optional()
+    .or(z.literal("")),
+  address: z
+    .string()
+    .trim()
+    .max(255, "العنوان يجب ألا يتجاوز 255 حرف")
+    .optional()
+    .or(z.literal("")),
+  branch_ids: z
+    .array(z.number().positive())
+    .min(1, "يرجى اختيار فرع واحد على الأقل"),
+  specialization: z
+    .string()
+    .trim()
+    .max(100, "التخصص يجب ألا يتجاوز 100 حرف")
+    .optional()
+    .or(z.literal("")),
+  experience_years: z
+    .number()
+    .nonnegative("سنوات الخبرة لا يمكن أن تكون سالبة")
+    .or(z.string().transform((val) => Number(val) || 0)),
+  employment_type: z.enum(
+    ["fixed_salary", "commission", "commission_based", "hourly", "hybrid"],
+    { message: "نوع التوظيف غير صالح" },
+  ),
+  base_salary: z
+    .number()
+    .nonnegative("لا يمكن أن يكون الراتب سالباً")
+    .or(z.string().transform((val) => Number(val) || 0)),
+  default_commission_rate: z
+    .number()
+    .min(0, "نسبة العمولة لا يمكن أن تكون سالبة")
+    .max(100, "نسبة العمولة لا يمكن أن تتجاوز 100%")
+    .or(z.string().transform((val) => Number(val) || 0)),
+  work_types: z.array(z.enum(["equipment", "activities"])).optional().default([]),
+  activity_ids: z.array(z.number().positive()).optional().default([]),
+  shift_ids: z.array(z.number().positive()).optional().default([]),
+});
+
+export const coachEditSchema = z.object({
+  specialization: z
+    .string()
+    .trim()
+    .max(100, "التخصص يجب ألا يتجاوز 100 حرف")
+    .optional()
+    .or(z.literal("")),
+
+  experience_years: z
+    .number()
+    .nonnegative("سنوات الخبرة لا يمكن أن تكون سالبة")
+    .or(z.string().transform((val) => Number(val) || 0)),
+
+  employment_type: z.enum(
+    ["fixed_salary", "commission", "commission_based", "hourly", "hybrid"],
+    { required_error: "يرجى تحديد نوع التوظيف" },
+  ),
+
+  base_salary: z
+    .number()
+    .nonnegative("لا يمكن أن يكون الراتب سالباً")
+    .or(z.string().transform((val) => Number(val) || 0)),
+
+  is_active: z.boolean().optional(),
+});
+

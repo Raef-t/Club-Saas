@@ -3,8 +3,8 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const toneClass = {
   primary: "bg-app-yellow text-app-bg border-none shadow-lg shadow-app-yellow/20 hover:opacity-90",
-  dark: "app-button-dark hover:bg-white/10",
-  ghost: "bg-app-card-soft text-app-text hover:bg-white/10",
+  dark: "app-button-dark hover:bg-app-card-hover",
+  ghost: "border border-transparent bg-app-card-soft text-app-text hover:border-app-line hover:bg-app-card-hover",
   outline: "border border-app-line bg-app-panel-soft text-app-muted-light hover:border-app-yellow/60 hover:text-app-yellow",
   danger: "bg-app-red/15 text-app-red hover:bg-app-red/20",
 };

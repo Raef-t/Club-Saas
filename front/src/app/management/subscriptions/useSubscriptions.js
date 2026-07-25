@@ -13,6 +13,7 @@ import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
+import { getBranchesArray } from "@/lib/utils";
 import { formatMoney as baseFormatMoney } from "@/lib/utils";
 
 function parseAmount(value) {
@@ -76,7 +77,7 @@ export function useSubscriptions() {
     useCancelSubscriptionMutation();
 
   const subscriptions = useMemo(() => getSubscriptionRows(data), [data]);
-  const branches = useMemo(() => branchesData?.data || [], [branchesData]);
+  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
   const members = useMemo(() => membersData?.data || [], [membersData]);
   const plans = useMemo(() => plansData?.data || [], [plansData]);
   const activities = useMemo(

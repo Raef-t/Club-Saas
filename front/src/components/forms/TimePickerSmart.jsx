@@ -46,6 +46,7 @@ export default function TimePickerSmart({
   disabled = false,
   allowClear = true,
   autoDefault = false,
+  error,
 }) {
   const { timeFormat, formatTime } = useTimeFormat();
   const inputWrapRef = useRef(null);
@@ -283,7 +284,9 @@ export default function TimePickerSmart({
         ref={inputWrapRef}
         className={[
           "relative flex h-[46px] w-full items-center justify-between rounded-lg px-4 text-sm transition outline-none",
-          "border border-app-muted/50 bg-app-panel-soft/40 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow",
+          error
+            ? "border border-app-red bg-app-red/5 focus-within:border-app-red focus-within:ring-1 focus-within:ring-app-red"
+            : "border border-app-muted/50 bg-app-panel-soft/40 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow",
           disabled ? "opacity-60 pointer-events-none" : "cursor-text",
         ].join(" ")}
         onClick={() => {
@@ -326,6 +329,7 @@ export default function TimePickerSmart({
           className="w-full bg-transparent outline-none pl-8 pr-8 text-left text-white placeholder-app-muted-light tracking-widest"
           dir="ltr"
           inputMode="numeric"
+          aria-invalid={Boolean(error)}
         />
 
         {allowClear && !!value && (
@@ -453,6 +457,14 @@ export default function TimePickerSmart({
           </>,
           document.body
         )}
+      {error && (
+        <span
+          className="mt-1.5 block w-full text-right text-xs text-app-red"
+          role="alert"
+        >
+          {error}
+        </span>
+      )}
     </div>
   );
 }

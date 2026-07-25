@@ -17,6 +17,7 @@ import {
 } from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { useToast } from "@/components/ui/Toast";
+import { formatLocalizedName } from "@/lib/utils";
 import { subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
 const statusLabels = {
   active: "نشط",
@@ -419,19 +420,14 @@ export function SubscriptionCreateForm({
   function handleSubmit(event) {
     event.preventDefault();
 
-    const data = {
+    const validationData = {
       member_id: Number(form.member_id),
       plan_id: Number(form.plan_id),
       paid_amount: Number(form.paid_amount) || 0,
-      start_date: form.start_date || undefined,
-      payment_method: "cash",
-      activities: selectedActivities.map((act) => ({
-        activity_id: act.activity_id,
-        coach_id: act.coach_id,
-      })),
+      start_date: form.start_date || "",
     };
 
-    const result = subscriptionSchema.safeParse(data);
+    const result = subscriptionSchema.safeParse(validationData);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
@@ -442,7 +438,14 @@ export function SubscriptionCreateForm({
     }
 
     setErrors({});
-    onSubmit(data);
+    onSubmit({
+      ...validationData,
+      payment_method: "cash",
+      activities: selectedActivities.map((act) => ({
+        activity_id: act.activity_id,
+        coach_id: act.coach_id,
+      })),
+    });
   }
 
   const selectedPlanObj = plans.find(
@@ -488,7 +491,7 @@ export function SubscriptionCreateForm({
           }}
           options={plans.map((p) => ({
             value: String(p.id),
-            label: `${p.name?.ar || p.name?.en || ""} - ${formatMoney(p.base_price)}`,
+            label: `${formatLocalizedName(p.name) || p.name || ""} - ${formatMoney(p.base_price)}`,
           }))}
           placeholder="اختر الخطة"
           error={errors && errors.plan_id}
@@ -502,7 +505,12 @@ export function SubscriptionCreateForm({
           min="0"
           value={form.paid_amount}
           onChange={(e) => updateField("paid_amount", e.target.value)}
-          className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
+          aria-invalid={Boolean(errors && errors.paid_amount)}
+          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+            errors && errors.paid_amount
+              ? "border border-app-red focus:border-app-red"
+              : "focus:border-app-yellow/70"
+          }`}
           placeholder={
             selectedPlanObj
               ? `السعر الأساسي: ${selectedPlanObj.base_price}`
@@ -511,18 +519,26 @@ export function SubscriptionCreateForm({
           required
         />
         {errors && errors.paid_amount && (
-          <span className="text-app-red text-xs mt-1 block">
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
             {errors.paid_amount}
           </span>
         )}
       </label>
 
-      <DatePickerSmart
-        label="تاريخ بداية الاشتراك"
-        value={form.start_date}
-        onChange={(val) => updateField("start_date", val)}
-        compact={false}
-      />
+      <div>
+        <DatePickerSmart
+          label="تاريخ بداية الاشتراك *"
+          value={form.start_date}
+          onChange={(val) => updateField("start_date", val)}
+          compact={false}
+          error={errors && errors.start_date}
+        />
+        {errors && errors.start_date && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {errors.start_date}
+          </span>
+        )}
+      </div>
 
       {/* Dynamic Activities Selection */}
       <div className="border-t border-app-line pt-4 mt-2 text-right">
@@ -760,7 +776,7 @@ export default function SubscriptionsClient() {
   const branchOptions = useMemo(
     () => [
       { value: "all", label: "كل الفروع" },
-      ...branches.map((b) => ({ value: String(b.id), label: b.name })),
+      ...branches.map((b) => ({ value: String(b.id), label: formatLocalizedName(b.name) })),
     ],
     [branches],
   );
@@ -830,8 +846,8 @@ export default function SubscriptionsClient() {
         getRowKey={(subscription) => subscription.id}
         totalPages={0}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="relative block min-w-64">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+            <label className="relative block w-full sm:w-80 md:w-96">
               <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
                 className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"

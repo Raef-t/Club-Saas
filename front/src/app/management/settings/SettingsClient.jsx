@@ -5,6 +5,7 @@ import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import { Field } from "@/components/forms/FormControls";
 import { useToast } from "@/components/ui/Toast";
+import { getBranchesArray } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import {
   SettingsIcon,
@@ -35,6 +36,21 @@ import DataTable from "@/components/ui/DataTable";
 import Drawer from "@/components/ui/Drawer";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
+import {
+  branchSettingsSchema,
+  holidaySchema,
+  shiftSchema,
+} from "@/lib/validations/settingsSchema";
+import { getFieldErrors } from "@/lib/validations/formErrors";
+
+function clearFieldError(setErrors, field) {
+  setErrors((current) => {
+    if (!current[field]) return current;
+    const updated = { ...current };
+    delete updated[field];
+    return updated;
+  });
+}
 
 export function CalendarIcon({ className = "size-5" }) {
   return (
@@ -82,7 +98,7 @@ export default function SettingsClient() {
 
   // RTK Queries & Mutations for Branches & Settings
   const { data: branchesData, isLoading: isLoadingBranches } = useGetBranchesQuery();
-  const branches = Array.isArray(branchesData?.data) ? branchesData.data : [];
+  const branches = getBranchesArray(branchesData);
 
   const { data: settingsResponse, isFetching: isLoadingSettings } = useGetBranchSettingsQuery(
     selectedBranchId,
@@ -101,6 +117,7 @@ export default function SettingsClient() {
   const [lockerPrice, setLockerPrice] = useState("0");
   const [allowFreeze, setAllowFreeze] = useState(false);
   const [displayMixedActivities, setDisplayMixedActivities] = useState(false);
+  const [settingsErrors, setSettingsErrors] = useState({});
 
   // States for shifts management
   const { data: shiftsResponse, isFetching: isLoadingShifts } = useGetBranchShiftsQuery(
@@ -121,6 +138,7 @@ export default function SettingsClient() {
   const [shiftStartTime, setShiftStartTime] = useState("");
   const [shiftEndTime, setShiftEndTime] = useState("");
   const [shiftGender, setShiftGender] = useState("mixed");
+  const [shiftErrors, setShiftErrors] = useState({});
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingShiftId, setDeletingShiftId] = useState(null);
@@ -312,11 +330,13 @@ export default function SettingsClient() {
   const [holidayDay, setHolidayDay] = useState("5"); // Friday
   const [holidayStartDate, setHolidayStartDate] = useState("");
   const [holidayEndDate, setHolidayEndDate] = useState("");
+  const [holidayErrors, setHolidayErrors] = useState({});
 
   const [deleteHolidayConfirmOpen, setDeleteHolidayConfirmOpen] = useState(false);
   const [deletingHolidayId, setDeletingHolidayId] = useState(null);
 
   const handleOpenAddHolidayDrawer = () => {
+    setHolidayErrors({});
     setHolidayDrawerMode("create");
     setEditingHoliday(null);
     setHolidayType("weekly");
@@ -327,6 +347,7 @@ export default function SettingsClient() {
   };
 
   const handleOpenEditHolidayDrawer = (holiday) => {
+    setHolidayErrors({});
     setHolidayDrawerMode("edit");
     setEditingHoliday(holiday);
     setHolidayType(holiday.type || "weekly");
@@ -339,17 +360,19 @@ export default function SettingsClient() {
   const handleSaveHoliday = async (e) => {
     e.preventDefault();
 
-    if (holidayType === "specific_dates") {
-      if (!holidayStartDate || !holidayEndDate) {
-        toast.error("يرجى تحديد تاريخ البدء وتاريخ الانتهاء.");
-        return;
-      }
-      if (holidayEndDate < holidayStartDate) {
-        toast.error("يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.");
-        return;
-      }
+    const validation = holidaySchema.safeParse({
+      holidayType,
+      holidayDay,
+      holidayStartDate,
+      holidayEndDate,
+    });
+
+    if (!validation.success) {
+      setHolidayErrors(getFieldErrors(validation.error));
+      return;
     }
 
+    setHolidayErrors({});
     try {
       const body = {
         type: holidayType,
@@ -431,25 +454,25 @@ export default function SettingsClient() {
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
-    setIsSaving(true);
 
-    // Client-side validation for working hours
-    if (workingHoursStart && workingHoursEnd) {
-      if (workingHoursEnd <= workingHoursStart) {
-        toast.error("يجب أن يكون وقت نهاية ساعات العمل بعد وقت البداية.");
-        setIsSaving(false);
-        return;
-      }
-    } else if (workingHoursStart && !workingHoursEnd) {
-      toast.error("يرجى تحديد وقت نهاية ساعات العمل.");
-      setIsSaving(false);
-      return;
-    } else if (!workingHoursStart && workingHoursEnd) {
-      toast.error("يرجى تحديد وقت بداية ساعات العمل.");
-      setIsSaving(false);
+    const validation = branchSettingsSchema.safeParse({
+      selectedBranchId,
+      defaultClubCommission,
+      defaultCoachCommission,
+      defaultEmployeeSalary,
+      workingHoursStart,
+      workingHoursEnd,
+      dailyEntryPrice,
+      lockerPrice,
+    });
+
+    if (!validation.success) {
+      setSettingsErrors(getFieldErrors(validation.error));
       return;
     }
 
+    setSettingsErrors({});
+    setIsSaving(true);
     try {
       if (selectedBranchId) {
         await updateBranchSettings({
@@ -492,6 +515,7 @@ export default function SettingsClient() {
 
   // Shifts Actions handlers
   const handleOpenAddDrawer = () => {
+    setShiftErrors({});
     setDrawerMode("create");
     setShiftName("");
     setShiftStartTime("08:00");
@@ -502,6 +526,7 @@ export default function SettingsClient() {
   };
 
   const handleOpenEditDrawer = (shift) => {
+    setShiftErrors({});
     setDrawerMode("edit");
     setEditingShift(shift);
     setShiftName(shift.name || "");
@@ -514,15 +539,19 @@ export default function SettingsClient() {
   const handleSaveShift = async (e) => {
     e.preventDefault();
 
-    if (!shiftStartTime || !shiftEndTime) {
-      toast.error("يرجى تحديد وقت البدء ووقت الانتهاء.");
-      return;
-    }
-    if (shiftEndTime <= shiftStartTime) {
-      toast.error("يجب أن يكون وقت الانتهاء بعد وقت البدء.");
+    const validation = shiftSchema.safeParse({
+      shiftName,
+      shiftStartTime,
+      shiftEndTime,
+      shiftGender,
+    });
+
+    if (!validation.success) {
+      setShiftErrors(getFieldErrors(validation.error));
       return;
     }
 
+    setShiftErrors({});
     try {
       const body = {
         name: shiftName,
@@ -649,7 +678,7 @@ export default function SettingsClient() {
 
         {/* Content Area */}
         <div className="rounded-2xl border border-app-line bg-app-panel p-6 shadow-sm min-w-0">
-          <form onSubmit={handleSaveSettings} className="space-y-6">
+          <form noValidate onSubmit={handleSaveSettings} className="space-y-6">
             {activeTab === "general" && (
               <div className="space-y-6">
                 <div>
@@ -674,11 +703,23 @@ export default function SettingsClient() {
                         label: typeof b.name === "object" ? b.name?.ar || b.name?.en : b.name
                       }))}
                       value={selectedBranchId}
-                      onChange={(val) => setSelectedBranchId(val)}
+                      onChange={(val) => {
+                        setSelectedBranchId(val);
+                        clearFieldError(setSettingsErrors, "selectedBranchId");
+                      }}
                       placeholder="اختر الفرع"
-                      buttonClassName="h-[46px]"
+                      buttonClassName={`h-[46px] ${
+                        settingsErrors.selectedBranchId
+                          ? "border-app-red bg-app-red/5"
+                          : ""
+                      }`}
                       disabled={isLoadingBranches || branches.length === 0}
                     />
+                    {settingsErrors.selectedBranchId && (
+                      <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                        {settingsErrors.selectedBranchId}
+                      </span>
+                    )}
                   </label>
                 </div>
 
@@ -703,8 +744,12 @@ export default function SettingsClient() {
                             max="100"
                             step="0.01"
                             value={defaultClubCommission}
-                            onChange={(e) => setDefaultClubCommission(e.target.value)}
+                            onChange={(e) => {
+                              setDefaultClubCommission(e.target.value);
+                              clearFieldError(setSettingsErrors, "defaultClubCommission");
+                            }}
                             placeholder="40"
+                            error={settingsErrors.defaultClubCommission}
                           />
                           <Field
                             label="نسبة عمولة المدرب الافتراضية (%)"
@@ -714,8 +759,12 @@ export default function SettingsClient() {
                             max="100"
                             step="0.01"
                             value={defaultCoachCommission}
-                            onChange={(e) => setDefaultCoachCommission(e.target.value)}
+                            onChange={(e) => {
+                              setDefaultCoachCommission(e.target.value);
+                              clearFieldError(setSettingsErrors, "defaultCoachCommission");
+                            }}
                             placeholder="60"
+                            error={settingsErrors.defaultCoachCommission}
                           />
                         </div>
 
@@ -727,8 +776,12 @@ export default function SettingsClient() {
                             min="0"
                             step="0.01"
                             value={defaultEmployeeSalary}
-                            onChange={(e) => setDefaultEmployeeSalary(e.target.value)}
+                            onChange={(e) => {
+                              setDefaultEmployeeSalary(e.target.value);
+                              clearFieldError(setSettingsErrors, "defaultEmployeeSalary");
+                            }}
                             placeholder="3500"
+                            error={settingsErrors.defaultEmployeeSalary}
                           />
                         </div>
 
@@ -738,14 +791,22 @@ export default function SettingsClient() {
                             type="time"
                             required={false}
                             value={workingHoursStart}
-                            onChange={(val) => setWorkingHoursStart(val)}
+                            onChange={(val) => {
+                              setWorkingHoursStart(val);
+                              clearFieldError(setSettingsErrors, "workingHoursStart");
+                            }}
+                            error={settingsErrors.workingHoursStart}
                           />
                           <Field
                             label="نهاية ساعات العمل للفرع"
                             type="time"
                             required={false}
                             value={workingHoursEnd}
-                            onChange={(val) => setWorkingHoursEnd(val)}
+                            onChange={(val) => {
+                              setWorkingHoursEnd(val);
+                              clearFieldError(setSettingsErrors, "workingHoursEnd");
+                            }}
+                            error={settingsErrors.workingHoursEnd}
                           />
                         </div>
 
@@ -757,8 +818,12 @@ export default function SettingsClient() {
                             min="0"
                             step="0.01"
                             value={dailyEntryPrice}
-                            onChange={(e) => setDailyEntryPrice(e.target.value)}
+                            onChange={(e) => {
+                              setDailyEntryPrice(e.target.value);
+                              clearFieldError(setSettingsErrors, "dailyEntryPrice");
+                            }}
                             placeholder="0"
+                            error={settingsErrors.dailyEntryPrice}
                           />
                           <Field
                             label="سعر الخزانة"
@@ -767,8 +832,12 @@ export default function SettingsClient() {
                             min="0"
                             step="0.01"
                             value={lockerPrice}
-                            onChange={(e) => setLockerPrice(e.target.value)}
+                            onChange={(e) => {
+                              setLockerPrice(e.target.value);
+                              clearFieldError(setSettingsErrors, "lockerPrice");
+                            }}
                             placeholder="30000"
+                            error={settingsErrors.lockerPrice}
                           />
                         </div>
 
@@ -1168,8 +1237,12 @@ export default function SettingsClient() {
             type="text"
             required={false}
             value={shiftName}
-            onChange={(e) => setShiftName(e.target.value)}
+            onChange={(e) => {
+              setShiftName(e.target.value);
+              clearFieldError(setShiftErrors, "shiftName");
+            }}
             placeholder="مثال: وردية الصباح"
+            error={shiftErrors.shiftName}
           />
 
 
@@ -1179,7 +1252,11 @@ export default function SettingsClient() {
             type="time"
             required
             value={shiftStartTime}
-            onChange={(val) => setShiftStartTime(val)}
+            onChange={(val) => {
+              setShiftStartTime(val);
+              clearFieldError(setShiftErrors, "shiftStartTime");
+            }}
+            error={shiftErrors.shiftStartTime}
           />
 
           <Field
@@ -1187,7 +1264,11 @@ export default function SettingsClient() {
             type="time"
             required
             value={shiftEndTime}
-            onChange={(val) => setShiftEndTime(val)}
+            onChange={(val) => {
+              setShiftEndTime(val);
+              clearFieldError(setShiftErrors, "shiftEndTime");
+            }}
+            error={shiftErrors.shiftEndTime}
           />
 
           <label className="block text-right">
@@ -1202,10 +1283,22 @@ export default function SettingsClient() {
                 { value: "female", label: "إناث" },
               ]}
               value={shiftGender}
-              onChange={(val) => setShiftGender(val)}
+              onChange={(val) => {
+                setShiftGender(val);
+                clearFieldError(setShiftErrors, "shiftGender");
+              }}
               placeholder="اختر الفئة"
-              buttonClassName="h-[46px]"
+              buttonClassName={`h-[46px] ${
+                shiftErrors.shiftGender
+                  ? "border-app-red bg-app-red/5"
+                  : ""
+              }`}
             />
+            {shiftErrors.shiftGender && (
+              <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                {shiftErrors.shiftGender}
+              </span>
+            )}
           </label>
         </div>
       </Drawer>
@@ -1260,7 +1353,10 @@ export default function SettingsClient() {
                 { value: "specific_dates", label: "إجازة محددة بالتاريخ" },
               ]}
               value={holidayType}
-              onChange={(val) => setHolidayType(val)}
+              onChange={(val) => {
+                setHolidayType(val);
+                setHolidayErrors({});
+              }}
               placeholder="اختر النوع"
               buttonClassName="h-[46px]"
             />
@@ -1283,10 +1379,22 @@ export default function SettingsClient() {
                   { value: "6", label: "السبت" },
                 ]}
                 value={holidayDay}
-                onChange={(val) => setHolidayDay(val)}
+                onChange={(val) => {
+                  setHolidayDay(val);
+                  clearFieldError(setHolidayErrors, "holidayDay");
+                }}
                 placeholder="اختر اليوم"
-                buttonClassName="h-[46px]"
+                buttonClassName={`h-[46px] ${
+                  holidayErrors.holidayDay
+                    ? "border-app-red bg-app-red/5"
+                    : ""
+                }`}
               />
+              {holidayErrors.holidayDay && (
+                <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                  {holidayErrors.holidayDay}
+                </span>
+              )}
             </label>
           ) : (
             <>
@@ -1295,14 +1403,22 @@ export default function SettingsClient() {
                 type="date"
                 required
                 value={holidayStartDate}
-                onChange={(val) => setHolidayStartDate(val)}
+                onChange={(val) => {
+                  setHolidayStartDate(val);
+                  clearFieldError(setHolidayErrors, "holidayStartDate");
+                }}
+                error={holidayErrors.holidayStartDate}
               />
               <Field
                 label="تاريخ الانتهاء"
                 type="date"
                 required
                 value={holidayEndDate}
-                onChange={(val) => setHolidayEndDate(val)}
+                onChange={(val) => {
+                  setHolidayEndDate(val);
+                  clearFieldError(setHolidayErrors, "holidayEndDate");
+                }}
+                error={holidayErrors.holidayEndDate}
               />
             </>
           )}

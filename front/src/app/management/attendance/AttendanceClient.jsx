@@ -7,6 +7,7 @@ import {
   useQrCheckOutMutation,
   useGetMemberSubscriptionsQuery,
   useGetMemberQuery,
+  useGetMemberAttendancesQuery,
   useDeductAttendanceMutation,
 } from "@/lib/api/attendanceApi";
 import PageHeader from "@/components/common/PageHeader";
@@ -488,6 +489,9 @@ export default function AttendanceClient() {
   } = useGetMemberSubscriptionsQuery(scannedMemberId, {
     skip: !scannedMemberId,
   });
+  const { data: memberAttendancesResponse, error: attendancesError, isLoading: attendancesLoading } = useGetMemberAttendancesQuery(scannedMemberId, {
+    skip: !scannedMemberId,
+  });
 
   useEffect(() => {
     if (scannedMemberId) {
@@ -519,6 +523,37 @@ export default function AttendanceClient() {
     }
     return null;
   }, [scannedMemberId, memberResponse]);
+
+  const apiAttendanceRows = useMemo(() => {
+    if (!memberAttendancesResponse?.data) return [];
+    return memberAttendancesResponse.data.map((record) => {
+      const checkInTime = record.check_in
+        ? new Date(record.check_in).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }).toLowerCase()
+        : "-";
+
+      let statusLabel = "غير معروف";
+      if (record.status === "checked_in") statusLabel = "دخول";
+      if (record.status === "completed") statusLabel = "مكتمل";
+
+      return {
+        id: record.id,
+        number: `#${record.id}`,
+        time: checkInTime,
+        member: activeMember?.name || `عضو #${record.member_id}`,
+        activity: "-",
+        coach: "-",
+        locker: "-",
+        status: statusLabel,
+        duration: record.duration_minutes || null,
+      };
+    });
+  }, [memberAttendancesResponse, activeMember]);
+
+  const displayRows = scannedMemberId ? apiAttendanceRows : attendanceRows;
 
   const apiSubscriptions = useMemo(() => {
     if (!memberSubscriptionsResponse?.data) return [];
@@ -830,9 +865,9 @@ export default function AttendanceClient() {
       </section>
 
       <DataTable
-        title="سجل الحضور"
+        title={scannedMemberId ? "سجل حضور اللاعب" : "سجل الحضور"}
         columns={tableColumns}
-        rows={attendanceRows}
+        rows={displayRows}
         minWidth="900px"
         tableColumns="72px 120px minmax(150px,1fr) minmax(130px,1fr) minmax(130px,1fr) 96px 96px 96px"
         showAdd={false}
@@ -844,12 +879,22 @@ export default function AttendanceClient() {
         headerClassName="gap-2 px-3"
         getRowKey={(row) => row.id}
         toolbarMeta={
-          <p className="text-sm text-app-muted-light">
-            اليوم:{" "}
-            <span className="font-medium text-app-text">
-              {attendanceRows.length.toLocaleString("ar")} حركة
-            </span>
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-app-muted-light">
+              الإجمالي:{" "}
+              <span className="font-medium text-app-text">
+                {displayRows.length.toLocaleString("ar")} حركة
+              </span>
+            </p>
+            {attendancesError && (
+              <p className="text-sm text-red-500">
+                خطأ في جلب البيانات: {attendancesError?.status} - {JSON.stringify(attendancesError?.data)}
+              </p>
+            )}
+            {attendancesLoading && (
+              <p className="text-sm text-app-yellow">جاري التحميل...</p>
+            )}
+          </div>
         }
       />
     </div>

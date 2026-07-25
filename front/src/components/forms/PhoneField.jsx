@@ -72,11 +72,15 @@ export default function PhoneField({
           className={`app-input h-11 px-3 outline-none text-white flex-1 min-w-0 placeholder-app-muted text-sm border focus:ring-1 ${error ? "border-app-red bg-app-red/5 focus:ring-app-red focus:border-app-red" : "bg-app-card-soft border-transparent focus:border-app-yellow/70 focus:ring-transparent"}`}
           placeholder={selectedCountry ? `أقصى ${selectedCountry.maxLength} أرقام` : ""}
           required={required}
+          aria-invalid={Boolean(error)}
           dir="ltr"
         />
       </div>
       {error && (
-        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+        <span
+          className="mt-1.5 block text-xs text-app-red text-right w-full"
+          role="alert"
+        >
           {error}
         </span>
       )}

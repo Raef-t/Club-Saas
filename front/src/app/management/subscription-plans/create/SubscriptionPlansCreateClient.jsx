@@ -35,12 +35,11 @@ export default function SubscriptionPlansCreateClient() {
   return (
     <ManagementCreatePage
       title={isEdit ? "تعديل فعالية" : "إضافة فعالية"}
-      subtitle={isEdit ? "إدارة النادي > تعديل فعالية" : "إدارة النادي > إضافة فعالية"}
+      subtitle={isEdit ? "الفعاليات > تعديل فعالية" : "الفعاليات > إضافة فعالية"}
       formId={FORM_ID}
       backHref="/management/subscription-plans"
       isSubmitting={isEdit ? isUpdating : isCreating}
       submitLabel={isEdit ? "حفظ التعديل" : "حفظ"}
-      maxWidth="720px"
     >
       <FormCard title="تفاصيل الفعالية" className="entry-form-card p-5">
         {isEdit && !editInitialValues ? (
@@ -57,7 +56,6 @@ export default function SubscriptionPlansCreateClient() {
             onCancel={() => router.push("/management/subscription-plans")}
             isLoading={isEdit ? isUpdating : isCreating}
             errorMessage={formError}
-            showFooterActions={false}
             branches={branches}
             activities={activities}
             coaches={coaches}

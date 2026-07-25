@@ -35,9 +35,7 @@ export default function ClubsCreateClient() {
       subtitle={isEdit ? "إدارة النادي > تعديل نادي" : "إدارة النادي > إضافة نادي"}
       formId={FORM_ID}
       backHref="/management/clubs"
-      isSubmitting={isEdit ? isUpdating : isCreating}
       submitLabel={isEdit ? "حفظ التعديل" : "حفظ"}
-      maxWidth="760px"
     >
       <div className="entry-form-side-layout">
         <FormCard title="بيانات النادي" className="entry-form-card p-5">
@@ -55,11 +53,10 @@ export default function ClubsCreateClient() {
               onCancel={() => router.push("/management/clubs")}
               isLoading={isEdit ? isUpdating : isCreating}
               errorMessage={formError}
-              showFooterActions={false}
             />
           )}
         </FormCard>
-        <UploadBox compact className="entry-form-card" />
+        <UploadBox compact className="entry-form-card" maxSizeMB={2} />
       </div>
     </ManagementCreatePage>
   );

@@ -25,3 +25,10 @@ export function formatLocalizedName(name) {
   if (typeof name === "string") return name;
   return name.ar || name.en || "-";
 }
+
+export function getBranchesArray(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+}

@@ -1,17 +1,15 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { getAuthHeader } from "@/lib/authStorage";
 
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "/api/backend",
     prepareHeaders: (headers) => {
-      if (typeof window !== "undefined") {
-        const token = window.localStorage.getItem("access_token");
-        const tokenType = window.localStorage.getItem("token_type") || "Bearer";
+      const authHeader = getAuthHeader();
 
-        if (token) {
-          headers.set("Authorization", `${tokenType} ${token}`);
-        }
+      if (authHeader) {
+        headers.set("Authorization", authHeader);
       }
 
       return headers;
@@ -19,10 +17,13 @@ export const authApi = createApi({
   }),
   endpoints: (builder) => ({
     login: builder.mutation({
-      query: (credentials) => ({
+      query: ({ remember = false, ...credentials }) => ({
         url: "auth/login",
         method: "POST",
         body: credentials,
+        headers: {
+          "X-Remember-Me": remember ? "true" : "false",
+        },
       }),
     }),
     logout: builder.mutation({

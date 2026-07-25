@@ -32,7 +32,6 @@ export default function SubscriptionsCreateClient() {
       formId={FORM_ID}
       backHref="/management/subscriptions"
       isSubmitting={isCreating}
-      maxWidth="920px"
     >
       <FormCard title="تفاصيل الاشتراك" className="entry-form-card p-5">
         <SubscriptionCreateForm
@@ -46,7 +45,6 @@ export default function SubscriptionsCreateClient() {
           onCancel={() => router.push("/management/subscriptions")}
           isLoading={isCreating}
           errorMessage={formError}
-          showFooterActions={false}
         />
       </FormCard>
     </ManagementCreatePage>

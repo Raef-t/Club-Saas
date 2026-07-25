@@ -7,10 +7,10 @@ export default function SearchInput({
   className = "",
 }) {
   return (
-    <label className={`relative block min-w-64 ${className}`}>
+    <label className={`relative block w-full sm:min-w-72 md:min-w-80 ${className}`}>
       <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
       <input
-        className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"
+        className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-app-text placeholder-app-muted"
         value={value}
         onChange={onChange}
         placeholder={placeholder}

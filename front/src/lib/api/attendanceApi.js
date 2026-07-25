@@ -41,6 +41,10 @@ export const attendanceApi = createApi({
       query: (memberId) => `members/${memberId}`,
       providesTags: ["Attendance"],
     }),
+    getMemberAttendances: builder.query({
+      query: (memberId) => `reception/members/${memberId}/attendances`,
+      providesTags: ["Attendance"],
+    }),
     deductAttendance: builder.mutation({
       query: ({ attendanceId, body }) => ({
         url: `reception/attendances/${attendanceId}/deduct`,
@@ -57,5 +61,6 @@ export const {
   useQrCheckOutMutation,
   useGetMemberSubscriptionsQuery,
   useGetMemberQuery,
+  useGetMemberAttendancesQuery,
   useDeductAttendanceMutation,
 } = attendanceApi;

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import {
   useGetCoachesQuery,
   useGetCoachQuery,
+  useGetCoachShiftsQuery,
   useCreateCoachMutation,
   useUpdateCoachMutation,
   useDeleteCoachMutation,
@@ -54,6 +55,13 @@ export function useCoaches(params = {}) {
     error: detailsError,
     isFetching: isFetchingDetails,
   } = useGetCoachQuery(selectedCoachId, {
+    skip: !selectedCoachId || (!fetchDetails && drawerMode !== "details"),
+  });
+
+  const {
+    data: shiftsData,
+    isFetching: isFetchingShifts,
+  } = useGetCoachShiftsQuery(selectedCoachId, {
     skip: !selectedCoachId || (!fetchDetails && drawerMode !== "details"),
   });
 
@@ -323,7 +331,7 @@ export function useCoaches(params = {}) {
   }
 
   function getEditInitialValues() {
-    if (!selectedCoach || (fetchDetails && !detailsData)) return null;
+    if (!selectedCoach || (fetchDetails && (!detailsData || isFetchingShifts))) return null;
 
     const branchIds = Array.isArray(selectedCoach.branch_ids)
       ? selectedCoach.branch_ids.map(Number)
@@ -333,8 +341,22 @@ export function useCoaches(params = {}) {
     const activityIds = Array.isArray(selectedCoach.activities)
       ? selectedCoach.activities.map((a) => Number(a.id))
       : [];
-    const shiftIds = Array.isArray(selectedCoach.shifts)
-      ? selectedCoach.shifts.map((s) => Number(s.id))
+
+    const fetchedShifts = Array.isArray(shiftsData?.data)
+      ? shiftsData.data
+      : Array.isArray(shiftsData)
+      ? shiftsData
+      : [];
+    const shiftIdsFromApi = fetchedShifts
+      .map((s) => Number(s.branch_shift_id || s.branch_shift?.id || s.id))
+      .filter((id) => !isNaN(id) && id > 0);
+
+    const shiftIds = shiftIdsFromApi.length > 0
+      ? shiftIdsFromApi
+      : Array.isArray(selectedCoach.shifts)
+      ? selectedCoach.shifts
+          .map((s) => Number(s.branch_shift_id || s.branch_shift?.id || s.id))
+          .filter((id) => !isNaN(id) && id > 0)
       : [];
     const workTypes = selectedCoach.work_types || selectedCoach.details?.work_types || [];
 

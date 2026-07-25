@@ -6,6 +6,7 @@ import React from "react";
 import IconRail from "@/components/layout/IconRail";
 import Navbar from "@/components/layout/Navbar";
 import { XIcon } from "@/components/icons/Icons";
+import SessionGuard from "@/components/auth/SessionGuard";
 
 export default function AppShell({ children, sidebar }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -19,41 +20,43 @@ export default function AppShell({ children, sidebar }) {
   // Clone sidebar element to inject custom mobile styles when in mobile view
   const mobileSidebar = sidebar
     ? React.cloneElement(sidebar, {
-        className: "w-full h-full overflow-y-auto px-4 py-6 bg-transparent border-0 shadow-none sticky-none lg:block",
+        className: "w-full min-h-full overflow-visible px-3 py-6 bg-transparent border-0 shadow-none sticky-none lg:block",
       })
     : null;
 
   return (
-    <div className="dashboard-bg min-h-screen p-3 text-app-text sm:p-4 md:p-6">
+    <SessionGuard>
+      <div className="dashboard-bg min-h-screen p-3 text-app-text sm:p-4 md:p-6">
       {/* Mobile Sidebar Off-canvas Drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex justify-start lg:hidden" dir="rtl">
           {/* Backdrop Overlay */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 bg-[var(--app-overlay)] backdrop-blur-sm animate-fade-in"
             onClick={() => setSidebarOpen(false)}
           />
 
           {/* Drawer Container */}
-          <div className="relative flex h-full w-[320px] max-w-[85vw] bg-app-panel border-l border-app-line shadow-2xl animate-slide-in-rtl">
-            {/* Close Button */}
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 left-4 z-50 grid size-8 place-items-center rounded-lg bg-app-card-soft text-app-muted hover:text-app-text border border-app-line transition"
-              title="إغلاق القائمة"
-            >
-              <XIcon className="size-5" />
-            </button>
-
+          <div className="relative flex h-full w-[320px] max-w-[85vw] overflow-hidden bg-app-panel border-l border-app-line shadow-2xl animate-slide-in-rtl">
             {/* Inner contents */}
-            <div className="flex h-full w-full">
-              {/* Right Side: Mini Icon rail for system switching */}
-              <div className="w-[68px] border-l border-app-line flex flex-col items-center py-6 bg-app-panel-soft/50">
-                <IconRail className="flex flex-col items-center justify-between h-full w-full" isMobile />
+            <div className="flex h-full w-full overflow-hidden">
+              {/* Right Side: Mini Icon rail for system switching & Close Button */}
+              <div className="w-[68px] shrink-0 border-l border-app-line flex flex-col items-center py-4 bg-app-panel-soft/50 gap-2">
+                {/* Close Button */}
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="grid size-9 shrink-0 place-items-center rounded-xl bg-app-card-soft text-app-muted hover:text-app-text hover:bg-app-line/30 border border-app-line transition shadow-sm"
+                  title="إغلاق القائمة"
+                  aria-label="إغلاق القائمة الجانبية"
+                >
+                  <XIcon className="size-5" />
+                </button>
+
+                <IconRail className="flex flex-col items-center justify-between flex-1 w-full min-h-0" isMobile />
               </div>
 
               {/* Left Side: System specific Sidebar links */}
-              <div className="flex-1 min-w-0 overflow-y-auto">
+              <div className="sidebar-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
                 {mobileSidebar}
               </div>
             </div>
@@ -74,6 +77,7 @@ export default function AppShell({ children, sidebar }) {
           </footer>
         </main>
       </div>
-    </div>
+      </div>
+    </SessionGuard>
   );
 }

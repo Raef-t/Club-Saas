@@ -85,7 +85,6 @@ export default function CoachesCreateClient() {
                 onCancel={() => router.push("/management/coaches")}
                 isLoading={isUpdating}
                 errorMessage={formError}
-                showFooterActions={false}
               />
             )
           ) : (
@@ -98,7 +97,6 @@ export default function CoachesCreateClient() {
               onCancel={() => router.push("/management/coaches")}
               isLoading={isCreating}
               errorMessage={formError}
-              showFooterActions={false}
             />
           )}
         </FormCard>
@@ -108,6 +106,7 @@ export default function CoachesCreateClient() {
           subtitle="الصورة الشخصية للمدرب"
           accept=".png,.jpg,.jpeg"
           multiple={false}
+          maxSizeMB={2}
           value={photo}
           onChange={setPhoto}
         />

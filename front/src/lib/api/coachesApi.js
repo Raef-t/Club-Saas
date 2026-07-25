@@ -28,6 +28,13 @@ export const coachesApi = createApi({
       query: (id) => `coaches/${id}`,
       providesTags: (result, error, id) => [{ type: "Coaches", id }],
     }),
+    getCoachShifts: builder.query({
+      query: (id) => `coaches/${id}/shifts`,
+      providesTags: (result, error, id) => [
+        "Coaches",
+        { type: "Coaches", id },
+      ],
+    }),
     createCoach: builder.mutation({
       query: (body) => ({
         url: "coaches",
@@ -103,6 +110,7 @@ export const coachesApi = createApi({
 export const {
   useGetCoachesQuery,
   useGetCoachQuery,
+  useGetCoachShiftsQuery,
   useCreateCoachMutation,
   useUpdateCoachBasicMutation,
   useUpdateCoachDetailsMutation,

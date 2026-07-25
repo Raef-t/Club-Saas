@@ -476,6 +476,7 @@ export default function DatePickerSmart({
           className="w-full bg-transparent outline-none pl-8 pr-8 text-left text-white placeholder-app-muted-light tracking-widest"
           dir="ltr"
           inputMode="numeric"
+          aria-invalid={Boolean(error)}
         />
 
         {allowClear && !!value && (
@@ -654,7 +655,10 @@ export default function DatePickerSmart({
           document.body,
         )}
       {error && (
-        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
+        <span
+          className="mt-1.5 block text-xs text-app-red text-right w-full"
+          role="alert"
+        >
           {error}
         </span>
       )}
