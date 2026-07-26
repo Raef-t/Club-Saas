@@ -27,9 +27,21 @@ function jsonError(message, status) {
   );
 }
 
-function clearAuthCookie(response) {
+function isSecureRequest(request) {
+  const forwardedProtocol = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",", 1)[0]
+    ?.trim()
+    ?.toLowerCase();
+
+  return forwardedProtocol
+    ? forwardedProtocol === "https"
+    : request.nextUrl.protocol === "https:";
+}
+
+function clearAuthCookie(response, secure = false) {
   response.cookies.set(AUTH_SESSION_COOKIE, "", {
-    ...getAuthCookieOptions(false),
+    ...getAuthCookieOptions(false, secure),
     maxAge: 0,
   });
 
@@ -37,6 +49,7 @@ function clearAuthCookie(response) {
 }
 
 async function proxyBackendRequest(request, context) {
+  const secureCookie = isSecureRequest(request);
   const { path = [] } = await context.params;
   const pathName = path.join("/");
   const token =
@@ -127,12 +140,12 @@ async function proxyBackendRequest(request, context) {
       nextResponse.cookies.set(
         AUTH_SESSION_COOKIE,
         sessionToken,
-        getAuthCookieOptions(remember),
+        getAuthCookieOptions(remember, secureCookie),
       );
     }
 
     if (pathName === "auth/logout" || response.status === 401) {
-      clearAuthCookie(nextResponse);
+      clearAuthCookie(nextResponse, secureCookie);
     }
 
     return nextResponse;
@@ -140,7 +153,7 @@ async function proxyBackendRequest(request, context) {
     const errorResponse = jsonError("Could not connect to backend API.", 502);
 
     if (pathName === "auth/logout") {
-      clearAuthCookie(errorResponse);
+      clearAuthCookie(errorResponse, secureCookie);
     }
 
     return errorResponse;
