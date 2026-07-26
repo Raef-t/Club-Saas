@@ -51,6 +51,33 @@ class PayslipController extends BaseController
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(
+        name: 'payslip',
+        in: 'path',
+        required: true,
+        description: 'معرف سجل الراتب (Payslip ID)',
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'base_pay', type: 'number', format: 'float', example: 5000),
+                new OA\Property(property: 'commission_pay', type: 'number', format: 'float', example: 500),
+                new OA\Property(
+                    property: 'adjustments',
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'type', type: 'string', enum: ['bonus', 'deduction'], example: 'bonus'),
+                            new OA\Property(property: 'amount', type: 'number', format: 'float', example: 150),
+                            new OA\Property(property: 'reason', type: 'string', example: 'مكافأة أداء')
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم تحديث السجل بنجاح')]
     #[OA\Response(response: 404, description: '❌ السجل غير موجود')]
     public function update(UpdatePayslipRequest $request, $id) {
