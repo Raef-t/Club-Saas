@@ -415,7 +415,7 @@ export default function DatePickerSmart({
             {required ? <span className="text-app-red">*</span> : null}
           </span>
         ) : (
-          <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
+          <span className="mb-3 flex items-center gap-2 text-base font-medium text-app-text">
             <TagIcon className="size-4 shrink-0 text-app-yellow" />
             <span>{label}</span>
             {required ? <span className="text-app-red">*</span> : null}
@@ -450,7 +450,7 @@ export default function DatePickerSmart({
             setOpen((v) => !v);
             setTimeout(updatePosition, 0);
           }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition-colors"
           title="فتح التقويم"
         >
           <CalendarIcon size={18} />
@@ -473,7 +473,7 @@ export default function DatePickerSmart({
             }
           }}
           placeholder={placeholderText}
-          className="w-full bg-transparent outline-none pl-8 pr-8 text-left text-white placeholder-app-muted-light tracking-widest"
+          className="w-full bg-transparent outline-none pl-8 pr-8 text-left text-app-text placeholder-app-muted-light tracking-widest"
           dir="ltr"
           inputMode="numeric"
           aria-invalid={Boolean(error)}
@@ -483,7 +483,7 @@ export default function DatePickerSmart({
           <button
             type="button"
             onClick={clear}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition-colors z-10"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition-colors z-10"
             title="مسح"
           >
             <X size={16} />
@@ -518,7 +518,7 @@ export default function DatePickerSmart({
               <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-4 text-app-text">
                 {/* Header */}
                 <div className="flex items-center justify-between" dir="rtl">
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-app-text">
                     التقويم
                   </div>
 

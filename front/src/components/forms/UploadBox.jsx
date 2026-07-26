@@ -77,7 +77,7 @@ export function UploadBox({
   return (
     <div className={`rounded-2xl bg-app-card-soft p-5 border border-app-line/40 ${className}`} dir="rtl">
       <div className="mb-4 flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm text-white font-medium">
+        <span className="flex items-center gap-2 text-sm text-app-text font-medium">
           <TagIcon className="size-4 text-app-yellow" />
           {label}
         </span>
@@ -104,8 +104,8 @@ export function UploadBox({
             : "border-app-muted/40 hover:border-app-yellow/50 bg-black/20 hover:bg-black/35"
         }`}
       >
-        <ArrowUpIcon className={`mb-2 size-5 text-white transition-transform duration-300 ${isDragOver ? "-translate-y-1 scale-110 text-app-yellow" : ""}`} />
-        <p className="text-sm font-medium text-white/95">اسحب الملفات هنا أو اضغط للاختيار</p>
+        <ArrowUpIcon className={`mb-2 size-5 text-app-text transition-transform duration-300 ${isDragOver ? "-translate-y-1 scale-110 text-app-yellow" : ""}`} />
+        <p className="text-sm font-medium text-app-text">اسحب الملفات هنا أو اضغط للاختيار</p>
         <p className="mt-1 text-[11px] text-app-muted-light">
           {accept.toUpperCase().replace(/\./g, " ").trim()} &nbsp;|&nbsp; حتى {maxSizeMB} MB
         </p>
@@ -150,7 +150,7 @@ export function UploadBox({
                     </div>
                   )}
                   <div className="flex flex-col text-right overflow-hidden">
-                    <span className="truncate text-xs font-medium text-white/90" title={fileName}>
+                    <span className="truncate text-xs font-medium text-app-text" title={fileName}>
                       {fileName}
                     </span>
                     {fileSizeStr && <span className="text-[10px] text-app-muted-light">{fileSizeStr}</span>}
