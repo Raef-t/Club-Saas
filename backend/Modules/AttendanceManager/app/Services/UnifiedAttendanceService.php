@@ -71,16 +71,34 @@ class UnifiedAttendanceService
     }
 
     /**
-     * Get history query builder for an entity.
+     * Get history query builder for an entity or all entities.
      *
-     * @param  string       $type
-     * @param  int          $entityId
+     * @param  string|null  $type
+     * @param  int|null     $entityId
      * @param  string|null  $from
      * @param  string|null  $to
      * @return Builder
      */
-    public function getHistory(string $type, int $entityId, ?string $from = null, ?string $to = null): Builder
+    public function getHistory(?string $type = null, ?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
+        if (!$type || $type === 'all') {
+            $query = Attendance::query()->orderByDesc('check_in_at');
+
+            if ($entityId) {
+                $query->where('attendable_id', $entityId);
+            }
+
+            if ($from) {
+                $query->whereDate('check_in_at', '>=', $from);
+            }
+
+            if ($to) {
+                $query->whereDate('check_in_at', '<=', $to);
+            }
+
+            return $query;
+        }
+
         return $this->resolveHandler($type)->getHistory($entityId, $from, $to);
     }
 

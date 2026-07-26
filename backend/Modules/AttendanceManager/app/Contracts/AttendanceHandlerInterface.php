@@ -36,10 +36,10 @@ interface AttendanceHandlerInterface
      * Return a query builder for the attendance history of this entity.
      * Callers can paginate/filter the result.
      *
-     * @param  int         $entityId
+     * @param  int|null    $entityId
      * @param  string|null $from  YYYY-MM-DD
      * @param  string|null $to    YYYY-MM-DD
      * @return Builder
      */
-    public function getHistory(int $entityId, ?string $from = null, ?string $to = null): Builder;
+    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder;
 }
