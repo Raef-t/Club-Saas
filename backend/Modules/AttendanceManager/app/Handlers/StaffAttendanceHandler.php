@@ -117,11 +117,14 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
     /**
      * Return a history query for a given staff member.
      */
-    public function getHistory(int $entityId, ?string $from = null, ?string $to = null): Builder
+    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
         $query = Attendance::where('attendable_type', 'staff')
-            ->where('attendable_id', $entityId)
             ->orderByDesc('check_in_at');
+
+        if ($entityId) {
+            $query->where('attendable_id', $entityId);
+        }
 
         if ($from) {
             $query->whereDate('check_in_at', '>=', $from);
