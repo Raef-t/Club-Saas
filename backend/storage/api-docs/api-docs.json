@@ -16445,6 +16445,65 @@
                 "summary": "📝 تعديل سجل راتب (إضافة خصم أو مكافأة)",
                 "description": "تحديث بيانات الراتب لشهر معين بإضافة أو تعديل الحسومات والمكافآت وتحديث الصافي.",
                 "operationId": "ffac5cdc4d359393729f66668c8ee98b",
+                "parameters": [
+                    {
+                        "name": "payslip",
+                        "in": "path",
+                        "description": "معرف سجل الراتب (Payslip ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "base_pay": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000
+                                    },
+                                    "commission_pay": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500
+                                    },
+                                    "adjustments": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bonus",
+                                                    "enum": [
+                                                        "bonus",
+                                                        "deduction"
+                                                    ]
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 150
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "example": "مكافأة أداء"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم تحديث السجل بنجاح"
