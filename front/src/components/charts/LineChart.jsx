@@ -66,7 +66,7 @@ export default function LineChart({ data, legend }) {
             x2={width}
             y1={axisY}
             y2={axisY}
-            stroke="#EFEFEF"
+            stroke="var(--app-line)"
             strokeWidth="1.4"
           />
 
@@ -80,13 +80,13 @@ export default function LineChart({ data, legend }) {
                   x2={x}
                   y1={axisY}
                   y2={axisY + 5}
-                  stroke="#EFEFEF"
+                  stroke="var(--app-line)"
                   strokeWidth="1"
                 />
                 <text
                   x={x}
                   y="161"
-                  fill="#FFFFFF"
+                  fill="var(--app-text)"
                   fontSize="20"
                   textAnchor="middle"
                   dominantBaseline="middle"
@@ -113,14 +113,14 @@ export default function LineChart({ data, legend }) {
             <path
               d={yellowPath}
               fill="none"
-              stroke="#FCCD03"
+              stroke="var(--app-yellow)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           )}
           {yellowPoints.map((point, index) => (
-            <circle key={index} cx={point.x} cy={point.y} r="4.5" fill="#FCCD03" />
+            <circle key={index} cx={point.x} cy={point.y} r="4.5" fill="var(--app-yellow)" />
           ))}
         </svg>
       </div>

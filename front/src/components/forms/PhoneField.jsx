@@ -63,13 +63,13 @@ export default function PhoneField({
           onChange={onCodeChange}
           buttonClassName={`border border-app-line h-11 w-[105px] px-2 text-sm ${error ? "bg-app-red/5 border-app-red" : "bg-app-card-soft"}`}
           menuClassName="w-48 max-h-64 overflow-y-auto"
-          className="text-white shrink-0"
+          className="text-app-text shrink-0"
         />
         <input
           type="tel"
           value={phoneValue || ""}
           onChange={handlePhoneChange}
-          className={`app-input h-11 px-3 outline-none text-white flex-1 min-w-0 placeholder-app-muted text-sm border focus:ring-1 ${error ? "border-app-red bg-app-red/5 focus:ring-app-red focus:border-app-red" : "bg-app-card-soft border-transparent focus:border-app-yellow/70 focus:ring-transparent"}`}
+          className={`app-input h-11 px-3 outline-none text-app-text flex-1 min-w-0 placeholder-app-muted text-sm border focus:ring-1 ${error ? "border-app-red bg-app-red/5 focus:ring-app-red focus:border-app-red" : "bg-app-card-soft border-transparent focus:border-app-yellow/70 focus:ring-transparent"}`}
           placeholder={selectedCountry ? `أقصى ${selectedCountry.maxLength} أرقام` : ""}
           required={required}
           aria-invalid={Boolean(error)}

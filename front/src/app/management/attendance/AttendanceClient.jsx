@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/attendanceApi";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
+import Checkbox from "@/components/ui/Checkbox";
 import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import ToggleSwitch from "@/components/ui/ToggleSwitch";
@@ -329,14 +330,14 @@ function PlayerCard({
   member,
   selectedSubscription,
   selectedActivity,
-  subscriptionOptions,
+  playerSubscriptions,
   activityOptions,
-  selectedSubscriptionId,
+  selectedSubscriptionIds,
   selectedActivityId,
   lockerNumber,
   isRegistered,
   isPendingDeduction,
-  onSubscriptionChange,
+  onSubscriptionToggle,
   onActivityChange,
   onLockerChange,
   onRegister,
@@ -428,17 +429,22 @@ function PlayerCard({
       </div>
 
       <div className="mt-6 space-y-4 border-t border-app-line pt-5">
-        <label className="block text-right text-sm text-app-muted-light">
+        <div className="block text-right text-sm text-app-muted-light">
           اشتراكات اللاعب
-          <Dropdown
-            className="mt-2 text-white"
-            buttonClassName="h-11 bg-app-card-soft"
-            value={selectedSubscriptionId}
-            onChange={onSubscriptionChange}
-            options={subscriptionOptions}
-            placeholder="اختر الاشتراك"
-          />
-        </label>
+          <div className="mt-2 space-y-2">
+            {playerSubscriptions.map((sub) => {
+              const isChecked = selectedSubscriptionIds.includes(sub.id);
+              return (
+                <Checkbox
+                  key={sub.id}
+                  label={`${sub.label} - ${sub.remaining} حصة`}
+                  checked={isChecked}
+                  onChange={() => onSubscriptionToggle(sub.id)}
+                />
+              );
+            })}
+          </div>
+        </div>
 
         <label className="block text-right text-sm text-app-muted-light">
           النشاط اليوم
@@ -489,7 +495,12 @@ export default function AttendanceClient() {
   } = useGetMemberSubscriptionsQuery(scannedMemberId, {
     skip: !scannedMemberId,
   });
-  const { data: memberAttendancesResponse, error: attendancesError, isLoading: attendancesLoading } = useGetMemberAttendancesQuery(scannedMemberId, {
+  const {
+    data: memberAttendancesResponse,
+    error: attendancesError,
+    isLoading: attendancesLoading,
+    refetch: refetchAttendances,
+  } = useGetMemberAttendancesQuery(scannedMemberId, {
     skip: !scannedMemberId,
   });
 
@@ -502,7 +513,7 @@ export default function AttendanceClient() {
   }, [scannedMemberId, memberSubscriptionsResponse, subsError]);
   const [alwaysOn, setAlwaysOn] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
-  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState("");
+  const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState([]);
   const [selectedActivityId, setSelectedActivityId] = useState("");
   const [lockerNumber, setLockerNumber] = useState("");
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
@@ -597,10 +608,12 @@ export default function AttendanceClient() {
 
   useEffect(() => {
     if (scannedMemberId && apiSubscriptions.length > 0) {
-      const firstSub = apiSubscriptions[0];
-      setSelectedSubscriptionId(firstSub.id);
-      setSelectedActivityId(firstSub.activities?.[0]?.id || "");
-      const firstLocker = firstSub.activeLockers?.[0]?.locker_number || "";
+      const allIds = apiSubscriptions
+        .filter((s) => Number(s.remaining) > 0)
+        .map((s) => s.id);
+      setSelectedSubscriptionIds(allIds.length > 0 ? allIds : [apiSubscriptions[0].id]);
+      setSelectedActivityId(apiSubscriptions[0].activities?.[0]?.id || "");
+      const firstLocker = apiSubscriptions[0].activeLockers?.[0]?.locker_number || "";
       setLockerNumber(firstLocker);
     }
   }, [apiSubscriptions, scannedMemberId]);
@@ -608,9 +621,9 @@ export default function AttendanceClient() {
   const selectedSubscription = useMemo(
     () =>
       playerSubscriptions.find(
-        (subscription) => subscription.id === selectedSubscriptionId,
+        (subscription) => selectedSubscriptionIds.includes(subscription.id),
       ) || playerSubscriptions[0],
-    [playerSubscriptions, selectedSubscriptionId],
+    [playerSubscriptions, selectedSubscriptionIds],
   );
 
   const activityOptions = useMemo(
@@ -630,14 +643,7 @@ export default function AttendanceClient() {
     [selectedActivityId, selectedSubscription],
   );
 
-  const subscriptionOptions = useMemo(
-    () =>
-      playerSubscriptions.map((subscription) => ({
-        value: subscription.id,
-        label: `${subscription.label} - ${subscription.remaining} حصة`,
-      })),
-    [playerSubscriptions],
-  );
+
 
   function handleAlwaysOnChange(checked) {
     setAlwaysOn(checked);
@@ -739,23 +745,23 @@ export default function AttendanceClient() {
     }
   }
 
-  function handleSubscriptionChange(value) {
-    const subscription = playerSubscriptions.find((item) => item.id === value);
-    setSelectedSubscriptionId(value);
-    setSelectedActivityId(subscription?.activities?.[0]?.id || "");
-    const firstLocker = subscription?.activeLockers?.[0]?.locker_number || "";
-    setLockerNumber(firstLocker);
+  function handleSubscriptionToggle(subId) {
+    setSelectedSubscriptionIds((prev) => {
+      const exists = prev.includes(subId);
+      const next = exists ? prev.filter((id) => id !== subId) : [...prev, subId];
+      return next.length > 0 ? next : prev; // at least one must remain selected
+    });
     setRegisteredMemberId(null);
   }
 
   function handleRegister() {
     if (!activeMember) return;
 
-    if (lastAttendanceId && selectedSubscriptionId) {
+    if (lastAttendanceId && selectedSubscriptionIds.length > 0) {
       deductAttendance({
         attendanceId: lastAttendanceId,
         body: {
-          player_subscription_ids: [Number(selectedSubscriptionId)],
+          player_subscription_ids: selectedSubscriptionIds.map(Number),
         },
       })
         .unwrap()
@@ -786,6 +792,11 @@ export default function AttendanceClient() {
 
           setRegisteredMemberId(activeMember.id);
           setLastAttendanceId(null); // Reset
+
+          // Refetch attendance history to show the new row in the table
+          if (scannedMemberId) {
+            refetchAttendances();
+          }
         })
         .catch((err) => {
           toast.error(err?.data?.message || "فشل خصم الجلسة");
@@ -831,16 +842,16 @@ export default function AttendanceClient() {
           member={activeMember}
           selectedSubscription={selectedSubscription}
           selectedActivity={selectedActivity}
-          subscriptionOptions={subscriptionOptions}
+          playerSubscriptions={playerSubscriptions}
           activityOptions={activityOptions}
-          selectedSubscriptionId={selectedSubscriptionId}
+          selectedSubscriptionIds={selectedSubscriptionIds}
           selectedActivityId={selectedActivityId}
           lockerNumber={lockerNumber}
           isRegistered={
             activeMember ? registeredMemberId === activeMember.id : false
           }
           isPendingDeduction={!!lastAttendanceId}
-          onSubscriptionChange={handleSubscriptionChange}
+          onSubscriptionToggle={handleSubscriptionToggle}
           onActivityChange={(value) => {
             setSelectedActivityId(value);
             setRegisteredMemberId(null);

@@ -42,7 +42,13 @@ export const attendanceApi = createApi({
       providesTags: ["Attendance"],
     }),
     getMemberAttendances: builder.query({
-      query: (memberId) => `reception/members/${memberId}/attendances`,
+      query: (memberId) => ({
+        url: `attendances/history`,
+        params: {
+          attendable_type: "member",
+          attendable_id: memberId,
+        },
+      }),
       providesTags: ["Attendance"],
     }),
     deductAttendance: builder.mutation({

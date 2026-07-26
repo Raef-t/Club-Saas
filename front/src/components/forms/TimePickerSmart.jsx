@@ -272,7 +272,7 @@ export default function TimePickerSmart({
   return (
     <div className="flex flex-col w-full text-start">
       {label && (
-        <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
+        <span className="mb-3 flex items-center gap-2 text-base font-medium text-app-text">
           <TagIcon className="size-4 shrink-0 text-app-yellow" />
           <span>{label}</span>
           {required ? <span className="text-app-red">*</span> : null}
@@ -303,7 +303,7 @@ export default function TimePickerSmart({
             setOpen((v) => !v);
             setTimeout(updatePosition, 0);
           }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition-colors"
           title="اختيار الوقت"
         >
           <Clock size={18} />
@@ -326,7 +326,7 @@ export default function TimePickerSmart({
             }
           }}
           placeholder={placeholder}
-          className="w-full bg-transparent outline-none pl-8 pr-8 text-left text-white placeholder-app-muted-light tracking-widest"
+          className="w-full bg-transparent outline-none pl-8 pr-8 text-left text-app-text placeholder-app-muted-light tracking-widest"
           dir="ltr"
           inputMode="numeric"
           aria-invalid={Boolean(error)}
@@ -336,7 +336,7 @@ export default function TimePickerSmart({
           <button
             type="button"
             onClick={clear}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition-colors z-10"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition-colors z-10"
             title="مسح"
           >
             <X size={16} />
@@ -369,10 +369,10 @@ export default function TimePickerSmart({
               onMouseDown={(e) => e.preventDefault()}
             >
               <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-3 flex flex-col gap-3">
-                <div className="flex justify-between items-center px-2 text-white font-medium border-b border-app-line pb-2" dir="rtl">
+                <div className="flex justify-between items-center px-2 text-app-text font-medium border-b border-app-line pb-2" dir="rtl">
                   <span>الساعات</span>
-                  {timeFormat === "12" && <span>الفترة</span>}
                   <span>الدقائق</span>
+                  {timeFormat === "12" && <span>الفترة</span>}
                 </div>
                 
                 <div className="flex justify-between h-[200px]" dir="rtl">
@@ -396,9 +396,29 @@ export default function TimePickerSmart({
                     })}
                   </div>
 
+                  {/* Minutes */}
+                  <div ref={minutesRef} className="flex-1 overflow-y-auto scrollbar-hidden border-l border-app-line/50 px-1 space-y-1">
+                    {minutesList.map((m) => {
+                      const isActive = m === viewTime.minute;
+                      return (
+                        <button
+                          key={`m-${m}`}
+                          type="button"
+                          onClick={() => setViewTime((prev) => ({ ...prev, minute: m }))}
+                          className={[
+                            "w-full h-9 rounded-lg text-sm flex items-center justify-center transition-colors",
+                            isActive ? "bg-app-yellow text-app-bg font-bold" : "text-app-text hover:bg-app-card-soft"
+                          ].join(" ")}
+                        >
+                          {pad2(m)}
+                        </button>
+                      )
+                    })}
+                  </div>
+
                   {/* Period Column (AM/PM) */}
                   {timeFormat === "12" && (
-                    <div className="flex-1 border-l border-app-line/50 px-1 flex flex-col justify-center gap-2">
+                    <div className="flex-1 px-1 flex flex-col justify-center gap-2">
                       <button
                         type="button"
                         onClick={() => setPeriod("ص")}
@@ -421,26 +441,6 @@ export default function TimePickerSmart({
                       </button>
                     </div>
                   )}
-
-                  {/* Minutes */}
-                  <div ref={minutesRef} className="flex-1 overflow-y-auto scrollbar-hidden pr-1 space-y-1">
-                    {minutesList.map((m) => {
-                      const isActive = m === viewTime.minute;
-                      return (
-                        <button
-                          key={`m-${m}`}
-                          type="button"
-                          onClick={() => setViewTime((prev) => ({ ...prev, minute: m }))}
-                          className={[
-                            "w-full h-9 rounded-lg text-sm flex items-center justify-center transition-colors",
-                            isActive ? "bg-app-yellow text-app-bg font-bold" : "text-app-text hover:bg-app-card-soft"
-                          ].join(" ")}
-                        >
-                          {pad2(m)}
-                        </button>
-                      )
-                    })}
-                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-app-line">

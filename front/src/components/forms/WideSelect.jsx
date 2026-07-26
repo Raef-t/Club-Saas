@@ -3,7 +3,7 @@ import { ChevronRight, TagIcon } from "@/components/icons/Icons";
 export function WideSelect({ label, placeholder = "بحث عن عضو ...", required = true, className = "", children, name, value, onChange, error, ...props }) {
   return (
     <label className={`block text-start ${className}`}>
-      <span className="mb-3 flex items-center gap-2 text-base font-medium text-white">
+      <span className="mb-3 flex items-center gap-2 text-base font-medium text-app-text">
         <TagIcon className="size-4 text-app-yellow" />
         <span>{label}</span>
         {required ? <span className="text-app-red">*</span> : null}

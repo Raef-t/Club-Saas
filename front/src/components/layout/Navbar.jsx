@@ -101,7 +101,11 @@ export default function Navbar({ onMenuClick }) {
           <div className="grid size-8 place-items-center rounded-full bg-app-yellow text-sm font-bold text-app-bg uppercase shadow-inner">
             {user.person?.photo_url ? (
               <img
-                src={user.person.photo_url}
+                src={
+                  user.person.photo_url.startsWith("http")
+                    ? user.person.photo_url
+                    : `http://31.70.108.63/${user.person.photo_url.replace(/^\//, "")}`
+                }
                 className="size-full rounded-full object-cover"
                 alt="Profile Avatar"
               />
