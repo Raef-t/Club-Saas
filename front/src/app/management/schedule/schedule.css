@@ -38,7 +38,9 @@
   text-align: center;
   font-size: 13px;
   border: 1px solid var(--app-line);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
   white-space: nowrap;
 }
 
@@ -82,24 +84,25 @@
   background: var(--app-card-soft);
 }
 
-/* Editable cells */
+/* Read-only cells */
 .schedule-cell {
-  cursor: pointer;
+  cursor: default;
   min-width: 100px;
   min-height: 44px;
   position: relative;
-}
-
-.schedule-cell:hover {
-  background: var(--app-yellow-soft) !important;
-  box-shadow: inset 0 0 0 2px var(--app-yellow);
 }
 
 .schedule-cell-content {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+  font-family: inherit;
   font-size: 12px;
   color: var(--app-text);
   font-weight: 500;
@@ -110,48 +113,8 @@
 
 .schedule-cell-empty {
   color: var(--app-muted-light);
-  opacity: 0;
-  transition: opacity 0.2s;
-  font-size: 18px;
-}
-
-.schedule-cell:hover .schedule-cell-empty {
-  opacity: 0.6;
-}
-
-/* Cell edit input */
-.schedule-cell-input {
-  width: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  text-align: center;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--app-text);
-  padding: 4px 2px;
-  resize: none;
-  overflow: hidden;
-  min-height: 32px;
-}
-
-.schedule-cell-input::placeholder {
-  color: var(--app-muted-light);
-}
-
-/* ─── Settings Panel ─── */
-
-.schedule-settings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-@media (max-width: 768px) {
-  .schedule-settings {
-    grid-template-columns: 1fr;
-  }
+  opacity: 0.55;
+  font-size: 14px;
 }
 
 /* Card layout for tablets and phones */
@@ -237,8 +200,7 @@
     text-align: start;
   }
 
-  .schedule-cell-content,
-  .schedule-cell-input {
+  .schedule-cell-content {
     justify-content: flex-start;
     min-width: 0;
     text-align: start;
@@ -253,110 +215,6 @@
   .schedule-table tbody {
     grid-template-columns: 1fr;
   }
-
-  .schedule-time-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-.schedule-period-config {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--app-card-soft);
-  border: 1px solid var(--app-line);
-}
-
-.schedule-period-config h3 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--app-yellow);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.schedule-period-config h3 .period-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--app-yellow);
-  display: inline-block;
-}
-
-.schedule-time-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.schedule-time-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.schedule-time-field label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--app-muted);
-  margin: 0;
-}
-
-.schedule-time-field input[type="time"],
-.schedule-time-field select {
-  height: 38px;
-  border: 1px solid var(--app-line);
-  border-radius: 8px;
-  background: var(--app-panel);
-  color: var(--app-text);
-  padding: 0 10px;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
-  direction: ltr;
-  text-align: center;
-}
-
-.schedule-time-field input[type="time"]:focus,
-.schedule-time-field select:focus {
-  border-color: var(--app-yellow);
-  box-shadow: 0 0 0 3px var(--app-yellow-soft);
-}
-
-/* ─── Duration selector ─── */
-.schedule-duration-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.schedule-duration-row label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--app-muted);
-  white-space: nowrap;
-}
-
-.schedule-duration-row select {
-  height: 36px;
-  border: 1px solid var(--app-line);
-  border-radius: 8px;
-  background: var(--app-panel);
-  color: var(--app-text);
-  padding: 0 10px;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
-  cursor: pointer;
-}
-
-.schedule-duration-row select:focus {
-  border-color: var(--app-yellow);
-  box-shadow: 0 0 0 3px var(--app-yellow-soft);
 }
 
 /* ─── Animations ─── */

@@ -1,243 +1,114 @@
 import { useMemo, useState } from "react";
+import { useToast } from "@/components/ui/Toast";
 import {
+  useDeleteActivityMutation,
   useGetActivitiesQuery,
   useGetActivityQuery,
-  useCreateActivityMutation,
-  useUpdateActivityMutation,
-  useDeleteActivityMutation,
-  useGetActivityTypesQuery,
 } from "@/lib/api/activitiesApi";
-import { useGetBranchesQuery } from "@/lib/api/branchesApi";
-import { getBranchesArray } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/apiError";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import {
+  createActivityStats,
+  filterActivities,
+  getActivityCollection,
+  getActivityRecord,
+} from "./activityUtils";
 
-function getActivitiesArray(response) {
-  return Array.isArray(response?.data) ? response.data : [];
-}
-
-function activityName(act) {
-  if (!act?.name) return "-";
-  if (typeof act.name === "string") return act.name;
-  return act.name.ar || act.name.en || "-";
-}
-
-export function useActivities(params = {}) {
-  const { selectedActivityId: initialSelectedId } = params;
+/**
+ * Coordinates the activity list, search, details, and deletion lifecycle.
+ */
+export function useActivities({ initialActivities } = {}) {
+  const toast = useToast();
+  const { selectedBranchId } = useManagementBranch();
   const [search, setSearch] = useState("");
-  const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedActivityId, setSelectedActivityId] = useState(initialSelectedId || null);
-  const [formError, setFormError] = useState("");
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
-
-  const { data, error, isLoading, refetch } = useGetActivitiesQuery();
-  const { data: branchesData } = useGetBranchesQuery();
-  const { data: activityTypesData } = useGetActivityTypesQuery();
-
-  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
-
-  const activityTypes = useMemo(() => {
-    return Array.isArray(activityTypesData?.data) ? activityTypesData.data : [];
-  }, [activityTypesData]);
-
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const {
-    data: detailsData,
+    currentData: activitiesResponse,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetActivitiesQuery(selectedBranchId === "all" ? {} : { branch_id: selectedBranchId });
+  const {
+    currentData: detailsResponse,
     error: detailsError,
     isFetching: isFetchingDetails,
-  } = useGetActivityQuery(selectedActivityId, {
-    skip: !selectedActivityId || drawerMode !== "details",
+  } = useGetActivityQuery(selectedActivity?.id, {
+    skip: !selectedActivity,
   });
-
-  const [createActivity, { isLoading: isCreating }] =
-    useCreateActivityMutation();
-  const [updateActivity, { isLoading: isUpdating }] =
-    useUpdateActivityMutation();
-  const [deleteActivity, { isLoading: isDeleting }] =
-    useDeleteActivityMutation();
-
-  const activities = useMemo(() => getActivitiesArray(data), [data]);
-
-  const selectedActivity = useMemo(
-    () => activities.find((a) => a.id === selectedActivityId) || null,
-    [activities, selectedActivityId],
+  const [deleteActivity, { isLoading: isDeleting }] = useDeleteActivityMutation();
+  const allActivities = useMemo(
+    () => getActivityCollection(activitiesResponse || initialActivities),
+    [activitiesResponse, initialActivities],
   );
+  const branchActivities = useMemo(
+    () => filterEntitiesByBranch(allActivities, selectedBranchId),
+    [allActivities, selectedBranchId],
+  );
+  const activities = useMemo(
+    () => filterActivities(branchActivities, search),
+    [branchActivities, search],
+  );
+  const stats = useMemo(() => createActivityStats(branchActivities), [branchActivities]);
+  const detailsActivity = getActivityRecord(detailsResponse) || selectedActivity;
 
-  const detailsActivity = useMemo(() => detailsData?.data || null, [detailsData]);
-
-  const filteredActivities = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return activities.filter((act) => {
-      const nameVal =
-        typeof act.name === "string"
-          ? act.name
-          : act.name?.ar || act.name?.en || "";
-      const descVal = act.description || "";
-
-      const matchesSearch =
-        !normalizedSearch ||
-        [nameVal, descVal]
-          .filter(Boolean)
-          .some((value) =>
-            String(value).toLowerCase().includes(normalizedSearch),
-          );
-
-      return matchesSearch;
-    });
-  }, [activities, search]);
-
-  const stats = useMemo(() => {
-    const activeCount = activities.filter((a) => a.is_active !== false).length;
-    const inactiveCount = activities.length - activeCount;
-
-    return [
-      {
-        title: "إجمالي الأنشطة",
-        value: activities.length.toLocaleString("ar"),
-        helper: "الأنشطة الرياضية المسجلة",
-        tone: "yellow",
-        compact: true,
-      },
-      {
-        title: "أنشطة نشطة",
-        value: activeCount.toLocaleString("ar"),
-        helper: "المتاحة للحجز حالياً",
-        tone: "green",
-        compact: true,
-      },
-      {
-        title: "أنشطة غير نشطة",
-        value: inactiveCount.toLocaleString("ar"),
-        helper: "الأنشطة الموقوفة مؤقتاً",
-        tone: "default",
-        compact: true,
-      },
-    ];
-  }, [activities]);
-
-  function closeDrawer() {
-    setDrawerMode(null);
-    setSelectedActivityId(null);
-    setFormError("");
+  /**
+   * Opens the details drawer with immediate data from the current table row.
+   */
+  function openDetails(activity) {
+    setSelectedActivity(activity);
   }
 
-  async function handleCreate(values) {
-    setFormError("");
-    try {
-      await createActivity(values).unwrap();
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      console.error("Create activity validation/API error:", submitError);
-      if (submitError?.data?.errors) {
-        console.error("Detailed validation errors:", submitError.data.errors);
-      }
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر إنشاء النشاط. تحقق من البيانات وحاول مرة أخرى.",
-      );
-      return false;
-    }
+  /**
+   * Closes the details drawer.
+   */
+  function closeDetails() {
+    setSelectedActivity(null);
   }
 
-  async function handleUpdate(values) {
-    if (!selectedActivityId) return false;
-    setFormError("");
-    try {
-      await updateActivity({ id: selectedActivityId, body: values }).unwrap();
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      console.error("Update activity validation/API error:", submitError);
-      if (submitError?.data?.errors) {
-        console.error("Detailed validation errors:", submitError.data.errors);
-      }
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر تعديل النشاط. تحقق من البيانات وحاول مرة أخرى.",
-      );
-      return false;
-    }
+  /**
+   * Opens the destructive confirmation for one activity.
+   */
+  function requestDelete(activity) {
+    setDeleteTarget(activity);
   }
 
-  function handleDelete(act) {
-    setItemToDelete(act);
-    setDeleteConfirmOpen(true);
-  }
-
-  function closeDeleteConfirm() {
-    setDeleteConfirmOpen(false);
-    setItemToDelete(null);
-  }
-
+  /**
+   * Deletes the selected activity after confirmation.
+   */
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!deleteTarget) return;
+
     try {
-      await deleteActivity(itemToDelete.id).unwrap();
-    } catch {
-      window.alert("تعذر حذف النشاط. حاول مرة أخرى.");
-    } finally {
-      closeDeleteConfirm();
+      await deleteActivity(deleteTarget.id).unwrap();
+      toast.success("تم حذف النشاط بنجاح");
+      setDeleteTarget(null);
+    } catch (deleteError) {
+      toast.error(getApiErrorMessage(deleteError, "تعذر حذف النشاط. حاول مرة أخرى."));
     }
-  }
-
-  function getEditInitialValues() {
-    if (!selectedActivity) return null;
-
-    const name =
-      typeof selectedActivity.name === "object"
-        ? selectedActivity.name?.ar || selectedActivity.name?.en || ""
-        : selectedActivity.name || "";
-
-    const shiftIds = Array.isArray(selectedActivity.shifts)
-      ? selectedActivity.shifts.map((s) => (typeof s === "object" ? s.id : s))
-      : [];
-
-    return {
-      name: name,
-      description: selectedActivity.description || "",
-      gender_allowed: selectedActivity.gender_allowed || "mixed",
-      branch_id: selectedActivity.branch_id ? String(selectedActivity.branch_id) : "",
-      activity_type_id: selectedActivity.activity_type_id
-        ? String(selectedActivity.activity_type_id)
-        : selectedActivity.activity_type?.id
-        ? String(selectedActivity.activity_type.id)
-        : "",
-      is_active: selectedActivity.is_active !== false,
-      shifts: shiftIds,
-    };
   }
 
   return {
     search,
     setSearch,
-    drawerMode,
-    setDrawerMode,
-    selectedActivityId,
-    setSelectedActivityId,
-    formError,
-    setFormError,
-    isLoading,
-    error,
-    refetch,
-    filteredActivities,
+    activities,
     stats,
+    isLoading: isLoading && allActivities.length === 0,
+    isFetching,
+    errorMessage: error ? getApiErrorMessage(error, "تعذر تحميل قائمة الأنشطة الرياضية.") : "",
+    retry: refetch,
     selectedActivity,
     detailsActivity,
-    isFetchingDetails,
     detailsError,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    handleCreate,
-    handleUpdate,
-    handleDelete,
+    isFetchingDetails,
+    openDetails,
+    closeDetails,
+    deleteTarget,
+    setDeleteTarget,
+    requestDelete,
     confirmDelete,
-    closeDeleteConfirm,
-    deleteConfirmOpen,
-    itemToDelete,
-    getEditInitialValues,
-    closeDrawer,
-    branches,
-    activityTypes,
+    isDeleting,
   };
 }

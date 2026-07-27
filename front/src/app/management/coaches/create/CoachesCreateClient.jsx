@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard, UploadBox } from "@/components/forms/FormControls";
-import { CoachCreateForm } from "../CoachesClient";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { CoachCreateForm } from "../CoachForm";
 import { useCoaches } from "../useCoaches";
 
 const FORM_ID = "create-coach-form";
 
 export default function CoachesCreateClient() {
   const router = useRouter();
+  const { selectedBranchId } = useManagementBranch();
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
   const editId = searchParams.get("id");
@@ -28,7 +30,6 @@ export default function CoachesCreateClient() {
     selectedCoachId: isEdit ? Number(editId) : null,
     fetchDetails: !!isEdit,
   });
-  const firstBranchId = branches[0]?.id || "none";
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
   const [photo, setPhoto] = useState([]);
@@ -89,7 +90,7 @@ export default function CoachesCreateClient() {
             )
           ) : (
             <CoachCreateForm
-              key={firstBranchId}
+              key={`coach-create-${selectedBranchId}`}
               formId={FORM_ID}
               branches={branches}
               activities={activities}

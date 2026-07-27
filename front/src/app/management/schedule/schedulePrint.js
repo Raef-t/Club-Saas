@@ -1,0 +1,234 @@
+import { SCHEDULE_DAYS } from "./scheduleConstants";
+import { escapeScheduleHtml } from "./scheduleUtils";
+
+/**
+ * Preserves user-entered line breaks after escaping printable cell content.
+ */
+function formatPrintableCell(value) {
+  return escapeScheduleHtml(value).replaceAll("\n", "<br />");
+}
+
+/**
+ * Builds one printable period table.
+ */
+function buildPeriodTableHtml(title, slots, periodKey, scheduleData) {
+  if (!slots.length) return "";
+
+  const headerCells = slots
+    .map(
+      (slot) =>
+        `<th><div class="time-heading"><div>${escapeScheduleHtml(slot.from)}</div><div class="time-arrow">↓</div><div>${escapeScheduleHtml(slot.to)}</div></div></th>`,
+    )
+    .join("");
+  const bodyRows = SCHEDULE_DAYS.map((day, index) => {
+    const cells = slots
+      .map((slot) => {
+        const value = scheduleData?.[day.key]?.[`${periodKey}_${slot.key}`] || "";
+        return `<td>${formatPrintableCell(value)}</td>`;
+      })
+      .join("");
+
+    return `<tr class="${index % 2 ? "even-row" : ""}"><td class="day-cell">${escapeScheduleHtml(day.label)}</td>${cells}</tr>`;
+  }).join("");
+
+  return `
+    <section class="period-section">
+      <h2>${escapeScheduleHtml(title)}</h2>
+      <table>
+        <thead><tr><th class="day-cell">اليوم</th>${headerCells}</tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </section>
+  `;
+}
+
+/**
+ * Creates the complete standalone HTML document used for schedule printing.
+ */
+export function buildSchedulePrintHtml({
+  morningSlots,
+  eveningSlots,
+  scheduleData,
+  printedAt = new Date(),
+}) {
+  const morningHtml = buildPeriodTableHtml(
+    "الفترة الصباحية",
+    morningSlots,
+    "morning",
+    scheduleData,
+  );
+  const eveningHtml = buildPeriodTableHtml(
+    "الفترة المسائية",
+    eveningSlots,
+    "evening",
+    scheduleData,
+  );
+  const printDate = escapeScheduleHtml(printedAt.toLocaleDateString("ar-SY"));
+
+  return `<!doctype html>
+    <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="utf-8" />
+        <title>جدول الدوام - TechnoGYM</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: Arial, "Tahoma", sans-serif;
+            direction: rtl;
+            text-align: right;
+            padding: 30px 25px;
+            color: #111;
+            background: #fff;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #d97706;
+            padding-bottom: 18px;
+            margin-bottom: 10px;
+          }
+          .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+          }
+          .header-right img {
+            width: 80px;
+            height: auto;
+            border-radius: 8px;
+          }
+          .logo-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111;
+            letter-spacing: 2px;
+          }
+          .logo-title span { color: #d97706; }
+          .logo-subtitle {
+            margin-top: 4px;
+            color: #666;
+            font-size: 11px;
+            font-weight: 500;
+          }
+          .meta-area {
+            color: #555;
+            font-size: 12px;
+            text-align: left;
+          }
+          .meta-area p { margin: 3px 0; }
+          .main-title {
+            margin: 20px 0 8px;
+            color: #111;
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+          }
+          .period-section {
+            page-break-after: always;
+            page-break-inside: avoid;
+          }
+          .period-section:last-of-type { page-break-after: auto; }
+          .period-section h2 {
+            margin: 30px 0 10px;
+            color: #111;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+          }
+          table {
+            width: 100%;
+            margin-top: 8px;
+            border-collapse: collapse;
+          }
+          th, td {
+            padding: 8px 4px;
+            border: 1px solid #d1d5db;
+            font-size: 11px;
+            text-align: center;
+            white-space: pre-wrap;
+          }
+          th {
+            background: #f3f4f6;
+            color: #374151;
+            font-size: 10px;
+            font-weight: 700;
+          }
+          td {
+            color: #1f2937;
+            font-weight: 500;
+          }
+          .time-heading { line-height: 1.4; }
+          .time-arrow { color: #999; font-size: 10px; }
+          .day-cell {
+            min-width: 70px;
+            background: #f3f4f6;
+            font-size: 13px;
+            font-weight: 700;
+          }
+          .even-row td { background: #fef9e7; }
+          .even-row .day-cell { background: #fdf3d3; }
+          .footer {
+            margin-top: 40px;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 500;
+            text-align: center;
+          }
+          @media print {
+            body { padding: 15px; }
+            @page { size: landscape; margin: 10mm; }
+            .period-section {
+              page-break-after: always;
+              page-break-inside: avoid;
+            }
+            .period-section:last-of-type { page-break-after: auto; }
+          }
+        </style>
+      </head>
+      <body>
+        <header class="header">
+          <div class="header-right">
+            <img src="/img/Logo11.jpeg" alt="TechnoGYM" />
+            <div>
+              <div class="logo-title">TECHNO<span>GYM</span></div>
+              <div class="logo-subtitle">نادي تكنولوجي جيم الرياضي</div>
+            </div>
+          </div>
+          <div class="meta-area">
+            <p>تاريخ الطباعة: ${printDate}</p>
+            <p>نظام إدارة الصالات الرياضية</p>
+          </div>
+        </header>
+        <h1 class="main-title">جدول الدوام الأسبوعي</h1>
+        ${morningHtml}
+        ${eveningHtml}
+        <footer class="footer">
+          نظام تكنولوجي جيم المتكامل لإدارة الأندية الرياضية &copy; جميع الحقوق محفوظة
+        </footer>
+        <script>
+          window.addEventListener("load", function () {
+            window.setTimeout(function () {
+              window.print();
+              window.setTimeout(function () { window.close(); }, 500);
+            }, 300);
+          });
+        </script>
+      </body>
+    </html>`;
+}
+
+/**
+ * Opens the generated print document and reports whether the browser allowed it.
+ */
+export function openSchedulePrintWindow(values) {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return false;
+
+  printWindow.document.open();
+  printWindow.document.write(buildSchedulePrintHtml(values));
+  printWindow.document.close();
+  return true;
+}

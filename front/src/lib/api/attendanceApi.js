@@ -1,20 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const attendanceApi = createApi({
   reducerPath: "attendanceApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["Attendance"],
   endpoints: (builder) => ({
     qrCheckIn: builder.mutation({
@@ -51,6 +40,13 @@ export const attendanceApi = createApi({
       }),
       providesTags: ["Attendance"],
     }),
+    getAttendances: builder.query({
+      query: (params = {}) => ({
+        url: "attendances/history",
+        params,
+      }),
+      providesTags: ["Attendance"],
+    }),
     deductAttendance: builder.mutation({
       query: ({ attendanceId, body }) => ({
         url: `reception/attendances/${attendanceId}/deduct`,
@@ -68,5 +64,6 @@ export const {
   useGetMemberSubscriptionsQuery,
   useGetMemberQuery,
   useGetMemberAttendancesQuery,
+  useGetAttendancesQuery,
   useDeductAttendanceMutation,
 } = attendanceApi;

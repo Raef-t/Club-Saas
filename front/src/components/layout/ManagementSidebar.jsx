@@ -9,7 +9,7 @@ const navGroups = [
   {
     title: "العمليات الأساسية",
     items: [
-      { title: "الصفحة الرئيسية", href: "/management" },
+      { title: "الإحصائيات", href: "/management" },
       { title: "المدربين", href: "/management/coaches" },
       { title: "الأنشطة الرياضية", href: "/management/activities" },
       { title: "الفعاليات", href: "/management/subscription-plans" },
@@ -51,9 +51,7 @@ export default function ManagementSidebar({ className }) {
         <Image src={"/img/test_logo.png"} alt="Logo" width={159} height={59} />
       </div>
 
-      <h3 className="mt-6 text-center text-base font-medium text-app-text">
-        نظام الإدارة
-      </h3>
+      <h3 className="mt-6 text-center text-base font-medium text-app-text">نظام الإدارة</h3>
 
       <nav className="mx-auto mt-8 flex w-full max-w-[250px] flex-col gap-6 px-1">
         {navGroups.map((group) => (
@@ -66,7 +64,7 @@ export default function ManagementSidebar({ className }) {
                 const active = isActive(pathname, item.href);
                 const hasSubItems = Boolean(
                   (item.children && item.children.length > 0) ||
-                  (item.subItems && item.subItems.length > 0)
+                  (item.subItems && item.subItems.length > 0),
                 );
                 return (
                   <Link

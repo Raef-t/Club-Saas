@@ -1,24 +1,16 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const subscriptionPlansApi = createApi({
   reducerPath: "subscriptionPlansApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["SubscriptionPlans"],
   endpoints: (builder) => ({
     getSubscriptionPlans: builder.query({
-      query: () => "subscription-plans",
+      query: (params = {}) => ({
+        url: "subscription-plans",
+        params,
+      }),
       providesTags: ["SubscriptionPlans"],
     }),
     getSubscriptionPlan: builder.query({

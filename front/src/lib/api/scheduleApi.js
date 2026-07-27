@@ -1,24 +1,16 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const scheduleApi = createApi({
   reducerPath: "scheduleApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["Schedule"],
   endpoints: (builder) => ({
     getSchedule: builder.query({
-      query: () => "session-templates/schedule",
+      query: (branchId) => ({
+        url: "session-templates/schedule",
+        params: branchId && branchId !== "all" ? { branch_id: String(branchId) } : undefined,
+      }),
       providesTags: ["Schedule"],
     }),
   }),

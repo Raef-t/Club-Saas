@@ -1,234 +1,112 @@
 import { useMemo, useState } from "react";
+import { useToast } from "@/components/ui/Toast";
 import {
+  useDeleteBranchMutation,
   useGetBranchesQuery,
   useGetBranchQuery,
-  useCreateBranchMutation,
-  useUpdateBranchMutation,
-  useDeleteBranchMutation,
   useToggleBranchStatusMutation,
 } from "@/lib/api/branchesApi";
-import { useGetClubsQuery } from "@/lib/api/clubsApi";
-import { useToast } from "@/components/ui/Toast";
+import { getApiErrorMessage } from "@/lib/apiError";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import {
+  createBranchStats,
+  filterBranches,
+  getBranchCollection,
+  getBranchRecord,
+} from "./branchUtils";
 
-function getBranchesArray(response) {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.data?.data)) return response.data.data;
-  return [];
-}
-
-function getClubsArray(response) {
-  return Array.isArray(response?.data) ? response.data : [];
-}
-
-function branchName(branch) {
-  if (!branch?.name) return "-";
-  if (typeof branch.name === "string") return branch.name;
-  return branch.name.ar || branch.name.en || "-";
-}
-
-export function useBranches({ selectedBranchId: initialSelectedBranchId = null } = {}) {
+/**
+ * Coordinates branch list filters, details, status changes, and deletion.
+ */
+export function useBranches({ initialBranches } = {}) {
   const toast = useToast();
+  const { selectedBranchId } = useManagementBranch();
   const [search, setSearch] = useState("");
   const [genderFilter, setGenderFilter] = useState("all");
-  const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedBranchId, setSelectedBranchId] = useState(initialSelectedBranchId);
-  const [formError, setFormError] = useState("");
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
-
-  const { data, error, isLoading, refetch } = useGetBranchesQuery();
-  const { data: clubsData } = useGetClubsQuery();
-
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const {
-    data: detailsData,
+    currentData: branchesResponse,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetBranchesQuery();
+  const {
+    currentData: detailsResponse,
     error: detailsError,
     isFetching: isFetchingDetails,
-  } = useGetBranchQuery(selectedBranchId, {
-    skip: !selectedBranchId || drawerMode !== "details",
+  } = useGetBranchQuery(selectedBranch?.id, {
+    skip: !selectedBranch,
   });
-
-  const [createBranch, { isLoading: isCreating }] = useCreateBranchMutation();
-  const [updateBranch, { isLoading: isUpdating }] = useUpdateBranchMutation();
   const [deleteBranch, { isLoading: isDeleting }] = useDeleteBranchMutation();
-  const [toggleStatus, { isLoading: isToggling }] =
-    useToggleBranchStatusMutation();
-
-  const branches = useMemo(() => getBranchesArray(data), [data]);
-  const clubs = useMemo(() => getClubsArray(clubsData), [clubsData]);
-
-  const selectedBranch = useMemo(
-    () => branches.find((b) => b.id === selectedBranchId) || null,
-    [branches, selectedBranchId],
+  const [toggleBranchStatus, { isLoading: isToggling }] = useToggleBranchStatusMutation();
+  const allBranches = useMemo(
+    () => getBranchCollection(branchesResponse || initialBranches),
+    [branchesResponse, initialBranches],
   );
+  const branchScope = useMemo(
+    () => filterEntitiesByBranch(allBranches, selectedBranchId, (branch) => [branch.id]),
+    [allBranches, selectedBranchId],
+  );
+  const branches = useMemo(
+    () =>
+      filterBranches(branchScope, {
+        search,
+        gender: genderFilter,
+      }),
+    [branchScope, genderFilter, search],
+  );
+  const stats = useMemo(() => createBranchStats(branchScope), [branchScope]);
+  const detailsBranch = getBranchRecord(detailsResponse) || selectedBranch;
 
-  const detailsBranch = useMemo(() => detailsData?.data || null, [detailsData]);
-
-  const filteredBranches = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return branches.filter((branch) => {
-      const nameVal =
-        typeof branch.name === "string"
-          ? branch.name
-          : branch.name?.ar || branch.name?.en || "";
-      const matchesGender =
-        genderFilter === "all" || branch.gender_restriction === genderFilter;
-      const matchesSearch =
-        !normalizedSearch ||
-        [nameVal, branch.address, branch.phone]
-          .filter(Boolean)
-          .some((value) =>
-            String(value).toLowerCase().includes(normalizedSearch),
-          );
-
-      return matchesGender && matchesSearch;
-    });
-  }, [branches, search, genderFilter]);
-
-  const stats = useMemo(() => {
-    const activeCount = branches.filter((b) => b.is_active).length;
-    const maleCount = branches.filter((b) => b.gender_restriction === "male").length;
-    const femaleCount = branches.filter((b) => b.gender_restriction === "female").length;
-
-    return [
-      {
-        title: "إجمالي الفروع",
-        value: branches.length.toLocaleString("ar"),
-        helper: "كل الفروع المسجلة",
-        tone: "yellow",
-        compact: true,
-      },
-      {
-        title: "الفروع النشطة",
-        value: activeCount.toLocaleString("ar"),
-        helper: "الفروع التي تعمل حالياً",
-        tone: "green",
-        compact: true,
-      },
-      {
-        title: "فروع الرجال",
-        value: maleCount.toLocaleString("ar"),
-        helper: "مخصصة للذكور فقط",
-        tone: "blue",
-        compact: true,
-      },
-      {
-        title: "فروع السيدات",
-        value: femaleCount.toLocaleString("ar"),
-        helper: "مخصصة للإناث فقط",
-        tone: "purple",
-        compact: true,
-      },
-    ];
-  }, [branches]);
-
-  function closeDrawer() {
-    setDrawerMode(null);
-    setSelectedBranchId(null);
-    setFormError("");
+  /**
+   * Opens the details drawer with immediate data from the current row.
+   */
+  function openDetails(branch) {
+    setSelectedBranch(branch);
   }
 
-  async function handleCreate(values) {
-    setFormError("");
-    try {
-      await createBranch(values).unwrap();
-      toast.success("تم إنشاء الفرع بنجاح!");
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      console.error("DEBUG handleCreate Error:", submitError);
-      let errorMsg = "تعذر إنشاء الفرع. تحقق من البيانات وحاول مرة أخرى.";
-      if (submitError?.data?.errors) {
-        const errors = submitError.data.errors;
-        const messages = Object.keys(errors).map(key => {
-          return `${key}: ${errors[key].join(", ")}`;
-        });
-        errorMsg = messages.join(" | ");
-      } else if (submitError?.data?.message) {
-        errorMsg = submitError.data.message;
-      }
-      setFormError(errorMsg);
-      return false;
-    }
+  /**
+   * Closes the branch details drawer.
+   */
+  function closeDetails() {
+    setSelectedBranch(null);
   }
 
-  async function handleUpdate(values) {
-    if (!selectedBranchId) return false;
-    setFormError("");
-    try {
-      await updateBranch({ id: selectedBranchId, body: values }).unwrap();
-      toast.success("تم تعديل بيانات الفرع بنجاح!");
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      console.error("DEBUG handleUpdate Error:", submitError);
-      let errorMsg = "تعذر تعديل الفرع. تحقق من البيانات وحاول مرة أخرى.";
-      if (submitError?.data?.errors) {
-        const errors = submitError.data.errors;
-        const messages = Object.keys(errors).map(key => {
-          return `${key}: ${errors[key].join(", ")}`;
-        });
-        errorMsg = messages.join(" | ");
-      } else if (submitError?.data?.message) {
-        errorMsg = submitError.data.message;
-      }
-      setFormError(errorMsg);
-      return false;
-    }
+  /**
+   * Opens the destructive confirmation for one branch.
+   */
+  function requestDelete(branch) {
+    setDeleteTarget(branch);
   }
 
-  function handleDelete(branch) {
-    setItemToDelete(branch);
-    setDeleteConfirmOpen(true);
-  }
-
-  function closeDeleteConfirm() {
-    setDeleteConfirmOpen(false);
-    setItemToDelete(null);
-  }
-
+  /**
+   * Deletes the selected branch after confirmation.
+   */
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!deleteTarget) return;
+
     try {
-      await deleteBranch(itemToDelete.id).unwrap();
-      toast.success("تم حذف الفرع بنجاح!");
-    } catch {
-      toast.error("تعذر حذف الفرع. حاول مرة أخرى.");
-    } finally {
-      closeDeleteConfirm();
+      await deleteBranch(deleteTarget.id).unwrap();
+      toast.success("تم حذف الفرع بنجاح");
+      setDeleteTarget(null);
+    } catch (deleteError) {
+      toast.error(getApiErrorMessage(deleteError, "تعذر حذف الفرع. حاول مرة أخرى."));
     }
   }
 
-  async function handleToggleStatus(branch) {
+  /**
+   * Toggles a branch status and reports the backend result.
+   */
+  async function toggleStatus(branch) {
     try {
-      await toggleStatus(branch.id).unwrap();
-      toast.success("تم تغيير حالة الفرع بنجاح!");
-    } catch {
-      toast.error("تعذر تغيير حالة الفرع. حاول مرة أخرى.");
+      await toggleBranchStatus(branch.id).unwrap();
+      toast.success("تم تغيير حالة الفرع بنجاح");
+    } catch (toggleError) {
+      toast.error(getApiErrorMessage(toggleError, "تعذر تغيير حالة الفرع. حاول مرة أخرى."));
     }
-  }
-
-  function getEditInitialValues() {
-    if (!selectedBranch) return null;
-
-    const nameAr =
-      typeof selectedBranch.name === "object"
-        ? selectedBranch.name?.ar
-        : selectedBranch.name;
-    const nameEn =
-      typeof selectedBranch.name === "object" ? selectedBranch.name?.en : "";
-
-    return {
-      club_id: String(selectedBranch.club_id || clubs[0]?.id || 1),
-      name_ar: nameAr || "",
-      name_en: nameEn || "",
-      gender_restriction: selectedBranch.gender_restriction || "mixed",
-      address: selectedBranch.address || "",
-      country_code: selectedBranch.country_code || "+963",
-      phone: selectedBranch.phone || "",
-      type: selectedBranch.type || "gym",
-    };
   }
 
   return {
@@ -236,35 +114,24 @@ export function useBranches({ selectedBranchId: initialSelectedBranchId = null }
     setSearch,
     genderFilter,
     setGenderFilter,
-    drawerMode,
-    setDrawerMode,
-    selectedBranchId,
-    setSelectedBranchId,
-    formError,
-    setFormError,
-    isLoading,
-    error,
-    refetch,
-    filteredBranches,
+    branches,
     stats,
+    isLoading: isLoading && allBranches.length === 0,
+    isFetching,
+    errorMessage: error ? getApiErrorMessage(error, "تعذر تحميل الفروع.") : "",
+    retry: refetch,
     selectedBranch,
     detailsBranch,
-    isFetchingDetails,
     detailsError,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    isToggling,
-    handleCreate,
-    handleUpdate,
-    handleDelete,
+    isFetchingDetails,
+    openDetails,
+    closeDetails,
+    deleteTarget,
+    setDeleteTarget,
+    requestDelete,
     confirmDelete,
-    closeDeleteConfirm,
-    deleteConfirmOpen,
-    itemToDelete,
-    handleToggleStatus,
-    getEditInitialValues,
-    clubs,
-    closeDrawer,
+    isDeleting,
+    toggleStatus,
+    isToggling,
   };
 }

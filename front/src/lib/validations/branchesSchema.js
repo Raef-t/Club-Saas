@@ -11,39 +11,18 @@ export const branchSchema = z.object({
     .string({ required_error: "الاسم بالعربية مطلوب" })
     .min(2, "الاسم يجب أن يكون حرفين على الأقل")
     .max(100, "الاسم يجب ألا يتجاوز 100 حرف"),
-    
-  name_en: z
-    .string()
-    .max(100, "الاسم يجب ألا يتجاوز 100 حرف")
-    .optional()
-    .or(z.literal("")),
 
-  gender_restriction: z.enum(["mixed", "male", "female"], { 
-    required_error: "يرجى تحديد قيود الجنس" 
+  gender_restriction: z.enum(["mixed", "male", "female"], {
+    required_error: "يرجى تحديد قيود الجنس",
   }),
 
-  type: z
-    .string()
-    .max(50, "نوع الفرع طويل جداً")
-    .optional()
-    .or(z.literal("")),
+  type: z.string().max(50, "نوع الفرع طويل جداً").optional().or(z.literal("")),
 
-  phone: z
-    .string()
-    .max(15, "رقم الهاتف طويل جداً")
-    .optional()
-    .or(z.literal("")),
+  phone: z.string().max(15, "رقم الهاتف طويل جداً").optional().or(z.literal("")),
 
-  country_code: z
-    .string()
-    .optional()
-    .or(z.literal("")),
+  country_code: z.string().optional().or(z.literal("")),
 
-  address: z
-    .string()
-    .max(255, "العنوان طويل جداً")
-    .optional()
-    .or(z.literal("")),
-    
+  address: z.string().max(255, "العنوان طويل جداً").optional().or(z.literal("")),
+
   is_active: z.boolean().optional(),
 });

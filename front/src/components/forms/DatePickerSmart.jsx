@@ -2,120 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { 
+import {
   CalendarIcon,
   ChevronLeft,
   ChevronRight,
   ChevronDownIcon as ChevronDown,
   XIcon as X,
-  TagIcon
+  TagIcon,
 } from "@/components/icons/Icons";
-
-function pad2(n) {
-  return String(n).padStart(2, "0");
-}
-
-function toISO(date) {
-  if (!date) return "";
-  const y = date.getFullYear();
-  const m = pad2(date.getMonth() + 1);
-  const d = pad2(date.getDate());
-  return `${y}-${m}-${d}`;
-}
-
-function fromISO(iso) {
-  if (!iso) return null;
-  const [y, m, d] = String(iso)
-    .split("-")
-    .map((x) => Number(x));
-  if (!y || !m || !d) return null;
-  const dt = new Date(y, m - 1, d);
-  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d)
-    return null;
-  return dt;
-}
-
-function formatDisplay(iso, format = "DD/MM/YYYY") {
-  const dt = fromISO(iso);
-  if (!dt) return "";
-  const dd = pad2(dt.getDate());
-  const mm = pad2(dt.getMonth() + 1);
-  const yyyy = dt.getFullYear();
-  if (format === "YYYY/MM/DD") return `${yyyy}/${mm}/${dd}`;
-  return format === "MM/DD/YYYY"
-    ? `${mm}/${dd}/${yyyy}`
-    : `${dd}/${mm}/${yyyy}`;
-}
-
-function cleanTyped(raw) {
-  return String(raw || "")
-    .replace(/\D/g, "")
-    .slice(0, 8);
-}
-
-function applyMask(digits, format = "DD/MM/YYYY") {
-  if (format === "YYYY/MM/DD") {
-    const y = digits.slice(0, 4);
-    const m = digits.slice(4, 6);
-    const d = digits.slice(6, 8);
-    if (digits.length <= 4) return y;
-    if (digits.length <= 6) return `${y}/${m}`;
-    return `${y}/${m}/${d}`;
-  }
-
-  const a = digits.slice(0, 2);
-  const b = digits.slice(2, 4);
-  const c = digits.slice(4, 8);
-
-  if (digits.length <= 2) return a;
-  if (digits.length <= 4) return `${a}/${b}`;
-  return `${a}/${b}/${c}`;
-}
-
-function parseTyped(masked, format = "DD/MM/YYYY") {
-  let m, yyyy, mm, dd;
-
-  if (format === "YYYY/MM/DD") {
-    m = String(masked || "")
-      .trim()
-      .match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
-    if (!m) return null;
-    yyyy = Number(m[1]);
-    mm = Number(m[2]);
-    dd = Number(m[3]);
-  } else {
-    m = String(masked || "")
-      .trim()
-      .match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!m) return null;
-
-    let p1 = Number(m[1]);
-    let p2 = Number(m[2]);
-    yyyy = Number(m[3]);
-
-    if (format === "MM/DD/YYYY") {
-      mm = p1;
-      dd = p2;
-    } else {
-      dd = p1;
-      mm = p2;
-    }
-  }
-
-  if (yyyy < 1900 || yyyy > 2100) return null;
-  if (mm < 1 || mm > 12) return null;
-  if (dd < 1 || dd > 31) return null;
-
-  const dt = new Date(yyyy, mm - 1, dd);
-  if (
-    dt.getFullYear() !== yyyy ||
-    dt.getMonth() !== mm - 1 ||
-    dt.getDate() !== dd
-  )
-    return null;
-
-  return toISO(dt);
-}
+import {
+  applyDateMask as applyMask,
+  cleanDateInput as cleanTyped,
+  formatDateDisplay as formatDisplay,
+  fromIsoDate as fromISO,
+  parseDateInput as parseTyped,
+  toIsoDate as toISO,
+} from "@/components/forms/datePickerUtils";
 
 const MONTHS = [
   "يناير",
@@ -170,10 +72,7 @@ export default function DatePickerSmart({
     return "";
   });
 
-  const inputText = useMemo(
-    () => applyMask(digits, format),
-    [digits, format],
-  );
+  const inputText = useMemo(() => applyMask(digits, format), [digits, format]);
 
   const selectedDate = useMemo(() => fromISO(value), [value]);
   const [view, setView] = useState(() => selectedDate || new Date());
@@ -183,7 +82,6 @@ export default function DatePickerSmart({
     if (autoDefault && !value && onChange) {
       onChange(toISO(new Date()));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync when closed (Background format)
@@ -226,8 +124,7 @@ export default function DatePickerSmart({
     let top = shouldFlip ? rect.top - estimatedH - 8 : rect.bottom + 8;
     let left = rect.right - width; // align right for RTL
 
-    if (left + width > window.innerWidth - margin)
-      left = window.innerWidth - width - margin;
+    if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
     if (left < margin) left = margin;
 
     if (top < margin) top = margin;
@@ -276,8 +173,7 @@ export default function DatePickerSmart({
     const daysInMonth = new Date(y, m + 1, 0).getDate();
 
     const cells = [];
-    for (let i = 0; i < firstDay; i++)
-      cells.push({ date: null, inMonth: false });
+    for (let i = 0; i < firstDay; i++) cells.push({ date: null, inMonth: false });
 
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push({ date: new Date(y, m, d), inMonth: true });
@@ -316,10 +212,8 @@ export default function DatePickerSmart({
     setOpen(false);
   };
 
-  const goPrevMonth = () =>
-    setView((v) => new Date(v.getFullYear(), v.getMonth() - 1, 1));
-  const goNextMonth = () =>
-    setView((v) => new Date(v.getFullYear(), v.getMonth() + 1, 1));
+  const goPrevMonth = () => setView((v) => new Date(v.getFullYear(), v.getMonth() - 1, 1));
+  const goNextMonth = () => setView((v) => new Date(v.getFullYear(), v.getMonth() + 1, 1));
 
   const handleInputChange = (e) => {
     let d = cleanTyped(e.target.value);
@@ -370,11 +264,7 @@ export default function DatePickerSmart({
     setOpen(false);
   };
 
-  const placeholderText =
-    placeholder ||
-    (format === "MM/DD/YYYY"
-      ? "mm/dd/yyyy"
-      : "dd/mm/yyyy");
+  const placeholderText = placeholder || (format === "MM/DD/YYYY" ? "mm/dd/yyyy" : "dd/mm/yyyy");
 
   // ===== Years list =====
   const years = useMemo(() => {
@@ -408,8 +298,8 @@ export default function DatePickerSmart({
 
   return (
     <div className="flex flex-col w-full text-start">
-      {label && (
-        compact ? (
+      {label &&
+        (compact ? (
           <span className="mb-1.5 block text-xs text-app-muted-light text-right w-full">
             {label}
             {required ? <span className="text-app-red">*</span> : null}
@@ -420,17 +310,14 @@ export default function DatePickerSmart({
             <span>{label}</span>
             {required ? <span className="text-app-red">*</span> : null}
           </span>
-        )
-      )}
+        ))}
 
       {/* Input */}
       <div
         ref={inputWrapRef}
         className={[
           "relative flex w-full items-center justify-between rounded-lg px-4 text-sm transition outline-none",
-          compact
-            ? "h-9 bg-black/35 border"
-            : "h-[46px] bg-app-panel-soft/40 border",
+          compact ? "h-9 bg-black/35 border" : "h-[46px] bg-app-panel-soft/40 border",
           error
             ? "border-app-red focus-within:border-app-red focus-within:ring-1 focus-within:ring-app-red"
             : "border-app-muted/50 focus-within:border-app-yellow focus-within:ring-1 focus-within:ring-app-yellow",
@@ -518,15 +405,11 @@ export default function DatePickerSmart({
               <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-4 text-app-text">
                 {/* Header */}
                 <div className="flex items-center justify-between" dir="rtl">
-                  <div className="text-sm font-semibold text-app-text">
-                    التقويم
-                  </div>
+                  <div className="text-sm font-semibold text-app-text">التقويم</div>
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setMode((m) => (m === "day" ? "year" : "day"))
-                    }
+                    onClick={() => setMode((m) => (m === "day" ? "year" : "day"))}
                     className="p-1 rounded-full hover:bg-app-card-soft transition"
                     title="السنوات"
                   >
@@ -535,10 +418,7 @@ export default function DatePickerSmart({
                 </div>
 
                 {/* Month row */}
-                <div
-                  className="mt-3 flex items-center justify-between"
-                  dir="rtl"
-                >
+                <div className="mt-3 flex items-center justify-between" dir="rtl">
                   <div className="text-xs text-app-muted-light">
                     {MONTHS[view.getMonth()]} {view.getFullYear()}
                   </div>
@@ -614,9 +494,7 @@ export default function DatePickerSmart({
                             {week.map((cell, i) => {
                               const inMonth = !!cell?.inMonth && !!cell?.date;
                               if (!inMonth) {
-                                return (
-                                  <div key={`b-${wIdx}-${i}`} className="h-8" />
-                                );
+                                return <div key={`b-${wIdx}-${i}`} className="h-8" />;
                               }
 
                               const iso = toISO(cell.date);
@@ -655,10 +533,7 @@ export default function DatePickerSmart({
           document.body,
         )}
       {error && (
-        <span
-          className="mt-1.5 block text-xs text-app-red text-right w-full"
-          role="alert"
-        >
+        <span className="mt-1.5 block text-xs text-app-red text-right w-full" role="alert">
           {error}
         </span>
       )}

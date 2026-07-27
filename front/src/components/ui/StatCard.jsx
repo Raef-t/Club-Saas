@@ -1,4 +1,26 @@
-import { GridIcon, TrendUpIcon } from "@/components/icons/Icons";
+import Link from "next/link";
+import {
+  CalendarIcon,
+  ClockIcon,
+  DumbbellIcon,
+  GiftIcon,
+  GridIcon,
+  SealCheckIcon,
+  TagIcon,
+  TrendUpIcon,
+  UsersIcon,
+} from "@/components/icons/Icons";
+
+const statIcons = {
+  activities: GiftIcon,
+  coaches: DumbbellIcon,
+  expiring: ClockIcon,
+  generalTraining: DumbbellIcon,
+  members: UsersIcon,
+  privateTraining: SealCheckIcon,
+  schedule: CalendarIcon,
+  subscriptions: TagIcon,
+};
 
 const toneMap = {
   yellow: {
@@ -53,6 +75,9 @@ function MiniSpark({ tone = "yellow" }) {
   );
 }
 
+/**
+ * Renders one statistic with a semantic icon and an optional destination.
+ */
 export default function StatCard({
   title,
   value,
@@ -61,51 +86,47 @@ export default function StatCard({
   tone = "yellow",
   negative = false,
   compact = false,
+  href,
+  iconKey,
 }) {
   const styles = toneMap[tone] || toneMap.yellow;
+  const Icon = statIcons[iconKey] || GridIcon;
 
-  return (
+  const card = (
     <article className="card-shell h-32 min-w-0 overflow-hidden rounded-2xl p-3.5" dir="rtl">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1 text-right">
-          <h3 className="truncate text-sm font-medium text-app-text">
-            {title}
-          </h3>
-          {helper && compact && (
-            <p className="mt-1 text-xs text-app-muted">{helper}</p>
-          )}
+          <h3 className="truncate text-sm font-medium text-app-text">{title}</h3>
+          {helper && compact && <p className="mt-1 text-xs text-app-muted">{helper}</p>}
         </div>
-        <div
-          className={`grid size-11 shrink-0 place-items-center rounded-full ${styles.icon}`}
-        >
-          <GridIcon className="size-5" />
+        <div className={`grid size-11 shrink-0 place-items-center rounded-full ${styles.icon}`}>
+          <Icon className="size-5" />
         </div>
       </div>
 
       {!compact && (
-        <div className={`mt-1 text-center text-xl font-medium leading-7 ${tone === 'yellow' ? 'text-app-yellow' : 'text-app-text'}`}>
+        <div
+          className={`mt-1 text-center text-xl font-medium leading-7 ${tone === "yellow" ? "text-app-yellow" : "text-app-text"}`}
+        >
           {value}
         </div>
       )}
       {compact && value && (
-        <div className={`mt-5 text-center text-xl font-medium ${tone === 'yellow' ? 'text-app-yellow' : 'text-app-text'}`}>
+        <div
+          className={`mt-5 text-center text-xl font-medium ${tone === "yellow" ? "text-app-yellow" : "text-app-text"}`}
+        >
           {value}
         </div>
       )}
 
       {!compact && (
-        <div
-          className="mt-1 flex items-end justify-between gap-3"
-          dir="ltr"
-        >
+        <div className="mt-1 flex items-end justify-between gap-3" dir="ltr">
           <div className="text-left text-[10px] leading-none text-white">
             {change && (
               <div
                 className={`flex items-center gap-1 text-sm font-medium leading-5 ${negative ? "text-app-red" : "text-app-green-2"}`}
               >
-                <TrendUpIcon
-                  className={`size-4 ${negative ? "rotate-180" : ""}`}
-                />
+                <TrendUpIcon className={`size-4 ${negative ? "rotate-180" : ""}`} />
                 <span>{change}</span>
               </div>
             )}
@@ -115,5 +136,17 @@ export default function StatCard({
         </div>
       )}
     </article>
+  );
+
+  if (!href) return card;
+
+  return (
+    <Link
+      href={href}
+      className="block min-w-0 rounded-2xl transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow/60"
+      aria-label={`فتح صفحة ${title}`}
+    >
+      {card}
+    </Link>
   );
 }

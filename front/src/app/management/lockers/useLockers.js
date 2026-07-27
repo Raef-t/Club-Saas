@@ -1,181 +1,123 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import {
-  useGetLockersQuery,
-  useCreateLockerMutation,
   useDeleteLockerMutation,
-  useToggleLockerStatusMutation,
-  useUpdateLockerMutation,
-  useReserveLockerMutation,
+  useGetLockersQuery,
   useReleaseLockerReservationMutation,
+  useReserveLockerMutation,
 } from "@/lib/api/lockersApi";
+import { getApiErrorMessage } from "@/lib/apiError";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { createLockerQueryParams, filterLockers, getLockerCollection } from "./lockerUtils";
 
-export function useLockers() {
+/**
+ * Coordinates locker list filters and reservation lifecycle actions.
+ */
+export function useLockers({ initialLockers } = {}) {
   const toast = useToast();
+  const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
+    useManagementBranch();
   const [search, setSearch] = useState("");
-  const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [formError, setFormError] = useState("");
-  
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [reserveTarget, setReserveTarget] = useState(null);
+  const [releaseTarget, setReleaseTarget] = useState(null);
+  const [reserveError, setReserveError] = useState("");
 
-  const queryParams = {
-    branch_id: branchFilter !== "all" ? branchFilter : undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined,
-  };
-
-  const { data: response, isLoading, isFetching, refetch } = useGetLockersQuery(queryParams);
-  const allLockers = response?.data || [];
-
-  const lockers = allLockers.filter((locker) => {
-    const matchesSearch = search
-      ? locker.locker_number.toLowerCase().includes(search.toLowerCase())
-      : true;
-    const matchesBranch =
-      branchFilter !== "all" ? String(locker.branch_id) === String(branchFilter) : true;
-    
-    // Status mapping for occupied
-    let isOccupied = locker.status === "assigned" || locker.status === "with_member" || locker.status === "with_staff";
-    let matchesStatus = true;
-    if (statusFilter === "available") {
-      matchesStatus = locker.status === "available";
-    } else if (statusFilter === "occupied") {
-      matchesStatus = isOccupied;
-    }
-    
-    return matchesSearch && matchesBranch && matchesStatus;
-  });
-
-  const [createLocker, { isLoading: isCreating }] = useCreateLockerMutation();
+  const queryParams = useMemo(
+    () => createLockerQueryParams(branchFilter, statusFilter),
+    [branchFilter, statusFilter],
+  );
+  const {
+    currentData: lockersResponse,
+    error: lockersError,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetLockersQuery(queryParams);
   const [deleteLocker, { isLoading: isDeleting }] = useDeleteLockerMutation();
-  const [toggleStatus, { isLoading: isToggling }] = useToggleLockerStatusMutation();
-
-  const [updateLocker, { isLoading: isUpdating }] = useUpdateLockerMutation();
   const [reserveLocker, { isLoading: isReserving }] = useReserveLockerMutation();
   const [releaseReservation, { isLoading: isReleasing }] = useReleaseLockerReservationMutation();
 
-  function closeDrawer() {
-    setDrawerOpen(false);
-    setFormError("");
+  const allLockers = useMemo(
+    () => getLockerCollection(lockersResponse || initialLockers),
+    [initialLockers, lockersResponse],
+  );
+  const lockers = useMemo(
+    () =>
+      filterLockers(allLockers, {
+        search,
+        branch: branchFilter,
+        status: statusFilter,
+      }),
+    [allLockers, branchFilter, search, statusFilter],
+  );
+
+  /**
+   * Opens the reservation drawer for the selected locker.
+   */
+  function openReserve(locker) {
+    setReserveError("");
+    setReserveTarget(locker);
   }
 
-  async function handleCreate(values) {
-    setFormError("");
-    try {
-      await createLocker(values).unwrap();
-      toast.success("تمت إضافة الخزانة بنجاح!");
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      setFormError(
-        submitError?.data?.message || "تعذر إضافة الخزانة. تحقق من البيانات وحاول مرة أخرى."
-      );
-      return false;
-    }
+  /**
+   * Closes the reservation drawer and clears its backend error.
+   */
+  function closeReserve() {
+    setReserveTarget(null);
+    setReserveError("");
   }
 
-  // Update State
-  const [updateModalOpen, setUpdateModalOpen] = useState(false);
-  const [itemToUpdate, setItemToUpdate] = useState(null);
-
-  function handleUpdateClick(locker) {
-    setItemToUpdate(locker);
-    setUpdateModalOpen(true);
-  }
-
-  function closeUpdateModal() {
-    setUpdateModalOpen(false);
-    setItemToUpdate(null);
-  }
-
-  async function handleUpdate(values) {
-    try {
-      await updateLocker({ id: itemToUpdate.id, ...values }).unwrap();
-      toast.success("تم تعديل الخزانة بنجاح!");
-      closeUpdateModal();
-      return true;
-    } catch (error) {
-      toast.error(error?.data?.message || "تعذر تعديل الخزانة.");
-      return false;
-    }
-  }
-
-  // Reserve State
-  const [reserveModalOpen, setReserveModalOpen] = useState(false);
-  const [itemToReserve, setItemToReserve] = useState(null);
-
-  function handleReserveClick(locker) {
-    setItemToReserve(locker);
-    setReserveModalOpen(true);
-  }
-
-  function closeReserveModal() {
-    setReserveModalOpen(false);
-    setItemToReserve(null);
-  }
-
+  /**
+   * Creates a reservation for the selected locker.
+   */
   async function handleReserve(values) {
+    if (!reserveTarget) return false;
+    setReserveError("");
+
     try {
-      await reserveLocker({ id: itemToReserve.id, ...values }).unwrap();
+      await reserveLocker({ id: reserveTarget.id, ...values }).unwrap();
       toast.success("تم حجز الخزانة بنجاح!");
-      closeReserveModal();
+      closeReserve();
       return true;
     } catch (error) {
-      toast.error(error?.data?.message || "تعذر حجز الخزانة.");
+      setReserveError(getApiErrorMessage(error, "تعذر حجز الخزانة."));
       return false;
     }
   }
 
-  // Release State
-  const [releaseConfirmOpen, setReleaseConfirmOpen] = useState(false);
-  const [itemToRelease, setItemToRelease] = useState(null);
-
-  function handleReleaseClick(locker) {
-    setItemToRelease(locker);
-    setReleaseConfirmOpen(true);
-  }
-
-  function closeReleaseConfirm() {
-    setReleaseConfirmOpen(false);
-    setItemToRelease(null);
-  }
-
+  /**
+   * Releases the active reservation after confirmation.
+   */
   async function confirmRelease() {
-    if (!itemToRelease) return;
+    if (!releaseTarget) return;
+
     try {
-      await releaseReservation(itemToRelease.id).unwrap();
+      await releaseReservation(releaseTarget.id).unwrap();
       toast.success("تم فك حجز الخزانة بنجاح!");
-      closeReleaseConfirm();
+      setReleaseTarget(null);
     } catch (error) {
-      toast.error(error?.data?.message || "تعذر فك حجز الخزانة.");
-      closeReleaseConfirm();
+      toast.error(getApiErrorMessage(error, "تعذر فك حجز الخزانة."));
     }
   }
 
-  function handleDeleteClick(locker) {
-    setItemToDelete(locker);
-    setDeleteConfirmOpen(true);
-  }
-
-  function closeDeleteConfirm() {
-    setDeleteConfirmOpen(false);
-    setItemToDelete(null);
-  }
-
+  /**
+   * Permanently deletes the selected locker after confirmation.
+   */
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!deleteTarget) return;
+
     try {
-      await deleteLocker(itemToDelete.id).unwrap();
+      await deleteLocker(deleteTarget.id).unwrap();
       toast.success("تم حذف الخزانة بنجاح!");
-      closeDeleteConfirm();
+      setDeleteTarget(null);
     } catch (error) {
-      toast.error(error?.data?.message || "تعذر حذف الخزانة. تأكد من عدم ارتباطها ببيانات أخرى.");
-      closeDeleteConfirm();
+      toast.error(
+        getApiErrorMessage(error, "تعذر حذف الخزانة. تأكد من عدم ارتباطها ببيانات أخرى."),
+      );
     }
   }
-
 
   return {
     search,
@@ -184,45 +126,27 @@ export function useLockers() {
     setBranchFilter,
     statusFilter,
     setStatusFilter,
-    drawerOpen,
-    setDrawerOpen,
-    formError,
-    setFormError,
     lockers,
+    lockersErrorMessage: lockersError
+      ? getApiErrorMessage(lockersError, "تعذر تحميل الخزائن.")
+      : "",
     isLoading,
     isFetching,
     refetch,
-    handleCreate,
-    isCreating,
-    deleteConfirmOpen,
-    itemToDelete,
-    handleDeleteClick,
-    closeDeleteConfirm,
+    deleteTarget,
+    setDeleteTarget,
     confirmDelete,
     isDeleting,
-    
-    // Update
-    updateModalOpen,
-    itemToUpdate,
-    handleUpdateClick,
-    closeUpdateModal,
-    handleUpdate,
-    isUpdating,
-
-    // Reserve
-    reserveModalOpen,
-    itemToReserve,
-    handleReserveClick,
-    closeReserveModal,
+    reserveTarget,
+    reserveError,
+    openReserve,
+    closeReserve,
     handleReserve,
     isReserving,
-
-    // Release
-    releaseConfirmOpen,
-    itemToRelease,
-    handleReleaseClick,
-    closeReleaseConfirm,
+    releaseTarget,
+    setReleaseTarget,
     confirmRelease,
     isReleasing,
+    actionsDisabled: isDeleting || isReserving || isReleasing,
   };
 }

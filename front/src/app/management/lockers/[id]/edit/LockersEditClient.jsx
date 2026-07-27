@@ -3,45 +3,27 @@
 import { useRouter } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard } from "@/components/forms/FormControls";
-import { LockerUpdateForm } from "../../LockersClient";
-import { useGetLockerQuery, useUpdateLockerMutation } from "@/lib/api/lockersApi";
-import { useToast } from "@/components/ui/Toast";
-import SkeletonPage from "@/components/ui/Skeleton";
+import LockerUpdateForm from "../../LockerUpdateForm";
+import { useUpdateLocker } from "../../useLockerFormMutation";
+import { getLockerCollection, getLockerRecord } from "../../lockerUtils";
 
 const FORM_ID = "edit-locker-form";
 
-export default function LockersEditClient({ lockerId }) {
+/**
+ * Connects the server-loaded locker form to its update mutation.
+ */
+export default function LockersEditClient({ lockerId, initialLocker, initialMembers }) {
   const router = useRouter();
-  const toast = useToast();
-  
-  const { data: lockerData, isLoading: isFetching } = useGetLockerQuery(lockerId);
-  const locker = lockerData?.data;
+  const locker = getLockerRecord(initialLocker);
+  const members = getLockerCollection(initialMembers);
+  const { formError, isLoading, submitLocker } = useUpdateLocker(lockerId);
 
-  const [updateLocker, { isLoading: isUpdating }] = useUpdateLockerMutation();
-
+  /**
+   * Updates the locker and returns to the list after success.
+   */
   async function submit(values) {
-    try {
-      await updateLocker({ id: lockerId, ...values }).unwrap();
-      toast.success("تم تعديل الخزانة بنجاح!");
-      router.push("/management/lockers");
-    } catch (error) {
-      toast.error(error?.data?.message || "تعذر تعديل الخزانة.");
-    }
-  }
-
-  if (isFetching) {
-    return <SkeletonPage />;
-  }
-
-  if (!locker) {
-    return (
-      <div className="flex flex-col items-center justify-center p-10 text-center">
-        <h2 className="text-xl font-bold text-white mb-2">الخزانة غير موجودة</h2>
-        <button className="text-app-yellow underline" onClick={() => router.push("/management/lockers")}>
-          العودة لقائمة الخزائن
-        </button>
-      </div>
-    );
+    const succeeded = await submitLocker(values);
+    if (succeeded) router.push("/management/lockers");
   }
 
   return (
@@ -50,7 +32,7 @@ export default function LockersEditClient({ lockerId }) {
       subtitle="إدارة الخزائن > تعديل خزانة"
       formId={FORM_ID}
       backHref="/management/lockers"
-      isSubmitting={isUpdating}
+      isSubmitting={isLoading}
       submitLabel="حفظ التعديلات"
     >
       <div className="entry-form-side-layout">
@@ -58,9 +40,11 @@ export default function LockersEditClient({ lockerId }) {
           <LockerUpdateForm
             formId={FORM_ID}
             initialData={locker}
+            members={members}
             onSubmit={submit}
             onCancel={() => router.push("/management/lockers")}
-            isLoading={isUpdating}
+            isLoading={isLoading}
+            errorMessage={formError}
           />
         </FormCard>
       </div>
