@@ -3591,17 +3591,19 @@
                     "Attendance"
                 ],
                 "summary": "📆 سجل حضور موحد",
-                "description": "يجلب سجل حضور وانصراف (عضو / موظف) مع إمكانية الفلترة حسب تاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).",
+                "description": "يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).",
                 "operationId": "3076ed071799f8e5c3593d9d7b5583be",
                 "parameters": [
                     {
                         "name": "attendable_type",
                         "in": "query",
-                        "description": "نوع المستخدم (عضو أو موظف)",
-                        "required": true,
+                        "description": "نوع المستخدم (member, staff, أو all للجلب الشامل)",
+                        "required": false,
                         "schema": {
                             "type": "string",
+                            "default": "all",
                             "enum": [
+                                "all",
                                 "member",
                                 "staff"
                             ]
@@ -3610,8 +3612,8 @@
                     {
                         "name": "attendable_id",
                         "in": "query",
-                        "description": "معرف المستخدم (ID)",
-                        "required": true,
+                        "description": "معرف المستخدم (اختياري - إذا لم يحدد يجلب الكل)",
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -9588,6 +9590,58 @@
                     },
                     "404": {
                         "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/member/measurements/report": {
+            "get": {
+                "tags": [
+                    "Member Measurements"
+                ],
+                "summary": "📊 تقرير القياسات البدنية الشهري المقارن",
+                "description": "استرجاع التقرير الشهري للقياسات البدنية للاعب بين تاريخين مع ترحيل القيم التلقائي للأشهر التي لم يسجل بها قياسات.",
+                "operationId": "1d7e86fdca02432a09a022f065d79972",
+                "parameters": [
+                    {
+                        "name": "member_id",
+                        "in": "query",
+                        "description": "معرف العضو (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "تاريخ البداية (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "تاريخ النهاية (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "2026-06-30"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استخراج التقرير بنجاح"
                     }
                 },
                 "security": [
