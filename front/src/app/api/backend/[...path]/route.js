@@ -42,13 +42,42 @@ function clearAuthCookie(response, secure = false) {
   return response;
 }
 
+function getFirstHeaderValue(request, name) {
+  return request.headers.get(name)?.split(",", 1)[0]?.trim();
+}
+
 /**
  * Rejects cross-origin mutations while allowing trusted server requests that
- * legitimately omit the Origin header.
+ * legitimately omit the Origin header. Behind a reverse proxy, nextUrl may
+ * contain the internal host, so also compare against the public forwarded/Host
+ * headers supplied by the proxy.
  */
 function hasTrustedOrigin(request) {
   const origin = request.headers.get("origin");
-  return !origin || origin === request.nextUrl.origin;
+  if (!origin) {
+    return true;
+  }
+
+  const publicHost =
+    getFirstHeaderValue(request, "x-forwarded-host") || getFirstHeaderValue(request, "host");
+  const publicProtocol =
+    getFirstHeaderValue(request, "x-forwarded-proto") ||
+    request.nextUrl.protocol.replace(/:$/, "");
+  const allowedOrigins = new Set([request.nextUrl.origin]);
+
+  if (publicHost && publicProtocol) {
+    try {
+      allowedOrigins.add(new URL(`${publicProtocol}://${publicHost}`).origin);
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    return allowedOrigins.has(new URL(origin).origin);
+  } catch {
+    return false;
+  }
 }
 
 async function proxyBackendRequest(request, context) {
