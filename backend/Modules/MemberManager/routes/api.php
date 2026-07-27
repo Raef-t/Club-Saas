@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::prefix('member/measurements')->group(function () {
         Route::get('/', [MemberMeasurementController::class, 'index']);
         Route::post('/', [MemberMeasurementController::class, 'store']);
+        Route::get('report', [MemberMeasurementController::class, 'report']);
         Route::get('{id}', [MemberMeasurementController::class, 'show']);
         Route::put('{id}', [MemberMeasurementController::class, 'update']);
         Route::delete('{id}', [MemberMeasurementController::class, 'destroy']);

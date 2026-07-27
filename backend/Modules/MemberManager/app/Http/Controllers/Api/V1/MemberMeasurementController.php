@@ -5,11 +5,18 @@ namespace Modules\MemberManager\Http\Controllers\Api\V1;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\MemberManager\Models\MemberMeasurement;
 use Modules\MemberManager\Http\Requests\AddPlayerMeasurementRequest;
+use Modules\MemberManager\Services\MemberMeasurementReportService;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class MemberMeasurementController extends BaseController
 {
+    protected MemberMeasurementReportService $reportService;
+
+    public function __construct(MemberMeasurementReportService $reportService)
+    {
+        $this->reportService = $reportService;
+    }
     #[OA\Get(
         path: '/v1/member/measurements',
         summary: '📏 جلب جميع القياسات',
@@ -271,5 +278,33 @@ class MemberMeasurementController extends BaseController
         }
 
         return $data;
+    }
+
+    #[OA\Get(
+        path: '/v1/member/measurements/report',
+        summary: '📊 تقرير القياسات البدنية الشهري المقارن',
+        description: 'استرجاع التقرير الشهري للقياسات البدنية للاعب بين تاريخين مع ترحيل القيم التلقائي للأشهر التي لم يسجل بها قياسات.',
+        tags: ['Member Measurements'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'member_id', in: 'query', required: true, description: 'معرف العضو (ID)', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'from_date', in: 'query', required: false, description: 'تاريخ البداية (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', example: '2026-01-01'))]
+    #[OA\Parameter(name: 'to_date', in: 'query', required: false, description: 'تاريخ النهاية (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', example: '2026-06-30'))]
+    #[OA\Response(response: 200, description: '✅ تم استخراج التقرير بنجاح')]
+    public function report(Request $request)
+    {
+        $validated = $request->validate([
+            'member_id' => 'required|integer|exists:members,id',
+            'from_date' => 'nullable|date',
+            'to_date'   => 'nullable|date|after_or_equal:from_date',
+        ]);
+
+        $memberId = (int) $validated['member_id'];
+        $fromDate = $validated['from_date'] ?? now()->subMonths(5)->startOfMonth()->toDateString();
+        $toDate   = $validated['to_date'] ?? now()->endOfMonth()->toDateString();
+
+        $data = $this->reportService->generateMonthlyReport($memberId, $fromDate, $toDate);
+
+        return $this->successResponse($data, __('Physical measurement report generated successfully'));
     }
 }
