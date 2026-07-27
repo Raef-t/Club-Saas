@@ -468,11 +468,9 @@ class SubscriptionService
                 $freezeDays = Carbon::parse($activeFreeze->freeze_start_date)->diffInDays(now());
                 $activeFreeze->update(['actual_end_date' => now()]);
 
-                // Extend end_date by freeze duration
-                if ($subscription->end_date) {
-                    $subscription->update([
-                        'end_date' => Carbon::parse($subscription->end_date)->addDays($freezeDays),
-                    ]);
+                $newEndDate = $this->calculateUnfreezeEndDate($subscription, $freezeDays);
+                if ($newEndDate) {
+                    $subscription->update(['end_date' => $newEndDate]);
                 }
             }
 
@@ -481,37 +479,117 @@ class SubscriptionService
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
-            // إرسال إشعار فك التجميد
-            $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
-            $userId = $member?->person?->user?->id;
-
-            if ($userId) {
-                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_unfrozen')->first();
-                if ($template) {
-                    $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
-                    $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
-
-                    $endDate = now();
-                    $endDay = $endDate->locale('ar')->translatedFormat('l');
-
-                    $body = $template->parseBody([
-                        'اسم اللاعب' => $playerName,
-                        'اسم الاشتراك' => $planName,
-                        'تاريخ النهاية' => $endDate->toDateString(),
-                        'يوم النهاية' => $endDay,
-                    ]);
-
-                    app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
-                        'title' => $template->subject ?? 'انتهاء فترة التجميد وتفعيل الاشتراك 🟢',
-                        'body' => $body,
-                        'user_ids' => [$userId],
-                        'sender_type' => 'system'
-                    ]);
-                }
-            }
+            $this->sendUnfreezeNotification($subscription);
 
             return $subscription;
         });
+    }
+
+    /**
+     * Calculate the new end date when unfreezing a subscription based on its plan type.
+     */
+    private function calculateUnfreezeEndDate(PlayerSubscription $subscription, int $freezeDays): ?string
+    {
+        $plan = $subscription->plan;
+
+        if ($plan && $plan->type === 'session_based') {
+            return $this->calculateSessionBasedEndDate($subscription, $freezeDays);
+        }
+
+        return $subscription->end_date
+            ? Carbon::parse($subscription->end_date)->addDays($freezeDays)->format('Y-m-d')
+            : null;
+    }
+
+    /**
+     * Calculate end date for session-based plans by mapping remaining sessions to scheduled session template days.
+     */
+    private function calculateSessionBasedEndDate(PlayerSubscription $subscription, int $fallbackFreezeDays): ?string
+    {
+        $subscription->loadMissing(['items', 'plan.sessionTemplates']);
+
+        $remainingSessions = $subscription->items->sum(function ($item) {
+            return max(0, ($item->sessions_allocated ?? 0) - ($item->sessions_consumed ?? 0));
+        });
+
+        $sessionTemplates = $subscription->plan?->sessionTemplates->where('is_active', true) ?? collect();
+        $allowedDays = $sessionTemplates->pluck('day_of_week')->map(fn($d) => (int)$d)->unique()->all();
+
+        if (empty($allowedDays) || $remainingSessions <= 0) {
+            return $subscription->end_date
+                ? Carbon::parse($subscription->end_date)->addDays($fallbackFreezeDays)->format('Y-m-d')
+                : null;
+        }
+
+        // Fetch cancelled session dates from exceptions
+        $templateIds = $sessionTemplates->pluck('id')->toArray();
+        $cancelledDates = \Modules\Sports\Models\SessionException::whereIn('sport_session_template_id', $templateIds)
+            ->where('status', 'cancelled')
+            ->pluck('date')
+            ->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))
+            ->toArray();
+
+        $currentDate = now()->startOfDay();
+        $sessionsCounted = 0;
+        $calculatedEndDate = $currentDate->copy();
+
+        $maxSearchDays = 730; // Maximum 2 years search horizon to prevent infinite loops
+        $daysSearched = 0;
+
+        while ($sessionsCounted < $remainingSessions && $daysSearched < $maxSearchDays) {
+            $formattedDate = $currentDate->format('Y-m-d');
+
+            if (in_array($currentDate->dayOfWeek, $allowedDays, true) && !in_array($formattedDate, $cancelledDates, true)) {
+                $sessionsCounted++;
+                $calculatedEndDate = $currentDate->copy();
+            }
+
+            if ($sessionsCounted < $remainingSessions) {
+                $currentDate->addDay();
+            }
+
+            $daysSearched++;
+        }
+
+        return $calculatedEndDate->format('Y-m-d');
+    }
+
+    /**
+     * Send notification to member when subscription is unfrozen.
+     */
+    private function sendUnfreezeNotification(PlayerSubscription $subscription): void
+    {
+        $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+        $userId = $member?->person?->user?->id;
+
+        if (!$userId) {
+            return;
+        }
+
+        $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_unfrozen')->first();
+        if (!$template) {
+            return;
+        }
+
+        $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+        $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
+
+        $endDate = now();
+        $endDay = $endDate->locale('ar')->translatedFormat('l');
+
+        $body = $template->parseBody([
+            'اسم اللاعب' => $playerName,
+            'اسم الاشتراك' => $planName,
+            'تاريخ النهاية' => $endDate->toDateString(),
+            'يوم النهاية' => $endDay,
+        ]);
+
+        app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+            'title' => $template->subject ?? 'انتهاء فترة التجميد وتفعيل الاشتراك 🟢',
+            'body' => $body,
+            'user_ids' => [$userId],
+            'sender_type' => 'system'
+        ]);
     }
 
     /**
