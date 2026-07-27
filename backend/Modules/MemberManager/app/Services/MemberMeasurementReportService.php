@@ -221,13 +221,38 @@ class MemberMeasurementReportService
     /**
      * Generate comprehensive monthly physical measurement report with carry-forward support.
      */
-    public function generateMonthlyReport(int $memberId, string $fromDate, string $toDate): array
+    public function generateMonthlyReport(int $memberId, ?string $fromDate = null, ?string $toDate = null): array
     {
         $member = Member::find($memberId);
         $memberName = $member ? ($member->name ?? $member->full_name ?? "Member #{$memberId}") : "Member #{$memberId}";
 
-        $start = Carbon::parse($fromDate)->startOfMonth();
-        $end = Carbon::parse($toDate)->endOfMonth();
+        // Smart determination of date range when not explicitly provided
+        if (empty($fromDate) || empty($toDate)) {
+            $firstRecord = MemberMeasurement::where('member_id', $memberId)
+                ->orderBy('measurement_date', 'asc')
+                ->first();
+
+            $nowEnd = now()->endOfMonth();
+
+            if ($firstRecord) {
+                $firstMonth = Carbon::parse($firstRecord->measurement_date)->startOfMonth();
+                $totalMonths = (int) $firstMonth->diffInMonths($nowEnd) + 1;
+
+                if ($totalMonths > 6) {
+                    $start = empty($fromDate) ? now()->subMonths(5)->startOfMonth() : Carbon::parse($fromDate)->startOfMonth();
+                    $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
+                } else {
+                    $start = empty($fromDate) ? $firstMonth : Carbon::parse($fromDate)->startOfMonth();
+                    $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
+                }
+            } else {
+                $start = empty($fromDate) ? now()->subMonths(5)->startOfMonth() : Carbon::parse($fromDate)->startOfMonth();
+                $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
+            }
+        } else {
+            $start = Carbon::parse($fromDate)->startOfMonth();
+            $end = Carbon::parse($toDate)->endOfMonth();
+        }
 
         // 1. Build monthly timeline array
         $period = CarbonPeriod::create($start, '1 month', $end);

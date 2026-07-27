@@ -300,8 +300,8 @@ class MemberMeasurementController extends BaseController
         ]);
 
         $memberId = (int) $validated['member_id'];
-        $fromDate = $validated['from_date'] ?? now()->subMonths(5)->startOfMonth()->toDateString();
-        $toDate   = $validated['to_date'] ?? now()->endOfMonth()->toDateString();
+        $fromDate = $validated['from_date'] ?? null;
+        $toDate   = $validated['to_date'] ?? null;
 
         $data = $this->reportService->generateMonthlyReport($memberId, $fromDate, $toDate);
 
