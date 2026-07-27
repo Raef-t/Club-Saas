@@ -3,13 +3,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard, UploadBox } from "@/components/forms/FormControls";
-import { MemberForm, memberInitialForm } from "../MembersClient";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { MemberForm, memberInitialForm } from "../MemberForm";
 import { useMembers } from "../useMembers";
 
 const FORM_ID = "create-member-form";
 
 export default function MembersCreateClient() {
   const router = useRouter();
+  const { selectedBranchId } = useManagementBranch();
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
   const editId = searchParams.get("id");
@@ -25,7 +27,6 @@ export default function MembersCreateClient() {
     getEditInitialValues,
   } = useMembers({ selectedMemberId: isEdit ? Number(editId) : null });
 
-  const firstBranchId = branches[0]?.id ? String(branches[0].id) : "";
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
   async function submit(values) {
@@ -50,14 +51,12 @@ export default function MembersCreateClient() {
             </p>
           ) : (
             <MemberForm
-              key={isEdit ? `member-edit-${editId}` : firstBranchId || "member-create"}
+              key={isEdit ? `member-edit-${editId}` : `member-create-${selectedBranchId}`}
               formId={FORM_ID}
               mode={isEdit ? "edit" : "create"}
               branches={branches}
               plans={plans}
-              initialValues={
-                editInitialValues || { ...memberInitialForm, branch_id: firstBranchId }
-              }
+              initialValues={editInitialValues || memberInitialForm}
               onSubmit={submit}
               onCancel={() => router.push("/management/members")}
               isLoading={isEdit ? isUpdating : isCreating}

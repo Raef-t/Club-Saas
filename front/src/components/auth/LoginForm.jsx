@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { useLoginMutation } from "@/lib/api/authApi";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
-import { saveAuthStorage } from "@/lib/authStorage";
+import BrandLogo from "@/components/common/BrandLogo";
 import { loginSchema } from "@/lib/validations/authSchema";
 
 const DEFAULT_FCM_TOKEN = "fcm_token_string_here";
@@ -59,20 +58,18 @@ export default function LoginForm() {
     }
 
     try {
-      const response = await login({
+      await login({
         username: form.username.trim(),
         password: form.password,
         fcm_token: DEFAULT_FCM_TOKEN,
         remember: form.remember,
       }).unwrap();
 
-      saveAuthStorage(response, form.remember);
-      router.replace("/management/subscriptions");
+      router.replace("/management");
       router.refresh();
     } catch (error) {
       setErrorMessage(
-        error?.data?.message ||
-          "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.",
+        error?.data?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.",
       );
     }
   }
@@ -86,25 +83,13 @@ export default function LoginForm() {
       dir="rtl"
     >
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-5 grid h-16 w-40 place-items-center rounded-2xl">
-          <Image
-            src="/img/test_logo.png"
-            alt="TechnoGYM"
-            width={500}
-            height={500}
-          />
-        </div>
+        <BrandLogo src="/img/test_logo.png" className="mx-auto mb-5 h-16 w-40" />
         <h1 className="text-2xl font-semibold text-white">تسجيل الدخول</h1>
-        <p className="mt-2 text-sm text-app-muted-light">
-          ادخل إلى أنظمة TechnoGYM الإدارية
-        </p>
+        <p className="mt-2 text-sm text-app-muted-light">ادخل إلى أنظمة TechnoGYM الإدارية</p>
       </div>
 
       <div className="space-y-4">
-        <label
-          htmlFor="username"
-          className="block w-full text-right text-sm text-app-muted-light"
-        >
+        <label htmlFor="username" className="block w-full text-right text-sm text-app-muted-light">
           <span className="block w-full text-right">اسم المستخدم</span>
           <input
             id="username"
@@ -155,16 +140,10 @@ export default function LoginForm() {
               type="button"
               onClick={() => setShowPassword((current) => !current)}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
-              aria-label={
-                showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
-              }
+              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
               aria-pressed={showPassword}
             >
-              {showPassword ? (
-                <EyeIcon className="size-5" />
-              ) : (
-                <EyeOffIcon className="size-5" />
-              )}
+              {showPassword ? <EyeIcon className="size-5" /> : <EyeOffIcon className="size-5" />}
             </button>
           </div>
           {fieldErrors.password && (
@@ -182,10 +161,7 @@ export default function LoginForm() {
       )}
 
       <div className="mt-4 flex items-center justify-between text-xs text-app-muted-light">
-        <Link
-          href="/forgot-password"
-          className="text-app-yellow hover:text-app-yellow/80"
-        >
+        <Link href="/forgot-password" className="text-app-yellow hover:text-app-yellow/80">
           نسيت كلمة المرور؟
         </Link>
         <label className="inline-flex items-center gap-2">

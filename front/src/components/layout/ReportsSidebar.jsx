@@ -5,12 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronLeft } from "@/components/icons/Icons";
 import Image from "next/image";
 
-const navItems = [
-  { title: "اللوحة الرئيسية", href: "/reports" },
-  { title: "تقارير مالية", href: "/reports/financial" },
-  { title: "تقارير إدارية", href: "/reports/administrative" },
-  { title: "أداء الفروع", href: "/reports/branches" },
-];
+const navItems = [{ title: "التقارير التشغيلية", href: "/reports" }];
 
 function isActive(pathname, href) {
   if (href === "/reports") return pathname === href;
@@ -33,16 +28,14 @@ export default function ReportsSidebar({ className }) {
         <Image src={"/img/test_logo.png"} alt="Logo" width={159} height={59} />
       </div>
 
-      <h3 className="mt-6 text-center text-base font-medium text-app-text">
-        نظام التقارير
-      </h3>
+      <h3 className="mt-6 text-center text-base font-medium text-app-text">نظام التقارير</h3>
 
       <nav className="mx-auto mt-10 flex w-full max-w-[250px] flex-col gap-2 px-1">
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           const hasSubItems = Boolean(
             (item.children && item.children.length > 0) ||
-            (item.subItems && item.subItems.length > 0)
+            (item.subItems && item.subItems.length > 0),
           );
           return (
             <Link

@@ -1,34 +1,39 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard } from "@/components/forms/FormControls";
-import { BranchForm, branchInitialForm } from "../BranchesClient";
-import { useBranches } from "../useBranches";
+import BranchForm from "../BranchForm";
+import { getBranchCollection, getBranchRecord } from "../branchUtils";
+import { useBranchEditor } from "./useBranchEditor";
 
-const FORM_ID = "create-branch-form";
+const FORM_ID = "branch-editor-form";
 
-export default function BranchesCreateClient() {
+/**
+ * Composes the server-seeded branch create or edit workspace.
+ */
+export default function BranchesCreateClient({ mode, branchId, initialData }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
-  const editId = searchParams.get("id");
-  const isEdit = mode === "edit" && editId;
-  const {
-    clubs,
-    formError,
-    isCreating,
-    isUpdating,
-    handleCreate,
-    handleUpdate,
-    getEditInitialValues,
-  } = useBranches({ selectedBranchId: isEdit ? Number(editId) : null });
-  const firstClubId = clubs[0]?.id ? String(clubs[0].id) : "";
-  const editInitialValues = isEdit ? getEditInitialValues() : null;
+  const isEdit = mode === "edit";
+  const editor = useBranchEditor({ mode, branchId });
+  const branch = getBranchRecord(initialData?.branch);
+  const clubs = getBranchCollection(initialData?.clubs);
 
-  async function submit(values) {
-    const ok = isEdit ? await handleUpdate(values) : await handleCreate(values);
-    if (ok) router.push("/management/branches");
+  /**
+   * Saves the branch and returns to the list after a successful mutation.
+   */
+  async function handleSubmit(values) {
+    const succeeded = await editor.submitBranch(values);
+    if (succeeded) {
+      router.push("/management/branches");
+    }
+  }
+
+  /**
+   * Returns to the branch list without saving.
+   */
+  function handleCancel() {
+    router.push("/management/branches");
   }
 
   return (
@@ -37,28 +42,21 @@ export default function BranchesCreateClient() {
       subtitle={isEdit ? "إدارة النادي > تعديل فرع" : "إدارة النادي > إضافة فرع"}
       formId={FORM_ID}
       backHref="/management/branches"
+      isSubmitting={editor.isSubmitting}
       submitLabel={isEdit ? "حفظ التعديل" : "حفظ"}
     >
       <FormCard title="بيانات الفرع" className="entry-form-card p-5">
-        {isEdit && !editInitialValues ? (
-          <p className="py-8 text-center text-sm text-app-muted-light">
-            جاري تحميل بيانات الفرع...
-          </p>
-        ) : (
-          <BranchForm
-            key={isEdit ? `branch-edit-${editId}` : firstClubId || "branch-create"}
-            formId={FORM_ID}
-            mode={isEdit ? "edit" : "create"}
-            clubs={clubs}
-            initialValues={
-              editInitialValues || { ...branchInitialForm, club_id: firstClubId }
-            }
-            onSubmit={submit}
-            onCancel={() => router.push("/management/branches")}
-            isLoading={isEdit ? isUpdating : isCreating}
-            errorMessage={formError}
-          />
-        )}
+        <BranchForm
+          key={isEdit ? `branch-edit-${branchId}` : "branch-create"}
+          formId={FORM_ID}
+          mode={mode}
+          clubs={clubs}
+          initialValues={branch}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          isLoading={editor.isSubmitting}
+          errorMessage={editor.errorMessage}
+        />
       </FormCard>
     </ManagementCreatePage>
   );

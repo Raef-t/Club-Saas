@@ -1,20 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const branchesApi = createApi({
   reducerPath: "branchesApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["Branches", "BranchSettings", "BranchShifts", "BranchHolidays"],
   endpoints: (builder) => ({
     getBranches: builder.query({

@@ -9,6 +9,8 @@ import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useCreatePlayerSubscriptionMutation } from "@/lib/api/playerSubscriptionsApi";
 import { useToast } from "@/components/ui/Toast";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
 function getMembersArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -25,10 +27,14 @@ function getPlansArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
 }
 
-export function useMembers({ selectedMemberId: initialSelectedMemberId = null } = {}) {
+/**
+ * Coordinates member data, filters, selection, and CRUD mutations.
+ */
+export function useMembers({ selectedMemberId: initialSelectedMemberId = null, initialData } = {}) {
   const toast = useToast();
+  const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
+    useManagementBranch();
   const [search, setSearch] = useState("");
-  const [branchFilter, setBranchFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedMemberId, setSelectedMemberId] = useState(initialSelectedMemberId);
@@ -42,53 +48,71 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
 
   const { data, error, isLoading, refetch } = useGetMembersQuery(queryParams);
   const { data: branchesData } = useGetBranchesQuery();
-  const { data: plansData } = useGetSubscriptionPlansQuery();
+  const { data: plansData } = useGetSubscriptionPlansQuery(queryParams);
 
   const [createPlayer, { isLoading: isCreating }] = useCreatePlayerMutation();
   const [updatePlayer, { isLoading: isUpdating }] = useUpdatePlayerMutation();
   const [deleteMember, { isLoading: isDeleting }] = useDeleteMemberMutation();
   const [createPlayerSubscription] = useCreatePlayerSubscriptionMutation();
 
-  const members = useMemo(() => getMembersArray(data), [data]);
-  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
-  const plans = useMemo(() => getPlansArray(plansData), [plansData]);
+  const members = useMemo(
+    () => getMembersArray(data || initialData?.members),
+    [data, initialData?.members],
+  );
+  const branches = useMemo(
+    () => getBranchesArray(branchesData || initialData?.branches),
+    [branchesData, initialData?.branches],
+  );
+  const allPlans = useMemo(
+    () => getPlansArray(plansData || initialData?.plans),
+    [plansData, initialData?.plans],
+  );
+  const plans = useMemo(
+    () => filterEntitiesByBranch(allPlans, branchFilter),
+    [allPlans, branchFilter],
+  );
 
   const selectedMember = useMemo(
     () => members.find((m) => m.id === selectedMemberId) || null,
     [members, selectedMemberId],
   );
 
+  const branchMembers = useMemo(
+    () => filterEntitiesByBranch(members, branchFilter),
+    [branchFilter, members],
+  );
   const filteredMembers = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return members.filter((m) => {
+    return branchMembers.filter((m) => {
       const person = m.person || {};
-      const fullName = (person.full_name || `${m.first_name || ""} ${m.last_name || ""}`).trim().toLowerCase();
+      const fullName = (person.full_name || `${m.first_name || ""} ${m.last_name || ""}`)
+        .trim()
+        .toLowerCase();
       const mobileVal = person.phone || person.mobile || m.mobile || "";
 
-      const matchesBranch =
-        branchFilter === "all" || String(m.branch_id) === String(branchFilter);
-      const matchesGender =
-        genderFilter === "all" || (person.gender || m.gender) === genderFilter;
+      const matchesGender = genderFilter === "all" || (person.gender || m.gender) === genderFilter;
 
       const matchesSearch =
         !normalizedSearch ||
         fullName.includes(normalizedSearch) ||
         String(mobileVal).includes(normalizedSearch);
 
-      return matchesBranch && matchesGender && matchesSearch;
+      return matchesGender && matchesSearch;
     });
-  }, [members, search, branchFilter, genderFilter]);
+  }, [branchMembers, genderFilter, search]);
 
   const stats = useMemo(() => {
-    const activeCount = members.filter((m) => m.is_active !== false).length;
-    const maleCount = members.filter((m) => (m.person?.gender || m.gender) === "male").length;
-    const femaleCount = members.filter((m) => (m.person?.gender || m.gender) === "female").length;
+    const activeCount = branchMembers.filter((m) => m.is_active !== false).length;
+    const maleCount = branchMembers.filter((m) => (m.person?.gender || m.gender) === "male").length;
+    const femaleCount = branchMembers.filter(
+      (m) => (m.person?.gender || m.gender) === "female",
+    ).length;
 
     return [
       {
         title: "إجمالي الأعضاء",
-        value: members.length.toLocaleString("ar"),
+        value: branchMembers.length.toLocaleString("ar"),
         helper: "كل اللاعبين المسجلين",
         tone: "yellow",
         compact: true,
@@ -115,7 +139,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
         compact: true,
       },
     ];
-  }, [members]);
+  }, [branchMembers]);
 
   function closeDrawer() {
     setDrawerMode(null);
@@ -126,12 +150,9 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
   async function handleCreate(values) {
     setFormError("");
     try {
-      console.log("handleCreate values:", values);
       const { plans: plansPayload, ...memberDetails } = values;
-      console.log("Sending memberDetails to API:", memberDetails);
 
       const memberResult = await createPlayer(memberDetails).unwrap();
-      console.log("Member created successfully:", memberResult);
 
       const memberId = memberResult?.data?.member?.id || memberResult?.data?.id || memberResult?.id;
       if (!memberId) {
@@ -144,12 +165,11 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
           member_id: memberId,
           plan_id: plan.plan_id,
           paid_amount: plan.paid_amount,
-          start_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+          start_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
           payment_method: "cash",
           activities: [],
         };
 
-        console.log("Creating subscription with payload:", subscriptionPayload);
         await createPlayerSubscription(subscriptionPayload).unwrap();
       }
 
@@ -180,7 +200,9 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
       console.error("Update member error:", submitError);
       const rawMsg = submitError?.data?.message || "";
       if (rawMsg.includes("endpoint or resource was not found") || submitError?.status === 404) {
-        setFormError("عذراً، الرابط البرمجي لتعديل بيانات اللاعب غير متوفر حالياً على الخادم (404).");
+        setFormError(
+          "عذراً، الرابط البرمجي لتعديل بيانات اللاعب غير متوفر حالياً على الخادم (404).",
+        );
       } else {
         setFormError(rawMsg || "تعذر تعديل بيانات العضو. تحقق من البيانات وحاول مرة أخرى.");
       }
@@ -217,11 +239,13 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null } 
     const fullName = person.full_name || "";
     const nameParts = fullName.trim().split(/\s+/);
     const firstName = person.first_name || selectedMember.first_name || nameParts[0] || "";
-    const lastName = person.last_name || selectedMember.last_name || nameParts.slice(1).join(" ") || "";
+    const lastName =
+      person.last_name || selectedMember.last_name || nameParts.slice(1).join(" ") || "";
     const gender = person.gender || selectedMember.gender || "male";
     const dob = person.dob || selectedMember.dob || "";
     const mobile = person.phone || person.mobile || selectedMember.mobile || "";
-    const mobileCountryCode = person.mobile_country_code || selectedMember.mobile_country_code || "+963";
+    const mobileCountryCode =
+      person.mobile_country_code || selectedMember.mobile_country_code || "+963";
     const age = person.age || selectedMember.age || "";
 
     const contact = selectedMember.additional_contacts?.[0] || null;

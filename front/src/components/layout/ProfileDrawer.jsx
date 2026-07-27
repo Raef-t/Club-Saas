@@ -121,7 +121,7 @@ export default function ProfileDrawer({ open, onClose }) {
       <div className="space-y-6" dir="rtl">
         {/* User Card Info */}
         <div className="flex flex-col items-center gap-3 border-b border-app-line pb-6">
-          <div className="relative grid size-20 place-items-center rounded-full bg-app-yellow text-3xl font-bold text-black uppercase shadow-lg">
+          <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-app-yellow text-3xl font-bold text-black uppercase shadow-lg">
             {person.photo_url ? (
               <img
                 src={
@@ -129,7 +129,7 @@ export default function ProfileDrawer({ open, onClose }) {
                     ? person.photo_url
                     : `http://31.70.108.63/${person.photo_url.replace(/^\//, "")}`
                 }
-                className="size-full rounded-full object-cover"
+                className="h-full w-full object-cover"
                 alt="Profile Avatar"
               />
             ) : (

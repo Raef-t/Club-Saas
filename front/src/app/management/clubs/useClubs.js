@@ -1,215 +1,96 @@
 import { useMemo, useState } from "react";
-import {
-  useGetClubsQuery,
-  useGetClubQuery,
-  useCreateClubMutation,
-  useUpdateClubMutation,
-  useDeleteClubMutation,
-} from "@/lib/api/clubsApi";
+import { useToast } from "@/components/ui/Toast";
+import { useDeleteClubMutation, useGetClubQuery, useGetClubsQuery } from "@/lib/api/clubsApi";
+import { getApiErrorMessage } from "@/lib/apiError";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { createClubStats, filterClubs, getClubCollection, getClubRecord } from "./clubUtils";
 
-export function useClubs({
-  selectedClubId: initialSelectedClubId = null,
-} = {}) {
+/**
+ * Coordinates the club list, search, details, and deletion lifecycle.
+ */
+export function useClubs({ initialClubs } = {}) {
+  const toast = useToast();
+  const { selectedClubId } = useManagementBranch();
   const [search, setSearch] = useState("");
-  const [drawerMode, setDrawerMode] = useState(null);
-  const [selectedClubId, setSelectedClubId] = useState(initialSelectedClubId);
-  const [formError, setFormError] = useState("");
-
-  const { data, error, isLoading, refetch } = useGetClubsQuery();
+  const [selectedClub, setSelectedClub] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const { currentData: clubsResponse, error, isLoading, isFetching, refetch } = useGetClubsQuery();
   const {
-    data: detailsData,
+    currentData: detailsResponse,
     error: detailsError,
     isFetching: isFetchingDetails,
-  } = useGetClubQuery(selectedClubId, {
-    skip: !selectedClubId || drawerMode !== "details",
+  } = useGetClubQuery(selectedClub?.id, {
+    skip: !selectedClub,
   });
-
-  const [createClub, { isLoading: isCreating }] = useCreateClubMutation();
-  const [updateClub, { isLoading: isUpdating }] = useUpdateClubMutation();
   const [deleteClub, { isLoading: isDeleting }] = useDeleteClubMutation();
-
-  const clubs = useMemo(() => {
-    return Array.isArray(responseToClubs(data)) ? responseToClubs(data) : [];
-  }, [data]);
-
-  const selectedClub = useMemo(
-    () => clubs.find((club) => club.id === selectedClubId) || null,
-    [clubs, selectedClubId],
+  const allClubs = useMemo(
+    () => getClubCollection(clubsResponse || initialClubs),
+    [clubsResponse, initialClubs],
   );
+  const branchClubs = useMemo(
+    () =>
+      selectedClubId ? allClubs.filter((club) => String(club.id) === selectedClubId) : allClubs,
+    [allClubs, selectedClubId],
+  );
+  const clubs = useMemo(() => filterClubs(branchClubs, search), [branchClubs, search]);
+  const stats = useMemo(() => createClubStats(branchClubs), [branchClubs]);
+  const detailsClub = getClubRecord(detailsResponse) || selectedClub;
 
-  const detailsClub = useMemo(() => {
-    return detailsData?.data || null;
-  }, [detailsData]);
-
-  const filteredClubs = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return clubs;
-
-    return clubs.filter((club) =>
-      [club.name, club.is_active ? "نشط" : "غير نشط"]
-        .filter(Boolean)
-        .some((value) =>
-          String(value).toLowerCase().includes(normalizedSearch),
-        ),
-    );
-  }, [clubs, search]);
-
-  const stats = useMemo(() => {
-    const activeCount = clubs.filter((club) => club.is_active).length;
-    const inactiveCount = clubs.length - activeCount;
-
-    return [
-      {
-        title: "إجمالي النوادي",
-        value: clubs.length.toLocaleString("ar"),
-        helper: "كل النوادي المسجلة",
-        tone: "yellow",
-        compact: true,
-      },
-      {
-        title: "النوادي النشطة",
-        value: activeCount.toLocaleString("ar"),
-        helper: "النوادي المفتوحة والفعالة",
-        tone: "green",
-        compact: true,
-      },
-      {
-        title: "النوادي غير النشطة",
-        value: inactiveCount.toLocaleString("ar"),
-        helper: "النوادي المغلقة مؤقتاً",
-        tone: "red",
-        compact: true,
-      },
-    ];
-  }, [clubs]);
-
-  function responseToClubs(response) {
-    return Array.isArray(response?.data) ? response.data : [];
+  /**
+   * Opens the details drawer with immediate data from the current row.
+   */
+  function openDetails(club) {
+    setSelectedClub(club);
   }
 
-  function closeDrawer() {
-    setDrawerMode(null);
-    setSelectedClubId(null);
-    setFormError("");
+  /**
+   * Closes the club details drawer.
+   */
+  function closeDetails() {
+    setSelectedClub(null);
   }
 
-  async function handleCreate(values) {
-    setFormError("");
-
-    const nameExists = clubs.some(
-      (club) =>
-        club.name?.trim().toLowerCase() === values.name?.trim().toLowerCase(),
-    );
-
-    if (nameExists) {
-      setFormError("اسم النادي موجود بالفعل، يرجى اختيار اسم آخر.");
-      return false;
-    }
-
-    try {
-      await createClub(values).unwrap();
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر إنشاء النادي. تحقق من البيانات وحاول مرة أخرى.",
-      );
-      return false;
-    }
+  /**
+   * Opens the destructive confirmation for one club.
+   */
+  function requestDelete(club) {
+    setDeleteTarget(club);
   }
 
-  async function handleUpdate(values) {
-    if (!selectedClubId) return false;
-    setFormError("");
-
-    const nameExists = clubs.some(
-      (club) =>
-        club.id !== selectedClubId &&
-        club.name?.trim().toLowerCase() === values.name?.trim().toLowerCase(),
-    );
-
-    if (nameExists) {
-      setFormError("اسم النادي موجود بالفعل، يرجى اختيار اسم آخر.");
-      return false;
-    }
-
-    try {
-      await updateClub({ id: selectedClubId, body: values }).unwrap();
-      closeDrawer();
-      return true;
-    } catch (submitError) {
-      setFormError(
-        submitError?.data?.message ||
-          "تعذر تعديل النادي. تحقق من البيانات وحاول مرة أخرى.",
-      );
-      return false;
-    }
-  }
-
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
-
-  function handleDelete(club) {
-    setItemToDelete(club);
-    setDeleteConfirmOpen(true);
-  }
-
-  function closeDeleteConfirm() {
-    setDeleteConfirmOpen(false);
-    setItemToDelete(null);
-  }
-
+  /**
+   * Deletes the selected club after confirmation.
+   */
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!deleteTarget) return;
+
     try {
-      await deleteClub(itemToDelete.id).unwrap();
-    } catch {
-      window.alert("تعذر حذف النادي. حاول مرة أخرى.");
-    } finally {
-      closeDeleteConfirm();
+      await deleteClub(deleteTarget.id).unwrap();
+      toast.success("تم حذف النادي بنجاح");
+      setDeleteTarget(null);
+    } catch (deleteError) {
+      toast.error(getApiErrorMessage(deleteError, "تعذر حذف النادي. حاول مرة أخرى."));
     }
-  }
-
-  function getEditInitialValues() {
-    if (!selectedClub) return null;
-
-    return {
-      name: selectedClub.name || "",
-      logo_url: selectedClub.logo_url || "",
-      is_active: Boolean(selectedClub.is_active),
-    };
   }
 
   return {
     search,
     setSearch,
-    drawerMode,
-    setDrawerMode,
-    selectedClubId,
-    setSelectedClubId,
-    formError,
-    setFormError,
-    isLoading,
-    error,
-    refetch,
-    filteredClubs,
+    clubs,
     stats,
+    isLoading: isLoading && allClubs.length === 0,
+    isFetching,
+    errorMessage: error ? getApiErrorMessage(error, "تعذر تحميل بيانات النوادي.") : "",
+    retry: refetch,
     selectedClub,
     detailsClub,
-    isFetchingDetails,
     detailsError,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    handleCreate,
-    handleUpdate,
-    handleDelete,
-    closeDrawer,
-    getEditInitialValues,
-    deleteConfirmOpen,
-    itemToDelete,
-    closeDeleteConfirm,
+    isFetchingDetails,
+    openDetails,
+    closeDetails,
+    deleteTarget,
+    setDeleteTarget,
+    requestDelete,
     confirmDelete,
+    isDeleting,
   };
 }

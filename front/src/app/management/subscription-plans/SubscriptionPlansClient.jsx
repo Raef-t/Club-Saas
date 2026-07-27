@@ -18,17 +18,22 @@ import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { getPreferredBranchId } from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 
 function CoachDropdown({ branchId, activityId, value, onChange }) {
-  const { data, isLoading } = useGetCoachesQuery({
-    branch_id: branchId || undefined,
-    activity_id: activityId || undefined,
-  }, {
-    skip: !branchId && !activityId
-  });
+  const { data, isLoading } = useGetCoachesQuery(
+    {
+      branch_id: branchId || undefined,
+      activity_id: activityId || undefined,
+    },
+    {
+      skip: !branchId && !activityId,
+    },
+  );
 
-  const coaches = useMemo(() => Array.isArray(data?.data) ? data.data : [], [data]);
+  const coaches = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
 
   return (
     <Dropdown
@@ -45,8 +50,7 @@ function CoachDropdown({ branchId, activityId, value, onChange }) {
   );
 }
 
-const TABLE_GRID_COLUMNS =
-  "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 88px";
+const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 88px";
 
 const initialForm = {
   branch_id: "",
@@ -94,11 +98,7 @@ function StatusBadge({ active }) {
 
 function PlanDetails({ plan, isLoading, error }) {
   if (isLoading) {
-    return (
-      <SkeletonPage
-        blocks={[{ type: "details", sections: 2, itemsPerSection: 4 }]}
-      />
-    );
+    return <SkeletonPage blocks={[{ type: "details", sections: 2, itemsPerSection: 4 }]} />;
   }
 
   if (error) {
@@ -122,9 +122,7 @@ function PlanDetails({ plan, isLoading, error }) {
       <div className="rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-medium text-app-text">
-              {planName(plan)}
-            </h3>
+            <h3 className="truncate text-lg font-medium text-app-text">{planName(plan)}</h3>
             <p className="mt-1 text-xs text-app-muted-light">
               {plan.name?.en || "Subscription plan"}
             </p>
@@ -135,11 +133,7 @@ function PlanDetails({ plan, isLoading, error }) {
 
       <section className="grid gap-3 sm:grid-cols-2">
         <DetailItem label="نوع الفعالية" value={planTypeLabel(plan.type)} />
-        <DetailItem
-          label="السعر"
-          value={formatMoney(plan.base_price)}
-          tone="yellow"
-        />
+        <DetailItem label="السعر" value={formatMoney(plan.base_price)} tone="yellow" />
         <DetailItem label="المدة" value={`${plan.duration_days || 0} يوم`} />
         <DetailItem label="عدد الجلسات" value={plan.session_count} />
       </section>
@@ -161,7 +155,15 @@ export function PlanForm({
   activities = [],
   coaches = [],
 }) {
-  const [form, setForm] = useState(initialValues);
+  const { selectedBranchId } = useManagementBranch();
+  const [form, setForm] = useState(() => ({
+    ...initialValues,
+    branch_id: getPreferredBranchId({
+      currentBranchId: initialValues.branch_id,
+      selectedBranchId,
+      branches,
+    }),
+  }));
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -169,7 +171,8 @@ export function PlanForm({
     form.activities?.forEach((item) => {
       const act = activities.find((a) => String(a.id) === String(item.activity_id));
       if (act) {
-        const actName = typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "";
+        const actName =
+          typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "";
         if (actName.includes("تدريب عام") || actName.includes("تدريب خاص")) {
           shouldBeUnlimited = true;
         }
@@ -199,15 +202,17 @@ export function PlanForm({
       max_subscribers: form.is_unlimited_subscribers ? null : form.max_subscribers,
       is_active: !!form.is_active,
       is_unlimited_subscribers: !!form.is_unlimited_subscribers,
-      activities: form.activities?.map(a => ({
-        activity_id: Number(a.activity_id),
-        coach_id: Number(a.coach_id),
-      })) || [],
-      session_templates: form.session_templates?.map(s => ({
-        day_of_week: Number(s.day_of_week),
-        start_time: s.start_time,
-        end_time: s.end_time,
-      })) || [],
+      activities:
+        form.activities?.map((a) => ({
+          activity_id: Number(a.activity_id),
+          coach_id: Number(a.coach_id),
+        })) || [],
+      session_templates:
+        form.session_templates?.map((s) => ({
+          day_of_week: Number(s.day_of_week),
+          start_time: s.start_time,
+          end_time: s.end_time,
+        })) || [],
     };
 
     const result = subscriptionPlanSchema.safeParse(rawData);
@@ -225,12 +230,7 @@ export function PlanForm({
   }
 
   return (
-    <form
-      id={formId}
-      noValidate
-      onSubmit={handleSubmit}
-      className={formClassName}
-    >
+    <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName}>
       <label className="block text-right text-sm text-app-muted-light">
         الفرع *
         <Dropdown
@@ -293,9 +293,7 @@ export function PlanForm({
       <Field
         label="المدة بالأيام"
         value={form.duration_in_days}
-        onChange={(event) =>
-          updateField("duration_in_days", event.target.value)
-        }
+        onChange={(event) => updateField("duration_in_days", event.target.value)}
         type="number"
         min="1"
         required
@@ -328,26 +326,32 @@ export function PlanForm({
 
       <div className="border-t border-app-line pt-4 mt-2">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-white">
-            الأنشطة والمدربين
-          </h4>
+          <h4 className="text-sm font-semibold text-white">الأنشطة والمدربين</h4>
           <Button
             type="button"
             tone="outline"
             className="h-8 px-3 text-xs"
-            onClick={() => updateField("activities", [...(form.activities || []), { activity_id: "", coach_id: "" }])}
+            onClick={() =>
+              updateField("activities", [
+                ...(form.activities || []),
+                { activity_id: "", coach_id: "" },
+              ])
+            }
           >
             <PlusIcon className="size-3 ml-1" />
             إضافة نشاط
           </Button>
         </div>
 
-        {(!form.activities || form.activities.length === 0) ? (
+        {!form.activities || form.activities.length === 0 ? (
           <p className="text-xs text-app-muted-light">لم يتم إضافة أي نشاط بعد.</p>
         ) : (
           <div className="space-y-3">
             {form.activities.map((item, idx) => (
-              <div key={idx} className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative">
+              <div
+                key={idx}
+                className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative"
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -431,9 +435,7 @@ export function PlanForm({
 
       <div className="border-t border-app-line pt-4 mt-2">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-white">
-            جدول أوقات الفعالية
-          </h4>
+          <h4 className="text-sm font-semibold text-white">جدول أوقات الفعالية</h4>
           <Button
             type="button"
             tone="outline"
@@ -445,16 +447,25 @@ export function PlanForm({
 
               if (form.session_templates && form.session_templates.length > 0) {
                 const lastTemplate = form.session_templates[form.session_templates.length - 1];
-                
-                const hasAutoSequenceActivity = form.activities?.length > 0 && form.activities.some((item) => {
-                  const act = activities.find((a) => String(a.id) === String(item.activity_id));
-                  if (act) {
-                    const actName = typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "";
-                    const isGeneralOrPrivate = actName.includes("أجهزة عام") || actName.includes("أجهزة خاص") || actName.includes("تدريب عام") || actName.includes("تدريب خاص");
-                    return !isGeneralOrPrivate;
-                  }
-                  return false;
-                });
+
+                const hasAutoSequenceActivity =
+                  form.activities?.length > 0 &&
+                  form.activities.some((item) => {
+                    const act = activities.find((a) => String(a.id) === String(item.activity_id));
+                    if (act) {
+                      const actName =
+                        typeof act.name === "string"
+                          ? act.name
+                          : act.name?.ar || act.name?.en || "";
+                      const isGeneralOrPrivate =
+                        actName.includes("أجهزة عام") ||
+                        actName.includes("أجهزة خاص") ||
+                        actName.includes("تدريب عام") ||
+                        actName.includes("تدريب خاص");
+                      return !isGeneralOrPrivate;
+                    }
+                    return false;
+                  });
 
                 if (hasAutoSequenceActivity) {
                   nextDay = String((parseInt(lastTemplate.day_of_week) + 2) % 7);
@@ -464,8 +475,8 @@ export function PlanForm({
               }
 
               updateField("session_templates", [
-                ...(form.session_templates || []), 
-                { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime }
+                ...(form.session_templates || []),
+                { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime },
               ]);
             }}
           >
@@ -474,12 +485,15 @@ export function PlanForm({
           </Button>
         </div>
 
-        {(!form.session_templates || form.session_templates.length === 0) ? (
+        {!form.session_templates || form.session_templates.length === 0 ? (
           <p className="text-xs text-app-muted-light">لم يتم إضافة أي أوقات للفعالية بعد.</p>
         ) : (
           <div className="space-y-3">
             {form.session_templates.map((item, idx) => (
-              <div key={idx} className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative">
+              <div
+                key={idx}
+                className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative"
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -560,15 +574,8 @@ export function PlanForm({
         </p>
       )}
 
-      <div
-        className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}
-      >
-        <Button
-          type="button"
-          tone="outline"
-          className="h-11 flex-1"
-          onClick={onCancel}
-        >
+      <div className={`${showFooterActions ? "flex" : "entry-form-actions-hidden"} gap-3 pt-2`}>
+        <Button type="button" tone="outline" className="h-11 flex-1" onClick={onCancel}>
           إلغاء
         </Button>
         <Button
@@ -584,7 +591,7 @@ export function PlanForm({
   );
 }
 
-export default function SubscriptionPlansClient() {
+export default function SubscriptionPlansClient({ initialData }) {
   const {
     search,
     setSearch,
@@ -617,7 +624,7 @@ export default function SubscriptionPlansClient() {
     closeDeleteConfirm,
     confirmDelete,
     branches,
-  } = useSubscriptionPlans();
+  } = useSubscriptionPlans({ initialData });
 
   const columns = useMemo(
     () => [
@@ -627,12 +634,8 @@ export default function SubscriptionPlansClient() {
         align: "center",
         render: (_, plan) => (
           <div className="min-w-0 text-center">
-            <p className="truncate text-sm font-medium text-app-text">
-              {planName(plan)}
-            </p>
-            <p className="mt-1 truncate text-[11px] text-app-muted-light">
-              {plan.name?.en || "-"}
-            </p>
+            <p className="truncate text-sm font-medium text-app-text">{planName(plan)}</p>
+            <p className="mt-1 truncate text-[11px] text-app-muted-light">{plan.name?.en || "-"}</p>
           </div>
         ),
       },
@@ -659,9 +662,7 @@ export default function SubscriptionPlansClient() {
         label: "السعر",
         align: "center",
         render: (value) => (
-          <span className="font-medium text-app-yellow">
-            {formatMoney(value)}
-          </span>
+          <span className="font-medium text-app-yellow">{formatMoney(value)}</span>
         ),
       },
       {
@@ -729,11 +730,7 @@ export default function SubscriptionPlansClient() {
           error ? (
             <div className="space-y-3 text-center">
               <p className="text-app-red">تعذر تحميل الفعاليات.</p>
-              <Button
-                tone="outline"
-                className="h-9 px-3 text-xs"
-                onClick={refetch}
-              >
+              <Button tone="outline" className="h-9 px-3 text-xs" onClick={refetch}>
                 إعادة المحاولة
               </Button>
             </div>

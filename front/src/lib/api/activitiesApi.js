@@ -1,24 +1,16 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const activitiesApi = createApi({
   reducerPath: "activitiesApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["Activities"],
   endpoints: (builder) => ({
     getActivities: builder.query({
-      query: () => "activities",
+      query: (params = {}) => ({
+        url: "activities",
+        params,
+      }),
       providesTags: ["Activities"],
     }),
     getActivityTypes: builder.query({
@@ -42,10 +34,7 @@ export const activitiesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        "Activities",
-        { type: "Activities", id },
-      ],
+      invalidatesTags: (result, error, { id }) => ["Activities", { type: "Activities", id }],
     }),
     deleteActivity: builder.mutation({
       query: (id) => ({

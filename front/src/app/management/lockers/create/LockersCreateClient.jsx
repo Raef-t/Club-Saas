@@ -3,28 +3,28 @@
 import { useRouter } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard } from "@/components/forms/FormControls";
-import { LockerCreateForm } from "../LockersClient";
-import { useLockers } from "../useLockers";
-import { useGetBranchesQuery } from "@/lib/api/branchesApi";
-import { getBranchesArray } from "@/lib/utils";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import LockerCreateForm from "../LockerCreateForm";
+import { useCreateLocker } from "../useLockerFormMutation";
+import { getLockerCollection } from "../lockerUtils";
 
 const FORM_ID = "create-locker-form";
 
-export default function LockersCreateClient() {
+/**
+ * Connects the create-locker form to its mutation and navigation.
+ */
+export default function LockersCreateClient({ initialBranches }) {
   const router = useRouter();
-  
-  const {
-    formError,
-    isCreating,
-    handleCreate,
-  } = useLockers();
+  const { selectedBranchId } = useManagementBranch();
+  const { formError, isLoading, submitLocker } = useCreateLocker();
+  const branches = getLockerCollection(initialBranches);
 
-  const { data: branchesData } = useGetBranchesQuery({});
-  const branches = getBranchesArray(branchesData);
-
+  /**
+   * Creates the locker and returns to the list after success.
+   */
   async function submit(values) {
-    const ok = await handleCreate(values);
-    if (ok) router.push("/management/lockers");
+    const succeeded = await submitLocker(values);
+    if (succeeded) router.push("/management/lockers");
   }
 
   return (
@@ -33,17 +33,18 @@ export default function LockersCreateClient() {
       subtitle="إدارة الخزائن > إضافة خزانة"
       formId={FORM_ID}
       backHref="/management/lockers"
-      isSubmitting={isCreating}
+      isSubmitting={isLoading}
       submitLabel="حفظ"
     >
       <div className="entry-form-side-layout">
         <FormCard title="بيانات الخزانة" className="entry-form-card p-5">
           <LockerCreateForm
+            key={`locker-create-${selectedBranchId}`}
             formId={FORM_ID}
             branches={branches}
             onSubmit={submit}
             onCancel={() => router.push("/management/lockers")}
-            isLoading={isCreating}
+            isLoading={isLoading}
             errorMessage={formError}
           />
         </FormCard>

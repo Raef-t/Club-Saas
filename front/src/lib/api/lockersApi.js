@@ -1,18 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const lockersApi = createApi({
   reducerPath: "lockersApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["Lockers"],
   endpoints: (builder) => ({
     getLockers: builder.query({
@@ -43,7 +34,7 @@ export const lockersApi = createApi({
     updateLocker: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `lockers/${id}`,
-        method: "PUT", // or PATCH depending on the API, usually PUT for update
+        method: "PUT",
         body,
       }),
       invalidatesTags: ["Lockers"],

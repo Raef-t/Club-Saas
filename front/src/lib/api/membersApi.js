@@ -1,20 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthHeader } from "@/lib/authStorage";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { backendBaseQuery } from "@/lib/api/baseQuery";
 
 export const membersApi = createApi({
   reducerPath: "membersApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/backend",
-    prepareHeaders: (headers) => {
-      const authHeader = getAuthHeader();
-
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
-      }
-
-      return headers;
-    },
-  }),
+  baseQuery: backendBaseQuery,
   tagTypes: ["Members"],
   endpoints: (builder) => ({
     getMembers: builder.query({

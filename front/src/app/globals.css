@@ -28,7 +28,7 @@
   --color-app-orange: #b36b00;
   --color-app-blue: #0755ff;
   --color-app-purple: #7925ff;
-  --font-sans: 'Tajawal', var(--font-tajawal), Arial, sans-serif;
+  --font-sans: "Tajawal", Tahoma, Arial, sans-serif;
 }
 
 :root {
@@ -112,7 +112,7 @@ body {
   margin: 0;
   background: var(--app-body-gradient);
   color: var(--app-text);
-  font-family: 'Tajawal', var(--font-tajawal), Arial, sans-serif;
+  font-family: "Tajawal", Tahoma, Arial, sans-serif;
 }
 
 button, input, select, textarea { font: inherit; }

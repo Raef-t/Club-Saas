@@ -3,22 +3,20 @@
 import { useRouter } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard } from "@/components/forms/FormControls";
-import { SubscriptionCreateForm } from "../SubscriptionsClient";
-import { useSubscriptions } from "../useSubscriptions";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { SubscriptionCreateForm } from "../SubscriptionForm";
+import { useCreateSubscription } from "../useCreateSubscription";
 
 const FORM_ID = "create-subscription-form";
 
-export default function SubscriptionsCreateClient() {
+/**
+ * Connects the create-subscription form to navigation and its mutation hook.
+ */
+export default function SubscriptionsCreateClient({ initialData }) {
   const router = useRouter();
-  const {
-    members,
-    plans,
-    activities,
-    coaches,
-    formError,
-    isCreating,
-    handleCreateSubscription,
-  } = useSubscriptions();
+  const { selectedBranchId } = useManagementBranch();
+  const { members, plans, activities, coaches, formError, isCreating, handleCreateSubscription } =
+    useCreateSubscription({ initialData });
 
   async function submit(values) {
     const ok = await handleCreateSubscription(values);
@@ -35,7 +33,7 @@ export default function SubscriptionsCreateClient() {
     >
       <FormCard title="تفاصيل الاشتراك" className="entry-form-card p-5">
         <SubscriptionCreateForm
-          key={`${members[0]?.id || "member"}-${plans[0]?.id || "plan"}`}
+          key={`${selectedBranchId}-${members[0]?.id || "member"}-${plans[0]?.id || "plan"}`}
           formId={FORM_ID}
           members={members}
           plans={plans}

@@ -11,11 +11,10 @@ import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 import { getBranchesArray } from "@/lib/utils";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
-import {
-  formatMoney as baseFormatMoney,
-  formatLocalizedName,
-} from "@/lib/utils";
+import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
 
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
@@ -38,14 +37,17 @@ const planName = (plan) => formatLocalizedName(plan?.name);
 
 export function useSubscriptionPlans({
   selectedPlanId: initialSelectedPlanId = null,
+  initialData,
 } = {}) {
   const toast = useToast();
+  const { selectedBranchId } = useManagementBranch();
   const [search, setSearch] = useState("");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedPlanId, setSelectedPlanId] = useState(initialSelectedPlanId);
   const [formError, setFormError] = useState("");
 
-  const { data, error, isLoading, refetch } = useGetSubscriptionPlansQuery();
+  const branchQueryParams = selectedBranchId === "all" ? {} : { branch_id: selectedBranchId };
+  const { data, error, isLoading, refetch } = useGetSubscriptionPlansQuery(branchQueryParams);
   const {
     data: detailsData,
     error: detailsError,
@@ -56,34 +58,55 @@ export function useSubscriptionPlans({
   });
 
   const { data: branchesData, error: branchesError } = useGetBranchesQuery();
-  const branches = useMemo(() => getBranchesArray(branchesData), [branchesData]);
+  const branches = useMemo(
+    () => getBranchesArray(branchesData || initialData?.branches),
+    [branchesData, initialData?.branches],
+  );
 
-  const { data: activitiesData } = useGetActivitiesQuery();
-  const activities = useMemo(() => Array.isArray(activitiesData?.data) ? activitiesData.data : [], [activitiesData]);
+  const { data: activitiesData } = useGetActivitiesQuery(branchQueryParams);
+  const allActivities = useMemo(() => {
+    const response = activitiesData || initialData?.activities;
+    return Array.isArray(response?.data) ? response.data : [];
+  }, [activitiesData, initialData?.activities]);
+  const activities = useMemo(
+    () => filterEntitiesByBranch(allActivities, selectedBranchId),
+    [allActivities, selectedBranchId],
+  );
 
-  const { data: coachesData } = useGetCoachesQuery({});
-  const coaches = useMemo(() => Array.isArray(coachesData?.data) ? coachesData.data : [], [coachesData]);
+  const { data: coachesData } = useGetCoachesQuery(branchQueryParams);
+  const allCoaches = useMemo(() => {
+    const response = coachesData || initialData?.coaches;
+    return Array.isArray(response?.data) ? response.data : [];
+  }, [coachesData, initialData?.coaches]);
+  const coaches = useMemo(
+    () => filterEntitiesByBranch(allCoaches, selectedBranchId),
+    [allCoaches, selectedBranchId],
+  );
 
   useEffect(() => {
     if (error) {
       console.warn("[useSubscriptionPlans] Error fetching subscription plans:", error);
     }
     if (detailsError) {
-      console.warn("[useSubscriptionPlans] Error fetching subscription plan details:", detailsError);
+      console.warn(
+        "[useSubscriptionPlans] Error fetching subscription plan details:",
+        detailsError,
+      );
     }
     if (branchesError) {
       console.warn("[useSubscriptionPlans] Error fetching branches:", branchesError);
     }
   }, [error, detailsError, branchesError]);
 
-  const [createPlan, { isLoading: isCreating }] =
-    useCreateSubscriptionPlanMutation();
-  const [updatePlan, { isLoading: isUpdating }] =
-    useUpdateSubscriptionPlanMutation();
-  const [deletePlan, { isLoading: isDeleting }] =
-    useDeleteSubscriptionPlanMutation();
+  const [createPlan, { isLoading: isCreating }] = useCreateSubscriptionPlanMutation();
+  const [updatePlan, { isLoading: isUpdating }] = useUpdateSubscriptionPlanMutation();
+  const [deletePlan, { isLoading: isDeleting }] = useDeleteSubscriptionPlanMutation();
 
-  const plans = useMemo(() => getPlans(data), [data]);
+  const allPlans = useMemo(() => getPlans(data || initialData?.plans), [data, initialData?.plans]);
+  const plans = useMemo(
+    () => filterEntitiesByBranch(allPlans, selectedBranchId),
+    [allPlans, selectedBranchId],
+  );
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) || null,
     [plans, selectedPlanId],
@@ -97,17 +120,14 @@ export function useSubscriptionPlans({
     return plans.filter((plan) =>
       [plan.name?.ar, plan.name?.en, plan.type, plan.base_price]
         .filter(Boolean)
-        .some((value) =>
-          String(value).toLowerCase().includes(normalizedSearch),
-        ),
+        .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
     );
   }, [plans, search]);
 
   const stats = useMemo(() => {
     const activeCount = plans.filter((plan) => plan.is_active).length;
     const averagePrice = plans.length
-      ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) /
-        plans.length
+      ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) / plans.length
       : 0;
 
     return [
@@ -166,8 +186,7 @@ export function useSubscriptionPlans({
       return true;
     } catch (submitError) {
       setFormError(
-        submitError?.data?.message ||
-          "تعذر إنشاء الخطة. تحقق من البيانات وحاول مرة أخرى.",
+        submitError?.data?.message || "تعذر إنشاء الخطة. تحقق من البيانات وحاول مرة أخرى.",
       );
       return false;
     }
@@ -192,8 +211,7 @@ export function useSubscriptionPlans({
       return true;
     } catch (submitError) {
       setFormError(
-        submitError?.data?.message ||
-          "تعذر تعديل الخطة. تحقق من البيانات وحاول مرة أخرى.",
+        submitError?.data?.message || "تعذر تعديل الخطة. تحقق من البيانات وحاول مرة أخرى.",
       );
       return false;
     }
@@ -243,15 +261,17 @@ export function useSubscriptionPlans({
       is_active: plan.is_active ?? true,
       gender_restriction: plan.gender_restriction || "mixed",
       is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
-      activities: plan.activities?.map((a) => ({
-        activity_id: String(a.activity_id),
-        coach_id: String(a.coach_id),
-      })) || [],
-      session_templates: plan.session_templates?.map((s) => ({
-        day_of_week: String(s.day_of_week),
-        start_time: s.start_time || "",
-        end_time: s.end_time || "",
-      })) || [],
+      activities:
+        plan.activities?.map((a) => ({
+          activity_id: String(a.activity_id),
+          coach_id: String(a.coach_id),
+        })) || [],
+      session_templates:
+        plan.session_templates?.map((s) => ({
+          day_of_week: String(s.day_of_week),
+          start_time: s.start_time || "",
+          end_time: s.end_time || "",
+        })) || [],
     };
   }
 

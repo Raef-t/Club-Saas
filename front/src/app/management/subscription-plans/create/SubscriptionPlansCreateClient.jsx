@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard } from "@/components/forms/FormControls";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { PlanForm } from "../SubscriptionPlansClient";
 import { useSubscriptionPlans } from "../useSubscriptionPlans";
 
@@ -10,6 +11,7 @@ const FORM_ID = "create-subscription-plan-form";
 
 export default function SubscriptionPlansCreateClient() {
   const router = useRouter();
+  const { selectedBranchId } = useManagementBranch();
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
   const editId = searchParams.get("id");
@@ -48,7 +50,7 @@ export default function SubscriptionPlansCreateClient() {
           </p>
         ) : (
           <PlanForm
-            key={isEdit ? `plan-edit-${editId}` : "plan-create"}
+            key={isEdit ? `plan-edit-${editId}` : `plan-create-${selectedBranchId}`}
             formId={FORM_ID}
             mode={isEdit ? "edit" : "create"}
             initialValues={editInitialValues || undefined}

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDownIcon } from "@/components/icons/Icons";
+import { getDropdownMenuPosition } from "./dropdownPosition";
 
 export default function Dropdown({
   options = [],
@@ -17,35 +19,54 @@ export default function Dropdown({
   searchable = false,
 }) {
   const [open, setOpen] = useState(false);
-  const [dropUp, setDropUp] = useState(false);
+  const [menuPosition, setMenuPosition] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
   const searchInputRef = useRef(null);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value),
     [options, value],
   );
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchQuery.trim()) return options;
+    return options.filter((option) =>
+      option.label.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [options, searchable, searchQuery]);
 
-  function checkPosition() {
+  /**
+   * Anchors the portal menu to the control and chooses its safest direction.
+   */
+  const updateMenuPosition = useCallback(() => {
     if (!containerRef.current) return;
+
     const rect = containerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    setDropUp(spaceBelow < 300 && spaceAbove > spaceBelow);
-  }
+    setMenuPosition(
+      getDropdownMenuPosition(rect, {
+        optionCount: filteredOptions.length,
+        searchable,
+        viewportHeight: document.documentElement.clientHeight || window.innerHeight,
+        viewportWidth: document.documentElement.clientWidth || window.innerWidth,
+      }),
+    );
+  }, [filteredOptions.length, searchable]);
 
   useEffect(() => {
     if (!open) return;
 
-    checkPosition();
+    updateMenuPosition();
 
     function handleScroll() {
-      checkPosition();
+      updateMenuPosition();
     }
 
     function handlePointerDown(event) {
-      if (!containerRef.current?.contains(event.target)) {
+      const clickedControl = containerRef.current?.contains(event.target);
+      const clickedMenu = menuRef.current?.contains(event.target);
+
+      if (!clickedControl && !clickedMenu) {
         setOpen(false);
       }
     }
@@ -67,7 +88,7 @@ export default function Dropdown({
       window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", handleScroll);
     };
-  }, [open]);
+  }, [open, updateMenuPosition]);
 
   useEffect(() => {
     if (open && searchable && searchInputRef.current) {
@@ -85,15 +106,8 @@ export default function Dropdown({
     setOpen(false);
   }
 
-  const filteredOptions = useMemo(() => {
-    if (!searchable || !searchQuery.trim()) return options;
-    return options.filter(opt => 
-      opt.label.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [options, searchable, searchQuery]);
-
   const hasHeight = useMemo(() => {
-    return buttonClassName.split(' ').some(c => c.startsWith('h-'));
+    return buttonClassName.split(" ").some((c) => c.startsWith("h-"));
   }, [buttonClassName]);
 
   return (
@@ -108,10 +122,10 @@ export default function Dropdown({
           disabled
             ? "cursor-not-allowed opacity-60"
             : open
-            ? "border-app-yellow ring-1 ring-app-yellow"
-            : !buttonClassName.includes("border-") 
-            ? "border border-app-muted/50 bg-app-panel-soft/40 hover:border-app-yellow/50 focus:border-app-yellow" 
-            : ""
+              ? "border-app-yellow ring-1 ring-app-yellow"
+              : !buttonClassName.includes("border-")
+                ? "border border-app-muted/50 bg-app-panel-soft/40 hover:border-app-yellow/50 focus:border-app-yellow"
+                : ""
         } ${!hasHeight ? "h-10" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -119,7 +133,7 @@ export default function Dropdown({
         onClick={() => {
           if (disabled) return;
           if (!open) {
-            checkPosition();
+            updateMenuPosition();
             setOpen(true);
           } else {
             setOpen(false);
@@ -141,62 +155,71 @@ export default function Dropdown({
         />
       </button>
 
-      {open && (
-        <div
-          className={`absolute right-0 z-50 ${dropUp ? "bottom-full mb-2" : "top-full mt-2"} max-h-72 w-full flex flex-col overflow-hidden rounded-xl border border-app-line bg-app-card shadow-[var(--app-elevated-shadow)] ${menuClassName}`}
-          role="listbox"
-        >
-          {searchable && (
-            <div className="p-2 border-b border-app-line shrink-0">
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="w-full bg-app-card-soft border border-app-line rounded-lg h-9 px-3 text-sm text-app-text placeholder-app-muted outline-none focus:border-app-yellow transition"
-                placeholder="ابحث..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-          )}
-          <div className="max-h-60 overflow-y-auto p-1 scrollbar-thin">
-            {filteredOptions.length > 0 ? filteredOptions.map((option) => {
-              const selected = option.value === value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`flex h-10 w-full items-center justify-between rounded-lg px-3 text-sm transition ${
-                    selected
-                      ? "bg-app-yellow-soft text-app-yellow"
-                      : "text-app-text hover:bg-app-card-hover"
-                  }`}
-                  role="option"
-                  aria-selected={selected}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectOption(option);
-                  }}
-                >
-                  <span className="truncate">{option.label}</span>
-                  {selected && (
-                    <span className="size-2 rounded-full bg-app-yellow" />
-                  )}
-                </button>
-              );
-            }) : (
-              <div className="flex h-10 items-center justify-center text-sm text-app-muted-light">
-                لا توجد نتائج
+      {open &&
+        menuPosition &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className={`fixed z-[100] flex flex-col overflow-hidden rounded-xl border border-app-line bg-app-card shadow-[var(--app-elevated-shadow)] ${menuClassName}`}
+            style={{
+              left: menuPosition.left,
+              maxHeight: menuPosition.maxHeight,
+              top: menuPosition.top,
+              width: menuPosition.width,
+            }}
+            role="listbox"
+            dir="rtl"
+          >
+            {searchable && (
+              <div className="shrink-0 border-b border-app-line p-2">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="h-9 w-full rounded-lg border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none placeholder-app-muted transition focus:border-app-yellow"
+                  placeholder="ابحث..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onClick={(event) => event.stopPropagation()}
+                />
               </div>
             )}
-          </div>
-        </div>
-      )}
+            <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto p-1">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => {
+                  const selected = option.value === value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`flex h-10 w-full shrink-0 items-center justify-between rounded-lg px-3 text-sm transition ${
+                        selected
+                          ? "bg-app-yellow-soft text-app-yellow"
+                          : "text-app-text hover:bg-app-card-hover"
+                      }`}
+                      role="option"
+                      aria-selected={selected}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        selectOption(option);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {selected && <span className="size-2 rounded-full bg-app-yellow" />}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="flex h-10 items-center justify-center text-sm text-app-muted-light">
+                  لا توجد نتائج
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
       {error && (
-        <span className="mt-1.5 block text-xs text-app-red text-right w-full">
-          {error}
-        </span>
+        <span className="mt-1.5 block text-xs text-app-red text-right w-full">{error}</span>
       )}
     </div>
   );

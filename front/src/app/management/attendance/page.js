@@ -1,5 +1,14 @@
 import AttendanceClient from "./AttendanceClient";
+import { verifySession } from "@/lib/server/auth";
+import { requestBackend } from "@/lib/server/backend";
 
-export default function AttendancePage() {
-  return <AttendanceClient />;
+export const metadata = {
+  title: "الحضور والانصراف | TechnoGYM",
+};
+
+export default async function AttendancePage() {
+  const { token } = await verifySession();
+  const branches = await requestBackend("branches", { token });
+
+  return <AttendanceClient initialBranches={branches} />;
 }

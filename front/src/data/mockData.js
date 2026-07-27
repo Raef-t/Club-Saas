@@ -21,8 +21,7 @@ export const systemCards = [
   {
     title: "نظام المحاسبة",
     href: "/accounting",
-    description:
-      "لوحة مالية كاملة للإيرادات، المصاريف، الرواتب، الصندوق، والديون.",
+    description: "لوحة مالية كاملة للإيرادات، المصاريف، الرواتب، الصندوق، والديون.",
     badge: "جاهز",
     stats: ["12 صفحة", "Mock Data", "RTL"],
   },
@@ -71,8 +70,8 @@ export const accountingMenu = [
 
 export const pageMeta = {
   "/management": {
-    title: "لوحة التحكم",
-    subtitle: "ملخص شامل لأداء نظام إدارة النادي",
+    title: "الإحصائيات",
+    subtitle: "بيانات مباشرة وملخص شامل لأداء نظام إدارة النادي",
   },
   "/management/attendance": {
     title: "تسجيل الحضور",
@@ -144,8 +143,8 @@ export const pageMeta = {
     subtitle: "رواتب المدربين > إضافة كشف",
   },
   "/reports": {
-    title: "نظام التقارير",
-    subtitle: "ملخص تقارير الأداء المالي والإداري للنادي",
+    title: "التقارير التشغيلية",
+    subtitle: "تقارير مباشرة حسب الفرع المختار مع إمكانية الطباعة",
   },
 };
 

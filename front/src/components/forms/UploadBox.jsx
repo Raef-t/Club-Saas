@@ -28,7 +28,7 @@ export function UploadBox({
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     if (e.dataTransfer.files) {
       processFiles(e.dataTransfer.files);
     }
@@ -75,7 +75,10 @@ export function UploadBox({
   };
 
   return (
-    <div className={`rounded-2xl bg-app-card-soft p-5 border border-app-line/40 ${className}`} dir="rtl">
+    <div
+      className={`rounded-2xl bg-app-card-soft p-5 border border-app-line/40 ${className}`}
+      dir="rtl"
+    >
       <div className="mb-4 flex items-center justify-between">
         <span className="flex items-center gap-2 text-sm text-app-text font-medium">
           <TagIcon className="size-4 text-app-yellow" />
@@ -104,7 +107,9 @@ export function UploadBox({
             : "border-app-muted/40 hover:border-app-yellow/50 bg-black/20 hover:bg-black/35"
         }`}
       >
-        <ArrowUpIcon className={`mb-2 size-5 text-app-text transition-transform duration-300 ${isDragOver ? "-translate-y-1 scale-110 text-app-yellow" : ""}`} />
+        <ArrowUpIcon
+          className={`mb-2 size-5 text-app-text transition-transform duration-300 ${isDragOver ? "-translate-y-1 scale-110 text-app-yellow" : ""}`}
+        />
         <p className="text-sm font-medium text-app-text">اسحب الملفات هنا أو اضغط للاختيار</p>
         <p className="mt-1 text-[11px] text-app-muted-light">
           {accept.toUpperCase().replace(/\./g, " ").trim()} &nbsp;|&nbsp; حتى {maxSizeMB} MB
@@ -114,10 +119,20 @@ export function UploadBox({
       {value.length > 0 && (
         <div className="mt-4 space-y-2 max-h-36 overflow-y-auto pr-1">
           {value.map((file, index) => {
-            const isImage = file.type?.startsWith("image/") || file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || (typeof file === "string" && file.match(/\.(jpg|jpeg|png|gif|webp)/i)) || (file?.url && file.url.match(/\.(jpg|jpeg|png|gif|webp)/i));
+            const isImage =
+              file.type?.startsWith("image/") ||
+              file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+              (typeof file === "string" && file.match(/\.(jpg|jpeg|png|gif|webp)/i)) ||
+              (file?.url && file.url.match(/\.(jpg|jpeg|png|gif|webp)/i));
             const fileSizeStr = file.size ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "";
-            const fileName = file.name || (file?.url ? file.url.split("/").pop() : typeof file === "string" ? file.split("/").pop() : "file");
-            
+            const fileName =
+              file.name ||
+              (file?.url
+                ? file.url.split("/").pop()
+                : typeof file === "string"
+                  ? file.split("/").pop()
+                  : "file");
+
             // Safe helper for image preview object URL
             let previewUrl = "";
             if (isImage) {
@@ -128,9 +143,15 @@ export function UploadBox({
                   console.error(e);
                 }
               } else if (typeof file === "string") {
-                previewUrl = file.startsWith("http") || file.startsWith("blob:") ? file : `http://31.70.108.63/${file.replace(/^\//, '')}`;
+                previewUrl =
+                  file.startsWith("http") || file.startsWith("blob:")
+                    ? file
+                    : `http://31.70.108.63/${file.replace(/^\//, "")}`;
               } else if (file?.url) {
-                previewUrl = file.url.startsWith("http") || file.url.startsWith("blob:") ? file.url : `http://31.70.108.63/${file.url.replace(/^\//, '')}`;
+                previewUrl =
+                  file.url.startsWith("http") || file.url.startsWith("blob:")
+                    ? file.url
+                    : `http://31.70.108.63/${file.url.replace(/^\//, "")}`;
               }
             }
 
@@ -141,7 +162,10 @@ export function UploadBox({
               >
                 <div className="flex items-center gap-3 overflow-hidden">
                   {previewUrl ? (
-                    <div className="size-9 rounded bg-cover bg-center border border-app-line/30 shrink-0" style={{ backgroundImage: `url(${previewUrl})` }} />
+                    <div
+                      className="size-9 rounded bg-cover bg-center border border-app-line/30 shrink-0"
+                      style={{ backgroundImage: `url(${previewUrl})` }}
+                    />
                   ) : (
                     <div className="size-9 rounded bg-app-card-soft flex items-center justify-center shrink-0 border border-app-line/30">
                       <span className="text-[10px] font-bold text-app-yellow">
@@ -153,10 +177,12 @@ export function UploadBox({
                     <span className="truncate text-xs font-medium text-app-text" title={fileName}>
                       {fileName}
                     </span>
-                    {fileSizeStr && <span className="text-[10px] text-app-muted-light">{fileSizeStr}</span>}
+                    {fileSizeStr && (
+                      <span className="text-[10px] text-app-muted-light">{fileSizeStr}</span>
+                    )}
                   </div>
                 </div>
-                
+
                 <button
                   type="button"
                   onClick={(e) => {
