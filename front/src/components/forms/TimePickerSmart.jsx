@@ -7,9 +7,10 @@ import { useTimeFormat } from "@/lib/TimeFormatContext";
 import {
   applyTimeMask as applyMask,
   cleanTimeInput as cleanTyped,
+  padTimeSegment,
   parseTimeInput as parseTyped,
 } from "@/components/forms/timePickerUtils";
-
+//test
 export default function TimePickerSmart({
   label,
   value,
@@ -42,7 +43,7 @@ export default function TimePickerSmart({
     if (value) return cleanTyped(value);
     if (autoDefault) {
       const now = new Date();
-      return cleanTyped(`${pad2(now.getHours())}:${pad2(now.getMinutes())}`);
+      return cleanTyped(`${padTimeSegment(now.getHours())}:${padTimeSegment(now.getMinutes())}`);
     }
     return "";
   });
@@ -201,7 +202,7 @@ export default function TimePickerSmart({
         if (h === 12) finalH = 0;
       }
     }
-    const timeStr = `${pad2(finalH)}:${pad2(m)}`;
+    const timeStr = `${padTimeSegment(finalH)}:${padTimeSegment(m)}`;
     onChange?.(timeStr);
     setDigits(cleanTyped(timeStr));
     setOpen(false);
@@ -371,7 +372,7 @@ export default function TimePickerSmart({
                               : "text-app-text hover:bg-app-card-soft",
                           ].join(" ")}
                         >
-                          {pad2(h)}
+                          {padTimeSegment(h)}
                         </button>
                       );
                     })}
@@ -396,7 +397,7 @@ export default function TimePickerSmart({
                               : "text-app-text hover:bg-app-card-soft",
                           ].join(" ")}
                         >
-                          {pad2(m)}
+                          {padTimeSegment(m)}
                         </button>
                       );
                     })}
