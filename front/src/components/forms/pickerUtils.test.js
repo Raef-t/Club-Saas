@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyDateMask, formatDateDisplay, parseDateInput } from "./datePickerUtils";
-import { applyTimeMask, parseTimeInput } from "./timePickerUtils";
+import { applyTimeMask, padTimeSegment, parseTimeInput } from "./timePickerUtils";
 
 describe("date picker utilities", () => {
   it("formats and parses supported date formats", () => {
@@ -17,6 +17,7 @@ describe("date picker utilities", () => {
 describe("time picker utilities", () => {
   it("masks and validates 24-hour values", () => {
     expect(applyTimeMask("0930")).toBe("09:30");
+    expect(padTimeSegment(7)).toBe("07");
     expect(parseTimeInput("23:59")).toBe("23:59");
     expect(parseTimeInput("24:00")).toBeNull();
   });

@@ -10,6 +10,10 @@ export function applyTimeMask(digits) {
   return digits.length <= 2 ? hour : `${hour}:${minute}`;
 }
 
+export function padTimeSegment(value) {
+  return String(value).padStart(2, "0");
+}
+
 /**
  * Parses a masked 24-hour time and rejects invalid hours and minutes.
  */
@@ -23,5 +27,5 @@ export function parseTimeInput(masked) {
   const minute = Number(match[2]);
   if (hour > 23 || minute > 59) return null;
 
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  return `${padTimeSegment(hour)}:${padTimeSegment(minute)}`;
 }

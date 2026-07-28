@@ -7,6 +7,7 @@ import { useTimeFormat } from "@/lib/TimeFormatContext";
 import {
   applyTimeMask as applyMask,
   cleanTimeInput as cleanTyped,
+  padTimeSegment as pad2,
   parseTimeInput as parseTyped,
 } from "@/components/forms/timePickerUtils";
 
