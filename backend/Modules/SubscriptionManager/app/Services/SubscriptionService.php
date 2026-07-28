@@ -89,15 +89,17 @@ class SubscriptionService
      */
     public function subscribeMember(int $memberId, int $planId, array $options = [])
     {
-        // 1. Load plan with activities and ensure it exists
-        $plan = $this->planRepository->find($planId);
-        $plan->load('planActivities');
+        return DB::transaction(function () use ($memberId, $planId, $options) {
+            // 1. Load and lock plan row inside transaction to prevent capacity overflow
+            $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planId)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $plan->load('planActivities');
 
-        if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-            throw new Exception(__('This subscription plan has reached its maximum capacity.'));
-        }
+            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                throw new Exception(__('This subscription plan has reached its maximum capacity.'));
+            }
 
-        return DB::transaction(function () use ($memberId, $plan, $options) {
             $this->incrementPlanSubscribers($plan);
 
 
@@ -321,11 +323,13 @@ class SubscriptionService
     /**
      * Record a payment for a subscription.
      */
-    public function recordPayment(int $subscriptionId, float $amount)
+    public function recordPayment(int $subscriptionId, float $amount, array $options = [])
     {
-        $subscription = $this->subscriptionRepository->find($subscriptionId);
+        return DB::transaction(function () use ($subscriptionId, $amount, $options) {
+            $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::where('id', $subscriptionId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return DB::transaction(function () use ($subscription, $amount) {
             $newPaidAmount = $subscription->paid_amount + $amount;
 
             if ($newPaidAmount > $subscription->total_amount) {
@@ -454,8 +458,13 @@ class SubscriptionService
         }
 
         return DB::transaction(function () use ($subscription) {
-            if ($subscription->plan && $subscription->plan->max_subscribers > 0 && $subscription->plan->current_subscribers >= $subscription->plan->max_subscribers) {
-                throw new Exception(__('لا يمكن فك التجميد لأن الخطة ممتلئة بالكامل حالياً.'));
+            if ($subscription->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $subscription->plan_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($plan && $plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                    throw new Exception(__('لا يمكن فك التجميد لأن الخطة ممتلئة بالكامل حالياً.'));
+                }
             }
 
             // Find the active freeze
@@ -614,16 +623,17 @@ class SubscriptionService
             throw new Exception(__('This offer is no longer active.'));
         }
 
-        // Check capacity for all plans
-        foreach ($offer->plans as $plan) {
-            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                throw new Exception(__('The plan :plan within this offer has reached its maximum capacity. Offer cannot be purchased.', ['plan' => $plan->name]));
-            }
-        }
-
         return DB::transaction(function () use ($memberId, $offer, $options) {
-            // Increment subscribers for all plans
-            foreach ($offer->plans as $plan) {
+            // Lock and check capacity for all plans inside transaction
+            foreach ($offer->plans as $planItem) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planItem->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                    throw new Exception(__('The plan :plan within this offer has reached its maximum capacity. Offer cannot be purchased.', ['plan' => $plan->name]));
+                }
+
                 $this->incrementPlanSubscribers($plan);
             }
 

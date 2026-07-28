@@ -80,6 +80,7 @@ class SessionDeductionService
             $items = DB::table('player_subscription_items')
                 ->where('player_subscription_id', $subscription->id)
                 ->where('is_unlimited', false)
+                ->lockForUpdate()
                 ->get();
 
             $this->validateRemainingSessions($items);
@@ -141,6 +142,7 @@ class SessionDeductionService
                 $items = DB::table('player_subscription_items')
                     ->where('player_subscription_id', $subscription->id)
                     ->where('is_unlimited', false)
+                    ->lockForUpdate()
                     ->get();
 
                 $this->validateRemainingSessions($items);
@@ -255,6 +257,7 @@ class SessionDeductionService
                 $item = DB::table('player_subscription_items')
                     ->where('player_subscription_id', $consumption->player_subscription_id)
                     ->where('sessions_consumed', '>', 0)
+                    ->lockForUpdate()
                     ->first();
 
                 if ($item) {

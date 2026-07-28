@@ -105,7 +105,9 @@ class LockerService
     public function reserveLocker(int $lockerId, array $data)
     {
         return DB::transaction(function () use ($lockerId, $data) {
-            $locker = $this->getLockerById($lockerId);
+            $locker = \Modules\ClubManager\Models\Locker::where('id', $lockerId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($locker->status !== 'available') {
                 throw new Exception(__('Locker is already occupied.'));
@@ -169,7 +171,9 @@ class LockerService
     public function releaseLocker(int $lockerId)
     {
         return DB::transaction(function () use ($lockerId) {
-            $locker = $this->getLockerById($lockerId);
+            $locker = \Modules\ClubManager\Models\Locker::where('id', $lockerId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($locker->status === 'available') {
                 throw new Exception(__('Locker is already available.'));
@@ -194,7 +198,10 @@ class LockerService
     public function transferReservationHolder(int $reservationId, array $data)
     {
         return DB::transaction(function () use ($reservationId, $data) {
-            $reservation = DB::table('locker_reservations')->where('id', $reservationId)->first();
+            $reservation = DB::table('locker_reservations')
+                ->where('id', $reservationId)
+                ->lockForUpdate()
+                ->first();
             
             if (!$reservation || $reservation->status !== 'active') {
                 throw new Exception(__('Active reservation not found.'));

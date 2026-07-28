@@ -212,7 +212,7 @@ class PlayerRegistrationService
 
     private function generateMemberNumber(): string
     {
-        $lastMember = Member::latest('id')->first();
+        $lastMember = Member::lockForUpdate()->latest('id')->first();
         $nextId = $lastMember ? $lastMember->id + 1 : 1;
         return 'MEM-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
     }

@@ -185,15 +185,16 @@ class PayrollService
      */
     public function confirmPayroll(array $data)
     {
-        $existingRun = PayrollRun::where('period_start', $data['period_start'])
-            ->where('period_end', $data['period_end'])
-            ->first();
+        return DB::transaction(function () use ($data) {
+            $existingRun = PayrollRun::where('period_start', $data['period_start'])
+                ->where('period_end', $data['period_end'])
+                ->lockForUpdate()
+                ->first();
 
-        if ($existingRun) {
-            throw new Exception("تم تثبيت رواتب هذه الفترة مسبقاً.", 409);
-        }
+            if ($existingRun) {
+                throw new Exception("تم تثبيت رواتب هذه الفترة مسبقاً.", 409);
+            }
 
-        DB::transaction(function () use ($data) {
             $payrollRun = PayrollRun::create([
                 'period_start' => $data['period_start'],
                 'period_end' => $data['period_end'],
