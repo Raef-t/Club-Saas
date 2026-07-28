@@ -28,6 +28,9 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
     {
         return DB::transaction(function () use ($entityId, $branchId) {
 
+            // 0. Lock staff row to prevent concurrent check-in
+            DB::table('staff')->where('id', $entityId)->lockForUpdate()->first();
+
             // 1. No double check-in
             $open = $this->findOpenAttendance($entityId);
             if ($open) {

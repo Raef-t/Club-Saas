@@ -31,6 +31,9 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
     {
         return DB::transaction(function () use ($entityId, $branchId) {
 
+            // ── 0. Lock member row to prevent concurrent check-in ───────────────────
+            DB::table('members')->where('id', $entityId)->lockForUpdate()->first();
+
             // ── 1. No double check-in ───────────────────────────────────────────────
             $open = $this->findOpenAttendance($entityId);
             if ($open) {
