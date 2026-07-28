@@ -5,7 +5,12 @@ use Illuminate\Support\Facades\Route;
 use Modules\AttendanceManager\Http\Controllers\Api\V1\UnifiedAttendanceController;
 use Modules\AttendanceManager\Http\Controllers\Api\V1\ReceptionAttendanceController;
 
+use Modules\AttendanceManager\Http\Controllers\Api\V1\AttendanceDashboardController;
+
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+
+    // Reception & Attendance Dashboard Real-Time Stats
+    Route::get('attendance-manager/dashboard-stats', [AttendanceDashboardController::class, 'stats']);
 
 
 
