@@ -102,7 +102,7 @@ class SubscriptionReportController extends BaseController
     )]
     #[OA\Parameter(name: 'start_time', in: 'query', required: false, description: 'وقت البداية لتصفية الحصص (مثل 10:00:00)', schema: new OA\Schema(type: 'string', example: '10:00:00'))]
     #[OA\Parameter(name: 'end_time', in: 'query', required: false, description: 'وقت النهاية لتصفية الحصص (مثل 14:00:00)', schema: new OA\Schema(type: 'string', example: '14:00:00'))]
-    #[OA\Parameter(name: 'day_of_week', in: 'query', required: false, description: 'يوم الأسبوع (1=الاثنين، 7=الأحد)', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 7, example: 1))]
+    #[OA\Parameter(name: 'day_of_week', in: 'query', required: false, description: 'يوم الأسبوع (0=الأحد، 1=الاثنين ... 6=السبت)', schema: new OA\Schema(type: 'integer', minimum: 0, maximum: 6, example: 0))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'plan_id', in: 'query', required: false, description: 'تصفية حسب خطة محددة', schema: new OA\Schema(type: 'integer', example: 5))]
     #[OA\Response(
@@ -154,5 +154,53 @@ class SubscriptionReportController extends BaseController
         $reportData = $this->reportService->getTimeSlotCapacityReport($filters);
 
         return $this->successResponse($reportData, __('Time-slot capacity report retrieved successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/reports/attendance/peak-hours',
+        summary: '🔥 تقرير أوقات الذروة والانخفاض في النادي (Peak & Off-Peak Traffic Report)',
+        description: 'استرجاع تقرير ذكي يُظهر أكثر الساعات والأيام ازدحاماً وهدوءاً في النادي مع استبعاد العطل الرسمية والأسبوعية المسجلة للفرع تلقائياً.',
+        tags: ['Reports'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'start_date', in: 'query', required: false, description: 'تاريخ بداية التحليل (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'))]
+    #[OA\Parameter(name: 'end_date', in: 'query', required: false, description: 'تاريخ نهاية التحليل (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-31'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'attendable_type', in: 'query', required: false, description: 'تصفية بين الأعضاء (member) أو الكباتن (staff)', schema: new OA\Schema(type: 'string', enum: ['member', 'staff'], default: 'member'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع تقرير الذروة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Peak hours report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'busiest_day', type: 'string', example: 'الاثنين'),
+                            new OA\Property(property: 'quietest_day', type: 'string', example: 'الجمعة'),
+                            new OA\Property(property: 'peak_hours_range', type: 'string', example: '18:00'),
+                            new OA\Property(property: 'off_peak_hours_range', type: 'string', example: '13:00'),
+                            new OA\Property(property: 'total_attendances_analyzed', type: 'integer', example: 1450),
+                            new OA\Property(property: 'excluded_holidays_count', type: 'integer', example: 2),
+                        ]),
+                        new OA\Property(property: 'top_peak_hours', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'top_off_peak_hours', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'hourly_breakdown', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'daily_breakdown', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function peakHoursReport(Request $request)
+    {
+        $filters = $request->only(['start_date', 'end_date', 'branch_id', 'attendable_type']);
+        $reportData = $this->reportService->getPeakHoursReport($filters);
+
+        return $this->successResponse($reportData, __('Peak hours report retrieved successfully'));
     }
 }
