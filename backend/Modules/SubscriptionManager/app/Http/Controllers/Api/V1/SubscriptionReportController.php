@@ -120,7 +120,6 @@ class SubscriptionReportController extends BaseController
                             new OA\Property(property: 'total_matching_sessions', type: 'integer', example: 8),
                             new OA\Property(property: 'total_unique_plans', type: 'integer', example: 3),
                             new OA\Property(property: 'total_active_subscribers', type: 'integer', example: 45),
-                            new OA\Property(property: 'total_currently_present', type: 'integer', example: 12),
                         ]),
                         new OA\Property(
                             property: 'records',
@@ -132,13 +131,13 @@ class SubscriptionReportController extends BaseController
                                     new OA\Property(property: 'plan_id', type: 'integer', example: 5),
                                     new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك لياقة صباحي'),
                                     new OA\Property(property: 'plan_type', type: 'string', example: 'monthly'),
-                                    new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
-                                    new OA\Property(property: 'day_name', type: 'string', example: 'الاثنين'),
+                                    new OA\Property(property: 'coaches_names', type: 'string', example: 'الكابتن طارق علي'),
+                                    new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                                    new OA\Property(property: 'day_name', type: 'string', example: 'الأحد'),
                                     new OA\Property(property: 'start_time', type: 'string', example: '10:00:00'),
                                     new OA\Property(property: 'end_time', type: 'string', example: '11:30:00'),
                                     new OA\Property(property: 'facility_name', type: 'string', example: 'صالة اللياقة الرئيسية'),
                                     new OA\Property(property: 'active_subscribers_count', type: 'integer', example: 20),
-                                    new OA\Property(property: 'present_players_count', type: 'integer', example: 5),
                                 ]
                             )
                         )
@@ -202,5 +201,52 @@ class SubscriptionReportController extends BaseController
         $reportData = $this->reportService->getPeakHoursReport($filters);
 
         return $this->successResponse($reportData, __('Peak hours report retrieved successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/reports/subscriptions/frozen-terminated',
+        summary: '❄️❌ تقرير الاشتراكات المجمدة والملغاة (Frozen & Terminated Subscriptions Report)',
+        description: 'استرجاع تقرير تفصيلي عن كافة الاشتراكات المجمدة والملغاة (Terminated) مع إظهار أسباب التجميد والإلغاء والتوارخ والإحصائيات المالية المفقودة والمجمدة.',
+        tags: ['Reports'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب الحالة: frozen (المجمدة فقط), terminated (الملغاة فقط), all (الجميع)', schema: new OA\Schema(type: 'string', enum: ['all', 'frozen', 'terminated'], default: 'all'))]
+    #[OA\Parameter(name: 'date_filter_by', in: 'query', required: false, description: 'المعيار الزمني للتصفية: event_date (تاريخ حدوث التجميد/الإلغاء), start_date (بداية الاشتراك), end_date (نهاية الاشتراك), created_date (تاريخ القيد)', schema: new OA\Schema(type: 'string', enum: ['event_date', 'start_date', 'end_date', 'created_date'], default: 'event_date'))]
+    #[OA\Parameter(name: 'start_date', in: 'query', required: false, description: 'تاريخ بداية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'))]
+    #[OA\Parameter(name: 'end_date', in: 'query', required: false, description: 'تاريخ نهاية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-31'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'plan_id', in: 'query', required: false, description: 'تصفية حسب خطة الاشتراك', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث برقم الهاتف، اسم اللاعب، أو رقم العضوية', schema: new OA\Schema(type: 'string', example: 'أحمد'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع التقرير بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Frozen and terminated subscriptions report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'total_records', type: 'integer', example: 15),
+                            new OA\Property(property: 'total_frozen', type: 'integer', example: 10),
+                            new OA\Property(property: 'total_terminated', type: 'integer', example: 5),
+                            new OA\Property(property: 'total_frozen_revenue', type: 'number', example: 5000.0),
+                            new OA\Property(property: 'total_lost_terminated_revenue', type: 'number', example: 2500.0),
+                        ]),
+                        new OA\Property(property: 'records', type: 'array', items: new OA\Items(type: 'object'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function frozenAndTerminatedReport(Request $request)
+    {
+        $filters = $request->only(['status', 'start_date', 'end_date', 'date_filter_by', 'branch_id', 'plan_id', 'search']);
+        $reportData = $this->reportService->getFrozenAndTerminatedReport($filters);
+
+        return $this->successResponse($reportData, __('Frozen and terminated subscriptions report retrieved successfully'));
     }
 }

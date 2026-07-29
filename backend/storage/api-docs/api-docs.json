@@ -22195,10 +22195,6 @@
                                                         "total_active_subscribers": {
                                                             "type": "integer",
                                                             "example": 45
-                                                        },
-                                                        "total_currently_present": {
-                                                            "type": "integer",
-                                                            "example": 12
                                                         }
                                                     },
                                                     "type": "object"
@@ -22223,13 +22219,17 @@
                                                                 "type": "string",
                                                                 "example": "monthly"
                                                             },
+                                                            "coaches_names": {
+                                                                "type": "string",
+                                                                "example": "الكابتن طارق علي"
+                                                            },
                                                             "day_of_week": {
                                                                 "type": "integer",
-                                                                "example": 1
+                                                                "example": 0
                                                             },
                                                             "day_name": {
                                                                 "type": "string",
-                                                                "example": "الاثنين"
+                                                                "example": "الأحد"
                                                             },
                                                             "start_time": {
                                                                 "type": "string",
@@ -22246,10 +22246,6 @@
                                                             "active_subscribers_count": {
                                                                 "type": "integer",
                                                                 "example": 20
-                                                            },
-                                                            "present_players_count": {
-                                                                "type": "integer",
-                                                                "example": 5
                                                             }
                                                         },
                                                         "type": "object"
@@ -22396,6 +22392,167 @@
                                                     }
                                                 },
                                                 "daily_breakdown": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/reports/subscriptions/frozen-terminated": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "❄️❌ تقرير الاشتراكات المجمدة والملغاة (Frozen & Terminated Subscriptions Report)",
+                "description": "استرجاع تقرير تفصيلي عن كافة الاشتراكات المجمدة والملغاة (Terminated) مع إظهار أسباب التجميد والإلغاء والتوارخ والإحصائيات المالية المفقودة والمجمدة.",
+                "operationId": "a4a116c940bdc6e80dd2bbe65a9ffc51",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة: frozen (المجمدة فقط), terminated (الملغاة فقط), all (الجميع)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "all",
+                            "enum": [
+                                "all",
+                                "frozen",
+                                "terminated"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_filter_by",
+                        "in": "query",
+                        "description": "المعيار الزمني للتصفية: event_date (تاريخ حدوث التجميد/الإلغاء), start_date (بداية الاشتراك), end_date (نهاية الاشتراك), created_date (تاريخ القيد)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "event_date",
+                            "enum": [
+                                "event_date",
+                                "start_date",
+                                "end_date",
+                                "created_date"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "تاريخ بداية النطاق الزمني (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "تاريخ نهاية النطاق الزمني (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-31"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "description": "تصفية حسب خطة الاشتراك",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث برقم الهاتف، اسم اللاعب، أو رقم العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع التقرير بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Frozen and terminated subscriptions report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_records": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "total_frozen": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "total_terminated": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "total_frozen_revenue": {
+                                                            "type": "number",
+                                                            "example": 5000
+                                                        },
+                                                        "total_lost_terminated_revenue": {
+                                                            "type": "number",
+                                                            "example": 2500
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "records": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "object"
