@@ -7990,10 +7990,40 @@
                                             "example": "Lockers retrieved successfully"
                                         },
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "available_lockers_count": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        },
+                                                        "unavailable_lockers_count": {
+                                                            "type": "integer",
+                                                            "example": 8
+                                                        },
+                                                        "assigned_to_member_count": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "assigned_to_coach_count": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "rented_lockers_count": {
+                                                            "type": "integer",
+                                                            "example": 4
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "lockers": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -22048,6 +22078,178 @@
                                                             "is_fully_paid": {
                                                                 "type": "boolean",
                                                                 "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/reports/sessions/time-capacity": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "🕒 تقرير سعة الحصص والخطط حسب الفترة الزمنية (Time-Slot Capacity Report)",
+                "description": "استرجاع تقرير بالخطط ونماذج الحصص الواقعة في فترة وقتية محددة (مثل من 10:00 إلى 14:00) مع إظهار عدد المشتركين النشطين الحاليين في كل خطة وعدد الحاضرين.",
+                "operationId": "e2b15b18d28e6ff613b91ce8d7fbee9b",
+                "parameters": [
+                    {
+                        "name": "start_time",
+                        "in": "query",
+                        "description": "وقت البداية لتصفية الحصص (مثل 10:00:00)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "10:00:00"
+                        }
+                    },
+                    {
+                        "name": "end_time",
+                        "in": "query",
+                        "description": "وقت النهاية لتصفية الحصص (مثل 14:00:00)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "14:00:00"
+                        }
+                    },
+                    {
+                        "name": "day_of_week",
+                        "in": "query",
+                        "description": "يوم الأسبوع (1=الاثنين، 7=الأحد)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1,
+                            "maximum": 7,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "description": "تصفية حسب خطة محددة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع تقرير سعة الحصص بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Time-slot capacity report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_matching_sessions": {
+                                                            "type": "integer",
+                                                            "example": 8
+                                                        },
+                                                        "total_unique_plans": {
+                                                            "type": "integer",
+                                                            "example": 3
+                                                        },
+                                                        "total_active_subscribers": {
+                                                            "type": "integer",
+                                                            "example": 45
+                                                        },
+                                                        "total_currently_present": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "records": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "session_template_id": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "plan_id": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "plan_name": {
+                                                                "type": "string",
+                                                                "example": "اشتراك لياقة صباحي"
+                                                            },
+                                                            "plan_type": {
+                                                                "type": "string",
+                                                                "example": "monthly"
+                                                            },
+                                                            "day_of_week": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "day_name": {
+                                                                "type": "string",
+                                                                "example": "الاثنين"
+                                                            },
+                                                            "start_time": {
+                                                                "type": "string",
+                                                                "example": "10:00:00"
+                                                            },
+                                                            "end_time": {
+                                                                "type": "string",
+                                                                "example": "11:30:00"
+                                                            },
+                                                            "facility_name": {
+                                                                "type": "string",
+                                                                "example": "صالة اللياقة الرئيسية"
+                                                            },
+                                                            "active_subscribers_count": {
+                                                                "type": "integer",
+                                                                "example": 20
+                                                            },
+                                                            "present_players_count": {
+                                                                "type": "integer",
+                                                                "example": 5
                                                             }
                                                         },
                                                         "type": "object"

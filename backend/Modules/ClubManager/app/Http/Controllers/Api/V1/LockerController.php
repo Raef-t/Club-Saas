@@ -47,7 +47,20 @@ class LockerController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Lockers retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'available_lockers_count', type: 'integer', example: 12),
+                            new OA\Property(property: 'unavailable_lockers_count', type: 'integer', example: 8),
+                            new OA\Property(property: 'assigned_to_member_count', type: 'integer', example: 5),
+                            new OA\Property(property: 'assigned_to_coach_count', type: 'integer', example: 2),
+                            new OA\Property(property: 'rented_lockers_count', type: 'integer', example: 4),
+                        ]),
+                        new OA\Property(property: 'lockers', type: 'array', items: new OA\Items(type: 'object'))
+                    ]
+                )
             ]
         )
     )]
@@ -55,8 +68,15 @@ class LockerController extends BaseController
     public function index(Request $request)
     {
         $filters = $request->only(['branch_id', 'status']);
+        $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
+
         $lockers = $this->lockerService->getAllLockers($filters);
-        return $this->successResponse(LockerResource::collection($lockers), __('Lockers retrieved successfully'));
+        $summary = $this->lockerService->getLockersSummary($branchId);
+
+        return $this->successResponse([
+            'summary' => $summary,
+            'lockers' => LockerResource::collection($lockers),
+        ], __('Lockers retrieved successfully'));
     }
 
     #[OA\Post(

@@ -3,6 +3,7 @@
 namespace Modules\SubscriptionManager\Services;
 
 use Modules\SubscriptionManager\Models\PlayerSubscription;
+use Illuminate\Support\Facades\DB;
 
 class SubscriptionReportService
 {
@@ -211,6 +212,116 @@ class SubscriptionReportService
                 'total_renewed_revenue'        => $totalRenewedRevenue,
             ],
             'records' => $reportRecords,
+        ];
+    }
+
+    /**
+     * Get report for session templates, plans, and subscriber counts filtered by time slot.
+     *
+     * @param array $filters
+     * @return array
+     */
+    public function getTimeSlotCapacityReport(array $filters = []): array
+    {
+        $startTime = $filters['start_time'] ?? null;
+        $endTime   = $filters['end_time'] ?? null;
+        $dayOfWeek = $filters['day_of_week'] ?? null;
+        $branchId  = $filters['branch_id'] ?? null;
+        $planId    = $filters['plan_id'] ?? null;
+
+        $daysMap = [
+            1 => 'الاثنين', 2 => 'الثلاثاء', 3 => 'الأربعاء',
+            4 => 'الخميس', 5 => 'الجمعة', 6 => 'السبت', 7 => 'الأحد'
+        ];
+
+        $query = DB::table('sport_session_templates as sst')
+            ->join('subscription_plans as sp', 'sp.id', '=', 'sst.plan_id')
+            ->leftJoin('facilities as f', 'f.id', '=', 'sst.facility_id')
+            ->where('sst.is_active', true);
+
+        if ($startTime) {
+            $query->whereTime('sst.start_time', '>=', $startTime);
+        }
+        if ($endTime) {
+            $query->whereTime('sst.end_time', '<=', $endTime);
+        }
+        if ($dayOfWeek) {
+            $query->where('sst.day_of_week', $dayOfWeek);
+        }
+        if ($branchId) {
+            $query->where('sp.branch_id', $branchId);
+        }
+        if ($planId) {
+            $query->where('sp.id', $planId);
+        }
+
+        $templates = $query->select(
+            'sst.id as session_template_id',
+            'sst.plan_id',
+            'sp.name as plan_name',
+            'sp.type as plan_type',
+            'sst.day_of_week',
+            'sst.start_time',
+            'sst.end_time',
+            'f.name as facility_name'
+        )->orderBy('sst.day_of_week')->orderBy('sst.start_time')->get();
+
+        $records = [];
+        $totalActiveSubscribersSum = 0;
+        $totalPresentSum = 0;
+        $uniquePlanIds = [];
+
+        foreach ($templates as $tmpl) {
+            $planName = json_decode($tmpl->plan_name, true) ?? $tmpl->plan_name;
+            if (is_array($planName)) {
+                $planName = $planName['ar'] ?? reset($planName);
+            }
+
+            // Active members subscribed to this plan
+            $activeSubscribersCount = DB::table('player_subscriptions')
+                ->where('plan_id', $tmpl->plan_id)
+                ->where('status', 'active')
+                ->whereDate('end_date', '>=', now())
+                ->distinct('member_id')
+                ->count('member_id');
+
+            // Currently checked-in players in this plan
+            $presentPlayersCount = DB::table('attendances as att')
+                ->join('attendance_consumptions as ac', 'ac.attendance_id', '=', 'att.id')
+                ->where('ac.subscription_plan_id', $tmpl->plan_id)
+                ->where('att.attendable_type', 'member')
+                ->where('att.status', 'checked_in')
+                ->whereNull('att.check_out_at')
+                ->distinct('att.attendable_id')
+                ->count('att.attendable_id');
+
+            $uniquePlanIds[$tmpl->plan_id] = true;
+            $totalActiveSubscribersSum += $activeSubscribersCount;
+            $totalPresentSum += $presentPlayersCount;
+
+            $records[] = [
+                'session_template_id'      => $tmpl->session_template_id,
+                'plan_id'                  => $tmpl->plan_id,
+                'plan_name'                => $planName,
+                'plan_type'                => $tmpl->plan_type,
+                'day_of_week'              => $tmpl->day_of_week,
+                'day_name'                 => $daysMap[$tmpl->day_of_week] ?? 'غير محدد',
+                'start_time'               => $tmpl->start_time,
+                'end_time'                 => $tmpl->end_time,
+                'facility_name'            => $tmpl->facility_name ?? 'الصالّة العامة',
+                'active_subscribers_count' => $activeSubscribersCount,
+                'present_players_count'    => $presentPlayersCount,
+            ];
+        }
+
+        return [
+            'summary' => [
+                'total_matching_sessions'  => count($records),
+                'total_unique_plans'       => count($uniquePlanIds),
+                'total_active_subscribers' => $totalActiveSubscribersSum,
+                'total_currently_present'  => $totalPresentSum,
+            ],
+            'records' => $records,
         ];
     }
 }
