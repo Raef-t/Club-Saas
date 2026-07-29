@@ -16,6 +16,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Subscription & Renewal Reports
     Route::get('reports/subscriptions/renewal-status', [SubscriptionReportController::class, 'renewalStatusReport']);
     Route::get('reports/sessions/time-capacity', [SubscriptionReportController::class, 'timeCapacityReport']);
+    Route::get('reports/attendance/peak-hours', [SubscriptionReportController::class, 'peakHoursReport']);
 
     // Authenticated Member's Invoices
     Route::get('my-invoices', [InvoiceController::class, 'myInvoices']);

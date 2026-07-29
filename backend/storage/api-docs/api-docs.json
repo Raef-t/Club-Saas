@@ -22135,13 +22135,13 @@
                     {
                         "name": "day_of_week",
                         "in": "query",
-                        "description": "يوم الأسبوع (1=الاثنين، 7=الأحد)",
+                        "description": "يوم الأسبوع (0=الأحد، 1=الاثنين ... 6=السبت)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 1,
-                            "maximum": 7,
-                            "minimum": 1
+                            "example": 0,
+                            "maximum": 6,
+                            "minimum": 0
                         }
                     },
                     {
@@ -22252,6 +22252,152 @@
                                                                 "example": 5
                                                             }
                                                         },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/reports/attendance/peak-hours": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "🔥 تقرير أوقات الذروة والانخفاض في النادي (Peak & Off-Peak Traffic Report)",
+                "description": "استرجاع تقرير ذكي يُظهر أكثر الساعات والأيام ازدحاماً وهدوءاً في النادي مع استبعاد العطل الرسمية والأسبوعية المسجلة للفرع تلقائياً.",
+                "operationId": "26728403cfe79d78c7eb83a345144dcf",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "تاريخ بداية التحليل (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "تاريخ نهاية التحليل (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-31"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "attendable_type",
+                        "in": "query",
+                        "description": "تصفية بين الأعضاء (member) أو الكباتن (staff)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "member",
+                            "enum": [
+                                "member",
+                                "staff"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع تقرير الذروة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Peak hours report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "busiest_day": {
+                                                            "type": "string",
+                                                            "example": "الاثنين"
+                                                        },
+                                                        "quietest_day": {
+                                                            "type": "string",
+                                                            "example": "الجمعة"
+                                                        },
+                                                        "peak_hours_range": {
+                                                            "type": "string",
+                                                            "example": "18:00"
+                                                        },
+                                                        "off_peak_hours_range": {
+                                                            "type": "string",
+                                                            "example": "13:00"
+                                                        },
+                                                        "total_attendances_analyzed": {
+                                                            "type": "integer",
+                                                            "example": 1450
+                                                        },
+                                                        "excluded_holidays_count": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "top_peak_hours": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "top_off_peak_hours": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "hourly_breakdown": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "daily_breakdown": {
+                                                    "type": "array",
+                                                    "items": {
                                                         "type": "object"
                                                     }
                                                 }
