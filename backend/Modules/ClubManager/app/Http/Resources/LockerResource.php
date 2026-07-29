@@ -54,6 +54,7 @@ class LockerResource extends JsonResource
             'id'            => $this->id,
             'branch_id'     => $this->branch_id,
             'locker_number' => $this->locker_number,
+            'key_number'    => $this->key_number ?? null,
 
             // ── Current state ──────────────────────────────────────────────
             'status'        => $this->status,
