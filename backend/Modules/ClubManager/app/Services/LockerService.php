@@ -6,6 +6,7 @@ use Modules\ClubManager\Repositories\LockerRepositoryInterface;
 use Modules\ClubManager\Domain\Rules\LockerUniquenessRule;
 use Modules\ClubManager\Models\BranchSetting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Exception;
 use Carbon\Carbon;
 
@@ -25,24 +26,28 @@ class LockerService
     public function getAllLockers(array $filters = [])
     {
         // Instead of just relying on the repository's all(), we want to fetch the active reservation details
+        $columns = [
+            'lockers.id',
+            'lockers.locker_number',
+            'lockers.status',
+            'lockers.branch_id',
+            'locker_reservations.id as active_reservation_id',
+            'locker_reservations.member_id as holder_member_id',
+            'locker_reservations.staff_id as holder_staff_id',
+            'locker_reservations.start_date',
+            'locker_reservations.end_date',
+            'locker_reservations.price',
+        ];
+        if (Schema::hasColumn('lockers', 'key_number')) {
+            $columns[] = 'lockers.key_number';
+        }
+
         $query = DB::table('lockers')
             ->leftJoin('locker_reservations', function($join) {
                 $join->on('lockers.id', '=', 'locker_reservations.locker_id')
                      ->where('locker_reservations.status', '=', 'active');
             })
-            ->select(
-                'lockers.id',
-                'lockers.locker_number',
-                'lockers.key_number',
-                'lockers.status',
-                'lockers.branch_id',
-                'locker_reservations.id as active_reservation_id',
-                'locker_reservations.member_id as holder_member_id',
-                'locker_reservations.staff_id as holder_staff_id',
-                'locker_reservations.start_date',
-                'locker_reservations.end_date',
-                'locker_reservations.price'
-            )
+            ->select($columns)
             ->orderBy('lockers.locker_number');
 
         if (!empty($filters['branch_id'])) {

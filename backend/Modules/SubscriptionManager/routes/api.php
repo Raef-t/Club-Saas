@@ -9,8 +9,12 @@ use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanActivity
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\InvoiceController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\OfferController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionReportController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+
+    // Subscription & Renewal Reports
+    Route::get('reports/subscriptions/renewal-status', [SubscriptionReportController::class, 'renewalStatusReport']);
 
     // Authenticated Member's Invoices
     Route::get('my-invoices', [InvoiceController::class, 'myInvoices']);
