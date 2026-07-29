@@ -262,4 +262,33 @@ class LockerService
             )
             ->get();
     }
+
+    /**
+     * Get aggregated counts for lockers.
+     *
+     * @param int|null $branchId
+     * @return array
+     */
+    public function getLockersSummary(?int $branchId = null): array
+    {
+        $baseQuery = DB::table('lockers');
+        if ($branchId) {
+            $baseQuery->where('branch_id', $branchId);
+        }
+
+        $rentedQuery = DB::table('locker_reservations as lr')
+            ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
+            ->where('lr.status', 'active');
+        if ($branchId) {
+            $rentedQuery->where('l.branch_id', $branchId);
+        }
+
+        return [
+            'available_lockers_count'   => (clone $baseQuery)->where('status', 'available')->count(),
+            'unavailable_lockers_count' => (clone $baseQuery)->where('status', '!=', 'available')->count(),
+            'assigned_to_member_count'  => (clone $baseQuery)->where('status', 'with_member')->count(),
+            'assigned_to_coach_count'   => (clone $baseQuery)->where('status', 'with_staff')->count(),
+            'rented_lockers_count'      => $rentedQuery->distinct('lr.locker_id')->count('lr.locker_id'),
+        ];
+    }
 }

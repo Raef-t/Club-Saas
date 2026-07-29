@@ -92,4 +92,67 @@ class SubscriptionReportController extends BaseController
 
         return $this->successResponse($reportData, __('Subscription renewal status report retrieved successfully'));
     }
+
+    #[OA\Get(
+        path: '/v1/reports/sessions/time-capacity',
+        summary: '🕒 تقرير سعة الحصص والخطط حسب الفترة الزمنية (Time-Slot Capacity Report)',
+        description: 'استرجاع تقرير بالخطط ونماذج الحصص الواقعة في فترة وقتية محددة (مثل من 10:00 إلى 14:00) مع إظهار عدد المشتركين النشطين الحاليين في كل خطة وعدد الحاضرين.',
+        tags: ['Reports'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'start_time', in: 'query', required: false, description: 'وقت البداية لتصفية الحصص (مثل 10:00:00)', schema: new OA\Schema(type: 'string', example: '10:00:00'))]
+    #[OA\Parameter(name: 'end_time', in: 'query', required: false, description: 'وقت النهاية لتصفية الحصص (مثل 14:00:00)', schema: new OA\Schema(type: 'string', example: '14:00:00'))]
+    #[OA\Parameter(name: 'day_of_week', in: 'query', required: false, description: 'يوم الأسبوع (1=الاثنين، 7=الأحد)', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 7, example: 1))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'plan_id', in: 'query', required: false, description: 'تصفية حسب خطة محددة', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع تقرير سعة الحصص بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Time-slot capacity report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'total_matching_sessions', type: 'integer', example: 8),
+                            new OA\Property(property: 'total_unique_plans', type: 'integer', example: 3),
+                            new OA\Property(property: 'total_active_subscribers', type: 'integer', example: 45),
+                            new OA\Property(property: 'total_currently_present', type: 'integer', example: 12),
+                        ]),
+                        new OA\Property(
+                            property: 'records',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'session_template_id', type: 'integer', example: 10),
+                                    new OA\Property(property: 'plan_id', type: 'integer', example: 5),
+                                    new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك لياقة صباحي'),
+                                    new OA\Property(property: 'plan_type', type: 'string', example: 'monthly'),
+                                    new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
+                                    new OA\Property(property: 'day_name', type: 'string', example: 'الاثنين'),
+                                    new OA\Property(property: 'start_time', type: 'string', example: '10:00:00'),
+                                    new OA\Property(property: 'end_time', type: 'string', example: '11:30:00'),
+                                    new OA\Property(property: 'facility_name', type: 'string', example: 'صالة اللياقة الرئيسية'),
+                                    new OA\Property(property: 'active_subscribers_count', type: 'integer', example: 20),
+                                    new OA\Property(property: 'present_players_count', type: 'integer', example: 5),
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function timeCapacityReport(Request $request)
+    {
+        $filters = $request->only(['start_time', 'end_time', 'day_of_week', 'branch_id', 'plan_id']);
+        $reportData = $this->reportService->getTimeSlotCapacityReport($filters);
+
+        return $this->successResponse($reportData, __('Time-slot capacity report retrieved successfully'));
+    }
 }
