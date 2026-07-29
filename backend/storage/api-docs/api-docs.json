@@ -3036,6 +3036,44 @@
                 ]
             }
         },
+        "/v1/attendance-manager/dashboard-stats": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "📊 إحصائيات لوحة التحكم اللحظية للاستقبال والاشتراكات",
+                "description": "يعرض إجمالي اللاعبين ذوي الاشتراكات النشطة، عدد الحاضرين في تدريب عام/خاص، الخطط الجارية حالياً وتفاصيل الحضور بها، الاشتراكات القريبة من الانتهاء، والخزائن المجانية المسندة.",
+                "operationId": "1197f5e0d06754bd96021fb2a667f48b",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الإحصائيات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في معالجة الإحصائيات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/qr/check-in": {
             "post": {
                 "tags": [
@@ -10242,6 +10280,18 @@
                                                     "type": "integer"
                                                 },
                                                 "active_members": {
+                                                    "type": "integer"
+                                                },
+                                                "total_subscribed_members": {
+                                                    "type": "integer"
+                                                },
+                                                "new_members_this_month": {
+                                                    "type": "integer"
+                                                },
+                                                "renewed_members_this_month": {
+                                                    "type": "integer"
+                                                },
+                                                "expired_not_renewed_members": {
                                                     "type": "integer"
                                                 },
                                                 "male_members": {
@@ -21765,6 +21815,264 @@
                 ]
             }
         },
+        "/v1/reports/subscriptions/renewal-status": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "📊 تقرير تجديد وانقضاء الاشتراكات (Renewal & Expiration Report)",
+                "description": "استرجاع تقرير تفصيلي وشامل عن اللاعبين الذين انتهت اشتراكاتهم ولم يجددوا، واللاعبين الذين جددوا، مع تفاصيل الخطة، والمدربين، والإحصائيات المالية.",
+                "operationId": "1766e9fb782d7aa9e33c4c8ef4de0046",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "نوع التقرير: expired_non_renewed (منتهي ولم يجدد), renewed (تم التجديد), all (الجميع)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "all",
+                            "enum": [
+                                "expired_non_renewed",
+                                "renewed",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_filter_by",
+                        "in": "query",
+                        "description": "المعيار الزمني للتصفية: end_date (انقضاء الاشتراك), start_date (بداية الاشتراك), created_date (تاريخ القيد)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "end_date",
+                            "enum": [
+                                "end_date",
+                                "start_date",
+                                "created_date"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "تاريخ بداية النطاق الزمني",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "تاريخ نهاية النطاق الزمني",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-31"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "description": "تصفية حسب خطة الاشتراك",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "coach_id",
+                        "in": "query",
+                        "description": "تصفية حسب المدرب المسند",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث برقم الهاتف، اسم اللاعب، أو رقم العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع التقرير بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription renewal status report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_records": {
+                                                            "type": "integer",
+                                                            "example": 25
+                                                        },
+                                                        "total_expired_non_renewed": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "total_renewed": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "renewal_rate_percentage": {
+                                                            "type": "number",
+                                                            "example": 40
+                                                        },
+                                                        "total_lost_potential_revenue": {
+                                                            "type": "number",
+                                                            "example": 2250
+                                                        },
+                                                        "total_renewed_revenue": {
+                                                            "type": "number",
+                                                            "example": 1800
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "records": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "subscription_id": {
+                                                                "type": "integer",
+                                                                "example": 101
+                                                            },
+                                                            "status_type": {
+                                                                "type": "string",
+                                                                "example": "expired_non_renewed"
+                                                            },
+                                                            "status_label": {
+                                                                "type": "string",
+                                                                "example": "منتهي ولم يجدد"
+                                                            },
+                                                            "member_id": {
+                                                                "type": "integer",
+                                                                "example": 12
+                                                            },
+                                                            "member_number": {
+                                                                "type": "string",
+                                                                "example": "MEM-10023"
+                                                            },
+                                                            "member_name": {
+                                                                "type": "string",
+                                                                "example": "محمد أحمد"
+                                                            },
+                                                            "member_phone": {
+                                                                "type": "string",
+                                                                "example": "0501234567"
+                                                            },
+                                                            "branch_name": {
+                                                                "type": "string",
+                                                                "example": "الفرع الرئيسي"
+                                                            },
+                                                            "plan_id": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "plan_name": {
+                                                                "type": "string",
+                                                                "example": "اشتراك لياقة شهري"
+                                                            },
+                                                            "plan_type": {
+                                                                "type": "string",
+                                                                "example": "monthly"
+                                                            },
+                                                            "coaches_names": {
+                                                                "type": "string",
+                                                                "example": "الكابتن طارق علي"
+                                                            },
+                                                            "start_date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-06-01"
+                                                            },
+                                                            "end_date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-07-01"
+                                                            },
+                                                            "subscription_status": {
+                                                                "type": "string",
+                                                                "example": "expired"
+                                                            },
+                                                            "days_since_expiration": {
+                                                                "type": "integer",
+                                                                "example": 28
+                                                            },
+                                                            "total_amount": {
+                                                                "type": "number",
+                                                                "example": 150
+                                                            },
+                                                            "paid_amount": {
+                                                                "type": "number",
+                                                                "example": 150
+                                                            },
+                                                            "remaining_amount": {
+                                                                "type": "number",
+                                                                "example": 0
+                                                            },
+                                                            "is_fully_paid": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/people/{person_id}/wallet": {
             "get": {
                 "tags": [
@@ -22695,6 +23003,11 @@
                         "type": "string",
                         "example": "L-101"
                     },
+                    "key_number": {
+                        "type": "string",
+                        "example": "K-101",
+                        "nullable": true
+                    },
                     "status": {
                         "type": "string",
                         "example": "available",
@@ -22775,6 +23088,11 @@
                     "locker_number": {
                         "type": "string",
                         "example": "L-101"
+                    },
+                    "key_number": {
+                        "type": "string",
+                        "example": "K-101",
+                        "nullable": true
                     },
                     "status": {
                         "type": "string",
@@ -23342,6 +23660,10 @@
         {
             "name": "Accounting - الصناديق والعهد المالية",
             "description": "Accounting - الصناديق والعهد المالية"
+        },
+        {
+            "name": "Reports",
+            "description": "Reports"
         },
         {
             "name": "Attendance",

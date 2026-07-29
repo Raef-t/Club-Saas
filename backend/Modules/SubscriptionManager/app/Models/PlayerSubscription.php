@@ -29,7 +29,10 @@ class PlayerSubscription extends Model
     ];
 
 
-    public ?\Modules\Core\DTOs\MemberDTO $member = null;
+    public function member()
+    {
+        return $this->belongsTo(\Modules\MemberManager\Models\Member::class, 'member_id');
+    }
 
     public function plan()
     {

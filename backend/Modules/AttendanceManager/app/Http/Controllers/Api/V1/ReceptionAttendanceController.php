@@ -5,6 +5,7 @@ namespace Modules\AttendanceManager\Http\Controllers\Api\V1;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\AttendanceManager\Models\Attendance;
 use Modules\AttendanceManager\Http\Resources\AttendanceResource;
@@ -38,20 +39,24 @@ class ReceptionAttendanceController extends BaseController
     {
         try {
             // 1. Fetch member's active lockers
+            $lockerSelectColumns = [
+                'lr.id as reservation_id',
+                'lr.locker_id',
+                'l.locker_number',
+                'l.branch_id',
+                'lr.start_date',
+                'lr.end_date',
+                'lr.price',
+            ];
+            if (Schema::hasColumn('lockers', 'key_number')) {
+                $lockerSelectColumns[] = 'l.key_number';
+            }
+
             $activeLockers = DB::table('locker_reservations as lr')
                 ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
                 ->where('lr.member_id', $memberId)
                 ->where('lr.status', 'active')
-                ->select(
-                    'lr.id as reservation_id',
-                    'lr.locker_id',
-                    'l.locker_number',
-                    'l.key_number',
-                    'l.branch_id',
-                    'lr.start_date',
-                    'lr.end_date',
-                    'lr.price'
-                )
+                ->select($lockerSelectColumns)
                 ->get();
 
             $subscriptions = DB::table('player_subscriptions as ps')
