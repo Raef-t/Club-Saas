@@ -46,6 +46,7 @@ class ReceptionAttendanceController extends BaseController
                     'lr.id as reservation_id',
                     'lr.locker_id',
                     'l.locker_number',
+                    'l.key_number',
                     'l.branch_id',
                     'lr.start_date',
                     'lr.end_date',

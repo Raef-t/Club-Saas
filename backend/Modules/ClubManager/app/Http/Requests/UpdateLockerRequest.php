@@ -9,6 +9,7 @@ use OpenApi\Attributes as OA;
     title: "UpdateLockerRequest",
     properties: [
         new OA\Property(property: "locker_number", type: "string", example: "L-101"),
+        new OA\Property(property: "key_number", type: "string", nullable: true, example: "K-101"),
         new OA\Property(property: "status", type: "string", enum: ["available", "with_member", "with_staff", "with_guest"], example: "available"),
         new OA\Property(property: "holder_id", type: "integer", nullable: true, example: 5),
         new OA\Property(property: "holder_type", type: "string", nullable: true, enum: ["member", "staff", "guest"], example: "member"),
@@ -26,6 +27,7 @@ class UpdateLockerRequest extends FormRequest
     {
         return [
             'locker_number' => 'sometimes|string|max:50',
+            'key_number'    => 'nullable|string|max:50',
             'status'        => 'sometimes|in:available,with_member,with_staff,with_guest',
             'holder_id'     => 'nullable|integer',
             'holder_type'   => 'nullable|in:member,staff,guest',

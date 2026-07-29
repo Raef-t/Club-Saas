@@ -14,6 +14,7 @@ class Locker extends Model
     protected $fillable = [
         'branch_id',
         'locker_number',
+        'key_number',
         'status',
     ];
 

@@ -298,17 +298,40 @@ class MemberService
             $query->where('branch_id', $filters['branch_id']);
         }
 
-        $baseQuery = clone $query;
+        $baseQuery    = clone $query;
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth   = now()->endOfMonth();
 
         return [
-            'total_members' => (clone $baseQuery)->count(),
-            'active_members' => (clone $baseQuery)->where('membership_status', 'active')->count(),
-            'male_members' => (clone $baseQuery)->whereHas('person', function ($q) {
-                $q->where('gender', 'male');
-            })->count(),
-            'female_members' => (clone $baseQuery)->whereHas('person', function ($q) {
-                $q->where('gender', 'female');
-            })->count(),
+            'total_members'               => (clone $baseQuery)->count(),
+            'active_members'              => (clone $baseQuery)->where('membership_status', 'active')->count(),
+            'total_subscribed_members'    => (clone $baseQuery)->whereHas('subscriptions', function ($q) {
+                                                $q->where('status', 'active')->whereDate('end_date', '>=', now());
+                                             })->count(),
+            'new_members_this_month'      => (clone $baseQuery)->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                                                $q->whereBetween('join_date', [$startOfMonth, $endOfMonth])
+                                                  ->orWhereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
+                                                      $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+                                                  });
+                                             })->whereDoesntHave('subscriptions', function ($sq) use ($startOfMonth) {
+                                                 $sq->where('start_date', '<', $startOfMonth);
+                                             })->count(),
+            'renewed_members_this_month'  => (clone $baseQuery)->whereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
+                                                $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+                                             })->whereHas('subscriptions', function ($sq) use ($startOfMonth) {
+                                                 $sq->where('start_date', '<', $startOfMonth);
+                                             })->count(),
+            'expired_not_renewed_members' => (clone $baseQuery)->whereHas('subscriptions', function ($sq) {
+                                                $sq->whereDate('end_date', '<', now());
+                                             })->whereDoesntHave('subscriptions', function ($sq) {
+                                                 $sq->where('status', 'active')->whereDate('end_date', '>=', now());
+                                             })->count(),
+            'male_members'                => (clone $baseQuery)->whereHas('person', function ($q) {
+                                                $q->where('gender', 'male');
+                                             })->count(),
+            'female_members'              => (clone $baseQuery)->whereHas('person', function ($q) {
+                                                $q->where('gender', 'female');
+                                             })->count(),
         ];
     }
 }

@@ -33,6 +33,7 @@ class LockerService
             ->select(
                 'lockers.id',
                 'lockers.locker_number',
+                'lockers.key_number',
                 'lockers.status',
                 'lockers.branch_id',
                 'locker_reservations.id as active_reservation_id',
@@ -244,6 +245,7 @@ class LockerService
             ->select(
                 'lockers.id',
                 'lockers.locker_number',
+                'lockers.key_number',
                 'lockers.status',
                 'lockers.branch_id',
                 'locker_reservations.id as active_reservation_id',

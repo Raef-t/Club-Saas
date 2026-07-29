@@ -244,6 +244,10 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'data', type: 'object', properties: [
                     new OA\Property(property: 'total_members', type: 'integer'),
                     new OA\Property(property: 'active_members', type: 'integer'),
+                    new OA\Property(property: 'total_subscribed_members', type: 'integer'),
+                    new OA\Property(property: 'new_members_this_month', type: 'integer'),
+                    new OA\Property(property: 'renewed_members_this_month', type: 'integer'),
+                    new OA\Property(property: 'expired_not_renewed_members', type: 'integer'),
                     new OA\Property(property: 'male_members', type: 'integer'),
                     new OA\Property(property: 'female_members', type: 'integer'),
                 ])
