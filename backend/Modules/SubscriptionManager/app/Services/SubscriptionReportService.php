@@ -7,6 +7,7 @@ use Modules\SubscriptionManager\Services\Reports\TimeSlotCapacityReportService;
 use Modules\SubscriptionManager\Services\Reports\PeakHoursReportService;
 use Modules\SubscriptionManager\Services\Reports\FrozenAndTerminatedReportService;
 use Modules\SubscriptionManager\Services\Reports\AllSubscriptionsReportService;
+use Modules\SubscriptionManager\Services\Reports\ShiftAttendanceReportService;
 
 class SubscriptionReportService
 {
@@ -15,19 +16,22 @@ class SubscriptionReportService
     protected PeakHoursReportService $peakHoursReportService;
     protected FrozenAndTerminatedReportService $frozenAndTerminatedReportService;
     protected AllSubscriptionsReportService $allSubscriptionsReportService;
+    protected ShiftAttendanceReportService $shiftAttendanceReportService;
 
     public function __construct(
         RenewalReportService $renewalReportService,
         TimeSlotCapacityReportService $timeSlotCapacityReportService,
         PeakHoursReportService $peakHoursReportService,
         FrozenAndTerminatedReportService $frozenAndTerminatedReportService,
-        AllSubscriptionsReportService $allSubscriptionsReportService
+        AllSubscriptionsReportService $allSubscriptionsReportService,
+        ShiftAttendanceReportService $shiftAttendanceReportService
     ) {
         $this->renewalReportService = $renewalReportService;
         $this->timeSlotCapacityReportService = $timeSlotCapacityReportService;
         $this->peakHoursReportService = $peakHoursReportService;
         $this->frozenAndTerminatedReportService = $frozenAndTerminatedReportService;
         $this->allSubscriptionsReportService = $allSubscriptionsReportService;
+        $this->shiftAttendanceReportService = $shiftAttendanceReportService;
     }
 
     /**
@@ -68,5 +72,13 @@ class SubscriptionReportService
     public function getFrozenAndTerminatedReport(array $filters = []): array
     {
         return $this->frozenAndTerminatedReportService->getReport($filters);
+    }
+
+    /**
+     * Get report for player attendance per shift and identify busiest shifts.
+     */
+    public function getShiftAttendanceReport(array $filters = []): array
+    {
+        return $this->shiftAttendanceReportService->getReport($filters);
     }
 }

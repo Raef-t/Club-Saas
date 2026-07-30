@@ -22826,6 +22826,199 @@
                 ]
             }
         },
+        "/v1/reports/shifts/attendance": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "🌅 تقرير حضور ورديات الأنشطة وازدحامها (Shift Attendance & Crowd Report)",
+                "description": "استرجاع تقرير تفصيلي يُظهر عدد اللاعبين الحاضرين في كل وردية (Shift) مع إظهار الوردية الأكثر والأقل ازدحاماً، مع إمكانية الفلترة حسب يوم محدد، شهر، أو رينج تاريخ.",
+                "operationId": "00158246aff567143b3fe8a4e89f6058",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "تصفية ليوم محدد (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-30"
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "description": "تصفية لشهر محدد (YYYY-MM)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "2026-07"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "تاريخ بداية النطاق الزمني (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "تاريخ نهاية النطاق الزمني (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-31"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "activity_id",
+                        "in": "query",
+                        "description": "تصفية حسب النشاط المتبع للورديات",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    },
+                    {
+                        "name": "shift_id",
+                        "in": "query",
+                        "description": "تصفية حسب وردية محددة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع تقرير حضور الورديات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Shift attendance report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "period_label": {
+                                                            "type": "string",
+                                                            "example": "من 2026-07-01 إلى 2026-07-31"
+                                                        },
+                                                        "total_shift_attendances": {
+                                                            "type": "integer",
+                                                            "example": 450
+                                                        },
+                                                        "total_shifts_count": {
+                                                            "type": "integer",
+                                                            "example": 6
+                                                        },
+                                                        "busiest_shift": {
+                                                            "properties": {
+                                                                "shift_id": {
+                                                                    "type": "integer",
+                                                                    "example": 2
+                                                                },
+                                                                "shift_name": {
+                                                                    "type": "string",
+                                                                    "example": "الوردية المسائية"
+                                                                },
+                                                                "branch_name": {
+                                                                    "type": "string",
+                                                                    "example": "الفرع الرئيسي"
+                                                                },
+                                                                "attended_players_count": {
+                                                                    "type": "integer",
+                                                                    "example": 180
+                                                                },
+                                                                "crowd_percentage": {
+                                                                    "type": "string",
+                                                                    "example": "40%"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "quietest_shift": {
+                                                            "properties": {
+                                                                "shift_id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "shift_name": {
+                                                                    "type": "string",
+                                                                    "example": "الوردية الصباحية"
+                                                                },
+                                                                "branch_name": {
+                                                                    "type": "string",
+                                                                    "example": "الفرع الرئيسي"
+                                                                },
+                                                                "attended_players_count": {
+                                                                    "type": "integer",
+                                                                    "example": 40
+                                                                },
+                                                                "crowd_percentage": {
+                                                                    "type": "string",
+                                                                    "example": "8.89%"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "records": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/people/{person_id}/wallet": {
             "get": {
                 "tags": [
