@@ -7,7 +7,7 @@ use Modules\SubscriptionManager\Models\PlayerSubscription;
 class AllSubscriptionsReportService
 {
     /**
-     * Get comprehensive report for all subscriptions with sessions, financial status, and coach details.
+     * Get comprehensive report for all subscriptions without pagination.
      *
      * @param array $filters
      * @return array
@@ -21,9 +21,7 @@ class AllSubscriptionsReportService
         $branchId      = $filters['branch_id'] ?? null;
         $startDate     = $filters['start_date'] ?? null;
         $endDate       = $filters['end_date'] ?? null;
-        $dateFilterBy  = $filters['date_filter_by'] ?? 'start_date';
         $search        = $filters['search'] ?? null;
-        $perPage       = isset($filters['per_page']) ? (int) $filters['per_page'] : 15;
 
         $query = PlayerSubscription::query()
             ->with([
@@ -69,20 +67,12 @@ class AllSubscriptionsReportService
             });
         }
 
-        // 6. Filter by Date Range
-        if ($startDate || $endDate) {
-            $dateColumn = match ($dateFilterBy) {
-                'end_date'     => 'end_date',
-                'created_date' => 'created_at',
-                default        => 'start_date',
-            };
-
-            if ($startDate) {
-                $query->whereDate($dateColumn, '>=', $startDate);
-            }
-            if ($endDate) {
-                $query->whereDate($dateColumn, '<=', $endDate);
-            }
+        // 6. Direct Date Range Filter
+        if ($startDate) {
+            $query->whereDate('start_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('start_date', '<=', $endDate);
         }
 
         // 7. Search Filter (member number, full name, phone)
@@ -96,27 +86,26 @@ class AllSubscriptionsReportService
             });
         }
 
-        // Calculate summary statistics on matching query before pagination
-        $allMatching = (clone $query)->get();
+        // Retrieve all matching records without pagination
+        $allSubscriptions = $query->orderBy('id', 'desc')->get();
 
+        // Calculate summary statistics
         $summary = [
-            'total_subscriptions'  => $allMatching->count(),
-            'total_revenue'        => round((float) $allMatching->sum('total_amount'), 2),
-            'total_paid'           => round((float) $allMatching->sum('paid_amount'), 2),
-            'total_remaining'      => round((float) $allMatching->sum(fn($s) => max(0, (float)$s->total_amount - (float)$s->paid_amount)), 2),
-            'active_count'         => $allMatching->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'active')->count(),
-            'finished_count'       => $allMatching->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'finished')->count(),
-            'frozen_count'         => $allMatching->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'frozen')->count(),
-            'terminated_count'     => $allMatching->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'terminated')->count(),
-            'fully_paid_count'     => $allMatching->filter(fn($s) => (float)$s->paid_amount >= (float)$s->total_amount)->count(),
-            'partially_paid_count' => $allMatching->filter(fn($s) => (float)$s->paid_amount > 0 && (float)$s->paid_amount < (float)$s->total_amount)->count(),
-            'unpaid_count'         => $allMatching->filter(fn($s) => (float)$s->paid_amount == 0)->count(),
+            'total_subscriptions'  => $allSubscriptions->count(),
+            'total_revenue'        => round((float) $allSubscriptions->sum('total_amount'), 2),
+            'total_paid'           => round((float) $allSubscriptions->sum('paid_amount'), 2),
+            'total_remaining'      => round((float) $allSubscriptions->sum(fn($s) => max(0, (float)$s->total_amount - (float)$s->paid_amount)), 2),
+            'active_count'         => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'active')->count(),
+            'finished_count'       => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'finished')->count(),
+            'frozen_count'         => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'frozen')->count(),
+            'terminated_count'     => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'terminated')->count(),
+            'fully_paid_count'     => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount >= (float)$s->total_amount)->count(),
+            'partially_paid_count' => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount > 0 && (float)$s->paid_amount < (float)$s->total_amount)->count(),
+            'unpaid_count'         => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount == 0)->count(),
         ];
 
-        // Paginate records
-        $paginated = $query->orderBy('id', 'desc')->paginate($perPage);
-
-        $records = collect($paginated->items())->map(function ($sub) {
+        // Format records
+        $records = $allSubscriptions->map(function ($sub) {
             $member = $sub->member;
             $person = $member?->person;
 
@@ -221,14 +210,8 @@ class AllSubscriptionsReportService
         });
 
         return [
-            'summary'    => $summary,
-            'records'    => $records,
-            'pagination' => [
-                'total'        => $paginated->total(),
-                'per_page'     => $paginated->perPage(),
-                'current_page' => $paginated->currentPage(),
-                'last_page'    => $paginated->lastPage(),
-            ],
+            'summary' => $summary,
+            'records' => $records,
         ];
     }
 }
