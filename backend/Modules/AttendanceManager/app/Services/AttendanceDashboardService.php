@@ -2,6 +2,7 @@
 
 namespace Modules\AttendanceManager\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceDashboardService
@@ -21,6 +22,23 @@ class AttendanceDashboardService
             'free_assigned_player_lockers_count' => $this->getFreeAssignedLockersCount(),
             'current_active_session_plans'       => $this->getCurrentActiveSessionPlans($branchId),
         ];
+    }
+
+    /**
+     * Get cached aggregated stats for the reception dashboard.
+     *
+     * @param int|null $branchId
+     * @param int $ttlSeconds
+     * @return array
+     */
+    public function getCachedDashboardStats(?int $branchId = null, int $ttlSeconds = 300): array
+    {
+        $branchKey = $branchId ? (string) $branchId : 'all';
+        $cacheKey  = "dashboard_stats_cache_{$branchKey}";
+
+        return Cache::remember($cacheKey, $ttlSeconds, function () use ($branchId) {
+            return $this->getDashboardStats($branchId);
+        });
     }
 
     /**

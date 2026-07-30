@@ -11,6 +11,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Reception & Attendance Dashboard Real-Time Stats
     Route::get('attendance-manager/dashboard-stats', [AttendanceDashboardController::class, 'stats']);
+    Route::get('attendance-manager/dashboard-stats-stream', [AttendanceDashboardController::class, 'statsStream']);
 
 
 

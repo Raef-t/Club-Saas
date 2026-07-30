@@ -3074,6 +3074,45 @@
                 ]
             }
         },
+        "/v1/attendance-manager/dashboard-stats-stream": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "⚡ بث لحظي لإحصائيات لوحة التحكم بطريقة SSE (Server-Sent Events)",
+                "description": "يفتح اتصال HTTP مستمر لإرسال تحديثات إحصائيات لوحة التحكم فور حدوث أي تعديل في الحضور، الاشتراكات، أو الخزائن.",
+                "operationId": "6364f75f01616b0c4c9ec437c162a93d",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "description": "توكن الوصول (Bearer Token) للتوصيل في EventSource",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ stream مفتوح لتقنية SSE (text/event-stream)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/qr/check-in": {
             "post": {
                 "tags": [
