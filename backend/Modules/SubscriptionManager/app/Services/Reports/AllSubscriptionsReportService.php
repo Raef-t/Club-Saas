@@ -25,7 +25,7 @@ class AllSubscriptionsReportService
 
         $query = PlayerSubscription::query()
             ->with([
-                'member.person',
+                'member.person.contacts',
                 'member.branch',
                 'plan.branch',
                 'offer',
@@ -75,18 +75,20 @@ class AllSubscriptionsReportService
             $query->whereDate('start_date', '<=', $endDate);
         }
 
-        // 7. Search Filter (member number, full name, phone)
+        // 7. Search Filter (member number, full name, phone number from contacts)
         if (!empty($search)) {
             $query->whereHas('member', function ($mq) use ($search) {
                 $mq->where('member_number', 'like', "%{$search}%")
                    ->orWhereHas('person', function ($pq) use ($search) {
                        $pq->where('full_name', 'like', "%{$search}%")
-                          ->orWhere('mobile1', 'like', "%{$search}%");
+                          ->orWhereHas('contacts', function ($cq) use ($search) {
+                              $cq->where('phone_number', 'like', "%{$search}%");
+                          });
                    });
             });
         }
 
-        // Retrieve all matching records without pagination
+        // Retrieve all matching records
         $allSubscriptions = $query->orderBy('id', 'desc')->get();
 
         // Calculate summary statistics
@@ -108,6 +110,11 @@ class AllSubscriptionsReportService
         $records = $allSubscriptions->map(function ($sub) {
             $member = $sub->member;
             $person = $member?->person;
+
+            // Extract phone number from contacts relation
+            $phone = $person?->contacts?->first()?->phone_number
+                ?? $person?->mobile1
+                ?? '';
 
             // Financial Calculations
             $totalAmount     = (float) $sub->total_amount;
@@ -171,7 +178,7 @@ class AllSubscriptionsReportService
                 'member_id'            => $sub->member_id,
                 'member_number'        => $member?->member_number ?? '',
                 'member_name'          => $person?->full_name ?? 'غير محدد',
-                'member_phone'         => $person?->mobile1 ?? '',
+                'member_phone'         => $phone,
                 'branch_name'          => $sub->plan?->branch?->name ?? $member?->branch?->name ?? 'غير محدد',
 
                 // Plan & Offer Details
