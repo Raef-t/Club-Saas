@@ -3090,15 +3090,6 @@
                         "schema": {
                             "type": "integer"
                         }
-                    },
-                    {
-                        "name": "token",
-                        "in": "query",
-                        "description": "توكن الوصول (Bearer Token) للتوصيل في EventSource",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
                     }
                 ],
                 "responses": {
