@@ -35,6 +35,20 @@ class Attendance extends Model
     }
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($attendance) {
+            \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($attendance->branch_id);
+        });
+
+        static::deleted(function ($attendance) {
+            \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($attendance->branch_id);
+        });
+    }
+
+    /**
      * Get the consumptions associated with this attendance.
      */
     public function consumptions()
