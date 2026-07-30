@@ -17,6 +17,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Unified Attendance API (Check-in, Check-out, History for all user types)
     Route::post('attendances/check-in', [UnifiedAttendanceController::class, 'checkIn']);
     Route::post('attendances/check-out/{attendanceId}', [UnifiedAttendanceController::class, 'checkOut']);
+    Route::post('attendances/bulk-check-out', [UnifiedAttendanceController::class, 'bulkCheckOut']);
     Route::get('attendances/history', [UnifiedAttendanceController::class, 'history']);
 
 

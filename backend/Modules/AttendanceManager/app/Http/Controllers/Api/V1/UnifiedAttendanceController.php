@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\AttendanceManager\Services\UnifiedAttendanceService;
 use Modules\AttendanceManager\Http\Requests\UnifiedCheckInRequest;
+use Modules\AttendanceManager\Http\Requests\BulkCheckOutRequest;
 use Modules\AttendanceManager\Http\Resources\AttendanceResource;
 use OpenApi\Attributes as OA;
 
@@ -70,6 +71,44 @@ class UnifiedAttendanceController extends BaseController
         try {
             $attendance = $this->attendanceService->checkOut((int) $attendanceId);
             return $this->successResponse(new AttendanceResource($attendance), __('Checked out successfully'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    #[OA\Post(
+        path: '/v1/attendances/bulk-check-out',
+        summary: '🚪 تسجيل الانصراف الجماعي (حسب الفرع والنشاط/الخطة)',
+        description: 'تسجيل الانصراف الجماعي لجميع الأشخاص الذين سجلوا دخولاً فقط ولم يسجلوا خروجاً بعد في فرع معين لخطة اشتراك محددة.',
+        tags: ['Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['branch_id', 'subscription_plan_id'],
+            properties: [
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1, description: 'معرف الفرع'),
+                new OA\Property(property: 'subscription_plan_id', type: 'integer', example: 5, description: 'معرف خطة الاشتراك / النشاط (مثل الأيروبيك)')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تنفيذ الانصراف الجماعي بنجاح',
+        content: new OA\JsonContent()
+    )]
+    public function bulkCheckOut(BulkCheckOutRequest $request)
+    {
+        try {
+            $result = $this->attendanceService->bulkCheckOut(
+                branchId: (int) $request->input('branch_id'),
+                subscriptionPlanId: (int) $request->input('subscription_plan_id')
+            );
+
+            $result['successful'] = AttendanceResource::collection($result['successful']);
+
+            return $this->successResponse($result, __('Bulk check-out process completed'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
