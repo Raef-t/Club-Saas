@@ -17,6 +17,72 @@ class SubscriptionReportController extends BaseController
     }
 
     #[OA\Get(
+        path: '/v1/reports/subscriptions',
+        summary: '📋 تقرير الاشتراكات الشامل (Subscriptions Comprehensive Report)',
+        description: 'استرجاع تقرير تفصيلي وشامل عن كافة الاشتراكات يتضمن معلومات اللاعب، حالة الاشتراك، تفاصيل الجلسات المخصصة والمتبقية، المدربين المسندين، والمبالغ المالية (المدفوع والمتبقي وحالة الدفع) مع فلاتر اختيارية متكاملة.',
+        tags: ['Reports'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية بحالة الاشتراك: active (فعال), finished (منتهي), frozen (مجمد), terminated (ملغى), all (الجميع)', schema: new OA\Schema(type: 'string', enum: ['all', 'active', 'finished', 'frozen', 'terminated'], default: 'all'))]
+    #[OA\Parameter(name: 'plan_id', in: 'query', required: false, description: 'تصفية حسب خطة الاشتراك', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Parameter(name: 'payment_status', in: 'query', required: false, description: 'تصفية بحالة الدفع: paid (مدفوع بالكامل), partially_paid (مدفوع جزئياً), unpaid (غير مدفوع), all (الجميع)', schema: new OA\Schema(type: 'string', enum: ['all', 'paid', 'partially_paid', 'unpaid'], default: 'all'))]
+    #[OA\Parameter(name: 'coach_id', in: 'query', required: false, description: 'تصفية حسب الكوتش المسند', schema: new OA\Schema(type: 'integer', example: 2))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'date_filter_by', in: 'query', required: false, description: 'المعيار الزمني: start_date, end_date, created_date', schema: new OA\Schema(type: 'string', enum: ['start_date', 'end_date', 'created_date'], default: 'start_date'))]
+    #[OA\Parameter(name: 'start_date', in: 'query', required: false, description: 'تاريخ بداية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'))]
+    #[OA\Parameter(name: 'end_date', in: 'query', required: false, description: 'تاريخ نهاية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-31'))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث باسم اللاعب، رقم الهاتف، أو رقم العضوية', schema: new OA\Schema(type: 'string', example: 'أحمد'))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد السجلات في الصفحة الواحدة', schema: new OA\Schema(type: 'integer', default: 15, example: 15))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع تقرير الاشتراكات الشامل بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'All subscriptions report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'total_subscriptions', type: 'integer', example: 120),
+                            new OA\Property(property: 'total_revenue', type: 'number', example: 15000.0),
+                            new OA\Property(property: 'total_paid', type: 'number', example: 12000.0),
+                            new OA\Property(property: 'total_remaining', type: 'number', example: 3000.0),
+                            new OA\Property(property: 'active_count', type: 'integer', example: 80),
+                            new OA\Property(property: 'finished_count', type: 'integer', example: 25),
+                            new OA\Property(property: 'frozen_count', type: 'integer', example: 10),
+                            new OA\Property(property: 'terminated_count', type: 'integer', example: 5),
+                            new OA\Property(property: 'fully_paid_count', type: 'integer', example: 95),
+                            new OA\Property(property: 'partially_paid_count', type: 'integer', example: 15),
+                            new OA\Property(property: 'unpaid_count', type: 'integer', example: 10),
+                        ]),
+                        new OA\Property(property: 'records', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'pagination', type: 'object', properties: [
+                            new OA\Property(property: 'total', type: 'integer', example: 120),
+                            new OA\Property(property: 'per_page', type: 'integer', example: 15),
+                            new OA\Property(property: 'current_page', type: 'integer', example: 1),
+                            new OA\Property(property: 'last_page', type: 'integer', example: 8),
+                        ])
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function allSubscriptionsReport(Request $request)
+    {
+        $filters = $request->only([
+            'status', 'plan_id', 'payment_status', 'coach_id', 'branch_id',
+            'start_date', 'end_date', 'date_filter_by', 'search', 'per_page'
+        ]);
+
+        $reportData = $this->reportService->getAllSubscriptionsReport($filters);
+
+        return $this->successResponse($reportData, __('All subscriptions report retrieved successfully'));
+    }
+
+    #[OA\Get(
         path: '/v1/reports/subscriptions/renewal-status',
         summary: '📊 تقرير تجديد وانقضاء الاشتراكات (Renewal & Expiration Report)',
         description: 'استرجاع تقرير تفصيلي وشامل عن اللاعبين الذين انتهت اشتراكاتهم ولم يجددوا، واللاعبين الذين جددوا، مع تفاصيل الخطة، والمدربين، والإحصائيات المالية.',

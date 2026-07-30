@@ -14,6 +14,7 @@ use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionReportContro
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Subscription & Renewal Reports
+    Route::get('reports/subscriptions', [SubscriptionReportController::class, 'allSubscriptionsReport']);
     Route::get('reports/subscriptions/renewal-status', [SubscriptionReportController::class, 'renewalStatusReport']);
     Route::get('reports/subscriptions/frozen-terminated', [SubscriptionReportController::class, 'frozenAndTerminatedReport']);
     Route::get('reports/sessions/time-capacity', [SubscriptionReportController::class, 'timeCapacityReport']);
