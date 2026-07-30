@@ -307,4 +307,63 @@ class SubscriptionReportController extends BaseController
 
         return $this->successResponse($reportData, __('Frozen and terminated subscriptions report retrieved successfully'));
     }
+
+    #[OA\Get(
+        path: '/v1/reports/shifts/attendance',
+        summary: '🌅 تقرير حضور ورديات الأنشطة وازدحامها (Shift Attendance & Crowd Report)',
+        description: 'استرجاع تقرير تفصيلي يُظهر عدد اللاعبين الحاضرين في كل وردية (Shift) مع إظهار الوردية الأكثر والأقل ازدحاماً، مع إمكانية الفلترة حسب يوم محدد، شهر، أو رينج تاريخ.',
+        tags: ['Reports'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'date', in: 'query', required: false, description: 'تصفية ليوم محدد (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-30'))]
+    #[OA\Parameter(name: 'month', in: 'query', required: false, description: 'تصفية لشهر محدد (YYYY-MM)', schema: new OA\Schema(type: 'string', example: '2026-07'))]
+    #[OA\Parameter(name: 'start_date', in: 'query', required: false, description: 'تاريخ بداية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'))]
+    #[OA\Parameter(name: 'end_date', in: 'query', required: false, description: 'تاريخ نهاية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-31'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity_id', in: 'query', required: false, description: 'تصفية حسب النشاط المتبع للورديات', schema: new OA\Schema(type: 'integer', example: 3))]
+    #[OA\Parameter(name: 'shift_id', in: 'query', required: false, description: 'تصفية حسب وردية محددة', schema: new OA\Schema(type: 'integer', example: 2))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع تقرير حضور الورديات بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Shift attendance report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'period_label', type: 'string', example: 'من 2026-07-01 إلى 2026-07-31'),
+                            new OA\Property(property: 'total_shift_attendances', type: 'integer', example: 450),
+                            new OA\Property(property: 'total_shifts_count', type: 'integer', example: 6),
+                            new OA\Property(property: 'busiest_shift', type: 'object', properties: [
+                                new OA\Property(property: 'shift_id', type: 'integer', example: 2),
+                                new OA\Property(property: 'shift_name', type: 'string', example: 'الوردية المسائية'),
+                                new OA\Property(property: 'branch_name', type: 'string', example: 'الفرع الرئيسي'),
+                                new OA\Property(property: 'attended_players_count', type: 'integer', example: 180),
+                                new OA\Property(property: 'crowd_percentage', type: 'string', example: '40%'),
+                            ]),
+                            new OA\Property(property: 'quietest_shift', type: 'object', properties: [
+                                new OA\Property(property: 'shift_id', type: 'integer', example: 1),
+                                new OA\Property(property: 'shift_name', type: 'string', example: 'الوردية الصباحية'),
+                                new OA\Property(property: 'branch_name', type: 'string', example: 'الفرع الرئيسي'),
+                                new OA\Property(property: 'attended_players_count', type: 'integer', example: 40),
+                                new OA\Property(property: 'crowd_percentage', type: 'string', example: '8.89%'),
+                            ]),
+                        ]),
+                        new OA\Property(property: 'records', type: 'array', items: new OA\Items(type: 'object'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function shiftAttendanceReport(Request $request)
+    {
+        $filters = $request->only(['date', 'month', 'start_date', 'end_date', 'branch_id', 'activity_id', 'shift_id']);
+        $reportData = $this->reportService->getShiftAttendanceReport($filters);
+
+        return $this->successResponse($reportData, __('Shift attendance report retrieved successfully'));
+    }
 }

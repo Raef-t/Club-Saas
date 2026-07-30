@@ -111,10 +111,29 @@ class AllSubscriptionsReportService
             $member = $sub->member;
             $person = $member?->person;
 
-            // Extract phone number from contacts relation
-            $phone = $person?->contacts?->first()?->phone_number
-                ?? $person?->mobile1
-                ?? '';
+            // Collect all contact phone numbers
+            $phoneNumbers = $person?->contacts
+                ?->pluck('phone_number')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray() ?? [];
+
+            if (empty($phoneNumbers) && !empty($person?->mobile1)) {
+                $phoneNumbers[] = $person->mobile1;
+            }
+
+            $memberPhone = !empty($phoneNumbers) ? implode(' - ', $phoneNumbers) : '';
+
+            // Detailed member contacts array
+            $memberContacts = $person?->contacts?->map(function ($c) {
+                return [
+                    'id'           => $c->id,
+                    'name'         => $c->name,
+                    'phone_number' => $c->phone_number,
+                    'relation'     => $c->relation,
+                ];
+            })->values()->toArray() ?? [];
 
             // Financial Calculations
             $totalAmount     = (float) $sub->total_amount;
@@ -178,7 +197,8 @@ class AllSubscriptionsReportService
                 'member_id'            => $sub->member_id,
                 'member_number'        => $member?->member_number ?? '',
                 'member_name'          => $person?->full_name ?? 'غير محدد',
-                'member_phone'         => $phone,
+                'member_phone'         => $memberPhone,
+                'member_contacts'      => $memberContacts,
                 'branch_name'          => $sub->plan?->branch?->name ?? $member?->branch?->name ?? 'غير محدد',
 
                 // Plan & Offer Details

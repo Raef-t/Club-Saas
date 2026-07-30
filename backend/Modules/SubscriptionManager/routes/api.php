@@ -19,6 +19,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('reports/subscriptions/frozen-terminated', [SubscriptionReportController::class, 'frozenAndTerminatedReport']);
     Route::get('reports/sessions/time-capacity', [SubscriptionReportController::class, 'timeCapacityReport']);
     Route::get('reports/attendance/peak-hours', [SubscriptionReportController::class, 'peakHoursReport']);
+    Route::get('reports/shifts/attendance', [SubscriptionReportController::class, 'shiftAttendanceReport']);
 
     // Authenticated Member's Invoices
     Route::get('my-invoices', [InvoiceController::class, 'myInvoices']);
