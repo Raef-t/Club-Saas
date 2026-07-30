@@ -46,7 +46,6 @@ class AttendanceDashboardController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Parameter(name: 'token', in: 'query', required: false, schema: new OA\Schema(type: 'string'), description: 'توكن الوصول (Bearer Token) للتوصيل في EventSource')]
     #[OA\Response(response: 200, description: '✅ stream مفتوح لتقنية SSE (text/event-stream)')]
     public function statsStream(Request $request): StreamedResponse
     {
