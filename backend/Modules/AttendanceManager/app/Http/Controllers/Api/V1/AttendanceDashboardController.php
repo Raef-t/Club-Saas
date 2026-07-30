@@ -55,6 +55,11 @@ class AttendanceDashboardController extends BaseController
             set_time_limit(0);
             ignore_user_abort(true);
 
+            // Clean active output buffers to ensure immediate stream flushing
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
             $lastVersion = null;
 
             while (true) {
@@ -95,6 +100,7 @@ class AttendanceDashboardController extends BaseController
             'Cache-Control'     => 'no-cache, no-store, must-revalidate',
             'Connection'        => 'keep-alive',
             'X-Accel-Buffering' => 'no',
+            'Content-Encoding'  => 'none',
         ]);
     }
 }
