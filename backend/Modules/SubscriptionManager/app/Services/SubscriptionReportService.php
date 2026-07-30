@@ -6,6 +6,7 @@ use Modules\SubscriptionManager\Services\Reports\RenewalReportService;
 use Modules\SubscriptionManager\Services\Reports\TimeSlotCapacityReportService;
 use Modules\SubscriptionManager\Services\Reports\PeakHoursReportService;
 use Modules\SubscriptionManager\Services\Reports\FrozenAndTerminatedReportService;
+use Modules\SubscriptionManager\Services\Reports\AllSubscriptionsReportService;
 
 class SubscriptionReportService
 {
@@ -13,17 +14,28 @@ class SubscriptionReportService
     protected TimeSlotCapacityReportService $timeSlotCapacityReportService;
     protected PeakHoursReportService $peakHoursReportService;
     protected FrozenAndTerminatedReportService $frozenAndTerminatedReportService;
+    protected AllSubscriptionsReportService $allSubscriptionsReportService;
 
     public function __construct(
         RenewalReportService $renewalReportService,
         TimeSlotCapacityReportService $timeSlotCapacityReportService,
         PeakHoursReportService $peakHoursReportService,
-        FrozenAndTerminatedReportService $frozenAndTerminatedReportService
+        FrozenAndTerminatedReportService $frozenAndTerminatedReportService,
+        AllSubscriptionsReportService $allSubscriptionsReportService
     ) {
         $this->renewalReportService = $renewalReportService;
         $this->timeSlotCapacityReportService = $timeSlotCapacityReportService;
         $this->peakHoursReportService = $peakHoursReportService;
         $this->frozenAndTerminatedReportService = $frozenAndTerminatedReportService;
+        $this->allSubscriptionsReportService = $allSubscriptionsReportService;
+    }
+
+    /**
+     * Get comprehensive report for all subscriptions.
+     */
+    public function getAllSubscriptionsReport(array $filters = []): array
+    {
+        return $this->allSubscriptionsReportService->getReport($filters);
     }
 
     /**

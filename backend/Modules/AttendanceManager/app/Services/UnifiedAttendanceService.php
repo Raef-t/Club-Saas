@@ -59,6 +59,47 @@ class UnifiedAttendanceService
     }
 
     /**
+     * Bulk check out open attendances for a specific branch and subscription plan.
+     *
+     * @param  int  $branchId
+     * @param  int  $subscriptionPlanId
+     * @return array
+     */
+    public function bulkCheckOut(int $branchId, int $subscriptionPlanId): array
+    {
+        $targetIds = Attendance::where('branch_id', $branchId)
+            ->whereNull('check_out_at')
+            ->whereHas('consumptions', function ($q) use ($subscriptionPlanId) {
+                $q->where('subscription_plan_id', $subscriptionPlanId);
+            })
+            ->pluck('id')
+            ->toArray();
+
+        $successful = [];
+        $failed = [];
+
+        foreach ($targetIds as $id) {
+            try {
+                $attendance = $this->checkOut((int) $id);
+                $successful[] = $attendance;
+            } catch (Exception $e) {
+                $failed[] = [
+                    'attendance_id' => $id,
+                    'error'         => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'total_processed' => count($targetIds),
+            'success_count'   => count($successful),
+            'failed_count'    => count($failed),
+            'successful'      => $successful,
+            'failed'          => $failed,
+        ];
+    }
+
+    /**
      * Find the open (checked-in) attendance record for an entity.
      *
      * @param  string  $type
