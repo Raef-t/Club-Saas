@@ -28,11 +28,9 @@ class SubscriptionReportController extends BaseController
     #[OA\Parameter(name: 'payment_status', in: 'query', required: false, description: 'تصفية بحالة الدفع: paid (مدفوع بالكامل), partially_paid (مدفوع جزئياً), unpaid (غير مدفوع), all (الجميع)', schema: new OA\Schema(type: 'string', enum: ['all', 'paid', 'partially_paid', 'unpaid'], default: 'all'))]
     #[OA\Parameter(name: 'coach_id', in: 'query', required: false, description: 'تصفية حسب الكوتش المسند', schema: new OA\Schema(type: 'integer', example: 2))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'date_filter_by', in: 'query', required: false, description: 'المعيار الزمني: start_date, end_date, created_date', schema: new OA\Schema(type: 'string', enum: ['start_date', 'end_date', 'created_date'], default: 'start_date'))]
     #[OA\Parameter(name: 'start_date', in: 'query', required: false, description: 'تاريخ بداية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'))]
     #[OA\Parameter(name: 'end_date', in: 'query', required: false, description: 'تاريخ نهاية النطاق الزمني (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-31'))]
     #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث باسم اللاعب، رقم الهاتف، أو رقم العضوية', schema: new OA\Schema(type: 'string', example: 'أحمد'))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد السجلات في الصفحة الواحدة', schema: new OA\Schema(type: 'integer', default: 15, example: 15))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع تقرير الاشتراكات الشامل بنجاح',
@@ -58,12 +56,6 @@ class SubscriptionReportController extends BaseController
                             new OA\Property(property: 'unpaid_count', type: 'integer', example: 10),
                         ]),
                         new OA\Property(property: 'records', type: 'array', items: new OA\Items(type: 'object')),
-                        new OA\Property(property: 'pagination', type: 'object', properties: [
-                            new OA\Property(property: 'total', type: 'integer', example: 120),
-                            new OA\Property(property: 'per_page', type: 'integer', example: 15),
-                            new OA\Property(property: 'current_page', type: 'integer', example: 1),
-                            new OA\Property(property: 'last_page', type: 'integer', example: 8),
-                        ])
                     ]
                 )
             ]
@@ -74,7 +66,7 @@ class SubscriptionReportController extends BaseController
     {
         $filters = $request->only([
             'status', 'plan_id', 'payment_status', 'coach_id', 'branch_id',
-            'start_date', 'end_date', 'date_filter_by', 'search', 'per_page'
+            'start_date', 'end_date', 'search'
         ]);
 
         $reportData = $this->reportService->getAllSubscriptionsReport($filters);
