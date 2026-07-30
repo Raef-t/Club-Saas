@@ -3623,6 +3623,57 @@
                 ]
             }
         },
+        "/v1/attendances/bulk-check-out": {
+            "post": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "🚪 تسجيل الانصراف الجماعي (حسب الفرع والنشاط/الخطة)",
+                "description": "تسجيل الانصراف الجماعي لجميع الأشخاص الذين سجلوا دخولاً فقط ولم يسجلوا خروجاً بعد في فرع معين لخطة اشتراك محددة.",
+                "operationId": "58c5db81adcd8370d1108f96e7d59a1f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_id",
+                                    "subscription_plan_id"
+                                ],
+                                "properties": {
+                                    "branch_id": {
+                                        "description": "معرف الفرع",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "subscription_plan_id": {
+                                        "description": "معرف خطة الاشتراك / النشاط (مثل الأيروبيك)",
+                                        "type": "integer",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تنفيذ الانصراف الجماعي بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/attendances/history": {
             "get": {
                 "tags": [
@@ -21836,6 +21887,203 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/reports/subscriptions": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "📋 تقرير الاشتراكات الشامل (Subscriptions Comprehensive Report)",
+                "description": "استرجاع تقرير تفصيلي وشامل عن كافة الاشتراكات يتضمن معلومات اللاعب، حالة الاشتراك، تفاصيل الجلسات المخصصة والمتبقية، المدربين المسندين، والمبالغ المالية (المدفوع والمتبقي وحالة الدفع) مع فلاتر اختيارية متكاملة.",
+                "operationId": "488fafcaf926e3b0e4bdfda059e7ea49",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية بحالة الاشتراك: active (فعال), finished (منتهي), frozen (مجمد), terminated (ملغى), all (الجميع)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "all",
+                            "enum": [
+                                "all",
+                                "active",
+                                "finished",
+                                "frozen",
+                                "terminated"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "description": "تصفية حسب خطة الاشتراك",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "payment_status",
+                        "in": "query",
+                        "description": "تصفية بحالة الدفع: paid (مدفوع بالكامل), partially_paid (مدفوع جزئياً), unpaid (غير مدفوع), all (الجميع)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "all",
+                            "enum": [
+                                "all",
+                                "paid",
+                                "partially_paid",
+                                "unpaid"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "coach_id",
+                        "in": "query",
+                        "description": "تصفية حسب الكوتش المسند",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "تاريخ بداية النطاق الزمني (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "تاريخ نهاية النطاق الزمني (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-07-31"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث باسم اللاعب، رقم الهاتف، أو رقم العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع تقرير الاشتراكات الشامل بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "All subscriptions report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_subscriptions": {
+                                                            "type": "integer",
+                                                            "example": 120
+                                                        },
+                                                        "total_revenue": {
+                                                            "type": "number",
+                                                            "example": 15000
+                                                        },
+                                                        "total_paid": {
+                                                            "type": "number",
+                                                            "example": 12000
+                                                        },
+                                                        "total_remaining": {
+                                                            "type": "number",
+                                                            "example": 3000
+                                                        },
+                                                        "active_count": {
+                                                            "type": "integer",
+                                                            "example": 80
+                                                        },
+                                                        "finished_count": {
+                                                            "type": "integer",
+                                                            "example": 25
+                                                        },
+                                                        "frozen_count": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "terminated_count": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "fully_paid_count": {
+                                                            "type": "integer",
+                                                            "example": 95
+                                                        },
+                                                        "partially_paid_count": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "unpaid_count": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "records": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
