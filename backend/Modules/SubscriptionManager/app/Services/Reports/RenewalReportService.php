@@ -2,6 +2,8 @@
 
 namespace Modules\SubscriptionManager\Services\Reports;
 
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Modules\SubscriptionManager\Models\PlayerSubscription;
 
 class RenewalReportService
@@ -24,7 +26,7 @@ class RenewalReportService
 
         $query = PlayerSubscription::query()
             ->with([
-                'member.person',
+                'member.person.contacts',
                 'member.branch',
                 'plan.branch',
                 'items.activity',
@@ -71,6 +73,19 @@ class RenewalReportService
         }
 
         $allSubscriptions = $query->orderBy('end_date', 'desc')->get();
+
+        // Batch load last attendance for members
+        $memberIds = $allSubscriptions->pluck('member_id')->filter()->unique();
+        $lastAttendances = [];
+        if ($memberIds->isNotEmpty()) {
+            $lastAttendances = DB::table('attendances')
+                ->whereIn('attendable_id', $memberIds)
+                ->where('attendable_type', 'member')
+                ->select('attendable_id', DB::raw('MAX(check_in_at) as last_check_in'))
+                ->groupBy('attendable_id')
+                ->pluck('last_check_in', 'attendable_id')
+                ->toArray();
+        }
 
         $reportRecords = [];
         $totalExpiredNonRenewed = 0;
@@ -129,6 +144,52 @@ class RenewalReportService
             $person = $member->person;
             $daysSinceExpiration = $sub->end_date ? (int) now()->diffInDays($sub->end_date, false) : 0;
 
+            // Extract contact persons
+            $contactPersons = [];
+            if ($person && $person->contacts) {
+                foreach ($person->contacts as $c) {
+                    $contactPersons[] = [
+                        'id'           => $c->id,
+                        'name'         => $c->name,
+                        'phone_number' => $c->phone_number,
+                        'relation'     => $c->relation,
+                    ];
+                }
+            }
+            if (empty($contactPersons) && !empty($person?->mobile1)) {
+                $contactPersons[] = [
+                    'id'           => null,
+                    'name'         => $person->full_name ?? 'الرقم الرئيسي',
+                    'phone_number' => $person->mobile1,
+                    'relation'     => 'صاحب الاشتراك',
+                ];
+            }
+
+            // Calculate absence period
+            $lastAttendanceRaw = $lastAttendances[$member->id] ?? null;
+            if ($lastAttendanceRaw) {
+                $lastDate = Carbon::parse($lastAttendanceRaw);
+                $diff = $lastDate->diff(now());
+                $totalAbsenceDays = (int) $lastDate->diffInDays(now());
+                $absencePeriod = [
+                    'last_attendance_date' => $lastDate->format('Y-m-d H:i:s'),
+                    'years'                => $diff->y,
+                    'months'               => $diff->m,
+                    'days'                 => $diff->d,
+                    'total_days'           => $totalAbsenceDays,
+                    'formatted'            => "{$diff->y} سنة، {$diff->m} شهر، {$diff->d} يوم",
+                ];
+            } else {
+                $absencePeriod = [
+                    'last_attendance_date' => null,
+                    'years'                => null,
+                    'months'               => null,
+                    'days'                 => null,
+                    'total_days'           => null,
+                    'formatted'            => 'لم يحضر أبدًا',
+                ];
+            }
+
             if ($isRenewed) {
                 $totalRenewed++;
                 $totalRenewedRevenue += (float) ($nextSubscription->total_amount ?? 0);
@@ -148,6 +209,8 @@ class RenewalReportService
                 'member_number'         => $member->member_number,
                 'member_name'           => $person->full_name ?? 'N/A',
                 'member_phone'          => $person->mobile1 ?? 'N/A',
+                'contact_persons'       => $contactPersons,
+                'absence_period'        => $absencePeriod,
                 'branch_name'           => $member->branch->name ?? ($sub->plan->branch->name ?? 'N/A'),
                 'plan_id'               => $sub->plan_id,
                 'plan_name'             => $planName,
