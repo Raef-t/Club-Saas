@@ -121,6 +121,31 @@ class SubscriptionReportController extends BaseController
                                     new OA\Property(property: 'member_number', type: 'string', example: 'MEM-10023'),
                                     new OA\Property(property: 'member_name', type: 'string', example: 'محمد أحمد'),
                                     new OA\Property(property: 'member_phone', type: 'string', example: '0501234567'),
+                                    new OA\Property(
+                                        property: 'contact_persons',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            type: 'object',
+                                            properties: [
+                                                new OA\Property(property: 'id', type: 'integer', nullable: true, example: 1),
+                                                new OA\Property(property: 'name', type: 'string', example: 'أبو محمد'),
+                                                new OA\Property(property: 'phone_number', type: 'string', example: '0501234567'),
+                                                new OA\Property(property: 'relation', type: 'string', nullable: true, example: 'أب'),
+                                            ]
+                                        )
+                                    ),
+                                    new OA\Property(
+                                        property: 'absence_period',
+                                        type: 'object',
+                                        properties: [
+                                            new OA\Property(property: 'last_attendance_date', type: 'string', nullable: true, example: '2026-06-15 17:30:00'),
+                                            new OA\Property(property: 'years', type: 'integer', nullable: true, example: 0),
+                                            new OA\Property(property: 'months', type: 'integer', nullable: true, example: 1),
+                                            new OA\Property(property: 'days', type: 'integer', nullable: true, example: 16),
+                                            new OA\Property(property: 'total_days', type: 'integer', nullable: true, example: 46),
+                                            new OA\Property(property: 'formatted', type: 'string', example: '0 سنة، 1 شهر، 16 يوم'),
+                                        ]
+                                    ),
                                     new OA\Property(property: 'branch_name', type: 'string', example: 'الفرع الرئيسي'),
                                     new OA\Property(property: 'plan_id', type: 'integer', example: 5),
                                     new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك لياقة شهري'),
@@ -153,8 +178,8 @@ class SubscriptionReportController extends BaseController
 
     #[OA\Get(
         path: '/v1/reports/sessions/time-capacity',
-        summary: '🕒 تقرير سعة الحصص والخطط حسب الفترة الزمنية (Time-Slot Capacity Report)',
-        description: 'استرجاع تقرير بالخطط ونماذج الحصص الواقعة في فترة وقتية محددة (مثل من 10:00 إلى 14:00) مع إظهار عدد المشتركين النشطين الحاليين في كل خطة وعدد الحاضرين.',
+        summary: '🕒 تقرير سعة الحصص والخطط مجمعة حسب الأنشطة والمدربين (Time-Slot Capacity Report by Activity)',
+        description: 'استرجاع تقرير بالسعة والاستيعاب مجمعاً حسب النشاط الرياضي، المدرب، والخطط مع أوقات الحصص وعدد المشتركين النشطين الحاليين.',
         tags: ['Reports'],
         security: [['bearerAuth' => []]]
     )]
@@ -163,6 +188,7 @@ class SubscriptionReportController extends BaseController
     #[OA\Parameter(name: 'day_of_week', in: 'query', required: false, description: 'يوم الأسبوع (0=الأحد، 1=الاثنين ... 6=السبت)', schema: new OA\Schema(type: 'integer', minimum: 0, maximum: 6, example: 0))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'plan_id', in: 'query', required: false, description: 'تصفية حسب خطة محددة', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Parameter(name: 'activity_id', in: 'query', required: false, description: 'تصفية حسب نشاط رياضي محدد', schema: new OA\Schema(type: 'integer', example: 2))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع تقرير سعة الحصص بنجاح',
@@ -175,27 +201,59 @@ class SubscriptionReportController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'summary', type: 'object', properties: [
-                            new OA\Property(property: 'total_matching_sessions', type: 'integer', example: 8),
-                            new OA\Property(property: 'total_unique_plans', type: 'integer', example: 3),
+                            new OA\Property(property: 'total_activities', type: 'integer', example: 3),
+                            new OA\Property(property: 'total_coaches', type: 'integer', example: 5),
+                            new OA\Property(property: 'total_plans', type: 'integer', example: 8),
                             new OA\Property(property: 'total_active_subscribers', type: 'integer', example: 45),
                         ]),
                         new OA\Property(
-                            property: 'records',
+                            property: 'activities',
                             type: 'array',
                             items: new OA\Items(
                                 type: 'object',
                                 properties: [
-                                    new OA\Property(property: 'session_template_id', type: 'integer', example: 10),
-                                    new OA\Property(property: 'plan_id', type: 'integer', example: 5),
-                                    new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك لياقة صباحي'),
-                                    new OA\Property(property: 'plan_type', type: 'string', example: 'monthly'),
-                                    new OA\Property(property: 'coaches_names', type: 'string', example: 'الكابتن طارق علي'),
-                                    new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
-                                    new OA\Property(property: 'day_name', type: 'string', example: 'الأحد'),
-                                    new OA\Property(property: 'start_time', type: 'string', example: '10:00:00'),
-                                    new OA\Property(property: 'end_time', type: 'string', example: '11:30:00'),
-                                    new OA\Property(property: 'facility_name', type: 'string', example: 'صالة اللياقة الرئيسية'),
-                                    new OA\Property(property: 'active_subscribers_count', type: 'integer', example: 20),
+                                    new OA\Property(property: 'activity_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'activity_name', type: 'string', example: 'كرة قدم'),
+                                    new OA\Property(
+                                        property: 'coaches',
+                                        type: 'array',
+                                        items: new OA\Items(
+                                            type: 'object',
+                                            properties: [
+                                                new OA\Property(property: 'staff_id', type: 'integer', example: 2),
+                                                new OA\Property(property: 'coach_name', type: 'string', example: 'الكابتن أحمد علي'),
+                                                new OA\Property(property: 'staff_activity_id', type: 'integer', example: 5),
+                                                new OA\Property(
+                                                    property: 'plans',
+                                                    type: 'array',
+                                                    items: new OA\Items(
+                                                        type: 'object',
+                                                        properties: [
+                                                            new OA\Property(property: 'plan_id', type: 'integer', example: 10),
+                                                            new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك كرة قدم - المستوى الأول'),
+                                                            new OA\Property(property: 'plan_type', type: 'string', example: 'monthly'),
+                                                            new OA\Property(property: 'active_subscribers_count', type: 'integer', example: 15),
+                                                            new OA\Property(
+                                                                property: 'schedules',
+                                                                type: 'array',
+                                                                items: new OA\Items(
+                                                                    type: 'object',
+                                                                    properties: [
+                                                                        new OA\Property(property: 'session_template_id', type: 'integer', example: 101),
+                                                                        new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                                                                        new OA\Property(property: 'day_name', type: 'string', example: 'الأحد'),
+                                                                        new OA\Property(property: 'start_time', type: 'string', example: '16:00:00'),
+                                                                        new OA\Property(property: 'end_time', type: 'string', example: '17:30:00'),
+                                                                        new OA\Property(property: 'facility_name', type: 'string', example: 'الملعب الرئيسي'),
+                                                                    ]
+                                                                )
+                                                            )
+                                                        ]
+                                                    )
+                                                )
+                                            ]
+                                        )
+                                    )
                                 ]
                             )
                         )
@@ -207,7 +265,7 @@ class SubscriptionReportController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function timeCapacityReport(Request $request)
     {
-        $filters = $request->only(['start_time', 'end_time', 'day_of_week', 'branch_id', 'plan_id']);
+        $filters = $request->only(['start_time', 'end_time', 'day_of_week', 'branch_id', 'plan_id', 'activity_id']);
         $reportData = $this->reportService->getTimeSlotCapacityReport($filters);
 
         return $this->successResponse($reportData, __('Time-slot capacity report retrieved successfully'));
