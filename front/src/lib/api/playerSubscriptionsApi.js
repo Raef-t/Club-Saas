@@ -64,6 +64,16 @@ export const playerSubscriptionsApi = createApi({
         "PlayerSubscriptions",
       ],
     }),
+    deletePlayerSubscription: builder.mutation({
+      query: (id) => ({
+        url: `player-subscriptions/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "PlayerSubscriptions", id },
+        "PlayerSubscriptions",
+      ],
+    }),
   }),
 });
 
@@ -74,4 +84,5 @@ export const {
   useFreezeSubscriptionMutation,
   useUnfreezeSubscriptionMutation,
   useCancelSubscriptionMutation,
+  useDeletePlayerSubscriptionMutation,
 } = playerSubscriptionsApi;

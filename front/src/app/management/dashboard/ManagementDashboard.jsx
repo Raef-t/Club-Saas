@@ -4,10 +4,9 @@ import Button from "@/components/ui/Button";
 import SectionCard from "@/components/ui/SectionCard";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
-import LineChart from "@/components/charts/LineChart";
+import BarChart from "@/components/charts/BarChart";
 import {
   DailyScheduleTable,
-  DashboardQuickLinks,
   DashboardSectionLink,
   SubscriptionDonut,
 } from "./ManagementDashboardWidgets";
@@ -55,12 +54,12 @@ export default function ManagementDashboard({ initialData }) {
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <SectionCard
-          title="الحصص المجدولة أسبوعياً"
-          subtitle="عدد الحصص في كل يوم حسب الفرع المختار"
-          action={<DashboardSectionLink href="/management/schedule" />}
+          title="أكثر الورديات ازدحاماً"
+          subtitle="أعلى 7 ورديات نشاطاً حسب نسبة الحضور الفعلي"
+          action={<DashboardSectionLink href="/reports">عرض التقارير</DashboardSectionLink>}
           className="min-h-[208px]"
         >
-          <LineChart data={dashboard.scheduleChart} />
+          <BarChart data={dashboard.shiftChart} />
         </SectionCard>
 
         <SectionCard
@@ -87,13 +86,6 @@ export default function ManagementDashboard({ initialData }) {
         <DailyScheduleTable sessions={dashboard.todaySessions} />
       </SectionCard>
 
-      <SectionCard
-        title="الوصول السريع"
-        subtitle="جميع صفحات نظام الإدارة"
-        contentClassName="px-5 pb-5"
-      >
-        <DashboardQuickLinks />
-      </SectionCard>
     </div>
   );
 }

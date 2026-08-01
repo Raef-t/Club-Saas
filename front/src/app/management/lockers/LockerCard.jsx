@@ -30,6 +30,11 @@ export default function LockerCard({
         <h2 className="text-2xl font-bold tracking-wider text-white" dir="ltr">
           {locker.locker_number || "-"}
         </h2>
+        {locker.key_number && (
+          <p className="mt-1 text-sm text-app-text font-medium" dir="ltr">
+            Key: {locker.key_number}
+          </p>
+        )}
         <p className="mt-2 text-xs text-app-muted-light">{getLockerBranchName(locker, branches)}</p>
       </div>
 

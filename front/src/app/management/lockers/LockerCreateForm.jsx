@@ -51,6 +51,7 @@ export default function LockerCreateForm({
     event.preventDefault();
     const validation = lockerSchema.safeParse({
       locker_number: form.locker_number.trim(),
+      key_number: form.key_number?.trim() || null,
       branch_id: Number(form.branch_id),
     });
 
@@ -96,6 +97,18 @@ export default function LockerCreateForm({
           value={form.locker_number}
           onChange={(event) => updateField("locker_number", event.target.value)}
           error={errors.locker_number}
+          dir="ltr"
+          maxLength={50}
+        />
+
+        <Field
+          label="رقم المفتاح"
+          type="text"
+          icon={LockerIcon}
+          placeholder="K-001"
+          value={form.key_number}
+          onChange={(event) => updateField("key_number", event.target.value)}
+          error={errors.key_number}
           dir="ltr"
           maxLength={50}
         />

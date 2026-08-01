@@ -5,6 +5,7 @@ import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Drawer from "@/components/ui/Drawer";
+import StatsGrid from "@/components/ui/StatsGrid";
 import { LockerIcon, PlusIcon } from "@/components/icons/Icons";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
@@ -40,6 +41,48 @@ export default function LockersClient({ initialData }) {
   );
   const memberOptions = useMemo(() => createLockerMemberOptions(branchMembers), [branchMembers]);
 
+  const statItems = useMemo(() => {
+    if (!lockerState.lockerSummary) return null;
+    const {
+      available_lockers_count = 0,
+      unavailable_lockers_count = 0,
+      assigned_to_member_count = 0,
+      assigned_to_coach_count = 0,
+      rented_lockers_count = 0,
+    } = lockerState.lockerSummary;
+
+    return [
+      {
+        title: "متاحة",
+        value: available_lockers_count,
+        tone: "green",
+      },
+      {
+        title: "مؤجرة",
+        value: rented_lockers_count,
+        iconKey: "subscriptions",
+        tone: "blue",
+      },
+      {
+        title: "مع الأعضاء",
+        value: assigned_to_member_count,
+        iconKey: "members",
+        tone: "cyan",
+      },
+      {
+        title: "مع المدربين",
+        value: assigned_to_coach_count,
+        iconKey: "coaches",
+        tone: "purple",
+      },
+      {
+        title: "غير متاحة",
+        value: unavailable_lockers_count,
+        tone: "orange",
+      },
+    ];
+  }, [lockerState.lockerSummary]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -57,6 +100,8 @@ export default function LockersClient({ initialData }) {
           </Button>
         }
       />
+
+      {statItems && <StatsGrid items={statItems} variant="compact" />}
 
       <LockerFilters
         search={lockerState.search}
