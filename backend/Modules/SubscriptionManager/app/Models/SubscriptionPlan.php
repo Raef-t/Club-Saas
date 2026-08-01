@@ -12,10 +12,6 @@ class SubscriptionPlan extends Model
         'branch_id',
         'subscription_number',
         'name',
-        'type',
-        'start_date',
-        'end_date',
-        'duration_days',
         'session_count',
         'sessions_per_week',
         'base_price',
@@ -44,8 +40,6 @@ class SubscriptionPlan extends Model
     }
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
         'is_active' => 'boolean',
         'base_price' => 'decimal:2',
         'max_subscribers' => 'integer',

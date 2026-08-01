@@ -105,10 +105,9 @@ class SubscriptionService
 
             // 2. Dates Calculation
             $startDate = Carbon::parse($options['start_date']);
-            $endDate = null;
-
-            if ($plan->duration_days) {
-                $endDate = $startDate->copy()->addDays($plan->duration_days);
+            $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+            if (!$endDate && !empty($options['duration_days'])) {
+                $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
             }
 
             // 3. Financials
@@ -501,7 +500,7 @@ class SubscriptionService
     {
         $plan = $subscription->plan;
 
-        if ($plan && $plan->type === 'session_based') {
+        if ($plan && !is_null($plan->session_count)) {
             return $this->calculateSessionBasedEndDate($subscription, $freezeDays);
         }
 
@@ -664,9 +663,9 @@ class SubscriptionService
 
             // Create individual PlayerSubscriptions for each plan in the offer
             foreach ($offer->plans as $plan) {
-                $endDate = null;
-                if ($plan->duration_days) {
-                    $endDate = $startDate->copy()->addDays($plan->duration_days);
+                $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+                if (!$endDate && !empty($options['duration_days'])) {
+                    $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
                 }
 
                 $subscription = $this->subscriptionRepository->create([
