@@ -4,6 +4,8 @@ namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Modules\SubscriptionManager\Enums\SubscriptionPlanStatus;
+
 class SubscriptionPlan extends Model
 {
 
@@ -15,7 +17,7 @@ class SubscriptionPlan extends Model
         'session_count',
         'sessions_per_week',
         'base_price',
-        'is_active',
+        'status',
         'max_subscribers',
         'current_subscribers',
         'gender_restriction',
@@ -40,7 +42,7 @@ class SubscriptionPlan extends Model
     }
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'status' => SubscriptionPlanStatus::class,
         'base_price' => 'decimal:2',
         'max_subscribers' => 'integer',
         'current_subscribers' => 'integer',
@@ -52,7 +54,7 @@ class SubscriptionPlan extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'active');
     }
 
     public function scopeAvailable($query)

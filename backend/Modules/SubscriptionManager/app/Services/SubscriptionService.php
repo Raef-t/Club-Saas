@@ -103,15 +103,17 @@ class SubscriptionService
             $this->incrementPlanSubscribers($plan);
 
 
-            // 2. Dates Calculation
-            $startDate = Carbon::parse($options['start_date']);
-            $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
-            if (!$endDate && !empty($options['duration_days'])) {
-                $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
-            }
-
-            // 3. Financials
+            // 2. Financials & Dates Calculation
             $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
+            $startDate = Carbon::parse($options['start_date']);
+            $endDate = isset($options['end_date']) && !empty($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+            if (!$endDate) {
+                if (!empty($options['duration_days'])) {
+                    $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
+                } else {
+                    $endDate = $startDate->copy()->addMonths($monthsCount);
+                }
+            }
             $totalAmount = $plan->base_price;
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
 
@@ -761,20 +763,20 @@ class SubscriptionService
     }
 
     /**
-     * Increment plan subscribers and deactivate if full.
+     * Increment plan subscribers and mark as completed if full.
      */
     public function incrementPlanSubscribers($plan)
     {
         if ($plan && $plan->max_subscribers > 0) {
             $plan->increment('current_subscribers');
             if ($plan->current_subscribers >= $plan->max_subscribers) {
-                $plan->update(['is_active' => false]);
+                $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
             }
         }
     }
 
     /**
-     * Decrement plan subscribers and reactivate if space opens up.
+     * Decrement plan subscribers and mark as active if space opens up from completed state.
      */
     public function decrementPlanSubscribers($plan)
     {
@@ -782,8 +784,12 @@ class SubscriptionService
             if ($plan->current_subscribers > 0) {
                 $plan->decrement('current_subscribers');
             }
-            if (!$plan->is_active && $plan->current_subscribers < $plan->max_subscribers) {
-                $plan->update(['is_active' => true]);
+            $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
+                ? $plan->status->value
+                : $plan->status;
+
+            if ($statusValue === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value && $plan->current_subscribers < $plan->max_subscribers) {
+                $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
             }
         }
     }

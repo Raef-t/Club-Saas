@@ -19638,10 +19638,16 @@
                                         "example": 50
                                     },
                                     "start_date": {
-                                        "description": "تاريخ بداية الاشتراك",
+                                        "description": "تاريخ بداية الاشتراك (مطلوب)",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-07-01"
+                                    },
+                                    "end_date": {
+                                        "description": "تاريخ نهاية الاشتراك (اختياري، في حال عدم تمريره يتم حسابه تلقائياً من عدد الأشهر)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01"
                                     },
                                     "notes": {
                                         "description": "ملاحظات (اختياري)",
@@ -21065,6 +21071,16 @@
                                                         "type": "string",
                                                         "example": "mixed"
                                                     },
+                                                    "status": {
+                                                        "description": "حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)",
+                                                        "type": "string",
+                                                        "example": "active",
+                                                        "enum": [
+                                                            "active",
+                                                            "inactive",
+                                                            "completed"
+                                                        ]
+                                                    },
                                                     "activities": {
                                                         "type": "array",
                                                         "items": {
@@ -21167,9 +21183,15 @@
                                             "mixed"
                                         ]
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "status": {
+                                        "description": "(اختياري) حالة الخطة: active, inactive, completed",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "completed"
+                                        ]
                                     },
                                     "activities": {
                                         "type": "array",
@@ -21260,6 +21282,16 @@
                                                 "gender_restriction": {
                                                     "type": "string",
                                                     "example": "mixed"
+                                                },
+                                                "status": {
+                                                    "description": "حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)",
+                                                    "type": "string",
+                                                    "example": "active",
+                                                    "enum": [
+                                                        "active",
+                                                        "inactive",
+                                                        "completed"
+                                                    ]
                                                 }
                                             },
                                             "type": "object"
@@ -21442,6 +21474,16 @@
                                                     "type": "string",
                                                     "example": "mixed"
                                                 },
+                                                "status": {
+                                                    "description": "حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)",
+                                                    "type": "string",
+                                                    "example": "active",
+                                                    "enum": [
+                                                        "active",
+                                                        "inactive",
+                                                        "completed"
+                                                    ]
+                                                },
                                                 "activities": {
                                                     "type": "array",
                                                     "items": {
@@ -21565,9 +21607,15 @@
                                             "mixed"
                                         ]
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "status": {
+                                        "description": "(اختياري) حالة الخطة: active, inactive, completed",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "completed"
+                                        ]
                                     },
                                     "activities": {
                                         "type": "array",
@@ -21658,6 +21706,16 @@
                                                 "gender_restriction": {
                                                     "type": "string",
                                                     "example": "mixed"
+                                                },
+                                                "status": {
+                                                    "description": "حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)",
+                                                    "type": "string",
+                                                    "example": "active",
+                                                    "enum": [
+                                                        "active",
+                                                        "inactive",
+                                                        "completed"
+                                                    ]
                                                 }
                                             },
                                             "type": "object"
@@ -21807,7 +21865,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (is_active = false) بدلاً من حذفها."
+                                            "example": "لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (status = 'inactive') بدلاً من حذفها."
                                         },
                                         "details": {
                                             "properties": {

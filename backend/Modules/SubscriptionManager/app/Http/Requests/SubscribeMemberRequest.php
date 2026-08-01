@@ -27,6 +27,7 @@ class SubscribeMemberRequest extends FormRequest
             'plan_id' => 'required|exists:subscription_plans,id',
             'months_count' => 'nullable|integer|min:1',
             'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'paid_amount' => 'required|numeric|min:0',
             'payment_method' => 'nullable|string',
             'notes' => 'nullable|string',
