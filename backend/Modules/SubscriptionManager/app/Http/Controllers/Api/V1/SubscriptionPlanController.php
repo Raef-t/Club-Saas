@@ -46,6 +46,7 @@ class SubscriptionPlanController extends BaseController
                             new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                             new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
                             new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                            new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active'),
                             new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
@@ -141,7 +142,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
                 new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: '(اختياري) حالة الخطة: active, inactive, completed', example: 'active'),
                 new OA\Property(
                     property: 'activities', 
                     type: 'array', 
@@ -185,7 +186,8 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
-                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed')
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active')
                     ]
                 )
             ]
@@ -228,6 +230,7 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
                         new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active'),
                         new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
@@ -265,7 +268,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
                 new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: '(اختياري) حالة الخطة: active, inactive, completed', example: 'active'),
                 new OA\Property(
                     property: 'activities', 
                     type: 'array', 
@@ -309,7 +312,8 @@ class SubscriptionPlanController extends BaseController
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
-                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed')
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active')
                     ]
                 )
             ]
@@ -353,7 +357,7 @@ class SubscriptionPlanController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (is_active = false) بدلاً من حذفها.'),
+                new OA\Property(property: 'message', type: 'string', example: "لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (status = 'inactive') بدلاً من حذفها."),
                 new OA\Property(
                     property: 'details', 
                     type: 'object', 

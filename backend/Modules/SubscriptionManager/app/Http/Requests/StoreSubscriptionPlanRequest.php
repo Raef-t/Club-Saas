@@ -34,7 +34,7 @@ class StoreSubscriptionPlanRequest extends FormRequest
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',
             'gender_restriction' => 'nullable|in:male,female,mixed',
-            'is_active' => 'boolean',
+            'status' => ['nullable', 'string', \Illuminate\Validation\Rule::in(['active', 'inactive', 'completed'])],
             'activities' => 'nullable|array',
             'activities.*.activity_id' => 'required_with:activities|exists:activities,id',
             'activities.*.coach_id' => 'nullable|exists:staff,id',

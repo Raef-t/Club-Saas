@@ -20,7 +20,7 @@ class SubscriptionPlanResource extends JsonResource
             'current_subscribers' => $this->current_subscribers,
             'is_unlimited_subscribers' => $this->max_subscribers == 0,
             'gender_restriction' => $this->gender_restriction,
-            'is_active' => (bool) $this->is_active,
+            'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,
             'activities' => SubscriptionPlanActivityResource::collection($this->whenLoaded('planActivities')),
             'session_templates' => $this->whenLoaded('sessionTemplates'),
         ];

@@ -62,7 +62,7 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
 
         if ($subscribersCount > 0) {
             throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن الحذف لأن الفعالية مسجل فيها {$subscribersCount} " . ($subscribersCount === 1 ? 'عضو' : 'أعضاء') . ". يمكنك تعطيل الفعالية (is_active = false) بدلاً من حذفها.",
+                "لا يمكن الحذف لأن الفعالية مسجل فيها {$subscribersCount} " . ($subscribersCount === 1 ? 'عضو' : 'أعضاء') . ". يمكنك تعطيل الفعالية (status = 'inactive') بدلاً من حذفها.",
                 ['subscribers_count' => $subscribersCount]
             );
         }

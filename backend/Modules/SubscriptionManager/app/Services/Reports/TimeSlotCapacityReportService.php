@@ -38,7 +38,7 @@ class TimeSlotCapacityReportService
             ->join('staff as st', 'st.id', '=', 'sa.staff_id')
             ->join('people as p', 'p.id', '=', 'st.person_id')
             ->join('subscription_plans as sp', 'sp.id', '=', 'pa.plan_id')
-            ->where('sp.is_active', true);
+            ->where('sp.status', 'active');
 
         if ($branchId) {
             $query->where('sp.branch_id', $branchId);
