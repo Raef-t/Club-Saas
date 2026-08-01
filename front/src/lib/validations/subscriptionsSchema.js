@@ -20,5 +20,9 @@ export const subscriptionSchema = z.object({
   start_date: z
     .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
     .min(1, "تاريخ بداية الاشتراك مطلوب"),
+
+  end_date: z
+    .string({ required_error: "تاريخ نهاية الاشتراك مطلوب" })
+    .min(1, "تاريخ نهاية الاشتراك مطلوب"),
 });
 

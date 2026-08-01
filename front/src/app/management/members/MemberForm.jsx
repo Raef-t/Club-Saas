@@ -92,9 +92,8 @@ export function MemberForm({
       emergency_name: form.emergency_name.trim(),
       emergency_relation: form.emergency_relation,
       emergency_phone: form.emergency_phone.trim(),
+      emergency_phone: form.emergency_phone.trim(),
       emergency_country_code: form.emergency_country_code.trim(),
-      plan_id: form.plan_id ? Number(form.plan_id) : undefined,
-      paid_amount: form.paid_amount ? Number(form.paid_amount) : undefined,
     };
 
     const result = memberSchema.safeParse(validationData);
@@ -110,27 +109,6 @@ export function MemberForm({
     setErrors({});
 
     if (mode === "create") {
-      let customErrors = {};
-      if (!form.plan_id) {
-        customErrors.plan_id = "يرجى اختيار خطة الاشتراك";
-      }
-      if (form.plan_id && !form.paid_amount && form.paid_amount !== 0 && form.paid_amount !== "0") {
-        customErrors.paid_amount = "يرجى ادخال المبلغ المدفوع";
-      }
-      if (Object.keys(customErrors).length > 0) {
-        setErrors(customErrors);
-        return;
-      }
-
-      const plansPayload = form.plan_id
-        ? [
-            {
-              plan_id: Number(form.plan_id),
-              paid_amount: Number(form.paid_amount) || 0,
-            },
-          ]
-        : [];
-
       onSubmit({
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
@@ -141,7 +119,6 @@ export function MemberForm({
         age: computedAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
-        plans: plansPayload,
       });
     } else {
       onSubmit({
@@ -157,8 +134,6 @@ export function MemberForm({
       });
     }
   }
-
-  const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
 
   return (
     <form id={formId} noValidate onSubmit={handleSubmit} className={formClassName} dir="rtl">
@@ -296,56 +271,6 @@ export function MemberForm({
           />
         </div>
       </div>
-
-      {/* Plan Section (Only in Create Mode) */}
-      {mode === "create" && (
-        <div className="border-t border-app-line pt-4 mt-2">
-          <h4 className="text-sm font-semibold text-white mb-3">تسجيل في خطة اشتراك مباشرة</h4>
-
-          <label className="block text-right text-sm text-app-muted-light mb-3">
-            الخطة الرياضية
-            <Dropdown
-              className="mt-2 text-white"
-              buttonClassName="bg-app-card-soft h-11"
-              value={form.plan_id}
-              onChange={(val) => {
-                updateField("plan_id", val);
-                const selected = plans.find((p) => String(p.id) === String(val));
-                if (selected) {
-                  updateField("paid_amount", String(selected.base_price || "0"));
-                }
-              }}
-              options={plans.map((p) => ({
-                value: String(p.id),
-                label: typeof p.name === "string" ? p.name : p.name?.ar || p.name?.en || "",
-              }))}
-              placeholder="اختر خطة الاشتراك"
-              error={errors && errors.plan_id}
-            />
-          </label>
-
-          {form.plan_id && (
-            <label className="block text-right text-sm text-app-muted-light">
-              المبلغ المدفوع ({CURRENCY_SYMBOL})
-              <input
-                value={form.paid_amount}
-                onChange={(event) => updateField("paid_amount", event.target.value)}
-                className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-                type="number"
-                min="0"
-                placeholder={
-                  selectedPlanObj ? `القيمة الأساسية: ${selectedPlanObj.base_price}` : ""
-                }
-              />
-              {errors && errors.paid_amount && (
-                <span className="text-app-red text-xs mt-1 block text-right w-full">
-                  {errors.paid_amount}
-                </span>
-              )}
-            </label>
-          )}
-        </div>
-      )}
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
