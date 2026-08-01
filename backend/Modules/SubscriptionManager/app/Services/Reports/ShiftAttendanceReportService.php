@@ -71,9 +71,10 @@ class ShiftAttendanceReportService
         // 3. Optional plan IDs matching activity_id if filtered
         $matchingPlanIds = null;
         if ($activityId) {
-            $matchingPlanIds = DB::table('subscription_plan_activities')
-                ->where('activity_id', $activityId)
-                ->pluck('subscription_plan_id')
+            $matchingPlanIds = DB::table('plan_activities as pa')
+                ->join('staff_activities as sa', 'pa.staff_activity_id', '=', 'sa.id')
+                ->where('sa.activity_id', $activityId)
+                ->pluck('pa.plan_id')
                 ->toArray();
         }
 

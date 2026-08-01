@@ -289,6 +289,19 @@ class CoachService
                 $coachDetail->save();
             }
 
+            // Update Activities if provided
+            if (isset($data['activity_ids']) && is_array($data['activity_ids'])) {
+                $staff->activities()->sync($data['activity_ids']);
+            }
+
+            // Update Shifts if provided
+            if (isset($data['shifts']) && is_array($data['shifts'])) {
+                $staff->shifts()->delete();
+                foreach ($data['shifts'] as $branchShiftId) {
+                    $staff->shifts()->create(['branch_shift_id' => $branchShiftId]);
+                }
+            }
+
             return $this->getSingleCoach($staff->id);
         });
     }

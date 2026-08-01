@@ -14882,6 +14882,22 @@
                                     "is_active": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "activity_ids[]": {
+                                        "description": "مصفوفة معرفات الأنشطة (اختياري)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "shifts[]": {
+                                        "description": "مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     }
                                 },
                                 "type": "object"
