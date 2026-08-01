@@ -30,8 +30,15 @@ export default function MembersCreateClient() {
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
   async function submit(values) {
-    const ok = isEdit ? await handleUpdate(values) : await handleCreate(values);
-    if (ok) router.push("/management/members");
+    if (isEdit) {
+      const ok = await handleUpdate(values);
+      if (ok) router.push("/management/members");
+    } else {
+      const memberId = await handleCreate(values);
+      if (memberId) {
+        router.push(`/management/subscriptions/create?memberId=${memberId}`);
+      }
+    }
   }
 
   return (

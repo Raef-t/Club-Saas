@@ -173,9 +173,9 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         await createPlayerSubscription(subscriptionPayload).unwrap();
       }
 
-      toast.success("تم تسجيل اللاعب العضو وتفعيل الاشتراك بنجاح!");
+      toast.success("تم تسجيل اللاعب العضو بنجاح!");
       closeDrawer();
-      return true;
+      return memberId;
     } catch (submitError) {
       console.error("Create member/subscription error:", submitError);
       const rawMsg = submitError?.data?.message || "";

@@ -4,7 +4,6 @@ import { useState } from "react";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
-import { TrashIcon } from "@/components/icons/Icons";
 import { useToast } from "@/components/ui/Toast";
 import { formatLocalizedName } from "@/lib/utils";
 import { subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
@@ -27,57 +26,22 @@ export function SubscriptionCreateForm({
   formId,
   showFooterActions = true,
   formClassName = "space-y-4",
+  initialMemberId = "",
 }) {
   const toast = useToast();
   const [form, setForm] = useState({
-    member_id: members[0]?.id ? String(members[0].id) : "",
+    member_id: initialMemberId ? String(initialMemberId) : (members[0]?.id ? String(members[0].id) : ""),
     plan_id: plans[0]?.id ? String(plans[0].id) : "",
     paid_amount: plans[0]?.base_price ? String(plans[0].base_price) : "0",
     start_date: "",
+    end_date: "",
   });
   const [errors, setErrors] = useState({});
-
-  const [selectedActivities, setSelectedActivities] = useState([]);
-  const [currActivityId, setCurrActivityId] = useState("");
-  const [currCoachId, setCurrCoachId] = useState("");
+  const [submitAction, setSubmitAction] = useState("normal");
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
     if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
-  }
-
-  function handleAddActivity() {
-    if (!currActivityId || !currCoachId) return;
-
-    // يمنع إسناد النشاط نفسه أكثر من مرة داخل الاشتراك.
-    if (selectedActivities.some((item) => String(item.activity_id) === String(currActivityId))) {
-      toast.warning("تمت إضافة هذا النشاط مسبقاً.");
-      return;
-    }
-
-    const activityObj = activities.find((a) => String(a.id) === String(currActivityId));
-    const coachObj = coaches.find((c) => String(c.id) === String(currCoachId));
-
-    setSelectedActivities((prev) => [
-      ...prev,
-      {
-        activity_id: Number(currActivityId),
-        coach_id: Number(currCoachId),
-        activityName: activityObj
-          ? typeof activityObj.name === "string"
-            ? activityObj.name
-            : activityObj.name?.ar || activityObj.name?.en
-          : "",
-        coachName: coachObj?.person?.full_name || `مدرب #${currCoachId}`,
-      },
-    ]);
-
-    setCurrActivityId("");
-    setCurrCoachId("");
-  }
-
-  function handleRemoveActivity(actId) {
-    setSelectedActivities((prev) => prev.filter((item) => item.activity_id !== actId));
   }
 
   function handleSubmit(event) {
@@ -88,6 +52,7 @@ export function SubscriptionCreateForm({
       plan_id: Number(form.plan_id),
       paid_amount: Number(form.paid_amount) || 0,
       start_date: form.start_date || "",
+      end_date: form.end_date || "",
     };
 
     const result = subscriptionSchema.safeParse(validationData);
@@ -104,11 +69,8 @@ export function SubscriptionCreateForm({
     onSubmit({
       ...validationData,
       payment_method: "cash",
-      activities: selectedActivities.map((act) => ({
-        activity_id: act.activity_id,
-        coach_id: act.coach_id,
-      })),
-    });
+      activities: [],
+    }, submitAction);
   }
 
   const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
@@ -146,7 +108,7 @@ export function SubscriptionCreateForm({
           }}
           options={plans.map((p) => ({
             value: String(p.id),
-            label: `${formatLocalizedName(p.name) || p.name || ""} - ${formatSubscriptionMoney(p.base_price)}`,
+            label: formatLocalizedName(p.name) || p.name || "",
           }))}
           placeholder="اختر الخطة"
           error={errors && errors.plan_id}
@@ -176,90 +138,39 @@ export function SubscriptionCreateForm({
         )}
       </label>
 
-      <div>
-        <DatePickerSmart
-          label="تاريخ بداية الاشتراك *"
-          value={form.start_date}
-          onChange={(val) => updateField("start_date", val)}
-          compact={false}
-          error={errors && errors.start_date}
-        />
-        {errors && errors.start_date && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.start_date}
-          </span>
-        )}
-      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <DatePickerSmart
+            label="تاريخ بداية الاشتراك *"
+            value={form.start_date}
+            onChange={(val) => updateField("start_date", val)}
+            compact={false}
+            error={errors && errors.start_date}
+          />
+          {errors && errors.start_date && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.start_date}
+            </span>
+          )}
+        </div>
 
-      {/* يتيح إسناد مدرب مستقل لكل نشاط ضمن الاشتراك. */}
-      <div className="border-t border-app-line pt-4 mt-2 text-right">
-        <h4 className="text-sm font-semibold text-white mb-3">
-          الأنشطة والمدربين المنسوبين للاشتراك
-        </h4>
-
-        {selectedActivities.length > 0 && (
-          <div className="space-y-2 mb-3">
-            {selectedActivities.map((act) => (
-              <div
-                key={act.activity_id}
-                className="flex items-center justify-between p-2 rounded bg-black/35 text-xs text-app-text border border-app-line"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleRemoveActivity(act.activity_id)}
-                  className="text-app-red p-1 rounded hover:bg-app-red/10 transition"
-                >
-                  <TrashIcon className="size-4" />
-                </button>
-                <span>
-                  {act.activityName} · المدرب: {act.coachName}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-2 items-end bg-app-card-soft/40 p-3 rounded-xl border border-app-line">
-          <div className="flex-1 space-y-2">
-            <label className="block text-xs text-app-muted-light">اختر النشاط</label>
-            <Dropdown
-              className="text-white bg-black/45 rounded text-xs"
-              buttonClassName="h-9"
-              value={currActivityId}
-              onChange={setCurrActivityId}
-              options={activities.map((a) => ({
-                value: String(a.id),
-                label: typeof a.name === "string" ? a.name : a.name?.ar || a.name?.en || "",
-              }))}
-              placeholder="الرياضة / النشاط"
-            />
-          </div>
-
-          <div className="flex-1 space-y-2">
-            <label className="block text-xs text-app-muted-light">اختر المدرب</label>
-            <Dropdown
-              className="text-white bg-black/45 rounded text-xs"
-              buttonClassName="h-9"
-              value={currCoachId}
-              onChange={setCurrCoachId}
-              options={coaches.map((c) => ({
-                value: String(c.id),
-                label: c.person?.full_name || `مدرب #${c.id}`,
-              }))}
-              placeholder="المدرب الكوتش"
-            />
-          </div>
-
-          <Button
-            type="button"
-            className="h-9 px-3 text-xs"
-            disabled={!currActivityId || !currCoachId}
-            onClick={handleAddActivity}
-          >
-            إضافة
-          </Button>
+        <div>
+          <DatePickerSmart
+            label="تاريخ نهاية الاشتراك *"
+            value={form.end_date}
+            onChange={(val) => updateField("end_date", val)}
+            compact={false}
+            error={errors && errors.end_date}
+          />
+          {errors && errors.end_date && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.end_date}
+            </span>
+          )}
         </div>
       </div>
+
+
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
@@ -271,8 +182,22 @@ export function SubscriptionCreateForm({
         <Button type="button" tone="outline" className="h-11 flex-1" onClick={onCancel}>
           إلغاء
         </Button>
-        <Button type="submit" className="h-11 flex-1" loading={isLoading}>
+        <Button 
+          type="submit" 
+          className="h-11 flex-1" 
+          loading={isLoading && submitAction === 'normal'}
+          onClick={() => setSubmitAction("normal")}
+        >
           إنشاء الاشتراك
+        </Button>
+        <Button 
+          type="submit" 
+          tone="outline"
+          className="h-11 flex-1 border-app-yellow text-app-yellow hover:bg-app-yellow/10" 
+          loading={isLoading && submitAction === 'addAnother'}
+          onClick={() => setSubmitAction("addAnother")}
+        >
+          حفظ وإضافة آخر
         </Button>
       </div>
     </form>
