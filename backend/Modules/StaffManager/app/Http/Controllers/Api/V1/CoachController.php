@@ -373,6 +373,8 @@ class CoachController extends Controller
                         new OA\Property(property: 'experience_years', type: 'integer', example: 7),
                         new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
                         new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(property: 'activity_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الأنشطة (اختياري)'),
+                        new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)'),
                     ]
                 )
             )
