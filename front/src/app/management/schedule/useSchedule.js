@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
 import { useToast } from "@/components/ui/Toast";
+import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { SCHEDULE_DEFAULT_SETTINGS } from "./scheduleConstants";
 import { createScheduleDataFromApi, generateTimeSlots } from "./scheduleUtils";
@@ -22,6 +23,7 @@ const DEFAULT_EVENING_SLOTS = generateTimeSlots(
  */
 export function useSchedule({ initialSchedule, selectedBranchId = "all" } = {}) {
   const toast = useToast();
+  const { formatTime } = useTimeFormat();
   const initialScopedSchedule = selectedBranchId === "all" ? initialSchedule : null;
   const {
     currentData: apiSchedule,
@@ -51,6 +53,7 @@ export function useSchedule({ initialSchedule, selectedBranchId = "all" } = {}) 
       morningSlots: DEFAULT_MORNING_SLOTS,
       eveningSlots: DEFAULT_EVENING_SLOTS,
       scheduleData,
+      formatTime,
     });
 
     if (!opened) {

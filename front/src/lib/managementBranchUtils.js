@@ -100,3 +100,17 @@ export function normalizeSelectedBranchId(selectedBranchId, branches) {
     ? String(selectedBranchId)
     : ALL_BRANCHES_VALUE;
 }
+
+/**
+ * Returns the default gender value implied by a branch's gender restriction.
+ * When the branch enforces a single gender ("male" or "female"), that gender is
+ * returned so form fields can be pre-filled automatically.  Otherwise the
+ * caller-provided fallback (default: "male") is returned.
+ */
+export function getDefaultGenderForBranch(selectedBranch, fallback = "male") {
+  const restriction = selectedBranch?.gender_restriction;
+  if (restriction === "female" || restriction === "male") {
+    return restriction;
+  }
+  return fallback;
+}

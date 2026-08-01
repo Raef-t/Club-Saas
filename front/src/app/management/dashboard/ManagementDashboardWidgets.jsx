@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GridIcon } from "@/components/icons/Icons";
+import { useTimeFormat } from "@/lib/TimeFormatContext";
 
 const QUICK_LINKS = [
   { title: "الأعضاء", href: "/management/members" },
@@ -75,6 +76,8 @@ export function SubscriptionDonut({ items }) {
  * Renders today's schedule as a responsive data table.
  */
 export function DailyScheduleTable({ sessions }) {
+  const { formatTime } = useTimeFormat();
+
   if (!sessions.length) {
     return (
       <div className="grid min-h-44 place-items-center rounded-xl border border-dashed border-app-line px-5 text-center text-sm text-app-muted">
@@ -99,7 +102,7 @@ export function DailyScheduleTable({ sessions }) {
           {sessions.map((session) => (
             <tr key={session.id} className="bg-app-card-soft">
               <td className="rounded-r-xl px-4 py-3 font-medium text-app-yellow" dir="ltr">
-                {session.startTime} - {session.endTime}
+                {formatTime(session.startTime)} - {formatTime(session.endTime)}
               </td>
               <td className="px-4 py-3 text-app-text">{session.title}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.coach}</td>
@@ -152,5 +155,73 @@ export function DashboardSectionLink({ href, children = "عرض الكل" }) {
     >
       {children}
     </Link>
+  );
+}
+
+/**
+ * Renders currently active session plans (live SSE stream data).
+ */
+export function CurrentActiveSessionsTable({ sessions = [] }) {
+  const { formatTime } = useTimeFormat();
+
+  if (!sessions || !sessions.length) {
+    return (
+      <div className="grid min-h-36 place-items-center rounded-xl border border-dashed border-app-line px-5 text-center text-sm text-app-muted">
+        لا توجد فعاليات تجري حالياً في الوقت الحالي.
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[650px] border-separate border-spacing-y-2 text-right text-sm">
+        <thead className="text-xs text-app-muted-light">
+          <tr>
+            <th className="px-4 pb-1 font-medium">اسم الفعالية / الخطة</th>
+            <th className="px-4 pb-1 font-medium">الوقت</th>
+            <th className="px-4 pb-1 font-medium">اللاعبين المتواجدين</th>
+            <th className="px-4 pb-1 font-medium">الحالة الحالية</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sessions.map((session, index) => {
+            const planName =
+              typeof session.plan_name === "object"
+                ? session.plan_name?.ar || session.plan_name?.en || "-"
+                : session.plan_name || "-";
+            const startTime = session.start_time ? formatTime(session.start_time) : "-";
+            const endTime = session.end_time ? formatTime(session.end_time) : "-";
+
+            return (
+              <tr
+                key={session.plan_id || session.session_template_id || index}
+                className="bg-app-card-soft"
+              >
+                <td className="rounded-r-xl px-4 py-3 font-medium text-app-text">
+                  {planName}
+                </td>
+                <td className="px-4 py-3 text-app-yellow font-medium" dir="ltr">
+                  {startTime} - {endTime}
+                </td>
+                <td className="px-4 py-3 text-white font-semibold">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/30 px-3 py-1 text-xs border border-app-line text-app-yellow font-medium">
+                    {session.present_players_count || 0} لاعب متواجد
+                  </span>
+                </td>
+                <td className="rounded-l-xl px-4 py-3">
+                  <span className="inline-flex items-center gap-2 rounded-lg bg-app-green/20 px-3 py-1 text-xs text-app-green font-medium">
+                    <span className="relative flex size-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-app-green opacity-75"></span>
+                      <span className="relative inline-flex size-2 rounded-full bg-app-green"></span>
+                    </span>
+                    جارية الآن
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

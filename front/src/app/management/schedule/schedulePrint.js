@@ -11,13 +11,14 @@ function formatPrintableCell(value) {
 /**
  * Builds one printable period table.
  */
-function buildPeriodTableHtml(title, slots, periodKey, scheduleData) {
+function buildPeriodTableHtml(title, slots, periodKey, scheduleData, formatTime) {
   if (!slots.length) return "";
+  const fmt = typeof formatTime === "function" ? formatTime : (v) => v;
 
   const headerCells = slots
     .map(
       (slot) =>
-        `<th><div class="time-heading"><div>${escapeScheduleHtml(slot.from)}</div><div class="time-arrow">↓</div><div>${escapeScheduleHtml(slot.to)}</div></div></th>`,
+        `<th><div class="time-heading"><div>${escapeScheduleHtml(fmt(slot.from))}</div><div class="time-arrow">↓</div><div>${escapeScheduleHtml(fmt(slot.to))}</div></div></th>`,
     )
     .join("");
   const bodyRows = SCHEDULE_DAYS.map((day, index) => {
@@ -49,6 +50,7 @@ export function buildSchedulePrintHtml({
   morningSlots,
   eveningSlots,
   scheduleData,
+  formatTime,
   printedAt = new Date(),
 }) {
   const morningHtml = buildPeriodTableHtml(
@@ -56,12 +58,14 @@ export function buildSchedulePrintHtml({
     morningSlots,
     "morning",
     scheduleData,
+    formatTime,
   );
   const eveningHtml = buildPeriodTableHtml(
     "الفترة المسائية",
     eveningSlots,
     "evening",
     scheduleData,
+    formatTime,
   );
   const printDate = escapeScheduleHtml(printedAt.toLocaleDateString("ar-SY"));
 

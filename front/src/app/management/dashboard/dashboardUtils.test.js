@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   createDashboardStats,
+  createShiftAttendanceChart,
   createSubscriptionMix,
   createTodaySchedule,
-  createWeeklyScheduleChart,
   getDashboardCollection,
 } from "./dashboardUtils";
 
@@ -50,8 +50,17 @@ describe("management dashboard utilities", () => {
     });
   });
 
-  it("counts scheduled sessions per weekday and branch", () => {
-    expect(createWeeklyScheduleChart(scheduleResponse, "3").yellow).toEqual([1, 1, 0, 0, 0, 0, 0]);
+  it("creates shift attendance chart data sorted by attendance", () => {
+    const reportResponse = {
+      data: {
+        records: [
+          { day_name: "الأحد", shift_name: "الوردية الأولى", attended_players_count: 5 },
+          { day_name: "الاثنين", shift_name: "الوردية الثانية", attended_players_count: 12 },
+        ],
+      },
+    };
+    const chartData = createShiftAttendanceChart(reportResponse);
+    expect(chartData[0]).toEqual({ label: "الاثنين - الوردية الثانية", value: 12 });
   });
 
   it("groups subscriptions by plan name", () => {
@@ -67,24 +76,29 @@ describe("management dashboard utilities", () => {
     ]);
   });
 
-  it("creates linked live statistics", () => {
+  it("creates linked live statistics from SSE stream data", () => {
+    const sseStats = {
+      total_active_subscribed_members: 145,
+      realtime_training_players_count: 12,
+      expiring_subscriptions_count: 5,
+      free_assigned_player_lockers_count: 8,
+      current_active_session_plans: [{ plan_id: 3 }],
+    };
+
     const stats = createDashboardStats({
-      members: [{ id: 1 }, { id: 2 }],
-      coaches: [{ id: 1 }],
-      subscriptions: [
-        { status: "active", end_date: "2026-07-30" },
-        { status: "cancelled", end_date: "2026-07-29" },
-      ],
-      todaySessions: [{ id: 1 }],
-      now: new Date(2026, 6, 27),
+      members: [],
+      coaches: [],
+      subscriptions: [],
+      todaySessions: [],
+      sseStats,
     });
 
-    expect(stats.map((stat) => stat.value)).toEqual(["2", "1", "1", "1", "1"]);
+    expect(stats.map((stat) => stat.value)).toEqual(["145", "12", "5", "8", "1"]);
     expect(stats.map((stat) => stat.iconKey)).toEqual([
       "members",
       "coaches",
-      "subscriptions",
       "expiring",
+      "subscriptions",
       "schedule",
     ]);
     expect(stats.every((stat) => stat.href.startsWith("/management/"))).toBe(true);

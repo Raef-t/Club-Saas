@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTimeFormat } from "@/lib/TimeFormatContext";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
@@ -8,7 +9,7 @@ import { Field, TextAreaField } from "@/components/forms/FormControls";
 import { useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { genderLabels } from "@/lib/constants";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { getPreferredBranchId } from "@/lib/managementBranchUtils";
+import { getPreferredBranchId, getDefaultGenderForBranch } from "@/lib/managementBranchUtils";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { activitySchema } from "@/lib/validations/activitiesSchema";
 import { DAYS_OF_WEEK, GENDER_OPTIONS, SHIFT_ACTIVITY_TYPE_IDS } from "./activityConstants";
@@ -36,9 +37,10 @@ export default function ActivityForm({
   showFooterActions = true,
   formClassName = "space-y-4",
 }) {
-  const { selectedBranchId } = useManagementBranch();
+  const { selectedBranchId, selectedBranch } = useManagementBranch();
   const [form, setForm] = useState(() => {
     const values = createActivityFormValues(initialValues);
+    const isCreate = mode !== "edit";
 
     return {
       ...values,
@@ -46,6 +48,9 @@ export default function ActivityForm({
         currentBranchId: values.branch_id,
         selectedBranchId,
         branches,
+      }),
+      ...(isCreate && {
+        gender_allowed: getDefaultGenderForBranch(selectedBranch, values.gender_allowed),
       }),
     };
   });
@@ -228,6 +233,8 @@ function ActivityDropdown({ label, value, onChange, options, placeholder, error 
  * Renders the selectable shifts available for the chosen branch.
  */
 function ActivityShifts({ shifts, selectedShiftIds, isLoading, onToggle }) {
+  const { formatTime } = useTimeFormat();
+
   return (
     <div className="block text-right text-sm text-app-muted-light">
       الورديات / الشفتات المتاحة
@@ -243,8 +250,8 @@ function ActivityShifts({ shifts, selectedShiftIds, isLoading, onToggle }) {
         ) : (
           shifts.map((shift) => {
             const shiftId = Number(shift.id);
-            const startTime = shift.start_time?.slice(0, 5) || "";
-            const endTime = shift.end_time?.slice(0, 5) || "";
+            const startTime = formatTime(shift.start_time) || "";
+            const endTime = formatTime(shift.end_time) || "";
             const gender = genderLabels[shift.gender_allowed] || shift.gender_allowed || "مختلط";
             const label = `${DAYS_OF_WEEK[shift.day_of_week] || "يوم غير معروف"} | من ${startTime} إلى ${endTime} (${gender})`;
 
