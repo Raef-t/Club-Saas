@@ -8,7 +8,7 @@ import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import { memberSchema } from "@/lib/validations/membersSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { getPreferredBranchId } from "@/lib/managementBranchUtils";
+import { getPreferredBranchId, getDefaultGenderForBranch } from "@/lib/managementBranchUtils";
 import {
   MEMBER_INITIAL_FORM as initialForm,
   RELATION_OPTIONS as relationOptions,
@@ -41,15 +41,21 @@ export function MemberForm({
   showFooterActions = true,
   formClassName = "space-y-4",
 }) {
-  const { selectedBranchId } = useManagementBranch();
-  const [form, setForm] = useState(() => ({
-    ...initialValues,
-    branch_id: getPreferredBranchId({
-      currentBranchId: initialValues.branch_id,
-      selectedBranchId,
-      branches,
-    }),
-  }));
+  const { selectedBranchId, selectedBranch } = useManagementBranch();
+  const [form, setForm] = useState(() => {
+    const isCreate = mode !== "edit";
+    return {
+      ...initialValues,
+      branch_id: getPreferredBranchId({
+        currentBranchId: initialValues.branch_id,
+        selectedBranchId,
+        branches,
+      }),
+      ...(isCreate && {
+        gender: getDefaultGenderForBranch(selectedBranch, initialValues.gender),
+      }),
+    };
+  });
   const [errors, setErrors] = useState({});
 
   function updateField(field, value) {

@@ -1,5 +1,6 @@
 import SectionCard from "@/components/ui/SectionCard";
 import { ClockIcon } from "@/components/icons/Icons";
+import { useTimeFormat } from "@/lib/TimeFormatContext";
 import ScheduleTable from "./ScheduleTable";
 
 /**
@@ -13,15 +14,19 @@ export default function SchedulePeriod({
   scheduleData,
   periodKey,
 }) {
+  const { formatTime } = useTimeFormat();
+  const formattedStart = formatTime(startTime);
+  const formattedEnd = formatTime(endTime);
+
   return (
     <SectionCard
       title={title}
-      subtitle={`من ${startTime} إلى ${endTime} — ${slots.length} حصة`}
+      subtitle={`من ${formattedStart} إلى ${formattedEnd} — ${slots.length} حصة`}
       action={
         <div className="flex items-center gap-1 text-xs">
           <ClockIcon className="size-3.5" />
           <span>
-            {startTime} - {endTime}
+            {formattedStart} - {formattedEnd}
           </span>
         </div>
       }

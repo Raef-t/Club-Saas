@@ -11,9 +11,11 @@ import { Field } from "@/components/forms/Field";
 import { TrashIcon } from "@/components/icons/Icons";
 import { useGetBranchSettingsQuery, useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { useTimeFormat } from "@/lib/TimeFormatContext";
+import { getDefaultGenderForBranch } from "@/lib/managementBranchUtils";
 import { coachFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
-import { EMPLOYMENT_TYPES as employmentTypes } from "./coachConstants";
+import { EMPLOYMENT_TYPES as employmentTypes, SHIFT_GENDER_LABELS as shiftGenderLabels } from "./coachConstants";
 import { createCoachFormInitialValues, getEmploymentTypeForWorkTypes } from "./coachFormUtils";
 export function CoachCreateForm({
   formId,
@@ -26,10 +28,15 @@ export function CoachCreateForm({
   showFooterActions = true,
   initialValues = null,
 }) {
-  const { selectedBranchId } = useManagementBranch();
-  const [form, setForm] = useState(() =>
-    createCoachFormInitialValues(initialValues, branches, selectedBranchId),
-  );
+  const { selectedBranchId, selectedBranch } = useManagementBranch();
+  const { formatTime } = useTimeFormat();
+  const [form, setForm] = useState(() => {
+    const values = createCoachFormInitialValues(initialValues, branches, selectedBranchId);
+    if (!initialValues) {
+      values.gender = getDefaultGenderForBranch(selectedBranch, values.gender);
+    }
+    return values;
+  });
 
   const branchId1 = form.branch_ids?.[0];
   const branchId2 = form.branch_ids?.[1];
@@ -346,8 +353,8 @@ export function CoachCreateForm({
               branchShifts.map((shift) => {
                 const isChecked = form.shift_ids?.some((id) => Number(id) === Number(shift.id));
                 const shiftNameStr = shift.name || "وردية بدون اسم";
-                const startTime = shift.start_time ? shift.start_time.slice(0, 5) : "";
-                const endTime = shift.end_time ? shift.end_time.slice(0, 5) : "";
+                const startTime = shift.start_time ? formatTime(shift.start_time) : "";
+                const endTime = shift.end_time ? formatTime(shift.end_time) : "";
                 const gender =
                   shiftGenderLabels[shift.gender_allowed] || shift.gender_allowed || "مختلط";
                 const label = `${shiftNameStr} | من ${startTime} إلى ${endTime} (${gender})`;

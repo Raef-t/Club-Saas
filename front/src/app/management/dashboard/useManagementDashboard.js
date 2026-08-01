@@ -78,6 +78,11 @@ export function useManagementDashboard({ initialData = {} } = {}) {
     [shiftAttendanceQuery.currentData],
   );
   const subscriptionMix = useMemo(() => createSubscriptionMix(subscriptions), [subscriptions]);
+  const currentActiveSessions = useMemo(
+    () => sseStatsQuery.data?.current_active_session_plans || [],
+    [sseStatsQuery.data?.current_active_session_plans],
+  );
+
   const queries = [membersQuery, coachesQuery, subscriptionsQuery, scheduleQuery, shiftAttendanceQuery];
   const hasInitialData = Object.values(initialData).some(Boolean);
 
@@ -93,6 +98,7 @@ export function useManagementDashboard({ initialData = {} } = {}) {
     shiftChart,
     subscriptionMix,
     todaySessions,
+    currentActiveSessions,
     isLoading: !hasInitialData && queries.some((query) => query.isLoading),
     isRefreshing: queries.some((query) => query.isFetching),
     hasError: queries.some((query) => Boolean(query.error)),

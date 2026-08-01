@@ -6,6 +6,7 @@ import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import BarChart from "@/components/charts/BarChart";
 import {
+  CurrentActiveSessionsTable,
   DailyScheduleTable,
   DashboardSectionLink,
   SubscriptionDonut,
@@ -52,6 +53,17 @@ export default function ManagementDashboard({ initialData }) {
 
       <StatsGrid items={dashboard.stats} variant="compact" />
 
+      {/* الفعاليات الجارية حالياً */}
+      <SectionCard
+        title="الفعاليات الجارية حالياً (مباشر)"
+        subtitle="الأنشطة والخطط التي تُجرى الآن وعدد اللاعبين الحاضرين بها"
+        action={<DashboardSectionLink href="/management/schedule">جدول الدوام</DashboardSectionLink>}
+        className="min-h-[180px]"
+        contentClassName="px-5 pb-5"
+      >
+        <CurrentActiveSessionsTable sessions={dashboard.currentActiveSessions} />
+      </SectionCard>
+
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <SectionCard
           title="أكثر الورديات ازدحاماً"
@@ -85,7 +97,6 @@ export default function ManagementDashboard({ initialData }) {
       >
         <DailyScheduleTable sessions={dashboard.todaySessions} />
       </SectionCard>
-
     </div>
   );
 }
