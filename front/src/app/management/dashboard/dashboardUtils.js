@@ -104,18 +104,28 @@ export function createTodaySchedule(response, selectedBranchId = "all", now = ne
 }
 
 /**
- * Creates the weekly scheduled-session chart from backend schedule data.
+ * Creates the shift attendance bar chart data from the new report API.
+ * Sorts by attendance and returns the top 7 busiest shifts.
  */
-export function createWeeklyScheduleChart(response, selectedBranchId = "all") {
-  const payload = getSchedulePayload(response);
+export function createShiftAttendanceChart(response) {
+  const data = response?.data?.records || [];
+  
+  // Aggregate data by day + shift to combine branches
+  const grouped = new Map();
+  data.forEach((record) => {
+    const key = `${record.day_name} - ${record.shift_name}`;
+    const count = record.attended_players_count || 0;
+    grouped.set(key, (grouped.get(key) || 0) + count);
+  });
 
-  return {
-    labels: SCHEDULE_DAYS.map((day) => day.label.replace(/^ال/, "")),
-    yellow: SCHEDULE_DAYS.map((day) => {
-      const sessions = Array.isArray(payload[day.apiKey]) ? payload[day.apiKey] : [];
-      return sessions.filter((session) => belongsToBranch(session, selectedBranchId)).length;
-    }),
-  };
+  const aggregatedData = Array.from(grouped.entries()).map(([label, value]) => ({
+    label,
+    value,
+  }));
+
+  const sortedData = aggregatedData.sort((a, b) => b.value - a.value);
+  
+  return sortedData.slice(0, 7);
 }
 
 /**
@@ -156,8 +166,61 @@ export function createDashboardStats({
   coaches,
   subscriptions,
   todaySessions,
+  sseStats,
   now = new Date(),
 }) {
+  // Use SSE data if available
+  if (sseStats) {
+    return [
+      {
+        title: "الأعضاء النشطين",
+        value: (sseStats.total_active_subscribed_members || 0).toLocaleString("ar"),
+        helper: "مشتركون حالياً",
+        tone: "yellow",
+        iconKey: "members",
+        compact: true,
+        href: "/management/members",
+      },
+      {
+        title: "لاعبون متواجدون",
+        value: (sseStats.realtime_training_players_count || 0).toLocaleString("ar"),
+        helper: "يتدربون الآن",
+        tone: "cyan",
+        iconKey: "coaches",
+        compact: true,
+        href: "/management/attendance",
+      },
+      {
+        title: "خزائن متاحة",
+        value: (sseStats.free_assigned_player_lockers_count || 0).toLocaleString("ar"),
+        helper: "غير محجوزة",
+        tone: "green",
+        iconKey: "subscriptions",
+        compact: true,
+        href: "/management/lockers",
+      },
+      {
+        title: "تنتهي قريباً",
+        value: (sseStats.expiring_subscriptions_count || 0).toLocaleString("ar"),
+        helper: "اشتراكات",
+        tone: "orange",
+        iconKey: "expiring",
+        compact: true,
+        href: "/management/subscriptions",
+      },
+      {
+        title: "حصص نشطة",
+        value: (sseStats.current_active_session_plans?.length || 0).toLocaleString("ar"),
+        helper: "حالياً",
+        tone: "blue",
+        iconKey: "schedule",
+        compact: true,
+        href: "/management/schedule",
+      },
+    ];
+  }
+
+  // Fallback to client-side calculated stats if SSE is not provided yet or fails
   const activeSubscriptions = subscriptions.filter(
     (subscription) => subscription.status === "active",
   );

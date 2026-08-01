@@ -4,6 +4,7 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
+import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import { memberSchema } from "@/lib/validations/membersSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
@@ -12,6 +13,19 @@ import {
   MEMBER_INITIAL_FORM as initialForm,
   RELATION_OPTIONS as relationOptions,
 } from "./memberConstants";
+
+function calculateAgeFromDob(dobString) {
+  if (!dobString) return undefined;
+  const birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime())) return undefined;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 0 ? age : undefined;
+}
 
 export { MEMBER_INITIAL_FORM as memberInitialForm } from "./memberConstants";
 export function MemberForm({
@@ -57,12 +71,8 @@ export function MemberForm({
         ]
       : [];
 
-    const enteredAge =
-      form.age !== "" && form.age !== null && form.age !== undefined ? Number(form.age) : undefined;
-    let calculatedDob = form.dob || null;
-    if (enteredAge && !calculatedDob) {
-      calculatedDob = `${new Date().getFullYear() - enteredAge}-01-01`;
-    }
+    const dobValue = form.dob ? form.dob.trim() : "";
+    const computedAge = calculateAgeFromDob(dobValue);
 
     const validationData = {
       first_name: form.first_name.trim(),
@@ -70,8 +80,8 @@ export function MemberForm({
       mobile_country_code: form.mobile_country_code.trim(),
       mobile: form.mobile.trim(),
       gender: form.gender,
-      dob: calculatedDob,
-      age: enteredAge,
+      dob: dobValue,
+      age: computedAge,
       branch_id: Number(form.branch_id),
       emergency_name: form.emergency_name.trim(),
       emergency_relation: form.emergency_relation,
@@ -121,8 +131,8 @@ export function MemberForm({
         mobile_country_code: form.mobile_country_code.trim(),
         mobile: form.mobile.trim(),
         gender: form.gender,
-        dob: calculatedDob,
-        age: enteredAge,
+        dob: dobValue,
+        age: computedAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
         plans: plansPayload,
@@ -134,8 +144,8 @@ export function MemberForm({
         mobile_country_code: form.mobile_country_code.trim(),
         mobile: form.mobile.trim(),
         gender: form.gender,
-        dob: calculatedDob,
-        age: enteredAge,
+        dob: dobValue,
+        age: computedAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
       });
@@ -206,21 +216,17 @@ export function MemberForm({
           />
         </label>
 
-        <label className="block text-right text-sm text-app-muted-light">
-          العمر *
-          <input
-            value={form.age}
-            onChange={(event) => updateField("age", event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-right outline-none focus:border-app-yellow/70 bg-app-card-soft text-white"
-            type="number"
-            min="4"
-            required
-            placeholder="مثال: 25"
+        <div>
+          <label className="block text-right text-sm text-app-muted-light mb-2">
+            تاريخ الميلاد *
+          </label>
+          <DatePickerSmart
+            value={form.dob}
+            onChange={(val) => updateField("dob", val)}
+            placeholder="dd/mm/yyyy"
+            error={errors && errors.dob}
           />
-          {errors && errors.age && (
-            <span className="text-app-red text-xs mt-1 block text-right w-full">{errors.age}</span>
-          )}
-        </label>
+        </div>
       </div>
 
       <label className="block text-right text-sm text-app-muted-light">

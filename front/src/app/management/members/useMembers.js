@@ -256,7 +256,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       mobile_country_code: mobileCountryCode,
       mobile: mobile,
       gender: gender,
-      dob: dob,
+      dob: dob ? dob.split("T")[0] : "",
       age: age,
       branch_id: String(selectedMember.branch_id || ""),
       emergency_name: contact?.name || "",

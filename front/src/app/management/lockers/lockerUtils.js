@@ -5,10 +5,23 @@ import { LOCKER_OCCUPIED_STATUSES } from "./lockerConstants";
  * Extracts a collection from the supported backend response shapes.
  */
 export function getLockerCollection(response) {
+  if (Array.isArray(response?.data?.lockers)) return response.data.lockers;
+  if (Array.isArray(response?.data?.data?.lockers)) return response.data.data.lockers;
   if (Array.isArray(response?.data?.data)) return response.data.data;
   if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.lockers)) return response.lockers;
   if (Array.isArray(response)) return response;
   return [];
+}
+
+/**
+ * Extracts a summary object from the supported backend response shapes.
+ */
+export function getLockerSummary(response) {
+  if (response?.data?.summary) return response.data.summary;
+  if (response?.data?.data?.summary) return response.data.data.summary;
+  if (response?.summary) return response.summary;
+  return null;
 }
 
 /**
@@ -134,6 +147,7 @@ export function getLockerValidationErrors(validationError) {
 export function createLockerUpdateInitialValues(locker) {
   return {
     locker_number: String(locker?.locker_number || ""),
+    key_number: locker?.key_number ? String(locker.key_number) : "",
     status: locker?.status || "available",
     holder_type: locker?.holder_type || "",
     holder_id: locker?.holder_id ? String(locker.holder_id) : "",
@@ -147,6 +161,7 @@ export function createLockerUpdateInitialValues(locker) {
 export function createLockerUpdatePayload(form) {
   const payload = {
     locker_number: form.locker_number.trim(),
+    key_number: form.key_number?.trim() || null,
     status: form.status,
   };
 

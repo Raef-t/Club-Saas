@@ -8,7 +8,7 @@ import {
 } from "@/lib/api/lockersApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { createLockerQueryParams, filterLockers, getLockerCollection } from "./lockerUtils";
+import { createLockerQueryParams, filterLockers, getLockerCollection, getLockerSummary } from "./lockerUtils";
 
 /**
  * Coordinates locker list filters and reservation lifecycle actions.
@@ -41,6 +41,10 @@ export function useLockers({ initialLockers } = {}) {
 
   const allLockers = useMemo(
     () => getLockerCollection(lockersResponse || initialLockers),
+    [initialLockers, lockersResponse],
+  );
+  const lockerSummary = useMemo(
+    () => getLockerSummary(lockersResponse || initialLockers),
     [initialLockers, lockersResponse],
   );
   const lockers = useMemo(
@@ -127,6 +131,7 @@ export function useLockers({ initialLockers } = {}) {
     statusFilter,
     setStatusFilter,
     lockers,
+    lockerSummary,
     lockersErrorMessage: lockersError
       ? getApiErrorMessage(lockersError, "تعذر تحميل الخزائن.")
       : "",

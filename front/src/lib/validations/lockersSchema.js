@@ -6,6 +6,7 @@ export const lockerSchema = z.object({
     .string({ required_error: "رقم الخزانة مطلوب" })
     .min(1, "رقم الخزانة مطلوب")
     .max(50, "رقم الخزانة طويل جداً"),
+  key_number: z.string().optional().nullable(),
   branch_id: z
     .number({ invalid_type_error: "الفرع مطلوب" })
     .positive("الفرع مطلوب")
@@ -17,6 +18,7 @@ export const updateLockerSchema = z.object({
     .string({ required_error: "رقم الخزانة مطلوب" })
     .min(1, "رقم الخزانة مطلوب")
     .max(50, "رقم الخزانة طويل جداً"),
+  key_number: z.string().optional().nullable(),
   status: z.string({ required_error: "الحالة مطلوبة" }).min(1, "الحالة مطلوبة"),
   holder_type: z.string().optional(),
   holder_id: z.union([z.number(), z.string().transform(Number)]).optional(),
@@ -40,11 +42,13 @@ export const reserveLockerSchema = z.object({
 
 export const initialLockerForm = {
   locker_number: "",
+  key_number: "",
   branch_id: "",
 };
 
 export const initialUpdateLockerForm = {
   locker_number: "",
+  key_number: "",
   status: "available",
   holder_type: "",
   holder_id: "",

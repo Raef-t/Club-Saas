@@ -106,6 +106,16 @@ export default function LockerUpdateForm({
           maxLength={50}
         />
 
+        <Field
+          label="رقم المفتاح"
+          type="text"
+          value={form.key_number}
+          onChange={(event) => updateField("key_number", event.target.value)}
+          error={errors.key_number}
+          dir="ltr"
+          maxLength={50}
+        />
+
         <div className="flex flex-col gap-1.5 text-start">
           <label className="flex items-center gap-1 text-sm font-medium text-white">
             الحالة <span className="text-app-red">*</span>

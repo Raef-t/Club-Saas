@@ -5,6 +5,7 @@ import {
   useFreezeSubscriptionMutation,
   useUnfreezeSubscriptionMutation,
   useCancelSubscriptionMutation,
+  useDeletePlayerSubscriptionMutation,
 } from "@/lib/api/playerSubscriptionsApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useToast } from "@/components/ui/Toast";
@@ -28,6 +29,8 @@ export function useSubscriptions({ initialData } = {}) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const queryParams = useMemo(() => {
     return branchFilter !== "all" ? { branch_id: branchFilter } : {};
@@ -50,6 +53,7 @@ export function useSubscriptions({ initialData } = {}) {
   const [freezeSubscription, { isLoading: isFreezing }] = useFreezeSubscriptionMutation();
   const [unfreezeSubscription, { isLoading: isUnfreezing }] = useUnfreezeSubscriptionMutation();
   const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
+  const [deletePlayerSubscription, { isLoading: isDeleting }] = useDeletePlayerSubscriptionMutation();
 
   const subscriptions = useMemo(
     () => getSubscriptionRows(data || initialData?.subscriptions),
@@ -179,6 +183,28 @@ export function useSubscriptions({ initialData } = {}) {
     }
   }
 
+  function handleDelete(subscription) {
+    setItemToDelete(subscription);
+    setDeleteConfirmOpen(true);
+  }
+
+  function closeDeleteConfirm() {
+    setDeleteConfirmOpen(false);
+    setItemToDelete(null);
+  }
+
+  async function confirmDelete() {
+    if (!itemToDelete) return;
+    try {
+      await deletePlayerSubscription(itemToDelete.id).unwrap();
+      toast.success("تم حذف الاشتراك بنجاح!");
+    } catch {
+      toast.error("تعذر حذف الاشتراك. حاول مرة أخرى.");
+    } finally {
+      closeDeleteConfirm();
+    }
+  }
+
   return {
     search,
     setSearch,
@@ -205,9 +231,15 @@ export function useSubscriptions({ initialData } = {}) {
     isFreezing,
     isUnfreezing,
     isCancelling,
+    isDeleting,
+    deleteConfirmOpen,
+    itemToDelete,
     handleFreeze,
     handleUnfreeze,
     handleCancel,
+    handleDelete,
+    closeDeleteConfirm,
+    confirmDelete,
     closeDrawer,
   };
 }

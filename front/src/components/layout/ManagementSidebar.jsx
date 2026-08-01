@@ -2,8 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft } from "@/components/icons/Icons";
+import {
+  ChevronLeft,
+  PlusIcon,
+  TagIcon,
+  DumbbellIcon,
+  CalendarIcon,
+} from "@/components/icons/Icons";
 import Image from "next/image";
+
+const quickActions = [
+  { label: "إضافة لاعب", href: "/management/members/create", icon: PlusIcon },
+  { label: "فعالية", href: "/management/subscription-plans/create", icon: TagIcon },
+  { label: "نشاط", href: "/management/activities/create", icon: DumbbellIcon },
+  { label: "برنامج الدوام", href: "/management/schedule", icon: CalendarIcon },
+];
 
 const navGroups = [
   {
@@ -16,7 +29,7 @@ const navGroups = [
       { title: "المشتركين", href: "/management/members" },
       { title: "الاشتراكات", href: "/management/subscriptions" },
       { title: "الخزائن", href: "/management/lockers" },
-      { title: "الحضور والغياب", href: "/management/attendance" },
+      { title: "الحضور المغادرة", href: "/management/attendance" },
       { title: "جدول الدوام", href: "/management/schedule" },
     ],
   },
@@ -51,7 +64,27 @@ export default function ManagementSidebar({ className }) {
         <Image src={"/img/test_logo.png"} alt="Logo" width={159} height={59} />
       </div>
 
-      <h3 className="mt-6 text-center text-base font-medium text-app-text">نظام الإدارة</h3>
+      <h3 className="mt-6 text-center text-base font-medium text-app-text">إجراءات سريعة</h3>
+      <div className="mt-5 grid grid-cols-4 gap-1.5 px-1 max-w-full">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          const actionActive = pathname === action.href;
+          return (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="group flex flex-col items-center gap-2 text-center text-[11px] leading-tight text-app-text"
+            >
+              <span
+                className={`grid size-[38px] place-items-center rounded-full transition ${actionActive ? "border border-app-yellow bg-app-yellow-soft text-app-yellow" : "bg-app-card-soft text-app-muted-light group-hover:bg-app-line-soft group-hover:text-app-text"}`}
+              >
+                <Icon className="size-5" />
+              </span>
+              <span>{action.label}</span>
+            </Link>
+          );
+        })}
+      </div>
 
       <nav className="mx-auto mt-8 flex w-full max-w-[250px] flex-col gap-6 px-1">
         {navGroups.map((group) => (

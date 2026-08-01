@@ -5,13 +5,15 @@ import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetPlayerSubscriptionsQuery } from "@/lib/api/playerSubscriptionsApi";
 import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
+import { useGetDashboardStatsStreamQuery } from "@/lib/api/dashboardApi";
+import { useGetShiftAttendanceReportQuery } from "@/lib/api/reportsApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import {
   createDashboardStats,
   createSubscriptionMix,
   createTodaySchedule,
-  createWeeklyScheduleChart,
+  createShiftAttendanceChart,
   getDashboardCollection,
 } from "./dashboardUtils";
 
@@ -28,6 +30,8 @@ export function useManagementDashboard({ initialData = {} } = {}) {
   const coachesQuery = useGetCoachesQuery(queryParams);
   const subscriptionsQuery = useGetPlayerSubscriptionsQuery(queryParams);
   const scheduleQuery = useGetScheduleQuery(selectedBranchId);
+  const sseStatsQuery = useGetDashboardStatsStreamQuery(queryParams);
+  const shiftAttendanceQuery = useGetShiftAttendanceReportQuery(queryParams);
 
   const members = useMemo(
     () =>
@@ -65,15 +69,16 @@ export function useManagementDashboard({ initialData = {} } = {}) {
         coaches,
         subscriptions,
         todaySessions,
+        sseStats: sseStatsQuery.data,
       }),
-    [coaches, members, subscriptions, todaySessions],
+    [coaches, members, subscriptions, todaySessions, sseStatsQuery.data],
   );
-  const scheduleChart = useMemo(
-    () => createWeeklyScheduleChart(scheduleResponse, selectedBranchId),
-    [scheduleResponse, selectedBranchId],
+  const shiftChart = useMemo(
+    () => createShiftAttendanceChart(shiftAttendanceQuery.currentData),
+    [shiftAttendanceQuery.currentData],
   );
   const subscriptionMix = useMemo(() => createSubscriptionMix(subscriptions), [subscriptions]);
-  const queries = [membersQuery, coachesQuery, subscriptionsQuery, scheduleQuery];
+  const queries = [membersQuery, coachesQuery, subscriptionsQuery, scheduleQuery, shiftAttendanceQuery];
   const hasInitialData = Object.values(initialData).some(Boolean);
 
   /**
@@ -85,7 +90,7 @@ export function useManagementDashboard({ initialData = {} } = {}) {
 
   return {
     stats,
-    scheduleChart,
+    shiftChart,
     subscriptionMix,
     todaySessions,
     isLoading: !hasInitialData && queries.some((query) => query.isLoading),

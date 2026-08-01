@@ -8,6 +8,8 @@ import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import Drawer from "@/components/ui/Drawer";
+import RowActions from "@/components/ui/RowActions";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { FilterIcon, SearchIcon, PlusIcon } from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
@@ -15,7 +17,7 @@ import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { formatSubscriptionMoney } from "./subscriptionUtils";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) minmax(180px,1.1fr) 88px 128px 88px 88px 88px";
+const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) minmax(160px,1fr) 88px 128px 88px 90px";
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -46,9 +48,15 @@ export default function SubscriptionsClient({ initialData }) {
     isFreezing,
     isUnfreezing,
     isCancelling,
+    isDeleting,
+    deleteConfirmOpen,
+    itemToDelete,
     handleFreeze,
     handleUnfreeze,
     handleCancel,
+    handleDelete,
+    closeDeleteConfirm,
+    confirmDelete,
     closeDrawer,
   } = useSubscriptions({ initialData });
 
@@ -117,8 +125,21 @@ export default function SubscriptionsClient({ initialData }) {
         align: "center",
         render: (value) => <SubscriptionStatusBadge status={value} />,
       },
+      {
+        key: "actions",
+        label: "الإجراءات",
+        align: "center",
+        render: (_, subscription) => (
+          <RowActions
+            disabled={isDeleting}
+            onEdit={() => setSelectedSubscriptionId(subscription.id)}
+            editTitle="عرض وإدارة الاشتراك"
+            onDelete={() => handleDelete(subscription)}
+          />
+        ),
+      },
     ],
-    [],
+    [isDeleting, handleDelete, setSelectedSubscriptionId],
   );
 
   const branchOptions = useMemo(
@@ -244,6 +265,15 @@ export default function SubscriptionsClient({ initialData }) {
           isCancelling={isCancelling}
         />
       </Drawer>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        onConfirm={confirmDelete}
+        title="تأكيد حذف الاشتراك"
+        message={`هل أنت متأكد من رغبتك في حذف الاشتراك${itemToDelete?.member?.person?.full_name ? ` الخاص برقم العضوية (${itemToDelete.member.member_number || itemToDelete.id})` : ""}؟ لا يمكن التراجع عن هذا الإجراء.`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export default function AttendanceClient({ initialBranches }) {
     <div className="space-y-6" dir="rtl">
       <PageHeader
         eyebrow="إدارة النادي"
-        title="الحضور والانصراف"
+        title="الحضور والمغادرة"
         subtitle="مسح بطاقة العضو، التحقق من اشتراكاته، وتأكيد خصم الجلسة."
       />
 

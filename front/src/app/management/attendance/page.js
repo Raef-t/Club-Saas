@@ -3,7 +3,7 @@ import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
-  title: "الحضور والانصراف | TechnoGYM",
+  title: "الحضور و المغادرة | TechnoGYM",
 };
 
 export default async function AttendancePage() {
