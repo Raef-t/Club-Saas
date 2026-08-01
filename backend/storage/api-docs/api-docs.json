@@ -21028,18 +21028,6 @@
                                                         "type": "string",
                                                         "example": "25487965"
                                                     },
-                                                    "start_date": {
-                                                        "type": "string",
-                                                        "format": "date",
-                                                        "example": "2026-08-01",
-                                                        "nullable": true
-                                                    },
-                                                    "end_date": {
-                                                        "type": "string",
-                                                        "format": "date",
-                                                        "example": "2026-12-31",
-                                                        "nullable": true
-                                                    },
                                                     "max_subscribers": {
                                                         "type": "integer",
                                                         "example": 50
@@ -21110,7 +21098,6 @@
                                 "required": [
                                     "branch_id",
                                     "name",
-                                    "type",
                                     "base_price"
                                 ],
                                 "properties": {
@@ -21123,31 +21110,6 @@
                                         "description": "اسم الخطة",
                                         "type": "string",
                                         "example": "الاشتراك الذهبي"
-                                    },
-                                    "type": {
-                                        "description": "نوع الخطة: fixed_period (اشتراك بفترة زمنية محددة مثل شهر)، session_based (اشتراك يعتمد على عدد الجلسات)",
-                                        "type": "string",
-                                        "example": "fixed_period",
-                                        "enum": [
-                                            "fixed_period",
-                                            "session_based"
-                                        ]
-                                    },
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2026-08-01",
-                                        "nullable": true
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2026-12-31",
-                                        "nullable": true
-                                    },
-                                    "duration_days": {
-                                        "type": "integer",
-                                        "example": 30
                                     },
                                     "session_count": {
                                         "type": "integer",
@@ -21261,18 +21223,6 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
-                                                },
-                                                "start_date": {
-                                                    "type": "string",
-                                                    "format": "date",
-                                                    "example": "2026-08-01",
-                                                    "nullable": true
-                                                },
-                                                "end_date": {
-                                                    "type": "string",
-                                                    "format": "date",
-                                                    "example": "2026-12-31",
-                                                    "nullable": true
                                                 },
                                                 "max_subscribers": {
                                                     "type": "integer",
@@ -21455,18 +21405,6 @@
                                                     "type": "string",
                                                     "example": "25487965"
                                                 },
-                                                "start_date": {
-                                                    "type": "string",
-                                                    "format": "date",
-                                                    "example": "2026-08-01",
-                                                    "nullable": true
-                                                },
-                                                "end_date": {
-                                                    "type": "string",
-                                                    "format": "date",
-                                                    "example": "2026-12-31",
-                                                    "nullable": true
-                                                },
                                                 "max_subscribers": {
                                                     "type": "integer",
                                                     "example": 50
@@ -21570,31 +21508,6 @@
                                         "description": "اسم الخطة",
                                         "type": "string",
                                         "example": "الاشتراك الماسي"
-                                    },
-                                    "type": {
-                                        "description": "نوع الخطة: fixed_period (اشتراك بفترة زمنية محددة مثل شهر)، session_based (اشتراك يعتمد على عدد الجلسات)",
-                                        "type": "string",
-                                        "example": "fixed_period",
-                                        "enum": [
-                                            "fixed_period",
-                                            "session_based"
-                                        ]
-                                    },
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2026-08-01",
-                                        "nullable": true
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2026-12-31",
-                                        "nullable": true
-                                    },
-                                    "duration_days": {
-                                        "type": "integer",
-                                        "example": 30
                                     },
                                     "session_count": {
                                         "type": "integer",
@@ -21708,18 +21621,6 @@
                                                 "subscription_number": {
                                                     "type": "string",
                                                     "example": "25487965"
-                                                },
-                                                "start_date": {
-                                                    "type": "string",
-                                                    "format": "date",
-                                                    "example": "2026-08-01",
-                                                    "nullable": true
-                                                },
-                                                "end_date": {
-                                                    "type": "string",
-                                                    "format": "date",
-                                                    "example": "2026-12-31",
-                                                    "nullable": true
                                                 },
                                                 "max_subscribers": {
                                                     "type": "integer",
@@ -22303,6 +22204,66 @@
                                                                 "type": "string",
                                                                 "example": "0501234567"
                                                             },
+                                                            "contact_persons": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1,
+                                                                            "nullable": true
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string",
+                                                                            "example": "أبو محمد"
+                                                                        },
+                                                                        "phone_number": {
+                                                                            "type": "string",
+                                                                            "example": "0501234567"
+                                                                        },
+                                                                        "relation": {
+                                                                            "type": "string",
+                                                                            "example": "أب",
+                                                                            "nullable": true
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "absence_period": {
+                                                                "properties": {
+                                                                    "last_attendance_date": {
+                                                                        "type": "string",
+                                                                        "example": "2026-06-15 17:30:00",
+                                                                        "nullable": true
+                                                                    },
+                                                                    "years": {
+                                                                        "type": "integer",
+                                                                        "example": 0,
+                                                                        "nullable": true
+                                                                    },
+                                                                    "months": {
+                                                                        "type": "integer",
+                                                                        "example": 1,
+                                                                        "nullable": true
+                                                                    },
+                                                                    "days": {
+                                                                        "type": "integer",
+                                                                        "example": 16,
+                                                                        "nullable": true
+                                                                    },
+                                                                    "total_days": {
+                                                                        "type": "integer",
+                                                                        "example": 46,
+                                                                        "nullable": true
+                                                                    },
+                                                                    "formatted": {
+                                                                        "type": "string",
+                                                                        "example": "0 سنة، 1 شهر، 16 يوم"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
                                                             "branch_name": {
                                                                 "type": "string",
                                                                 "example": "الفرع الرئيسي"
@@ -22386,8 +22347,8 @@
                 "tags": [
                     "Reports"
                 ],
-                "summary": "🕒 تقرير سعة الحصص والخطط حسب الفترة الزمنية (Time-Slot Capacity Report)",
-                "description": "استرجاع تقرير بالخطط ونماذج الحصص الواقعة في فترة وقتية محددة (مثل من 10:00 إلى 14:00) مع إظهار عدد المشتركين النشطين الحاليين في كل خطة وعدد الحاضرين.",
+                "summary": "🕒 تقرير سعة الحصص والخطط مجمعة حسب الأنشطة والمدربين (Time-Slot Capacity Report by Activity)",
+                "description": "استرجاع تقرير بالسعة والاستيعاب مجمعاً حسب النشاط الرياضي، المدرب، والخطط مع أوقات الحصص وعدد المشتركين النشطين الحاليين.",
                 "operationId": "e2b15b18d28e6ff613b91ce8d7fbee9b",
                 "parameters": [
                     {
@@ -22441,6 +22402,16 @@
                             "type": "integer",
                             "example": 5
                         }
+                    },
+                    {
+                        "name": "activity_id",
+                        "in": "query",
+                        "description": "تصفية حسب نشاط رياضي محدد",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
                     }
                 ],
                 "responses": {
@@ -22462,13 +22433,17 @@
                                             "properties": {
                                                 "summary": {
                                                     "properties": {
-                                                        "total_matching_sessions": {
-                                                            "type": "integer",
-                                                            "example": 8
-                                                        },
-                                                        "total_unique_plans": {
+                                                        "total_activities": {
                                                             "type": "integer",
                                                             "example": 3
+                                                        },
+                                                        "total_coaches": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "total_plans": {
+                                                            "type": "integer",
+                                                            "example": 8
                                                         },
                                                         "total_active_subscribers": {
                                                             "type": "integer",
@@ -22477,53 +22452,93 @@
                                                     },
                                                     "type": "object"
                                                 },
-                                                "records": {
+                                                "activities": {
                                                     "type": "array",
                                                     "items": {
                                                         "properties": {
-                                                            "session_template_id": {
+                                                            "activity_id": {
                                                                 "type": "integer",
-                                                                "example": 10
+                                                                "example": 1
                                                             },
-                                                            "plan_id": {
-                                                                "type": "integer",
-                                                                "example": 5
-                                                            },
-                                                            "plan_name": {
+                                                            "activity_name": {
                                                                 "type": "string",
-                                                                "example": "اشتراك لياقة صباحي"
+                                                                "example": "كرة قدم"
                                                             },
-                                                            "plan_type": {
-                                                                "type": "string",
-                                                                "example": "monthly"
-                                                            },
-                                                            "coaches_names": {
-                                                                "type": "string",
-                                                                "example": "الكابتن طارق علي"
-                                                            },
-                                                            "day_of_week": {
-                                                                "type": "integer",
-                                                                "example": 0
-                                                            },
-                                                            "day_name": {
-                                                                "type": "string",
-                                                                "example": "الأحد"
-                                                            },
-                                                            "start_time": {
-                                                                "type": "string",
-                                                                "example": "10:00:00"
-                                                            },
-                                                            "end_time": {
-                                                                "type": "string",
-                                                                "example": "11:30:00"
-                                                            },
-                                                            "facility_name": {
-                                                                "type": "string",
-                                                                "example": "صالة اللياقة الرئيسية"
-                                                            },
-                                                            "active_subscribers_count": {
-                                                                "type": "integer",
-                                                                "example": 20
+                                                            "coaches": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "staff_id": {
+                                                                            "type": "integer",
+                                                                            "example": 2
+                                                                        },
+                                                                        "coach_name": {
+                                                                            "type": "string",
+                                                                            "example": "الكابتن أحمد علي"
+                                                                        },
+                                                                        "staff_activity_id": {
+                                                                            "type": "integer",
+                                                                            "example": 5
+                                                                        },
+                                                                        "plans": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "properties": {
+                                                                                    "plan_id": {
+                                                                                        "type": "integer",
+                                                                                        "example": 10
+                                                                                    },
+                                                                                    "plan_name": {
+                                                                                        "type": "string",
+                                                                                        "example": "اشتراك كرة قدم - المستوى الأول"
+                                                                                    },
+                                                                                    "plan_type": {
+                                                                                        "type": "string",
+                                                                                        "example": "monthly"
+                                                                                    },
+                                                                                    "active_subscribers_count": {
+                                                                                        "type": "integer",
+                                                                                        "example": 15
+                                                                                    },
+                                                                                    "schedules": {
+                                                                                        "type": "array",
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "session_template_id": {
+                                                                                                    "type": "integer",
+                                                                                                    "example": 101
+                                                                                                },
+                                                                                                "day_of_week": {
+                                                                                                    "type": "integer",
+                                                                                                    "example": 0
+                                                                                                },
+                                                                                                "day_name": {
+                                                                                                    "type": "string",
+                                                                                                    "example": "الأحد"
+                                                                                                },
+                                                                                                "start_time": {
+                                                                                                    "type": "string",
+                                                                                                    "example": "16:00:00"
+                                                                                                },
+                                                                                                "end_time": {
+                                                                                                    "type": "string",
+                                                                                                    "example": "17:30:00"
+                                                                                                },
+                                                                                                "facility_name": {
+                                                                                                    "type": "string",
+                                                                                                    "example": "الملعب الرئيسي"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
                                                             }
                                                         },
                                                         "type": "object"

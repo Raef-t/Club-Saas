@@ -42,8 +42,6 @@ class SubscriptionPlanController extends BaseController
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
                             new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                            new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                            new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                             new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                             new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                             new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
@@ -133,14 +131,10 @@ class SubscriptionPlanController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['branch_id', 'name', 'type', 'base_price'],
+            required: ['branch_id', 'name', 'base_price'],
             properties: [
                 new OA\Property(property: 'branch_id', type: 'integer', description: '(مطلوب) معرف الفرع', example: 1),
                 new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الذهبي'),
-                new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], description: 'نوع الخطة: fixed_period (اشتراك بفترة زمنية محددة مثل شهر)، session_based (اشتراك يعتمد على عدد الجلسات)', example: 'fixed_period'),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
-                new OA\Property(property: 'duration_days', type: 'integer', example: 30),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'sessions_per_week', type: 'integer', nullable: true, example: 3),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
@@ -188,8 +182,6 @@ class SubscriptionPlanController extends BaseController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
@@ -232,8 +224,6 @@ class SubscriptionPlanController extends BaseController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
@@ -269,10 +259,6 @@ class SubscriptionPlanController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الماسي'),
-                new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], description: 'نوع الخطة: fixed_period (اشتراك بفترة زمنية محددة مثل شهر)، session_based (اشتراك يعتمد على عدد الجلسات)', example: 'fixed_period'),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
-                new OA\Property(property: 'duration_days', type: 'integer', example: 30),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'sessions_per_week', type: 'integer', nullable: true, example: 3),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 400.00),
@@ -320,8 +306,6 @@ class SubscriptionPlanController extends BaseController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
