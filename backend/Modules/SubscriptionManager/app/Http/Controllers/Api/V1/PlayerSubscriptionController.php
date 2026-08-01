@@ -79,6 +79,7 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'member_id', type: 'integer', example: 1),
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                new OA\Property(property: 'months_count', type: 'integer', example: 1, description: 'عدد الأشهر للاشتراك (افتراضياً 1)'),
                 new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 50.00, description: 'المبلغ المدفوع فوراً (أدخل 0 إذا لم يتم الدفع)'),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01', description: 'تاريخ بداية الاشتراك'),
                 new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات إضافية', description: 'ملاحظات (اختياري)'),

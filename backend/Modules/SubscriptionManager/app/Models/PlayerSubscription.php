@@ -11,6 +11,7 @@ class PlayerSubscription extends Model
     protected $fillable = [
         'member_id',
         'plan_id',
+        'months_count',
         'total_amount',
         'paid_amount',
         'remaining_amount',
@@ -22,6 +23,7 @@ class PlayerSubscription extends Model
     ];
 
     protected $casts = [
+        'months_count' => 'integer',
         'start_date' => 'date:Y-m-d',
         'end_date' => 'date:Y-m-d',
         'paid_amount' => 'decimal:2',

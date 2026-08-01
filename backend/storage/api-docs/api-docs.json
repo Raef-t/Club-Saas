@@ -19610,6 +19610,11 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "months_count": {
+                                        "description": "عدد الأشهر للاشتراك (افتراضياً 1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "paid_amount": {
                                         "description": "المبلغ المدفوع فوراً (أدخل 0 إذا لم يتم الدفع)",
                                         "type": "number",

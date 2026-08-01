@@ -22,6 +22,7 @@ class PlayerSubscriptionResource extends JsonResource
                 ] : null,
             ] : null,
             'plan' => new SubscriptionPlanResource($this->whenLoaded('plan')),
+            'months_count' => $this->months_count ?? 1,
             'start_date' => $this->start_date ? (\Illuminate\Support\Carbon::parse($this->start_date)->format('Y-m-d')) : null,
             'end_date' => $this->end_date ? (\Illuminate\Support\Carbon::parse($this->end_date)->format('Y-m-d')) : null,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus ? $this->status->value : $this->status,
