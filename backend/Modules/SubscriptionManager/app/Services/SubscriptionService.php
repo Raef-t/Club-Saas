@@ -111,6 +111,7 @@ class SubscriptionService
             }
 
             // 3. Financials
+            $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
             $totalAmount = $plan->base_price;
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
 
@@ -139,6 +140,7 @@ class SubscriptionService
                 'member_id' => $memberId,
                 'coach_id' => null,
                 'plan_id' => $plan->id,
+                'months_count' => $monthsCount,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
@@ -155,10 +157,14 @@ class SubscriptionService
                 $activityId = $planActivity->activity_id;
                 $coachId = $planActivity->coach_id;
 
+                $sessionsAllocated = !is_null($plan->session_count)
+                    ? ($plan->session_count * $monthsCount)
+                    : null;
+
                 $subscription->items()->create([
                     'activity_id' => $activityId,
                     'coach_id' => $coachId,
-                    'sessions_allocated' => $plan->session_count,
+                    'sessions_allocated' => $sessionsAllocated,
                     'is_unlimited' => is_null($plan->session_count),
                 ]);
             }
@@ -661,6 +667,8 @@ class SubscriptionService
 
             $createdSubscriptions = collect();
 
+            $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
+
             // Create individual PlayerSubscriptions for each plan in the offer
             foreach ($offer->plans as $plan) {
                 $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
@@ -672,6 +680,7 @@ class SubscriptionService
                     'member_id' => $memberId,
                     'coach_id' => null,
                     'plan_id' => $plan->id,
+                    'months_count' => $monthsCount,
                     'offer_id' => $offer->id,
                     'total_amount' => 0, // Zero because it's part of the offer
                     'paid_amount' => 0,
@@ -683,10 +692,14 @@ class SubscriptionService
                 ]);
 
                 foreach ($plan->planActivities as $planActivity) {
+                    $sessionsAllocated = !is_null($plan->session_count)
+                        ? ($plan->session_count * $monthsCount)
+                        : null;
+
                     $subscription->items()->create([
                         'activity_id' => $planActivity->activity_id,
                         'coach_id' => $planActivity->coach_id,
-                        'sessions_allocated' => $plan->session_count,
+                        'sessions_allocated' => $sessionsAllocated,
                         'is_unlimited' => is_null($plan->session_count),
                     ]);
                 }
