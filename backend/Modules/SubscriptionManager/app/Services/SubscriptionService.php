@@ -200,9 +200,7 @@ class SubscriptionService
                     );
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'type' => 'in',
-                        'payable_type' => \Modules\SubscriptionManager\Models\Invoice::class,
-                        'payable_id' => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'safe_id' => null, // No safe involved since money is taken from wallet
                         'amount' => $paidAmount,
                         'payment_method' => 'wallet',
@@ -220,9 +218,7 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'type' => 'in',
-                        'payable_type' => \Modules\SubscriptionManager\Models\Invoice::class,
-                        'payable_id' => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
                         'payment_method' => $options['payment_method'] ?? 'cash',
@@ -381,9 +377,7 @@ class SubscriptionService
                     );
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'type' => 'in',
-                        'payable_type' => \Modules\SubscriptionManager\Models\Invoice::class,
-                        'payable_id' => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'safe_id' => null,
                         'amount' => $amount,
                         'payment_method' => 'wallet',
@@ -401,9 +395,7 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'type' => 'in',
-                        'payable_type' => \Modules\SubscriptionManager\Models\Invoice::class,
-                        'payable_id' => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $amount,
                         'payment_method' => 'cash',
@@ -722,9 +714,7 @@ class SubscriptionService
                     );
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'type' => 'in',
-                        'payable_type' => \Modules\SubscriptionManager\Models\Invoice::class,
-                        'payable_id' => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'safe_id' => null,
                         'amount' => $paidAmount,
                         'payment_method' => 'wallet',
@@ -742,9 +732,7 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'type' => 'in',
-                        'payable_type' => \Modules\SubscriptionManager\Models\Invoice::class,
-                        'payable_id' => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
                         'payment_method' => $options['payment_method'] ?? 'cash',

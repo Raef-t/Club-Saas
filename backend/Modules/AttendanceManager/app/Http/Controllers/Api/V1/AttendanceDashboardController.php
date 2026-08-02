@@ -67,7 +67,7 @@ class AttendanceDashboardController extends BaseController
                     break;
                 }
 
-                $currentVersion = DashboardNotificationService::getBranchStatsVersion($branchId);
+                $currentVersion = DashboardNotificationService::getBranchStatsVersion($branchId) . '_' . now()->format('YmdHi');
 
                 if ($lastVersion === null || $currentVersion !== $lastVersion) {
                     $lastVersion = $currentVersion;

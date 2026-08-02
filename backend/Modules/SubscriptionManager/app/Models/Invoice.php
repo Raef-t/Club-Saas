@@ -48,6 +48,6 @@ class Invoice extends Model
 
     public function payments()
     {
-        return $this->morphMany(Payment::class, 'payable');
+        return $this->hasMany(Payment::class, 'invoice_id');
     }
 }

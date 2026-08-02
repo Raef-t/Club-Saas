@@ -31,11 +31,11 @@ class RecordSubscriptionPayment
         }
 
         // 2. Ensure payment is for an invoice and get it
-        if (trim($payment->payable_type, '\\') !== trim(\Modules\SubscriptionManager\Models\Invoice::class, '\\')) {
+        if (!$payment->invoice_id) {
             return;
         }
 
-        $invoice = DB::table('invoices')->where('id', $payment->payable_id)->first();
+        $invoice = DB::table('invoices')->where('id', $payment->invoice_id)->first();
         if (!$invoice) {
             return;
         }

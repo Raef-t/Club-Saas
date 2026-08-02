@@ -34,4 +34,19 @@ class SessionException extends Model
         // Assuming there is a Staff model in Modules\Core\Models\Staff or somewhere else
         return $this->belongsTo(Staff::class, 'coach_id'); // Fallback: try checking if it exists
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($exception) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
+            }
+        });
+
+        static::deleted(function ($exception) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
+            }
+        });
+    }
 }
