@@ -438,7 +438,7 @@ export default function TimePickerSmart({
                   <button
                     type="button"
                     onClick={() => pickTime(viewTime.hour, viewTime.minute, period)}
-                    className="w-full bg-app-yellow text-app-bg rounded-lg py-2 text-sm font-medium hover:bg-yellow-400 transition"
+                    className="w-full bg-app-yellow text-app-bg rounded-lg py-2 text-sm font-medium transition hover:brightness-95"
                   >
                     تأكيد الوقت
                   </button>

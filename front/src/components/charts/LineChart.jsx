@@ -56,8 +56,8 @@ export default function LineChart({ data, legend }) {
               <stop offset="100%" stopColor="#13AC49" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="chartYellowFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#FCCD03" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#FCCD03" stopOpacity="0" />
+              <stop offset="0%" stopColor="#F2DC2E" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#F2DC2E" stopOpacity="0" />
             </linearGradient>
           </defs>
 

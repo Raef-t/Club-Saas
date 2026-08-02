@@ -13,10 +13,14 @@ describe("coach form utilities", () => {
 
   it("preserves edit values", () => {
     const values = createCoachFormInitialValues({
-      full_name: "Test Coach",
+      first_name: "Test",
+      last_name: "Coach",
+      dob: "1990-01-01",
       branch_ids: [3],
     });
-    expect(values.full_name).toBe("Test Coach");
+    expect(values.first_name).toBe("Test");
+    expect(values.last_name).toBe("Coach");
+    expect(values.dob).toBe("1990-01-01");
     expect(values.branch_ids).toEqual([3]);
   });
 

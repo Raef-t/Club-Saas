@@ -25,7 +25,7 @@ const statIcons = {
 const toneMap = {
   yellow: {
     icon: "bg-app-yellow-soft text-app-yellow",
-    spark: "#d97706",
+    spark: "#F2DC2E",
   },
   green: {
     icon: "bg-[rgba(19,172,73,0.22)] text-app-green",
@@ -120,8 +120,8 @@ export default function StatCard({
       )}
 
       {!compact && (
-        <div className="mt-1 flex items-end justify-between gap-3" dir="ltr">
-          <div className="text-left text-[10px] leading-none text-white">
+        <div className="mt-1 flex items-end justify-between gap-3">
+          <div className="text-start text-[10px] leading-none text-white">
             {change && (
               <div
                 className={`flex items-center gap-1 text-sm font-medium leading-5 ${negative ? "text-app-red" : "text-app-green-2"}`}

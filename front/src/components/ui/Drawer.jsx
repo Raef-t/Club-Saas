@@ -6,8 +6,8 @@ import { XIcon } from "@/components/icons/Icons";
 const sideClass = {
   right: "inset-y-0 right-0 h-full w-full max-w-[460px] translate-x-0",
   left: "inset-y-0 left-0 h-full w-full max-w-[460px] translate-x-0",
-  end: "inset-y-0 right-0 h-full w-full max-w-[460px] translate-x-0",
-  start: "inset-y-0 left-0 h-full w-full max-w-[460px] translate-x-0",
+  end: "inset-y-0 end-0 h-full w-full max-w-[460px] translate-x-0",
+  start: "inset-y-0 start-0 h-full w-full max-w-[460px] translate-x-0",
   bottom: "inset-x-0 bottom-0 max-h-[85vh] w-full rounded-t-2xl",
 };
 

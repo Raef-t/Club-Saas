@@ -198,7 +198,7 @@ export default function ProfileDrawer({ open, onClose }) {
                   onChange={(e) =>
                     updateField("current_password", e.target.value)
                   }
-                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-app-text outline-none transition ${
+                  className={`h-11 w-full rounded-xl border bg-app-card-soft ps-4 pe-12 text-right text-app-text outline-none transition ${
                     fieldErrors.current_password
                       ? "border-app-red focus:border-app-red"
                       : "border-app-line focus:border-app-yellow"
@@ -208,7 +208,7 @@ export default function ProfileDrawer({ open, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition"
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-app-muted-light transition hover:text-app-text"
                 >
                   {showCurrent ? (
                     <EyeOffIcon className="size-4" />
@@ -233,7 +233,7 @@ export default function ProfileDrawer({ open, onClose }) {
                   type={showNew ? "text" : "password"}
                   dir="ltr"
                   onChange={(e) => updateField("new_password", e.target.value)}
-                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-app-text outline-none transition ${
+                  className={`h-11 w-full rounded-xl border bg-app-card-soft ps-4 pe-12 text-right text-app-text outline-none transition ${
                     fieldErrors.new_password
                       ? "border-app-red focus:border-app-red"
                       : "border-app-line focus:border-app-yellow"
@@ -243,7 +243,7 @@ export default function ProfileDrawer({ open, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition"
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-app-muted-light transition hover:text-app-text"
                 >
                   {showNew ? (
                     <EyeOffIcon className="size-4" />
@@ -270,7 +270,7 @@ export default function ProfileDrawer({ open, onClose }) {
                   onChange={(e) =>
                     updateField("new_password_confirmation", e.target.value)
                   }
-                  className={`h-11 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-app-text outline-none transition ${
+                  className={`h-11 w-full rounded-xl border bg-app-card-soft ps-4 pe-12 text-right text-app-text outline-none transition ${
                     fieldErrors.new_password_confirmation
                       ? "border-app-red focus:border-app-red"
                       : "border-app-line focus:border-app-yellow"
@@ -280,7 +280,7 @@ export default function ProfileDrawer({ open, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-app-text transition"
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-app-muted-light transition hover:text-app-text"
                 >
                   {showConfirm ? (
                     <EyeOffIcon className="size-4" />

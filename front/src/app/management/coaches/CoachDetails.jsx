@@ -82,11 +82,7 @@ export default function CoachDetails({
           label="الجنس"
           value={genderLabels[coach.person?.gender] || coach.person?.gender}
         />
-        {/* <DetailItem
-          label="تاريخ الميلاد"
-          value={formatDate(coach.person?.dob)}
-        /> */}
-        <DetailItem label="العمر" value={coach.person?.age ? `${coach.person.age} سنة` : "-"} />
+        <DetailItem label="تاريخ الميلاد" value={formatDate(coach.person?.dob)} />
         <DetailItem
           label="نوع التوظيف"
           value={employmentLabels[coach.employment_type] || coach.employment_type}
@@ -94,8 +90,8 @@ export default function CoachDetails({
         <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
         <DetailItem label="العنوان" value={coach.person?.address} />
         {/* <DetailItem label="البريد الإلكتروني" value={coach.person?.email} /> */}
-        {/* <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} /> */}
-        <DetailItem label="تاريخ الانضمام" value={formatDate(coach.created_at)} />
+        <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} />
+        <DetailItem label="تاريخ المباشرة" value={formatDate(coach.start_date)} />
       </section>
 
       {/* Activities Section */}

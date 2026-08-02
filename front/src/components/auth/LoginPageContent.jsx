@@ -19,7 +19,7 @@ export default function LoginPageContent() {
             <LoginForm />
           </div>
 
-          <section className="hidden text-start lg:mr-24 lg:block">
+          <section className="hidden text-start lg:ms-24 lg:block">
             <p className="text-sm text-app-yellow">TechnoGYM</p>
             <h2 className="mt-4 max-w-xl text-5xl font-semibold leading-tight text-white">
               نظام موحد لإدارة النادي والاشتراكات والتقارير

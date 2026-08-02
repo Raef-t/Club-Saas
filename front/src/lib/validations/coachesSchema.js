@@ -66,44 +66,31 @@ export const coachSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-const requiredCoachNumber = (label, { min = 0, max } = {}) => {
-  let schema = z
-    .union([z.string(), z.number()])
-    .refine(
-      (value) =>
-        String(value).trim() !== "" && Number.isFinite(Number(value)),
-      `${label} مطلوب ويجب أن يكون رقماً صالحاً`,
-    )
-    .transform(Number)
-    .refine((value) => value >= min, `${label} يجب ألا يقل عن ${min}`);
-
-  if (max !== undefined) {
-    schema = schema.refine(
-      (value) => value <= max,
-      `${label} يجب ألا يزيد عن ${max}`,
-    );
-  }
-
-  return schema;
-};
-
 export const coachFormSchema = z.object({
-  full_name: z
-    .string({ required_error: "الاسم الكامل للمدرب مطلوب" })
+  first_name: z
+    .string({ required_error: "الاسم الأول مطلوب" })
     .trim()
-    .min(3, "الاسم يجب أن يكون 3 أحرف على الأقل")
-    .max(100, "الاسم يجب ألا يتجاوز 100 حرف"),
+    .min(1, "الاسم الأول مطلوب")
+    .max(50, "الاسم الأول يجب ألا يتجاوز 50 حرفاً"),
+  last_name: z
+    .string({ required_error: "اسم العائلة مطلوب" })
+    .trim()
+    .min(1, "اسم العائلة مطلوب")
+    .max(50, "اسم العائلة يجب ألا يتجاوز 50 حرفاً"),
   gender: z.enum(["male", "female"], {
     message: "يرجى تحديد الجنس",
   }),
-  age: requiredCoachNumber("العمر", { min: 15, max: 100 }),
-  phone: z
+  dob: z
+    .string({ required_error: "تاريخ الميلاد مطلوب" })
+    .min(1, "تاريخ الميلاد مطلوب"),
+  phone_number: z
     .string()
     .trim()
     .max(15, "رقم الهاتف يجب ألا يتجاوز 15 رقماً")
     .regex(/^\d*$/, "رقم الهاتف يجب أن يحتوي على أرقام فقط")
     .optional()
     .or(z.literal("")),
+  national_id: z.string().trim().max(50, "الرقم الوطني طويل جداً").optional().or(z.literal("")),
   country_code: z
     .string()
     .trim()
@@ -119,12 +106,6 @@ export const coachFormSchema = z.object({
   branch_ids: z
     .array(z.number().positive())
     .min(1, "يرجى اختيار فرع واحد على الأقل"),
-  specialization: z
-    .string()
-    .trim()
-    .max(100, "التخصص يجب ألا يتجاوز 100 حرف")
-    .optional()
-    .or(z.literal("")),
   experience_years: z
     .number()
     .nonnegative("سنوات الخبرة لا يمكن أن تكون سالبة")
@@ -145,6 +126,8 @@ export const coachFormSchema = z.object({
   work_types: z.array(z.enum(["equipment", "activities"])).optional().default([]),
   activity_ids: z.array(z.number().positive()).optional().default([]),
   shift_ids: z.array(z.number().positive()).optional().default([]),
+  start_date: z.string().optional().or(z.literal("")),
+  is_active: z.boolean().optional(),
 });
 
 export const coachEditSchema = z.object({
@@ -172,4 +155,3 @@ export const coachEditSchema = z.object({
 
   is_active: z.boolean().optional(),
 });
-

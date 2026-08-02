@@ -13,11 +13,7 @@ export const subscriptionPlanSchema = z.object({
     .min(2, "اسم الخطة يجب أن يكون حرفين على الأقل")
     .max(100, "اسم الخطة طويل جداً"),
 
-  type: z.enum(["fixed_period", "session_based"], {
-    required_error: "نوع الخطة مطلوب",
-  }),
-
-  duration_in_days: z
+  sessions_per_week: z
     .union([
       z.number(),
       z.string().transform((val) => (val === "" ? undefined : Number(val))),
@@ -66,35 +62,35 @@ export const subscriptionPlanSchema = z.object({
 
   is_active: z.boolean().optional(),
 }).superRefine((data, ctx) => {
-  if (data.type === "fixed_period") {
-    if (data.duration_in_days === undefined || data.duration_in_days === null || Number.isNaN(data.duration_in_days)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "المدة بالأيام مطلوبة",
-        path: ["duration_in_days"],
-      });
-    } else if (data.duration_in_days <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "المدة يجب أن تكون أكبر من صفر",
-        path: ["duration_in_days"],
-      });
-    }
-  }
+  // if (data.type === "fixed_period") {
+  //   if (data.duration_in_days === undefined || data.duration_in_days === null || Number.isNaN(data.duration_in_days)) {
+  //     ctx.addIssue({
+  //       code: z.ZodIssueCode.custom,
+  //       message: "المدة بالأيام مطلوبة",
+  //       path: ["duration_in_days"],
+  //     });
+  //   } else if (data.duration_in_days <= 0) {
+  //     ctx.addIssue({
+  //       code: z.ZodIssueCode.custom,
+  //       message: "المدة يجب أن تكون أكبر من صفر",
+  //       path: ["duration_in_days"],
+  //     });
+  //   }
+  // }
 
-  if (data.type === "session_based") {
-    if (data.session_count === undefined || data.session_count === null || Number.isNaN(data.session_count)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "عدد الجلسات مطلوب",
-        path: ["session_count"],
-      });
-    } else if (data.session_count <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "عدد الجلسات يجب أن يكون أكبر من صفر",
-        path: ["session_count"],
-      });
-    }
-  }
+  // if (data.type === "session_based") {
+  //   if (data.session_count === undefined || data.session_count === null || Number.isNaN(data.session_count)) {
+  //     ctx.addIssue({
+  //       code: z.ZodIssueCode.custom,
+  //       message: "عدد الجلسات مطلوب",
+  //       path: ["session_count"],
+  //     });
+  //   } else if (data.session_count <= 0) {
+  //     ctx.addIssue({
+  //       code: z.ZodIssueCode.custom,
+  //       message: "عدد الجلسات يجب أن يكون أكبر من صفر",
+  //       path: ["session_count"],
+  //     });
+  //   }
+  // }
 });

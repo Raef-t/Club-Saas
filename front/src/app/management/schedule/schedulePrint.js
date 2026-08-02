@@ -88,7 +88,7 @@ export function buildSchedulePrintHtml({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #d97706;
+            border-bottom: 3px solid #f2dc2e;
             padding-bottom: 18px;
             margin-bottom: 10px;
           }
@@ -108,7 +108,7 @@ export function buildSchedulePrintHtml({
             color: #111;
             letter-spacing: 2px;
           }
-          .logo-title span { color: #d97706; }
+          .logo-title span { color: #f2dc2e; }
           .logo-subtitle {
             margin-top: 4px;
             color: #666;

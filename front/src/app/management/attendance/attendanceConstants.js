@@ -18,4 +18,4 @@ export const ATTENDANCE_STATUS_CLASSES = {
 };
 
 export const ATTENDANCE_TABLE_COLUMNS =
-  "72px 120px minmax(150px,1fr) minmax(130px,1fr) minmax(130px,1fr) 96px 96px 96px";
+  "72px 80px minmax(150px,1fr) 110px 110px 96px 96px";

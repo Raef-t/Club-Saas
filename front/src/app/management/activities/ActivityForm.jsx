@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
@@ -9,7 +9,10 @@ import { Field, TextAreaField } from "@/components/forms/FormControls";
 import { useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { genderLabels } from "@/lib/constants";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { getPreferredBranchId, getDefaultGenderForBranch } from "@/lib/managementBranchUtils";
+import {
+  getPreferredBranchId,
+  getGenderForBranchId,
+} from "@/lib/managementBranchUtils";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { activitySchema } from "@/lib/validations/activitiesSchema";
 import { DAYS_OF_WEEK, GENDER_OPTIONS, SHIFT_ACTIVITY_TYPE_IDS } from "./activityConstants";
@@ -37,7 +40,7 @@ export default function ActivityForm({
   showFooterActions = true,
   formClassName = "space-y-4",
 }) {
-  const { selectedBranchId, selectedBranch } = useManagementBranch();
+  const { selectedBranchId } = useManagementBranch();
   const [form, setForm] = useState(() => {
     const values = createActivityFormValues(initialValues);
     const isCreate = mode !== "edit";
@@ -50,11 +53,21 @@ export default function ActivityForm({
         branches,
       }),
       ...(isCreate && {
-        gender_allowed: getDefaultGenderForBranch(selectedBranch, values.gender_allowed),
+        gender_allowed: getGenderForBranchId(branches, selectedBranchId, values.gender_allowed),
       }),
     };
   });
   const [errors, setErrors] = useState({});
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      gender_allowed: getGenderForBranchId(
+        branches,
+        current.branch_id,
+        current.gender_allowed,
+      ),
+    }));
+  }, [branches, form.branch_id]);
   const branchId = Number(form.branch_id);
   const initialBranchId = Number(initialValues?.branch_id || initialValues?.branch?.id);
   const {
@@ -187,7 +200,7 @@ export default function ActivityForm({
           onChange={(event) => updateField("is_active", event.target.checked)}
           className="peer sr-only"
         />
-        <span className="relative h-6 w-11 cursor-pointer rounded-full bg-app-line after:absolute after:right-[2px] after:top-[2px] after:size-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]" />
+        <span className="relative h-6 w-11 cursor-pointer rounded-full bg-app-line after:absolute after:start-[2px] after:top-[2px] after:size-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]" />
         <span className="text-sm font-medium text-white">نشط في النظام</span>
       </label>
 

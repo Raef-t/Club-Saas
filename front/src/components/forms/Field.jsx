@@ -90,7 +90,7 @@ export function Field({
             defaultValue={onChange ? undefined : value ?? ""}
             onChange={onChange}
             aria-invalid={Boolean(error)}
-            className={`${baseInputClass} appearance-none pr-4 pl-10 ${value ? "text-app-text" : "text-app-muted-light"}`}
+            className={`${baseInputClass} appearance-none ps-4 pe-10 ${value ? "text-app-text" : "text-app-muted-light"}`}
             dir="rtl"
             {...props}
           >
@@ -99,7 +99,7 @@ export function Field({
             </option>
             {children}
           </select>
-          <ChevronRight className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 -rotate-90 text-app-muted-light" />
+          <ChevronRight className="pointer-events-none absolute end-4 top-1/2 size-4 -translate-y-1/2 -rotate-90 text-app-muted-light" />
         </div>
       ) : (
         <div className={`${baseInputClass} ${Icon ? "gap-2" : ""}`}>
@@ -113,7 +113,7 @@ export function Field({
             onChange={onChange}
             placeholder={placeholder}
             aria-invalid={Boolean(error)}
-            className="w-full bg-transparent text-app-text placeholder-app-muted outline-none"
+            className="w-full bg-transparent text-start text-app-text placeholder-app-muted outline-none"
             dir="rtl"
             {...props}
           />

@@ -1,0 +1,124 @@
+/* ── FormStepper ─────────────────────────────────────────────── */
+
+.form-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1.25rem 1.5rem;
+  direction: rtl;
+}
+
+/* ── single step wrapper ─────────────────────────────────────── */
+.form-stepper__step {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 0 0 auto;
+}
+
+/* ── circle indicator ────────────────────────────────────────── */
+.form-stepper__circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+/* upcoming (default) */
+.form-stepper__circle--upcoming {
+  background: var(--app-card-soft);
+  color: var(--app-muted);
+  border: 2px solid var(--app-line);
+}
+
+/* active */
+.form-stepper__circle--active {
+  background: var(--app-yellow);
+  color: var(--app-on-accent);
+  border: 2px solid var(--app-yellow);
+  box-shadow: 0 0 0 4px var(--app-yellow-soft), 0 4px 16px var(--app-yellow-soft);
+  animation: stepper-pulse 2s ease-in-out infinite;
+}
+
+/* completed */
+.form-stepper__circle--completed {
+  background: var(--app-green);
+  color: #fff;
+  border: 2px solid var(--app-green);
+  box-shadow: 0 2px 8px rgba(19, 172, 73, 0.25);
+}
+
+.form-stepper__check {
+  width: 16px;
+  height: 16px;
+  stroke-width: 3;
+}
+
+/* ── label ───────────────────────────────────────────────────── */
+.form-stepper__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-inline-start: 0.5rem;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.form-stepper__label--upcoming {
+  color: var(--app-muted);
+}
+
+.form-stepper__label--active {
+  color: var(--app-yellow);
+}
+
+.form-stepper__label--completed {
+  color: var(--app-green);
+}
+
+/* ── connector line ──────────────────────────────────────────── */
+.form-stepper__connector {
+  width: 64px;
+  height: 2px;
+  margin: 0 0.75rem;
+  border-radius: 1px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--app-line);
+  transition: background 0.35s ease;
+}
+
+.form-stepper__connector--done {
+  background: var(--app-green);
+}
+
+/* ── pulse animation ─────────────────────────────────────────── */
+@keyframes stepper-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--app-yellow-soft), 0 4px 16px var(--app-yellow-soft); }
+  50%      { box-shadow: 0 0 0 8px transparent, 0 4px 16px var(--app-yellow-soft); }
+}
+
+/* ── step body transition ────────────────────────────────────── */
+.form-stepper-body {
+  animation: stepper-slide-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes stepper-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

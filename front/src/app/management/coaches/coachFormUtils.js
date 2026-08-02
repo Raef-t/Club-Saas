@@ -15,15 +15,18 @@ export function createCoachFormInitialValues(
         : null;
 
   return {
-    full_name: initialValues?.full_name || "",
+    first_name: initialValues?.first_name || "",
+    last_name: initialValues?.last_name || "",
     gender: initialValues?.gender || "male",
-    age: initialValues?.age || "",
-    phone: initialValues?.phone || "",
+    dob: initialValues?.dob || "",
+    phone_number: initialValues?.phone_number || "",
     country_code: initialValues?.country_code || "+963",
+    national_id: initialValues?.national_id || "",
     address: initialValues?.address || "",
     branch_ids: initialValues?.branch_ids || (defaultBranchId ? [defaultBranchId] : []),
-    specialization: initialValues?.specialization || "",
     experience_years: initialValues?.experience_years || "0",
+    start_date: initialValues?.start_date || "",
+    is_active: initialValues?.is_active ?? true,
     employment_type: initialValues?.employment_type || "fixed_salary",
     base_salary: initialValues?.base_salary || "0",
     default_commission_rate: initialValues?.default_commission_rate || "0",

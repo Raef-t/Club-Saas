@@ -12,9 +12,12 @@ import ProfileDrawer from "./ProfileDrawer";
 /**
  * Renders a compact informational value in the secondary navigation row.
  */
-function InfoChip({ icon: Icon, children }) {
+function InfoChip({ icon: Icon, children, dir = "rtl" }) {
   return (
-    <div className="app-panel flex min-h-9 min-w-0 items-center gap-2 rounded-lg bg-app-panel-soft px-2 py-1.5 text-[11px] text-app-muted-light sm:px-3">
+    <div
+      className="app-panel flex min-h-9 min-w-0 items-center gap-2 rounded-lg bg-app-panel-soft px-2 py-1.5 text-[11px] text-app-muted-light sm:px-3"
+      dir={dir}
+    >
       {Icon && <Icon className="size-4" />}
       {children}
     </div>
@@ -94,7 +97,7 @@ export default function Navbar({ onMenuClick, initialUser }) {
         <button
           type="button"
           onClick={() => setProfileOpen(true)}
-          className="flex shrink-0 items-center gap-3 rounded-xl border border-app-line/20 bg-app-card-soft/80 p-1.5 pl-3 pr-1.5 transition duration-300 hover:border-app-yellow/50"
+          className="flex shrink-0 items-center gap-3 rounded-xl border border-app-line/20 bg-app-card-soft/80 p-1.5 ps-1.5 pe-3 transition duration-300 hover:border-app-yellow/50"
           aria-label="فتح الملف الشخصي"
         >
           <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-app-yellow text-sm font-bold uppercase text-app-bg shadow-inner ring-1 ring-app-line/40">
@@ -112,7 +115,7 @@ export default function Navbar({ onMenuClick, initialUser }) {
               avatarLetter
             )}
           </span>
-          <span className="ml-1 hidden text-xs font-medium text-app-muted-light sm:inline">
+          <span className="me-1 hidden text-xs font-medium text-app-muted-light sm:inline">
             {fullName || "الملف الشخصي"}
           </span>
         </button>

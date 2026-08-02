@@ -23,9 +23,9 @@ function CreatePageBreadcrumb({ subtitle, backHref }) {
             {parts[0]}
           </Link>
         </li>
-        <li aria-hidden="true">&gt;</li>
+        <li aria-hidden="true">‹</li>
         <li className="text-app-yellow" aria-current="page">
-          {parts.slice(1).join(" > ")}
+          {parts.slice(1).join(" ‹ ")}
         </li>
       </ol>
     </nav>

@@ -10,10 +10,10 @@ function SkeletonBlock({ className = "" }) {
 function HeaderSkeleton({ actions = 1 }) {
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div className="space-y-3 text-end">
-        <SkeletonBlock className="mr-auto h-3 w-24" />
-        <SkeletonBlock className="mr-auto h-8 w-56" />
-        <SkeletonBlock className="mr-auto h-4 w-80 max-w-full" />
+      <div className="space-y-3 text-start">
+        <SkeletonBlock className="me-auto h-3 w-24" />
+        <SkeletonBlock className="me-auto h-8 w-56" />
+        <SkeletonBlock className="me-auto h-4 w-80 max-w-full" />
       </div>
       {actions > 0 && (
         <div className="flex gap-2">
@@ -34,8 +34,8 @@ function StatsSkeleton({ count = 4 }) {
           <div className="flex items-center justify-between gap-3">
             <SkeletonBlock className="size-11 rounded-full" />
             <div className="flex-1 space-y-2">
-              <SkeletonBlock className="mr-auto h-4 w-24" />
-              <SkeletonBlock className="mr-auto h-3 w-32" />
+              <SkeletonBlock className="me-auto h-4 w-24" />
+              <SkeletonBlock className="me-auto h-3 w-32" />
             </div>
           </div>
           <SkeletonBlock className="mx-auto mt-5 h-7 w-24" />
@@ -80,7 +80,7 @@ function DetailsSkeleton({ sections = 3, itemsPerSection = 4 }) {
     <div className="space-y-6">
       {Array.from({ length: sections }).map((_, sectionIndex) => (
         <section key={sectionIndex} className="space-y-3">
-          <SkeletonBlock className="mr-auto h-4 w-28" />
+          <SkeletonBlock className="me-auto h-4 w-28" />
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: itemsPerSection }).map((_, itemIndex) => (
               <SkeletonBlock key={itemIndex} className="h-16" />

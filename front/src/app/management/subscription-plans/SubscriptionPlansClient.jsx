@@ -19,8 +19,12 @@ import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { getPreferredBranchId } from "@/lib/managementBranchUtils";
+import {
+  getPreferredBranchId,
+  getGenderForBranchId,
+} from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
 
 function CoachDropdown({ branchId, activityId, value, onChange }) {
   const { data, isLoading } = useGetCoachesQuery(
@@ -55,8 +59,7 @@ const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 
 const initialForm = {
   branch_id: "",
   name: "",
-  type: "fixed_period",
-  duration_in_days: "30",
+  sessions_per_week: "",
   session_count: "",
   price: "",
   max_subscribers: "50",
@@ -73,16 +76,7 @@ function formatMoney(value) {
 
 const planName = (plan) => formatLocalizedName(plan?.name);
 
-function planTypeLabel(type) {
-  const labels = {
-    monthly: "شهري",
-    weekly: "أسبوعي",
-    yearly: "سنوي",
-    custom: "مخصص",
-  };
 
-  return labels[type] || type || "-";
-}
 
 function StatusBadge({ active }) {
   return (
@@ -127,15 +121,14 @@ function PlanDetails({ plan, isLoading, error }) {
               {plan.name?.en || "Subscription plan"}
             </p>
           </div>
-          <StatusBadge active={plan.is_active} />
+          <StatusBadge active={plan.status === 'active' || plan.is_active === true} />
         </div>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <DetailItem label="نوع الفعالية" value={planTypeLabel(plan.type)} />
         <DetailItem label="السعر" value={formatMoney(plan.base_price)} tone="yellow" />
-        <DetailItem label="المدة" value={`${plan.duration_days || 0} يوم`} />
-        <DetailItem label="عدد الجلسات" value={plan.session_count} />
+        <DetailItem label="الجلسات أسبوعياً" value={plan.sessions_per_week || "-"} />
+        <DetailItem label="عدد الجلسات الإجمالي" value={plan.session_count || "-"} />
       </section>
     </div>
   );
@@ -165,6 +158,16 @@ export function PlanForm({
     }),
   }));
   const [errors, setErrors] = useState({});
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      gender_restriction: getGenderForBranchId(
+        branches,
+        current.branch_id,
+        current.gender_restriction,
+      ),
+    }));
+  }, [branches, form.branch_id]);
 
   useEffect(() => {
     let shouldBeUnlimited = false;
@@ -194,10 +197,9 @@ export function PlanForm({
     const rawData = {
       branch_id: form.branch_id,
       name: form.name?.trim(),
-      type: form.type,
       gender_restriction: form.gender_restriction,
-      duration_in_days: form.duration_in_days,
-      session_count: form.type === "session_based" ? form.session_count : null,
+      sessions_per_week: form.sessions_per_week,
+      session_count: form.session_count,
       price: form.price,
       max_subscribers: form.is_unlimited_subscribers ? null : form.max_subscribers,
       is_active: !!form.is_active,
@@ -257,21 +259,7 @@ export function PlanForm({
         error={errors.name}
       />
 
-      <label className="block text-right text-sm text-app-muted-light">
-        نوع الفعالية *
-        <Dropdown
-          className="mt-2 text-white"
-          buttonClassName="bg-app-card-soft h-11"
-          value={form.type}
-          onChange={(val) => updateField("type", val)}
-          options={[
-            { value: "fixed_period", label: "محددة بمدة" },
-            { value: "session_based", label: "محددة بعدد جلسات" },
-          ]}
-          placeholder="اختر نوع الفعالية"
-          error={errors.type}
-        />
-      </label>
+
 
       <label className="block text-right text-sm text-app-muted-light">
         تخصيص الجنس *
@@ -291,26 +279,23 @@ export function PlanForm({
       </label>
 
       <Field
-        label="المدة بالأيام"
-        value={form.duration_in_days}
-        onChange={(event) => updateField("duration_in_days", event.target.value)}
+        label="عدد الجلسات في الأسبوع"
+        value={form.sessions_per_week}
+        onChange={(event) => updateField("sessions_per_week", event.target.value)}
         type="number"
         min="1"
-        required
-        error={errors.duration_in_days}
+        error={errors.sessions_per_week}
       />
 
-      {form.type === "session_based" && (
-        <Field
-          label="عدد الجلسات"
-          value={form.session_count}
-          onChange={(event) => updateField("session_count", event.target.value)}
-          type="number"
-          min="1"
-          placeholder="مثال: 12"
-          error={errors.session_count}
-        />
-      )}
+      <Field
+        label="عدد الجلسات (الإجمالي)"
+        value={form.session_count}
+        onChange={(event) => updateField("session_count", event.target.value)}
+        type="number"
+        min="1"
+        placeholder="مثال: 12"
+        error={errors.session_count}
+      />
 
       <Field
         label="السعر"
@@ -338,7 +323,7 @@ export function PlanForm({
               ])
             }
           >
-            <PlusIcon className="size-3 ml-1" />
+            <PlusIcon className="me-1 size-3" />
             إضافة نشاط
           </Button>
         </div>
@@ -359,7 +344,7 @@ export function PlanForm({
                     newActs.splice(idx, 1);
                     updateField("activities", newActs);
                   }}
-                  className="absolute top-2 left-3 text-app-muted hover:text-app-red text-xs"
+                  className="absolute end-3 top-2 text-xs text-app-muted hover:text-app-red"
                 >
                   إزالة
                 </button>
@@ -480,7 +465,7 @@ export function PlanForm({
               ]);
             }}
           >
-            <PlusIcon className="size-3 ml-1" />
+            <PlusIcon className="me-1 size-3" />
             إضافة وقت
           </Button>
         </div>
@@ -501,7 +486,7 @@ export function PlanForm({
                     newTemplates.splice(idx, 1);
                     updateField("session_templates", newTemplates);
                   }}
-                  className="absolute top-2 left-3 text-app-muted hover:text-app-red text-xs"
+                  className="absolute end-3 top-2 text-xs text-app-muted hover:text-app-red"
                 >
                   إزالة
                 </button>
@@ -535,7 +520,12 @@ export function PlanForm({
                     value={item.start_time}
                     onChange={(val) => {
                       const newTemplates = [...form.session_templates];
-                      newTemplates[idx].start_time = val && val.target ? val.target.value : val;
+                      const startTime = val && val.target ? val.target.value : val;
+                      newTemplates[idx] = {
+                        ...newTemplates[idx],
+                        start_time: startTime,
+                        end_time: addMinutesToTime(startTime),
+                      };
                       updateField("session_templates", newTemplates);
                     }}
                     required
@@ -640,16 +630,10 @@ export default function SubscriptionPlansClient({ initialData }) {
         ),
       },
       {
-        key: "type",
-        label: "النوع",
+        key: "sessions_per_week",
+        label: "جلسات/أسبوع",
         align: "center",
-        render: (value) => planTypeLabel(value),
-      },
-      {
-        key: "duration_days",
-        label: "المدة",
-        align: "center",
-        render: (value) => `${value || 0} يوم`,
+        render: (value) => value || "-",
       },
       {
         key: "session_count",
@@ -678,7 +662,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         key: "is_active",
         label: "الحالة",
         align: "center",
-        render: (value) => <StatusBadge active={value} />,
+        render: (_, plan) => <StatusBadge active={plan.status === 'active' || plan.is_active === true} />,
       },
       {
         key: "actions",

@@ -47,6 +47,39 @@ export const attendanceApi = createApi({
       }),
       providesTags: ["Attendance"],
     }),
+    manualCheckIn: builder.mutation({
+      query: (body) => ({
+        url: "attendances/check-in",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Attendance"],
+    }),
+    manualCheckOut: builder.mutation({
+      query: (attendanceId) => ({
+        url: `attendances/check-out/${attendanceId}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Attendance"],
+    }),
+    bulkCheckOut: builder.mutation({
+      query: (body) => ({
+        url: "attendances/bulk-check-out",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Attendance"],
+    }),
+    rollbackAttendance: builder.mutation({
+      query: ({ attendanceId, playerSubscriptionIds }) => ({
+        url: `reception/attendances/${attendanceId}/rollback`,
+        method: "DELETE",
+        ...(playerSubscriptionIds.length
+          ? { body: { player_subscription_ids: playerSubscriptionIds } }
+          : {}),
+      }),
+      invalidatesTags: ["Attendance"],
+    }),
     deductAttendance: builder.mutation({
       query: ({ attendanceId, body }) => ({
         url: `reception/attendances/${attendanceId}/deduct`,
@@ -65,5 +98,9 @@ export const {
   useGetMemberQuery,
   useGetMemberAttendancesQuery,
   useGetAttendancesQuery,
+  useManualCheckInMutation,
+  useManualCheckOutMutation,
+  useBulkCheckOutMutation,
+  useRollbackAttendanceMutation,
   useDeductAttendanceMutation,
 } = attendanceApi;
