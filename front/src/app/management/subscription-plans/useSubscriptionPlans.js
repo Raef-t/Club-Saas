@@ -16,6 +16,7 @@ import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
 import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
 //test
+//testtest
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
   return Number.isFinite(number) ? number : 0;
