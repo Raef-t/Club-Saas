@@ -46,10 +46,26 @@ class AttendanceDashboardService
      */
     protected function getActiveSubscribedMembersCount(?int $branchId = null): int
     {
-        return DB::table('player_subscriptions')
-            ->where('status', 'active')
-            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->count(DB::raw('DISTINCT member_id'));
+        return DB::table('player_subscriptions as ps')
+            ->where('ps.status', 'active')
+            ->when($branchId, function ($q) use ($branchId) {
+                $q->where(function ($bq) use ($branchId) {
+                    $bq->where('ps.branch_id', $branchId)
+                       ->orWhereExists(function ($subQ) use ($branchId) {
+                           $subQ->select(DB::raw(1))
+                                ->from('subscription_plans as sp')
+                                ->whereColumn('sp.id', 'ps.plan_id')
+                                ->where('sp.branch_id', $branchId);
+                       })
+                       ->orWhereExists(function ($subQ) use ($branchId) {
+                           $subQ->select(DB::raw(1))
+                                ->from('members as m')
+                                ->whereColumn('m.id', 'ps.member_id')
+                                ->where('m.branch_id', $branchId);
+                       });
+                });
+            })
+            ->count(DB::raw('DISTINCT ps.member_id'));
     }
 
     /**
@@ -98,6 +114,7 @@ class AttendanceDashboardService
             ->where('sst.day_of_week', $currentDayOfWeek)
             ->whereTime('sst.start_time', '<=', $currentTime)
             ->whereTime('sst.end_time', '>=', $currentTime)
+            ->when($branchId, fn($q) => $q->where('sp.branch_id', $branchId))
             ->select(
                 'sp.id as plan_id',
                 'sp.name as plan_name',
@@ -121,7 +138,23 @@ class AttendanceDashboardService
     {
         return DB::table('player_subscriptions as ps')
             ->where('ps.status', 'active')
-            ->when($branchId, fn($q) => $q->where('ps.branch_id', $branchId))
+            ->when($branchId, function ($q) use ($branchId) {
+                $q->where(function ($bq) use ($branchId) {
+                    $bq->where('ps.branch_id', $branchId)
+                       ->orWhereExists(function ($subQ) use ($branchId) {
+                           $subQ->select(DB::raw(1))
+                                ->from('subscription_plans as sp')
+                                ->whereColumn('sp.id', 'ps.plan_id')
+                                ->where('sp.branch_id', $branchId);
+                       })
+                       ->orWhereExists(function ($subQ) use ($branchId) {
+                           $subQ->select(DB::raw(1))
+                                ->from('members as m')
+                                ->whereColumn('m.id', 'ps.member_id')
+                                ->where('m.branch_id', $branchId);
+                       });
+                });
+            })
             ->where(function($query) {
                 $query->where(function($qDate) {
                     $qDate->whereNotNull('ps.end_date')
