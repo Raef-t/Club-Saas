@@ -7,7 +7,7 @@ export function UpcomingPaymentItem({ item }) {
   return (
     <div className="flex h-12 items-center justify-between rounded-lg bg-app-card-soft px-3">
       <div className="text-start text-sm font-medium text-app-yellow">{item.amount}</div>
-      <div className="text-end">
+      <div className="text-start">
         <h4 className="text-sm font-medium text-app-text">{item.title}</h4>
         <p className="text-xs text-app-muted">{item.date}</p>
       </div>
@@ -21,7 +21,7 @@ export function UpcomingPaymentItem({ item }) {
 export function SalarySummaryPanel({ items }) {
   return (
     <>
-      <div className="flex justify-center gap-5 px-5 pt-8" dir="ltr">
+      <div className="flex justify-center gap-5 px-5 pt-8" dir="rtl">
         {items.map((item) => (
           <div
             key={item.label}

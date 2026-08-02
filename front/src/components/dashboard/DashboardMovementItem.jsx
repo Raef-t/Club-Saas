@@ -21,7 +21,7 @@ export default function DashboardMovementItem({
       >
         <ArrowUpIcon className={`size-5 ${isIncoming ? "rotate-[225deg]" : "rotate-45"}`} />
       </div>
-      <div className="min-w-0 flex-1 text-end">
+      <div className="min-w-0 flex-1 text-start">
         <h4 className="truncate text-sm font-medium text-app-text">{title}</h4>
         <p className="truncate text-xs text-app-muted">{description}</p>
       </div>

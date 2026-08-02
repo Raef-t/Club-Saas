@@ -6,13 +6,11 @@ import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
-import { UploadBox } from "@/components/forms/UploadBox";
-import { Field } from "@/components/forms/Field";
 import { TrashIcon } from "@/components/icons/Icons";
 import { useGetBranchSettingsQuery, useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
-import { getDefaultGenderForBranch } from "@/lib/managementBranchUtils";
+import { getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { coachFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
 import { EMPLOYMENT_TYPES as employmentTypes, SHIFT_GENDER_LABELS as shiftGenderLabels } from "./coachConstants";
@@ -28,12 +26,12 @@ export function CoachCreateForm({
   showFooterActions = true,
   initialValues = null,
 }) {
-  const { selectedBranchId, selectedBranch } = useManagementBranch();
+  const { selectedBranchId } = useManagementBranch();
   const { formatTime } = useTimeFormat();
   const [form, setForm] = useState(() => {
     const values = createCoachFormInitialValues(initialValues, branches, selectedBranchId);
     if (!initialValues) {
-      values.gender = getDefaultGenderForBranch(selectedBranch, values.gender);
+      values.gender = getGenderForBranchId(branches, values.branch_ids?.[0], values.gender);
     }
     return values;
   });
@@ -41,6 +39,12 @@ export function CoachCreateForm({
   const branchId1 = form.branch_ids?.[0];
   const branchId2 = form.branch_ids?.[1];
   const branchId3 = form.branch_ids?.[2];
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      gender: getGenderForBranchId(branches, current.branch_ids?.[0], current.gender),
+    }));
+  }, [branchId1, branches]);
 
   const { data: shiftsResponse1, isFetching: isLoadingShifts1 } = useGetBranchShiftsQuery(
     branchId1,
@@ -143,26 +147,21 @@ export function CoachCreateForm({
     }
 
     setErrors({});
-    const ageNum = Number(form.age);
-    let dob = null;
-    if (ageNum > 0) {
-      const birthYear = new Date().getFullYear() - ageNum;
-      dob = `${birthYear}-01-01`;
-    }
-
     const shiftsPayload = hasEquipmentActivity ? (form.shift_ids || []).map(Number) : [];
 
     onSubmit({
-      full_name: form.full_name.trim(),
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
       gender: form.gender,
-      dob: dob,
-      phone: form.phone.trim() || null,
+      dob: form.dob,
+      phone_number: form.phone_number.trim() || null,
       country_code: form.country_code.trim() || "+963",
-      email: null,
+      national_id: form.national_id.trim() || null,
       address: form.address.trim() || null,
       branch_ids: form.branch_ids,
-      specialization: form.specialization.trim() || null,
       experience_years: Number(form.experience_years) || 0,
+      start_date: form.start_date || null,
+      is_active: form.is_active,
       employment_type: form.employment_type,
       base_salary: Number(form.base_salary) || 0,
       default_commission_rate: Number(form.default_commission_rate) || 0,
@@ -174,26 +173,22 @@ export function CoachCreateForm({
 
   return (
     <form id={formId} noValidate onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-      <label className="block text-right text-sm text-app-muted-light">
-        الاسم الكامل للمدرب *
-        <input
-          value={form.full_name}
-          onChange={(event) => updateField("full_name", event.target.value)}
-          aria-invalid={Boolean(errors && errors.full_name)}
-          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-            errors && errors.full_name
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          placeholder="الاسم الثلاثي للمدرب"
-          required
+      <div className="grid grid-cols-2 gap-3">
+        <CoachTextField
+          label="الاسم الأول *"
+          value={form.first_name}
+          onChange={(value) => updateField("first_name", value)}
+          error={errors.first_name}
+          placeholder="الاسم الأول"
         />
-        {errors && errors.full_name && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.full_name}
-          </span>
-        )}
-      </label>
+        <CoachTextField
+          label="اسم العائلة *"
+          value={form.last_name}
+          onChange={(value) => updateField("last_name", value)}
+          error={errors.last_name}
+          placeholder="اسم العائلة"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
@@ -211,43 +206,36 @@ export function CoachCreateForm({
           />
         </label>
 
-        <label className="block text-right text-sm text-app-muted-light">
-          العمر (بالسنوات) *
-          <input
-            value={form.age}
-            onChange={(event) => updateField("age", event.target.value)}
-            aria-invalid={Boolean(errors && errors.age)}
-            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-              errors && errors.age
-                ? "border border-app-red focus:border-app-red"
-                : "focus:border-app-yellow/70"
-            }`}
-            placeholder="مثال: 30"
-            type="number"
-            min="15"
-            max="100"
-            required
-          />
-          {errors && errors.age && (
-            <span className="mt-1.5 block text-xs text-app-red" role="alert">
-              {errors.age}
-            </span>
-          )}
-        </label>
+        <DatePickerSmart
+          label="تاريخ الميلاد *"
+          value={form.dob}
+          onChange={(value) => updateField("dob", value)}
+          placeholder="DD/MM/YYYY"
+          error={errors.dob}
+          required
+        />
       </div>
 
       <div>
         <PhoneField
           label="رقم الهاتف"
-          phoneValue={form.phone}
-          onPhoneChange={(val) => updateField("phone", val)}
+          phoneValue={form.phone_number}
+          onPhoneChange={(val) => updateField("phone_number", val)}
           codeValue={form.country_code}
           onCodeChange={(val) => updateField("country_code", val)}
           required={false}
           className="text-right w-full"
-          error={errors && (errors.phone || errors.country_code)}
+          error={errors && (errors.phone_number || errors.country_code)}
         />
       </div>
+
+      <CoachTextField
+        label="الرقم الوطني"
+        value={form.national_id}
+        onChange={(value) => updateField("national_id", value)}
+        error={errors.national_id}
+        placeholder="أدخل الرقم الوطني"
+      />
 
       <div className="block text-right text-sm text-app-muted-light">
         الفروع التابع لها *
@@ -407,46 +395,45 @@ export function CoachCreateForm({
         </div>
       </div>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        التخصص التدريبي
-        <input
-          value={form.specialization}
-          onChange={(event) => updateField("specialization", event.target.value)}
-          aria-invalid={Boolean(errors && errors.specialization)}
-          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-            errors && errors.specialization
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          placeholder="مثال: Yoga, CrossFit, Bodybuilding"
-        />
-        {errors && errors.specialization && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.specialization}
-          </span>
-        )}
-      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block text-right text-sm text-app-muted-light">
+          سنوات الخبرة
+          <input
+            value={form.experience_years}
+            onChange={(event) => updateField("experience_years", event.target.value)}
+            aria-invalid={Boolean(errors && errors.experience_years)}
+            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+              errors && errors.experience_years
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
+            type="number"
+            min="0"
+          />
+          {errors && errors.experience_years && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.experience_years}
+            </span>
+          )}
+        </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        سنوات الخبرة
-        <input
-          value={form.experience_years}
-          onChange={(event) => updateField("experience_years", event.target.value)}
-          aria-invalid={Boolean(errors && errors.experience_years)}
-          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-            errors && errors.experience_years
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          type="number"
-          min="0"
+        <DatePickerSmart
+          label="تاريخ المباشرة"
+          value={form.start_date}
+          onChange={(value) => updateField("start_date", value)}
+          placeholder="DD/MM/YYYY"
+          error={errors.start_date}
+          required={false}
         />
-        {errors && errors.experience_years && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.experience_years}
-          </span>
-        )}
-      </label>
+      </div>
+
+      <div className="rounded-lg border border-app-line bg-app-card-soft p-3">
+        <Checkbox
+          label="المدرب نشط"
+          checked={form.is_active}
+          onChange={(event) => updateField("is_active", event.target.checked)}
+        />
+      </div>
 
       <label className="block text-right text-sm text-app-muted-light">
         نوع التوظيف
@@ -548,5 +535,29 @@ export function CoachCreateForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function CoachTextField({ label, value, onChange, error, placeholder }) {
+  return (
+    <label className="block text-right text-sm text-app-muted-light">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        aria-invalid={Boolean(error)}
+        className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+          error
+            ? "border border-app-red focus:border-app-red"
+            : "focus:border-app-yellow/70"
+        }`}
+        placeholder={placeholder}
+      />
+      {error && (
+        <span className="mt-1.5 block text-xs text-app-red" role="alert">
+          {error}
+        </span>
+      )}
+    </label>
   );
 }

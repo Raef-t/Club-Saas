@@ -149,7 +149,7 @@ export default function Dropdown({
           )}
         </span>
         <ChevronDownIcon
-          className={`size-4 ml-3 shrink-0 text-app-muted-light transition ${
+          className={`me-3 size-4 shrink-0 text-app-muted-light transition ${
             open ? "rotate-180 text-app-yellow" : ""
           }`}
         />
@@ -175,7 +175,7 @@ export default function Dropdown({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="h-9 w-full rounded-lg border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none placeholder-app-muted transition focus:border-app-yellow"
+                  className="h-9 w-full rounded-lg border border-app-line bg-app-card-soft px-3 text-right text-sm text-app-text outline-none placeholder-app-muted transition focus:border-app-yellow"
                   placeholder="ابحث..."
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}

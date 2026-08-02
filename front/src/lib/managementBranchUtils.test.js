@@ -4,6 +4,7 @@ import {
   createManagementBranchOptions,
   filterEntitiesByBranch,
   getEntityBranchIds,
+  getGenderForBranchId,
   getPreferredBranchId,
   normalizeSelectedBranchId,
 } from "./managementBranchUtils";
@@ -69,5 +70,15 @@ describe("management branch utilities", () => {
       { value: "2", label: "الشرقي" },
     ]);
     expect(normalizeSelectedBranchId("9", branches)).toBe("all");
+  });
+
+  it("enforces a branch gender restriction and preserves the fallback for mixed branches", () => {
+    const genderedBranches = [
+      { id: 1, gender_restriction: "mixed" },
+      { id: 2, gender_restriction: "female" },
+    ];
+
+    expect(getGenderForBranchId(genderedBranches, "2", "male")).toBe("female");
+    expect(getGenderForBranchId(genderedBranches, "1", "male")).toBe("male");
   });
 });

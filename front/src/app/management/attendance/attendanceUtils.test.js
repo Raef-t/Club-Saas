@@ -54,8 +54,66 @@ describe("attendance utilities", () => {
       id: 10,
       number: "#10",
       member: "أحمد علي",
+      type: "عضو",
       status: "دخول",
     });
+  });
+
+  it("maps the global attendance response for staff without nested person data", () => {
+    const rows = createAttendanceRows({
+      status: "success",
+      data: [
+        {
+          id: 4,
+          attendable_type: "staff",
+          attendable_id: 9,
+          check_in: "2026-08-02T12:39:05+03:00",
+          check_out: null,
+          status: "checked_in",
+        },
+      ],
+    });
+
+    expect(rows[0]).toMatchObject({
+      id: 4,
+      attendableId: 9,
+      attendableType: "staff",
+      isOpen: true,
+      type: "موظف",
+      member: "موظف #9",
+      checkOut: "-",
+      status: "دخول",
+    });
+  });
+
+  it("joins attendance ids with member and staff names", () => {
+    const rows = createAttendanceRows(
+      {
+        data: [
+          {
+            id: 1,
+            attendable_type: "member",
+            attendable_id: 12,
+            duration_minutes: 0,
+            status: "completed",
+          },
+          {
+            id: 2,
+            attendable_type: "staff",
+            attendable_id: 8,
+            status: "checked_in",
+          },
+        ],
+      },
+      null,
+      {
+        members: { data: [{ id: 12, person: { full_name: "محمد علي" } }] },
+        staff: { data: [{ id: 8, person: { full_name: "سامر حسن" } }] },
+      },
+    );
+
+    expect(rows[0]).toMatchObject({ member: "محمد علي", duration: 0 });
+    expect(rows[1]).toMatchObject({ member: "سامر حسن" });
   });
 
   it("creates a fallback activity when the subscription has no items", () => {

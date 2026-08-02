@@ -150,7 +150,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
   async function handleCreate(values) {
     setFormError("");
     try {
-      const { plans: plansPayload, ...memberDetails } = values;
+      const { plans: _plansPayload, ...memberDetails } = values;
 
       const memberResult = await createPlayer(memberDetails).unwrap();
 
@@ -159,25 +159,11 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         throw new Error("لم يتم الحصول على معرف العضو الجديد");
       }
 
-      if (plansPayload && plansPayload.length > 0) {
-        const plan = plansPayload[0];
-        const subscriptionPayload = {
-          member_id: memberId,
-          plan_id: plan.plan_id,
-          paid_amount: plan.paid_amount,
-          start_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
-          payment_method: "cash",
-          activities: [],
-        };
-
-        await createPlayerSubscription(subscriptionPayload).unwrap();
-      }
-
       toast.success("تم تسجيل اللاعب العضو بنجاح!");
       closeDrawer();
       return memberId;
     } catch (submitError) {
-      console.error("Create member/subscription error:", submitError);
+      console.error("Create member error:", submitError);
       const rawMsg = submitError?.data?.message || "";
       if (rawMsg.includes("endpoint or resource was not found") || submitError?.status === 404) {
         setFormError("عذراً، الرابط البرمجي لإضافة اللاعب غير متوفر حالياً على الخادم (404).");

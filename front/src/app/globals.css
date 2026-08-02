@@ -41,8 +41,8 @@
   --app-card-hover: #f1f5f9;
   --app-line: #e2e8f0;
   --app-line-soft: #f1f5f9;
-  --app-yellow: #d97706;
-  --app-yellow-soft: rgba(217, 119, 6, 0.12);
+  --app-yellow: #f2dc2e;
+  --app-yellow-soft: rgba(242, 220, 46, 0.12);
   --app-text: #0f172a;
   --app-muted: #64748b;
   --app-muted-light: #94a3b8;
@@ -79,8 +79,8 @@
   --app-card-hover: #1b1b1b;
   --app-line: #282828;
   --app-line-soft: #1b1b1b;
-  --app-yellow: #fccd03;
-  --app-yellow-soft: rgba(252, 205, 3, 0.12);
+  --app-yellow: #f2dc2e;
+  --app-yellow-soft: rgba(242, 220, 46, 0.12);
   --app-text: #efefef;
   --app-muted: #a1a1a1;
   --app-muted-light: #c1c1c1;
@@ -92,8 +92,8 @@
   --app-subtle-fill-hover: rgba(255, 255, 255, 0.1);
   --app-inner-shadow: inset 0 2px 4px rgba(158, 158, 158, 0.25), inset 4px 0 4px rgba(120, 120, 120, 0);
   --app-gold-shadow: inset 4px 0 4px rgba(203, 181, 84, 0.2), inset 0 4px 4px rgba(203, 181, 84, 0.1);
-  --app-body-gradient: radial-gradient(circle at 30% 20%, rgba(252, 205, 3, 0.16), transparent 20rem), radial-gradient(circle at 75% 65%, rgba(19, 172, 73, 0.07), transparent 22rem), var(--app-bg);
-  --app-dashboard-gradient: radial-gradient(circle at 30% 22%, rgba(252, 205, 3, 0.16), transparent 24rem), radial-gradient(circle at 72% 56%, rgba(19, 172, 73, 0.07), transparent 22rem), linear-gradient(180deg, rgba(255,255,255,0.018), transparent 14rem), var(--app-bg);
+  --app-body-gradient: radial-gradient(circle at 30% 20%, rgba(242, 220, 46, 0.16), transparent 20rem), radial-gradient(circle at 75% 65%, rgba(19, 172, 73, 0.07), transparent 22rem), var(--app-bg);
+  --app-dashboard-gradient: radial-gradient(circle at 30% 22%, rgba(242, 220, 46, 0.16), transparent 24rem), radial-gradient(circle at 72% 56%, rgba(19, 172, 73, 0.07), transparent 22rem), linear-gradient(180deg, rgba(255,255,255,0.018), transparent 14rem), var(--app-bg);
   --app-panel-bg: rgba(13, 14, 19, 0.92);
   --app-card-gradient: linear-gradient(180deg, rgba(28,29,29,0.96), rgba(21,22,22,0.96));
   --app-overlay: var(--app-scrim);
@@ -110,12 +110,18 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
+  direction: rtl;
+  text-align: start;
   background: var(--app-body-gradient);
   color: var(--app-text);
   font-family: "Tajawal", Tahoma, Arial, sans-serif;
 }
 
-button, input, select, textarea { font: inherit; }
+button, input, select, textarea {
+  direction: inherit;
+  font: inherit;
+  text-align: inherit;
+}
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 input, select, textarea { caret-color: var(--app-yellow); }
@@ -132,6 +138,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 ::selection { background: var(--app-yellow-soft); color: var(--app-text); }
+
+/* Keep deliberately Latin/numeric fragments isolated inside the Arabic UI. */
+[dir="ltr"] {
+  unicode-bidi: isolate;
+}
 
 .dashboard-bg {
   background: var(--app-dashboard-gradient);
@@ -185,7 +196,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .dark .app-button-primary {
-  border: 1px solid rgba(252,205,3,0.6);
+  border: 1px solid rgba(242,220,46,0.6);
 }
 
 /*
@@ -229,12 +240,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .scrollbar-hidden::-webkit-scrollbar { display: none; }
 .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(252,205,3,0.35); border-radius: 999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(242,220,46,0.35); border-radius: 999px; }
 
 .sidebar-scrollbar {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(252, 205, 3, 0.78) rgba(255, 255, 255, 0.08);
+  scrollbar-color: rgba(242, 220, 46, 0.78) rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-scrollbar::-webkit-scrollbar {
@@ -250,7 +261,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   min-height: 40px;
   border: 2px solid transparent;
   border-radius: 999px;
-  background: rgba(252, 205, 3, 0.78);
+  background: rgba(242, 220, 46, 0.78);
   background-clip: padding-box;
 }
 
@@ -266,7 +277,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .light .sidebar-scrollbar {
-  scrollbar-color: #b36b00 rgba(0, 0, 0, 0.1);
+  scrollbar-color: var(--app-yellow) rgba(0, 0, 0, 0.1);
 }
 
 .light .sidebar-scrollbar::-webkit-scrollbar-track {
@@ -274,7 +285,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .light .sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: #b36b00;
+  background: var(--app-yellow);
   background-clip: padding-box;
 }
 

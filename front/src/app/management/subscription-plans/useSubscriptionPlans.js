@@ -15,7 +15,8 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
 import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
-
+//test
+//testtest
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
   return Number.isFinite(number) ? number : 0;
@@ -125,7 +126,7 @@ export function useSubscriptionPlans({
   }, [plans, search]);
 
   const stats = useMemo(() => {
-    const activeCount = plans.filter((plan) => plan.is_active).length;
+    const activeCount = plans.filter((plan) => plan.status === "active" || plan.is_active).length;
     const averagePrice = plans.length
       ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) / plans.length
       : 0;
@@ -153,9 +154,9 @@ export function useSubscriptionPlans({
         compact: true,
       },
       {
-        title: "أكثر مدة",
-        value: `${Math.max(0, ...plans.map((plan) => plan.duration_days || 0)).toLocaleString("ar")} يوم`,
-        helper: "أطول خطة متاحة",
+        title: "أكثر جلسات أسبوعياً",
+        value: `${Math.max(0, ...plans.map((plan) => plan.sessions_per_week || 0)).toLocaleString("ar")} جلسة`,
+        helper: "أكثر عدد جلسات أسبوعية",
         tone: "purple",
         compact: true,
       },
@@ -173,11 +174,11 @@ export function useSubscriptionPlans({
 
     const apiPayload = {
       ...values,
-      duration_days: values.duration_in_days,
       base_price: values.price,
+      status: values.is_active ? "active" : "inactive",
     };
-    delete apiPayload.duration_in_days;
     delete apiPayload.price;
+    delete apiPayload.is_active;
 
     try {
       await createPlan(apiPayload).unwrap();
@@ -198,11 +199,11 @@ export function useSubscriptionPlans({
 
     const apiPayload = {
       ...values,
-      duration_days: values.duration_in_days,
       base_price: values.price,
+      status: values.is_active ? "active" : "inactive",
     };
-    delete apiPayload.duration_in_days;
     delete apiPayload.price;
+    delete apiPayload.is_active;
 
     try {
       await updatePlan({ id: selectedPlanId, body: apiPayload }).unwrap();
@@ -246,19 +247,14 @@ export function useSubscriptionPlans({
     const plan = detailsPlan || selectedPlan;
     if (!plan) return null;
 
-    let normalizedType = plan.type;
-    if (normalizedType === "duration") normalizedType = "fixed_period";
-    if (normalizedType === "session") normalizedType = "session_based";
-
     return {
       branch_id: plan.branch_id ? String(plan.branch_id) : "",
       name: planName(plan) === "-" ? "" : planName(plan),
-      type: normalizedType || "fixed_period",
-      duration_in_days: String(plan.duration_days ?? ""),
+      sessions_per_week: plan.sessions_per_week ? String(plan.sessions_per_week) : "",
       session_count: plan.session_count ? String(plan.session_count) : "",
       price: String(parseAmount(plan.base_price || "")),
       max_subscribers: String(plan.max_subscribers ?? "0"),
-      is_active: plan.is_active ?? true,
+      is_active: plan.status === "active" || plan.is_active === true,
       gender_restriction: plan.gender_restriction || "mixed",
       is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
       activities:

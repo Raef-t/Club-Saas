@@ -60,23 +60,66 @@ export function getAttendanceStatusLabel(status) {
 /**
  * Converts attendance history records into DataTable rows.
  */
-export function createAttendanceRows(response, activeMember) {
+export function createAttendanceRows(response, activeMember, people = {}) {
+  const memberNames = createPersonNameMap(people.members, "member");
+  const staffNames = createPersonNameMap(people.staff, "staff");
+
   return getAttendanceCollection(response).map((record, index) => ({
     id: record.id || `attendance-${index}`,
+    attendableId: record.attendable_id || record.member_id || record.staff_id || null,
+    attendableType: record.attendable_type || (record.staff_id ? "staff" : "member"),
+    branchId: record.branch_id || null,
+    isOpen: record.status === "checked_in" && !record.check_out,
     number: record.id ? `#${record.id}` : "-",
-    time: formatAttendanceTime(record.check_in),
+    type: record.attendable_type === "staff" ? "موظف" : "عضو",
+    checkIn: formatAttendanceTime(record.check_in),
+    checkOut: formatAttendanceTime(record.check_out),
     member:
-      activeMember?.name ||
+      (activeMember &&
+      record.attendable_type !== "staff" &&
+      String(activeMember.id) === String(record.attendable_id)
+        ? activeMember.name
+        : null) ||
       record.member?.person?.full_name ||
+      record.staff?.person?.full_name ||
       record.member_name ||
-      `عضو #${record.member_id || record.attendable_id || "-"}`,
+      record.staff_name ||
+      (record.attendable_type === "staff"
+        ? staffNames.get(String(record.attendable_id || record.staff_id))
+        : memberNames.get(String(record.attendable_id || record.member_id))) ||
+      `${record.attendable_type === "staff" ? "موظف" : "عضو"} #${record.attendable_id || record.member_id || record.staff_id || "-"}`,
     activity: formatLocalizedName(record.activity?.name || record.activity_name) || "-",
     coach: record.coach?.person?.full_name || record.coach?.name || record.coach_name || "-",
     locker:
       record.locker?.number || record.locker_number || record.active_locker?.locker_number || "-",
-    duration: record.duration_minutes || null,
+    duration: record.duration_minutes ?? null,
     status: getAttendanceStatusLabel(record.status),
   }));
+}
+
+/**
+ * Indexes members or staff records by the identifiers returned in attendance history.
+ */
+function createPersonNameMap(records, type) {
+  const names = new Map();
+
+  getAttendanceCollection(records).forEach((record) => {
+    const name =
+      record.person?.full_name ||
+      record.full_name ||
+      [record.person?.first_name, record.person?.last_name].filter(Boolean).join(" ");
+    if (!name) return;
+
+    const ids =
+      type === "staff"
+        ? [record.staff_id, record.id]
+        : [record.member_id, record.id];
+    ids
+      .filter((id) => id !== null && id !== undefined)
+      .forEach((id) => names.set(String(id), name));
+  });
+
+  return names;
 }
 
 /**

@@ -114,3 +114,14 @@ export function getDefaultGenderForBranch(selectedBranch, fallback = "male") {
   }
   return fallback;
 }
+
+/**
+ * Resolves the gender imposed by a branch id from a branch collection.
+ */
+export function getGenderForBranchId(branches, branchId, fallback) {
+  const branch = getBranchesArray(branches).find(
+    (item) => String(item.id) === String(branchId),
+  );
+
+  return getDefaultGenderForBranch(branch, fallback);
+}

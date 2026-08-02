@@ -130,7 +130,7 @@ export default function AttendanceScanner({
       dir="rtl"
     >
       <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-center justify-end gap-2 text-right">
+        <div className="flex items-center justify-start gap-2 text-right">
           <div>
             <div className="flex items-center gap-2">
               <QrCodeIcon className="size-5 shrink-0" />

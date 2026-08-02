@@ -16,7 +16,7 @@ const statusClass = {
   مدفوع: "bg-[rgba(19,172,73,0.18)] text-app-green",
   معلق: "bg-[rgba(252,153,3,0.18)] text-[#d99300]",
   متأخر: "bg-[rgba(228,0,0,0.18)] text-app-red",
-  "قيد المراجعة": "bg-[rgba(252,205,3,0.18)] text-app-yellow",
+  "قيد المراجعة": "bg-[rgba(242,220,46,0.18)] text-app-yellow",
 };
 
 function getVisiblePages(page, total) {
@@ -27,10 +27,10 @@ function getVisiblePages(page, total) {
   return [1, "...", page - 1, page, page + 1, "...", total];
 }
 
-function getAlignClass(align = "end") {
+function getAlignClass(align = "start") {
   if (align === "center") return "justify-center text-center";
-  if (align === "start") return "justify-start text-start";
-  return "justify-end text-end";
+  if (align === "end") return "justify-end text-end";
+  return "justify-start text-start";
 }
 
 function CellValue({ column, row, value, card = false }) {
@@ -91,7 +91,7 @@ function Toolbar({
         <h2 className="text-base font-medium text-app-text">{title}</h2>
         {subtitle && <p className="mt-1 text-xs text-app-muted">{subtitle}</p>}
 
-        <div className="mt-4 grid grid-cols-2 items-center gap-3 sm:flex sm:flex-wrap sm:justify-end">
+        <div className="mt-4 grid grid-cols-2 items-center gap-3 sm:flex sm:flex-wrap sm:justify-start">
           {showAdd && (
             <Button
               onClick={onAdd}
@@ -263,7 +263,7 @@ export default function DataTable({
       : [];
 
   return (
-    <section className="app-card overflow-hidden rounded-2xl">
+    <section className="app-card overflow-hidden rounded-2xl" dir="rtl">
       {showToolbar && (
         <Toolbar
           title={title}

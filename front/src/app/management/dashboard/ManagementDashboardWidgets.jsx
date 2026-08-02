@@ -41,7 +41,7 @@ export function SubscriptionDonut({ items }) {
     <div className="flex items-center justify-center gap-8 px-5 pb-5 pt-1">
       <ul className="space-y-3 text-sm text-app-text">
         {items.map((item) => (
-          <li key={item.label} className="flex items-center justify-end gap-3">
+          <li key={item.label} className="flex items-center justify-start gap-3">
             <span className="max-w-28 truncate">{item.label}</span>
             <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} />
           </li>
@@ -101,13 +101,13 @@ export function DailyScheduleTable({ sessions }) {
         <tbody>
           {sessions.map((session) => (
             <tr key={session.id} className="bg-app-card-soft">
-              <td className="rounded-r-xl px-4 py-3 font-medium text-app-yellow" dir="ltr">
+              <td className="rounded-s-xl px-4 py-3 font-medium text-app-yellow" dir="ltr">
                 {formatTime(session.startTime)} - {formatTime(session.endTime)}
               </td>
               <td className="px-4 py-3 text-app-text">{session.title}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.coach}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.branch}</td>
-              <td className="rounded-l-xl px-4 py-3">
+              <td className="rounded-e-xl px-4 py-3">
                 <span
                   className={`inline-flex min-w-16 justify-center rounded-lg px-3 py-1 text-xs ${
                     statusClasses[session.status.tone] || statusClasses.neutral
@@ -197,7 +197,7 @@ export function CurrentActiveSessionsTable({ sessions = [] }) {
                 key={session.plan_id || session.session_template_id || index}
                 className="bg-app-card-soft"
               >
-                <td className="rounded-r-xl px-4 py-3 font-medium text-app-text">
+                <td className="rounded-s-xl px-4 py-3 font-medium text-app-text">
                   {planName}
                 </td>
                 <td className="px-4 py-3 text-app-yellow font-medium" dir="ltr">
@@ -208,7 +208,7 @@ export function CurrentActiveSessionsTable({ sessions = [] }) {
                     {session.present_players_count || 0} لاعب متواجد
                   </span>
                 </td>
-                <td className="rounded-l-xl px-4 py-3">
+                <td className="rounded-e-xl px-4 py-3">
                   <span className="inline-flex items-center gap-2 rounded-lg bg-app-green/20 px-3 py-1 text-xs text-app-green font-medium">
                     <span className="relative flex size-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-app-green opacity-75"></span>

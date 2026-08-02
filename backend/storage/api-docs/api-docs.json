@@ -9840,12 +9840,12 @@
                                         ]
                                     },
                                     "age": {
-                                        "description": "(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات",
+                                        "description": "العمر بالسنوات (اختياري)",
                                         "type": "integer",
                                         "example": 25
                                     },
                                     "dob": {
-                                        "description": "(مطلوب في حال لم يتم إدخال العمر) تاريخ الميلاد",
+                                        "description": "تاريخ الميلاد (اختياري)",
                                         "type": "string",
                                         "format": "date",
                                         "example": "1995-10-25"
@@ -10057,7 +10057,7 @@
                                         ]
                                     },
                                     "age": {
-                                        "description": "(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات",
+                                        "description": "العمر بالسنوات (اختياري)",
                                         "type": "integer",
                                         "example": 25
                                     },
@@ -14161,8 +14161,7 @@
                                 "required": [
                                     "first_name",
                                     "last_name",
-                                    "branch_ids[]",
-                                    "age"
+                                    "branch_ids[]"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -16933,6 +16932,7 @@
                             "type": "string",
                             "enum": [
                                 "admin",
+                                "management_admin",
                                 "manager",
                                 "coach",
                                 "receptionist",
@@ -17067,8 +17067,8 @@
                                         "example": "receptionist",
                                         "enum": [
                                             "admin",
+                                            "management_admin",
                                             "receptionist",
-                                            "coach",
                                             "cleaner",
                                             "manager",
                                             "staff"
@@ -17478,6 +17478,7 @@
                                         "example": "receptionist",
                                         "enum": [
                                             "admin",
+                                            "management_admin",
                                             "receptionist",
                                             "coach",
                                             "cleaner",
@@ -20999,6 +21000,20 @@
                 "description": "استرجاع قائمة بجميع خطط الاشتراك المتوفرة في النادي.",
                 "operationId": "d777883f9934526c98bba1e8b8912722",
                 "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة الخطة (active, inactive, completed)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "completed"
+                            ]
+                        }
+                    },
                     {
                         "name": "branch_id",
                         "in": "query",

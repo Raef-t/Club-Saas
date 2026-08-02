@@ -25,6 +25,7 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
@@ -57,8 +58,12 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()->with(['planActivities', 'sessionTemplates']);
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities', 'sessionTemplates']);
         
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
@@ -67,8 +72,10 @@ class SubscriptionPlanController extends BaseController
             $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
         }
 
-        if ($request->boolean('available', true)) {
-            $query->available();
+        if ($request->has('available')) {
+            if ($request->boolean('available')) {
+                $query->available();
+            }
         }
         
         $plans = $query->orderBy('id', 'desc')->get();

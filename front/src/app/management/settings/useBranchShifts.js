@@ -9,6 +9,7 @@ import {
 import { getApiErrorMessage } from "@/lib/apiError";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { shiftSchema } from "@/lib/validations/settingsSchema";
+import { getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { printBranchShifts } from "./shiftPrint";
 import {
   createShiftForm,
@@ -47,6 +48,7 @@ export function useBranchShifts({
     () => getSettingsCollection(shiftsResponse || fallbackShifts),
     [fallbackShifts, shiftsResponse],
   );
+  const branchGender = getGenderForBranchId(branches, branchId, null);
 
   useEffect(() => {
     setEditor(null);
@@ -71,7 +73,10 @@ export function useBranchShifts({
    * Opens an empty shift editor.
    */
   function openCreate() {
-    setForm(createShiftForm());
+    setForm({
+      ...createShiftForm(),
+      ...(branchGender ? { shiftGender: branchGender } : {}),
+    });
     setErrors({});
     setEditor({ mode: "create", shift: null });
   }
@@ -80,7 +85,10 @@ export function useBranchShifts({
    * Opens the shift editor with the selected record.
    */
   function openEdit(shift) {
-    setForm(createShiftForm(shift));
+    setForm({
+      ...createShiftForm(shift),
+      ...(branchGender ? { shiftGender: branchGender } : {}),
+    });
     setErrors({});
     setEditor({ mode: "edit", shift });
   }

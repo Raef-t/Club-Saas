@@ -111,7 +111,11 @@ export function useCoaches(params = {}) {
     return branchCoaches.filter((coach) => {
       const nameVal = coach.person?.full_name || "";
       const specVal = coach.details?.specialization || "";
-      const phoneVal = coach.person?.phone || "";
+      const phoneVal =
+        coach.person?.phone_number ||
+        coach.person?.phone ||
+        coach.person?.contacts?.[0]?.phone_number ||
+        "";
 
       const matchesActivity =
         activityFilter === "all" ||
@@ -180,27 +184,22 @@ export function useCoaches(params = {}) {
   async function handleCreate(values) {
     setFormError("");
     try {
-      const nameParts = (values.full_name || "").trim().split(/\s+/);
-      const first_name = nameParts[0] || "";
-      const last_name = nameParts.slice(1).join(" ") || ".";
-
       const formData = new FormData();
-      formData.append("first_name", first_name);
-      formData.append("last_name", last_name);
+      formData.append("first_name", values.first_name);
+      formData.append("last_name", values.last_name);
       formData.append("gender", values.gender || "male");
-      formData.append("age", String(Number(values.age) || 25));
-
+      formData.append("dob", values.dob);
       if (values.phone_number) formData.append("phone_number", values.phone_number);
-      else if (values.phone) formData.append("phone_number", values.phone);
       formData.append("country_code", values.country_code || "+963");
-      formData.append("email", ""); // backend email placeholder
+      if (values.national_id) formData.append("national_id", values.national_id);
       if (values.address) formData.append("address", values.address);
 
       if (Array.isArray(values.branch_ids)) {
         values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
       }
-      if (values.specialization) formData.append("specialization", values.specialization);
       formData.append("experience_years", String(Number(values.experience_years) || 0));
+      if (values.start_date) formData.append("start_date", values.start_date);
+      formData.append("is_active", values.is_active ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
       formData.append(
@@ -237,28 +236,23 @@ export function useCoaches(params = {}) {
     if (!selectedCoachId) return;
     setFormError("");
     try {
-      const nameParts = (values.full_name || "").trim().split(/\s+/);
-      const first_name = nameParts[0] || "";
-      const last_name = nameParts.slice(1).join(" ") || ".";
-
       const formData = new FormData();
       formData.append("_method", "PATCH"); // Laravel POST method spoofing
-      formData.append("first_name", first_name);
-      formData.append("last_name", last_name);
+      formData.append("first_name", values.first_name);
+      formData.append("last_name", values.last_name);
       formData.append("gender", values.gender || "male");
-      formData.append("age", String(Number(values.age) || 25));
-
-      if (values.phone_number) formData.append("phone_number", values.phone_number);
-      else if (values.phone) formData.append("phone_number", values.phone);
+      formData.append("dob", values.dob);
+      formData.append("phone_number", values.phone_number || "");
       formData.append("country_code", values.country_code || "+963");
-      formData.append("email", ""); // backend email placeholder
+      formData.append("national_id", values.national_id || "");
       formData.append("address", values.address || "");
 
       if (Array.isArray(values.branch_ids)) {
         values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
       }
-      if (values.specialization) formData.append("specialization", values.specialization);
       formData.append("experience_years", String(Number(values.experience_years) || 0));
+      formData.append("start_date", values.start_date || "");
+      formData.append("is_active", values.is_active ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
       formData.append(
@@ -326,19 +320,30 @@ export function useCoaches(params = {}) {
               .filter((id) => !isNaN(id) && id > 0)
           : [];
     const workTypes = selectedCoach.work_types || selectedCoach.details?.work_types || [];
+    const [firstName, ...remainingNameParts] = (selectedCoach.person?.full_name || "").split(/\s+/);
+    const primaryContact = selectedCoach.person?.contacts?.[0] || null;
 
     return {
-      full_name: selectedCoach.person?.full_name || "",
+      first_name: selectedCoach.person?.first_name || firstName || "",
+      last_name:
+        selectedCoach.person?.last_name || remainingNameParts.join(" ") || "",
       gender: selectedCoach.person?.gender || "male",
-      age: selectedCoach.person?.age ? String(selectedCoach.person.age) : "",
-      phone: selectedCoach.person?.phone_number || selectedCoach.person?.phone || "",
-      country_code: selectedCoach.person?.country_code || "+963",
+      dob: selectedCoach.person?.dob ? selectedCoach.person.dob.split("T")[0] : "",
+      phone_number:
+        selectedCoach.person?.phone_number ||
+        selectedCoach.person?.phone ||
+        primaryContact?.phone_number ||
+        "",
+      country_code:
+        selectedCoach.person?.country_code || primaryContact?.country_code || "+963",
+      national_id: selectedCoach.person?.national_id || "",
       address: selectedCoach.person?.address || "",
       branch_ids: branchIds,
-      specialization: selectedCoach.details?.specialization || selectedCoach.specialization || "",
       experience_years: String(
         selectedCoach.experience_years || selectedCoach.details?.experience_years || 0,
       ),
+      start_date: selectedCoach.start_date ? selectedCoach.start_date.split("T")[0] : "",
+      is_active: selectedCoach.is_active ?? true,
       employment_type: selectedCoach.employment_type || "fixed_salary",
       base_salary: String(Number(selectedCoach.base_salary) || 0),
       default_commission_rate: String(Number(selectedCoach.details?.default_commission_rate) || 0),
