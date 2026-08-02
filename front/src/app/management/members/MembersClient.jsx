@@ -301,9 +301,9 @@ export default function MembersClient({ initialData }) {
         toolbarActions={
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
             <label className="relative block w-full sm:w-80 md:w-96">
-              <SearchIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
+              <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
-                className="app-input h-10 w-full pr-9 pl-3 text-sm outline-none transition focus:border-app-yellow/70 bg-app-card-soft text-white"
+                className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="البحث باسم اللاعب أو الهاتف..."

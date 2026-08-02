@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   useDeductAttendanceMutation,
-  useGetMemberAttendancesQuery,
+  useBulkCheckOutMutation,
+  useGetAttendancesQuery,
   useGetMemberQuery,
   useGetMemberSubscriptionsQuery,
+  useManualCheckInMutation,
+  useManualCheckOutMutation,
   useQrCheckInMutation,
   useQrCheckOutMutation,
+  useRollbackAttendanceMutation,
 } from "@/lib/api/attendanceApi";
 import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { useGetMembersQuery } from "@/lib/api/membersApi";
+import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { ATTENDANCE_SCAN_MODES } from "./attendanceConstants";
 import {
   createAttendanceBranchOptions,
@@ -48,10 +54,36 @@ export function useAttendance({ initialBranches } = {}) {
   const [selectedActivityId, setSelectedActivityId] = useState("");
   const [lockerNumber, setLockerNumber] = useState("");
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
+  const [attendanceTypeFilter, setAttendanceTypeFilter] = useState("all");
+  const [attendanceFromDate, setAttendanceFromDate] = useState("");
+  const [attendanceToDate, setAttendanceToDate] = useState("");
 
   const [qrCheckIn, { isLoading: isCheckingIn }] = useQrCheckInMutation();
   const [qrCheckOut, { isLoading: isCheckingOut }] = useQrCheckOutMutation();
   const [deductAttendance, { isLoading: isRegistering }] = useDeductAttendanceMutation();
+  const [manualCheckIn, { isLoading: isManualCheckingIn }] = useManualCheckInMutation();
+  const [manualCheckOut, { isLoading: isManualCheckingOut }] = useManualCheckOutMutation();
+  const [bulkCheckOut, { isLoading: isBulkCheckingOut }] = useBulkCheckOutMutation();
+  const [rollbackAttendance, { isLoading: isRollingBack }] =
+    useRollbackAttendanceMutation();
+  const peopleQueryParams = branchId ? { branch_id: branchId } : {};
+  const { currentData: attendanceMembersResponse } = useGetMembersQuery(peopleQueryParams);
+  const { currentData: attendanceStaffResponse } = useGetCoachesQuery(peopleQueryParams);
+  const attendanceHistoryParams = useMemo(
+    () => ({
+      attendable_type: attendanceTypeFilter,
+      ...(attendanceFromDate ? { from: attendanceFromDate } : {}),
+      ...(attendanceToDate ? { to: attendanceToDate } : {}),
+    }),
+    [attendanceFromDate, attendanceToDate, attendanceTypeFilter],
+  );
+  const {
+    currentData: attendanceHistoryResponse,
+    error: attendanceHistoryError,
+    isLoading: isAttendanceHistoryLoading,
+    isFetching: isAttendanceHistoryFetching,
+    refetch: refetchAttendanceHistory,
+  } = useGetAttendancesQuery(attendanceHistoryParams);
 
   const {
     currentData: memberResponse,
@@ -71,23 +103,22 @@ export function useAttendance({ initialBranches } = {}) {
   } = useGetMemberSubscriptionsQuery(scannedMemberId, {
     skip: !scannedMemberId,
   });
-  const {
-    currentData: memberAttendancesResponse,
-    error: attendancesError,
-    isLoading: isAttendancesLoading,
-    isFetching: isAttendancesFetching,
-    refetch: refetchAttendances,
-  } = useGetMemberAttendancesQuery(scannedMemberId, {
-    skip: !scannedMemberId,
-  });
-
   const activeMember = useMemo(
     () => createAttendanceMember(memberResponse, scannedMemberId),
     [memberResponse, scannedMemberId],
   );
   const attendanceRows = useMemo(
-    () => createAttendanceRows(memberAttendancesResponse, activeMember),
-    [activeMember, memberAttendancesResponse],
+    () =>
+      createAttendanceRows(attendanceHistoryResponse, activeMember, {
+        members: attendanceMembersResponse,
+        staff: attendanceStaffResponse,
+      }),
+    [
+      activeMember,
+      attendanceHistoryResponse,
+      attendanceMembersResponse,
+      attendanceStaffResponse,
+    ],
   );
   const playerSubscriptions = useMemo(
     () => createAttendanceSubscriptions(memberSubscriptionsResponse),
@@ -132,8 +163,8 @@ export function useAttendance({ initialBranches } = {}) {
   const subscriptionsErrorMessage = subscriptionsError
     ? getApiErrorMessage(subscriptionsError, "تعذر تحميل اشتراكات العضو.")
     : "";
-  const attendancesErrorMessage = attendancesError
-    ? getApiErrorMessage(attendancesError, "تعذر تحميل سجل حضور العضو.")
+  const attendancesErrorMessage = attendanceHistoryError
+    ? getApiErrorMessage(attendanceHistoryError, "تعذر تحميل سجل الحضور.")
     : "";
   const isProcessingScan = isCheckingIn || isCheckingOut;
 
@@ -142,6 +173,12 @@ export function useAttendance({ initialBranches } = {}) {
    */
   function setBranchId(value) {
     setSelectedBranchId(value || "all");
+  }
+
+  function resetAttendanceFilters() {
+    setAttendanceTypeFilter("all");
+    setAttendanceFromDate("");
+    setAttendanceToDate("");
   }
 
   /**
@@ -261,6 +298,83 @@ export function useAttendance({ initialBranches } = {}) {
   }
 
   /**
+   * Registers a manual check-in for a member or staff record.
+   */
+  async function handleManualCheckIn({ attendableType, attendableId }) {
+    if (!branchId) {
+      toast.warning("اختر الفرع قبل تسجيل الدخول اليدوي.");
+      return false;
+    }
+
+    try {
+      const response = await manualCheckIn({
+        attendable_type: attendableType,
+        attendable_id: Number(attendableId),
+        branch_id: Number(branchId),
+      }).unwrap();
+      toast.success(response?.message || "تم تسجيل الدخول بنجاح.");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "فشل تسجيل الدخول اليدوي."));
+      return false;
+    }
+  }
+
+  /**
+   * Checks out an open attendance record by its attendance id.
+   */
+  async function handleManualCheckOut(attendanceId) {
+    try {
+      const response = await manualCheckOut(Number(attendanceId)).unwrap();
+      toast.success(response?.message || "تم تسجيل الانصراف بنجاح.");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "فشل تسجيل الانصراف اليدوي."));
+      return false;
+    }
+  }
+
+  /**
+   * Checks out all open attendance records for one branch and subscription plan.
+   */
+  async function handleBulkCheckOut(subscriptionPlanId) {
+    if (!branchId) {
+      toast.warning("اختر الفرع قبل تسجيل الانصراف الجماعي.");
+      return null;
+    }
+
+    try {
+      const response = await bulkCheckOut({
+        branch_id: Number(branchId),
+        subscription_plan_id: Number(subscriptionPlanId),
+      }).unwrap();
+      const result = response?.data || {};
+      toast.success(response?.message || "اكتملت عملية الانصراف الجماعي.");
+      return result;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "فشل تسجيل الانصراف الجماعي."));
+      return null;
+    }
+  }
+
+  /**
+   * Returns deducted sessions and optionally removes the complete attendance record.
+   */
+  async function handleRollbackAttendance(attendanceId, playerSubscriptionIds) {
+    try {
+      const response = await rollbackAttendance({
+        attendanceId: Number(attendanceId),
+        playerSubscriptionIds,
+      }).unwrap();
+      toast.success(response?.message || "تم التراجع عن الحضور وإرجاع الجلسة بنجاح.");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "فشل التراجع عن سجل الحضور."));
+      return false;
+    }
+  }
+
+  /**
    * Routes a decoded QR value to the selected attendance operation.
    */
   async function handleScanSuccess(decodedText) {
@@ -326,7 +440,7 @@ export function useAttendance({ initialBranches } = {}) {
       setRegisteredMemberId(activeMember.id);
       setLastAttendanceId(null);
       toast.success(response?.message || "تم خصم الجلسة وتأكيد الحضور بنجاح.");
-      await refetchAttendances();
+      await refetchAttendanceHistory();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "فشل خصم الجلسة."));
     }
@@ -353,12 +467,26 @@ export function useAttendance({ initialBranches } = {}) {
     attendancesErrorMessage,
     isMemberLoading: isMemberLoading || isMemberFetching,
     isSubscriptionsLoading: isSubscriptionsLoading || isSubscriptionsFetching,
-    isAttendancesLoading: isAttendancesLoading || isAttendancesFetching,
+    isAttendancesLoading: isAttendanceHistoryLoading || isAttendanceHistoryFetching,
     isProcessingScan,
     isRegistering,
+    isManualCheckingIn,
+    isManualCheckingOut,
+    isBulkCheckingOut,
+    isRollingBack,
     isRegistered: Boolean(activeMember) && registeredMemberId === activeMember?.id,
     isPendingDeduction: Boolean(lastAttendanceId),
+    attendanceTypeFilter,
+    attendanceFromDate,
+    attendanceToDate,
+    hasAttendanceFilters: Boolean(
+      attendanceTypeFilter !== "all" || attendanceFromDate || attendanceToDate,
+    ),
     setBranchId,
+    setAttendanceTypeFilter,
+    setAttendanceFromDate,
+    setAttendanceToDate,
+    resetAttendanceFilters,
     handleAlwaysOnChange,
     handleScanClick,
     handleScanModeChange,
@@ -368,9 +496,13 @@ export function useAttendance({ initialBranches } = {}) {
     handleActivityChange,
     handleLockerChange,
     handleRegister,
+    handleManualCheckIn,
+    handleManualCheckOut,
+    handleBulkCheckOut,
+    handleRollbackAttendance,
     stopScanner: () => setScannerActive(false),
     retryMember: () => scannedMemberId && refetchMember(),
     retrySubscriptions: () => scannedMemberId && refetchSubscriptions(),
-    retryAttendances: () => scannedMemberId && refetchAttendances(),
+    retryAttendances: refetchAttendanceHistory,
   };
 }

@@ -139,7 +139,7 @@ export function buildReportsPrintHtml({ reports, branchName, logoUrl, generatedA
             justify-content: space-between;
             gap: 24px;
             padding-bottom: 12px;
-            border-bottom: 3px solid #fccd03;
+            border-bottom: 3px solid #f2dc2e;
           }
           .brand { display: flex; align-items: center; gap: 12px; }
           .brand img {

@@ -37,11 +37,11 @@ export default function AppShell({ children, sidebar, currentUser }) {
             />
 
             {/* Drawer Container */}
-            <div className="relative flex h-full w-[320px] max-w-[85vw] overflow-hidden bg-app-panel border-l border-app-line shadow-2xl animate-slide-in-rtl">
+            <div className="relative flex h-full w-[320px] max-w-[85vw] overflow-hidden border-e border-app-line bg-app-panel shadow-2xl animate-slide-in-rtl">
               {/* Inner contents */}
               <div className="flex h-full w-full overflow-hidden">
                 {/* Right Side: Mini Icon rail for system switching & Close Button */}
-                <div className="w-[68px] shrink-0 border-l border-app-line flex flex-col items-center py-4 bg-app-panel-soft/50 gap-2">
+                <div className="flex w-[68px] shrink-0 flex-col items-center gap-2 border-e border-app-line bg-app-panel-soft/50 py-4">
                   {/* Close Button */}
                   <button
                     onClick={() => setSidebarOpen(false)}

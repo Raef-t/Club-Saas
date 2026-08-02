@@ -6,7 +6,7 @@ export const appPalette = {
   cardSoft: "#222222",
   border: "#282828",
   borderSoft: "#1B1B1B",
-  yellow: "#FCCD03",
+  yellow: "#F2DC2E",
   text: "#EFEFEF",
   muted: "#A1A1A1",
   mutedLight: "#C1C1C1",
@@ -72,10 +72,6 @@ export const pageMeta = {
   "/management": {
     title: "الإحصائيات",
     subtitle: "بيانات مباشرة وملخص شامل لأداء نظام إدارة النادي",
-  },
-  "/management/attendance": {
-    title: "تسجيل الحضور",
-    subtitle: "مسح QR واختيار نشاط اللاعب قبل تسجيل الحضور",
   },
   "/accounting": {
     title: "النظرة العامة للأمور المالية",

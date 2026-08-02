@@ -132,14 +132,14 @@ export default function LoginForm() {
               maxLength={100}
               required
               onChange={(event) => updateField("password", event.target.value)}
-              className={`login-password-input h-12 w-full rounded-xl border bg-app-card-soft pl-12 pr-4 text-right text-white outline-none transition focus:border-app-yellow ${
+              className={`login-password-input h-12 w-full rounded-xl border bg-app-card-soft ps-4 pe-12 text-right text-white outline-none transition focus:border-app-yellow ${
                 fieldErrors.password ? "border-app-red" : "border-app-line"
               }`}
             />
             <button
               type="button"
               onClick={() => setShowPassword((current) => !current)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-app-muted-light hover:text-white transition"
+              className="absolute end-4 top-1/2 -translate-y-1/2 text-app-muted-light transition hover:text-white"
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
               aria-pressed={showPassword}
             >
@@ -168,7 +168,7 @@ export default function LoginForm() {
           <span>تذكرني</span>
           <input
             type="checkbox"
-            className="accent-[#fccd03]"
+            className="accent-[#f2dc2e]"
             checked={form.remember}
             onChange={(event) => updateField("remember", event.target.checked)}
           />

@@ -8,8 +8,8 @@ export default function ToggleSwitch({
   const trackSize = size === "sm" ? "h-5 w-9" : "h-6 w-11";
   const thumbSize =
     size === "sm"
-      ? "after:h-4 after:w-4 after:top-[2px] after:right-[2px] peer-checked:after:-translate-x-full"
-      : "after:h-5 after:w-5 after:top-[2px] after:right-[2px] peer-checked:after:-translate-x-[18px]";
+      ? "after:h-4 after:w-4 after:top-[2px] after:start-[2px] peer-checked:after:-translate-x-full"
+      : "after:h-5 after:w-5 after:top-[2px] after:start-[2px] peer-checked:after:-translate-x-[18px]";
 
   return (
     <div className={`flex items-center gap-3 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>

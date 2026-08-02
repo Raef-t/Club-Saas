@@ -60,7 +60,7 @@ export default function ConfirmDialog({
           type="button"
           onClick={onClose}
           disabled={isLoading}
-          className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg border border-app-line bg-app-card-soft text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow disabled:opacity-50"
+          className="absolute end-4 top-4 grid size-8 place-items-center rounded-lg border border-app-line bg-app-card-soft text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow disabled:opacity-50"
           aria-label="إغلاق"
         >
           <XIcon className="size-4" />
@@ -81,7 +81,7 @@ export default function ConfirmDialog({
         </div>
 
         {/* Actions */}
-        <div className="mt-6 flex flex-row-reverse gap-3">
+        <div className="mt-6 flex gap-3">
           <Button
             type="button"
             tone={tone === "danger" ? "danger" : "primary"}

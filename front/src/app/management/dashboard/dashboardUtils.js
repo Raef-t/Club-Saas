@@ -2,7 +2,7 @@ import { SCHEDULE_DAYS } from "../schedule/scheduleConstants";
 import { getEntityBranchIds } from "../../../lib/managementBranchUtils";
 import { formatLocalizedName } from "../../../lib/utils";
 
-const SUBSCRIPTION_COLORS = ["#16e79b", "#fccd03", "#f2f2f2", "#0755ff", "#7925ff"];
+const SUBSCRIPTION_COLORS = ["#16e79b", "#f2dc2e", "#f2f2f2", "#0755ff", "#7925ff"];
 
 /**
  * Extracts a collection from the response shapes returned by the backend.

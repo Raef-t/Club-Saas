@@ -14,7 +14,7 @@ export default function SectionCard({
     >
       {(title || subtitle || action) && (
         <div className="flex items-start justify-between gap-4 px-5 py-3.5">
-          <div className="min-w-0 text-end">
+          <div className="min-w-0 text-start">
             {title && (
               <h2 className="text-base font-medium text-app-text">{title}</h2>
             )}

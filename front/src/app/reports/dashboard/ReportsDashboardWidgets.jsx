@@ -42,7 +42,7 @@ export function ReportCards({ reports, selectedReportId, onSelect }) {
             onClick={() => onSelect(report.id)}
             className={`group min-h-36 rounded-2xl border p-4 text-right transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow/60 ${
               selected
-                ? "border-app-yellow bg-[linear-gradient(135deg,rgba(252,205,3,0.16),rgba(252,205,3,0.04))] shadow-[0_12px_30px_rgba(252,205,3,0.08)]"
+                ? "border-app-yellow bg-[linear-gradient(135deg,rgba(242,220,46,0.16),rgba(242,220,46,0.04))] shadow-[0_12px_30px_rgba(242,220,46,0.08)]"
                 : "border-app-line bg-app-card-soft hover:-translate-y-0.5 hover:border-app-yellow/50 hover:bg-app-card-hover"
             }`}
           >
@@ -150,9 +150,9 @@ export function ReportPanel({ report, branchName, onPrint }) {
                     key={column.key}
                     className={`px-4 py-3 text-app-text ${
                       columnIndex === 0
-                        ? "rounded-r-xl"
+                        ? "rounded-s-xl"
                         : columnIndex === report.columns.length - 1
-                          ? "rounded-l-xl"
+                          ? "rounded-e-xl"
                           : ""
                     }`}
                   >

@@ -5,14 +5,14 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { TimeFormatProvider } from "@/lib/TimeFormatContext";
 
 export const metadata = {
-  title: "TechnoGYM Dashboard",
-  description: "Gym accounting and reports dashboard",
+  title: "TechnoGYM | إدارة النادي",
+  description: "لوحة إدارة النادي والاشتراكات والتقارير",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className="antialiased" dir="rtl">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <TimeFormatProvider>
             <StoreProvider>

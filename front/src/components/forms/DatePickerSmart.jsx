@@ -56,7 +56,7 @@ export default function DatePickerSmart({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // day | year
+  // day | month | year
   const [mode, setMode] = useState("day");
 
   const [pos, setPos] = useState({
@@ -405,38 +405,39 @@ export default function DatePickerSmart({
               <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-4 text-app-text">
                 {/* Header */}
                 <div className="flex items-center justify-between" dir="rtl">
-                  <div className="text-sm font-semibold text-app-text">التقويم</div>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode((m) => (m === "day" ? "year" : "day"))}
-                    className="p-1 rounded-full hover:bg-app-card-soft transition"
-                    title="السنوات"
-                  >
-                    <ChevronDown size={18} className="text-app-muted" />
-                  </button>
-                </div>
-
-                {/* Month row */}
-                <div className="mt-3 flex items-center justify-between" dir="rtl">
-                  <div className="text-xs text-app-muted-light">
-                    {MONTHS[view.getMonth()]} {view.getFullYear()}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setMode((m) => (m === "month" ? "day" : "month"))}
+                      className="text-sm font-bold text-app-text hover:text-app-yellow transition px-2 py-1 rounded-md hover:bg-app-card-soft"
+                      title="اختر الشهر"
+                    >
+                      {MONTHS[view.getMonth()]}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMode((m) => (m === "year" ? "day" : "year"))}
+                      className="text-sm font-bold text-app-text hover:text-app-yellow transition px-2 py-1 rounded-md hover:bg-app-card-soft"
+                      title="اختر السنة"
+                    >
+                      {view.getFullYear()}
+                    </button>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={goPrevMonth}
-                      className="p-1 rounded-full hover:bg-app-card-soft transition"
-                      title="السابق"
+                      className="p-1.5 rounded-full hover:bg-app-card-soft transition"
+                      title="الشهر السابق"
                     >
                       <ChevronRight size={18} className="text-app-muted-light" />
                     </button>
                     <button
                       type="button"
                       onClick={goNextMonth}
-                      className="p-1 rounded-full hover:bg-app-card-soft transition"
-                      title="التالي"
+                      className="p-1.5 rounded-full hover:bg-app-card-soft transition"
+                      title="الشهر التالي"
                     >
                       <ChevronLeft size={18} className="text-app-muted-light" />
                     </button>
@@ -471,6 +472,30 @@ export default function DatePickerSmart({
                         );
                       })}
                     </div>
+                  </div>
+                ) : mode === "month" ? (
+                  <div className="grid grid-cols-3 gap-2 py-2" dir="rtl">
+                    {MONTHS.map((m, idx) => {
+                      const isCurrent = idx === view.getMonth();
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setView((v) => new Date(v.getFullYear(), idx, 1));
+                            setMode("day");
+                          }}
+                          className={[
+                            "h-10 rounded-lg text-sm transition",
+                            isCurrent
+                              ? "bg-app-yellow text-app-bg font-bold"
+                              : "text-app-text hover:bg-app-card-soft border border-app-line",
+                          ].join(" ")}
+                        >
+                          {m}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <>

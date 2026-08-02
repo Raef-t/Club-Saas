@@ -18,7 +18,7 @@ export function CheckboxField({
         checked={checked}
         onChange={onChange}
         disabled={disabled}
-        className="size-4 rounded border-app-line bg-app-card-soft text-app-yellow accent-[#fccd03] focus:ring-0 disabled:opacity-50"
+        className="size-4 rounded border-app-line bg-app-card-soft text-app-yellow accent-[#f2dc2e] focus:ring-0 disabled:opacity-50"
         {...props}
       />
     </div>

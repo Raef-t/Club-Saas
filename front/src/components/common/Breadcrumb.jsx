@@ -8,7 +8,7 @@ export default function Breadcrumb({ title, subtitle, className = "" }) {
         {subtitle?.includes(">") ? (
           <>
             {subtitle.split(">")[0].trim()}
-            {" > "}
+            {" ‹ "}
             <span className="text-app-yellow">
               {subtitle.split(">").slice(1).join(">").trim()}
             </span>

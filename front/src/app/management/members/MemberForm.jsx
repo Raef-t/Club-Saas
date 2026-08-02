@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
@@ -8,7 +8,10 @@ import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import { memberSchema } from "@/lib/validations/membersSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { getPreferredBranchId, getDefaultGenderForBranch } from "@/lib/managementBranchUtils";
+import {
+  getPreferredBranchId,
+  getGenderForBranchId,
+} from "@/lib/managementBranchUtils";
 import {
   MEMBER_INITIAL_FORM as initialForm,
   RELATION_OPTIONS as relationOptions,
@@ -40,8 +43,9 @@ export function MemberForm({
   formId,
   showFooterActions = true,
   formClassName = "space-y-4",
+  submitLabel,
 }) {
-  const { selectedBranchId, selectedBranch } = useManagementBranch();
+  const { selectedBranchId } = useManagementBranch();
   const [form, setForm] = useState(() => {
     const isCreate = mode !== "edit";
     return {
@@ -52,11 +56,17 @@ export function MemberForm({
         branches,
       }),
       ...(isCreate && {
-        gender: getDefaultGenderForBranch(selectedBranch, initialValues.gender),
+        gender: getGenderForBranchId(branches, selectedBranchId, initialValues.gender),
       }),
     };
   });
   const [errors, setErrors] = useState({});
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      gender: getGenderForBranchId(branches, current.branch_id, current.gender),
+    }));
+  }, [branches, form.branch_id]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -283,7 +293,7 @@ export function MemberForm({
           إلغاء
         </Button>
         <Button type="submit" className="h-11 flex-1" loading={isLoading}>
-          {mode === "edit" ? "حفظ التعديل" : "إضافة العضو"}
+          {submitLabel || (mode === "edit" ? "حفظ التعديل" : "إضافة العضو")}
         </Button>
       </div>
     </form>
