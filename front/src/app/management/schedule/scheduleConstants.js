@@ -9,9 +9,9 @@ export const SCHEDULE_DAYS = [
 ];
 
 export const SCHEDULE_DEFAULT_SETTINGS = {
-  morningStart: "10:00",
-  morningEnd: "14:00",
-  eveningStart: "15:00",
-  eveningEnd: "00:00",
+  morningStart: "08:00",
+  morningEnd: "16:00",
+  eveningStart: "16:00",
+  eveningEnd: "23:00",
   slotDuration: 60,
 };

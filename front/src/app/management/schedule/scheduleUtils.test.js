@@ -1,8 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { createScheduleDataFromApi, escapeScheduleHtml, generateTimeSlots } from "./scheduleUtils";
 import { buildSchedulePrintHtml } from "./schedulePrint";
+import { SCHEDULE_DEFAULT_SETTINGS } from "./scheduleConstants";
 
 describe("schedule utilities", () => {
+  it("uses the club morning and evening opening periods", () => {
+    expect(SCHEDULE_DEFAULT_SETTINGS).toMatchObject({
+      morningStart: "08:00",
+      morningEnd: "16:00",
+      eveningStart: "16:00",
+      eveningEnd: "23:00",
+    });
+
+    expect(
+      generateTimeSlots(
+        SCHEDULE_DEFAULT_SETTINGS.morningStart,
+        SCHEDULE_DEFAULT_SETTINGS.morningEnd,
+        SCHEDULE_DEFAULT_SETTINGS.slotDuration,
+      ),
+    ).toHaveLength(8);
+    expect(
+      generateTimeSlots(
+        SCHEDULE_DEFAULT_SETTINGS.eveningStart,
+        SCHEDULE_DEFAULT_SETTINGS.eveningEnd,
+        SCHEDULE_DEFAULT_SETTINGS.slotDuration,
+      ),
+    ).toHaveLength(7);
+  });
+
   it("generates fixed slots without extending beyond the period", () => {
     expect(generateTimeSlots("10:00", "14:00", 90)).toEqual([
       {

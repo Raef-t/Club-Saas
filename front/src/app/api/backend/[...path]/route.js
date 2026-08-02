@@ -109,7 +109,20 @@ async function proxyBackendRequest(request, context) {
   });
 
   const headers = new Headers();
-  headers.set("Accept", "application/json");
+  const accept = request.headers.get("accept") || "application/json";
+  const acceptsEventStream = accept.toLowerCase().includes("text/event-stream");
+  headers.set("Accept", accept);
+
+  if (acceptsEventStream) {
+    headers.set("Accept-Encoding", "identity");
+    headers.set("Cache-Control", "no-cache");
+
+    const lastEventId = request.headers.get("last-event-id");
+    if (lastEventId) {
+      headers.set("Last-Event-ID", lastEventId);
+    }
+  }
+
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
@@ -118,6 +131,7 @@ async function proxyBackendRequest(request, context) {
     method: request.method,
     headers,
     cache: "no-store",
+    signal: request.signal,
   };
 
   if (METHODS_WITH_BODY.has(request.method)) {
@@ -132,6 +146,20 @@ async function proxyBackendRequest(request, context) {
   try {
     const response = await fetch(upstreamUrl, init);
     const responseContentType = response.headers.get("content-type") || "application/json";
+
+    if (responseContentType.toLowerCase().includes("text/event-stream") && response.body) {
+      return new Response(response.body, {
+        status: response.status,
+        headers: {
+          "Content-Type": responseContentType,
+          "Cache-Control": "no-cache, no-store, no-transform, must-revalidate",
+          Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
     let body = await response.text();
     let sessionToken = null;
 

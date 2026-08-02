@@ -6,9 +6,11 @@ import {
 
 describe("coach form utilities", () => {
   it("selects the first branch for a new coach", () => {
-    expect(createCoachFormInitialValues(null, [{ id: "12" }]).branch_ids).toEqual([
-      12,
-    ]);
+    const values = createCoachFormInitialValues(null, [{ id: "12" }]);
+
+    expect(values.branch_ids).toEqual([12]);
+    expect(values).not.toHaveProperty("national_id");
+    expect(values).not.toHaveProperty("start_date");
   });
 
   it("preserves edit values", () => {

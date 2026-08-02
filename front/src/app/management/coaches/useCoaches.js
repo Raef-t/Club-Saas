@@ -191,14 +191,12 @@ export function useCoaches(params = {}) {
       formData.append("dob", values.dob);
       if (values.phone_number) formData.append("phone_number", values.phone_number);
       formData.append("country_code", values.country_code || "+963");
-      if (values.national_id) formData.append("national_id", values.national_id);
       if (values.address) formData.append("address", values.address);
 
       if (Array.isArray(values.branch_ids)) {
         values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
       }
       formData.append("experience_years", String(Number(values.experience_years) || 0));
-      if (values.start_date) formData.append("start_date", values.start_date);
       formData.append("is_active", values.is_active ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
@@ -244,14 +242,12 @@ export function useCoaches(params = {}) {
       formData.append("dob", values.dob);
       formData.append("phone_number", values.phone_number || "");
       formData.append("country_code", values.country_code || "+963");
-      formData.append("national_id", values.national_id || "");
       formData.append("address", values.address || "");
 
       if (Array.isArray(values.branch_ids)) {
         values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
       }
       formData.append("experience_years", String(Number(values.experience_years) || 0));
-      formData.append("start_date", values.start_date || "");
       formData.append("is_active", values.is_active ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
@@ -336,13 +332,11 @@ export function useCoaches(params = {}) {
         "",
       country_code:
         selectedCoach.person?.country_code || primaryContact?.country_code || "+963",
-      national_id: selectedCoach.person?.national_id || "",
       address: selectedCoach.person?.address || "",
       branch_ids: branchIds,
       experience_years: String(
         selectedCoach.experience_years || selectedCoach.details?.experience_years || 0,
       ),
-      start_date: selectedCoach.start_date ? selectedCoach.start_date.split("T")[0] : "",
       is_active: selectedCoach.is_active ?? true,
       employment_type: selectedCoach.employment_type || "fixed_salary",
       base_salary: String(Number(selectedCoach.base_salary) || 0),

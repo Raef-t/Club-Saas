@@ -61,6 +61,7 @@ export const subscriptionPlanSchema = z.object({
   ).optional(),
 
   is_active: z.boolean().optional(),
+  status: z.enum(["active", "inactive", "completed"]).optional(),
 }).superRefine((data, ctx) => {
   // if (data.type === "fixed_period") {
   //   if (data.duration_in_days === undefined || data.duration_in_days === null || Number.isNaN(data.duration_in_days)) {

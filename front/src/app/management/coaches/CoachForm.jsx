@@ -156,11 +156,9 @@ export function CoachCreateForm({
       dob: form.dob,
       phone_number: form.phone_number.trim() || null,
       country_code: form.country_code.trim() || "+963",
-      national_id: form.national_id.trim() || null,
       address: form.address.trim() || null,
       branch_ids: form.branch_ids,
       experience_years: Number(form.experience_years) || 0,
-      start_date: form.start_date || null,
       is_active: form.is_active,
       employment_type: form.employment_type,
       base_salary: Number(form.base_salary) || 0,
@@ -228,14 +226,6 @@ export function CoachCreateForm({
           error={errors && (errors.phone_number || errors.country_code)}
         />
       </div>
-
-      <CoachTextField
-        label="الرقم الوطني"
-        value={form.national_id}
-        onChange={(value) => updateField("national_id", value)}
-        error={errors.national_id}
-        placeholder="أدخل الرقم الوطني"
-      />
 
       <div className="block text-right text-sm text-app-muted-light">
         الفروع التابع لها *
@@ -395,7 +385,7 @@ export function CoachCreateForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div>
         <label className="block text-right text-sm text-app-muted-light">
           سنوات الخبرة
           <input
@@ -417,14 +407,6 @@ export function CoachCreateForm({
           )}
         </label>
 
-        <DatePickerSmart
-          label="تاريخ المباشرة"
-          value={form.start_date}
-          onChange={(value) => updateField("start_date", value)}
-          placeholder="DD/MM/YYYY"
-          error={errors.start_date}
-          required={false}
-        />
       </div>
 
       <div className="rounded-lg border border-app-line bg-app-card-soft p-3">

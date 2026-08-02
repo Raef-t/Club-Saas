@@ -103,4 +103,22 @@ describe("management dashboard utilities", () => {
     ]);
     expect(stats.every((stat) => stat.href.startsWith("/management/"))).toBe(true);
   });
+
+  it("keeps zero values from SSE instead of using calculated fallback statistics", () => {
+    const stats = createDashboardStats({
+      members: [{ id: 1 }],
+      coaches: Array.from({ length: 9 }, (_, id) => ({ id })),
+      subscriptions: Array.from({ length: 12 }, (_, id) => ({ id, status: "active" })),
+      todaySessions: Array.from({ length: 5 }, (_, id) => ({ id })),
+      sseStats: {
+        total_active_subscribed_members: 10,
+        realtime_training_players_count: 0,
+        expiring_subscriptions_count: 0,
+        free_assigned_player_lockers_count: 0,
+        current_active_session_plans: [],
+      },
+    });
+
+    expect(stats.map((stat) => stat.value)).toEqual(["10", "0", "0", "0", "0"]);
+  });
 });
