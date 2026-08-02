@@ -67,7 +67,11 @@ class LockerService
 
     public function createLocker(array $data)
     {
-        $this->uniquenessRule->validate($data['branch_id'], $data['locker_number']);
+        $this->uniquenessRule->validate(
+            $data['branch_id'],
+            $data['locker_number'] ?? null,
+            $data['key_number'] ?? null
+        );
         return $this->repository->create($data);
     }
 
@@ -78,6 +82,13 @@ class LockerService
 
     public function updateLocker($id, array $data)
     {
+        $locker = $this->repository->find($id);
+        $branchId = $data['branch_id'] ?? $locker->branch_id;
+        $lockerNumber = $data['locker_number'] ?? $locker->locker_number;
+        $keyNumber = array_key_exists('key_number', $data) ? $data['key_number'] : $locker->key_number;
+
+        $this->uniquenessRule->validate($branchId, $lockerNumber, $keyNumber, $id);
+
         return $this->repository->update($id, $data);
     }
 

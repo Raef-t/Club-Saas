@@ -16933,6 +16933,7 @@
                             "type": "string",
                             "enum": [
                                 "admin",
+                                "management_admin",
                                 "manager",
                                 "coach",
                                 "receptionist",
@@ -17067,6 +17068,7 @@
                                         "example": "receptionist",
                                         "enum": [
                                             "admin",
+                                            "management_admin",
                                             "receptionist",
                                             "coach",
                                             "cleaner",
@@ -17478,6 +17480,7 @@
                                         "example": "receptionist",
                                         "enum": [
                                             "admin",
+                                            "management_admin",
                                             "receptionist",
                                             "coach",
                                             "cleaner",
