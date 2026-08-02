@@ -20,7 +20,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('attendances/check-out/{attendanceId}', [UnifiedAttendanceController::class, 'checkOut']);
     Route::post('attendances/bulk-check-out', [UnifiedAttendanceController::class, 'bulkCheckOut']);
     Route::get('attendances/history', [UnifiedAttendanceController::class, 'history']);
-    Route::delete('attendances/clear-all', [UnifiedAttendanceController::class, 'clearAll']);
 
 
     // ── Reception Desk Workflow ──────────────────────────────────────────────
