@@ -85,7 +85,7 @@ class StaffController extends BaseController
                     new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
                     new OA\Property(property: 'country_code', type: 'string', example: '+1'),
                     new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
-                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
                     new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                     new OA\Property(property: 'base_salary', type: 'number', example: 5000),
                     new OA\Property(property: 'is_active', type: 'boolean', example: true),

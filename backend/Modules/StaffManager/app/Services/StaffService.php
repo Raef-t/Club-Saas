@@ -6,6 +6,7 @@ use Modules\StaffManager\Repositories\StaffRepositoryInterface;
 use Modules\Core\Contracts\PersonSharedServiceInterface;
 use Modules\Core\Contracts\BranchSharedServiceInterface;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Exception;
 
 class StaffService
@@ -177,9 +178,10 @@ class StaffService
                 'is_active' => true,
             ]);
 
-            // Assign matching role (admin, receptionist, coach, cleaner, manager)
+            // Assign matching role (admin, receptionist, cleaner, manager, staff, etc.)
             $roleName = $data['role'] ?? 'staff';
-            $spatieRole = $roleName === 'receptionist' ? 'reception' : $roleName;
+            $spatieRoleName = $roleName === 'receptionist' ? 'reception' : $roleName;
+            $spatieRole = Role::firstOrCreate(['name' => $spatieRoleName, 'guard_name' => 'sanctum']);
             $user->assignRole($spatieRole);
 
             // Expose credentials temporarily

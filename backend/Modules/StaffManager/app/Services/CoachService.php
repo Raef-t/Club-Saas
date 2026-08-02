@@ -13,6 +13,7 @@ use Modules\Authentication\Models\PersonContact;
 use Modules\Authentication\Models\User;
 use Modules\Sports\Models\Activity;
 use Modules\Authentication\Services\PersonQrCodeService;
+use Spatie\Permission\Models\Role;
 
 class CoachService
 {
@@ -76,6 +77,10 @@ class CoachService
                 'is_active' => true,
                 'role'      => 'coach',
             ]);
+
+            // Assign Spatie Coach Role
+            $coachRole = Role::firstOrCreate(['name' => 'coach', 'guard_name' => 'sanctum']);
+            $user->assignRole($coachRole);
 
             // 5. Create Staff (Role = coach)
             $staff = Staff::create([

@@ -155,8 +155,13 @@ class AttendanceDashboardService
             })
             ->when($branchId, function ($q) use ($branchId) {
                 $q->where(function ($bq) use ($branchId) {
-                    $bq->where('sst.branch_id', $branchId)
-                       ->orWhere('sp.branch_id', $branchId);
+                    $bq->where('sp.branch_id', $branchId)
+                       ->orWhereExists(function ($facQ) use ($branchId) {
+                           $facQ->select(DB::raw(1))
+                                ->from('facilities as f')
+                                ->whereColumn('f.id', 'sst.facility_id')
+                                ->where('f.branch_id', $branchId);
+                       });
                 });
             })
             ->select(
