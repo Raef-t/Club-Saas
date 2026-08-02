@@ -167,9 +167,7 @@ class MemberDashboardService
         $trainingHours = round($trainingMinutes / 60, 1);
 
         // Last payment
-        $lastPayment = Payment::where('type', 'in')
-            ->where('payable_type', \Modules\SubscriptionManager\Models\Invoice::class)
-            ->whereIn('payable_id', function ($query) use ($memberId) {
+        $lastPayment = Payment::whereIn('invoice_id', function ($query) use ($memberId) {
                 $query->select('id')
                     ->from('invoices')
                     ->where('member_id', $memberId);

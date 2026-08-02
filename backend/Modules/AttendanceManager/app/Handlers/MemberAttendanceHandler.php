@@ -27,9 +27,9 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
      *  5. Decrement sessions_consumed ONLY in player_subscription_items (per user's spec).
      *  6. Fire MemberCheckedIn event.
      */
-    public function checkIn(int $entityId, int $branchId): Attendance
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null): Attendance
     {
-        return DB::transaction(function () use ($entityId, $branchId) {
+        return DB::transaction(function () use ($entityId, $branchId, $checkInAt) {
 
             // ── 0. Lock member row to prevent concurrent check-in ───────────────────
             DB::table('members')->where('id', $entityId)->lockForUpdate()->first();
@@ -41,14 +41,14 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
             }
 
             // ── 2. Create Attendance record (Pending Deduction) ─────────────────────
-            $checkInAt = now();
+            $checkInTimestamp = $checkInAt ? Carbon::parse($checkInAt) : now();
 
             $attendance = Attendance::create([
                 'attendable_type'      => 'member',
                 'attendable_id'        => $entityId,
                 'branch_id'            => $branchId,
                 'recorded_by_staff_id' => Auth::id(),   // The logged-in receptionist (if any)
-                'check_in_at'          => $checkInAt,
+                'check_in_at'          => $checkInTimestamp,
                 'status'               => 'checked_in',
             ]);
 

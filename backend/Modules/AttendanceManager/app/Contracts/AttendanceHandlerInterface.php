@@ -10,11 +10,12 @@ interface AttendanceHandlerInterface
     /**
      * Record a check-in for the given entity.
      *
-     * @param  int    $entityId  The primary entity (member_id or staff_id)
-     * @param  int    $branchId
+     * @param  int         $entityId  The primary entity (member_id or staff_id)
+     * @param  int         $branchId
+     * @param  string|null $checkInAt
      * @return Attendance
      */
-    public function checkIn(int $entityId, int $branchId): Attendance;
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null): Attendance;
 
     /**
      * Record a check-out for the given attendance record.

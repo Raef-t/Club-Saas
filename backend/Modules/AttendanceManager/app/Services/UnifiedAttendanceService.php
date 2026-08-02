@@ -33,15 +33,16 @@ class UnifiedAttendanceService
     /**
      * Check in an entity (member, staff, …).
      *
-     * @param  string  $type      attendable_type ('member' | 'staff' | …)
-     * @param  int     $entityId  The primary entity id
-     * @param  int     $branchId
+     * @param  string      $type      attendable_type ('member' | 'staff' | …)
+     * @param  int         $entityId  The primary entity id
+     * @param  int         $branchId
+     * @param  string|null $checkInAt
      * @return Attendance
      * @throws Exception
      */
-    public function checkIn(string $type, int $entityId, int $branchId): Attendance
+    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null): Attendance
     {
-        return $this->resolveHandler($type)->checkIn($entityId, $branchId);
+        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt);
     }
 
     /**

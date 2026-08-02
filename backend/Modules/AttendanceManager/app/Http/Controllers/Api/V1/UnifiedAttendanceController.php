@@ -30,8 +30,7 @@ class UnifiedAttendanceController extends BaseController
                 new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'),
                 new OA\Property(property: 'attendable_id', type: 'integer', example: 1),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'),
-                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-06-26 15:30:00')
+                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)')
             ]
         )
     )]
@@ -41,6 +40,7 @@ class UnifiedAttendanceController extends BaseController
         try {
             $type = $request->input('attendable_type');
             $id   = (int) $request->input('attendable_id');
+            $checkInAt = $request->input('check_in_at');
             $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();
             if (!$branch) {
                 return $this->errorResponse('Branch not found.', 404);
@@ -49,7 +49,8 @@ class UnifiedAttendanceController extends BaseController
             $attendance = $this->attendanceService->checkIn(
                 type: $type,
                 entityId: $id,
-                branchId: (int) $branch->id
+                branchId: (int) $branch->id,
+                checkInAt: $checkInAt
             );
 
             return $this->successResponse(new AttendanceResource($attendance), __('Checked in successfully'));

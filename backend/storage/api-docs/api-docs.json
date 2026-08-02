@@ -3590,11 +3590,6 @@
                                         "description": "معرف المنشأة (اختياري)",
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "check_in_at": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2026-06-26 15:30:00"
                                     }
                                 },
                                 "type": "object"
