@@ -16,10 +16,10 @@ class AttendanceDashboardService
     public function getDashboardStats(?int $branchId = null): array
     {
         return [
-            'total_active_subscribed_members'    => $this->getActiveSubscribedMembersCount(),
+            'total_active_subscribed_members'    => $this->getActiveSubscribedMembersCount($branchId),
             'realtime_training_players_count'    => $this->getRealtimeTrainingPlayersCount($branchId),
-            'expiring_subscriptions_count'       => $this->getExpiringSubscriptionsCount(),
-            'free_assigned_player_lockers_count' => $this->getFreeAssignedLockersCount(),
+            'expiring_subscriptions_count'       => $this->getExpiringSubscriptionsCount($branchId),
+            'free_assigned_player_lockers_count' => $this->getFreeAssignedLockersCount($branchId),
             'current_active_session_plans'       => $this->getCurrentActiveSessionPlans($branchId),
         ];
     }
@@ -44,14 +44,12 @@ class AttendanceDashboardService
     /**
      * 1. Total distinct members with active subscriptions.
      */
-    protected function getActiveSubscribedMembersCount(): int
+    protected function getActiveSubscribedMembersCount(?int $branchId = null): int
     {
         return DB::table('player_subscriptions')
             ->where('status', 'active')
-            ->whereDate('start_date', '<=', now())
-            ->whereDate('end_date', '>=', now())
-            ->distinct('member_id')
-            ->count('member_id');
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->count(DB::raw('DISTINCT member_id'));
     }
 
     /**
@@ -60,18 +58,20 @@ class AttendanceDashboardService
     protected function getRealtimeTrainingPlayersCount(?int $branchId = null): int
     {
         return DB::table('attendances as att')
-            ->join('attendance_consumptions as ac', 'ac.attendance_id', '=', 'att.id')
-            ->join('player_subscriptions as ps', 'ps.id', '=', 'ac.player_subscription_id')
-            ->join('player_subscription_items as psi', 'psi.player_subscription_id', '=', 'ps.id')
-            ->join('activities as act', 'act.id', '=', 'psi.activity_id')
-            ->join('activity_types as at', 'at.id', '=', 'act.activity_type_id')
+            ->leftJoin('attendance_consumptions as ac', 'ac.attendance_id', '=', 'att.id')
+            ->leftJoin('player_subscriptions as ps', 'ps.id', '=', 'ac.player_subscription_id')
+            ->leftJoin('player_subscription_items as psi', 'psi.player_subscription_id', '=', 'ps.id')
+            ->leftJoin('activities as act', 'act.id', '=', 'psi.activity_id')
+            ->leftJoin('activity_types as at', 'at.id', '=', 'act.activity_type_id')
             ->where('att.attendable_type', 'member')
             ->where('att.status', 'checked_in')
             ->whereNull('att.check_out_at')
-            ->whereIn('at.name', ['تدريب عام', 'تدريب خاص'])
+            ->where(function($q) {
+                $q->whereIn('at.name', ['تدريب عام', 'تدريب خاص'])
+                  ->orWhereNull('at.name');
+            })
             ->when($branchId, fn($q) => $q->where('att.branch_id', $branchId))
-            ->distinct('att.attendable_id')
-            ->count('att.attendable_id');
+            ->count(DB::raw('DISTINCT att.attendable_id'));
     }
 
     /**
@@ -117,18 +117,23 @@ class AttendanceDashboardService
     /**
      * 4. Count of subscriptions expiring soon (<= 3 sessions or <= 7 days).
      */
-    protected function getExpiringSubscriptionsCount(): int
+    protected function getExpiringSubscriptionsCount(?int $branchId = null): int
     {
         return DB::table('player_subscriptions as ps')
             ->where('ps.status', 'active')
+            ->when($branchId, fn($q) => $q->where('ps.branch_id', $branchId))
             ->where(function($query) {
-                $query->whereBetween('ps.end_date', [now()->toDateString(), now()->addDays(7)->toDateString()])
+                $query->where(function($qDate) {
+                    $qDate->whereNotNull('ps.end_date')
+                          ->whereBetween('ps.end_date', [now()->toDateString(), now()->addDays(7)->toDateString()]);
+                })
                 ->orWhereExists(function($subQuery) {
                     $subQuery->select(DB::raw(1))
                         ->from('player_subscription_items as psi')
                         ->whereColumn('psi.player_subscription_id', 'ps.id')
                         ->where('psi.is_unlimited', false)
-                        ->whereRaw('(psi.sessions_allocated - psi.sessions_consumed) <= 3');
+                        ->whereRaw('(psi.sessions_allocated - psi.sessions_consumed) <= 3')
+                        ->whereRaw('(psi.sessions_allocated - psi.sessions_consumed) >= 0');
                 });
             })
             ->count();
@@ -137,13 +142,15 @@ class AttendanceDashboardService
     /**
      * 5. Count of free assigned lockers for members.
      */
-    protected function getFreeAssignedLockersCount(): int
+    protected function getFreeAssignedLockersCount(?int $branchId = null): int
     {
-        return DB::table('locker_reservations')
-            ->where('status', 'active')
-            ->whereNotNull('member_id')
-            ->whereNull('staff_id')
-            ->where('price', 0)
+        return DB::table('locker_reservations as lr')
+            ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
+            ->where('lr.status', 'active')
+            ->whereNotNull('lr.member_id')
+            ->whereNull('lr.staff_id')
+            ->where('lr.price', 0)
+            ->when($branchId, fn($q) => $q->where('l.branch_id', $branchId))
             ->count();
     }
 }
