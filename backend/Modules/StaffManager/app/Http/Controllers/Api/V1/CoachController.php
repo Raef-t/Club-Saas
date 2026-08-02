@@ -49,7 +49,7 @@ class CoachController extends Controller
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['first_name', 'last_name', 'branch_ids[]', 'age'],
+                    required: ['first_name', 'last_name', 'branch_ids[]'],
                     properties: [
                         new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
                         new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),

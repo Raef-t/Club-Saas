@@ -9840,12 +9840,12 @@
                                         ]
                                     },
                                     "age": {
-                                        "description": "(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات",
+                                        "description": "العمر بالسنوات (اختياري)",
                                         "type": "integer",
                                         "example": 25
                                     },
                                     "dob": {
-                                        "description": "(مطلوب في حال لم يتم إدخال العمر) تاريخ الميلاد",
+                                        "description": "تاريخ الميلاد (اختياري)",
                                         "type": "string",
                                         "format": "date",
                                         "example": "1995-10-25"
@@ -10057,7 +10057,7 @@
                                         ]
                                     },
                                     "age": {
-                                        "description": "(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات",
+                                        "description": "العمر بالسنوات (اختياري)",
                                         "type": "integer",
                                         "example": 25
                                     },
@@ -14161,8 +14161,7 @@
                                 "required": [
                                     "first_name",
                                     "last_name",
-                                    "branch_ids[]",
-                                    "age"
+                                    "branch_ids[]"
                                 ],
                                 "properties": {
                                     "first_name": {
