@@ -151,4 +151,27 @@ class UnifiedAttendanceController extends BaseController
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
     }
+
+    #[OA\Delete(
+        path: '/v1/attendances/clear-all',
+        summary: '🗑️ مسح جميع بيانات الحضور (مؤقت)',
+        description: 'يقوم بإفراغ جدول الحضور attendances وجدول استهلاك الجلسات وسجلات QR.',
+        tags: ['Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم مسح جميع سجلات الحضور بنجاح', content: new OA\JsonContent())]
+    public function clearAll()
+    {
+        try {
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            \Modules\AttendanceManager\Models\AttendanceConsumption::truncate();
+            \Modules\AttendanceManager\Models\Attendance::truncate();
+            \Illuminate\Support\Facades\DB::table('qr_access_logs')->truncate();
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            return $this->successResponse(null, __('All attendance records deleted successfully'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
 }
