@@ -74,19 +74,20 @@ class AttendanceDashboardService
     protected function getRealtimeTrainingPlayersCount(?int $branchId = null): int
     {
         return DB::table('attendances as att')
-            ->leftJoin('attendance_consumptions as ac', 'ac.attendance_id', '=', 'att.id')
-            ->leftJoin('player_subscriptions as ps', 'ps.id', '=', 'ac.player_subscription_id')
-            ->leftJoin('player_subscription_items as psi', 'psi.player_subscription_id', '=', 'ps.id')
-            ->leftJoin('activities as act', 'act.id', '=', 'psi.activity_id')
-            ->leftJoin('activity_types as at', 'at.id', '=', 'act.activity_type_id')
             ->where('att.attendable_type', 'member')
             ->where('att.status', 'checked_in')
             ->whereNull('att.check_out_at')
-            ->where(function($q) {
-                $q->whereIn('at.name', ['تدريب عام', 'تدريب خاص'])
-                  ->orWhereNull('at.name');
-            })
             ->when($branchId, fn($q) => $q->where('att.branch_id', $branchId))
+            ->whereExists(function ($subQ) {
+                $subQ->select(DB::raw(1))
+                    ->from('player_subscriptions as ps')
+                    ->join('player_subscription_items as psi', 'psi.player_subscription_id', '=', 'ps.id')
+                    ->join('activities as act', 'act.id', '=', 'psi.activity_id')
+                    ->join('activity_types as at', 'at.id', '=', 'act.activity_type_id')
+                    ->whereColumn('ps.member_id', 'att.attendable_id')
+                    ->where('ps.status', 'active')
+                    ->whereIn('at.name', ['تدريب عام', 'تدريب خاص']);
+            })
             ->count(DB::raw('DISTINCT att.attendable_id'));
     }
 
@@ -95,20 +96,23 @@ class AttendanceDashboardService
      */
     protected function getCurrentActiveSessionPlans(?int $branchId = null)
     {
-        $currentDayOfWeek = now()->dayOfWeekIso;
+        $currentDayOfWeek = now()->dayOfWeek; // 0 = Sunday, 1 = Monday ... 6 = Saturday
         $currentTime = now()->format('H:i:s');
 
         return DB::table('sport_session_templates as sst')
             ->join('subscription_plans as sp', 'sp.id', '=', 'sst.plan_id')
-            ->leftJoin('attendance_consumptions as ac', 'ac.subscription_plan_id', '=', 'sp.id')
             ->leftJoin('attendances as att', function($join) use ($branchId) {
-                $join->on('att.id', '=', 'ac.attendance_id')
-                     ->where('att.attendable_type', '=', 'member')
+                $join->on('att.attendable_type', '=', DB::raw("'member'"))
                      ->where('att.status', '=', 'checked_in')
                      ->whereNull('att.check_out_at');
                 if ($branchId) {
                     $join->where('att.branch_id', '=', $branchId);
                 }
+            })
+            ->leftJoin('player_subscriptions as ps', function($join) {
+                $join->on('ps.member_id', '=', 'att.attendable_id')
+                     ->on('ps.plan_id', '=', 'sp.id')
+                     ->where('ps.status', '=', 'active');
             })
             ->where('sst.is_active', true)
             ->where('sst.day_of_week', $currentDayOfWeek)
@@ -121,7 +125,7 @@ class AttendanceDashboardService
                 'sst.id as session_template_id',
                 'sst.start_time',
                 'sst.end_time',
-                DB::raw('COUNT(DISTINCT att.attendable_id) as present_players_count')
+                DB::raw('COUNT(DISTINCT CASE WHEN ps.id IS NOT NULL THEN att.attendable_id END) as present_players_count')
             )
             ->groupBy('sp.id', 'sp.name', 'sst.id', 'sst.start_time', 'sst.end_time')
             ->get()
