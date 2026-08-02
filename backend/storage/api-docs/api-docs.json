@@ -21002,6 +21002,20 @@
                 "operationId": "d777883f9934526c98bba1e8b8912722",
                 "parameters": [
                     {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة الخطة (active, inactive, completed)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "completed"
+                            ]
+                        }
+                    },
+                    {
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية حسب معرف الفرع",
