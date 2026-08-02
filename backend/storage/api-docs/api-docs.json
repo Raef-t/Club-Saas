@@ -10153,14 +10153,14 @@
                 "tags": [
                     "Member Management"
                 ],
-                "summary": "🗑️ حذف عضو وتنظيف كافة بياناته",
-                "description": "حذف عضو محدد بشكل نهائي مع تنظيف كافة البيانات المتعلقة به في النظام (الفواتير، المدفوعات، الحضور، الاشتراكات، القياسات، الملف الشخصي، والحساب).",
+                "summary": "🗑️ حذف عضو",
+                "description": "حذف عضو محدد من النظام.",
                 "operationId": "bfc4d5caaa5a904cfda51e6901dd213d",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "معرف العضو (Member ID)",
+                        "description": "معرف العضو",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -10170,30 +10170,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف العضو وكافة بياناته المتعلقة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member and all related data deleted successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "✅ تم حذف العضو بنجاح"
                     },
                     "404": {
                         "description": "🚫 العضو غير موجود"
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [

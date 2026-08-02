@@ -224,68 +224,38 @@ class MemberService
 
     public function deleteMember(int $id): void
     {
-        DB::transaction(function () use ($id) {
-            $member = $this->repository->find($id);
-            if (!$member) {
-                return;
-            }
+        $member = $this->repository->find($id);
 
-            // 1. Delete locker reservations
-            \Modules\SubscriptionManager\Models\LockerReservation::where('member_id', $id)->delete();
+        // Check for financial records
+        $invoicesCount = \Modules\SubscriptionManager\Models\Invoice::where('member_id', $id)->count();
 
-            // 2. Delete player unavailabilities
-            \Modules\MemberManager\Models\PlayerUnavailability::where('member_id', $id)->delete();
+        // Check for attendance records (polymorphic: attendable_type = Member class)
+        $attendanceCount = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
+            ->where('attendable_id', $id)
+            ->count();
 
-            // 3. Delete measurements & health profile
-            $member->measurements()->delete();
-            $member->healthProfile()->delete();
+        $blocked = [];
 
-            // 4. Delete attendance & consumption records
-            $attendances = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', \Modules\MemberManager\Models\Member::class)
-                ->where('attendable_id', $id)
-                ->get();
+        if ($invoicesCount > 0) {
+            $blocked[] = "يوجد {$invoicesCount} " . ($invoicesCount === 1 ? 'فاتورة' : 'فواتير') . " مالية مرتبطة بهذا العضو";
+        }
+        if ($attendanceCount > 0) {
+            $blocked[] = "يوجد {$attendanceCount} " . ($attendanceCount === 1 ? 'سجل حضور' : 'سجلات حضور') . " مرتبطة بهذا العضو";
+        }
 
-            foreach ($attendances as $attendance) {
-                $attendance->consumptions()->delete();
-                $attendance->delete();
-            }
+        if (!empty($blocked)) {
+            $reasons = implode('، و', $blocked);
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف هذا العضو لأن: {$reasons}. يمكنك تغيير حالة العضو إلى 'غير نشط' بدلاً من الحذف.",
+                [
+                    'invoices_count'   => $invoicesCount,
+                    'attendance_count' => $attendanceCount,
+                ]
+            );
+        }
 
-            // 5. Delete invoices & payments
-            $invoices = \Modules\SubscriptionManager\Models\Invoice::where('member_id', $id)->get();
-            foreach ($invoices as $invoice) {
-                $invoice->payments()->delete();
-                $invoice->delete();
-            }
-
-            // 6. Delete subscriptions, items & freezes
-            $subscriptions = $member->subscriptions;
-            foreach ($subscriptions as $subscription) {
-                $subscription->items()->delete();
-                $subscription->freezes()->delete();
-                $subscription->delete();
-            }
-
-            // 7. Delete member record
-            $personId = $member->person_id;
-            $this->repository->delete($id);
-
-            // 8. Delete associated person, user, wallet, and contacts
-            if ($personId) {
-                $person = \Modules\Authentication\Models\Person::find($personId);
-                if ($person) {
-                    if ($person->user) {
-                        $person->user->roles()->detach();
-                        $person->user->delete();
-                    }
-                    $person->contacts()->delete();
-                    if ($person->wallet) {
-                        $person->wallet->transactions()->delete();
-                        $person->wallet()->delete();
-                    }
-                    $person->delete();
-                }
-            }
-        });
+        // Safe to delete — cascade will clean up non-financial child records
+        $this->repository->delete($id);
     }
 
     public function getMeasurements(int $memberId)
