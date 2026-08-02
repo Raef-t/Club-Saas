@@ -3772,6 +3772,31 @@
                 ]
             }
         },
+        "/v1/attendances/clear-all": {
+            "delete": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "🗑️ مسح جميع بيانات الحضور (مؤقت)",
+                "description": "يقوم بإفراغ جدول الحضور attendances وجدول استهلاك الجلسات وسجلات QR.",
+                "operationId": "a3d5c8e1cace11037ca75e6bc0c4c1fe",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم مسح جميع سجلات الحضور بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/auth/login": {
             "post": {
                 "tags": [
