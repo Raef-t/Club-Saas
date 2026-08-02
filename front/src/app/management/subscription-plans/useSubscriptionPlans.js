@@ -15,7 +15,7 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
 import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
-
+//test
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
   return Number.isFinite(number) ? number : 0;
@@ -125,7 +125,7 @@ export function useSubscriptionPlans({
   }, [plans, search]);
 
   const stats = useMemo(() => {
-    const activeCount = plans.filter((plan) => plan.status === 'active' || plan.is_active).length;
+    const activeCount = plans.filter((plan) => plan.status === "active" || plan.is_active).length;
     const averagePrice = plans.length
       ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) / plans.length
       : 0;
@@ -253,7 +253,7 @@ export function useSubscriptionPlans({
       session_count: plan.session_count ? String(plan.session_count) : "",
       price: String(parseAmount(plan.base_price || "")),
       max_subscribers: String(plan.max_subscribers ?? "0"),
-      is_active: plan.status === 'active' || plan.is_active === true,
+      is_active: plan.status === "active" || plan.is_active === true,
       gender_restriction: plan.gender_restriction || "mixed",
       is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
       activities:
