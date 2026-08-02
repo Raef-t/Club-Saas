@@ -157,13 +157,16 @@ class LedgerService
     /**
      * جلب رصيد حساب حتى تاريخ معين
      */
-    public function getAccountBalance(int $accountId, ?string $upToDate = null): array
+    public function getAccountBalance(int $accountId, ?string $upToDate = null, ?int $branchId = null): array
     {
         $query = AccJournalEntry::where('account_id', $accountId)
-            ->whereHas('journal', function ($q) use ($upToDate) {
+            ->whereHas('journal', function ($q) use ($upToDate, $branchId) {
                 $q->where('status', 'posted');
                 if ($upToDate) {
                     $q->where('date', '<=', $upToDate);
+                }
+                if ($branchId !== null) {
+                    $q->where('branch_id', $branchId);
                 }
             });
 
@@ -277,10 +280,21 @@ class LedgerService
     {
         $year   = now()->format('Y');
         $prefix = config('accounting.journal_number_prefix.' . $type, $type);
-        $count  = AccJournal::where('reference_number', 'LIKE', "{$prefix}-{$year}-%")
+        
+        $maxRef = AccJournal::withoutGlobalScopes()
+            ->where('reference_number', 'LIKE', "{$prefix}-{$year}-%")
             ->lockForUpdate()
-            ->count();
+            ->max('reference_number');
+            
+        $nextNumber = 1;
+        if ($maxRef) {
+            $parts = explode('-', $maxRef);
+            $lastPart = end($parts);
+            if (is_numeric($lastPart)) {
+                $nextNumber = ((int) $lastPart) + 1;
+            }
+        }
 
-        return $prefix . '-' . $year . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+        return $prefix . '-' . $year . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }
