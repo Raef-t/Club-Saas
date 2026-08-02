@@ -132,7 +132,8 @@ async function proxyBackendRequest(request, context) {
   try {
     const response = await fetch(upstreamUrl, init);
     const responseContentType = response.headers.get("content-type") || "application/json";
-    let body = await response.text();
+    const isBinary = responseContentType.includes("zip") || responseContentType.includes("octet-stream") || responseContentType.includes("pdf");
+    let body = isBinary ? await response.arrayBuffer() : await response.text();
     let sessionToken = null;
 
     if (pathName === "auth/login" && response.ok) {
@@ -159,12 +160,18 @@ async function proxyBackendRequest(request, context) {
       }
     }
 
+    const responseHeaders = {
+      "Content-Type": responseContentType,
+      "Cache-Control": "no-store",
+    };
+    const contentDisposition = response.headers.get("content-disposition");
+    if (contentDisposition) {
+      responseHeaders["Content-Disposition"] = contentDisposition;
+    }
+
     const nextResponse = new NextResponse(body, {
       status: response.status,
-      headers: {
-        "Content-Type": responseContentType,
-        "Cache-Control": "no-store",
-      },
+      headers: responseHeaders,
     });
 
     if (sessionToken) {
