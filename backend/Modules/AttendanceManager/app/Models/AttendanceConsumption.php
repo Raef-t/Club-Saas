@@ -21,4 +21,20 @@ class AttendanceConsumption extends Model
     {
         return $this->belongsTo(Attendance::class, 'attendance_id');
     }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($consumption) {
+            $branchId = $consumption->attendance?->branch_id;
+            \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
+        });
+
+        static::deleted(function ($consumption) {
+            $branchId = $consumption->attendance?->branch_id;
+            \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
+        });
+    }
 }
