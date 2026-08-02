@@ -293,20 +293,33 @@ class PlayerRegistrationController extends BaseController
 
     #[OA\Delete(
         path: '/v1/members/{id}',
-        summary: '🗑️ حذف عضو',
-        description: 'حذف عضو محدد من النظام.',
+        summary: '🗑️ حذف عضو وتنظيف كافة بياناته',
+        description: 'حذف عضو محدد بشكل نهائي مع تنظيف كافة البيانات المتعلقة به في النظام (الفواتير، المدفوعات، الحضور، الاشتراكات، القياسات، الملف الشخصي، والحساب).',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو (Member ID)', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف العضو وكافة بياناته المتعلقة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Member and all related data deleted successfully')
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function destroy($id)
     {
-        $deleted = $this->memberService->deleteMember($id);
-        if (!$deleted) {
-            return response()->json(['message' => __('Member not found or could not be deleted')], 404);
+        $member = $this->memberService->getMemberById((int)$id);
+        if (!$member) {
+            return response()->json(['message' => __('Member not found')], 404);
         }
-        return $this->successResponse(null, __('Member deleted successfully'));
+
+        $this->memberService->deleteMember((int)$id);
+
+        return $this->successResponse(null, __('Member and all related data deleted successfully'));
     }
 }
