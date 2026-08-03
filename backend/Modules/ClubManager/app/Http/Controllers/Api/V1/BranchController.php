@@ -173,15 +173,15 @@ class BranchController extends BaseController
 
     #[OA\Delete(
         path: '/v1/branches/{id}',
-        summary: '🗑️ حذف الفرع',
-        description: 'إزالة الفرع المحدد من النظام.',
+        summary: '🗑️ حذف الفرع (Soft Delete)',
+        description: 'إزالة الفرع المحدد ناعماً من النظام مع كافّة السجلات والمرافق والأعضاء التابعة له متتابعاً.',
         tags: ['Branch Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم حذف الفرع بنجاح',
+        description: '✅ تم حذف الفرع وسجلاته التابعة ناعماً بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -192,20 +192,36 @@ class BranchController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    #[OA\Response(
-        response: 409, 
-        description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف الفرع لأن: يوجد 10 أعضاء مسجل في هذا الفرع، يوجد 5 اشتراكات مرتبط بهذا الفرع، يوجد 12 فاتورة مرتبطة بهذا الفرع. يُنصح بتعطيل الفرع بدلاً من حذفه للحفاظ على سلامة البيانات.')
-            ]
-        )
-    )]
     public function destroy($id)
     {
         $this->branchService->deleteBranch($id);
         return $this->successResponse(null, __('Branch deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/branches/{id}/restore',
+        summary: '♻️ استرجاع الفرع المحذوف',
+        description: 'استرجاع الفرع المحذوف ناعماً وكافّة السجلات التابعة له تلقائياً.',
+        tags: ['Branch Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الفرع وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع المحذوف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    public function restore($id)
+    {
+        $this->branchService->restoreBranch($id);
+        return $this->successResponse(null, __('Branch restored successfully'));
     }
 
     #[OA\Patch(

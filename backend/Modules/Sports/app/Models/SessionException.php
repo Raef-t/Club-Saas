@@ -4,11 +4,12 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\StaffManager\Models\Staff;
 
 class SessionException extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'session_exceptions';
 

@@ -10,9 +10,11 @@ use Modules\ClubManager\Http\Controllers\Api\V1\BranchHolidayController;
 use Modules\ClubManager\Http\Controllers\Api\V1\BranchSettingController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    Route::post('clubs/{id}/restore', [ClubController::class, 'restore']);
     Route::apiResource('clubs', ClubController::class);
 
     Route::get('branches/stats', [BranchController::class, 'stats']);
+    Route::post('branches/{id}/restore', [BranchController::class, 'restore']);
     Route::apiResource('branches', BranchController::class);
     Route::patch('branches/{id}/toggle-status', [BranchController::class, 'toggleStatus']);
     
@@ -31,6 +33,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
 
     Route::get('lockers/holder/active', [LockerController::class, 'getByHolder']);
+    Route::post('lockers/{id}/restore', [LockerController::class, 'restore']);
     Route::apiResource('lockers', LockerController::class);
     Route::post('lockers/{locker}/reservations', [LockerController::class, 'reserve']);
     Route::delete('lockers/{locker}/reservations/current', [LockerController::class, 'releaseCurrentReservation']);

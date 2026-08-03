@@ -3,11 +3,15 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 use Modules\ClubManager\Models\Branch;
 
 class Offer extends Model
 {
+    use SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['invoices', 'subscriptions'];
 
 
     protected $fillable = [

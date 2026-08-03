@@ -15,6 +15,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::put('members/{id}', [PlayerRegistrationController::class, 'update']);
     Route::post('members/{id}/photo', [PlayerRegistrationController::class, 'updatePhoto']);
     Route::delete('members/{id}', [PlayerRegistrationController::class, 'destroy']);
+    Route::post('members/{id}/restore', [PlayerRegistrationController::class, 'restore']);
 
 
     // Member Health Profiles CRUD

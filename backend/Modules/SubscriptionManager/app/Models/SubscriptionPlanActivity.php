@@ -3,9 +3,11 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SubscriptionPlanActivity extends Model
 {
+    use SoftDeletes;
     protected $table = 'plan_activities';
 
     protected $fillable = [

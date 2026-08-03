@@ -3,11 +3,23 @@
 namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Staff extends Model
 {
-    use \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = [
+        'coachDetail',
+        'contracts',
+        'shifts',
+        'unavailabilities',
+        'leaves',
+        'commissionRules',
+        'payslips',
+        'attendances',
+    ];
 
     protected $table = 'staff';
 
@@ -120,5 +132,20 @@ class Staff extends Model
     public function isCoach(): bool
     {
         return $this->role === 'coach';
+    }
+
+    public function commissionRules()
+    {
+        return $this->hasMany(\Modules\Sports\Models\StaffCommissionRule::class, 'staff_id');
+    }
+
+    public function payslips()
+    {
+        return $this->hasMany(Payslip::class, 'staff_id');
+    }
+
+    public function attendances()
+    {
+        return $this->morphMany(\Modules\AttendanceManager\Models\Attendance::class, 'attendable');
     }
 }

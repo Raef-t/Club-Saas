@@ -358,30 +358,20 @@ class StaffController extends BaseController
 
     #[OA\Delete(
         path: '/v1/staff/{staff}',
-        summary: '🗑️ حذف موظف',
-        description: 'حذف موظف من النظام. لا يمكن حذفه إذا كان مرتبطاً ببيانات مالية، حضور، أو أنشطة.',
+        summary: '🗑️ حذف موظف (Soft Delete)',
+        description: 'حذف موظف أو مدرب ناعماً من النظام مع كافّة عقوده وشفتاته وسجلاته التابعة متتابعاً.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم حذف الموظف بنجاح',
+        description: '✅ تم حذف الموظف وسجلاته التابعة ناعماً بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff deleted successfully'),
                 new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
-            ]
-        )
-    )]
-    #[OA\Response(
-        response: 409, 
-        description: '🚫 لا يمكن الحذف — الموظف مرتبط ببيانات أخرى', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا الموظف/المدرب لأنه: يوجد 2 قسائم رواتب، و مرتبط بـ 1 أنشطة رياضية. يرجى تغيير حالته إلى \'غير نشط\' بدلاً من الحذف.')
             ]
         )
     )]
@@ -391,5 +381,31 @@ class StaffController extends BaseController
     {
         $this->staffService->deleteStaff($id);
         return $this->successResponse(null, __('Staff deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/staff/{id}/restore',
+        summary: '♻️ استرجاع موظف محذوف',
+        description: 'استرجاع الموظف أو المدرب المحذوف ناعماً وكافّة عقوده وشفتاته وسجلاته التابعة تلقائياً.',
+        tags: ['Staff Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الموظف وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود في الأرشيف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    public function restore($id)
+    {
+        $this->staffService->restoreStaff($id);
+        return $this->successResponse(null, __('Staff restored successfully'));
     }
 }

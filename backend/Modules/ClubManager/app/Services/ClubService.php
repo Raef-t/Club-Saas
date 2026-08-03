@@ -19,23 +19,35 @@ class ClubService
     public function update($id, array $data) { return $this->repository->update($id, $data); }
 
     /**
-     * Delete a club only if it has no branches.
-     *
-     * @throws CannotDeleteException
+     * Delete a club and all its branches (and all their members, subscriptions, etc.) via CascadeSoftDeletes.
      */
-    public function delete($id): void
+    public function delete($id): bool
     {
-        $club = Club::findOrFail($id);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $club = Club::findOrFail($id);
+            return $club->delete();
+        });
+    }
 
-        $branchesCount = $club->branches()->count();
+    /**
+     * Restore a deleted club and all cascaded branches and child records.
+     */
+    public function restore($id): bool
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $club = Club::onlyTrashed()->findOrFail($id);
+            return $club->restore();
+        });
+    }
 
-        if ($branchesCount > 0) {
-            throw new CannotDeleteException(
-                "لا يمكن حذف النادي لأنه يحتوي على {$branchesCount} " . ($branchesCount === 1 ? 'فرع' : 'فروع') . ". يرجى حذف جميع الفروع أولاً أو تعطيل النادي بدلاً من حذفه.",
-                ['branches_count' => $branchesCount]
-            );
-        }
-
-        $this->repository->delete($id);
+    /**
+     * Permanently delete a club.
+     */
+    public function forceDelete($id): bool
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $club = Club::withTrashed()->findOrFail($id);
+            return $club->forceDelete();
+        });
     }
 }

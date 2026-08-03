@@ -3,8 +3,12 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class SubscriptionFreeze extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'player_subscription_id',
         'freeze_start_date',

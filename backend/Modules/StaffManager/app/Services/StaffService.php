@@ -379,54 +379,35 @@ class StaffService
     }
 
     /**
-     * Delete a staff member only if they have no financial/attendance/activity records.
-     *
-     * @throws \Modules\Core\Exceptions\CannotDeleteException
+     * Delete a staff member with full cascading soft delete for all related records.
      */
-    public function deleteStaff(int $id): void
+    public function deleteStaff(int $id): bool
     {
-        $staff = $this->staffRepository->find($id);
+        return DB::transaction(function () use ($id) {
+            $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
+            return $staff->delete();
+        });
+    }
 
-        $payslipsCount = \Modules\StaffManager\Models\Payslip::where('staff_id', $id)->count();
+    /**
+     * Restore a deleted staff member and all cascaded children.
+     */
+    public function restoreStaff(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $staff = \Modules\StaffManager\Models\Staff::onlyTrashed()->findOrFail($id);
+            return $staff->restore();
+        });
+    }
 
-        $attendanceCount = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\StaffManager\\Models\\Staff')
-            ->where('attendable_id', $id)
-            ->count();
-
-        // Also check if they recorded attendance for others
-        $recordedAttendanceCount = \Modules\AttendanceManager\Models\Attendance::where('recorded_by_staff_id', $id)->count();
-
-        $activitiesCount = \Modules\Sports\Models\StaffActivity::where('staff_id', $id)->count();
-
-        $blocked = [];
-
-        if ($payslipsCount > 0) {
-            $blocked[] = "يوجد {$payslipsCount} " . ($payslipsCount === 1 ? 'قسيمة راتب' : 'قسائم رواتب');
-        }
-        if ($attendanceCount > 0) {
-            $blocked[] = "يوجد {$attendanceCount} " . ($attendanceCount === 1 ? 'سجل حضور' : 'سجلات حضور');
-        }
-        if ($recordedAttendanceCount > 0) {
-            $blocked[] = "قام بتسجيل حضور لـ {$recordedAttendanceCount} " . ($recordedAttendanceCount === 1 ? 'شخص' : 'أشخاص');
-        }
-        if ($activitiesCount > 0) {
-            $blocked[] = "مرتبط بـ {$activitiesCount} " . ($activitiesCount === 1 ? 'نشاط رياضي' : 'أنشطة رياضية');
-        }
-
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف هذا الموظف/المدرب لأنه: {$reasons}. يرجى تغيير حالته إلى 'غير نشط' بدلاً من الحذف.",
-                [
-                    'payslips_count' => $payslipsCount,
-                    'attendance_count' => $attendanceCount,
-                    'recorded_attendance_count' => $recordedAttendanceCount,
-                    'activities_count' => $activitiesCount,
-                ]
-            );
-        }
-
-        // It is safe to delete
-        $this->staffRepository->delete($id);
+    /**
+     * Force delete a staff member permanently.
+     */
+    public function forceDeleteStaff(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $staff = \Modules\StaffManager\Models\Staff::withTrashed()->findOrFail($id);
+            return $staff->forceDelete();
+        });
     }
 }

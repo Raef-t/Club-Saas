@@ -3772,6 +3772,76 @@
                 ]
             }
         },
+        "/v1/attendances/{id}": {
+            "delete": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "🗑️ حذف سجل حضور (Soft Delete)",
+                "description": "حذف سجل حضور ناعماً من النظام مع كافّة استهلاكات الجلسات المترابطة به ناعماً ومتتابعاً.",
+                "operationId": "28b42c39fc047d08e1698f46d1d6a0e7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل الحضور",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف سجل الحضور ناعماً بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 سجل الحضور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/attendances/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "♻️ استرجاع سجل حضور محذوف",
+                "description": "استرجاع سجل الحضور المحذوف ناعماً وكافّة استهلاكات الجلسات المترابطة به تلقائياً.",
+                "operationId": "3ef0016683fa2ae1659c79e7fb22639c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل الحضور",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع سجل الحضور بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 سجل الحضور غير موجود في سلة المحذوفات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/auth/login": {
             "post": {
                 "tags": [
@@ -5142,8 +5212,8 @@
                 "tags": [
                     "Branch Management"
                 ],
-                "summary": "🗑️ حذف الفرع",
-                "description": "إزالة الفرع المحدد من النظام.",
+                "summary": "🗑️ حذف الفرع (Soft Delete)",
+                "description": "إزالة الفرع المحدد ناعماً من النظام مع كافّة السجلات والمرافق والأعضاء التابعة له متتابعاً.",
                 "operationId": "daeac13363de4fbc6e23805455b0d108",
                 "parameters": [
                     {
@@ -5159,7 +5229,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف الفرع بنجاح",
+                        "description": "✅ تم حذف الفرع وسجلاته التابعة ناعماً بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5218,9 +5288,63 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/branches/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Branch Management"
+                ],
+                "summary": "♻️ استرجاع الفرع المحذوف",
+                "description": "استرجاع الفرع المحذوف ناعماً وكافّة السجلات التابعة له تلقائياً.",
+                "operationId": "d87cf2d6eedc8f66d6ba39c03e4919a9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفرع",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الفرع وسجلاته التابعة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Branch restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
-                    "409": {
-                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                    "404": {
+                        "description": "🚫 لم يتم العثور على الفرع المحذوف",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5231,7 +5355,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف الفرع لأن: يوجد 10 أعضاء مسجل في هذا الفرع، يوجد 5 اشتراكات مرتبط بهذا الفرع، يوجد 12 فاتورة مرتبطة بهذا الفرع. يُنصح بتعطيل الفرع بدلاً من حذفه للحفاظ على سلامة البيانات."
+                                            "example": "Branch not found."
                                         }
                                     },
                                     "type": "object"
@@ -6768,8 +6892,8 @@
                 "tags": [
                     "Club Management"
                 ],
-                "summary": "🗑️ حذف النادي",
-                "description": "حذف النادي بالكامل من النظام.",
+                "summary": "🗑️ حذف النادي (Soft Delete)",
+                "description": "حذف النادي ناعماً من النظام مع كافّة فروعه ومرافقه وأعضائه واشتراكاته متتابعاً.",
                 "operationId": "294e5f27a4482ce0f1f46cd7427b2e26",
                 "parameters": [
                     {
@@ -6785,7 +6909,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم حذف النادي وسجلاته التابعة ناعماً بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6796,7 +6920,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Deleted successfully"
+                                            "example": "Club deleted successfully"
                                         },
                                         "data": {
                                             "type": "object",
@@ -6844,9 +6968,63 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/clubs/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Club Management"
+                ],
+                "summary": "♻️ استرجاع النادي المحذوف",
+                "description": "استرجاع النادي المحذوف ناعماً وكافّة فروعه ومرافقه وسجلاته التابعة تلقائياً.",
+                "operationId": "e5eaed202859e895fba72544d2f37ae3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف النادي",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع النادي وسجلاته التابعة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Club restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
-                    "409": {
-                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
+                    "404": {
+                        "description": "🚫 لم يتم العثور على النادي المحذوف",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6857,7 +7035,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "لا يمكن حذف النادي لأنه يحتوي على 2 فروع. يرجى حذف جميع الفروع أولاً أو تعطيل النادي بدلاً من حذفه."
+                                            "example": "Record not found."
                                         }
                                     },
                                     "type": "object"
@@ -8315,8 +8493,8 @@
                 "tags": [
                     "Locker Management"
                 ],
-                "summary": "🗑️ حذف خزانة",
-                "description": "إزالة خزانة محددة من النظام. لا يمكن حذف خزانة وهي مشغولة.",
+                "summary": "🗑️ حذف خزانة (Soft Delete)",
+                "description": "إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.",
                 "operationId": "849979252fdb3ee314725226a799e838",
                 "parameters": [
                     {
@@ -8332,7 +8510,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف الخزانة بنجاح",
+                        "description": "✅ تم حذف الخزانة بنجاح ناعماً",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8361,26 +8539,41 @@
                     },
                     "401": {
                         "description": "❌ غير مصرح"
-                    },
-                    "409": {
-                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن حذف الخزانة لوجود 1 حجوزات مرتبطة بها. يُنصح بإلغاء الحجز أو تعطيل الخزانة بدلاً من حذفها."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "♻️ استرجاع خزانة محذوفة",
+                "description": "استرجاع الخزانة المحذوفة ناعماً وكافّة حجوزاتها التابعة تلقائياً.",
+                "operationId": "8691c12e83c4546dcd85a1083b98cc8d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الخزانة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الخزانة بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الخزانة غير موجودة في سلة المحذوفات"
                     }
                 },
                 "security": [
@@ -10153,8 +10346,8 @@
                 "tags": [
                     "Member Management"
                 ],
-                "summary": "🗑️ حذف عضو",
-                "description": "حذف عضو محدد من النظام.",
+                "summary": "🗑️ حذف عضو (Soft Delete)",
+                "description": "حذف عضو محدد من النظام ناعماً مع إخفاء كافّة اشتراكاته ودفعاته المالية وحجوزاته وسجلاته التابعة ناعماً ومتتابعاً.",
                 "operationId": "bfc4d5caaa5a904cfda51e6901dd213d",
                 "parameters": [
                     {
@@ -10170,7 +10363,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف العضو بنجاح"
+                        "description": "✅ تم حذف العضو وسجلاته التابعة ناعماً بنجاح"
                     },
                     "404": {
                         "description": "🚫 العضو غير موجود"
@@ -10417,6 +10610,41 @@
                     },
                     "401": {
                         "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/members/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Member Management"
+                ],
+                "summary": "♻️ استرجاع عضو محذوف",
+                "description": "استرجاع العضو المحذوف ناعماً وكافّة اشتراكاته ودفعاته وسجلاته التابعة تلقائياً.",
+                "operationId": "72942e95c604859e105deafdfdf9d919",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف العضو",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع العضو وكافة سجلاته التابعة بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 العضو غير موجود في سلة المحذوفات"
                     }
                 },
                 "security": [
@@ -12664,8 +12892,8 @@
                 "tags": [
                     "Sports & Activities"
                 ],
-                "summary": "🗑️ حذف النشاط",
-                "description": "إزالة نشاط رياضي من النظام. لا يمكن حذف النشاط إذا كان مرتبطاً بخطة اشتراك أو مدرب.",
+                "summary": "🗑️ حذف النشاط (Soft Delete)",
+                "description": "إزالة نشاط رياضي ناعماً من النظام مع كافّة قوالب الجلسات والحجوزات التابعة له متتابعاً.",
                 "operationId": "fdf7d0704d687d2700dc5ef6a6eb5d9d",
                 "parameters": [
                     {
@@ -12681,7 +12909,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم حذف النشاط بنجاح ناعماً",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -12698,26 +12926,6 @@
                                             "type": "object",
                                             "example": null,
                                             "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "🚫 لا يمكن الحذف — النشاط مرتبط ببيانات أخرى",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن حذف هذا النشاط لأنه مرتبط بـ 2 خطة اشتراك، و 1 مدرب. يمكنك تعطيل النشاط (is_active = false) بدلاً من حذفه."
                                         }
                                     },
                                     "type": "object"
@@ -12754,6 +12962,80 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activities/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "♻️ استرجاع نشاط رياضي محذوف",
+                "description": "استرجاع النشاط الرياضي المحذوف ناعماً وكافّة قوالبه وحجوزاته التابعة تلقائياً.",
+                "operationId": "b33d751bc9fdc245e27efa7a5f4a6cf8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف النشاط",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع النشاط وسجلاته التابعة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 النشاط غير موجود في الأرشيف",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
                                         }
                                     },
                                     "type": "object"
@@ -14620,8 +14902,8 @@
                 "tags": [
                     "Coach Management"
                 ],
-                "summary": "Delete Coach",
-                "description": "Delete a coach. Cannot be deleted if associated with players, shifts, or activities.",
+                "summary": "Delete Coach (Soft Delete)",
+                "description": "Soft deletes a coach and all associated details, contracts, certifications, and shifts automatically.",
                 "operationId": "cb8e2568da2ec2b147d7d150d61b88af",
                 "parameters": [
                     {
@@ -14635,7 +14917,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Coach deleted successfully",
+                        "description": "Coach soft-deleted successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -14643,74 +14925,6 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Coach deleted successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict - Cannot delete coach",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن حذف هذا المدرب لأنه مرتبط بـ 2 اشتراكات لاعبين. يمكنك إيقاف حساب المدرب بدلاً من حذفه."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
                                         }
                                     },
                                     "type": "object"
@@ -15880,6 +16094,85 @@
                                         "message": {
                                             "type": "string",
                                             "example": "An error occurred while uploading certification."
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message details"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/coaches/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Coach Management"
+                ],
+                "summary": "Restore Soft Deleted Coach",
+                "description": "Restores a soft-deleted coach and all associated details, contracts, certifications, and shifts automatically.",
+                "operationId": "7ddfcd17a76da920ebf7799303bbfe7d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Coach restored successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coach restored successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Coach not found in trashed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coach not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "An error occurred while restoring the coach."
                                         },
                                         "error": {
                                             "type": "string",
@@ -17625,8 +17918,8 @@
                 "tags": [
                     "Staff Management"
                 ],
-                "summary": "🗑️ حذف موظف",
-                "description": "حذف موظف من النظام. لا يمكن حذفه إذا كان مرتبطاً ببيانات مالية، حضور، أو أنشطة.",
+                "summary": "🗑️ حذف موظف (Soft Delete)",
+                "description": "حذف موظف أو مدرب ناعماً من النظام مع كافّة عقوده وشفتاته وسجلاته التابعة متتابعاً.",
                 "operationId": "29e68e331d2e6548b81ee1f38a226345",
                 "parameters": [
                     {
@@ -17642,7 +17935,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف الموظف بنجاح",
+                        "description": "✅ تم حذف الموظف وسجلاته التابعة ناعماً بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -17659,26 +17952,6 @@
                                             "type": "object",
                                             "example": null,
                                             "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "🚫 لا يمكن الحذف — الموظف مرتبط ببيانات أخرى",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن حذف هذا الموظف/المدرب لأنه: يوجد 2 قسائم رواتب، و مرتبط بـ 1 أنشطة رياضية. يرجى تغيير حالته إلى 'غير نشط' بدلاً من الحذف."
                                         }
                                     },
                                     "type": "object"
@@ -18061,6 +18334,80 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/staff/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Staff Management"
+                ],
+                "summary": "♻️ استرجاع موظف محذوف",
+                "description": "استرجاع الموظف أو المدرب المحذوف ناعماً وكافّة عقوده وشفتاته وسجلاته التابعة تلقائياً.",
+                "operationId": "72eabfdb0099b450812156a061f15cd4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الموظف",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الموظف وسجلاته التابعة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 الموظف غير موجود في الأرشيف",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
                                         }
                                     },
                                     "type": "object"
@@ -20516,6 +20863,76 @@
                 ]
             }
         },
+        "/v1/player-subscriptions/{id}": {
+            "delete": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🗑️ حذف اشتراك متدرب (Soft Delete)",
+                "description": "حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.",
+                "operationId": "397414f0216c095ed8c6a7b15c216061",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الاشتراك غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "♻️ استرجاع اشتراك محذوف",
+                "description": "استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.",
+                "operationId": "3705194785ed48deca2ca7dc82401a37",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الاشتراك وكافة سجلاته المالية المرفقة بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الاشتراك غير موجود في سلة المحذوفات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/subscription-plan-activities": {
             "get": {
                 "tags": [
@@ -21802,8 +22219,8 @@
                 "tags": [
                     "Subscription Management"
                 ],
-                "summary": "🗑️ حذف خطة الاشتراك",
-                "description": "إزالة خطة اشتراك من النظام.",
+                "summary": "🗑️ حذف خطة الاشتراك (Soft Delete)",
+                "description": "حذف خطة الاشتراك ناعماً من النظام مع كافّة أنشطتها وقوالبها التابعة متتابعاً.",
                 "operationId": "630078218265b88ac46b80ddc70a58cf",
                 "parameters": [
                     {
@@ -21819,7 +22236,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف الخطة بنجاح",
+                        "description": "✅ تم حذف الخطة وسجلاتها التابعة ناعماً بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -21863,35 +22280,6 @@
                             }
                         }
                     },
-                    "409": {
-                        "description": "🚫 لا يمكن الحذف — الفعالية مرتبطة بلاعبين",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (status = 'inactive') بدلاً من حذفها."
-                                        },
-                                        "details": {
-                                            "properties": {
-                                                "subscribers_count": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "401": {
                         "description": "❌ غير مصرح",
                         "content": {
@@ -21907,6 +22295,41 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "♻️ استرجاع خطة اشتراك محذوفة",
+                "description": "استرجاع خطة الاشتراك المحذوفة ناعماً وكافّة أنشطتها وقوالب جلساتها تلقائياً.",
+                "operationId": "7a3d177204d275cf877dbfbeb806c516",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الخطة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الخطة بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الخطة غير موجودة في سلة المحذوفات"
                     }
                 },
                 "security": [

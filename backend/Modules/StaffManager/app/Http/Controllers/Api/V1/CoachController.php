@@ -900,8 +900,8 @@ class CoachController extends Controller
 
     #[OA\Delete(
         path: '/v1/coaches/{id}',
-        summary: 'Delete Coach',
-        description: 'Delete a coach. Cannot be deleted if associated with players, shifts, or activities.',
+        summary: 'Delete Coach (Soft Delete)',
+        description: 'Soft deletes a coach and all associated details, contracts, certifications, and shifts automatically.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -910,38 +910,9 @@ class CoachController extends Controller
         responses: [
             new OA\Response(
                 response: 200, 
-                description: 'Coach deleted successfully',
+                description: 'Coach soft-deleted successfully',
                 content: new OA\JsonContent(properties: [
                     new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 409, 
-                description: 'Conflict - Cannot delete coach',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'status', type: 'string', example: 'error'),
-                    new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا المدرب لأنه مرتبط بـ 2 اشتراكات لاعبين. يمكنك إيقاف حساب المدرب بدلاً من حذفه.')
-                ])
-            ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
                 ])
             ),
             new OA\Response(
@@ -972,11 +943,62 @@ class CoachController extends Controller
             return response()->json([
                 'message' => 'Coach not found.'
             ], 404);
-        } catch (\Modules\Core\Exceptions\CannotDeleteException $e) {
-            throw $e; // Handled by global exception handler
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while deleting the coach.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/restore',
+        summary: 'Restore Soft Deleted Coach',
+        description: 'Restores a soft-deleted coach and all associated details, contracts, certifications, and shifts automatically.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: 'Coach restored successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found in trashed',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while restoring the coach.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
+        ]
+    )]
+    public function restore($id)
+    {
+        try {
+            $this->coachService->restoreCoach($id);
+            return response()->json([
+                'message' => 'Coach restored successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while restoring the coach.',
                 'error' => $e->getMessage()
             ], 500);
         }

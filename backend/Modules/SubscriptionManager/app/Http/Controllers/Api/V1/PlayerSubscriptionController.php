@@ -422,4 +422,38 @@ class PlayerSubscriptionController extends BaseController
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
+
+    #[OA\Delete(
+        path: '/v1/player-subscriptions/{id}',
+        summary: '🗑️ حذف اشتراك متدرب (Soft Delete)',
+        description: 'حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود')]
+    public function destroy(int $id)
+    {
+        $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::findOrFail($id);
+        $subscription->delete();
+        return $this->successResponse(null, __('Player subscription deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/player-subscriptions/{id}/restore',
+        summary: '♻️ استرجاع اشتراك محذوف',
+        description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع الاشتراك وكافة سجلاته المالية المرفقة بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود في سلة المحذوفات')]
+    public function restore(int $id)
+    {
+        $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->findOrFail($id);
+        $subscription->restore();
+        return $this->successResponse(null, __('Player subscription restored successfully'));
+    }
 }

@@ -27,6 +27,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Subscription Plans CRUD
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
+    Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
 
     // Offers CRUD & Actions
@@ -39,9 +40,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('player-subscriptions/{id}/renew', [PlayerSubscriptionController::class, 'renew']);
     Route::post('player-subscriptions/{id}/cancel', [PlayerSubscriptionController::class, 'cancel']);
     Route::post('player-subscriptions/{id}/payment', [PlayerSubscriptionController::class, 'recordPayment']);
+    Route::post('player-subscriptions/{id}/restore', [PlayerSubscriptionController::class, 'restore']);
 
     // Player Subscriptions CRUD
-    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update', 'destroy']);
+    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update']);
 
 
     Route::apiResource('subscription-plan-activities', SubscriptionPlanActivityController::class);
