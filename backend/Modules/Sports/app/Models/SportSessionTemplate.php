@@ -3,10 +3,14 @@
 namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class SportSessionTemplate extends Model
 {
+    use SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['exceptions'];
 
 
     protected $table = 'sport_session_templates';
@@ -35,10 +39,11 @@ class SportSessionTemplate extends Model
         return $this->hasMany(SessionException::class, 'sport_session_template_id');
     }
 
+
     /**
      * Scopes
      */
-    public function scopeActive($query)
+    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query)
     {
         return $query->where('is_active', true);
     }

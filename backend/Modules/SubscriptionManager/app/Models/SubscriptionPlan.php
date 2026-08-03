@@ -3,11 +3,15 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 use Modules\SubscriptionManager\Enums\SubscriptionPlanStatus;
 
 class SubscriptionPlan extends Model
 {
+    use SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['planActivities', 'sessionTemplates'];
 
 
     protected $fillable = [
@@ -87,5 +91,10 @@ class SubscriptionPlan extends Model
     public function offers()
     {
         return $this->belongsToMany(Offer::class, 'offer_subscription_plan');
+    }
+
+    public function playerSubscriptions()
+    {
+        return $this->hasMany(PlayerSubscription::class, 'plan_id');
     }
 }

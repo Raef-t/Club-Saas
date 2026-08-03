@@ -38,7 +38,7 @@ class MemberService
 
     public function getAllMembers(array $filters = [])
     {
-        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan', 'healthProfile', 'measurements']);
+        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
 
         // 1. Filtering by Branch
         if (!empty($filters['branch_id'])) {
@@ -107,10 +107,10 @@ class MemberService
             }
             $clubSettings = ClubSetting::where('club_id', $branch->club_id)->first();
             $enabledFeatures = $clubSettings ? ($clubSettings->enabled_features ?? []) : [];
-            
-            $autoGenerate = isset($enabledFeatures['auto_generate_credentials']) 
-                            ? filter_var($enabledFeatures['auto_generate_credentials'], FILTER_VALIDATE_BOOLEAN) 
-                            : true; // Default to true if not specified
+
+            $autoGenerate = isset($enabledFeatures['auto_generate_credentials'])
+                ? filter_var($enabledFeatures['auto_generate_credentials'], FILTER_VALIDATE_BOOLEAN)
+                : true; // Default to true if not specified
 
             $username = null;
             $password = null;
@@ -120,7 +120,7 @@ class MemberService
                 // Generate User Account for Mobile App
                 $username = 'Mem-' . $personId . '-' . strtolower(Str::random(6));
                 $password = 'password123'; // Default password
-                
+
                 $user = User::create([
                     'username'  => $username,
                     'password'  => Hash::make($password),
@@ -222,40 +222,37 @@ class MemberService
         });
     }
 
-    public function deleteMember(int $id): void
+    /**
+     * Delete a member n-levels deep via CascadeSoftDeletes.
+     */
+    public function deleteMember(int $id): bool
     {
-        $member = $this->repository->find($id);
+        return DB::transaction(function () use ($id) {
+            $member = \Modules\MemberManager\Models\Member::findOrFail($id);
+            return $member->delete();
+        });
+    }
 
-        // Check for financial records
-        $invoicesCount = \Modules\SubscriptionManager\Models\Invoice::where('member_id', $id)->count();
+    /**
+     * Restore a deleted member and all cascaded children.
+     */
+    public function restoreMember(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $member = \Modules\MemberManager\Models\Member::onlyTrashed()->findOrFail($id);
+            return $member->restore();
+        });
+    }
 
-        // Check for attendance records (polymorphic: attendable_type = Member class)
-        $attendanceCount = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
-            ->where('attendable_id', $id)
-            ->count();
-
-        $blocked = [];
-
-        if ($invoicesCount > 0) {
-            $blocked[] = "يوجد {$invoicesCount} " . ($invoicesCount === 1 ? 'فاتورة' : 'فواتير') . " مالية مرتبطة بهذا العضو";
-        }
-        if ($attendanceCount > 0) {
-            $blocked[] = "يوجد {$attendanceCount} " . ($attendanceCount === 1 ? 'سجل حضور' : 'سجلات حضور') . " مرتبطة بهذا العضو";
-        }
-
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف هذا العضو لأن: {$reasons}. يمكنك تغيير حالة العضو إلى 'غير نشط' بدلاً من الحذف.",
-                [
-                    'invoices_count'   => $invoicesCount,
-                    'attendance_count' => $attendanceCount,
-                ]
-            );
-        }
-
-        // Safe to delete — cascade will clean up non-financial child records
-        $this->repository->delete($id);
+    /**
+     * Force delete a member permanently.
+     */
+    public function forceDeleteMember(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $member = \Modules\MemberManager\Models\Member::withTrashed()->findOrFail($id);
+            return $member->forceDelete();
+        });
     }
 
     public function getMeasurements(int $memberId)
@@ -282,7 +279,7 @@ class MemberService
     protected function attachSharedDTOs(?\Modules\MemberManager\Models\Member $member)
     {
         if ($member) {
-            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan', 'healthProfile', 'measurements']);
+            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
         }
         return $member;
     }
@@ -306,32 +303,32 @@ class MemberService
             'total_members'               => (clone $baseQuery)->count(),
             'active_members'              => (clone $baseQuery)->where('membership_status', 'active')->count(),
             'total_subscribed_members'    => (clone $baseQuery)->whereHas('subscriptions', function ($q) {
-                                                $q->where('status', 'active')->whereDate('end_date', '>=', now());
-                                             })->count(),
+                $q->where('status', 'active')->whereDate('end_date', '>=', now());
+            })->count(),
             'new_members_this_month'      => (clone $baseQuery)->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                                                $q->whereBetween('join_date', [$startOfMonth, $endOfMonth])
-                                                  ->orWhereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
-                                                      $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
-                                                  });
-                                             })->whereDoesntHave('subscriptions', function ($sq) use ($startOfMonth) {
-                                                 $sq->where('start_date', '<', $startOfMonth);
-                                             })->count(),
+                $q->whereBetween('join_date', [$startOfMonth, $endOfMonth])
+                    ->orWhereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
+                        $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+                    });
+            })->whereDoesntHave('subscriptions', function ($sq) use ($startOfMonth) {
+                $sq->where('start_date', '<', $startOfMonth);
+            })->count(),
             'renewed_members_this_month'  => (clone $baseQuery)->whereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
-                                                $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
-                                             })->whereHas('subscriptions', function ($sq) use ($startOfMonth) {
-                                                 $sq->where('start_date', '<', $startOfMonth);
-                                             })->count(),
+                $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+            })->whereHas('subscriptions', function ($sq) use ($startOfMonth) {
+                $sq->where('start_date', '<', $startOfMonth);
+            })->count(),
             'expired_not_renewed_members' => (clone $baseQuery)->whereHas('subscriptions', function ($sq) {
-                                                $sq->whereDate('end_date', '<', now());
-                                             })->whereDoesntHave('subscriptions', function ($sq) {
-                                                 $sq->where('status', 'active')->whereDate('end_date', '>=', now());
-                                             })->count(),
+                $sq->whereDate('end_date', '<', now());
+            })->whereDoesntHave('subscriptions', function ($sq) {
+                $sq->where('status', 'active')->whereDate('end_date', '>=', now());
+            })->count(),
             'male_members'                => (clone $baseQuery)->whereHas('person', function ($q) {
-                                                $q->where('gender', 'male');
-                                             })->count(),
+                $q->where('gender', 'male');
+            })->count(),
             'female_members'              => (clone $baseQuery)->whereHas('person', function ($q) {
-                                                $q->where('gender', 'female');
-                                             })->count(),
+                $q->where('gender', 'female');
+            })->count(),
         ];
     }
 }

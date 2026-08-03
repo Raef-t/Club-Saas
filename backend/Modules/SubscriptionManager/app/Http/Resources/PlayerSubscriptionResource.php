@@ -32,18 +32,27 @@ class PlayerSubscriptionResource extends JsonResource
             'remaining_amount' => $this->remaining_amount,
             'notes' => $this->notes,
             'items' => $this->whenLoaded('items', function () {
-                return $this->items->map(function ($item) {
+                $planActivities = $this->plan && $this->plan->relationLoaded('planActivities')
+                    ? $this->plan->planActivities
+                    : collect();
+
+                return $this->items->values()->map(function ($item, $index) use ($planActivities) {
+                    $planActivity = $planActivities->get($index);
+                    $staffActivity = $planActivity?->staffActivity;
+                    $activity = $staffActivity?->activity;
+                    $coach = $staffActivity?->staff;
+
                     return [
                         'id' => $item->id,
-                        'activity_id' => $item->activity_id,
-                        'activity' => $item->relationLoaded('activity') && $item->activity ? [
-                            'id' => $item->activity->id,
-                            'name' => $item->activity->name,
+                        'activity_id' => $activity?->id,
+                        'activity' => $activity ? [
+                            'id' => $activity->id,
+                            'name' => $activity->name,
                         ] : null,
-                        'coach_id' => $item->coach_id,
-                        'coach' => $item->relationLoaded('coach') && $item->coach ? [
-                            'id' => $item->coach->id,
-                            'name' => $item->coach->person ? $item->coach->person->full_name : null,
+                        'coach_id' => $coach?->id,
+                        'coach' => $coach ? [
+                            'id' => $coach->id,
+                            'name' => $coach->person ? $coach->person->full_name : null,
                         ] : null,
                         'sessions_allocated' => $item->sessions_allocated,
                         'sessions_consumed' => $item->sessions_consumed ?? 0,

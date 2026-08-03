@@ -48,45 +48,36 @@ class BranchService
     }
 
     /**
-     * Delete a branch only if it has no impact on the system.
-     * A branch cannot be deleted if it has members, subscriptions, invoices, or leads.
-     *
-     * @throws CannotDeleteException
+     * Delete a branch with full cascading soft delete for all related records.
      */
-    public function deleteBranch($id): void
+    public function deleteBranch($id): bool
     {
-        $branch = Branch::findOrFail($id);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $branch = Branch::findOrFail($id);
+            return $branch->delete();
+        });
+    }
 
-        // Count all related records that block deletion
-        $membersCount       = \Modules\MemberManager\Models\Member::where('branch_id', $id)->count();
-        $subscriptionsCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('branch_id', $id)->count();
-        $invoicesCount      = \Modules\SubscriptionManager\Models\Invoice::where('branch_id', $id)->count();
+    /**
+     * Restore a deleted branch and all cascaded children.
+     */
+    public function restoreBranch($id): bool
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $branch = Branch::onlyTrashed()->findOrFail($id);
+            return $branch->restore();
+        });
+    }
 
-        $blocked = [];
-
-        if ($membersCount > 0) {
-            $blocked[] = "يوجد {$membersCount} " . ($membersCount === 1 ? 'عضو' : 'أعضاء') . " مسجل في هذا الفرع";
-        }
-        if ($subscriptionsCount > 0) {
-            $blocked[] = "يوجد {$subscriptionsCount} " . ($subscriptionsCount === 1 ? 'اشتراك' : 'اشتراكات') . " مرتبط بهذا الفرع";
-        }
-        if ($invoicesCount > 0) {
-            $blocked[] = "يوجد {$invoicesCount} " . ($invoicesCount === 1 ? 'فاتورة' : 'فواتير') . " مرتبطة بهذا الفرع";
-        }
-
-        if (!empty($blocked)) {
-            $reasons = implode('، ', $blocked);
-            throw new CannotDeleteException(
-                "لا يمكن حذف الفرع لأن: {$reasons}. يُنصح بتعطيل الفرع بدلاً من حذفه للحفاظ على سلامة البيانات.",
-                [
-                    'members_count'       => $membersCount,
-                    'subscriptions_count' => $subscriptionsCount,
-                    'invoices_count'      => $invoicesCount,
-                ]
-            );
-        }
-
-        $this->repository->delete($id);
+    /**
+     * Force delete a branch permanently.
+     */
+    public function forceDeleteBranch($id): bool
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $branch = Branch::withTrashed()->findOrFail($id);
+            return $branch->forceDelete();
+        });
     }
 
     /**

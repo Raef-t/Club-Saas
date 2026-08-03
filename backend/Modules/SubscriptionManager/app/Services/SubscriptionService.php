@@ -31,7 +31,7 @@ class SubscriptionService
      */
     public function getAllSubscriptions(array $filters = [])
     {
-        $query = PlayerSubscription::query()->with(['plan', 'items.activity', 'items.coach.person']);
+        $query = PlayerSubscription::query()->with(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items']);
 
         if (!empty($filters['member_id'])) {
             $query->where('member_id', $filters['member_id']);
@@ -51,9 +51,7 @@ class SubscriptionService
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['coach_id'])) {
-            $query->where('coach_id', $filters['coach_id']);
-        }
+        // Note: coach_id filter removed — coach info is now derived from subscription_plan → plan_activities
 
         if (!empty($filters['start_date'])) {
             $query->where('start_date', '>=', $filters['start_date']);
@@ -140,7 +138,6 @@ class SubscriptionService
             // 4. Create Subscription
             $subscription = $this->subscriptionRepository->create([
                 'member_id' => $memberId,
-                'coach_id' => null,
                 'plan_id' => $plan->id,
                 'months_count' => $monthsCount,
                 'total_amount' => $totalAmount,
@@ -152,20 +149,14 @@ class SubscriptionService
                 'notes' => $options['notes'] ?? null,
             ]);
 
-            // 5. Create Subscription Items
-            $requestedActivities = collect($options['activities'] ?? []);
-
+            // 5. Create Subscription Items (one item per plan activity)
+            // Activity & coach info is now derived from subscription_plan → plan_activities → staff_activity
             foreach ($plan->planActivities as $planActivity) {
-                $activityId = $planActivity->activity_id;
-                $coachId = $planActivity->coach_id;
-
                 $sessionsAllocated = !is_null($plan->session_count)
                     ? ($plan->session_count * $monthsCount)
                     : null;
 
                 $subscription->items()->create([
-                    'activity_id' => $activityId,
-                    'coach_id' => $coachId,
                     'sessions_allocated' => $sessionsAllocated,
                     'is_unlimited' => is_null($plan->session_count),
                 ]);
@@ -316,7 +307,7 @@ class SubscriptionService
                 ? Carbon::parse($oldSubscription->end_date)
                 : now();
 
-            $options['coach_id'] = $options['coach_id'] ?? $oldSubscription->coach_id;
+            // coach_id is no longer stored per item; it is derived from the plan's planActivities
             $options['start_date'] = $startDate->toDateString();
 
             return $this->subscribeMember($oldSubscription->member_id, $plan->id, $options);
@@ -672,7 +663,6 @@ class SubscriptionService
 
                 $subscription = $this->subscriptionRepository->create([
                     'member_id' => $memberId,
-                    'coach_id' => null,
                     'plan_id' => $plan->id,
                     'months_count' => $monthsCount,
                     'offer_id' => $offer->id,
@@ -685,14 +675,13 @@ class SubscriptionService
                     'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
                 ]);
 
+                // One item per plan activity; activity & coach derived from plan_activities → staff_activity
                 foreach ($plan->planActivities as $planActivity) {
                     $sessionsAllocated = !is_null($plan->session_count)
                         ? ($plan->session_count * $monthsCount)
                         : null;
 
                     $subscription->items()->create([
-                        'activity_id' => $planActivity->activity_id,
-                        'coach_id' => $planActivity->coach_id,
                         'sessions_allocated' => $sessionsAllocated,
                         'is_unlimited' => is_null($plan->session_count),
                     ]);

@@ -3,10 +3,19 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class PlayerSubscription extends Model
 {
-    use \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = [
+        'items',
+        'freezes',
+        'invoices',
+        'attendanceConsumptions',
+    ];
 
     protected $fillable = [
         'member_id',
@@ -54,6 +63,16 @@ class PlayerSubscription extends Model
     public function items()
     {
         return $this->hasMany(PlayerSubscriptionItem::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'player_subscription_id');
+    }
+
+    public function attendanceConsumptions()
+    {
+        return $this->hasMany(\Modules\AttendanceManager\Models\AttendanceConsumption::class, 'player_subscription_id');
     }
 
 

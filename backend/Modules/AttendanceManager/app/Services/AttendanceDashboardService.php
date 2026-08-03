@@ -91,8 +91,10 @@ class AttendanceDashboardService
                 $query->whereExists(function ($subQ) {
                     $subQ->select(DB::raw(1))
                         ->from('player_subscriptions as ps')
-                        ->join('player_subscription_items as psi', 'psi.player_subscription_id', '=', 'ps.id')
-                        ->join('activities as act', 'act.id', '=', 'psi.activity_id')
+                        ->join('subscription_plans as sp_inner', 'sp_inner.id', '=', 'ps.plan_id')
+                        ->join('plan_activities as pa_inner', 'pa_inner.plan_id', '=', 'sp_inner.id')
+                        ->join('staff_activities as sa_inner', 'sa_inner.id', '=', 'pa_inner.staff_activity_id')
+                        ->join('activities as act', 'act.id', '=', 'sa_inner.activity_id')
                         ->leftJoin('activity_types as at', 'at.id', '=', 'act.activity_type_id')
                         ->whereColumn('ps.member_id', 'att.attendable_id')
                         ->where('ps.status', 'active')

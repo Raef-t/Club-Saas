@@ -82,7 +82,7 @@ class MemberDashboardService
      */
     public function getSubscriptions(int $memberId): array
     {
-        $subscriptions = PlayerSubscription::with(['plan', 'items.activity', 'items.coach.person'])
+        $subscriptions = PlayerSubscription::with(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items'])
             ->where('member_id', $memberId)
             ->latest()
             ->get();
@@ -94,15 +94,22 @@ class MemberDashboardService
         $member = DB::table('members')->where('id', $memberId)->first();
 
         return $subscriptions->map(function ($subscription) use ($member) {
-            $activities = $subscription->items->map(function ($item) {
+            $planActivities = $subscription->plan ? $subscription->plan->planActivities : collect();
+
+            $activities = $subscription->items->values()->map(function ($item, $index) use ($planActivities) {
+                $planActivity = $planActivities->get($index);
+                $staffActivity = $planActivity?->staffActivity;
+                $activity = $staffActivity?->activity;
+                $coach = $staffActivity?->staff;
+
                 // Determine activity name
-                $activityName = $item->activity->name ?? null;
+                $activityName = $activity->name ?? null;
                 if (is_string($activityName) && json_decode($activityName)) {
                     $decoded = json_decode($activityName, true);
                     $activityName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $activityName;
                 }
 
-                $coachName = $item->coach?->person?->full_name ?? null;
+                $coachName = $coach?->person?->full_name ?? null;
 
                 return [
                     'id' => $item->id,

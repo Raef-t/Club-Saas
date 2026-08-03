@@ -151,4 +151,38 @@ class UnifiedAttendanceController extends BaseController
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
     }
+
+    #[OA\Delete(
+        path: '/v1/attendances/{id}',
+        summary: '🗑️ حذف سجل حضور (Soft Delete)',
+        description: 'حذف سجل حضور ناعماً من النظام مع كافّة استهلاكات الجلسات المترابطة به ناعماً ومتتابعاً.',
+        tags: ['Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل الحضور', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم حذف سجل الحضور ناعماً بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 سجل الحضور غير موجود')]
+    public function destroy(int $id)
+    {
+        $attendance = \Modules\AttendanceManager\Models\Attendance::findOrFail($id);
+        $attendance->delete();
+        return $this->successResponse(null, __('Attendance deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/attendances/{id}/restore',
+        summary: '♻️ استرجاع سجل حضور محذوف',
+        description: 'استرجاع سجل الحضور المحذوف ناعماً وكافّة استهلاكات الجلسات المترابطة به تلقائياً.',
+        tags: ['Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل الحضور', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع سجل الحضور بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 سجل الحضور غير موجود في سلة المحذوفات')]
+    public function restore(int $id)
+    {
+        $attendance = \Modules\AttendanceManager\Models\Attendance::onlyTrashed()->findOrFail($id);
+        $attendance->restore();
+        return $this->successResponse(null, __('Attendance restored successfully'));
+    }
 }

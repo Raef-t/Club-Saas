@@ -4,10 +4,14 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class ActivityType extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['activities'];
 
     /**
      * The attributes that are mass assignable.

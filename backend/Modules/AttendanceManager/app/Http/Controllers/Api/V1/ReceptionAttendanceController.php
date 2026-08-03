@@ -88,42 +88,57 @@ class ReceptionAttendanceController extends BaseController
             $subscriptions->transform(function ($sub) use ($activeLockers) {
                 $sub->plan_name = json_decode($sub->plan_name, true) ?? $sub->plan_name;
 
-                $sub->items = DB::table('player_subscription_items as psi')
-                    ->leftJoin('activities as a', 'a.id', '=', 'psi.activity_id')
-                    ->leftJoin('staff as s', 's.id', '=', 'psi.coach_id')
-                    ->leftJoin('people as p', 'p.id', '=', 's.person_id')
+                // Fetch raw subscription items (no longer carry activity_id / coach_id)
+                $rawItems = DB::table('player_subscription_items as psi')
                     ->where('psi.player_subscription_id', $sub->player_subscription_id)
+                    ->whereNull('psi.deleted_at')
                     ->select(
                         'psi.id',
-                        'psi.activity_id',
-                        'a.name as activity_name',
-                        'psi.coach_id',
-                        'p.full_name as coach_name',
-                        's.role as coach_role',
                         'psi.sessions_allocated',
                         'psi.sessions_consumed',
                         'psi.is_unlimited',
                         DB::raw('(psi.sessions_allocated - psi.sessions_consumed) as sessions_remaining')
                     )
-                    ->get()
-                    ->map(function ($item) {
-                        $item->activity_name = json_decode($item->activity_name, true) ?? $item->activity_name;
-                        
-                        // 2. Structure coach details
-                        if ($item->coach_id) {
-                            $item->coach = [
-                                'id' => $item->coach_id,
-                                'name' => $item->coach_name,
-                                'role' => $item->coach_role,
-                            ];
-                        } else {
-                            $item->coach = null;
-                        }
-                        
-                        unset($item->coach_name, $item->coach_role);
+                    ->get();
 
-                        return $item;
-                    });
+                // Fetch activity & coach info from the subscription plan
+                $planActivities = DB::table('plan_activities as pa')
+                    ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
+                    ->join('activities as act', 'act.id', '=', 'sa.activity_id')
+                    ->leftJoin('staff as s', 's.id', '=', 'sa.staff_id')
+                    ->leftJoin('people as p', 'p.id', '=', 's.person_id')
+                    ->where('pa.plan_id', $sub->plan_id)
+                    ->whereNull('pa.deleted_at')
+                    ->select(
+                        'act.id as activity_id',
+                        'act.name as activity_name',
+                        's.id as coach_id',
+                        'p.full_name as coach_name',
+                        's.role as coach_role'
+                    )
+                    ->get();
+
+                // Merge items with activity/coach data from the plan
+                $sub->items = $rawItems->map(function ($item, $index) use ($planActivities) {
+                    $planActivity = $planActivities->get($index);
+
+                    $item->activity_id   = $planActivity->activity_id   ?? null;
+                    $item->activity_name = isset($planActivity->activity_name)
+                        ? (json_decode($planActivity->activity_name, true) ?? $planActivity->activity_name)
+                        : null;
+
+                    if (!empty($planActivity->coach_id)) {
+                        $item->coach = [
+                            'id'   => $planActivity->coach_id,
+                            'name' => $planActivity->coach_name,
+                            'role' => $planActivity->coach_role,
+                        ];
+                    } else {
+                        $item->coach = null;
+                    }
+
+                    return $item;
+                });
 
                 // 3. Calculate total sessions for the subscription
                 $sub->total_sessions_allocated = $sub->items->sum('sessions_allocated');

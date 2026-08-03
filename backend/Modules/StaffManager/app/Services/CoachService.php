@@ -414,41 +414,36 @@ class CoachService
     }
 
     /**
-     * Delete a coach.
+     * Delete a coach (Soft Delete).
      */
     public function deleteCoach($id)
     {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        
-        $subscriptionItemsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('coach_id', $id)->count();
-        $staffActivitiesCount = \Modules\Sports\Models\StaffActivity::where('staff_id', $id)->count();
-        $shiftsCount = \Modules\StaffManager\Models\StaffShift::where('staff_id', $id)->count();
+        return DB::transaction(function () use ($id) {
+            $staff = Staff::where('role', 'coach')->findOrFail($id);
+            $deleted = $staff->delete();
 
-        $blocked = [];
-        if ($subscriptionItemsCount > 0) {
-            $blocked[] = "مرتبط بـ {$subscriptionItemsCount} " . ($subscriptionItemsCount === 1 ? 'اشتراك لاعب' : 'اشتراكات لاعبين');
-        }
-        if ($staffActivitiesCount > 0) {
-            $blocked[] = "مرتبط بـ {$staffActivitiesCount} " . ($staffActivitiesCount === 1 ? 'نشاط رياضي' : 'أنشطة رياضية');
-        }
-        if ($shiftsCount > 0) {
-            $blocked[] = "مرتبط بـ {$shiftsCount} " . ($shiftsCount === 1 ? 'شفت عمل' : 'شفتات عمل');
-        }
+            if ($staff->user) {
+                $staff->user->update(['is_active' => false]);
+            }
 
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف هذا المدرب لأنه {$reasons}. يمكنك إيقاف حساب المدرب بدلاً من حذفه."
-            );
-        }
+            return $deleted;
+        });
+    }
 
-        $staff->delete(); // Soft delete or hard delete depending on config
+    /**
+     * Restore a soft-deleted coach.
+     */
+    public function restoreCoach($id)
+    {
+        return DB::transaction(function () use ($id) {
+            $staff = Staff::onlyTrashed()->where('role', 'coach')->findOrFail($id);
+            $restored = $staff->restore();
 
-        // Optional: deactivate user
-        if ($staff->user) {
-            $staff->user->update(['is_active' => false]);
-        }
+            if ($staff->user) {
+                $staff->user->update(['is_active' => true]);
+            }
 
-        return true;
+            return $restored;
+        });
     }
 }

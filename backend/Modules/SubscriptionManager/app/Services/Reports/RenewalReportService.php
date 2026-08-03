@@ -29,8 +29,9 @@ class RenewalReportService
                 'member.person.contacts',
                 'member.branch',
                 'plan.branch',
-                'items.activity',
-                'items.coach.person',
+                'plan.planActivities.staffActivity.activity',
+                'plan.planActivities.staffActivity.staff.person',
+                'items',
             ]);
 
         if ($branchId) {
@@ -45,7 +46,7 @@ class RenewalReportService
         }
 
         if ($coachId) {
-            $query->whereHas('items', fn($q) => $q->where('coach_id', $coachId));
+            $query->whereHas('plan.planActivities.staffActivity', fn($q) => $q->where('staff_id', $coachId));
         }
 
         if (!empty($search)) {
@@ -124,17 +125,22 @@ class RenewalReportService
 
             $coaches = [];
             $activities = [];
-            foreach ($sub->items as $item) {
-                if ($item->activity) {
-                    $activityName = is_array($item->activity->name)
-                        ? ($item->activity->name['ar'] ?? reset($item->activity->name))
-                        : $item->activity->name;
+            $planActivities = $sub->plan ? $sub->plan->planActivities : collect();
+            foreach ($planActivities as $planActivity) {
+                $staffActivity = $planActivity->staffActivity;
+                $activity = $staffActivity?->activity;
+                $coach = $staffActivity?->staff;
+
+                if ($activity) {
+                    $activityName = is_array($activity->name)
+                        ? ($activity->name['ar'] ?? reset($activity->name))
+                        : $activity->name;
                     $activities[] = $activityName;
                 }
-                if ($item->coach && $item->coach->person) {
+                if ($coach && $coach->person) {
                     $coaches[] = [
-                        'id'   => $item->coach->id,
-                        'name' => $item->coach->person->full_name,
+                        'id'   => $coach->id,
+                        'name' => $coach->person->full_name,
                     ];
                 }
             }

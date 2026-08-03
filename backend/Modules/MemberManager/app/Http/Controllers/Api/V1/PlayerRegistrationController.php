@@ -293,13 +293,13 @@ class PlayerRegistrationController extends BaseController
 
     #[OA\Delete(
         path: '/v1/members/{id}',
-        summary: '🗑️ حذف عضو',
-        description: 'حذف عضو محدد من النظام.',
+        summary: '🗑️ حذف عضو (Soft Delete)',
+        description: 'حذف عضو محدد من النظام ناعماً مع إخفاء كافّة اشتراكاته ودفعاته المالية وحجوزاته وسجلاته التابعة ناعماً ومتتابعاً.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
+    #[OA\Response(response: 200, description: '✅ تم حذف العضو وسجلاته التابعة ناعماً بنجاح')]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
     public function destroy($id)
     {
@@ -308,5 +308,24 @@ class PlayerRegistrationController extends BaseController
             return response()->json(['message' => __('Member not found or could not be deleted')], 404);
         }
         return $this->successResponse(null, __('Member deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/members/{id}/restore',
+        summary: '♻️ استرجاع عضو محذوف',
+        description: 'استرجاع العضو المحذوف ناعماً وكافّة اشتراكاته ودفعاته وسجلاته التابعة تلقائياً.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع العضو وكافة سجلاته التابعة بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود في سلة المحذوفات')]
+    public function restore($id)
+    {
+        $restored = $this->memberService->restoreMember($id);
+        if (!$restored) {
+            return response()->json(['message' => __('Member not found in trashed')], 404);
+        }
+        return $this->successResponse(null, __('Member restored successfully'));
     }
 }

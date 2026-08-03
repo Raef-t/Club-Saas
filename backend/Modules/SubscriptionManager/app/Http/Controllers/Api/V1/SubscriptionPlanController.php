@@ -340,15 +340,15 @@ class SubscriptionPlanController extends BaseController
 
     #[OA\Delete(
         path: '/v1/subscription-plans/{subscription_plan}',
-        summary: '🗑️ حذف خطة الاشتراك',
-        description: 'إزالة خطة اشتراك من النظام.',
+        summary: '🗑️ حذف خطة الاشتراك (Soft Delete)',
+        description: 'حذف خطة الاشتراك ناعماً من النظام مع كافّة أنشطتها وقوالبها التابعة متتابعاً.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم حذف الخطة بنجاح',
+        description: '✅ تم حذف الخطة وسجلاتها التابعة ناعماً بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -358,27 +358,27 @@ class SubscriptionPlanController extends BaseController
         )
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(
-        response: 409, 
-        description: '🚫 لا يمكن الحذف — الفعالية مرتبطة بلاعبين', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: "لا يمكن الحذف لأن الفعالية مسجل فيها 5 أعضاء. يمكنك تعطيل الفعالية (status = 'inactive') بدلاً من حذفها."),
-                new OA\Property(
-                    property: 'details', 
-                    type: 'object', 
-                    properties: [
-                        new OA\Property(property: 'subscribers_count', type: 'integer', example: 5)
-                    ]
-                )
-            ]
-        )
-    )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
         $this->planRepository->delete($id);
         return $this->successResponse(null, __('Subscription plan deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/subscription-plans/{id}/restore',
+        summary: '♻️ استرجاع خطة اشتراك محذوفة',
+        description: 'استرجاع خطة الاشتراك المحذوفة ناعماً وكافّة أنشطتها وقوالب جلساتها تلقائياً.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع الخطة بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 الخطة غير موجودة في سلة المحذوفات')]
+    public function restore($id)
+    {
+        $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::onlyTrashed()->findOrFail($id);
+        $plan->restore();
+        return $this->successResponse(null, __('Subscription plan restored successfully'));
     }
 }

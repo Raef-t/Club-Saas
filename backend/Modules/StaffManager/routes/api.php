@@ -13,7 +13,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Staff Actions
     Route::post('staff/{id}/schedule', [StaffController::class, 'setSchedule']);
     Route::patch('staff/{id}/toggle-status', [StaffController::class, 'toggleStatus']);
-    Route::post('staff/{id}/sync-branches', [StaffController::class, 'syncBranches']);
+    Route::post('staff/{id}/restore', [StaffController::class, 'restore']);
     Route::post('staff/{id}/photo', [StaffController::class, 'updatePhoto']);
 
     // Staff Unavailabilities
@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
         Route::put('/{id}/shifts/{shiftId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updateShift']);
         Route::delete('/{id}/shifts/{shiftId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeShift']);
         Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
+        Route::post('/{id}/restore', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'restore']);
     });
 
     // Shifts
