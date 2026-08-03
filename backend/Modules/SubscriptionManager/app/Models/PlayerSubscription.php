@@ -47,7 +47,7 @@ class PlayerSubscription extends Model
 
     public function plan()
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
     }
 
     public function offer()

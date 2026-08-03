@@ -338,14 +338,75 @@ class SubscriptionPlanController extends BaseController
         );
     }
 
-    #[OA\Delete(
-        path: '/v1/subscription-plans/{subscription_plan}',
-        summary: '🗑️ حذف خطة الاشتراك (Soft Delete)',
-        description: 'حذف خطة الاشتراك ناعماً من النظام مع كافّة أنشطتها وقوالبها التابعة متتابعاً.',
+    #[OA\Get(
+        path: '/v1/subscription-plans/{subscription_plan}/delete-check',
+        summary: '🔍 فحص معلومات ومخاطر حذف خطة الاشتراك',
+        description: 'استرجاع التقرير والاشتراكات والمدربين المرتبطين بالخطة لتنبيه وتخيير المستخدم قبل تنفيذ الحذف.',
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تقرير الفحص المسبق قبل الحذف',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Delete check report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_name', type: 'string', example: 'الاشتراك الذهبي'),
+                        new OA\Property(property: 'has_active_subscriptions', type: 'boolean', example: true),
+                        new OA\Property(property: 'active_subscriptions_count', type: 'integer', example: 3),
+                        new OA\Property(property: 'inactive_subscriptions_count', type: 'integer', example: 5),
+                        new OA\Property(
+                            property: 'associated_coaches',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'staff_id', type: 'integer', example: 2),
+                                    new OA\Property(property: 'name', type: 'string', example: 'كابتن أحمد'),
+                                    new OA\Property(property: 'role', type: 'string', example: 'coach')
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    public function deleteCheck($id)
+    {
+        $info = $this->planRepository->getDeleteCheckInfo($id);
+        return $this->successResponse($info, __('Delete check report retrieved successfully'));
+    }
+
+    #[OA\Delete(
+        path: '/v1/subscription-plans/{subscription_plan}',
+        summary: '🗑️ حذف خطة الاشتراك (Soft Delete)',
+        description: 'حذف خطة الاشتراك ناعماً من النظام مع خيارات حسم الاشتراكات النشطة وفك إرتباط وحذف المدربين المحددين.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'force_delete_active_subscriptions', type: 'boolean', description: 'حذف الاشتراكات النشطة للاعبين ناعماً أيضاً', example: false),
+                new OA\Property(
+                    property: 'detach_and_delete_staff_ids',
+                    type: 'array',
+                    description: 'مصفوفة معرفات المدربين المراد فك ارتباطهم بالفعالية وحذفهم ناعماً',
+                    items: new OA\Items(type: 'integer', example: 2)
+                )
+            ]
+        )
+    )]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف الخطة وسجلاتها التابعة ناعماً بنجاح',
@@ -359,9 +420,14 @@ class SubscriptionPlanController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy($id)
+    public function destroy(\Illuminate\Http\Request $request, $id)
     {
-        $this->planRepository->delete($id);
+        $options = [
+            'force_delete_active_subscriptions' => $request->boolean('force_delete_active_subscriptions', false),
+            'detach_and_delete_staff_ids' => $request->input('detach_and_delete_staff_ids', []),
+        ];
+
+        $this->planRepository->delete($id, $options);
         return $this->successResponse(null, __('Subscription plan deleted successfully'));
     }
 
