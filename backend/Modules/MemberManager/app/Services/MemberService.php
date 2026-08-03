@@ -38,7 +38,7 @@ class MemberService
 
     public function getAllMembers(array $filters = [])
     {
-        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan', 'healthProfile', 'measurements']);
+        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
 
         // 1. Filtering by Branch
         if (!empty($filters['branch_id'])) {
@@ -279,7 +279,7 @@ class MemberService
     protected function attachSharedDTOs(?\Modules\MemberManager\Models\Member $member)
     {
         if ($member) {
-            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan', 'healthProfile', 'measurements']);
+            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
         }
         return $member;
     }

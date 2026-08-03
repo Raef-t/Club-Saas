@@ -11,7 +11,7 @@ class SubscriptionPlan extends Model
 {
     use SoftDeletes, CascadeSoftDeletes;
 
-    protected array $cascadeDeletes = ['planActivities', 'sessionTemplates', 'playerSubscriptions'];
+    protected array $cascadeDeletes = ['planActivities', 'sessionTemplates'];
 
 
     protected $fillable = [

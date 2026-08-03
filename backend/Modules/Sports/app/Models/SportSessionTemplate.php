@@ -10,7 +10,7 @@ class SportSessionTemplate extends Model
 {
     use SoftDeletes, CascadeSoftDeletes;
 
-    protected array $cascadeDeletes = ['exceptions', 'bookings'];
+    protected array $cascadeDeletes = ['exceptions'];
 
 
     protected $table = 'sport_session_templates';
@@ -39,10 +39,6 @@ class SportSessionTemplate extends Model
         return $this->hasMany(SessionException::class, 'sport_session_template_id');
     }
 
-    public function bookings()
-    {
-        return $this->hasMany(SportSessionBooking::class, 'sport_session_template_id');
-    }
 
     /**
      * Scopes

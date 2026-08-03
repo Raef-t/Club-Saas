@@ -28,9 +28,10 @@ class AllSubscriptionsReportService
                 'member.person.contacts',
                 'member.branch',
                 'plan.branch',
+                'plan.planActivities.staffActivity.activity',
+                'plan.planActivities.staffActivity.staff.person',
                 'offer',
-                'items.activity',
-                'items.coach.person',
+                'items',
             ]);
 
         // 1. Filter by Subscription Status
@@ -56,7 +57,7 @@ class AllSubscriptionsReportService
 
         // 4. Filter by Assigned Coach
         if ($coachId) {
-            $query->whereHas('items', fn($q) => $q->where('coach_id', $coachId));
+            $query->whereHas('plan.planActivities.staffActivity', fn($q) => $q->where('staff_id', $coachId));
         }
 
         // 5. Filter by Branch
@@ -153,9 +154,11 @@ class AllSubscriptionsReportService
                 'unpaid'         => 'غير مدفوع',
             };
 
-            // Coaches list across subscription items
-            $coachesList = $sub->items
-                ->map(fn($item) => $item->coach?->person?->full_name)
+            $planActivities = $sub->plan ? $sub->plan->planActivities : collect();
+
+            // Coaches list across subscription plan activities
+            $coachesList = $planActivities
+                ->map(fn($pa) => $pa->staffActivity?->staff?->person?->full_name)
                 ->filter()
                 ->unique()
                 ->values()
@@ -168,7 +171,12 @@ class AllSubscriptionsReportService
             $totalConsumed  = 0;
             $hasUnlimited   = false;
 
-            $itemsBreakdown = $sub->items->map(function ($item) use (&$totalAllocated, &$totalConsumed, &$hasUnlimited) {
+            $itemsBreakdown = $sub->items->values()->map(function ($item, $index) use ($planActivities, &$totalAllocated, &$totalConsumed, &$hasUnlimited) {
+                $planActivity = $planActivities->get($index);
+                $staffActivity = $planActivity?->staffActivity;
+                $activity = $staffActivity?->activity;
+                $coach = $staffActivity?->staff;
+
                 if ($item->is_unlimited) {
                     $hasUnlimited = true;
                 }
@@ -181,8 +189,8 @@ class AllSubscriptionsReportService
 
                 return [
                     'item_id'            => $item->id,
-                    'activity_name'      => $item->activity?->name ?? 'نشاط عام',
-                    'coach_name'         => $item->coach?->person?->full_name ?? 'غير مسند',
+                    'activity_name'      => $activity?->name ?? 'نشاط عام',
+                    'coach_name'         => $coach?->person?->full_name ?? 'غير مسند',
                     'is_unlimited'       => (bool) $item->is_unlimited,
                     'sessions_allocated' => $allocated,
                     'sessions_consumed'  => $consumed,

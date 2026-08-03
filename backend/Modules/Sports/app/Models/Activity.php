@@ -11,7 +11,7 @@ class Activity extends Model
 {
     use HasFactory, SoftDeletes, CascadeSoftDeletes;
 
-    protected array $cascadeDeletes = ['commissionRules', 'subscriptionItems'];
+    protected array $cascadeDeletes = ['commissionRules'];
 
     /**
      * The attributes that are mass assignable.
@@ -56,8 +56,5 @@ class Activity extends Model
         return $this->hasMany(StaffCommissionRule::class, 'activity_id');
     }
 
-    public function subscriptionItems()
-    {
-        return $this->hasMany(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class, 'activity_id');
-    }
 }
+
