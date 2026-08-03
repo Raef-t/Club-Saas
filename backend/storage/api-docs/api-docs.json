@@ -22220,7 +22220,7 @@
                     "Subscription Management"
                 ],
                 "summary": "🗑️ حذف خطة الاشتراك (Soft Delete)",
-                "description": "حذف خطة الاشتراك ناعماً من النظام مع كافّة أنشطتها وقوالبها التابعة متتابعاً.",
+                "description": "حذف خطة الاشتراك ناعماً من النظام مع خيارات حسم الاشتراكات النشطة وفك إرتباط وحذف المدربين المحددين.",
                 "operationId": "630078218265b88ac46b80ddc70a58cf",
                 "parameters": [
                     {
@@ -22234,6 +22234,31 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "force_delete_active_subscriptions": {
+                                        "description": "حذف الاشتراكات النشطة للاعبين ناعماً أيضاً",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "detach_and_delete_staff_ids": {
+                                        "description": "مصفوفة معرفات المدربين المراد فك ارتباطهم بالفعالية وحذفهم ناعماً",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم حذف الخطة وسجلاتها التابعة ناعماً بنجاح",
@@ -22289,6 +22314,100 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans/{subscription_plan}/delete-check": {
+            "get": {
+                "tags": [
+                    "Subscription Management"
+                ],
+                "summary": "🔍 فحص معلومات ومخاطر حذف خطة الاشتراك",
+                "description": "استرجاع التقرير والاشتراكات والمدربين المرتبطين بالخطة لتنبيه وتخيير المستخدم قبل تنفيذ الحذف.",
+                "operationId": "176398b3ff70414eb37598e2d0a12783",
+                "parameters": [
+                    {
+                        "name": "subscription_plan",
+                        "in": "path",
+                        "description": "معرف الخطة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تقرير الفحص المسبق قبل الحذف",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Delete check report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "plan_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "plan_name": {
+                                                    "type": "string",
+                                                    "example": "الاشتراك الذهبي"
+                                                },
+                                                "has_active_subscriptions": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "active_subscriptions_count": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "inactive_subscriptions_count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "associated_coaches": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "staff_id": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "كابتن أحمد"
+                                                            },
+                                                            "role": {
+                                                                "type": "string",
+                                                                "example": "coach"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
