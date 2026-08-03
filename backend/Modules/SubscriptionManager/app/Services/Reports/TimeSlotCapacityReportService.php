@@ -76,8 +76,7 @@ class TimeSlotCapacityReportService
             'p.full_name as coach_name',
             'sa.id as staff_activity_id',
             'sp.id as plan_id',
-            'sp.name as plan_name',
-            'sp.type as plan_type'
+            'sp.name as plan_name'
         )->distinct()->get();
 
         $activitiesGrouped = [];

@@ -68,7 +68,6 @@ class ReceptionAttendanceController extends BaseController
                     'ps.member_id',
                     'ps.plan_id',
                     'sp.name as plan_name',
-                    'sp.type as plan_type',
                     'ps.start_date',
                     'ps.end_date',
                     'ps.status',
