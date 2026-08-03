@@ -3,10 +3,12 @@
 namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 
 class Staff extends Model
 {
+    use SoftDeletes;
     use \Modules\Core\Traits\HasCreatedBy;
 
     protected $table = 'staff';

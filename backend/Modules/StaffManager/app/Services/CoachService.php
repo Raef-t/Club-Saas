@@ -415,40 +415,104 @@ class CoachService
 
     /**
      * Delete a coach.
+     *
+     * Blocked if:
+     *   - Coach has active/frozen subscribers (player_subscription_items via active subscriptions)
+     *   - Coach has payslips (financial records)
+     *
+     * Contracts are kept as financial records and NOT deleted.
+     *
+     * Soft-deletes (records that lose value without the coach):
+     * - coach_certifications    → soft-deleted (via coachDetail)
+     * - coach_details           → soft-deleted
+     * - staff_leaves            → soft-deleted
+     * - staff_unavailabilities  → soft-deleted
+     * - staff_shifts            → soft-deleted
+     *
+     * Other:
+     * - staff_activities                    → detached from pivot table
+     * - staff_contracts                     → KEPT (financial reference records)
+     * - player_subscription_items.coach_id  → nullified manually (soft delete won't trigger DB onDelete)
+     *
+     * @throws \Modules\Core\Exceptions\CannotDeleteException
      */
     public function deleteCoach($id)
     {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        
-        $subscriptionItemsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('coach_id', $id)->count();
-        $staffActivitiesCount = \Modules\Sports\Models\StaffActivity::where('staff_id', $id)->count();
-        $shiftsCount = \Modules\StaffManager\Models\StaffShift::where('staff_id', $id)->count();
+        return DB::transaction(function () use ($id) {
+            $staff = Staff::where('role', 'coach')->findOrFail($id);
 
-        $blocked = [];
-        if ($subscriptionItemsCount > 0) {
-            $blocked[] = "مرتبط بـ {$subscriptionItemsCount} " . ($subscriptionItemsCount === 1 ? 'اشتراك لاعب' : 'اشتراكات لاعبين');
-        }
-        if ($staffActivitiesCount > 0) {
-            $blocked[] = "مرتبط بـ {$staffActivitiesCount} " . ($staffActivitiesCount === 1 ? 'نشاط رياضي' : 'أنشطة رياضية');
-        }
-        if ($shiftsCount > 0) {
-            $blocked[] = "مرتبط بـ {$shiftsCount} " . ($shiftsCount === 1 ? 'شفت عمل' : 'شفتات عمل');
-        }
+            $blocked = [];
 
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف هذا المدرب لأنه {$reasons}. يمكنك إيقاف حساب المدرب بدلاً من حذفه."
-            );
-        }
+            // ── Guard 1: block if coach has active/frozen subscribers ──────────
+            // We only count items linked to active or frozen subscriptions.
+            // Finished/terminated subscriptions are historical and should not block deletion.
+            $activeSubscribersCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem
+                ::where('coach_id', $id)
+                ->whereHas('subscription', function ($q) {
+                    $q->whereIn('status', ['active', 'frozen']);
+                })
+                ->count();
 
-        $staff->delete(); // Soft delete or hard delete depending on config
+            if ($activeSubscribersCount > 0) {
+                $blocked[] = "مرتبط بـ {$activeSubscribersCount} " . ($activeSubscribersCount === 1 ? 'مشترك نشط' : 'مشتركين نشطين');
+            }
 
-        // Optional: deactivate user
-        if ($staff->user) {
-            $staff->user->update(['is_active' => false]);
-        }
+            // ── Guard 2: block if coach has payslips (financial records) ───────
+            $payslipsCount = \Modules\StaffManager\Models\Payslip::where('staff_id', $id)->count();
 
-        return true;
+            if ($payslipsCount > 0) {
+                $blocked[] = "يوجد {$payslipsCount} " . ($payslipsCount === 1 ? 'قسيمة راتب' : 'قسائم رواتب');
+            }
+
+            if (!empty($blocked)) {
+                $reasons = implode('، و', $blocked);
+                throw new \Modules\Core\Exceptions\CannotDeleteException(
+                    "لا يمكن حذف هذا المدرب لأنه: {$reasons}. يرجى تغيير حالته إلى 'غير نشط' بدلاً من الحذف.",
+                    [
+                        'active_subscribers_count' => $activeSubscribersCount,
+                        'payslips_count'           => $payslipsCount,
+                    ]
+                );
+            }
+
+            // ── 1. Soft-delete coach certifications (through coachDetail) ──────
+            if ($staff->coachDetail) {
+                $staff->coachDetail->certifications()->delete();
+
+                // 2. Soft-delete coach details
+                $staff->coachDetail->delete();
+            }
+
+            // ── 3. Soft-delete staff leaves ────────────────────────────────────
+            $staff->leaves()->delete();
+
+            // ── 4. Soft-delete staff unavailabilities ──────────────────────────
+            $staff->unavailabilities()->delete();
+
+            // ── 5. Soft-delete coach's personal shifts ─────────────────────────
+            $staff->shifts()->delete();
+
+            // ── 6. Detach coach from activities pivot (staff_activities) ───────
+            $staff->activities()->detach();
+
+            // ── 7. staff_contracts → KEPT (financial records, do NOT delete) ───
+
+            // ── 8. Nullify coach_id in ALL subscription items manually ─────────
+            // NOTE: We use soft delete on `staff`, so the DB onDelete('set null') FK
+            // will NOT fire automatically. We must handle this ourselves.
+            \Modules\SubscriptionManager\Models\PlayerSubscriptionItem
+                ::where('coach_id', $id)
+                ->update(['coach_id' => null]);
+
+            // ── 9. Soft-delete the staff record itself ─────────────────────────
+            $staff->delete();
+
+            // ── 10. Deactivate the login account ──────────────────────────────
+            if ($staff->user) {
+                $staff->user->update(['is_active' => false]);
+            }
+
+            return true;
+        });
     }
 }
