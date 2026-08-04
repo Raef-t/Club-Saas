@@ -6,10 +6,10 @@ import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import BarChart from "@/components/charts/BarChart";
 import {
+  CoachSubscriptionsDonut,
   CurrentActiveSessionsTable,
   DailyScheduleTable,
   DashboardSectionLink,
-  SubscriptionDonut,
 } from "./ManagementDashboardWidgets";
 import { useManagementDashboard } from "./useManagementDashboard";
 
@@ -53,15 +53,19 @@ export default function ManagementDashboard({ initialData }) {
 
       <StatsGrid items={dashboard.stats} variant="compact" />
 
-      {/* الفعاليات الجارية حالياً */}
+      {/* جدول الدوام اليومي بدل الفعاليات الجارية */}
       <SectionCard
-        title="الفعاليات الجارية حالياً (مباشر)"
-        subtitle="الأنشطة والخطط التي تُجرى الآن وعدد اللاعبين الحاضرين بها"
-        action={<DashboardSectionLink href="/management/schedule">جدول الدوام</DashboardSectionLink>}
+        title="جدول الدوام اليومي"
+        subtitle="حصص اليوم مرتبة حسب وقت البداية"
+        action={
+          <DashboardSectionLink href="/management/schedule">
+            فتح الجدول الأسبوعي
+          </DashboardSectionLink>
+        }
         className="min-h-[180px]"
         contentClassName="px-5 pb-5"
       >
-        <CurrentActiveSessionsTable sessions={dashboard.currentActiveSessions} />
+        <DailyScheduleTable sessions={dashboard.todaySessions} />
       </SectionCard>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -75,28 +79,20 @@ export default function ManagementDashboard({ initialData }) {
         </SectionCard>
 
         <SectionCard
-          title="توزيع الاشتراكات"
-          subtitle="حسب خطط الاشتراكات الفعالة"
-          action={<DashboardSectionLink href="/management/subscriptions" />}
-          className="min-h-[206px]"
+          title="اشتراكات الكوتشات"
+          subtitle="عدد اللاعبين النشطين المسجلين مع كل كوتش"
+          action={
+            <DashboardSectionLink href="/management/coaches">عرض الكوتشات</DashboardSectionLink>
+          }
+          className="min-h-[230px]"
         >
-          <SubscriptionDonut items={dashboard.subscriptionMix} />
+          <CoachSubscriptionsDonut
+            items={dashboard.coachSubscriptionMix}
+            isLoading={dashboard.isCoachSubscriptionsLoading}
+            hasError={dashboard.hasCoachSubscriptionsError}
+          />
         </SectionCard>
       </section>
-
-      <SectionCard
-        title="جدول الدوام اليومي"
-        subtitle="حصص اليوم مرتبة حسب وقت البداية"
-        action={
-          <DashboardSectionLink href="/management/schedule">
-            فتح الجدول الأسبوعي
-          </DashboardSectionLink>
-        }
-        className="min-h-[260px]"
-        contentClassName="px-5 pb-5"
-      >
-        <DailyScheduleTable sessions={dashboard.todaySessions} />
-      </SectionCard>
     </div>
   );
 }

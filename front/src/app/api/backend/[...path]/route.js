@@ -3,7 +3,7 @@ import { AUTH_SESSION_COOKIE, getAuthCookieOptions } from "@/lib/authSession";
 
 export const dynamic = "force-dynamic";
 //test
-const API_BASE_URL = process.env.API_BASE_URL || "http://issgroup-001-site1.anytempurl.com";
+const API_BASE_URL = process.env.API_BASE_URL || "http://31.70.108.63";
 
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const PUBLIC_API_PATHS = new Set(["auth/login", "auth/forgot-password"]);

@@ -11,7 +11,13 @@ export const reportsApi = createApi({
         params,
       }),
     }),
+    getCoachSubscriptionsReport: builder.query({
+      query: (params) => ({
+        url: "reports/coaches/subscriptions",
+        params,
+      }),
+    }),
   }),
 });
 
-export const { useGetShiftAttendanceReportQuery } = reportsApi;
+export const { useGetShiftAttendanceReportQuery, useGetCoachSubscriptionsReportQuery } = reportsApi;
