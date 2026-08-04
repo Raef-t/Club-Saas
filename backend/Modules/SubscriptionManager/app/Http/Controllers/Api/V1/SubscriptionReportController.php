@@ -424,4 +424,68 @@ class SubscriptionReportController extends BaseController
 
         return $this->successResponse($reportData, __('Shift attendance report retrieved successfully'));
     }
+
+    #[OA\Get(
+        path: '/v1/reports/coaches/subscriptions',
+        summary: '🏃‍♂️ تقرير كوتشات الحصص الجماعية والأجهزة العامة (Group Session Coaches & General Equipment Report)',
+        description: 'استرجاع تقرير تفصيلي يُظهر كوتشات الحصص الجماعية والأنشطة التي يدربونها مع عدد اللاعبين النشطين المسجلين في كافة خططهم، بالإضافة إلى قسم خاص بأجهزة تدريب عام وإجمالي لاعبيها النشطين.',
+        tags: ['Reports'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع التقرير بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Coach group sessions & general equipment report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'summary', type: 'object', properties: [
+                            new OA\Property(property: 'total_group_coaches', type: 'integer', example: 3),
+                            new OA\Property(property: 'total_group_active_players', type: 'integer', example: 65),
+                            new OA\Property(property: 'general_equipment_active_players', type: 'integer', example: 140),
+                        ]),
+                        new OA\Property(
+                            property: 'group_session_coaches',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'coach_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'coach_name', type: 'string', example: 'الكابتن أحمد علي'),
+                                    new OA\Property(
+                                        property: 'activities',
+                                        type: 'array',
+                                        items: new OA\Items(type: 'string', example: 'كرة القدم')
+                                    ),
+                                    new OA\Property(property: 'active_players_count', type: 'integer', example: 35),
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: 'general_equipment',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'title', type: 'string', example: 'أجهزة عامة'),
+                                new OA\Property(property: 'activity_type_name', type: 'string', example: 'تدريب عام'),
+                                new OA\Property(property: 'active_players_count', type: 'integer', example: 140),
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function coachSubscriptionReport(Request $request)
+    {
+        $filters = $request->only(['branch_id']);
+        $reportData = $this->reportService->getCoachSubscriptionReport($filters);
+
+        return $this->successResponse($reportData, __('Coach group sessions & general equipment report retrieved successfully'));
+    }
 }
