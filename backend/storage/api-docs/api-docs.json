@@ -23743,6 +23743,179 @@
                 ]
             }
         },
+        "/v1/reports/coaches/subscriptions": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "🏃‍♂️ تقرير الكوتشات والأنشطة وخطط الاشتراك واللاعبين النشطين (Coach Activities & Plans Report)",
+                "description": "استرجاع تقرير تفصيلي يتضمن اسم كل كوتش، الأنشطة التي يدربها، خطط الاشتراكات المرتبطة بها، وعدد اللاعبين النشطين المسجلين في كل خطة.",
+                "operationId": "72e02da48a9ced91f6dd014c197a1ce0",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "coach_id",
+                        "in": "query",
+                        "description": "تصفية حسب مدرب محدد",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "activity_id",
+                        "in": "query",
+                        "description": "تصفية حسب نشاط رياضي محدد",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    },
+                    {
+                        "name": "plan_id",
+                        "in": "query",
+                        "description": "تصفية حسب خطة اشتراك محددة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع التقرير بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coach subscription report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_coaches": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "total_activities": {
+                                                            "type": "integer",
+                                                            "example": 8
+                                                        },
+                                                        "total_plans": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        },
+                                                        "total_active_players": {
+                                                            "type": "integer",
+                                                            "example": 145
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "coaches": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "coach_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "coach_name": {
+                                                                "type": "string",
+                                                                "example": "الكابتن أحمد علي"
+                                                            },
+                                                            "activities": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "activity_id": {
+                                                                            "type": "integer",
+                                                                            "example": 2
+                                                                        },
+                                                                        "activity_name": {
+                                                                            "type": "string",
+                                                                            "example": "كرة القدم"
+                                                                        },
+                                                                        "subscription_plans": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "properties": {
+                                                                                    "plan_id": {
+                                                                                        "type": "integer",
+                                                                                        "example": 10
+                                                                                    },
+                                                                                    "plan_name": {
+                                                                                        "type": "string",
+                                                                                        "example": "خطة كرة القدم للمحترفين"
+                                                                                    },
+                                                                                    "base_price": {
+                                                                                        "type": "number",
+                                                                                        "example": 500
+                                                                                    },
+                                                                                    "max_subscribers": {
+                                                                                        "type": "integer",
+                                                                                        "example": 30,
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "plan_status": {
+                                                                                        "type": "string",
+                                                                                        "example": "active"
+                                                                                    },
+                                                                                    "active_players_count": {
+                                                                                        "type": "integer",
+                                                                                        "example": 25
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/people/{person_id}/wallet": {
             "get": {
                 "tags": [
