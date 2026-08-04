@@ -7,6 +7,8 @@ use Modules\Sports\Models\SportSessionTemplate;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
+use Modules\SubscriptionManager\Enums\SubscriptionPlanStatus;
+
 class SessionTemplateController extends BaseController
 {
     #[OA\Get(
@@ -56,6 +58,9 @@ class SessionTemplateController extends BaseController
     public function schedule(Request $request)
     {
         $sessions = SportSessionTemplate::active()
+            ->whereHas('subscriptionPlan', function ($query) {
+                $query->where('status', '!=', SubscriptionPlanStatus::INACTIVE);
+            })
             ->with([
                 'facility',
                 'subscriptionPlan.planActivities.staffActivity.activity',
