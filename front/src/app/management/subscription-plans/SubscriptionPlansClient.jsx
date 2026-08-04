@@ -25,6 +25,10 @@ import {
 } from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
+import {
+  getSubscriptionPlanStatusMeta,
+  SUBSCRIPTION_PLAN_STATUS,
+} from "./subscriptionPlanStatus";
 
 function CoachDropdown({ branchId, activityId, value, onChange }) {
   const { data, isLoading } = useGetCoachesQuery(
@@ -64,6 +68,7 @@ const initialForm = {
   price: "",
   max_subscribers: "50",
   is_active: true,
+  status: SUBSCRIPTION_PLAN_STATUS.ACTIVE,
   gender_restriction: "mixed",
   activities: [],
   session_templates: [],
@@ -78,14 +83,14 @@ const planName = (plan) => formatLocalizedName(plan?.name);
 
 
 
-function StatusBadge({ active }) {
+function StatusBadge({ plan }) {
+  const status = getSubscriptionPlanStatusMeta(plan);
+
   return (
     <span
-      className={`inline-flex min-w-20 justify-center rounded-md px-3 py-1 text-xs font-medium ${
-        active ? "status-success" : "status-danger"
-      }`}
+      className={`inline-flex min-w-20 justify-center rounded-md px-3 py-1 text-xs font-medium ${status.className}`}
     >
-      {active ? "فعالة" : "متوقفة"}
+      {status.label}
     </span>
   );
 }
@@ -121,7 +126,7 @@ function PlanDetails({ plan, isLoading, error }) {
               {plan.name?.en || "Subscription plan"}
             </p>
           </div>
-          <StatusBadge active={plan.status === 'active' || plan.is_active === true} />
+          <StatusBadge plan={plan} />
         </div>
       </div>
 
@@ -203,6 +208,12 @@ export function PlanForm({
       price: form.price,
       max_subscribers: form.is_unlimited_subscribers ? null : form.max_subscribers,
       is_active: !!form.is_active,
+      status:
+        form.status === SUBSCRIPTION_PLAN_STATUS.COMPLETED
+          ? SUBSCRIPTION_PLAN_STATUS.COMPLETED
+          : form.is_active
+            ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
+            : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
       is_unlimited_subscribers: !!form.is_unlimited_subscribers,
       activities:
         form.activities?.map((a) => ({
@@ -555,7 +566,16 @@ export function PlanForm({
       <CheckboxField
         label="الفعالية فعالة ونشطة حالياً"
         checked={form.is_active}
-        onChange={(e) => updateField("is_active", e.target.checked)}
+        onChange={(e) => {
+          const isActive = e.target.checked;
+          setForm((current) => ({
+            ...current,
+            is_active: isActive,
+            status: isActive
+              ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
+              : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
+          }));
+        }}
       />
 
       {errorMessage && (
@@ -662,7 +682,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         key: "is_active",
         label: "الحالة",
         align: "center",
-        render: (_, plan) => <StatusBadge active={plan.status === 'active' || plan.is_active === true} />,
+        render: (_, plan) => <StatusBadge plan={plan} />,
       },
       {
         key: "actions",

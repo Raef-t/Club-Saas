@@ -7,6 +7,7 @@ import {
   FilterIcon,
   PlusIcon,
   SearchIcon,
+  SortIcon,
 } from "@/components/icons/Icons";
 import { Field } from "@/components/forms/Field";
 import SkeletonPage from "@/components/ui/Skeleton";
@@ -179,9 +180,50 @@ export default function DataTable({
   headerClassName = "",
   rowClassName = "",
   cellClassName = "",
+  sortable = true,
+  sortColumn,
+  sortDirection,
+  onSortChange,
+  defaultSortColumn = null,
+  defaultSortDirection = "asc",
 }) {
   const [internalPage, setInternalPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(pageSize);
+
+  const [internalSortColumn, setInternalSortColumn] = useState(defaultSortColumn);
+  const [internalSortDirection, setInternalSortDirection] = useState(defaultSortDirection);
+
+  const activeSortColumn = sortColumn !== undefined ? sortColumn : internalSortColumn;
+  const activeSortDirection = sortDirection !== undefined ? sortDirection : internalSortDirection;
+
+  const handleHeaderClick = (column) => {
+    if (!sortable || column.sortable === false || column.key === "actions") return;
+    const colKey = column.sortKey || column.key;
+
+    let nextColumn = activeSortColumn;
+    let nextDirection = "asc";
+
+    if (activeSortColumn === colKey) {
+      if (activeSortDirection === "asc") {
+        nextDirection = "desc";
+      } else if (activeSortDirection === "desc") {
+        nextColumn = null;
+        nextDirection = null;
+      } else {
+        nextDirection = "asc";
+      }
+    } else {
+      nextColumn = colKey;
+      nextDirection = "asc";
+    }
+
+    if (typeof onSortChange === "function") {
+      onSortChange(nextColumn, nextDirection);
+    } else {
+      setInternalSortColumn(nextColumn);
+      setInternalSortDirection(nextDirection);
+    }
+  };
 
   const dropdownOptions = useMemo(() => {
     return pageSizeOptions.map(option => ({
@@ -189,20 +231,64 @@ export default function DataTable({
       label: String(option)
     }));
   }, [pageSizeOptions]);
-  const rowsSignature = rows
+
+  const hasControlledPagination =
+    typeof onPageChange === "function" &&
+    Number.isFinite(totalPages) &&
+    totalPages > 0;
+
+  const sortedRows = useMemo(() => {
+    if (!sortable || !activeSortColumn || !activeSortDirection || hasControlledPagination) {
+      return rows;
+    }
+
+    const colDef = columns.find(
+      (col) => (col.sortKey || col.key) === activeSortColumn || col.key === activeSortColumn
+    );
+
+    return [...rows].sort((a, b) => {
+      let valA, valB;
+      if (colDef?.sortValue) {
+        valA = colDef.sortValue(a, a[colDef.key]);
+        valB = colDef.sortValue(b, b[colDef.key]);
+      } else if (typeof colDef?.sortKey === "function") {
+        valA = colDef.sortKey(a);
+        valB = colDef.sortKey(b);
+      } else {
+        valA = a[activeSortColumn] ?? (colDef ? a[colDef.key] : undefined);
+        valB = b[activeSortColumn] ?? (colDef ? b[colDef.key] : undefined);
+      }
+
+      if ((valA === null || valA === undefined || valA === "") && (valB === null || valB === undefined || valB === "")) return 0;
+      if (valA === null || valA === undefined || valA === "") return 1;
+      if (valB === null || valB === undefined || valB === "") return -1;
+
+      let result = 0;
+
+      if (typeof valA === "number" && typeof valB === "number") {
+        result = valA - valB;
+      } else if (typeof valA === "boolean" && typeof valB === "boolean") {
+        result = valA === valB ? 0 : valA ? 1 : -1;
+      } else {
+        const strA = String(valA).trim();
+        const strB = String(valB).trim();
+        result = strA.localeCompare(strB, "ar", { numeric: true, sensitivity: "base" });
+      }
+
+      return activeSortDirection === "asc" ? result : -result;
+    });
+  }, [rows, sortable, activeSortColumn, activeSortDirection, hasControlledPagination, columns]);
+
+  const rowsSignature = sortedRows
     .map(
       (row, index) =>
         getRowKey?.(row, index) ?? row.id ?? row.key ?? index,
     )
     .join("|");
   const previousRowsSignature = useRef(rowsSignature);
-  const hasControlledPagination =
-    typeof onPageChange === "function" &&
-    Number.isFinite(totalPages) &&
-    totalPages > 0;
   const internalTotalPages = Math.max(
     1,
-    Math.ceil(rows.length / Math.max(rowsPerPage, 1)),
+    Math.ceil(sortedRows.length / Math.max(rowsPerPage, 1)),
   );
   const resolvedTotalPages = hasControlledPagination
     ? totalPages
@@ -211,14 +297,14 @@ export default function DataTable({
     ? Math.min(Math.max(currentPage || 1, 1), resolvedTotalPages)
     : Math.min(internalPage, resolvedTotalPages);
   const displayedRows = hasControlledPagination
-    ? rows
-    : rows.slice(
+    ? sortedRows
+    : sortedRows.slice(
         (resolvedCurrentPage - 1) * rowsPerPage,
         resolvedCurrentPage * rowsPerPage,
       );
   const hasKnownTotalItems =
     !hasControlledPagination || Number.isFinite(totalItems);
-  const resolvedTotalItems = totalItems ?? rows.length;
+  const resolvedTotalItems = totalItems ?? sortedRows.length;
   const firstVisibleItem =
     resolvedTotalItems > 0
       ? (resolvedCurrentPage - 1) * rowsPerPage + 1
@@ -229,6 +315,12 @@ export default function DataTable({
         resolvedTotalItems,
       )
     : Math.min(resolvedCurrentPage * rowsPerPage, resolvedTotalItems);
+
+  useEffect(() => {
+    if (!hasControlledPagination) {
+      setInternalPage(1);
+    }
+  }, [activeSortColumn, activeSortDirection, hasControlledPagination]);
 
   useEffect(() => {
     if (!hasControlledPagination) {
@@ -258,7 +350,7 @@ export default function DataTable({
   const resolvedTableColumns =
     tableColumns || columns.map((column) => column.width || "1fr").join(" ");
   const visiblePages =
-    resolvedTotalPages > 0
+  resolvedTotalPages > 0
       ? getVisiblePages(resolvedCurrentPage, resolvedTotalPages)
       : [];
 
@@ -287,14 +379,37 @@ export default function DataTable({
             className={`grid border-b border-app-line px-3 py-3 text-xs text-app-muted-light ${headerClassName}`}
             style={{ gridTemplateColumns: resolvedTableColumns }}
           >
-            {columns.map((column) => (
-              <div
-                key={column.key}
-                className={`flex min-w-0 items-center ${getAlignClass(column.align)}`}
-              >
-                {column.label}
-              </div>
-            ))}
+            {columns.map((column) => {
+              const colKey = column.sortKey || column.key;
+              const isColumnSortable =
+                sortable && column.sortable !== false && column.key !== "actions";
+              const isSorted = isColumnSortable && activeSortColumn === colKey;
+              const currentDir = isSorted ? activeSortDirection : null;
+
+              return (
+                <div
+                  key={column.key}
+                  className={`group flex min-w-0 items-center gap-1.5 ${getAlignClass(column.align)} ${
+                    isColumnSortable
+                      ? "cursor-pointer select-none transition-colors hover:text-app-text"
+                      : ""
+                  }`}
+                  onClick={
+                    isColumnSortable ? () => handleHeaderClick(column) : undefined
+                  }
+                  title={
+                    isColumnSortable
+                      ? `ترتيب حسب ${column.label}`
+                      : undefined
+                  }
+                >
+                  <span className="truncate">{column.label}</span>
+                  {isColumnSortable && (
+                    <SortIcon direction={currentDir} className="shrink-0 size-3.5" />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {isLoading ? (
@@ -469,7 +584,7 @@ export default function DataTable({
             dir="rtl"
           >
             <button
-              className="app-input min-h-8 rounded-lg px-3 transition hover:border-app-yellow disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs transition app-input hover:border-app-yellow disabled:cursor-not-allowed disabled:opacity-40"
               onClick={() => changePage(resolvedCurrentPage - 1)}
               disabled={resolvedCurrentPage <= 1}
               aria-label="الصفحة السابقة"
@@ -488,9 +603,9 @@ export default function DataTable({
                         resolvedCurrentPage === page ? "page" : undefined
                       }
                       aria-label={`الصفحة ${page}`}
-                      className={`min-h-8 min-w-8 rounded-lg px-2 py-1 transition-colors ${
+                      className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-center text-xs transition-colors ${
                         resolvedCurrentPage === page
-                          ? "bg-app-yellow text-app-bg"
+                          ? "bg-app-yellow font-bold text-app-bg"
                           : "app-input hover:border-app-yellow"
                       }`}
                     >
@@ -501,7 +616,7 @@ export default function DataTable({
               ))}
             </div>
             <button
-              className="app-input min-h-8 rounded-lg px-3 transition hover:border-app-yellow disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs transition app-input hover:border-app-yellow disabled:cursor-not-allowed disabled:opacity-40"
               onClick={() => changePage(resolvedCurrentPage + 1)}
               disabled={resolvedCurrentPage >= resolvedTotalPages}
               aria-label="الصفحة التالية"

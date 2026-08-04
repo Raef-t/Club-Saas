@@ -168,7 +168,7 @@ export default function AttendanceScanner({
             type="button"
             onClick={() => onScanModeChange(ATTENDANCE_SCAN_MODES.CHECK_IN)}
             disabled={isProcessing}
-            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all disabled:opacity-60 ${
+            className={`inline-flex flex-1 items-center justify-center rounded-md px-2 py-1.5 text-center text-xs font-medium transition-all disabled:opacity-60 ${
               isCheckIn
                 ? "bg-white font-bold text-black shadow-sm"
                 : "text-[#4b4b4b] hover:text-[#1b1b1b]"
@@ -180,7 +180,7 @@ export default function AttendanceScanner({
             type="button"
             onClick={() => onScanModeChange(ATTENDANCE_SCAN_MODES.CHECK_OUT)}
             disabled={isProcessing}
-            className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all disabled:opacity-60 ${
+            className={`inline-flex flex-1 items-center justify-center rounded-md px-2 py-1.5 text-center text-xs font-medium transition-all disabled:opacity-60 ${
               !isCheckIn
                 ? "bg-white font-bold text-black shadow-sm"
                 : "text-[#4b4b4b] hover:text-[#1b1b1b]"

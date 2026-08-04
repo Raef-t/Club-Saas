@@ -81,8 +81,9 @@ export const coachFormSchema = z.object({
     message: "يرجى تحديد الجنس",
   }),
   dob: z
-    .string({ required_error: "تاريخ الميلاد مطلوب" })
-    .min(1, "تاريخ الميلاد مطلوب"),
+    .string()
+    .optional()
+    .or(z.literal("")),
   phone_number: z
     .string()
     .trim()
@@ -90,7 +91,6 @@ export const coachFormSchema = z.object({
     .regex(/^\d*$/, "رقم الهاتف يجب أن يحتوي على أرقام فقط")
     .optional()
     .or(z.literal("")),
-  national_id: z.string().trim().max(50, "الرقم الوطني طويل جداً").optional().or(z.literal("")),
   country_code: z
     .string()
     .trim()
@@ -126,7 +126,6 @@ export const coachFormSchema = z.object({
   work_types: z.array(z.enum(["equipment", "activities"])).optional().default([]),
   activity_ids: z.array(z.number().positive()).optional().default([]),
   shift_ids: z.array(z.number().positive()).optional().default([]),
-  start_date: z.string().optional().or(z.literal("")),
   is_active: z.boolean().optional(),
 });
 

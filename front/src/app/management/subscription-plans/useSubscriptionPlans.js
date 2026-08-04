@@ -15,6 +15,11 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
 import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
+import {
+  getSubscriptionPlanStatus,
+  isSubscriptionPlanActive,
+  SUBSCRIPTION_PLAN_STATUS,
+} from "./subscriptionPlanStatus";
 //test
 //testtest
 function parseAmount(value) {
@@ -126,7 +131,7 @@ export function useSubscriptionPlans({
   }, [plans, search]);
 
   const stats = useMemo(() => {
-    const activeCount = plans.filter((plan) => plan.status === "active" || plan.is_active).length;
+    const activeCount = plans.filter(isSubscriptionPlanActive).length;
     const averagePrice = plans.length
       ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) / plans.length
       : 0;
@@ -175,7 +180,9 @@ export function useSubscriptionPlans({
     const apiPayload = {
       ...values,
       base_price: values.price,
-      status: values.is_active ? "active" : "inactive",
+      status: values.is_active
+        ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
+        : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
     };
     delete apiPayload.price;
     delete apiPayload.is_active;
@@ -200,7 +207,11 @@ export function useSubscriptionPlans({
     const apiPayload = {
       ...values,
       base_price: values.price,
-      status: values.is_active ? "active" : "inactive",
+      status:
+        values.status ||
+        (values.is_active
+          ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
+          : SUBSCRIPTION_PLAN_STATUS.INACTIVE),
     };
     delete apiPayload.price;
     delete apiPayload.is_active;
@@ -247,6 +258,8 @@ export function useSubscriptionPlans({
     const plan = detailsPlan || selectedPlan;
     if (!plan) return null;
 
+    const status = getSubscriptionPlanStatus(plan);
+
     return {
       branch_id: plan.branch_id ? String(plan.branch_id) : "",
       name: planName(plan) === "-" ? "" : planName(plan),
@@ -254,7 +267,8 @@ export function useSubscriptionPlans({
       session_count: plan.session_count ? String(plan.session_count) : "",
       price: String(parseAmount(plan.base_price || "")),
       max_subscribers: String(plan.max_subscribers ?? "0"),
-      is_active: plan.status === "active" || plan.is_active === true,
+      is_active: status === SUBSCRIPTION_PLAN_STATUS.ACTIVE,
+      status,
       gender_restriction: plan.gender_restriction || "mixed",
       is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
       activities:

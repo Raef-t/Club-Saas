@@ -5,7 +5,13 @@ import { useTimeFormat } from "@/lib/TimeFormatContext";
 /**
  * Renders one read-only weekly schedule period.
  */
-export default function ScheduleTable({ title, slots, scheduleData, periodKey }) {
+export default function ScheduleTable({
+  title,
+  slots,
+  scheduleData,
+  periodKey,
+  holidayDayKeys = [],
+}) {
   const { formatTime } = useTimeFormat();
 
   if (!slots.length) return null;
@@ -31,24 +37,31 @@ export default function ScheduleTable({ title, slots, scheduleData, periodKey })
           </tr>
         </thead>
         <tbody>
-          {SCHEDULE_DAYS.map((day) => (
-            <tr key={day.key}>
-              <td className="day-cell">{day.label}</td>
-              {slots.map((slot) => {
-                const cellKey = `${periodKey}_${slot.key}`;
+          {SCHEDULE_DAYS.map((day) => {
+            const isHoliday = holidayDayKeys.includes(day.key);
 
-                return (
-                  <td
-                    key={`${day.key}-${slot.key}`}
-                    className="schedule-cell"
-                    data-label={`${formatTime(slot.from)} - ${formatTime(slot.to)}`}
-                  >
-                    <ScheduleCell value={scheduleData?.[day.key]?.[cellKey] || ""} />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+            return (
+              <tr key={day.key} className={isHoliday ? "schedule-holiday-row" : undefined}>
+                <td className="day-cell">
+                  <span>{day.label}</span>
+                  {isHoliday && <span className="schedule-holiday-badge">عطلة</span>}
+                </td>
+                {slots.map((slot) => {
+                  const cellKey = `${periodKey}_${slot.key}`;
+
+                  return (
+                    <td
+                      key={`${day.key}-${slot.key}`}
+                      className="schedule-cell"
+                      data-label={`${formatTime(slot.from)} - ${formatTime(slot.to)}`}
+                    >
+                      <ScheduleCell value={scheduleData?.[day.key]?.[cellKey] || ""} />
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

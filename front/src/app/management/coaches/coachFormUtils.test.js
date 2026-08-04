@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   createCoachFormInitialValues,
   getEmploymentTypeForWorkTypes,
+  calculateAge,
 } from "./coachFormUtils";
 
 describe("coach form utilities", () => {
   it("selects the first branch for a new coach", () => {
-    expect(createCoachFormInitialValues(null, [{ id: "12" }]).branch_ids).toEqual([
-      12,
-    ]);
+    const values = createCoachFormInitialValues(null, [{ id: "12" }]);
+
+    expect(values.branch_ids).toEqual([12]);
+    expect(values).not.toHaveProperty("national_id");
+    expect(values).not.toHaveProperty("start_date");
   });
 
   it("preserves edit values", () => {
@@ -33,4 +36,16 @@ describe("coach form utilities", () => {
       "hybrid",
     );
   });
+
+  it("calculates age correctly from date of birth", () => {
+    expect(calculateAge("")).toBeNull();
+    expect(calculateAge(null)).toBeNull();
+    expect(calculateAge("invalid-date")).toBeNull();
+
+    // Past date (e.g. 1995-01-01)
+    const age1995 = calculateAge("1995-01-01");
+    expect(typeof age1995).toBe("number");
+    expect(age1995).toBeGreaterThan(25);
+  });
 });
+
