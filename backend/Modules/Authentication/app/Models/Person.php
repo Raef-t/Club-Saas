@@ -60,6 +60,18 @@ class Person extends Model
     }
 
     /**
+     * Get dynamic age calculated from dob if present, otherwise return age column.
+     */
+    public function getAgeAttribute($value)
+    {
+        if (!empty($this->attributes['dob'])) {
+            return \Carbon\Carbon::parse($this->attributes['dob'])->age;
+        }
+
+        return $value;
+    }
+
+    /**
      * Get the person's full name using camelCase property (fullName).
      */
     public function getFullNameAttribute()
