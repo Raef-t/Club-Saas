@@ -45,3 +45,27 @@ export function getEmploymentTypeForWorkTypes(workTypes = []) {
   if (hasActivities) return "commission_based";
   return "fixed_salary";
 }
+
+/**
+ * Calculates age in years from a date of birth string.
+ */
+export function calculateAge(dobString) {
+  if (!dobString) return null;
+  let birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime()) && typeof dobString === "string") {
+    const parts = dobString.split(/[-/]/);
+    if (parts.length === 3 && parts[2].length === 4) {
+      birthDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+  }
+  if (isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 0 ? age : null;
+}
+

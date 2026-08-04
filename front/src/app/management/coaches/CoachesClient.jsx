@@ -3,7 +3,8 @@
 import CoachDetails from "./CoachDetails";
 import { CoachCreateForm } from "./CoachForm";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -40,6 +41,85 @@ import {
   getCoachBranchNames,
   getUnassignedActivities,
 } from "@/app/management/coaches/coachDetailsUtils";
+
+/**
+ * Activity badge with hover tooltip showing related subscription plans.
+ */
+function ActivityBadgeWithTooltip({ activity, plans = [] }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const badgeRef = useRef(null);
+
+  function handleEnter() {
+    if (!plans.length) return;
+    const rect = badgeRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({
+      top: rect.bottom + 6,
+      left: rect.left + rect.width / 2,
+    });
+    setShow(true);
+  }
+
+  return (
+    <>
+      <span
+        ref={badgeRef}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setShow(false)}
+        className={[
+          "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors",
+          plans.length
+            ? "bg-app-yellow/15 text-app-yellow cursor-pointer hover:bg-app-yellow/25"
+            : "bg-app-yellow/15 text-app-yellow",
+        ].join(" ")}
+      >
+        {activity.name}
+        {plans.length > 0 && (
+          <span className="mr-1 text-[9px] opacity-60">({plans.length})</span>
+        )}
+      </span>
+
+      {show &&
+        plans.length > 0 &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              transform: "translateX(-50%)",
+              zIndex: 10000,
+            }}
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+            className="w-56 rounded-xl border border-app-line bg-app-card p-3 shadow-2xl"
+            dir="rtl"
+          >
+            <p className="mb-2 text-[11px] font-semibold text-app-yellow">
+              الفعاليات المرتبطة
+            </p>
+            <div className="space-y-1.5">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-app-card-soft/80 px-2.5 py-1.5"
+                >
+                  <span className="truncate text-[11px] font-medium text-app-text">
+                    {plan.name}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-app-muted-light">
+                    {plan.sessions ? `${plan.sessions} جلسة` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 export default function CoachesClient({ initialData }) {
   const {
@@ -85,6 +165,7 @@ export default function CoachesClient({ initialData }) {
     getEditInitialValues,
     branches,
     activities,
+    activityPlansMap,
     closeDrawer,
   } = useCoaches({ initialData });
 
@@ -121,16 +202,32 @@ export default function CoachesClient({ initialData }) {
           );
         },
       },
-      // {
-      //   key: "specialization",
-      //   label: "التخصص",
-      //   align: "center",
-      //   render: (_, coach) => (
-      //     <span className="text-xs text-app-muted-light">
-      //       {coach.details?.specialization || "غير محدد"}
-      //     </span>
-      //   ),
-      // },
+      {
+        key: "specialization",
+        label: "التخصص",
+        align: "center",
+        sortValue: (coach) => {
+          const acts = Array.isArray(coach.activities) ? coach.activities : [];
+          return acts.map((a) => a.name || "").join(", ");
+        },
+        render: (_, coach) => {
+          const acts = Array.isArray(coach.activities) ? coach.activities : [];
+          if (!acts.length) {
+            return <span className="text-xs text-app-muted-light">غير محدد</span>;
+          }
+          return (
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {acts.map((act) => (
+                <ActivityBadgeWithTooltip
+                  key={act.id}
+                  activity={act}
+                  plans={activityPlansMap.get(String(act.id)) || []}
+                />
+              ))}
+            </div>
+          );
+        },
+      },
       {
         key: "employment_type",
         label: "التوظيف",

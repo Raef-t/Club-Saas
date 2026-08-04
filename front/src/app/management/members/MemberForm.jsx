@@ -209,7 +209,7 @@ export function MemberForm({
 
         <div>
           <label className="block text-right text-sm text-app-muted-light mb-2">
-            تاريخ الميلاد *
+            تاريخ الميلاد
           </label>
           <DatePickerSmart
             value={form.dob}

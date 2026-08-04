@@ -64,7 +64,9 @@ export default function AttendanceTable({
         إعادة المحاولة
       </Button>
     </div>
-  ) : "لا توجد حركات حضور مسجلة.";
+  ) : (
+    "لا توجد حركات حضور مسجلة."
+  );
 
   return (
     <DataTable

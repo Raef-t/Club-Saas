@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createScheduleDataFromApi, escapeScheduleHtml, generateTimeSlots } from "./scheduleUtils";
+import {
+  createScheduleDataFromApi,
+  createScheduleSettingsFromApi,
+  createWeeklyHolidayDayKeys,
+  escapeScheduleHtml,
+  generateTimeSlots,
+} from "./scheduleUtils";
 import { buildSchedulePrintHtml } from "./schedulePrint";
-import { SCHEDULE_DEFAULT_SETTINGS } from "./scheduleConstants";
+import { SCHEDULE_DAYS, SCHEDULE_DEFAULT_SETTINGS } from "./scheduleConstants";
 
 describe("schedule utilities", () => {
   it("uses the club morning and evening opening periods", () => {
@@ -26,6 +32,56 @@ describe("schedule utilities", () => {
         SCHEDULE_DEFAULT_SETTINGS.slotDuration,
       ),
     ).toHaveLength(7);
+  });
+
+  it("starts the displayed week on Saturday", () => {
+    expect(SCHEDULE_DAYS.map((day) => day.key)).toEqual([
+      "sat",
+      "sun",
+      "mon",
+      "tue",
+      "wed",
+      "thu",
+      "fri",
+    ]);
+  });
+
+  it("uses the selected branch opening and closing times", () => {
+    expect(
+      createScheduleSettingsFromApi({
+        data: { working_hours_start: "07:30:00", working_hours_end: "22:30:00" },
+      }),
+    ).toMatchObject({ morningStart: "07:30", eveningEnd: "22:30" });
+  });
+
+  it("keeps periods inside branches with early or late working hours", () => {
+    expect(
+      createScheduleSettingsFromApi({
+        data: { working_hours_start: "06:00:00", working_hours_end: "14:00:00" },
+      }),
+    ).toMatchObject({
+      morningStart: "06:00",
+      morningEnd: "14:00",
+      eveningStart: "14:00",
+      eveningEnd: "14:00",
+    });
+
+    expect(
+      createScheduleSettingsFromApi({
+        data: { working_hours_start: "18:00:00", working_hours_end: "23:00:00" },
+      }),
+    ).toMatchObject({
+      morningStart: "18:00",
+      morningEnd: "18:00",
+      eveningStart: "18:00",
+      eveningEnd: "23:00",
+    });
+  });
+
+  it("maps recurring weekly holidays to schedule rows", () => {
+    expect(createWeeklyHolidayDayKeys({ data: [{ type: "weekly", day_of_week: 5 }] })).toEqual([
+      "fri",
+    ]);
   });
 
   it("generates fixed slots without extending beyond the period", () => {
@@ -56,6 +112,7 @@ describe("schedule utilities", () => {
   it("rejects invalid times and durations", () => {
     expect(generateTimeSlots("invalid", "14:00", 60)).toEqual([]);
     expect(generateTimeSlots("10:00", "14:00", 0)).toEqual([]);
+    expect(generateTimeSlots("14:00", "14:00", 60)).toEqual([]);
   });
 
   it("maps backend sessions only to their matching period", () => {
@@ -125,10 +182,13 @@ describe("schedule utilities", () => {
       scheduleData: {
         sun: { morning_1000: "<img src=x onerror=alert(1)>" },
       },
+      holidayDayKeys: ["sun"],
       printedAt: new Date("2026-01-01T00:00:00Z"),
     });
 
     expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
     expect(html).not.toContain("<img src=x onerror=alert(1)>");
+    expect(html).toMatch(/<tr class="[^"]*holiday-row[^"]*">/);
+    expect(html).toContain('class="holiday-badge">عطلة</span>');
   });
 });

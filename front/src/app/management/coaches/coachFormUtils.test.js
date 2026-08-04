@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createCoachFormInitialValues,
   getEmploymentTypeForWorkTypes,
+  calculateAge,
 } from "./coachFormUtils";
 
 describe("coach form utilities", () => {
@@ -35,4 +36,16 @@ describe("coach form utilities", () => {
       "hybrid",
     );
   });
+
+  it("calculates age correctly from date of birth", () => {
+    expect(calculateAge("")).toBeNull();
+    expect(calculateAge(null)).toBeNull();
+    expect(calculateAge("invalid-date")).toBeNull();
+
+    // Past date (e.g. 1995-01-01)
+    const age1995 = calculateAge("1995-01-01");
+    expect(typeof age1995).toBe("number");
+    expect(age1995).toBeGreaterThan(25);
+  });
 });
+

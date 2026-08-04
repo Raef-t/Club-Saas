@@ -299,6 +299,7 @@ export function useAttendance({ initialBranches } = {}) {
 
   /**
    * Registers a manual check-in for a member or staff record.
+   * When successful, activates the scanned-member card (same as QR flow).
    */
   async function handleManualCheckIn({ attendableType, attendableId }) {
     if (!branchId) {
@@ -312,6 +313,15 @@ export function useAttendance({ initialBranches } = {}) {
         attendable_id: Number(attendableId),
         branch_id: Number(branchId),
       }).unwrap();
+
+      const memberId =
+        response?.data?.member_id || (attendableType === "member" ? Number(attendableId) : null);
+      const attendanceId = response?.data?.attendance_id || response?.data?.id || null;
+
+      if (memberId) {
+        selectScannedMember(memberId, attendanceId);
+      }
+
       toast.success(response?.message || "تم تسجيل الدخول بنجاح.");
       return true;
     } catch (error) {

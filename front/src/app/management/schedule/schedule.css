@@ -84,6 +84,31 @@
   background: var(--app-card-soft);
 }
 
+/* Weekly branch holiday */
+.schedule-table tbody tr.schedule-holiday-row > td {
+  background: color-mix(in srgb, var(--app-red) 9%, var(--app-card));
+  border-color: color-mix(in srgb, var(--app-red) 30%, var(--app-line));
+}
+
+.schedule-table tbody tr.schedule-holiday-row > .day-cell {
+  background: color-mix(in srgb, var(--app-red) 16%, var(--app-card-soft)) !important;
+  color: var(--app-red);
+}
+
+.schedule-holiday-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: 7px;
+  border: 1px solid color-mix(in srgb, var(--app-red) 35%, transparent);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: color-mix(in srgb, var(--app-red) 12%, transparent);
+  color: var(--app-red);
+  font-size: 10px;
+  line-height: 1;
+}
+
 /* Read-only cells */
 .schedule-cell {
   cursor: default;

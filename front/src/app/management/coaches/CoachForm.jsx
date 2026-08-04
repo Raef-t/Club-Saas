@@ -14,7 +14,8 @@ import { getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { coachFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
 import { EMPLOYMENT_TYPES as employmentTypes, SHIFT_GENDER_LABELS as shiftGenderLabels } from "./coachConstants";
-import { createCoachFormInitialValues, getEmploymentTypeForWorkTypes } from "./coachFormUtils";
+import { createCoachFormInitialValues, getEmploymentTypeForWorkTypes, calculateAge } from "./coachFormUtils";
+
 export function CoachCreateForm({
   formId,
   branches = [],
@@ -35,6 +36,8 @@ export function CoachCreateForm({
     }
     return values;
   });
+
+  const calculatedAge = calculateAge(form.dob);
 
   const branchId1 = form.branch_ids?.[0];
   const branchId2 = form.branch_ids?.[1];
@@ -188,7 +191,7 @@ export function CoachCreateForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
           الجنس *
           <Dropdown
@@ -204,14 +207,29 @@ export function CoachCreateForm({
           />
         </label>
 
-        <DatePickerSmart
-          label="تاريخ الميلاد *"
-          value={form.dob}
-          onChange={(value) => updateField("dob", value)}
-          placeholder="DD/MM/YYYY"
-          error={errors.dob}
-          required
-        />
+        <label className="block text-right text-sm text-app-muted-light">
+          تاريخ الميلاد
+          <div className="mt-2">
+            <DatePickerSmart
+              value={form.dob}
+              onChange={(value) => updateField("dob", value)}
+              placeholder="DD/MM/YYYY"
+              error={errors.dob}
+            />
+          </div>
+        </label>
+
+        <label className="block text-right text-sm text-app-muted-light">
+          العمر
+          <input
+            type="text"
+            readOnly
+            disabled
+            value={calculatedAge !== null ? `${calculatedAge} سنة` : "يُحسب تلقائياً"}
+            className="app-input mt-2 h-11 w-full bg-app-card-soft/60 px-3 text-right text-white font-medium outline-none border border-app-line/60 cursor-not-allowed"
+            placeholder="يُحسب تلقائياً"
+          />
+        </label>
       </div>
 
       <div>

@@ -1,14 +1,106 @@
-import { SCHEDULE_DAYS } from "./scheduleConstants";
+import { SCHEDULE_DAYS, SCHEDULE_DEFAULT_SETTINGS } from "./scheduleConstants";
 import { getEntityBranchIds } from "../../../lib/managementBranchUtils";
 
 const VALID_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const DAY_BY_API_KEY = Object.fromEntries(SCHEDULE_DAYS.map((day) => [day.apiKey, day.key]));
+const DAY_BY_INDEX = Object.fromEntries(SCHEDULE_DAYS.map((day) => [day.dayIndex, day.key]));
 
 /**
  * Pads a time segment with a leading zero.
  */
 function padTimePart(value) {
   return String(value).padStart(2, "0");
+}
+
+/**
+ * Extracts one object record from the response shapes used by branch settings.
+ */
+function getSettingsRecord(response) {
+  const record = response?.data?.data || response?.data || response;
+  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+}
+
+/**
+ * Extracts a list from the response shapes used by branch holidays.
+ */
+function getHolidayCollection(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+}
+
+/**
+ * Normalizes an API time to HH:mm and falls back when it is unavailable or invalid.
+ */
+function normalizeScheduleTime(value, fallback) {
+  const time = value ? String(value).slice(0, 5) : "";
+  return VALID_TIME_PATTERN.test(time) ? time : fallback;
+}
+
+/**
+ * Resolves the visible schedule range from the selected branch opening hours.
+ */
+export function createScheduleSettingsFromApi(response) {
+  const settings = getSettingsRecord(response);
+  const openingTime = normalizeScheduleTime(
+    settings?.working_hours_start,
+    SCHEDULE_DEFAULT_SETTINGS.morningStart,
+  );
+  const closingTime = normalizeScheduleTime(
+    settings?.working_hours_end,
+    SCHEDULE_DEFAULT_SETTINGS.eveningEnd,
+  );
+  const openingMinutes = getTimeInMinutes(openingTime);
+  const closingMinutes = getTimeInMinutes(closingTime);
+  const splitMinutes = getTimeInMinutes(SCHEDULE_DEFAULT_SETTINGS.eveningStart);
+  const adjustedClosing =
+    closingMinutes <= openingMinutes ? closingMinutes + 24 * 60 : closingMinutes;
+  let adjustedSplit = splitMinutes;
+
+  if (adjustedSplit <= openingMinutes) adjustedSplit += 24 * 60;
+
+  const splitFallsWithinHours = adjustedSplit < adjustedClosing;
+
+  if (splitFallsWithinHours) {
+    return {
+      ...SCHEDULE_DEFAULT_SETTINGS,
+      morningStart: openingTime,
+      eveningEnd: closingTime,
+    };
+  }
+
+  if (openingMinutes >= splitMinutes) {
+    return {
+      ...SCHEDULE_DEFAULT_SETTINGS,
+      morningStart: openingTime,
+      morningEnd: openingTime,
+      eveningStart: openingTime,
+      eveningEnd: closingTime,
+    };
+  }
+
+  return {
+    ...SCHEDULE_DEFAULT_SETTINGS,
+    morningStart: openingTime,
+    morningEnd: closingTime,
+    eveningStart: closingTime,
+    eveningEnd: closingTime,
+  };
+}
+
+/**
+ * Returns the schedule row keys configured as recurring weekly holidays.
+ */
+export function createWeeklyHolidayDayKeys(response) {
+  return [
+    ...new Set(
+      getHolidayCollection(response)
+        .filter((holiday) => holiday?.type === "weekly")
+        .map((holiday) => DAY_BY_INDEX[Number(holiday.day_of_week)])
+        .filter(Boolean),
+    ),
+  ];
 }
 
 /**
@@ -32,7 +124,7 @@ export function generateTimeSlots(startTime, endTime, stepMinutes) {
     return [];
   }
 
-  const adjustedEnd = end <= start ? end + 24 * 60 : end;
+  const adjustedEnd = end < start ? end + 24 * 60 : end;
   const slots = [];
 
   for (let current = start; current + step <= adjustedEnd && slots.length < 96; current += step) {

@@ -71,6 +71,7 @@ function ScheduleWorkspace({ initialSchedule, selectedBranchId }) {
       )}
 
       <SchedulePeriod
+        holidayDayKeys={schedule.holidayDayKeys}
         title="الفترة الصباحية"
         startTime={schedule.settings.morningStart}
         endTime={schedule.settings.morningEnd}
@@ -80,6 +81,7 @@ function ScheduleWorkspace({ initialSchedule, selectedBranchId }) {
       />
 
       <SchedulePeriod
+        holidayDayKeys={schedule.holidayDayKeys}
         title="الفترة المسائية"
         startTime={schedule.settings.eveningStart}
         endTime={schedule.settings.eveningEnd}

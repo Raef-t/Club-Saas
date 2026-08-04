@@ -11,8 +11,10 @@ import {
 } from "@/lib/api/coachesApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
+import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { formatLocalizedName } from "@/lib/utils";
 
 function getCoachesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -94,6 +96,35 @@ export function useCoaches(params = {}) {
     [allActivities, branchFilter],
   );
 
+  const { data: plansData } = useGetSubscriptionPlansQuery(
+    branchFilter === "all" ? {} : { branch_id: branchFilter },
+  );
+
+  /**
+   * Maps each activity ID to the subscription plans (فعاليات) that reference it.
+   */
+  const activityPlansMap = useMemo(() => {
+    const plans = Array.isArray(plansData?.data) ? plansData.data : [];
+    const map = new Map();
+
+    plans.forEach((plan) => {
+      const planActivities = Array.isArray(plan.activities) ? plan.activities : [];
+      planActivities.forEach((item) => {
+        const actId = String(item.activity_id || item.activity?.id || "");
+        if (!actId) return;
+        if (!map.has(actId)) map.set(actId, []);
+        map.get(actId).push({
+          id: plan.id,
+          name: formatLocalizedName(plan.name),
+          price: plan.base_price,
+          sessions: plan.session_count,
+        });
+      });
+    });
+
+    return map;
+  }, [plansData]);
+
   const selectedCoach = useMemo(
     () => detailsData?.data || coaches.find((c) => c.id === selectedCoachId) || null,
     [coaches, selectedCoachId, detailsData],
@@ -110,7 +141,9 @@ export function useCoaches(params = {}) {
 
     return branchCoaches.filter((coach) => {
       const nameVal = coach.person?.full_name || "";
-      const specVal = coach.details?.specialization || "";
+      const activitiesVal = Array.isArray(coach.activities)
+        ? coach.activities.map((a) => a.name || "").join(" ")
+        : "";
       const phoneVal =
         coach.person?.phone_number ||
         coach.person?.phone ||
@@ -127,7 +160,7 @@ export function useCoaches(params = {}) {
 
       const matchesSearch =
         !normalizedSearch ||
-        [nameVal, specVal, phoneVal]
+        [nameVal, activitiesVal, phoneVal]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(normalizedSearch));
 
@@ -437,6 +470,7 @@ export function useCoaches(params = {}) {
     getEditInitialValues,
     branches,
     activities,
+    activityPlansMap,
     closeDrawer,
   };
 }

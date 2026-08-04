@@ -81,8 +81,9 @@ export const coachFormSchema = z.object({
     message: "يرجى تحديد الجنس",
   }),
   dob: z
-    .string({ required_error: "تاريخ الميلاد مطلوب" })
-    .min(1, "تاريخ الميلاد مطلوب"),
+    .string()
+    .optional()
+    .or(z.literal("")),
   phone_number: z
     .string()
     .trim()
