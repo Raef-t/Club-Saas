@@ -25,6 +25,7 @@ class BranchSetting extends Model
         'payroll_start_day',
         'payroll_end_day',
         'include_terminated_subscriptions',
+        'allow_installments',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class BranchSetting extends Model
         'payroll_start_day' => 'integer',
         'payroll_end_day' => 'integer',
         'include_terminated_subscriptions' => 'boolean',
+        'allow_installments' => 'boolean',
     ];
 
     public function branch(): BelongsTo

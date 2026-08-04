@@ -6004,6 +6004,11 @@
                                         "description": "تضمين الاشتراكات المنتهية",
                                         "type": "boolean",
                                         "example": false
+                                    },
+                                    "allow_installments": {
+                                        "description": "السماح بالتقسيط في دفع الأموال للفرع",
+                                        "type": "boolean",
+                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -7314,6 +7319,49 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/system/backup/download": {
+            "get": {
+                "tags": [
+                    "Database Backup"
+                ],
+                "summary": "📦 تحميل نسخة احتياطية من قاعدة البيانات",
+                "description": "توليد ملف مضغوط ZIP يحتوي على نسخة احتياطية من قاعدة البيانات وتحميله.",
+                "operationId": "7da7818fa90dc6be14205627b8ca2192",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إنشاء الملف وتنزيله بنجاح",
+                        "content": {
+                            "application/zip": {}
+                        }
+                    },
+                    "500": {
+                        "description": "❌ حدث خطأ أثناء التصدير",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to generate backup."
                                         }
                                     },
                                     "type": "object"
@@ -24875,6 +24923,11 @@
                         "example": false,
                         "nullable": true
                     },
+                    "allow_installments": {
+                        "type": "boolean",
+                        "example": false,
+                        "nullable": true
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
@@ -25326,6 +25379,10 @@
         {
             "name": "Club Settings",
             "description": "Club Settings"
+        },
+        {
+            "name": "Database Backup",
+            "description": "Database Backup"
         },
         {
             "name": "Facility Management",
