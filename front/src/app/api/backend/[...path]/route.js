@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { AUTH_SESSION_COOKIE, getAuthCookieOptions } from "@/lib/authSession";
 
 export const dynamic = "force-dynamic";
-
+//test
 const API_BASE_URL = process.env.API_BASE_URL || "http://issgroup-001-site1.anytempurl.com";
 
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
