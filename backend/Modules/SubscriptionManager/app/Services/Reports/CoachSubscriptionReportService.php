@@ -108,39 +108,55 @@ class CoachSubscriptionReportService
             $totalGroupActivePlayersSum += $cData['active_players_count'];
         }
 
-        // 2. General Equipment Active Players (أجهزة عامة / تدريب عام)
-        $generalEquipQuery = DB::table('player_subscriptions as ps')
-            ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
-            ->join('plan_activities as pa', 'pa.plan_id', '=', 'sp.id')
-            ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
-            ->join('activities as a', 'a.id', '=', 'sa.activity_id')
+        // 2. Check if branch has General Training activities (تدريب عام)
+        $hasGeneralTrainingQuery = DB::table('activities as a')
             ->join('activity_types as at', 'at.id', '=', 'a.activity_type_id')
-            ->where('ps.status', PlayerSubscriptionStatus::ACTIVE->value)
             ->where('at.name', 'like', '%تدريب عام%')
-            ->whereNull('ps.deleted_at')
-            ->whereNull('sp.deleted_at')
-            ->whereNull('pa.deleted_at')
-            ->whereNull('sa.deleted_at')
             ->whereNull('a.deleted_at');
 
         if ($branchId) {
-            $generalEquipQuery->where('sp.branch_id', $branchId);
+            $hasGeneralTrainingQuery->where('a.branch_id', $branchId);
         }
 
-        $generalEquipmentActiveCount = $generalEquipQuery->count(DB::raw('DISTINCT ps.member_id'));
+        $hasGeneralTraining = $hasGeneralTrainingQuery->exists();
 
-        return [
+        $result = [
             'summary' => [
-                'total_group_coaches'               => count($groupCoachesList),
-                'total_group_active_players'        => $totalGroupActivePlayersSum,
-                'general_equipment_active_players' => $generalEquipmentActiveCount,
+                'total_group_coaches'        => count($groupCoachesList),
+                'total_group_active_players' => $totalGroupActivePlayersSum,
             ],
             'group_session_coaches' => $groupCoachesList,
-            'general_equipment'     => [
-                'title'                => 'أجهزة عامة',
+        ];
+
+        if ($hasGeneralTraining) {
+            $generalEquipQuery = DB::table('player_subscriptions as ps')
+                ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
+                ->join('plan_activities as pa', 'pa.plan_id', '=', 'sp.id')
+                ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
+                ->join('activities as a', 'a.id', '=', 'sa.activity_id')
+                ->join('activity_types as at', 'at.id', '=', 'a.activity_type_id')
+                ->where('ps.status', PlayerSubscriptionStatus::ACTIVE->value)
+                ->where('at.name', 'like', '%تدريب عام%')
+                ->whereNull('ps.deleted_at')
+                ->whereNull('sp.deleted_at')
+                ->whereNull('pa.deleted_at')
+                ->whereNull('sa.deleted_at')
+                ->whereNull('a.deleted_at');
+
+            if ($branchId) {
+                $generalEquipQuery->where('sp.branch_id', $branchId);
+            }
+
+            $generalEquipmentActiveCount = $generalEquipQuery->count(DB::raw('DISTINCT ps.member_id'));
+
+            $result['summary']['general_equipment_active_players'] = $generalEquipmentActiveCount;
+            $result['general_equipment'] = [
+                'title'                => 'أجهزة عام',
                 'activity_type_name'   => 'تدريب عام',
                 'active_players_count' => $generalEquipmentActiveCount,
-            ],
-        ];
+            ];
+        }
+
+        return $result;
     }
 }
