@@ -3,6 +3,18 @@ import { getEntityBranchIds } from "../../../lib/managementBranchUtils";
 import { formatLocalizedName } from "../../../lib/utils";
 
 const SUBSCRIPTION_COLORS = ["#16e79b", "#f2dc2e", "#f2f2f2", "#0755ff", "#7925ff"];
+const COACH_SUBSCRIPTION_COLORS = [
+  "#16e79b",
+  "#f2dc2e",
+  "#38bdf8",
+  "#fb7185",
+  "#a78bfa",
+  "#f97316",
+  "#2dd4bf",
+  "#e879f9",
+  "#84cc16",
+  "#60a5fa",
+];
 
 /**
  * Extracts a collection from the response shapes returned by the backend.
@@ -77,7 +89,7 @@ function getSessionStatus(session, now) {
  * Converts today's backend schedule into rows for the dashboard table.
  */
 export function createTodaySchedule(response, selectedBranchId = "all", now = new Date()) {
-  const day = SCHEDULE_DAYS[now.getDay()];
+  const day = SCHEDULE_DAYS.find((scheduleDay) => scheduleDay.dayIndex === now.getDay());
   const sessions = getSchedulePayload(response)[day?.apiKey];
 
   if (!Array.isArray(sessions)) return [];
@@ -109,7 +121,7 @@ export function createTodaySchedule(response, selectedBranchId = "all", now = ne
  */
 export function createShiftAttendanceChart(response) {
   const data = response?.data?.records || [];
-  
+
   // Aggregate data by day + shift to combine branches
   const grouped = new Map();
   data.forEach((record) => {
@@ -124,7 +136,7 @@ export function createShiftAttendanceChart(response) {
   }));
 
   const sortedData = aggregatedData.sort((a, b) => b.value - a.value);
-  
+
   return sortedData.slice(0, 7);
 }
 
@@ -156,6 +168,24 @@ export function createSubscriptionMix(subscriptions) {
       value,
       color: SUBSCRIPTION_COLORS[index],
     }));
+}
+
+/**
+ * Converts the coaches subscriptions report into interactive donut data.
+ */
+export function createCoachSubscriptionMix(response) {
+  const payload = response?.data?.data || response?.data || response;
+  const coaches = Array.isArray(payload?.group_session_coaches)
+    ? payload.group_session_coaches
+    : [];
+
+  return coaches.map((coach, index) => ({
+    id: "coach-" + (coach.coach_id ?? index),
+    label: String(coach.coach_name || "كوتش غير محدد"),
+    value: Math.max(0, Number(coach.active_players_count) || 0),
+    activities: Array.isArray(coach.activities) ? coach.activities.filter(Boolean) : [],
+    color: COACH_SUBSCRIPTION_COLORS[index % COACH_SUBSCRIPTION_COLORS.length],
+  }));
 }
 
 /**

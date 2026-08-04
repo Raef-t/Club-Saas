@@ -6,12 +6,15 @@ import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetPlayerSubscriptionsQuery } from "@/lib/api/playerSubscriptionsApi";
 import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
 import { useGetDashboardStatsStreamQuery } from "@/lib/api/dashboardApi";
-import { useGetShiftAttendanceReportQuery } from "@/lib/api/reportsApi";
+import {
+  useGetCoachSubscriptionsReportQuery,
+  useGetShiftAttendanceReportQuery,
+} from "@/lib/api/reportsApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import {
+  createCoachSubscriptionMix,
   createDashboardStats,
-  createSubscriptionMix,
   createTodaySchedule,
   createShiftAttendanceChart,
   getDashboardCollection,
@@ -32,6 +35,7 @@ export function useManagementDashboard({ initialData = {} } = {}) {
   const scheduleQuery = useGetScheduleQuery(selectedBranchId);
   const sseStatsQuery = useGetDashboardStatsStreamQuery(queryParams);
   const shiftAttendanceQuery = useGetShiftAttendanceReportQuery(queryParams);
+  const coachSubscriptionsQuery = useGetCoachSubscriptionsReportQuery(queryParams);
 
   const members = useMemo(
     () =>
@@ -77,13 +81,23 @@ export function useManagementDashboard({ initialData = {} } = {}) {
     () => createShiftAttendanceChart(shiftAttendanceQuery.currentData),
     [shiftAttendanceQuery.currentData],
   );
-  const subscriptionMix = useMemo(() => createSubscriptionMix(subscriptions), [subscriptions]);
+  const coachSubscriptionMix = useMemo(
+    () => createCoachSubscriptionMix(coachSubscriptionsQuery.currentData),
+    [coachSubscriptionsQuery.currentData],
+  );
   const currentActiveSessions = useMemo(
     () => sseStatsQuery.data?.current_active_session_plans || [],
     [sseStatsQuery.data?.current_active_session_plans],
   );
 
-  const queries = [membersQuery, coachesQuery, subscriptionsQuery, scheduleQuery, shiftAttendanceQuery];
+  const queries = [
+    membersQuery,
+    coachesQuery,
+    subscriptionsQuery,
+    scheduleQuery,
+    shiftAttendanceQuery,
+    coachSubscriptionsQuery,
+  ];
   const hasInitialData = Object.values(initialData).some(Boolean);
 
   /**
@@ -96,12 +110,16 @@ export function useManagementDashboard({ initialData = {} } = {}) {
   return {
     stats,
     shiftChart,
-    subscriptionMix,
+    coachSubscriptionMix,
     todaySessions,
     currentActiveSessions,
     isLoading: !hasInitialData && queries.some((query) => query.isLoading),
     isRefreshing: queries.some((query) => query.isFetching),
     hasError: queries.some((query) => Boolean(query.error)),
+    isCoachSubscriptionsLoading:
+      coachSubscriptionsQuery.isLoading ||
+      (coachSubscriptionsQuery.isFetching && !coachSubscriptionsQuery.currentData),
+    hasCoachSubscriptionsError: Boolean(coachSubscriptionsQuery.error),
     refresh,
   };
 }

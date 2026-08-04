@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 import { GridIcon } from "@/components/icons/Icons";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 
@@ -73,6 +74,136 @@ export function SubscriptionDonut({ items }) {
 }
 
 /**
+ * Renders coach subscriptions as an interactive, scrollable donut.
+ */
+export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasError = false }) {
+  const [activeCoachId, setActiveCoachId] = useState(null);
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const visualTotal = items.reduce((sum, item) => sum + Math.max(item.value, 1), 0);
+  const activeItem = items.find((item) => item.id === activeCoachId) || null;
+  const circumference = 2 * Math.PI * 38;
+  let offset = 0;
+
+  if (isLoading) {
+    return (
+      <div
+        className="grid min-h-44 place-items-center px-5 pb-5 text-sm text-app-muted"
+        role="status"
+      >
+        جاري تحميل إحصائيات الكوتشات...
+      </div>
+    );
+  }
+
+  if (!items.length) {
+    return (
+      <p
+        className="grid min-h-44 place-items-center px-5 pb-5 text-center text-sm text-app-muted"
+        role={hasError ? "alert" : undefined}
+      >
+        {hasError
+          ? "تعذر تحميل إحصائيات اشتراكات الكوتشات."
+          : "لا توجد بيانات اشتراكات للكوتشات في الفرع المختار."}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex min-h-44 items-center gap-4 px-5 pb-5 pt-1">
+      <div className="max-h-40 min-w-0 flex-1 overflow-y-auto overscroll-contain pe-2 [scrollbar-color:var(--app-yellow)_transparent] [scrollbar-width:thin]">
+        <ul className="space-y-1.5 text-sm text-app-text">
+          {items.map((item) => {
+            const activities = item.activities.join("، ");
+            const details = activities ? `${item.label} — ${activities}` : item.label;
+
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start transition ${
+                    activeItem && activeItem.id !== item.id
+                      ? "opacity-45"
+                      : "bg-transparent hover:bg-white/5 focus-visible:bg-white/5"
+                  }`}
+                  title={`${details}: ${item.value.toLocaleString("ar")} لاعب`}
+                  onMouseEnter={() => setActiveCoachId(item.id)}
+                  onMouseLeave={() => setActiveCoachId(null)}
+                  onFocus={() => setActiveCoachId(item.id)}
+                  onBlur={() => setActiveCoachId(null)}
+                >
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="relative size-36 shrink-0">
+        <svg
+          className="size-full"
+          viewBox="0 0 120 120"
+          role="img"
+          aria-label="توزيع اللاعبين النشطين حسب الكوتش"
+        >
+          <g transform="rotate(-90 60 60)">
+            <circle cx="60" cy="60" r="38" fill="none" stroke="#222" strokeWidth="18" />
+            {items.map((item) => {
+              const visualValue = Math.max(item.value, 1);
+              const length = (visualValue / visualTotal) * circumference;
+              const segmentOffset = offset;
+              offset += length;
+
+              return (
+                <circle
+                  key={item.id}
+                  cx="60"
+                  cy="60"
+                  r="38"
+                  fill="none"
+                  stroke={item.color}
+                  strokeWidth="18"
+                  strokeDasharray={`${length} ${circumference - length}`}
+                  strokeDashoffset={-segmentOffset}
+                  tabIndex={0}
+                  className={`cursor-pointer transition-opacity outline-none ${
+                    activeItem && activeItem.id !== item.id ? "opacity-30" : "opacity-100"
+                  }`}
+                  onMouseEnter={() => setActiveCoachId(item.id)}
+                  onMouseLeave={() => setActiveCoachId(null)}
+                  onFocus={() => setActiveCoachId(item.id)}
+                  onBlur={() => setActiveCoachId(null)}
+                >
+                  <title>
+                    {item.label}: {item.value.toLocaleString("ar")} لاعب
+                  </title>
+                </circle>
+              );
+            })}
+          </g>
+        </svg>
+
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-5 text-center"
+          aria-live="polite"
+        >
+          <strong className="text-xl text-app-text">
+            {(activeItem?.value ?? total).toLocaleString("ar")}
+          </strong>
+          <span className="mt-0.5 max-w-20 truncate text-[11px] text-app-muted">
+            {activeItem?.label || "إجمالي اللاعبين"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Renders today's schedule as a responsive data table.
  */
 export function DailyScheduleTable({ sessions }) {
@@ -100,7 +231,12 @@ export function DailyScheduleTable({ sessions }) {
         </thead>
         <tbody>
           {sessions.map((session) => (
-            <tr key={session.id} className="bg-app-card-soft">
+            <tr
+              key={session.id}
+              className={`bg-app-card-soft transition-opacity duration-300 ${
+                session.status.tone === "yellow" ? "opacity-45 hover:opacity-100" : ""
+              }`}
+            >
               <td className="rounded-s-xl px-4 py-3 font-medium text-app-yellow" dir="ltr">
                 {formatTime(session.startTime)} - {formatTime(session.endTime)}
               </td>
@@ -109,10 +245,16 @@ export function DailyScheduleTable({ sessions }) {
               <td className="px-4 py-3 text-app-muted-light">{session.branch}</td>
               <td className="rounded-e-xl px-4 py-3">
                 <span
-                  className={`inline-flex min-w-16 justify-center rounded-lg px-3 py-1 text-xs ${
+                  className={`inline-flex min-w-16 items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-xs ${
                     statusClasses[session.status.tone] || statusClasses.neutral
                   }`}
                 >
+                  {session.status.tone === "green" && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-app-green opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-app-green"></span>
+                    </span>
+                  )}
                   {session.status.label}
                 </span>
               </td>
@@ -197,9 +339,7 @@ export function CurrentActiveSessionsTable({ sessions = [] }) {
                 key={session.plan_id || session.session_template_id || index}
                 className="bg-app-card-soft"
               >
-                <td className="rounded-s-xl px-4 py-3 font-medium text-app-text">
-                  {planName}
-                </td>
+                <td className="rounded-s-xl px-4 py-3 font-medium text-app-text">{planName}</td>
                 <td className="px-4 py-3 text-app-yellow font-medium" dir="ltr">
                   {startTime} - {endTime}
                 </td>

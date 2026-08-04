@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createCoachSubscriptionMix,
   createDashboardStats,
   createShiftAttendanceChart,
   createSubscriptionMix,
@@ -27,6 +28,7 @@ const scheduleResponse = {
       },
     ],
     Monday: [{ id: 3, branch_id: 3, start_time: "09:00:00", end_time: "10:00:00" }],
+    Tuesday: [{ id: 4, branch_id: 3, start_time: "14:00:00", end_time: "15:00:00" }],
   },
 };
 
@@ -48,6 +50,14 @@ describe("management dashboard utilities", () => {
       startTime: "10:00",
       status: { label: "قادمة", tone: "yellow" },
     });
+  });
+
+  it("selects Tuesday by calendar day instead of the displayed array position", () => {
+    const tuesdayAfternoon = new Date(2026, 6, 28, 13, 30);
+
+    expect(createTodaySchedule(scheduleResponse, "3", tuesdayAfternoon)).toMatchObject([
+      { id: 4, startTime: "14:00" },
+    ]);
   });
 
   it("creates shift attendance chart data sorted by attendance", () => {
@@ -74,6 +84,42 @@ describe("management dashboard utilities", () => {
       { label: "شهري", value: 2 },
       { label: "سنوي", value: 1 },
     ]);
+  });
+
+  it("maps the coaches subscriptions report into distinct chart items", () => {
+    const items = createCoachSubscriptionMix({
+      status: "success",
+      data: {
+        group_session_coaches: [
+          {
+            coach_id: 44,
+            coach_name: "Coach One",
+            activities: ["Mix"],
+            active_players_count: 13,
+          },
+          {
+            coach_id: 42,
+            coach_name: "Coach Two",
+            activities: ["Aerobics"],
+            active_players_count: 0,
+          },
+        ],
+      },
+    });
+
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({
+      id: "coach-44",
+      label: "Coach One",
+      value: 13,
+      activities: ["Mix"],
+    });
+    expect(items[1]).toMatchObject({
+      id: "coach-42",
+      label: "Coach Two",
+      value: 0,
+    });
+    expect(items[0].color).not.toBe(items[1].color);
   });
 
   it("creates linked live statistics from SSE stream data", () => {
