@@ -469,8 +469,9 @@ class SubscriptionReportController extends BaseController
                         new OA\Property(
                             property: 'general_equipment',
                             type: 'object',
+                            nullable: true,
                             properties: [
-                                new OA\Property(property: 'title', type: 'string', example: 'أجهزة عامة'),
+                                new OA\Property(property: 'title', type: 'string', example: 'أجهزة عام'),
                                 new OA\Property(property: 'activity_type_name', type: 'string', example: 'تدريب عام'),
                                 new OA\Property(property: 'active_players_count', type: 'integer', example: 140),
                             ]
