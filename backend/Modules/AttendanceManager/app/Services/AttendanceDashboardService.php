@@ -55,6 +55,9 @@ class AttendanceDashboardService
     protected function getActiveSubscribedMembersCount(?int $branchId = null): int
     {
         return DB::table('player_subscriptions as ps')
+            ->join('members as m', 'm.id', '=', 'ps.member_id')
+            ->whereNull('ps.deleted_at')
+            ->whereNull('m.deleted_at')
             ->where('ps.status', 'active')
             ->when($branchId, function ($q) use ($branchId) {
                 $q->where(function ($bq) use ($branchId) {
@@ -63,14 +66,10 @@ class AttendanceDashboardService
                            $subQ->select(DB::raw(1))
                                 ->from('subscription_plans as sp')
                                 ->whereColumn('sp.id', 'ps.plan_id')
-                                ->where('sp.branch_id', $branchId);
+                                ->where('sp.branch_id', $branchId)
+                                ->whereNull('sp.deleted_at');
                        })
-                       ->orWhereExists(function ($subQ) use ($branchId) {
-                           $subQ->select(DB::raw(1))
-                                ->from('members as m')
-                                ->whereColumn('m.id', 'ps.member_id')
-                                ->where('m.branch_id', $branchId);
-                       });
+                       ->orWhere('m.branch_id', $branchId);
                 });
             })
             ->count(DB::raw('DISTINCT ps.member_id'));
@@ -82,9 +81,12 @@ class AttendanceDashboardService
     protected function getRealtimeTrainingPlayersCount(?int $branchId = null): int
     {
         return DB::table('attendances as att')
+            ->join('members as m', 'm.id', '=', 'att.attendable_id')
             ->where('att.attendable_type', 'member')
             ->where('att.status', 'checked_in')
             ->whereNull('att.check_out_at')
+            ->whereNull('att.deleted_at')
+            ->whereNull('m.deleted_at')
             ->when($branchId, fn($q) => $q->where('att.branch_id', $branchId))
             ->where(function ($query) {
                 // 1. Member has active subscription with activity type having is_session_based = false (تدريب عام/خاص/دخول يومي)
@@ -97,6 +99,8 @@ class AttendanceDashboardService
                         ->join('activities as act', 'act.id', '=', 'sa_inner.activity_id')
                         ->leftJoin('activity_types as at', 'at.id', '=', 'act.activity_type_id')
                         ->whereColumn('ps.member_id', 'att.attendable_id')
+                        ->whereNull('ps.deleted_at')
+                        ->whereNull('sp_inner.deleted_at')
                         ->where('ps.status', 'active')
                         ->where(function ($atQ) {
                             $atQ->where('at.is_session_based', false)
@@ -109,11 +113,14 @@ class AttendanceDashboardService
                         ->from('player_subscriptions as ps2')
                         ->join('subscription_plans as sp', 'sp.id', '=', 'ps2.plan_id')
                         ->whereColumn('ps2.member_id', 'att.attendable_id')
+                        ->whereNull('ps2.deleted_at')
+                        ->whereNull('sp.deleted_at')
                         ->where('ps2.status', 'active')
                         ->whereNotExists(function ($sstQ) {
                             $sstQ->select(DB::raw(1))
                                  ->from('sport_session_templates as sst')
-                                 ->whereColumn('sst.plan_id', 'sp.id');
+                                 ->whereColumn('sst.plan_id', 'sp.id')
+                                 ->whereNull('sst.deleted_at');
                         });
                 });
             })
@@ -131,18 +138,26 @@ class AttendanceDashboardService
 
         return DB::table('sport_session_templates as sst')
             ->join('subscription_plans as sp', 'sp.id', '=', 'sst.plan_id')
+            ->whereNull('sst.deleted_at')
+            ->whereNull('sp.deleted_at')
             ->leftJoin('attendances as att', function($join) use ($branchId) {
                 $join->on('att.attendable_type', '=', DB::raw("'member'"))
                      ->where('att.status', '=', 'checked_in')
-                     ->whereNull('att.check_out_at');
+                     ->whereNull('att.check_out_at')
+                     ->whereNull('att.deleted_at');
                 if ($branchId) {
                     $join->where('att.branch_id', '=', $branchId);
                 }
             })
+            ->leftJoin('members as m', function($join) {
+                $join->on('m.id', '=', 'att.attendable_id')
+                     ->whereNull('m.deleted_at');
+            })
             ->leftJoin('player_subscriptions as ps', function($join) {
-                $join->on('ps.member_id', '=', 'att.attendable_id')
+                $join->on('ps.member_id', '=', 'm.id')
                      ->on('ps.plan_id', '=', 'sp.id')
-                     ->where('ps.status', '=', 'active');
+                     ->where('ps.status', '=', 'active')
+                     ->whereNull('ps.deleted_at');
             })
             ->where('sst.is_active', true)
             ->where('sst.day_of_week', $currentDayOfWeek)
@@ -153,7 +168,8 @@ class AttendanceDashboardService
                      ->from('session_exceptions as se')
                      ->whereColumn('se.sport_session_template_id', 'sst.id')
                      ->where('se.date', $todayDate)
-                     ->where('se.status', 'canceled');
+                     ->where('se.status', 'canceled')
+                     ->whereNull('se.deleted_at');
             })
             ->when($branchId, function ($q) use ($branchId) {
                 $q->where(function ($bq) use ($branchId) {
@@ -162,7 +178,8 @@ class AttendanceDashboardService
                            $facQ->select(DB::raw(1))
                                 ->from('facilities as f')
                                 ->whereColumn('f.id', 'sst.facility_id')
-                                ->where('f.branch_id', $branchId);
+                                ->where('f.branch_id', $branchId)
+                                ->whereNull('f.deleted_at');
                        });
                 });
             })
@@ -189,6 +206,9 @@ class AttendanceDashboardService
     protected function getExpiringSubscriptionsCount(?int $branchId = null): int
     {
         return DB::table('player_subscriptions as ps')
+            ->join('members as m', 'm.id', '=', 'ps.member_id')
+            ->whereNull('ps.deleted_at')
+            ->whereNull('m.deleted_at')
             ->where('ps.status', 'active')
             ->when($branchId, function ($q) use ($branchId) {
                 $q->where(function ($bq) use ($branchId) {
@@ -197,14 +217,10 @@ class AttendanceDashboardService
                            $subQ->select(DB::raw(1))
                                 ->from('subscription_plans as sp')
                                 ->whereColumn('sp.id', 'ps.plan_id')
-                                ->where('sp.branch_id', $branchId);
+                                ->where('sp.branch_id', $branchId)
+                                ->whereNull('sp.deleted_at');
                        })
-                       ->orWhereExists(function ($subQ) use ($branchId) {
-                           $subQ->select(DB::raw(1))
-                                ->from('members as m')
-                                ->whereColumn('m.id', 'ps.member_id')
-                                ->where('m.branch_id', $branchId);
-                       });
+                       ->orWhere('m.branch_id', $branchId);
                 });
             })
             ->where(function($query) {
@@ -216,6 +232,7 @@ class AttendanceDashboardService
                     $subQuery->select(DB::raw(1))
                         ->from('player_subscription_items as psi')
                         ->whereColumn('psi.player_subscription_id', 'ps.id')
+                        ->whereNull('psi.deleted_at')
                         ->where('psi.is_unlimited', false)
                         ->whereRaw('(psi.sessions_allocated - psi.sessions_consumed) <= 3')
                         ->whereRaw('(psi.sessions_allocated - psi.sessions_consumed) >= 0');
@@ -231,10 +248,14 @@ class AttendanceDashboardService
     {
         return DB::table('locker_reservations as lr')
             ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
+            ->join('members as m', 'm.id', '=', 'lr.member_id')
             ->where('lr.status', 'active')
             ->whereNotNull('lr.member_id')
             ->whereNull('lr.staff_id')
             ->where('lr.price', 0)
+            ->whereNull('lr.deleted_at')
+            ->whereNull('l.deleted_at')
+            ->whereNull('m.deleted_at')
             ->when($branchId, fn($q) => $q->where('l.branch_id', $branchId))
             ->count();
     }
