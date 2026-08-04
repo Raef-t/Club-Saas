@@ -9034,6 +9034,217 @@
                 ]
             }
         },
+        "/v1/audits": {
+            "get": {
+                "tags": [
+                    "Audit Logs"
+                ],
+                "summary": "📋 جلب قائمة سجلات التدقيق مع الفلاتر المتقدمة",
+                "description": "يتيح لك البحث والفلترة الدقيقة في كافة عمليات النظام (إنشاء، تعديل، حذف) مع معرفة المستخدم والفرع والتغييرات",
+                "operationId": "getAuditLogsList",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف المستخدم الذي قام بالعملية",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "event",
+                        "in": "query",
+                        "description": "نوع الإجراء (created, updated, deleted)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "updated",
+                            "enum": [
+                                "created",
+                                "updated",
+                                "deleted"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "description": "اسم الموديول المتأثر (member, subscription, invoice, staff, branch, user)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "member"
+                        }
+                    },
+                    {
+                        "name": "subject_id",
+                        "in": "query",
+                        "description": "معرف العنصر المتأثر (مثلاً رقم المشترك أو رقم الفاتورة)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 204
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "تاريخ بداية الفترة (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-08-01"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "تاريخ نهاية الفترة (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-08-04"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث نصي في الوصف أو التغييرات",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "0501112233"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "حقل الترتيب (created_at, id, event)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "اتجاه الترتيب (asc, desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد النتائج في الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15,
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1,
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب السجلات بنجاح"
+                    },
+                    "401": {
+                        "description": "🔒 غير مصرح (Unauthenticated)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/audits/meta": {
+            "get": {
+                "tags": [
+                    "Audit Logs"
+                ],
+                "summary": "⚙️ جلب قائمة الموديولات والأحداث المتاحة لفلترة الواجهة",
+                "operationId": "getAuditLogMetadata",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الفلاتر المتاحة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/audits/{id}": {
+            "get": {
+                "tags": [
+                    "Audit Logs"
+                ],
+                "summary": "🔍 عرض تفاصيل سجل تدقيق محدد",
+                "operationId": "getAuditLogDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل التدقيق",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1042
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل السجل بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ السجل غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/me/preferences": {
             "get": {
                 "tags": [
@@ -10270,7 +10481,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "properties": {
                                     "first_name": {
@@ -25419,6 +25630,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Audit Logs",
+            "description": "إدارة وسجلات التدقيق والأحداث في النظام والعمليات التي تمت على البيانات"
+        },
         {
             "name": "Coach Management",
             "description": "API Endpoints for managing coaches"
