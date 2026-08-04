@@ -10,13 +10,12 @@ interface AttendanceHandlerInterface
     /**
      * Record a check-in for the given entity.
      *
-     * @param  int    $entityId  The primary entity (member_id or staff_id)
-     * @param  int    $clubId
-     * @param  int    $branchId
-     * @param  array  $metadata  Extra context (facility_id, source, etc.)
+     * @param  int         $entityId  The primary entity (member_id or staff_id)
+     * @param  int         $branchId
+     * @param  string|null $checkInAt
      * @return Attendance
      */
-    public function checkIn(int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance;
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null): Attendance;
 
     /**
      * Record a check-out for the given attendance record.
@@ -38,10 +37,10 @@ interface AttendanceHandlerInterface
      * Return a query builder for the attendance history of this entity.
      * Callers can paginate/filter the result.
      *
-     * @param  int         $entityId
+     * @param  int|null    $entityId
      * @param  string|null $from  YYYY-MM-DD
      * @param  string|null $to    YYYY-MM-DD
      * @return Builder
      */
-    public function getHistory(int $entityId, ?string $from = null, ?string $to = null): Builder;
+    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder;
 }

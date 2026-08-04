@@ -13,7 +13,7 @@ class EloquentStaffRepository implements StaffRepositoryInterface
 
     public function find($id)
     {
-        return Staff::with(['shifts', 'attendances'])->findOrFail($id);
+        return Staff::with(['shifts'])->findOrFail($id);
     }
 
     public function create(array $data)

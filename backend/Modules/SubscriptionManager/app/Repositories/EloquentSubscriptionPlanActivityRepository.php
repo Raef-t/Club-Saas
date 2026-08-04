@@ -11,6 +11,7 @@ class EloquentSubscriptionPlanActivityRepository implements SubscriptionPlanActi
     public function update($id, array $data) {
         $record = $this->find($id);
         $record->update($data);
+        $record->refresh();
         return $record;
     }
     public function delete($id) { return $this->find($id)->delete(); }

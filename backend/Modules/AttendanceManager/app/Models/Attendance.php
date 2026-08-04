@@ -4,13 +4,17 @@ namespace Modules\AttendanceManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Attendance extends Model
 {
+    use SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['consumptions'];
     protected $table = 'attendances';
 
     protected $fillable = [
-        'club_id',
         'attendable_type',
         'attendable_id',
         'branch_id',
@@ -18,14 +22,13 @@ class Attendance extends Model
         'recorded_by_staff_id',
         'check_in_at',
         'check_out_at',
+        'duration_minutes',
         'status',
-        'metadata',
     ];
 
     protected $casts = [
         'check_in_at'  => 'datetime',
         'check_out_at' => 'datetime',
-        'metadata'     => 'array',
     ];
 
     /**
@@ -34,5 +37,27 @@ class Attendance extends Model
     public function attendable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($attendance) {
+            \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($attendance->branch_id);
+        });
+
+        static::deleted(function ($attendance) {
+            \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($attendance->branch_id);
+        });
+    }
+
+    /**
+     * Get the consumptions associated with this attendance.
+     */
+    public function consumptions()
+    {
+        return $this->hasMany(AttendanceConsumption::class, 'attendance_id');
     }
 }

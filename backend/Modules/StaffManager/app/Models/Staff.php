@@ -4,33 +4,40 @@ namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Staff extends Model
 {
-    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = [
+        'coachDetail',
+        'contracts',
+        'shifts',
+        'unavailabilities',
+        'leaves',
+        'commissionRules',
+        'payslips',
+        'attendances',
+    ];
 
     protected $table = 'staff';
 
     protected $fillable = [
         'person_id',
         'role',
-        'employment_type',
-        'base_salary',
         'is_active',
         'start_date',
         'end_date',
-        'contract_type',
-        'shift_type',
-        'work_type',
+        'start_time',
+        'end_time',
         'work_status',
-        'other_tasks',
     ];
 
     protected $casts = [
         'is_active'   => 'boolean',
         'start_date'  => 'date',
         'end_date'    => 'date',
-        'base_salary' => 'decimal:2',
     ];
 
     public ?\Modules\Core\DTOs\PersonDTO $personDto = null;
@@ -54,6 +61,16 @@ class Staff extends Model
         return $this->hasOne(CoachDetail::class);
     }
 
+    public function contracts()
+    {
+        return $this->hasMany(StaffContract::class);
+    }
+
+    public function activeContract()
+    {
+        return $this->hasOne(StaffContract::class)->where('is_active', true);
+    }
+
     public function shifts()
     {
         return $this->hasMany(StaffShift::class);
@@ -69,15 +86,13 @@ class Staff extends Model
         return $this->hasMany(StaffUnavailability::class);
     }
 
-    public function workingHours()
-    {
-        return $this->hasMany(StaffWorkingHour::class);
-    }
 
     public function leaves()
     {
         return $this->hasMany(StaffLeave::class);
     }
+
+
 
     // ── Helpers ─────────────────────────────────────────────────
 
@@ -108,7 +123,7 @@ class Staff extends Model
             'staff_activities',
             'staff_id',
             'activity_id'
-        );
+        )->withPivot('id');
     }
 
     /**
@@ -117,5 +132,20 @@ class Staff extends Model
     public function isCoach(): bool
     {
         return $this->role === 'coach';
+    }
+
+    public function commissionRules()
+    {
+        return $this->hasMany(\Modules\Sports\Models\StaffCommissionRule::class, 'staff_id');
+    }
+
+    public function payslips()
+    {
+        return $this->hasMany(Payslip::class, 'staff_id');
+    }
+
+    public function attendances()
+    {
+        return $this->morphMany(\Modules\AttendanceManager\Models\Attendance::class, 'attendable');
     }
 }

@@ -47,9 +47,35 @@ class FacilityService
 
     /**
      * Delete a facility.
+     *
+     * @throws \Modules\Core\Exceptions\CannotDeleteException
      */
     public function deleteFacility($id)
     {
+        $facility = \Modules\ClubManager\Models\Facility::findOrFail($id);
+
+        $templatesCount = \Modules\Sports\Models\SportSessionTemplate::where('facility_id', $id)->count();
+        $lockersCount = \Modules\ClubManager\Models\Locker::where('facility_id', $id)->count();
+
+        $blocked = [];
+        if ($templatesCount > 0) {
+            $blocked[] = "يوجد {$templatesCount} " . ($templatesCount === 1 ? 'قالب جلسة تدريبية' : 'قوالب جلسات تدريبية') . " تعتمد على هذا المرفق";
+        }
+        if ($lockersCount > 0) {
+            $blocked[] = "يحتوي على {$lockersCount} " . ($lockersCount === 1 ? 'خزانة' : 'خزائن');
+        }
+
+        if (!empty($blocked)) {
+            $reasons = implode('، و ', $blocked);
+            throw new \Modules\Core\Exceptions\CannotDeleteException(
+                "لا يمكن حذف هذا المرفق لأنه: {$reasons}. يُنصح بتعطيل المرفق بدلاً من حذفه.",
+                [
+                    'templates_count' => $templatesCount,
+                    'lockers_count' => $lockersCount
+                ]
+            );
+        }
+
         return $this->repository->delete($id);
     }
 

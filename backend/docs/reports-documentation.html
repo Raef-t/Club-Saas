@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل التقارير — نظام النادي الرياضي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d28;
+            --bg-card: #21242f;
+            --bg-inner: #272b3a;
+            --text-primary: #e8eaf0;
+            --text-secondary: #9ca3b5;
+            --text-muted: #6b7280;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-pink: #ec4899;
+            --border-color: #2d3144;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 2;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 3.5rem 2rem;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%);
+            border-radius: 24px;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(139,92,246,0.06) 0%, transparent 50%);
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .header p { color: var(--text-secondary); font-size: 1.1rem; margin-top: 0.5rem; position: relative; }
+        .header .meta { color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; position: relative; }
+
+        /* TOC */
+        .toc {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .toc h2 { font-size: 1.4rem; color: var(--accent-cyan); margin-bottom: 1.5rem; }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .toc-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .toc-item:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(59,130,246,0.12);
+        }
+
+        .toc-num {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1rem; flex-shrink: 0;
+        }
+
+        /* Report Section */
+        .report {
+            background: var(--bg-card);
+            border-radius: 24px;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .report-head {
+            padding: 2rem 2.5rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .report-head h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; }
+
+        .report-purpose {
+            background: rgba(59,130,246,0.07);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 14px;
+            padding: 1rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 2;
+        }
+
+        .report-purpose strong { color: var(--accent-blue); }
+
+        .report-body { padding: 2rem 2.5rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section:last-child { margin-bottom: 0; }
+
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Info Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-card {
+            background: var(--bg-inner);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .info-card h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .info-card p, .info-card ul {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 2;
+        }
+
+        .info-card ul {
+            padding-right: 1.2rem;
+            margin-top: 0.25rem;
+        }
+
+        .info-card ul li { margin-bottom: 0.2rem; }
+
+        /* Stat pills */
+        .stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin: 0.2rem;
+        }
+
+        .pill-blue { background: rgba(59,130,246,0.12); color: #60a5fa; }
+        .pill-green { background: rgba(16,185,129,0.12); color: #34d399; }
+        .pill-orange { background: rgba(245,158,11,0.12); color: #fbbf24; }
+        .pill-red { background: rgba(239,68,68,0.12); color: #f87171; }
+        .pill-purple { background: rgba(139,92,246,0.12); color: #a78bfa; }
+        .pill-cyan { background: rgba(6,182,212,0.12); color: #22d3ee; }
+        .pill-pink { background: rgba(236,72,153,0.12); color: #f472b6; }
+
+        /* Hierarchy */
+        .hierarchy {
+            background: var(--bg-inner);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .hierarchy h4 {
+            color: var(--accent-purple);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .tree { line-height: 2.5; }
+
+        .tree-level { padding-right: 0; }
+        .tree-level-1 { padding-right: 2.5rem; }
+        .tree-level-2 { padding-right: 5rem; }
+        .tree-level-3 { padding-right: 7.5rem; }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tree-connector { color: var(--text-muted); font-size: 0.9rem; }
+        .tree-label { font-weight: 600; }
+        .tree-desc { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Note boxes */
+        .note {
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            font-size: 0.88rem;
+            line-height: 2;
+        }
+
+        .note-warn {
+            background: rgba(245,158,11,0.07);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: var(--accent-orange);
+        }
+
+        .note-info {
+            background: rgba(59,130,246,0.07);
+            border: 1px solid rgba(59,130,246,0.2);
+            color: var(--accent-blue);
+        }
+
+        .note-tip {
+            background: rgba(16,185,129,0.07);
+            border: 1px solid rgba(16,185,129,0.2);
+            color: var(--accent-green);
+        }
+
+        /* Color strips */
+        .color-1 .report-head { border-right: 4px solid var(--accent-blue); }
+        .color-2 .report-head { border-right: 4px solid var(--accent-orange); }
+        .color-3 .report-head { border-right: 4px solid var(--accent-cyan); }
+        .color-4 .report-head { border-right: 4px solid var(--accent-green); }
+        .color-5 .report-head { border-right: 4px solid var(--accent-red); }
+        .color-6 .report-head { border-right: 4px solid var(--accent-purple); }
+
+        /* Bullet list */
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .bullet-list li {
+            padding: 0.6rem 1rem;
+            background: var(--bg-inner);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .bullet-list li .icon { flex-shrink: 0; font-size: 1rem; }
+        .bullet-list li strong { color: var(--text-primary); }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 1.5rem 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 1.5rem; }
+            .toc-grid, .info-grid { grid-template-columns: 1fr; }
+            .report-head, .report-body { padding: 1.25rem; }
+            .tree-level-1 { padding-right: 1.5rem; }
+            .tree-level-2 { padding-right: 3rem; }
+            .tree-level-3 { padding-right: 4.5rem; }
+        }
+
+        @media print {
+            body { background: #fff; color: #000; }
+            .report { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- الرأس -->
+    <div class="header">
+        <h1>📊 دليل تقارير نظام النادي الرياضي</h1>
+        <p>شرح مفصّل لكل تقرير — موجّه لفريق التصميم</p>
+        <p class="meta">📅 تاريخ التوثيق: ٣١ يوليو ٢٠٢٦ &nbsp;|&nbsp; 🔢 عدد التقارير: ٦</p>
+    </div>
+
+    <!-- الفهرس -->
+    <div class="toc">
+        <h2>📑 فهرس التقارير</h2>
+        <div class="toc-grid">
+            <a href="#report-1" class="toc-item">
+                <div class="toc-num" style="background: rgba(59,130,246,0.15); color: var(--accent-blue);">١</div>
+                تقرير الاشتراكات الشامل
+            </a>
+            <a href="#report-2" class="toc-item">
+                <div class="toc-num" style="background: rgba(245,158,11,0.15); color: var(--accent-orange);">٢</div>
+                تقرير التجديد والانقطاع
+            </a>
+            <a href="#report-3" class="toc-item">
+                <div class="toc-num" style="background: rgba(6,182,212,0.15); color: var(--accent-cyan);">٣</div>
+                تقرير الأنشطة والمدربين والحصص
+            </a>
+            <a href="#report-4" class="toc-item">
+                <div class="toc-num" style="background: rgba(16,185,129,0.15); color: var(--accent-green);">٤</div>
+                تقرير أوقات الذروة والهدوء
+            </a>
+            <a href="#report-5" class="toc-item">
+                <div class="toc-num" style="background: rgba(239,68,68,0.15); color: var(--accent-red);">٥</div>
+                تقرير التجميد والإلغاء
+            </a>
+            <a href="#report-6" class="toc-item">
+                <div class="toc-num" style="background: rgba(139,92,246,0.15); color: var(--accent-purple);">٦</div>
+                تقرير حضور الورديات
+            </a>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- التقرير ١: الاشتراكات الشامل -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div id="report-1" class="report color-1">
+        <div class="report-head">
+            <h2>📋 التقرير ١: تقرير الاشتراكات الشامل</h2>
+            <div class="report-purpose">
+                <strong>🎯 الهدف:</strong> هذا التقرير يعطي الإدارة صورة كاملة وشاملة عن كل الاشتراكات الموجودة في النادي. يمكن استخدامه لمعرفة حالة كل لاعب واشتراكه ومدفوعاته وأنشطته — كأنه "لوحة تحكم رئيسية" لكل شيء يتعلق بالاشتراكات.
+            </div>
+        </div>
+        <div class="report-body">
+
+            <!-- الملخص الإحصائي -->
+            <div class="section">
+                <h3 class="section-title">📈 الملخص الإحصائي (يظهر في أعلى التقرير)</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">مجموعة بطاقات رقمية تُعطي نظرة سريعة عن الوضع العام:</p>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>💰 الإحصائيات المالية</h4>
+                        <ul>
+                            <li>إجمالي الإيرادات (المبلغ الكلي لكل الاشتراكات)</li>
+                            <li>إجمالي المبلغ المدفوع</li>
+                            <li>إجمالي المبلغ المتبقي (غير المحصّل)</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>📊 إحصائيات حسب حالة الاشتراك</h4>
+                        <ul>
+                            <li>عدد الاشتراكات الإجمالي</li>
+                            <li>عدد الاشتراكات الفعالة</li>
+                            <li>عدد المنتهية</li>
+                            <li>عدد المجمدة</li>
+                            <li>عدد الملغاة</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>💳 إحصائيات حسب حالة الدفع</h4>
+                        <ul>
+                            <li>عدد المدفوع بالكامل</li>
+                            <li>عدد المدفوع جزئياً</li>
+                            <li>عدد غير المدفوع</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- ماذا يظهر لكل اشتراك -->
+            <div class="section">
+                <h3 class="section-title">📄 ماذا يظهر لكل اشتراك في القائمة؟</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">كل سطر/بطاقة في التقرير تمثّل اشتراكاً واحداً، ويحتوي على المعلومات التالية:</p>
+
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">👤</span>
+                        <div><strong>بيانات اللاعب:</strong> الاسم الكامل، رقم العضوية، اسم الفرع التابع له.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📞</span>
+                        <div><strong>أرقام التواصل:</strong> كل أرقام الهاتف المسجلة للاعب مجمعة في نص واحد. بالإضافة إلى قائمة تفصيلية لجهات الاتصال: كل جهة فيها الاسم ورقم الهاتف والعلاقة (مثلاً: أب، أم، أخ).</div>
+                    </li>
+                    <li>
+                        <span class="icon">📋</span>
+                        <div><strong>تفاصيل خطة الاشتراك:</strong> اسم الخطة، نوعها (شهري/سنوي/...)، واسم العرض الترويجي إذا اشترك من خلال عرض.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📅</span>
+                        <div><strong>التواريخ والحالة:</strong> تاريخ بداية ونهاية الاشتراك، تاريخ التسجيل، وحالة الاشتراك (فعال، منتهي، مجمد، ملغى) — تظهر الحالة بالعربي.</div>
+                    </li>
+                    <li>
+                        <span class="icon">💰</span>
+                        <div><strong>المعلومات المالية:</strong> المبلغ الإجمالي، المدفوع، المتبقي، هل مدفوع بالكامل أم لا، وحالة الدفع (مدفوع بالكامل / مدفوع جزئياً / غير مدفوع) — تظهر بالعربي.</div>
+                    </li>
+                    <li>
+                        <span class="icon">🏋️</span>
+                        <div><strong>المدربون:</strong> قائمة بأسماء كل المدربين المسندين لهذا الاشتراك، وأيضاً نص مجمع فيه كل الأسماء (مفيد للعرض المختصر).</div>
+                    </li>
+                    <li>
+                        <span class="icon">🎯</span>
+                        <div><strong>ملخص الحصص الإجمالي:</strong> هل يوجد نشاط بحصص غير محدودة؟ كم إجمالي الحصص المخصصة والمستهلكة والمتبقية لكل الأنشطة مجتمعة.</div>
+                    </li>
+                    <li>
+                        <span class="icon">⚽</span>
+                        <div><strong>تفاصيل كل نشاط:</strong> لكل نشاط مسجل في الاشتراك يظهر: اسم النشاط الرياضي، اسم المدرب المسند، هل الحصص غير محدودة، عدد الحصص المخصصة والمستهلكة والمتبقية.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📝</span>
+                        <div><strong>ملاحظات:</strong> أي ملاحظات مسجلة على الاشتراك (قد تكون فارغة).</div>
+                    </li>
+                </ul>
+
+                <div class="note note-tip">
+                    💡 <strong>ملاحظة تصميمية:</strong> الأنشطة والمدربون قد يكونون أكثر من واحد في نفس الاشتراك. يُفضّل عرضهم كقائمة قابلة للتوسيع داخل كل بطاقة.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- التقرير ٢: التجديد والانقطاع -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div id="report-2" class="report color-2">
+        <div class="report-head">
+            <h2>📊 التقرير ٢: تقرير التجديد والانقطاع</h2>
+            <div class="report-purpose">
+                <strong>🎯 الهدف:</strong> هذا التقرير يُساعد الإدارة على متابعة اللاعبين الذين انتهت اشتراكاتهم — مَن جدّد منهم ومَن لم يجدّد بعد. الميزة الأهم أنه يُظهر <strong>مدة انقطاع اللاعب عن النادي</strong> (منذ آخر مرة حضر فيها) وأرقام التواصل معه حتى تتمكن الإدارة من التواصل مع المنقطعين.
+            </div>
+        </div>
+        <div class="report-body">
+
+            <div class="section">
+                <h3 class="section-title">📈 الملخص الإحصائي</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>📊 أرقام التجديد</h4>
+                        <ul>
+                            <li>إجمالي السجلات</li>
+                            <li>عدد اللاعبين الذين <strong>لم يجددوا</strong></li>
+                            <li>عدد اللاعبين الذين <strong>جددوا</strong></li>
+                            <li>نسبة التجديد المئوية</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>💰 الأرقام المالية</h4>
+                        <ul>
+                            <li>إجمالي الإيرادات المفقودة (من اللاعبين الذين لم يجددوا)</li>
+                            <li>إجمالي إيرادات التجديد (من اللاعبين الذين جددوا)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+                <h3 class="section-title">📄 ماذا يظهر لكل لاعب؟</h3>
+
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">🏷️</span>
+                        <div><strong>حالة اللاعب:</strong> هل جدّد اشتراكه أم لا — تظهر كعلامة ملونة واضحة (مثلاً: "تم التجديد ✅" أو "منتهي ولم يجدد ⚠️").</div>
+                    </li>
+                    <li>
+                        <span class="icon">👤</span>
+                        <div><strong>بيانات اللاعب:</strong> اسمه، رقم عضويته، رقم هاتفه الرئيسي، اسم الفرع.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📞</span>
+                        <div><strong>جهات الاتصال:</strong> قائمة بكل أرقام التواصل المسجلة للاعب. كل رقم يظهر معه: اسم صاحب الرقم، الرقم نفسه، والعلاقة (مثلاً: أب، أخ، صاحب الاشتراك). إذا لم تكن هناك جهات اتصال مسجلة، يُضاف الرقم الرئيسي تلقائياً مع العلاقة "صاحب الاشتراك".</div>
+                    </li>
+                    <li>
+                        <span class="icon">⏰</span>
+                        <div>
+                            <strong>مدة الانقطاع عن النادي:</strong> هذه أهم معلومة في التقرير — تُظهر منذ متى لم يحضر اللاعب:
+                            <ul style="margin-top: 0.5rem;">
+                                <li>تاريخ آخر حضور</li>
+                                <li>مدة الانقطاع بالسنوات والأشهر والأيام (مثلاً: "٠ سنة، ١ شهر، ١٦ يوم")</li>
+                                <li>إجمالي الأيام (مفيد للفرز — مثلاً ٤٦ يوم)</li>
+                                <li>نص عربي مقروء جاهز للعرض المباشر</li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">📋</span>
+                        <div><strong>تفاصيل الاشتراك:</strong> اسم الخطة، نوعها، الأنشطة المسجل فيها، أسماء المدربين.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📅</span>
+                        <div><strong>التواريخ:</strong> تاريخ بداية ونهاية الاشتراك، وعدد الأيام المنقضية منذ الانتهاء.</div>
+                    </li>
+                    <li>
+                        <span class="icon">💰</span>
+                        <div><strong>المعلومات المالية:</strong> المبلغ الإجمالي، المدفوع، المتبقي، وهل مدفوع بالكامل.</div>
+                    </li>
+                    <li>
+                        <span class="icon">🔄</span>
+                        <div><strong>معلومات التجديد (إذا جدّد):</strong> إذا اللاعب جدّد، تظهر تفاصيل الاشتراك الجديد: اسم الخطة الجديدة، تاريخ البداية والنهاية الجديدين، ومبلغ الاشتراك الجديد.</div>
+                    </li>
+                </ul>
+
+                <div class="note note-warn">
+                    ⚠️ <strong>حالة خاصة:</strong> إذا لم يحضر اللاعب أبداً منذ تسجيله، تظهر مدة الانقطاع كنص "لم يحضر أبداً" بدون أرقام.
+                </div>
+
+                <div class="note note-tip" style="margin-top: 0.75rem;">
+                    💡 <strong>اقتراح تصميمي:</strong> يمكن ترتيب القائمة تلقائياً حسب مدة الانقطاع (الأطول أولاً) لتسهيل متابعة المنقطعين الأقدم. ويمكن إضافة زر "اتصل" بجانب كل رقم تواصل.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- التقرير ٣: الأنشطة والمدربين والحصص -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div id="report-3" class="report color-3">
+        <div class="report-head">
+            <h2>🕒 التقرير ٣: تقرير الأنشطة والمدربين والحصص</h2>
+            <div class="report-purpose">
+                <strong>🎯 الهدف:</strong> هذا التقرير يعرض بنية الأنشطة الرياضية في النادي بشكل شجري/هرمي. يبدأ من النشاط الرياضي، ثم يوضح المدربين التابعين له، ثم الخطط لكل مدرب مع عدد المشتركين النشطين ومواعيد الحصص. مفيد لمعرفة الضغط على كل مدرب وتخطيط الجدول.
+            </div>
+        </div>
+        <div class="report-body">
+
+            <div class="section">
+                <h3 class="section-title">📈 الملخص الإحصائي</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>📊 أرقام عامة</h4>
+                        <ul>
+                            <li>عدد الأنشطة الرياضية</li>
+                            <li>عدد المدربين</li>
+                            <li>عدد الخطط</li>
+                            <li>إجمالي المشتركين النشطين</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+                <h3 class="section-title">🏗️ كيف تُعرض البيانات؟ (بنية شجرية)</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">هذا التقرير مختلف عن البقية — البيانات فيه ليست قائمة مسطحة، بل <strong>شجرة متداخلة</strong> من ٤ مستويات:</p>
+
+                <div class="hierarchy">
+                    <h4>📐 التسلسل الهرمي للبيانات</h4>
+                    <div class="tree">
+                        <div class="tree-level tree-item">
+                            <span>🏅</span>
+                            <span class="tree-label" style="color: var(--accent-cyan);">النشاط الرياضي</span>
+                            <span class="tree-desc">— مثال: كرة قدم، سباحة، لياقة بدنية</span>
+                        </div>
+                        <div class="tree-level-1 tree-item">
+                            <span class="tree-connector">└──</span>
+                            <span>👨‍🏫</span>
+                            <span class="tree-label" style="color: var(--accent-green);">المدرب</span>
+                            <span class="tree-desc">— كل مدرب يعمل في هذا النشاط</span>
+                        </div>
+                        <div class="tree-level-2 tree-item">
+                            <span class="tree-connector">└──</span>
+                            <span>📋</span>
+                            <span class="tree-label" style="color: var(--accent-orange);">الخطة</span>
+                            <span class="tree-desc">— كل خطة اشتراك تابعة لهذا المدرب + عدد المشتركين النشطين</span>
+                        </div>
+                        <div class="tree-level-3 tree-item">
+                            <span class="tree-connector">└──</span>
+                            <span>📅</span>
+                            <span class="tree-label" style="color: var(--accent-purple);">مواعيد الحصص</span>
+                            <span class="tree-desc">— اليوم، وقت البداية والنهاية، اسم الصالة</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 style="margin-bottom: 1rem; font-size: 1rem;">🔍 ماذا يظهر في كل مستوى؟</h4>
+
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">🏅</span>
+                        <div><strong>مستوى النشاط:</strong> اسم النشاط الرياضي (مثلاً: كرة قدم). كل نشاط يحتوي تحته على قائمة المدربين.</div>
+                    </li>
+                    <li>
+                        <span class="icon">👨‍🏫</span>
+                        <div><strong>مستوى المدرب:</strong> اسم المدرب الكامل. كل مدرب يحتوي تحته على قائمة الخطط التي يُشرف عليها في هذا النشاط.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📋</span>
+                        <div><strong>مستوى الخطة:</strong> اسم خطة الاشتراك، نوعها (شهري/سنوي/...)، و<strong>عدد المشتركين النشطين حالياً</strong> (هذا الرقم مهم جداً لمعرفة الضغط). تحت كل خطة تظهر مواعيد الحصص.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📅</span>
+                        <div><strong>مستوى مواعيد الحصص:</strong> لكل حصة يظهر: اسم اليوم بالعربي (مثلاً: الأحد)، وقت البداية والنهاية، واسم الصالة أو المنشأة.</div>
+                    </li>
+                </ul>
+
+                <div class="note note-tip">
+                    💡 <strong>اقتراح تصميمي:</strong> يمكن تصميم هذا التقرير كـ"أكورديون" قابل للطي — المستخدم يضغط على النشاط فتظهر قائمة المدربين، يضغط على المدرب فتظهر الخطط، وهكذا. يمكن أيضاً إضافة ألوان مختلفة لكل مستوى لتسهيل التمييز البصري.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- التقرير ٤: أوقات الذروة -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div id="report-4" class="report color-4">
+        <div class="report-head">
+            <h2>🔥 التقرير ٤: تقرير أوقات الذروة والهدوء</h2>
+            <div class="report-purpose">
+                <strong>🎯 الهدف:</strong> هذا التقرير يُحلّل بيانات الحضور ليُظهر أكثر الساعات والأيام ازدحاماً وهدوءاً في النادي. يتم استبعاد أيام العطل الرسمية والأسبوعية تلقائياً حتى لا تؤثر على دقة التحليل. مفيد جداً لتخطيط الحصص وتوزيع الموارد.
+            </div>
+        </div>
+        <div class="report-body">
+
+            <div class="section">
+                <h3 class="section-title">📈 الملخص الإحصائي</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>📊 النتائج الرئيسية</h4>
+                        <ul>
+                            <li>أكثر يوم ازدحاماً (مثلاً: الاثنين)</li>
+                            <li>أكثر يوم هدوءاً (مثلاً: الجمعة)</li>
+                            <li>ساعة الذروة الأعلى (مثلاً: ١٨:٠٠)</li>
+                            <li>أهدأ ساعة (مثلاً: ١٣:٠٠)</li>
+                            <li>إجمالي سجلات الحضور المحللة</li>
+                            <li>عدد العطل الرسمية المستبعدة من التحليل</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+                <h3 class="section-title">📄 أقسام البيانات التفصيلية</h3>
+
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">🔺</span>
+                        <div>
+                            <strong>أعلى ٣ ساعات ذروة:</strong> أكثر ٣ ساعات ازدحاماً — لكل واحدة يظهر رقم الساعة بتنسيق مقروء (مثلاً ١٨:٠٠) وعدد مرات الحضور فيها.
+                            <br><span style="color: var(--accent-green);">🎨 مناسب للعرض كبطاقات ملونة أو مؤشرات بارزة.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">🔻</span>
+                        <div>
+                            <strong>أدنى ٣ ساعات حضوراً:</strong> أقل ٣ ساعات من حيث الحضور (مع استبعاد الساعات التي فيها صفر حضور). لكل واحدة نفس البيانات.
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">⏰</span>
+                        <div>
+                            <strong>التوزيع الساعي الكامل (٢٤ ساعة):</strong> قائمة من ٢٤ عنصراً (من الساعة ٠٠:٠٠ إلى ٢٣:٠٠) — كل عنصر فيه الساعة وعدد الحضور.
+                            <br><span style="color: var(--accent-green);">🎨 مثالي لرسم بياني شريطي أو خطي (تشارت) يوضح توزيع الحضور على مدار اليوم.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">📅</span>
+                        <div>
+                            <strong>التوزيع اليومي (٧ أيام):</strong> قائمة بأيام الأسبوع السبعة — لكل يوم يظهر: اسم اليوم بالعربي، عدد مرات الحضور، وهل هو يوم عطلة أسبوعية أم لا.
+                            <br><span style="color: var(--accent-green);">🎨 مثالي لرسم بياني دائري أو شريطي. أيام العطل يمكن تلوينها بلون مختلف.</span>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="note note-info">
+                    ℹ️ <strong>ملاحظة:</strong> العطل الأسبوعية (مثل الجمعة) والعطل الرسمية المسجلة يتم استبعادها تلقائياً من الحسابات حتى لا تشوّه النتائج.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- التقرير ٥: التجميد والإلغاء -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div id="report-5" class="report color-5">
+        <div class="report-head">
+            <h2>❄️❌ التقرير ٥: تقرير التجميد والإلغاء</h2>
+            <div class="report-purpose">
+                <strong>🎯 الهدف:</strong> هذا التقرير يركّز فقط على الاشتراكات المجمدة والملغاة — لماذا جُمّدت أو أُلغيت، متى حدث ذلك، وما تأثيرها المالي. مفيد لمعرفة أسباب خسارة العملاء والإيرادات المجمدة أو المفقودة.
+            </div>
+        </div>
+        <div class="report-body">
+
+            <div class="section">
+                <h3 class="section-title">📈 الملخص الإحصائي</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>📊 الأعداد</h4>
+                        <ul>
+                            <li>إجمالي السجلات</li>
+                            <li>عدد الاشتراكات المجمدة ❄️</li>
+                            <li>عدد الاشتراكات الملغاة ❌</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>💰 التأثير المالي</h4>
+                        <ul>
+                            <li>إجمالي إيرادات الاشتراكات المجمدة (مبالغ معلّقة)</li>
+                            <li>إجمالي الإيرادات المفقودة من الإلغاءات</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+                <h3 class="section-title">📄 ماذا يظهر لكل اشتراك مجمد أو ملغى؟</h3>
+
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">🏷️</span>
+                        <div><strong>الحالة:</strong> علامة واضحة توضح إذا كان الاشتراك مجمد ❄️ أو ملغى ❌ — بالعربي.</div>
+                    </li>
+                    <li>
+                        <span class="icon">👤</span>
+                        <div><strong>بيانات اللاعب:</strong> اسمه، رقم عضويته، رقم هاتفه، اسم الفرع.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📋</span>
+                        <div><strong>تفاصيل الاشتراك:</strong> اسم الخطة، نوعها، تواريخ البداية والنهاية.</div>
+                    </li>
+                    <li>
+                        <span class="icon">💰</span>
+                        <div><strong>المالية:</strong> المبلغ الإجمالي، المدفوع، المتبقي، وهل مدفوع بالكامل.</div>
+                    </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h4 style="margin-bottom: 1rem; color: #60a5fa;">❄️ تفاصيل إضافية للاشتراكات المجمدة فقط:</h4>
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">📅</span>
+                        <div><strong>تواريخ التجميد:</strong> تاريخ بداية التجميد، تاريخ النهاية المخطط، وتاريخ النهاية الفعلي (إذا انتهى التجميد). إذا كان لا يزال مجمداً، يكون تاريخ النهاية الفعلي فارغاً.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📝</span>
+                        <div><strong>سبب التجميد:</strong> النص المسجل كسبب للتجميد (مثلاً: سفر خارج البلاد). إذا لم يُسجل سبب يظهر "لا يوجد سبب مدون".</div>
+                    </li>
+                    <li>
+                        <span class="icon">🔵</span>
+                        <div><strong>هل لا يزال مجمداً؟</strong> مؤشر واضح (نعم/لا) يوضح إذا كان التجميد لا يزال سارياً.</div>
+                    </li>
+                </ul>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #f87171;">❌ تفاصيل إضافية للاشتراكات الملغاة فقط:</h4>
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">📅</span>
+                        <div><strong>تاريخ ووقت الإلغاء:</strong> متى تم إلغاء الاشتراك بالتحديد.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📝</span>
+                        <div><strong>سبب الإلغاء:</strong> السبب المسجل (مثلاً: رغبة العميل بالتوقف). إذا لم يُسجل سبب يظهر "لا يوجد سبب مدون".</div>
+                    </li>
+                    <li>
+                        <span class="icon">💬</span>
+                        <div><strong>ملاحظات إضافية:</strong> أي ملاحظات مرفقة بعملية الإلغاء.</div>
+                    </li>
+                </ul>
+
+                <div class="note note-tip">
+                    💡 <strong>اقتراح تصميمي:</strong> يمكن عرض المجمدين والملغيين في تبويبين منفصلين مع ألوان مختلفة (أزرق للتجميد، أحمر للإلغاء) لتسهيل التفريق البصري.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- التقرير ٦: حضور الورديات -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div id="report-6" class="report color-6">
+        <div class="report-head">
+            <h2>🌅 التقرير ٦: تقرير حضور الورديات وازدحامها</h2>
+            <div class="report-purpose">
+                <strong>🎯 الهدف:</strong> هذا التقرير يُظهر عدد اللاعبين الحاضرين في كل وردية (فترة زمنية محددة خلال اليوم) مع تحديد الوردية الأكثر والأقل ازدحاماً. مفيد لتخطيط توزيع الطاقم والموارد على فترات اليوم المختلفة.
+            </div>
+        </div>
+        <div class="report-body">
+
+            <div class="section">
+                <h3 class="section-title">📈 الملخص الإحصائي</h3>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>📊 أرقام عامة</h4>
+                        <ul>
+                            <li>وصف الفترة الزمنية المحللة (مثلاً: "من ٢٠٢٦-٠٧-٠١ إلى ٢٠٢٦-٠٧-٣١" أو "يوم ٢٠٢٦-٠٧-٣٠" أو "شهر ٢٠٢٦-٠٧")</li>
+                            <li>إجمالي مرات الحضور في كل الورديات</li>
+                            <li>عدد الورديات المحللة</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>🔥 أبرز النتائج</h4>
+                        <p>تظهر بطاقتان بارزتان:</p>
+                        <ul>
+                            <li><strong>الوردية الأكثر ازدحاماً:</strong> اسمها، اسم الفرع، عدد الحاضرين، ونسبة الازدحام</li>
+                            <li><strong>الوردية الأقل ازدحاماً:</strong> نفس البيانات</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section">
+                <h3 class="section-title">📄 ماذا يظهر لكل وردية؟</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">كل سطر/بطاقة في القائمة تمثّل وردية واحدة:</p>
+
+                <ul class="bullet-list">
+                    <li>
+                        <span class="icon">🏷️</span>
+                        <div><strong>معلومات الوردية:</strong> اسم الوردية (مثلاً: الوردية الصباحية)، اسم الفرع التابعة له.</div>
+                    </li>
+                    <li>
+                        <span class="icon">📅</span>
+                        <div><strong>التوقيت:</strong> اليوم المحدد بالعربي (مثلاً: الاثنين) أو "كل الأيام" إذا كانت الوردية يومية. وقت البداية والنهاية (مثلاً: ٠٦:٠٠ إلى ١٢:٠٠).</div>
+                    </li>
+                    <li>
+                        <span class="icon">👥</span>
+                        <div><strong>أرقام الحضور:</strong> إجمالي عدد مرات الحضور في هذه الوردية خلال الفترة المحددة، وعدد اللاعبين الفريدين (بدون تكرار — أي كم لاعب مختلف حضر).</div>
+                    </li>
+                    <li>
+                        <span class="icon">📊</span>
+                        <div><strong>نسبة الازدحام:</strong> نسبة مئوية توضح حصة هذه الوردية من إجمالي الحضور (مثلاً: ٤٠٪ من كل الحضور كان في هذه الوردية).</div>
+                    </li>
+                </ul>
+
+                <div class="note note-tip">
+                    💡 <strong>اقتراح تصميمي:</strong> يمكن عرض الورديات كبطاقات ملونة حسب نسبة الازدحام (أحمر = مزدحم جداً، أخضر = هادئ). ويمكن إضافة رسم بياني دائري يوضح نسب الازدحام بين الورديات.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- التذييل -->
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border-color); margin-top: 2rem;">
+        <p>📄 هذا الدليل مُعدّ خصيصاً لفريق التصميم — نظام النادي الرياضي</p>
+        <p>آخر تحديث: ٣١ يوليو ٢٠٢٦</p>
+    </div>
+
+</div>
+
+</body>
+</html>

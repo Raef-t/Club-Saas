@@ -4,18 +4,24 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class ActivityType extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['activities'];
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
         'name',
-        'branch_id',
         'is_active',
+        'is_session_based',
+        'has_unlimited_subscribers',
+        'has_shifts',
     ];
 
     /**
@@ -23,6 +29,9 @@ class ActivityType extends Model
      */
     protected $casts = [
         'is_active' => 'boolean',
+        'is_session_based' => 'boolean',
+        'has_unlimited_subscribers' => 'boolean',
+        'has_shifts' => 'boolean',
     ];
 
     /**
@@ -31,13 +40,5 @@ class ActivityType extends Model
     public function activities()
     {
         return $this->hasMany(Activity::class);
-    }
-
-    /**
-     * Get the branch that owns the activity type.
-     */
-    public function branch()
-    {
-        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class);
     }
 }

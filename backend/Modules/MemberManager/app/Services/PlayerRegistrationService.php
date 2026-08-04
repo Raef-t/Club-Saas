@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PlayerRegistrationService
 {
-    protected $subscriptionService;
+    protected SubscriptionService $subscriptionService;
 
     public function __construct(SubscriptionService $subscriptionService)
     {
@@ -24,7 +24,20 @@ class PlayerRegistrationService
     public function registerPlayer(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $branchId = $data['branch_id'] ?? 1;
+            $branchId = $data['branch_id'] ?? null;
+            if (!$branchId) {
+                /** @var \Modules\Authentication\Models\User|null $user */
+                $user = \Illuminate\Support\Facades\Auth::user();
+                if ($user && $user->person) {
+                    $staff = \Modules\StaffManager\Models\Staff::where('person_id', $user->person_id)->first();
+                    if ($staff && $staff->branches()->exists()) {
+                        $branchId = $staff->branches()->first()->id;
+                    }
+                }
+            }
+            if (!$branchId) {
+                throw new Exception(__('Branch is required. Please specify a branch.'));
+            }
             $branch = \Modules\ClubManager\Models\Branch::find($branchId);
             
             if ($branch && $branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $data['gender']) {
@@ -78,20 +91,25 @@ class PlayerRegistrationService
             // 5. Create Member
             $member = Member::create([
                 'person_id' => $person->id,
-                'branch_id' => $data['branch_id'] ?? 1, // Default to branch 1 if not provided
+                'branch_id' => $branchId,
                 'member_number' => $data['member_number'] ?? $this->generateMemberNumber(),
                 'membership_status' => 'active',
                 'join_date' => now(),
             ]);
 
             // 6. Create User Account automatically
+            $username = 'Mem-' . $person->id . '-' . strtolower(\Illuminate\Support\Str::random(6));
+            $password = 'password123';
             $user = User::create([
                 'person_id' => $person->id,
-                'username' => $member->member_number,
-                'password' => Hash::make('password123'),
+                'username' => $username,
+                'password' => Hash::make($password),
                 'is_active' => true,
                 'role' => 'player',
             ]);
+            
+            $member->generated_username = $username;
+            $member->generated_password = $password;
 
             // Assign spatie role if needed
             $user->assignRole('player');
@@ -107,7 +125,7 @@ class PlayerRegistrationService
         });
     }
 
-    public function updatePlayer($memberId, array $data)
+    public function updatePlayer(int $memberId, array $data)
     {
         return DB::transaction(function () use ($memberId, $data) {
             $member = Member::findOrFail($memberId);
@@ -116,14 +134,6 @@ class PlayerRegistrationService
             if (!$person) {
                 abort(404, 'لا يمكن تعديل العضو: لا يوجد سجل بيانات شخصية مرتبط بهذا العضو.');
             }
-            // Handle Photo Upload
-            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
-                if ($person->photo_url) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
-                }
-                $data['photo_url'] = $data['photo']->store('people/photos', 'public');
-            }
-
             // Update Person
             $personData = [];
             if (isset($data['first_name']) || isset($data['last_name'])) {
@@ -133,6 +143,7 @@ class PlayerRegistrationService
                 $personData['full_name'] = trim($firstName . ' ' . $lastName);
             }
             if (isset($data['gender'])) $personData['gender'] = $data['gender'];
+            if (array_key_exists('age', $data)) $personData['age'] = $data['age'];
             if (array_key_exists('dob', $data)) $personData['dob'] = $data['dob'];
             if (array_key_exists('address', $data)) $personData['address'] = $data['address'];
             if (isset($data['photo_url'])) $personData['photo_url'] = $data['photo_url'];
@@ -175,9 +186,33 @@ class PlayerRegistrationService
         });
     }
 
+    public function updateMemberPhoto(int $memberId, \Illuminate\Http\UploadedFile $photo)
+    {
+        return DB::transaction(function () use ($memberId, $photo) {
+            $member = Member::findOrFail($memberId);
+            $person = $member->person()->first();
+
+            if (!$person) {
+                abort(404, 'لا يمكن تعديل العضو: لا يوجد سجل بيانات شخصية مرتبط بهذا العضو.');
+            }
+
+            // Delete old photo if exists
+            if ($person->photo_url) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            }
+
+            $person->update([
+                'photo_url' => $photo->store('people/photos', 'public'),
+            ]);
+
+            $member->load('person.contacts', 'measurements', 'healthProfile');
+            return $member;
+        });
+    }
+
     private function generateMemberNumber(): string
     {
-        $lastMember = Member::latest('id')->first();
+        $lastMember = Member::lockForUpdate()->latest('id')->first();
         $nextId = $lastMember ? $lastMember->id + 1 : 1;
         return 'MEM-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
     }

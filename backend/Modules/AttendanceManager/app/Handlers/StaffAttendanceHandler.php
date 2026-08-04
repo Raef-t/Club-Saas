@@ -24,9 +24,12 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
      *  3. Create Attendance record (attendable_type='staff', attendable_id=staff_id).
      *  4. Fire StaffCheckedIn event.
      */
-    public function checkIn(int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null): Attendance
     {
-        return DB::transaction(function () use ($entityId, $clubId, $branchId, $metadata) {
+        return DB::transaction(function () use ($entityId, $branchId, $checkInAt) {
+
+            // 0. Lock staff row to prevent concurrent check-in
+            DB::table('staff')->where('id', $entityId)->lockForUpdate()->first();
 
             // 1. No double check-in
             $open = $this->findOpenAttendance($entityId);
@@ -42,10 +45,9 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
                 $attempt = new CheckInAttempt(
                     attendableType: 'staff',
                     attendableId: $entityId,
-                    clubId: $clubId,
+                    clubId: 1, // Optional: You can remove clubId from CheckInAttempt if it's no longer used
                     branchId: $branchId,
-                    timestamp: new \DateTimeImmutable(),
-                    metadata: $metadata,
+                    timestamp: new \DateTimeImmutable()
                 );
 
                 /** @var AttendanceDecision $decision */
@@ -54,23 +56,17 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
                 if (!$decision->isAllowed) {
                     throw new Exception($decision->rejectionReason);
                 }
-
-                // Merge policy context into metadata (role, employment_type, etc.)
-                $metadata = array_merge($metadata, $decision->context);
             }
 
-            $checkInAt = $metadata['check_in_at'] ?? now();
-            unset($metadata['check_in_at']);
+            $checkInTimestamp = $checkInAt ? \Carbon\Carbon::parse($checkInAt) : now();
 
             // 3. Create Attendance record
             $attendance = Attendance::create([
-                'club_id'         => $clubId,
                 'attendable_type' => 'staff',
                 'attendable_id'   => $entityId,
                 'branch_id'       => $branchId,
-                'check_in_at'     => $checkInAt,
+                'check_in_at'     => $checkInTimestamp,
                 'status'          => 'checked_in',
-                'metadata'        => $metadata,
             ]);
 
             event(new StaffCheckedIn($attendance));
@@ -124,11 +120,14 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
     /**
      * Return a history query for a given staff member.
      */
-    public function getHistory(int $entityId, ?string $from = null, ?string $to = null): Builder
+    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
         $query = Attendance::where('attendable_type', 'staff')
-            ->where('attendable_id', $entityId)
             ->orderByDesc('check_in_at');
+
+        if ($entityId) {
+            $query->where('attendable_id', $entityId);
+        }
 
         if ($from) {
             $query->whereDate('check_in_at', '>=', $from);

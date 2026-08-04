@@ -21,7 +21,6 @@ class UnifiedCheckInRequest extends FormRequest
             'check_in_at'     => ['nullable', 'date'],
             // Receptionist manually picks which subscription to deduct a session from
             'subscription_id' => ['nullable', 'integer'],
-            'metadata'        => ['nullable', 'array'],
         ];
     }
 }

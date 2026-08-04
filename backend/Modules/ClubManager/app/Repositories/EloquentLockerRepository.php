@@ -6,9 +6,19 @@ use Modules\ClubManager\Models\Locker;
 
 class EloquentLockerRepository implements LockerRepositoryInterface
 {
-    public function all()
+    public function all(array $filters = [])
     {
-        return Locker::with(['branch', 'facility'])->get();
+        $query = Locker::with(['branch']);
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->get();
     }
 
     public function find($id)

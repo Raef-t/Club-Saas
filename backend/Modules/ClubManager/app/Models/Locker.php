@@ -3,29 +3,29 @@
 namespace Modules\ClubManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Locker extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['reservations'];
+
+    public function reservations()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\LockerReservation::class, 'locker_id');
+    }
 
     protected $fillable = [
         'branch_id',
         'locker_number',
-        // Availability status: available | with_member | with_staff | with_guest
+        'key_number',
         'status',
-        // Polymorphic holder – who currently holds this key
-        'holder_id',    // ID of the member/staff record (null for guests)
-        'holder_type',  // 'member' | 'staff' | 'guest'
-        'holder_name',  // cached display name or raw guest name
-        'assigned_at',  // timestamp when the key was handed out
     ];
 
-    protected $casts = [
-        'assigned_at' => 'datetime',
-    ];
 
     // ──────────────────────────────────────────────────────────────────────────
     //  Relationships

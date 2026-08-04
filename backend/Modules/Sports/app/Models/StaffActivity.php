@@ -3,9 +3,12 @@
 namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StaffActivity extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'staff_activities';
 
     protected $fillable = [
@@ -20,5 +23,8 @@ class StaffActivity extends Model
         return $this->belongsTo(Activity::class);
     }
 
-    // staff_id resolved via Core contracts — no belongsTo(Staff::class)
+    public function staff()
+    {
+        return $this->belongsTo(\Modules\StaffManager\Models\Staff::class, 'staff_id');
+    }
 }

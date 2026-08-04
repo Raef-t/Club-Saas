@@ -31,7 +31,7 @@ class SubscriptionService
      */
     public function getAllSubscriptions(array $filters = [])
     {
-        $query = PlayerSubscription::query()->with(['plan']);
+        $query = PlayerSubscription::query()->with(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items']);
 
         if (!empty($filters['member_id'])) {
             $query->where('member_id', $filters['member_id']);
@@ -51,9 +51,7 @@ class SubscriptionService
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['coach_id'])) {
-            $query->where('coach_id', $filters['coach_id']);
-        }
+        // Note: coach_id filter removed — coach info is now derived from subscription_plan → plan_activities
 
         if (!empty($filters['start_date'])) {
             $query->where('start_date', '>=', $filters['start_date']);
@@ -89,29 +87,46 @@ class SubscriptionService
      */
     public function subscribeMember(int $memberId, int $planId, array $options = [])
     {
-        // 1. Load plan with activities and ensure it exists
-        $plan = $this->planRepository->find($planId);
-        $plan->load('planActivities');
+        return DB::transaction(function () use ($memberId, $planId, $options) {
+            // 1. Load and lock plan row inside transaction to prevent capacity overflow
+            $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planId)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $plan->load('planActivities');
 
-        return DB::transaction(function () use ($memberId, $plan, $options) {
-            // 2. Dates Calculation
-            $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
-            $endDate = null;
-
-            if ($plan->type === 'fixed_period' && $plan->duration_days) {
-                $endDate = $startDate->copy()->addDays($plan->duration_days);
+            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                throw new Exception(__('This subscription plan has reached its maximum capacity.'));
             }
 
-            // 3. Financials
+            $this->incrementPlanSubscribers($plan);
+
+
+            // 2. Financials & Dates Calculation
+            $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
+            $startDate = Carbon::parse($options['start_date']);
+            $endDate = isset($options['end_date']) && !empty($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+            if (!$endDate) {
+                if (!empty($options['duration_days'])) {
+                    $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
+                } else {
+                    $endDate = $startDate->copy()->addMonths($monthsCount);
+                }
+            }
             $totalAmount = $plan->base_price;
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
-            
+
             if ($paidAmount < $totalAmount) {
                 $memberDTO = $this->memberSharedService->getMemberById($memberId);
-                $branchId = $memberDTO->branchId ?? 1;
+                $branchId = $memberDTO->branchId;
+                if (!$branchId) {
+                    throw new Exception(__('Member does not belong to any branch.'));
+                }
                 $branch = \Modules\ClubManager\Models\Branch::find($branchId);
-                $clubId = $branch ? $branch->club_id : 1;
-                
+                if (!$branch) {
+                    throw new Exception(__('Branch not found.'));
+                }
+                $clubId = $branch->club_id;
+
                 $clubSetting = \Modules\ClubManager\Models\ClubSetting::where('club_id', $clubId)->first();
                 if ($clubSetting && !$clubSetting->allow_partial_payment) {
                     throw new Exception(__('Partial payments are not allowed for this club. Please pay the full amount.'));
@@ -123,37 +138,36 @@ class SubscriptionService
             // 4. Create Subscription
             $subscription = $this->subscriptionRepository->create([
                 'member_id' => $memberId,
-                'coach_id' => $options['coach_id'] ?? null,
                 'plan_id' => $plan->id,
+                'months_count' => $monthsCount,
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate ? $endDate->toDateString() : null,
-                'remaining_sessions' => $plan->session_count,
-                'status' => 'active',
+                'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
                 'notes' => $options['notes'] ?? null,
             ]);
 
-            // 5. Create Subscription Items
-            $requestedActivities = collect($options['activities'] ?? []);
-
+            // 5. Create Subscription Items (one item per plan activity)
+            // Activity & coach info is now derived from subscription_plan → plan_activities → staff_activity
             foreach ($plan->planActivities as $planActivity) {
-                // Find if the user provided a specific coach for this activity
-                $requestedActivity = $requestedActivities->firstWhere('activity_id', $planActivity->activity_id);
-                $coachId = $requestedActivity ? ($requestedActivity['coach_id'] ?? null) : null;
+                $sessionsAllocated = !is_null($plan->session_count)
+                    ? ($plan->session_count * $monthsCount)
+                    : null;
 
                 $subscription->items()->create([
-                    'activity_id' => $planActivity->activity_id,
-                    'coach_id' => $coachId,
-                    'sessions_allocated' => $planActivity->sessions_count,
-                    'is_unlimited' => $planActivity->is_unlimited,
+                    'sessions_allocated' => $sessionsAllocated,
+                    'is_unlimited' => is_null($plan->session_count),
                 ]);
             }
 
             // 6. Create Invoice
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branchId ?? 1;
+            $branchId = $memberDTO->branchId;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
                 'member_id' => $memberId,
@@ -206,38 +220,12 @@ class SubscriptionService
                 event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
 
-            // 8. Create Extra Services (including Lockers)
-            if (!empty($options['extra_services']) && is_array($options['extra_services'])) {
-                foreach ($options['extra_services'] as $serviceData) {
-                    $priceCharged = $serviceData['price_charged'] ?? 0;
-                    $lockerId = $serviceData['locker_id'] ?? null;
 
-                    if ($lockerId) {
-                        $locker = \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->first();
-                        if (!$locker) {
-                            throw new Exception(__('Selected locker not found.'));
-                        }
-                        if ($locker->status !== 'available') {
-                            throw new Exception(__('Locker :number is already rented.', ['number' => $locker->locker_number]));
-                        }
-
-                        \Illuminate\Support\Facades\DB::table('lockers')->where('id', $lockerId)->update([
-                            'status' => 'rented',
-                            'updated_at' => now(),
-                        ]);
-                    }
-
-                    $subscription->services()->create([
-                        'extra_service_id' => $serviceData['extra_service_id'],
-                        'price_charged' => $priceCharged,
-                        'start_date' => $startDate->toDateString(),
-                        'end_date' => $endDate ? $endDate->toDateString() : null,
-                        'locker_id' => $lockerId,
-                    ]);
-                }
-            }
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            // Dispatch SubscriptionCreated event so other modules (like StaffManager) can react
+            event(new \Modules\SubscriptionManager\Events\SubscriptionCreated($subscription, $plan));
 
             return $subscription;
         });
@@ -246,47 +234,58 @@ class SubscriptionService
     /**
      * Freeze a subscription.
      */
-    public function freezeSubscription(int $subscriptionId, string $startDate, string $endDate, ?string $reason = null)
+    public function freezeSubscription(int $subscriptionId, string $startDate, ?string $reason = null)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        return DB::transaction(function () use ($subscription, $startDate, $endDate, $reason) {
-            $plan = $subscription->plan;
+        return DB::transaction(function () use ($subscription, $startDate, $reason) {
+            $memberModel = \Modules\MemberManager\Models\Member::with('branch.settings')->find($subscription->member_id);
+            $allowFreeze = $memberModel?->branch?->settings?->allow_freeze ?? false;
 
-            if ($plan) {
-                // Validate max freeze count
-                if ($plan->max_freeze_count !== null) {
-                    $freezeCount = $subscription->freezes()->count();
-                    if ($freezeCount >= $plan->max_freeze_count) {
-                        throw new Exception(__('Freezing limit exceeded. This subscription plan allows at most :count freeze(s).', ['count' => $plan->max_freeze_count]));
-                    }
-                }
-
-                // Validate max freeze days
-                if ($plan->max_freeze_days !== null) {
-                    $requestedDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
-
-                    $previousFreezeDays = 0;
-                    foreach ($subscription->freezes as $freeze) {
-                        $end = $freeze->actual_end_date ?? $freeze->freeze_end_date;
-                        $previousFreezeDays += Carbon::parse($freeze->freeze_start_date)->diffInDays(Carbon::parse($end)) + 1;
-                    }
-
-                    if ($previousFreezeDays + $requestedDays > $plan->max_freeze_days) {
-                        throw new Exception(__('Total freezing days limit exceeded. This subscription plan allows at most :days days of freezing.', ['days' => $plan->max_freeze_days]));
-                    }
-                }
+            if (!$allowFreeze) {
+                throw new Exception(__('Freezing is not allowed in this branch.'));
             }
 
             $subscription->freezes()->create([
                 'freeze_start_date' => $startDate,
-                'freeze_end_date' => $endDate,
+                'freeze_end_date' => null,
                 'reason' => $reason,
             ]);
 
-            $subscription->update(['status' => 'frozen']);
+            $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value]);
+            // $this->decrementPlanSubscribers($subscription->plan);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            // إرسال إشعار التجميد
+            $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+            $userId = $member?->person?->user?->id;
+
+            if ($userId) {
+                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_frozen')->first();
+                if ($template) {
+                    $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+                    $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
+
+                    $startCarbon = \Carbon\Carbon::parse($startDate);
+
+                    $startDay = $startCarbon->locale('ar')->translatedFormat('l');
+
+                    $body = $template->parseBody([
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                        'تاريخ البداية' => $startDate,
+                        'يوم البداية' => $startDay,
+                    ]);
+
+                    app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+                        'title' => $template->subject ?? 'تم تجميد اشتراكك مؤقتاً ❄️',
+                        'body' => $body,
+                        'user_ids' => [$userId],
+                        'sender_type' => 'system'
+                    ]);
+                }
+            }
 
             return $subscription;
         });
@@ -308,7 +307,7 @@ class SubscriptionService
                 ? Carbon::parse($oldSubscription->end_date)
                 : now();
 
-            $options['coach_id'] = $options['coach_id'] ?? $oldSubscription->coach_id;
+            // coach_id is no longer stored per item; it is derived from the plan's planActivities
             $options['start_date'] = $startDate->toDateString();
 
             return $this->subscribeMember($oldSubscription->member_id, $plan->id, $options);
@@ -318,11 +317,13 @@ class SubscriptionService
     /**
      * Record a payment for a subscription.
      */
-    public function recordPayment(int $subscriptionId, float $amount)
+    public function recordPayment(int $subscriptionId, float $amount, array $options = [])
     {
-        $subscription = $this->subscriptionRepository->find($subscriptionId);
+        return DB::transaction(function () use ($subscriptionId, $amount, $options) {
+            $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::where('id', $subscriptionId)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return DB::transaction(function () use ($subscription, $amount) {
             $newPaidAmount = $subscription->paid_amount + $amount;
 
             if ($newPaidAmount > $subscription->total_amount) {
@@ -338,7 +339,10 @@ class SubscriptionService
             ]);
 
             $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
-            $branchId = $memberDTO->branchId ?? 1;
+            $branchId = $memberDTO->branchId;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
                 ['player_subscription_id' => $subscription->id],
@@ -410,32 +414,21 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        if ($subscription->status === 'cancelled') {
+        if ($subscription->status->value === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value) {
             throw new Exception(__('Subscription is already cancelled.'));
         }
 
         return DB::transaction(function () use ($subscription, $reason) {
             $subscription->update([
-                'status' => 'cancelled',
+                'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value,
                 'notes' => $subscription->notes
                     ? $subscription->notes . "\n" . __('Cancellation reason: ') . $reason
                     : __('Cancellation reason: ') . $reason,
             ]);
 
-            // Release any rented lockers tied to this subscription
-            $rentedLockerIds = $subscription->services()
-                ->whereNotNull('locker_id')
-                ->pluck('locker_id')
-                ->toArray();
+            $this->decrementPlanSubscribers($subscription->plan);
 
-            if (!empty($rentedLockerIds)) {
-                \Illuminate\Support\Facades\DB::table('lockers')
-                    ->whereIn('id', $rentedLockerIds)
-                    ->update([
-                        'status' => 'available',
-                        'updated_at' => now(),
-                    ]);
-            }
+
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -450,11 +443,20 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        if ($subscription->status !== 'frozen') {
+        if ($subscription->status->value !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
             throw new Exception(__('Subscription is not frozen.'));
         }
 
         return DB::transaction(function () use ($subscription) {
+            if ($subscription->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $subscription->plan_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($plan && $plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                    throw new Exception(__('لا يمكن فك التجميد لأن الخطة ممتلئة بالكامل حالياً.'));
+                }
+            }
+
             // Find the active freeze
             $activeFreeze = $subscription->freezes()
                 ->whereNull('actual_end_date')
@@ -465,20 +467,128 @@ class SubscriptionService
                 $freezeDays = Carbon::parse($activeFreeze->freeze_start_date)->diffInDays(now());
                 $activeFreeze->update(['actual_end_date' => now()]);
 
-                // Extend end_date by freeze duration
-                if ($subscription->end_date) {
-                    $subscription->update([
-                        'end_date' => Carbon::parse($subscription->end_date)->addDays($freezeDays),
-                    ]);
+                $newEndDate = $this->calculateUnfreezeEndDate($subscription, $freezeDays);
+                if ($newEndDate) {
+                    $subscription->update(['end_date' => $newEndDate]);
                 }
             }
 
-            $subscription->update(['status' => 'active']);
+            $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value]);
+            // $this->incrementPlanSubscribers($subscription->plan);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
+            $this->sendUnfreezeNotification($subscription);
+
             return $subscription;
         });
+    }
+
+    /**
+     * Calculate the new end date when unfreezing a subscription based on its plan type.
+     */
+    private function calculateUnfreezeEndDate(PlayerSubscription $subscription, int $freezeDays): ?string
+    {
+        $plan = $subscription->plan;
+
+        if ($plan && !is_null($plan->session_count)) {
+            return $this->calculateSessionBasedEndDate($subscription, $freezeDays);
+        }
+
+        return $subscription->end_date
+            ? Carbon::parse($subscription->end_date)->addDays($freezeDays)->format('Y-m-d')
+            : null;
+    }
+
+    /**
+     * Calculate end date for session-based plans by mapping remaining sessions to scheduled session template days.
+     */
+    private function calculateSessionBasedEndDate(PlayerSubscription $subscription, int $fallbackFreezeDays): ?string
+    {
+        $subscription->loadMissing(['items', 'plan.sessionTemplates']);
+
+        $remainingSessions = $subscription->items->sum(function ($item) {
+            return max(0, ($item->sessions_allocated ?? 0) - ($item->sessions_consumed ?? 0));
+        });
+
+        $sessionTemplates = $subscription->plan?->sessionTemplates->where('is_active', true) ?? collect();
+        $allowedDays = $sessionTemplates->pluck('day_of_week')->map(fn($d) => (int)$d)->unique()->all();
+
+        if (empty($allowedDays) || $remainingSessions <= 0) {
+            return $subscription->end_date
+                ? Carbon::parse($subscription->end_date)->addDays($fallbackFreezeDays)->format('Y-m-d')
+                : null;
+        }
+
+        // Fetch cancelled session dates from exceptions
+        $templateIds = $sessionTemplates->pluck('id')->toArray();
+        $cancelledDates = \Modules\Sports\Models\SessionException::whereIn('sport_session_template_id', $templateIds)
+            ->where('status', 'cancelled')
+            ->pluck('date')
+            ->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))
+            ->toArray();
+
+        $currentDate = now()->startOfDay();
+        $sessionsCounted = 0;
+        $calculatedEndDate = $currentDate->copy();
+
+        $maxSearchDays = 730; // Maximum 2 years search horizon to prevent infinite loops
+        $daysSearched = 0;
+
+        while ($sessionsCounted < $remainingSessions && $daysSearched < $maxSearchDays) {
+            $formattedDate = $currentDate->format('Y-m-d');
+
+            if (in_array($currentDate->dayOfWeek, $allowedDays, true) && !in_array($formattedDate, $cancelledDates, true)) {
+                $sessionsCounted++;
+                $calculatedEndDate = $currentDate->copy();
+            }
+
+            if ($sessionsCounted < $remainingSessions) {
+                $currentDate->addDay();
+            }
+
+            $daysSearched++;
+        }
+
+        return $calculatedEndDate->format('Y-m-d');
+    }
+
+    /**
+     * Send notification to member when subscription is unfrozen.
+     */
+    private function sendUnfreezeNotification(PlayerSubscription $subscription): void
+    {
+        $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+        $userId = $member?->person?->user?->id;
+
+        if (!$userId) {
+            return;
+        }
+
+        $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_unfrozen')->first();
+        if (!$template) {
+            return;
+        }
+
+        $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+        $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
+
+        $endDate = now();
+        $endDay = $endDate->locale('ar')->translatedFormat('l');
+
+        $body = $template->parseBody([
+            'اسم اللاعب' => $playerName,
+            'اسم الاشتراك' => $planName,
+            'تاريخ النهاية' => $endDate->toDateString(),
+            'يوم النهاية' => $endDay,
+        ]);
+
+        app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+            'title' => $template->subject ?? 'انتهاء فترة التجميد وتفعيل الاشتراك 🟢',
+            'body' => $body,
+            'user_ids' => [$userId],
+            'sender_type' => 'system'
+        ]);
     }
 
     /**
@@ -490,5 +600,174 @@ class SubscriptionService
             ->whereNotNull('end_date')
             ->whereBetween('end_date', [now(), now()->addDays($days)])
             ->get();
+    }
+
+    /**
+     * Subscribe a member to an offer, enrolling them in all included plans.
+     */
+    public function subscribeMemberToOffer(int $memberId, int $offerId, array $options = [])
+    {
+        $offer = \Modules\SubscriptionManager\Models\Offer::with(['plans.planActivities'])->findOrFail($offerId);
+
+        if (!$offer->is_active) {
+            throw new Exception(__('This offer is no longer active.'));
+        }
+
+        return DB::transaction(function () use ($memberId, $offer, $options) {
+            // Lock and check capacity for all plans inside transaction
+            foreach ($offer->plans as $planItem) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planItem->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                    throw new Exception(__('The plan :plan within this offer has reached its maximum capacity. Offer cannot be purchased.', ['plan' => $plan->name]));
+                }
+
+                $this->incrementPlanSubscribers($plan);
+            }
+
+            $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
+
+            $totalAmount = (float) $offer->price;
+            $paidAmount = isset($options['paid_amount']) ? (float) $options['paid_amount'] : $totalAmount;
+            $remainingAmount = max(0, $totalAmount - $paidAmount);
+
+            // Fetch member details for financials
+            $memberDTO = $this->memberSharedService->getMemberById($memberId);
+            $branchId = $memberDTO->branchId;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
+
+            // Create Invoice linked to Offer
+            $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
+                'member_id' => $memberId,
+                'branch_id' => $branchId,
+                'offer_id' => $offer->id,
+                'player_subscription_id' => null,
+                'total' => $totalAmount,
+                'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
+            ]);
+
+            $createdSubscriptions = collect();
+
+            $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
+
+            // Create individual PlayerSubscriptions for each plan in the offer
+            foreach ($offer->plans as $plan) {
+                $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+                if (!$endDate && !empty($options['duration_days'])) {
+                    $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
+                }
+
+                $subscription = $this->subscriptionRepository->create([
+                    'member_id' => $memberId,
+                    'plan_id' => $plan->id,
+                    'months_count' => $monthsCount,
+                    'offer_id' => $offer->id,
+                    'total_amount' => 0, // Zero because it's part of the offer
+                    'paid_amount' => 0,
+                    'remaining_amount' => 0,
+                    'start_date' => $startDate->toDateString(),
+                    'end_date' => $endDate ? $endDate->toDateString() : null,
+                    'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
+                    'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
+                ]);
+
+                // One item per plan activity; activity & coach derived from plan_activities → staff_activity
+                foreach ($plan->planActivities as $planActivity) {
+                    $sessionsAllocated = !is_null($plan->session_count)
+                        ? ($plan->session_count * $monthsCount)
+                        : null;
+
+                    $subscription->items()->create([
+                        'sessions_allocated' => $sessionsAllocated,
+                        'is_unlimited' => is_null($plan->session_count),
+                    ]);
+                }
+
+                $createdSubscriptions->push($subscription);
+            }
+
+            // Record Payment if paid_amount > 0
+            if ($paidAmount > 0) {
+                if (($options['payment_method'] ?? 'cash') === 'wallet') {
+                    $walletService = app(\Modules\WalletManager\Services\WalletService::class);
+                    $walletService->pay(
+                        $memberDTO->personId,
+                        $paidAmount,
+                        'Offer Payment for Invoice #' . $invoice->id,
+                        \Modules\SubscriptionManager\Models\Invoice::class,
+                        $invoice->id
+                    );
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => null,
+                        'amount' => $paidAmount,
+                        'payment_method' => 'wallet',
+                        'status' => 'completed',
+                    ]);
+                } else {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                        ->where('branch_id', $branchId)
+                        ->value('default_safe_id');
+
+                    if (!$safeId) {
+                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                            ->where('branch_id', $branchId)
+                            ->value('id');
+                    }
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => $safeId,
+                        'amount' => $paidAmount,
+                        'payment_method' => $options['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+                }
+
+                event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
+            }
+
+            return [
+                'invoice' => $invoice,
+                'subscriptions' => $createdSubscriptions
+            ];
+        });
+    }
+
+    /**
+     * Increment plan subscribers and mark as completed if full.
+     */
+    public function incrementPlanSubscribers($plan)
+    {
+        if ($plan && $plan->max_subscribers > 0) {
+            $plan->increment('current_subscribers');
+            if ($plan->current_subscribers >= $plan->max_subscribers) {
+                $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
+            }
+        }
+    }
+
+    /**
+     * Decrement plan subscribers and mark as active if space opens up from completed state.
+     */
+    public function decrementPlanSubscribers($plan)
+    {
+        if ($plan && $plan->max_subscribers > 0) {
+            if ($plan->current_subscribers > 0) {
+                $plan->decrement('current_subscribers');
+            }
+            $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
+                ? $plan->status->value
+                : $plan->status;
+
+            if ($statusValue === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value && $plan->current_subscribers < $plan->max_subscribers) {
+                $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
+            }
+        }
     }
 }

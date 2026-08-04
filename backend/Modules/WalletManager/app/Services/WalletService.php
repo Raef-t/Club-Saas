@@ -5,12 +5,13 @@ namespace Modules\WalletManager\Services;
 use Modules\WalletManager\Repositories\WalletRepositoryInterface;
 use Modules\WalletManager\Repositories\WalletTransactionRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Exception;
 
 class WalletService
 {
-    protected $walletRepository;
-    protected $transactionRepository;
+    protected WalletRepositoryInterface $walletRepository;
+    protected WalletTransactionRepositoryInterface $transactionRepository;
 
     public function __construct(
         WalletRepositoryInterface $walletRepository,
@@ -31,15 +32,15 @@ class WalletService
 
         return DB::transaction(function () use ($personId, $amount, $description) {
             $wallet = $this->walletRepository->findOrCreateForPerson($personId);
-            
+
             $this->walletRepository->updateBalance($wallet->id, $amount);
-            
+
             $transaction = $this->transactionRepository->logTransaction([
                 'wallet_id' => $wallet->id,
                 'amount' => $amount,
                 'type' => 'deposit',
                 'description' => $description,
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             return [
@@ -59,8 +60,8 @@ class WalletService
         }
 
         return DB::transaction(function () use ($personId, $amount, $description, $refType, $refId) {
-            $wallet = $this->walletRepository->findByPersonId($personId);
-            
+            $wallet = $this->walletRepository->findByPersonIdForUpdate($personId);
+
             if (!$wallet || $wallet->balance < $amount) {
                 throw new Exception(__('Insufficient wallet balance.'));
             }
@@ -68,9 +69,9 @@ class WalletService
             if (!$wallet->isActive()) {
                 throw new Exception(__('Wallet is inactive.'));
             }
-            
+
             $this->walletRepository->updateBalance($wallet->id, -$amount);
-            
+
             $transaction = $this->transactionRepository->logTransaction([
                 'wallet_id' => $wallet->id,
                 'amount' => -$amount,
@@ -78,7 +79,7 @@ class WalletService
                 'reference_type' => $refType,
                 'reference_id' => $refId,
                 'description' => $description,
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             return [

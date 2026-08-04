@@ -4,19 +4,23 @@ namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 use Modules\Core\Traits\HasCreatedBy;
 
 class Invoice extends Model
 {
-    use HasFactory, HasCreatedBy;
+    use HasFactory, HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['payments'];
 
     protected $table = 'invoices';
 
     protected $fillable = [
-        'code',
         'member_id',
         'branch_id',
         'player_subscription_id',
+        'offer_id',
         'total',
         'status',
     ];
@@ -24,16 +28,6 @@ class Invoice extends Model
     protected static function boot()
     {
         parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->code)) {
-                $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
-                while (static::where('code', $code)->exists()) {
-                    $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
-                }
-                $model->code = $code;
-            }
-        });
     }
 
     protected $casts = [
@@ -49,6 +43,11 @@ class Invoice extends Model
     public function subscription()
     {
         return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id');
+    }
+
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class, 'offer_id');
     }
 
     public function payments()

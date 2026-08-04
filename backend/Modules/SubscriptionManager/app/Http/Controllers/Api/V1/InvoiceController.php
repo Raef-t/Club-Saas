@@ -97,7 +97,6 @@ class InvoiceController extends BaseController
         if (isset($user->person_id)) {
             return DB::table('members')
                 ->where('person_id', $user->person_id)
-                ->whereNull('deleted_at')
                 ->first();
         }
 

@@ -4,10 +4,14 @@ namespace Modules\Authentication\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Person extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['contacts', 'user', 'wallet', 'member', 'staff'];
 
     protected $table = 'people';
 
@@ -56,6 +60,14 @@ class Person extends Model
     }
 
     /**
+     * Get the person's full name using camelCase property (fullName).
+     */
+    public function getFullNameAttribute()
+    {
+        return $this->attributes['full_name'] ?? null;
+    }
+
+    /**
      * Prepare photo_url for frontend by prepending storage/
      */
     public function getPhotoUrlAttribute($value)
@@ -70,5 +82,15 @@ class Person extends Model
     public function wallet()
     {
         return $this->hasOne(\Modules\WalletManager\Models\Wallet::class, 'person_id');
+    }
+
+    public function member()
+    {
+        return $this->hasOne(\Modules\MemberManager\Models\Member::class, 'person_id');
+    }
+
+    public function staff()
+    {
+        return $this->hasOne(\Modules\StaffManager\Models\Staff::class, 'person_id');
     }
 }

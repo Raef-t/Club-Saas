@@ -144,19 +144,19 @@ class ClubController extends BaseController
 
     #[OA\Delete(
         path: '/v1/clubs/{id}',
-        summary: '🗑️ حذف النادي',
-        description: 'حذف النادي بالكامل من النظام.',
+        summary: '🗑️ حذف النادي (Soft Delete)',
+        description: 'حذف النادي ناعماً من النظام مع كافّة فروعه ومرافقه وأعضائه واشتراكاته متتابعاً.',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم الحذف بنجاح',
+        description: '✅ تم حذف النادي وسجلاته التابعة ناعماً بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Deleted successfully'),
+                new OA\Property(property: 'message', type: 'string', example: 'Club deleted successfully'),
                 new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
             ]
         )
@@ -166,6 +166,32 @@ class ClubController extends BaseController
     public function destroy($id)
     {
         $this->service->delete($id);
-        return $this->successResponse(null, 'Deleted successfully');
+        return $this->successResponse(null, __('Club deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/clubs/{id}/restore',
+        summary: '♻️ استرجاع النادي المحذوف',
+        description: 'استرجاع النادي المحذوف ناعماً وكافّة فروعه ومرافقه وسجلاته التابعة تلقائياً.',
+        tags: ['Club Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع النادي وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Club restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على النادي المحذوف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    public function restore($id)
+    {
+        $this->service->restore($id);
+        return $this->successResponse(null, __('Club restored successfully'));
     }
 }

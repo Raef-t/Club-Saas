@@ -4,11 +4,23 @@ namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 use Modules\Authentication\Models\Person;
 
 class Member extends Model
 {
-    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = [
+        'healthProfile',
+        'measurements',
+        'unavailabilities',
+        'subscriptions',
+        'evaluations',
+        'invoices',
+        'attendances',
+        'lockerReservations',
+    ];
 
     protected $fillable = [
         'branch_id',
@@ -22,8 +34,6 @@ class Member extends Model
     protected $casts = [
         'join_date' => 'date',
     ];
-
-
 
     public function person()
     {
@@ -45,9 +55,29 @@ class Member extends Model
         return $this->hasMany(MemberMeasurement::class);
     }
 
+    public function evaluations()
+    {
+        return $this->hasMany(MemberEvaluation::class);
+    }
+
     public function subscriptions()
     {
         return $this->hasMany(\Modules\SubscriptionManager\Models\PlayerSubscription::class, 'member_id');
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\Invoice::class, 'member_id');
+    }
+
+    public function attendances()
+    {
+        return $this->morphMany(\Modules\AttendanceManager\Models\Attendance::class, 'attendable');
+    }
+
+    public function lockerReservations()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\LockerReservation::class, 'member_id');
     }
 
     /**

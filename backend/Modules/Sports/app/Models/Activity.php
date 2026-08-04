@@ -4,10 +4,14 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Activity extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, CascadeSoftDeletes;
+
+    protected array $cascadeDeletes = ['commissionRules'];
 
     /**
      * The attributes that are mass assignable.
@@ -17,9 +21,7 @@ class Activity extends Model
         'description',
         'branch_id',
         'activity_type_id',
-        'default_capacity',
         'is_private_equipment',
-        'gender_allowed',
         'is_active',
         'session_price',
         'exercises_count',
@@ -48,4 +50,11 @@ class Activity extends Model
     {
         return $this->belongsTo(\Modules\ClubManager\Models\Branch::class);
     }
+
+    public function commissionRules()
+    {
+        return $this->hasMany(StaffCommissionRule::class, 'activity_id');
+    }
+
 }
+

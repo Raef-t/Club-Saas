@@ -18,6 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $roles = [
             'super_admin',
             'admin',
+            'management_admin',
             'coach',
             'player',
             'accountant',

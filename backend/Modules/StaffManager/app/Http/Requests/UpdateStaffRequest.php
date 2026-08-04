@@ -13,6 +13,14 @@ class UpdateStaffRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+        if ($this->has('first_name') || $this->has('last_name')) {
+            $firstName = $this->first_name ?? '';
+            $lastName = $this->last_name ?? '';
+            $this->merge([
+                'full_name' => trim($firstName . ' ' . $lastName)
+            ]);
+        }
+
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
                 'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',') 
@@ -20,16 +28,23 @@ class UpdateStaffRequest extends FormRequest
                     : [$this->branch_ids]
             ]);
         }
+
+        if ($this->has('is_active')) {
+            $this->merge([
+                'is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
     }
 
     public function rules(): array
     {
         return [
-            // ── Personal Details ─────────────────────────────────
+            // ── Personal Details (people table) ──────────────────
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
             'full_name' => 'nullable|string|max:200',
             'country_code' => 'nullable|string|max:5',
-            'phone_number' => 'nullable|string',
-            'email' => 'nullable|email',
+            'phone_number' => 'required|string',
             'gender' => 'nullable|in:male,female',
             'dob' => 'nullable|date',
             'national_id' => 'nullable|string|max:50',
@@ -47,22 +62,24 @@ class UpdateStaffRequest extends FormRequest
             'how_did_you_hear' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
 
-            // ── Staff Details ────────────────────────────────────
-            'role' => 'nullable|in:admin,receptionist,coach,cleaner,manager,staff',
-            'employment_type' => 'nullable|in:fixed_salary,commission_based,hybrid',
+            // ── Staff Details (staff table) ──────────────────────
+            'role' => 'required|in:admin,management_admin,receptionist,coach,cleaner,manager,staff',
+            'employment_type' => 'required|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
-            'branch_ids' => 'nullable|array',
+            'branch_ids' => 'required|array',
             'branch_ids.*' => 'exists:branches,id',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'contract_type' => 'nullable|in:probation,permanent',
-            'shift_type' => 'nullable|string|max:50',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
             'work_type' => 'nullable|in:part_time,full_time',
             'work_status' => 'nullable|in:active,suspended,on_leave',
-            'other_tasks' => 'nullable|string|max:500',
+            'is_active' => 'nullable|boolean',
+            'shifts' => 'nullable|array',
+            'shifts.*' => 'exists:branch_shifts,id',
 
-            // ── Coach Details (only applies when staff is a coach) ──
-            'specialization' => 'nullable|string|max:100',
+            // ── Coach Details (coach_details table, only when role=coach) ──
+            'specialization' => 'nullable|required_if:role,coach|string|max:100',
             'bio' => 'nullable|string|max:2000',
             'experience_years' => 'nullable|integer|min:0',
             'payment_type' => 'nullable|string|max:50',
@@ -70,6 +87,14 @@ class UpdateStaffRequest extends FormRequest
             'default_commission_rate' => 'nullable|numeric|min:0|max:100',
             'working_hours_per_week' => 'nullable|numeric|min:0',
             'gym_type' => 'nullable|in:male,female,mixed',
+
+            // ── Certifications (coach_certifications table) ──────
+            'certifications' => 'nullable|array',
+            'certifications.*.name' => 'required_with:certifications|string|max:200',
+            'certifications.*.issuer' => 'nullable|string|max:200',
+            'certifications.*.issue_date' => 'nullable|date',
+            'certifications.*.expiry_date' => 'nullable|date|after_or_equal:certifications.*.issue_date',
+            'certifications.*.document_url' => 'nullable|string|max:255',
         ];
     }
 }
