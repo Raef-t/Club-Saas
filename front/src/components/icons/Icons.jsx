@@ -588,7 +588,12 @@ export function SettingsIcon({ className = "size-5" }) {
 export function SortIcon({ direction, className = "size-3.5" }) {
   if (direction === "asc") {
     return (
-      <svg className={`${className} text-app-yellow`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <svg
+        className={`${className} text-app-yellow`}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
         <path d="M12 5l-5 5h10l-5-5z" fill="currentColor" />
         <path d="M12 19V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
@@ -596,17 +601,45 @@ export function SortIcon({ direction, className = "size-3.5" }) {
   }
   if (direction === "desc") {
     return (
-      <svg className={`${className} text-app-yellow`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <svg
+        className={`${className} text-app-yellow`}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
         <path d="M12 19l5-5H7l5 5z" fill="currentColor" />
         <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     );
   }
   return (
-    <svg className={`${className} text-app-muted-light/40 group-hover:text-app-muted-light transition-colors`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      className={`${className} text-app-muted-light/40 group-hover:text-app-muted-light transition-colors`}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path d="M8 9l4-4 4 4H8z" fill="currentColor" />
       <path d="M8 15l4 4 4-4H8z" fill="currentColor" />
     </svg>
   );
 }
 
+export function DatabaseIcon({ className = "size-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+    </svg>
+  );
+}

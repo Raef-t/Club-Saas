@@ -61,8 +61,7 @@ function hasTrustedOrigin(request) {
   const publicHost =
     getFirstHeaderValue(request, "x-forwarded-host") || getFirstHeaderValue(request, "host");
   const publicProtocol =
-    getFirstHeaderValue(request, "x-forwarded-proto") ||
-    request.nextUrl.protocol.replace(/:$/, "");
+    getFirstHeaderValue(request, "x-forwarded-proto") || request.nextUrl.protocol.replace(/:$/, "");
   const allowedOrigins = new Set([request.nextUrl.origin]);
 
   if (publicHost && publicProtocol) {
@@ -146,8 +145,9 @@ async function proxyBackendRequest(request, context) {
   try {
     const response = await fetch(upstreamUrl, init);
     const responseContentType = response.headers.get("content-type") || "application/json";
+    const normalizedResponseContentType = responseContentType.toLowerCase();
 
-    if (responseContentType.toLowerCase().includes("text/event-stream") && response.body) {
+    if (normalizedResponseContentType.includes("text/event-stream") && response.body) {
       return new Response(response.body, {
         status: response.status,
         headers: {
@@ -160,7 +160,11 @@ async function proxyBackendRequest(request, context) {
       });
     }
 
-    let body = await response.text();
+    const isBinaryResponse =
+      normalizedResponseContentType.includes("zip") ||
+      normalizedResponseContentType.includes("octet-stream") ||
+      normalizedResponseContentType.includes("pdf");
+    let body = isBinaryResponse ? await response.arrayBuffer() : await response.text();
     let sessionToken = null;
 
     if (pathName === "auth/login" && response.ok) {

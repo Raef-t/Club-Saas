@@ -49,4 +49,23 @@ describe("backend proxy streaming", () => {
     expect(new TextDecoder().decode(firstChunk.value)).toBe(event);
     await reader.cancel();
   });
+
+  it("forwards binary responses without converting them to text", async () => {
+    const binaryPayload = new Uint8Array([0, 37, 80, 68, 70, 255]);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(binaryPayload, {
+        headers: { "Content-Type": "application/pdf" },
+      }),
+    );
+    const request = new NextRequest("http://localhost/api/backend/reports/export", {
+      headers: { Authorization: "Bearer test-token" },
+    });
+
+    const response = await GET(request, {
+      params: Promise.resolve({ path: ["reports", "export"] }),
+    });
+
+    expect(response.headers.get("content-type")).toBe("application/pdf");
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(binaryPayload);
+  });
 });
