@@ -14565,11 +14565,9 @@
                                         "type": "string",
                                         "example": "500000000"
                                     },
-                                    "national_id": {
-                                        "description": "الرقم الوطني",
+                                    "country_code": {
                                         "type": "string",
-                                        "example": "1234567890",
-                                        "nullable": true
+                                        "example": "+966"
                                     },
                                     "address": {
                                         "description": "العنوان",
@@ -15112,12 +15110,6 @@
                                     "phone_number": {
                                         "type": "string",
                                         "example": "500000000"
-                                    },
-                                    "national_id": {
-                                        "description": "الرقم الوطني",
-                                        "type": "string",
-                                        "example": "1234567890",
-                                        "nullable": true
                                     },
                                     "address": {
                                         "description": "العنوان",

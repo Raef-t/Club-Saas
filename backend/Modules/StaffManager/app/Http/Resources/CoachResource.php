@@ -61,15 +61,16 @@ class CoachResource extends JsonResource
             
             // Relations
             'person'         => $this->person ? [
-                'id'          => $this->person->id,
-                'full_name'   => $this->person->full_name,
-                'gender'      => $this->person->gender,
-                'age'         => $this->person->age,
-                'dob'         => $this->person->dob,
-                'national_id' => $this->person->national_id,
-                'address'     => $this->person->address,
-                'photo_url'   => $this->person->photo_url,
-                'email'       => $this->person->email,
+                'id'           => $this->person->id,
+                'full_name'    => $this->person->full_name,
+                'gender'       => $this->person->gender,
+                'age'          => $this->person->age,
+                'dob'          => $this->person->dob,
+                'address'      => $this->person->address,
+                'photo_url'    => $this->person->photo_url,
+                'email'        => $this->person->email,
+                'phone_number' => $this->person->contacts->where('name', 'Personal')->first()?->phone_number,
+                'country_code' => $this->person->contacts->where('name', 'Personal')->first()?->country_code,
             ] : null,
             'username'       => $this->user ? $this->user->username : null,
             'details'        => $detail ? [

@@ -48,18 +48,18 @@ class CoachService
                 'gender'    => $data['gender'] ?? null,
                 'age'       => $data['age'] ?? null,
                 'dob'       => $data['dob'] ?? null,
-                'national_id'=> $data['national_id'] ?? null,
                 'address'   => $data['address'] ?? null,
                 'photo_url' => $photoUrl,
             ]);
 
             // 1.5 Create Person Contact
-            if (!empty($data['phone_number'])) {
+            if (!empty($data['phone_number']) || !empty($data['country_code'])) {
                 PersonContact::create([
                     'person_id'    => $person->id,
                     'name'         => 'Personal',
                     'relation'     => 'self',
-                    'phone_number' => $data['phone_number'],
+                    'phone_number' => $data['phone_number'] ?? null,
+                    'country_code' => $data['country_code'] ?? null,
                 ]);
             }
 
@@ -204,7 +204,7 @@ class CoachService
             // Update Person Info
             $person = $staff->person;
             if ($person) {
-                $personFillable = ['gender', 'age', 'dob', 'national_id', 'address'];
+                $personFillable = ['gender', 'age', 'dob', 'address'];
                 $personData = array_intersect_key($data, array_flip($personFillable));
 
                 if (isset($data['first_name']) || isset($data['last_name'])) {
@@ -218,18 +218,20 @@ class CoachService
                 }
 
                 // Update Person Contact
-                if (isset($data['phone_number'])) {
+                if (isset($data['phone_number']) || isset($data['country_code'])) {
                     $contact = $person->contacts()->where('name', 'Personal')->first();
                     if ($contact) {
-                        $contact->update([
-                            'phone_number' => $data['phone_number'],
-                        ]);
+                        $contactData = [];
+                        if (isset($data['phone_number'])) $contactData['phone_number'] = $data['phone_number'];
+                        if (isset($data['country_code'])) $contactData['country_code'] = $data['country_code'];
+                        $contact->update($contactData);
                     } else {
                         PersonContact::create([
                             'person_id'    => $person->id,
                             'name'         => 'Personal',
                             'relation'     => 'self',
-                            'phone_number' => $data['phone_number'],
+                            'phone_number' => $data['phone_number'] ?? null,
+                            'country_code' => $data['country_code'] ?? null,
                         ]);
                     }
                 }
