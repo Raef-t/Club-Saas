@@ -89,6 +89,13 @@ class CoachResource extends JsonResource
             'activities'     => ActivityResource::collection($this->activities),
             'experience_years'       => $detail?->experience_years,
             'work_types'     => $detail?->work_types,
+            'shifts'         => $this->shifts->map(fn($shift) => [
+                'id'              => $shift->id,
+                'branch_shift_id' => $shift->branch_shift_id,
+                'name'            => $shift->branchShift?->name,
+                'start_time'      => $shift->branchShift?->start_time,
+                'end_time'        => $shift->branchShift?->end_time,
+            ]),
         ];
     }
 }
