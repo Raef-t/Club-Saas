@@ -14,8 +14,6 @@ class Staff extends Model
         'coachDetail',
         'contracts',
         'shifts',
-        'unavailabilities',
-        'leaves',
         'commissionRules',
         'payslips',
         'attendances',
@@ -79,17 +77,6 @@ class Staff extends Model
     public function branches()
     {
         return $this->belongsToMany(\Modules\ClubManager\Models\Branch::class, 'staff_branches', 'staff_id', 'branch_id');
-    }
-
-    public function unavailabilities()
-    {
-        return $this->hasMany(StaffUnavailability::class);
-    }
-
-
-    public function leaves()
-    {
-        return $this->hasMany(StaffLeave::class);
     }
 
 

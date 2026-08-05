@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Modules\StaffManager\Models\Staff;
 use Modules\StaffManager\Models\CoachDetail;
-use Modules\StaffManager\Models\CoachCertification;
 use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\PersonContact;
 use Modules\Authentication\Models\User;
@@ -309,82 +308,6 @@ class CoachService
 
             return $this->getSingleCoach($staff->id);
         });
-    }
-
-    public function assignActivities($id, array $activityIds)
-    {
-        $staff = Staff::where('role', 'coach')->with('activeContract')->findOrFail($id);
-        $employmentType = $staff->activeContract?->employment_type ?? 'fixed_salary';
-
-        $activities = \Modules\Sports\Models\Activity::with('activityType')->whereIn('id', $activityIds)->get();
-
-        foreach ($activities as $activity) {
-            $isSessionBased = (bool) ($activity->activityType?->is_session_based ?? false);
-
-            if ($employmentType === 'fixed_salary' && $isSessionBased) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'activity_ids' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
-                ]);
-            }
-
-            if ($employmentType === 'commission_based' && !$isSessionBased) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'activity_ids' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
-                ]);
-            }
-        }
-
-        // syncWithoutDetaching avoids duplicates and keeps existing associations
-        $staff->activities()->syncWithoutDetaching($activityIds);
-
-        return $staff->fresh(['activities']);
-    }
-
-    /**
-     * Remove an activity from a coach.
-     */
-    public function removeActivity($id, $activityId)
-    {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        $staff->activities()->detach($activityId);
-
-        return true;
-    }
-
-    /**
-     * Upload and save a certification for a coach.
-     */
-    public function uploadCertification($id, array $data)
-    {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        $coachDetail = $staff->coachDetail;
-
-        if (!$coachDetail) {
-            throw new \Exception("Coach details not found.");
-        }
-
-        $documentUrl = null;
-        if (isset($data['file']) && $data['file'] instanceof \Illuminate\Http\UploadedFile) {
-            $path = $data['file']->store('coach_certifications', 'public');
-            $documentUrl = $path;
-        } elseif (isset($data['document_url'])) {
-            $documentUrl = $data['document_url'];
-        }
-
-        if (!$documentUrl) {
-            throw new \Exception("A document file or URL is required.");
-        }
-
-        $certification = CoachCertification::create([
-            'coach_detail_id' => $coachDetail->id,
-            'name'            => $data['name'],
-            'issuer'          => $data['issuer'] ?? null,
-            'issue_date'      => $data['issue_date'] ?? null,
-            'expiry_date'     => $data['expiry_date'] ?? null,
-            'document_url'    => $documentUrl,
-        ]);
-
-        return $certification;
     }
 
     /**

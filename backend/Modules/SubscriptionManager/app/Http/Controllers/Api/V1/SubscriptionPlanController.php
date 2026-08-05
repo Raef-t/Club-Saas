@@ -22,7 +22,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans',
         summary: '📋 عرض جميع خطط الاشتراك',
         description: 'استرجاع قائمة بجميع خطط الاشتراك المتوفرة في النادي.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
@@ -89,7 +89,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/registration',
         summary: '📋 عرض خطط الاشتراك المتاحة للتسجيل',
         description: 'استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
@@ -133,7 +133,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans',
         summary: '➕ إنشاء خطة اشتراك جديدة',
         description: 'إنشاء خطة اشتراك جديدة يمكن للأعضاء الاشتراك بها.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -216,7 +216,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{subscription_plan}',
         summary: '🔍 تفاصيل خطة الاشتراك',
         description: 'استرجاع تفاصيل خطة اشتراك محددة.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -260,7 +260,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{subscription_plan}',
         summary: '📝 تعديل خطة الاشتراك',
         description: 'تحديث بيانات ومميزات خطة اشتراك.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -342,7 +342,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{subscription_plan}/delete-check',
         summary: '🔍 فحص معلومات ومخاطر حذف خطة الاشتراك',
         description: 'استرجاع التقرير والاشتراكات والمدربين المرتبطين بالخطة لتنبيه وتخيير المستخدم قبل تنفيذ الحذف.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -389,7 +389,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{subscription_plan}',
         summary: '🗑️ حذف خطة الاشتراك (Soft Delete)',
         description: 'حذف خطة الاشتراك ناعماً من النظام مع خيارات حسم الاشتراكات النشطة وفك إرتباط وحذف المدربين المحددين.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -435,7 +435,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{id}/restore',
         summary: '♻️ استرجاع خطة اشتراك محذوفة',
         description: 'استرجاع خطة الاشتراك المحذوفة ناعماً وكافّة أنشطتها وقوالب جلساتها تلقائياً.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]

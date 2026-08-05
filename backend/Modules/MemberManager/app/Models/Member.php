@@ -14,7 +14,6 @@ class Member extends Model
     protected array $cascadeDeletes = [
         'healthProfile',
         'measurements',
-        'unavailabilities',
         'subscriptions',
         'evaluations',
         'invoices',
@@ -99,11 +98,6 @@ class Member extends Model
     public function getIsActiveAttribute(): bool
     {
         return $this->membership_status === 'active';
-    }
-
-    public function unavailabilities()
-    {
-        return $this->hasMany(PlayerUnavailability::class);
     }
 
     public function getTotalSubscriptionsAmountAttribute()
