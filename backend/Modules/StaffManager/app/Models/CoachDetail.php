@@ -8,9 +8,8 @@ use Modules\Core\Traits\CascadeSoftDeletes;
 
 class CoachDetail extends Model
 {
-    use SoftDeletes, CascadeSoftDeletes;
+    use SoftDeletes;
 
-    protected array $cascadeDeletes = ['certifications'];
     protected $table = 'coach_details';
 
     protected $fillable = [
@@ -33,13 +32,5 @@ class CoachDetail extends Model
     public function staff()
     {
         return $this->belongsTo(Staff::class);
-    }
-
-    /**
-     * Coach's certifications.
-     */
-    public function certifications()
-    {
-        return $this->hasMany(CoachCertification::class);
     }
 }

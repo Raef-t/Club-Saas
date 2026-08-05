@@ -4781,6 +4781,377 @@
                 ]
             }
         },
+        "/v1/permissions": {
+            "get": {
+                "tags": [
+                    "Permissions"
+                ],
+                "summary": "📋 جلب قائمة الصلاحيات",
+                "description": "يجلب جميع الصلاحيات المتاحة في النظام، مع إمكانية الفلترة حسب الموديول.",
+                "operationId": "getPermissionsList",
+                "parameters": [
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "description": "فلترة حسب اسم الموديول (مثال: member, staff, subscription)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "member"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الصلاحيات بنجاح"
+                    },
+                    "401": {
+                        "description": "🔒 غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/roles": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "📋 جلب قائمة الأدوار",
+                "description": "يجلب جميع الأدوار المتاحة في النظام مع صلاحياتها.",
+                "operationId": "getRolesList",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الأدوار بنجاح"
+                    },
+                    "401": {
+                        "description": "🔒 غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "➕ إنشاء دور جديد",
+                "description": "ينشئ دوراً جديداً في النظام.",
+                "operationId": "createRole",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "اسم الدور (حروف صغيرة وشرطة سفلية فقط)",
+                                        "type": "string",
+                                        "example": "member_manager"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء الدور بنجاح"
+                    },
+                    "422": {
+                        "description": "❌ خطأ في البيانات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/roles/{id}": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "🔍 عرض تفاصيل دور محدد",
+                "description": "GET /v1/roles/{id}\nShow role details with all its permissions.",
+                "operationId": "getRoleDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "🗑️ حذف دور",
+                "description": "يحذف دوراً من النظام. لا يمكن حذف الأدوار المحمية (super_admin, admin).",
+                "operationId": "deleteRole",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الدور بنجاح"
+                    },
+                    "403": {
+                        "description": "🚫 لا يمكن حذف دور محمي"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/roles/{id}/permissions": {
+            "put": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "🔄 تعيين صلاحيات لدور (Sync)",
+                "description": "يستبدل جميع صلاحيات الدور بالقائمة الجديدة المرسلة (sync).",
+                "operationId": "syncRolePermissions",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "permissions"
+                                ],
+                                "properties": {
+                                    "permissions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "member.view-any",
+                                            "member.create",
+                                            "member.update"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث صلاحيات الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    },
+                    "422": {
+                        "description": "❌ صلاحية غير موجودة في النظام"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{userId}/roles": {
+            "get": {
+                "tags": [
+                    "User Roles"
+                ],
+                "summary": "👤 جلب أدوار وصلاحيات مستخدم محدد",
+                "description": "يجلب الأدوار والصلاحيات المعينة لمستخدم معين.",
+                "operationId": "getUserRoles",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب بيانات المستخدم بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ المستخدم غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "User Roles"
+                ],
+                "summary": "➕ تعيين دور لمستخدم",
+                "description": "يعين دوراً لمستخدم معين.",
+                "operationId": "assignRoleToUser",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "role"
+                                ],
+                                "properties": {
+                                    "role": {
+                                        "description": "اسم الدور المراد تعيينه للمستخدم",
+                                        "type": "string",
+                                        "example": "member_manager"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعيين الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ المستخدم أو الدور غير موجود"
+                    },
+                    "422": {
+                        "description": "❌ خطأ في البيانات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "User Roles"
+                ],
+                "summary": "➖ إزالة دور من مستخدم",
+                "description": "يزيل دوراً من مستخدم معين.",
+                "operationId": "revokeRoleFromUser",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "role"
+                                ],
+                                "properties": {
+                                    "role": {
+                                        "type": "string",
+                                        "example": "member_manager"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إزالة الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ المستخدم غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/branches": {
             "get": {
                 "tags": [
@@ -9245,187 +9616,6 @@
                 ]
             }
         },
-        "/v1/me/preferences": {
-            "get": {
-                "tags": [
-                    "Member Management"
-                ],
-                "summary": "⚙️ عرض التفضيلات الشخصية",
-                "description": "استرجاع التفضيلات الحالية للمستخدم (مثل: لغة العرض، والإشعارات).",
-                "operationId": "c522a59c7b3dde934b851ff26f00d364",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع التفضيلات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Preferences retrieved successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "language": {
-                                                    "type": "string",
-                                                    "example": "ar"
-                                                },
-                                                "notifications_enabled": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Member Management"
-                ],
-                "summary": "✏️ تحديث التفضيلات",
-                "description": "تعديل تفضيلات المستخدم الخاصة بالتطبيق.",
-                "operationId": "1452ba3afa7515ff00dfd45be1685106",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "language": {
-                                        "type": "string",
-                                        "example": "en"
-                                    },
-                                    "notifications_enabled": {
-                                        "type": "boolean",
-                                        "example": false
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "✅ تم التحديث بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Preferences updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الملف الشخصي غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/member/dashboard": {
             "get": {
                 "tags": [
@@ -10904,361 +11094,6 @@
                     },
                     "404": {
                         "description": "🚫 العضو غير موجود في سلة المحذوفات"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/members/{member}/unavailabilities": {
-            "get": {
-                "tags": [
-                    "Member Management"
-                ],
-                "summary": "🗓️ عرض أوقات عدم التفرغ للعضو",
-                "description": "استرجاع قائمة بأوقات عدم التفرغ (الإجازات، الغياب، الإصابات) الخاصة بعضو محدد.",
-                "operationId": "df056be21e14b8dec6c2343668c32475",
-                "parameters": [
-                    {
-                        "name": "member",
-                        "in": "path",
-                        "description": "معرف العضو",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع البيانات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Player unavailabilities retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "start_date": {
-                                                        "type": "string",
-                                                        "format": "date",
-                                                        "example": "2023-10-10"
-                                                    },
-                                                    "end_date": {
-                                                        "type": "string",
-                                                        "format": "date",
-                                                        "example": "2023-10-15"
-                                                    },
-                                                    "reason": {
-                                                        "type": "string",
-                                                        "example": "إجازة مرضية"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Member Management"
-                ],
-                "summary": "➕ إضافة وقت عدم تفرغ جديد",
-                "description": "إضافة فترة زمنية يكون فيها العضو غير متفرغ أو غائبًا.",
-                "operationId": "fd53d3433a6875902ddd2ec89d17cf80",
-                "parameters": [
-                    {
-                        "name": "member",
-                        "in": "path",
-                        "description": "معرف العضو",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "start_date",
-                                    "end_date",
-                                    "reason"
-                                ],
-                                "properties": {
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-10-10"
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-10-15"
-                                    },
-                                    "reason": {
-                                        "type": "string",
-                                        "example": "إجازة مرضية"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم الإضافة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Player unavailability created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/members/{member}/unavailabilities/{unavailability}": {
-            "delete": {
-                "tags": [
-                    "Member Management"
-                ],
-                "summary": "🗑️ حذف وقت عدم التفرغ",
-                "description": "حذف فترة عدم تفرغ سابقة خاصة بالعضو.",
-                "operationId": "f089f6f0ba944c6135f87aa1a6ce7f33",
-                "parameters": [
-                    {
-                        "name": "member",
-                        "in": "path",
-                        "description": "معرف العضو",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "unavailability",
-                        "in": "path",
-                        "description": "معرف فترة عدم التفرغ",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 5
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم الحذف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Player unavailability deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الفترة لا تنتمي لهذا العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unavailability does not belong to this member"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على الفترة أو العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
                     }
                 },
                 "security": [
@@ -15652,726 +15487,6 @@
                 ]
             }
         },
-        "/v1/coaches/{id}/activities": {
-            "get": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Get Coach Activities",
-                "description": "Returns all activities associated with a specific coach, including full activity details.",
-                "operationId": "e43054398edeea2bb040154003140015",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of activities retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "error": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Assign Activities to Coach",
-                "description": "Assign multiple activities to a coach.",
-                "operationId": "094ae0ced17fb5ec66d2f5a34949c6cb",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "activity_ids"
-                                ],
-                                "properties": {
-                                    "activity_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Activities assigned successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/CoachResource"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activities assigned successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Conflict occurred."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "❌ خطأ في التحقق - لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية."
-                                        },
-                                        "errors": {
-                                            "type": "object",
-                                            "example": {
-                                                "activity_ids": [
-                                                    "لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية."
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while assigning activities."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/activities/{activityId}": {
-            "delete": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Remove Activity from Coach",
-                "operationId": "8ad2d7116180bd50fd3abc927d83c118",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "activityId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Activity removed successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activity removed successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach or Activity not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while removing the activity."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/certifications": {
-            "get": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Get Coach Certifications",
-                "operationId": "b49d26ba19914a7e3cbe997294853f59",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of certifications",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Certifications retrieved successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while retrieving certifications."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Upload Coach Certification",
-                "description": "Upload a certification or provide a document URL for a coach.",
-                "operationId": "0ff0a7adbef39ae67a27400df2b422b6",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "name"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "issuer": {
-                                        "type": "string"
-                                    },
-                                    "issue_date": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "expiry_date": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "file": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "document_url": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Certification uploaded successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Certification uploaded successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Please provide either a file or a document_url"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation errors",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while uploading certification."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/coaches/{id}/restore": {
             "post": {
                 "tags": [
@@ -16495,311 +15610,6 @@
                 "responses": {
                     "200": {
                         "description": "Schedule updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/shifts": {
-            "get": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Get Coach Shifts",
-                "description": "Returns all shifts assigned to a specific coach.",
-                "operationId": "2d9187b57a76242e145c5caada8d3a0e",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of shifts retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "error": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Add a single Shift to Coach",
-                "description": "Assigns a single specific shift to a coach on a specific date.",
-                "operationId": "deaa2a84dbf022b936280c4c77c24288",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "branch_shift_id",
-                                    "date"
-                                ],
-                                "properties": {
-                                    "branch_shift_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-11-01"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Shift created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation errors (e.g., invalid branch_shift_id)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The selected branch shift id is invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object",
-                                            "example": {
-                                                "branch_shift_id": [
-                                                    "The selected branch shift id is invalid."
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/shifts/{shiftId}": {
-            "put": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Update Coach Shift",
-                "description": "Updates a specific assigned shift for a coach.",
-                "operationId": "683f2aa91c06c313d300a965aaf75808",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "shiftId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-11-02"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Shift updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Remove Coach Shift",
-                "description": "Removes a specific shift assigned to a coach.",
-                "operationId": "bfcec81bdf4e3466722f8615b28b643d",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "shiftId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Shift deleted successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -19142,240 +17952,6 @@
                 ]
             }
         },
-        "/v1/staff/{staff}/unavailabilities": {
-            "get": {
-                "tags": [
-                    "Staff Unavailability"
-                ],
-                "summary": "📅 عرض أوقات عدم توفر الموظف",
-                "description": "استرجاع جميع فترات غياب وعدم توفر الموظف للعمل.",
-                "operationId": "86e99faf45524bc5411cd502b3a18087",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الفترات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Staff Unavailability"
-                ],
-                "summary": "➕ إضافة فترة عدم توفر",
-                "description": "تسجيل فترة زمنية يكون فيها الموظف غير متاح للعمل.",
-                "operationId": "ef68a8e9d2dca107bd8abe748c398fc5",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "start_datetime",
-                                    "end_datetime"
-                                ],
-                                "properties": {
-                                    "start_datetime": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-11-01 09:00:00"
-                                    },
-                                    "end_datetime": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-11-01 17:00:00"
-                                    },
-                                    "reason": {
-                                        "type": "string",
-                                        "example": "إجازة مرضية"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم إضافة الفترة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/staff/{staff}/unavailabilities/{unavailability}": {
-            "delete": {
-                "tags": [
-                    "Staff Unavailability"
-                ],
-                "summary": "🗑️ حذف فترة عدم التوفر",
-                "description": "إزالة فترة مسجلة لعدم توفر الموظف.",
-                "operationId": "e964ddb18a1db499142b96a6c6d5e09c",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "unavailability",
-                        "in": "path",
-                        "description": "معرف الفترة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "✅ تم الحذف بنجاح"
-                    },
-                    "404": {
-                        "description": "🚫 الفترة غير موجودة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/my-invoices": {
             "get": {
                 "tags": [
@@ -19477,7 +18053,7 @@
         "/v1/offers": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "👥 عرض الباقات/العروض",
                 "description": "استرجاع قائمة بجميع العروض المتاحة. يمكن التصفية حسب الفرع.",
@@ -19579,7 +18155,7 @@
             },
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "➕ إضافة عرض جديد",
                 "description": "إنشاء عرض جديد وربطه بعدة خطط.",
@@ -19695,7 +18271,7 @@
         "/v1/offers/{id}": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "🔍 تفاصيل العرض",
                 "description": "استرجاع تفاصيل العرض المحددة.",
@@ -19797,7 +18373,7 @@
             },
             "put": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "✏️ تحديث العرض",
                 "description": "تحديث بيانات العرض والخطط المرتبطة به.",
@@ -19910,7 +18486,7 @@
         "/v1/offers/{offer}": {
             "delete": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "🗑️ حذف العرض",
                 "description": "حذف العرض من النظام. لا يمكن حذفه إذا كان هناك أعضاء اشتركوا من خلاله.",
@@ -20020,7 +18596,7 @@
         "/v1/offers/{id}/subscribe": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "📝 اشتراك في عرض",
                 "description": "اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط التابعة للعرض).",
@@ -20129,7 +18705,7 @@
         "/v1/player-subscriptions": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "👥 عرض اشتراكات الأعضاء",
                 "description": "استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.",
@@ -20204,7 +18780,7 @@
             },
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "➕ تسجيل اشتراك جديد لعضو",
                 "description": "إنشاء اشتراك جديد لعضو محدد في خطة معينة.",
@@ -20367,7 +18943,7 @@
         "/v1/player-subscriptions/{player_subscription}": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🔍 تفاصيل الاشتراك",
                 "description": "استرجاع تفاصيل اشتراك عضو محدد مع تجميداته.",
@@ -20461,7 +19037,7 @@
         "/v1/player-subscriptions/{id}/freeze": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "❄️ تجميد الاشتراك",
                 "description": "إيقاف الاشتراك مؤقتاً لعضو.",
@@ -20602,7 +19178,7 @@
         "/v1/player-subscriptions/{id}/unfreeze": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🔓 إلغاء تجميد الاشتراك",
                 "description": "إعادة تفعيل الاشتراك بعد تجميده.",
@@ -20720,7 +19296,7 @@
         "/v1/player-subscriptions/{id}/renew": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🔄 تجديد الاشتراك",
                 "description": "تجديد اشتراك العضو في نفس الخطة أو خطة جديدة.",
@@ -20854,7 +19430,7 @@
         "/v1/player-subscriptions/{id}/cancel": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "❌ إلغاء الاشتراك",
                 "description": "إنهاء اشتراك عضو قبل موعد انتهائه.",
@@ -20988,7 +19564,7 @@
         "/v1/player-subscriptions/{id}/payment": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "💳 تسجيل دفعة مالية",
                 "description": "تسجيل دفعة مالية جديدة على اشتراك العضو.",
@@ -21125,7 +19701,7 @@
         "/v1/player-subscriptions/{id}": {
             "delete": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🗑️ حذف اشتراك متدرب (Soft Delete)",
                 "description": "حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.",
@@ -21160,7 +19736,7 @@
         "/v1/player-subscriptions/{id}/restore": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "♻️ استرجاع اشتراك محذوف",
                 "description": "استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.",
@@ -21670,7 +20246,7 @@
         "/v1/subscription-plans": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "📋 عرض جميع خطط الاشتراك",
                 "description": "استرجاع قائمة بجميع خطط الاشتراك المتوفرة في النادي.",
@@ -21808,7 +20384,7 @@
             },
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "➕ إنشاء خطة اشتراك جديدة",
                 "description": "إنشاء خطة اشتراك جديدة يمكن للأعضاء الاشتراك بها.",
@@ -22034,7 +20610,7 @@
         "/v1/subscription-plans/registration": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "📋 عرض خطط الاشتراك المتاحة للتسجيل",
                 "description": "استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.",
@@ -22102,7 +20678,7 @@
         "/v1/subscription-plans/{subscription_plan}": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "🔍 تفاصيل خطة الاشتراك",
                 "description": "استرجاع تفاصيل خطة اشتراك محددة.",
@@ -22230,7 +20806,7 @@
             },
             "put": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "📝 تعديل خطة الاشتراك",
                 "description": "تحديث بيانات ومميزات خطة اشتراك.",
@@ -22476,7 +21052,7 @@
             },
             "delete": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "🗑️ حذف خطة الاشتراك (Soft Delete)",
                 "description": "حذف خطة الاشتراك ناعماً من النظام مع خيارات حسم الاشتراكات النشطة وفك إرتباط وحذف المدربين المحددين.",
@@ -22591,7 +21167,7 @@
         "/v1/subscription-plans/{subscription_plan}/delete-check": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "🔍 فحص معلومات ومخاطر حذف خطة الاشتراك",
                 "description": "استرجاع التقرير والاشتراكات والمدربين المرتبطين بالخطة لتنبيه وتخيير المستخدم قبل تنفيذ الحذف.",
@@ -22685,7 +21261,7 @@
         "/v1/subscription-plans/{id}/restore": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "♻️ استرجاع خطة اشتراك محذوفة",
                 "description": "استرجاع خطة الاشتراك المحذوفة ناعماً وكافّة أنشطتها وقوالب جلساتها تلقائياً.",
@@ -25301,32 +23877,6 @@
                 },
                 "type": "object"
             },
-            "StorePlayerUnavailabilityRequest": {
-                "title": "StorePlayerUnavailabilityRequest",
-                "required": [
-                    "day_of_week",
-                    "start_time",
-                    "end_time"
-                ],
-                "properties": {
-                    "day_of_week": {
-                        "description": "0 for Sunday, 6 for Saturday",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "start_time": {
-                        "type": "string",
-                        "format": "time",
-                        "example": "09:00:00"
-                    },
-                    "end_time": {
-                        "type": "string",
-                        "format": "time",
-                        "example": "12:00:00"
-                    }
-                },
-                "type": "object"
-            },
             "MemberResource": {
                 "title": "Member Resource",
                 "description": "Member resource representation",
@@ -25631,6 +24181,18 @@
     },
     "tags": [
         {
+            "name": "Permissions",
+            "description": "عرض وإدارة صلاحيات النظام"
+        },
+        {
+            "name": "Roles",
+            "description": "إدارة الأدوار (Roles) وتعيين الصلاحيات لها"
+        },
+        {
+            "name": "User Roles",
+            "description": "تعيين وإدارة أدوار المستخدمين"
+        },
+        {
             "name": "Audit Logs",
             "description": "إدارة وسجلات التدقيق والأحداث في النظام والعمليات التي تمت على البيانات"
         },
@@ -25779,20 +24341,24 @@
             "description": "Staff Shifts"
         },
         {
-            "name": "Staff Unavailability",
-            "description": "Staff Unavailability"
-        },
-        {
             "name": "Invoices & Payments",
             "description": "Invoices & Payments"
         },
         {
-            "name": "Subscription Management",
-            "description": "Subscription Management"
+            "name": "Offers",
+            "description": "Offers"
+        },
+        {
+            "name": "Player Subscriptions",
+            "description": "Player Subscriptions"
         },
         {
             "name": "Subscription Plan Activities",
             "description": "Subscription Plan Activities"
+        },
+        {
+            "name": "Subscription Plans",
+            "description": "Subscription Plans"
         },
         {
             "name": "WalletManager",

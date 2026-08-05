@@ -16,11 +16,6 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('staff/{id}/restore', [StaffController::class, 'restore']);
     Route::post('staff/{id}/photo', [StaffController::class, 'updatePhoto']);
 
-    // Staff Unavailabilities
-    Route::get('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'index']);
-    Route::post('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'store']);
-    Route::delete('staff/{staff}/unavailabilities/{unavailability}', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'destroy']);
-
 
     // Payroll & Payslips
     Route::post('payroll-runs/{id}/generate-payslips', [PayrollController::class, 'generatePayslips']);
@@ -39,16 +34,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
         Route::get('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'show']);
         Route::patch('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'update']);
         Route::post('/{id}/photo', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updatePhoto']);
-        Route::post('/{id}/activities', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'assignActivities']);
-        Route::get('/{id}/activities', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'getActivities']);
-        Route::delete('/{id}/activities/{activityId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeActivity']);
-        Route::post('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'uploadCertification']);
-        Route::get('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'getCertifications']);
         Route::post('/{id}/schedule', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'setSchedule']);
-        Route::get('/{id}/shifts', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'getShifts']);
-        Route::post('/{id}/shifts', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'addShift']);
-        Route::put('/{id}/shifts/{shiftId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updateShift']);
-        Route::delete('/{id}/shifts/{shiftId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeShift']);
         Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
         Route::post('/{id}/restore', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'restore']);
     });

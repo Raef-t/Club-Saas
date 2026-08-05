@@ -29,7 +29,7 @@ class OfferController extends BaseController
         path: '/v1/offers',
         summary: '👥 عرض الباقات/العروض',
         description: 'استرجاع قائمة بجميع العروض المتاحة. يمكن التصفية حسب الفرع.',
-        tags: ['Subscription Management'],
+        tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(
@@ -86,7 +86,7 @@ class OfferController extends BaseController
         path: '/v1/offers',
         summary: '➕ إضافة عرض جديد',
         description: 'إنشاء عرض جديد وربطه بعدة خطط.',
-        tags: ['Subscription Management'],
+        tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -145,7 +145,7 @@ class OfferController extends BaseController
         path: '/v1/offers/{id}',
         summary: '🔍 تفاصيل العرض',
         description: 'استرجاع تفاصيل العرض المحددة.',
-        tags: ['Subscription Management'],
+        tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(
@@ -201,7 +201,7 @@ class OfferController extends BaseController
         path: '/v1/offers/{id}',
         summary: '✏️ تحديث العرض',
         description: 'تحديث بيانات العرض والخطط المرتبطة به.',
-        tags: ['Subscription Management'],
+        tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(
@@ -259,7 +259,7 @@ class OfferController extends BaseController
         path: '/v1/offers/{offer}',
         summary: '🗑️ حذف العرض',
         description: 'حذف العرض من النظام. لا يمكن حذفه إذا كان هناك أعضاء اشتركوا من خلاله.',
-        tags: ['Subscription Management'],
+        tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'offer', in: 'path', required: true, description: 'معرف العرض', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -307,7 +307,7 @@ class OfferController extends BaseController
         path: '/v1/offers/{id}/subscribe',
         summary: '📝 اشتراك في عرض',
         description: 'اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط التابعة للعرض).',
-        tags: ['Subscription Management'],
+        tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(

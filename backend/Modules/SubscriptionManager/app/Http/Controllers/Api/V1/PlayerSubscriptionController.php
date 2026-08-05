@@ -31,7 +31,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions',
         summary: '👥 عرض اشتراكات الأعضاء',
         description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -69,7 +69,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions',
         summary: '➕ تسجيل اشتراك جديد لعضو',
         description: 'إنشاء اشتراك جديد لعضو محدد في خطة معينة.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -133,7 +133,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{player_subscription}',
         summary: '🔍 تفاصيل الاشتراك',
         description: 'استرجاع تفاصيل اشتراك عضو محدد مع تجميداته.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'player_subscription', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -174,7 +174,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/freeze',
         summary: '❄️ تجميد الاشتراك',
         description: 'إيقاف الاشتراك مؤقتاً لعضو.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -231,7 +231,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/unfreeze',
         summary: '🔓 إلغاء تجميد الاشتراك',
         description: 'إعادة تفعيل الاشتراك بعد تجميده.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -272,7 +272,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/renew',
         summary: '🔄 تجديد الاشتراك',
         description: 'تجديد اشتراك العضو في نفس الخطة أو خطة جديدة.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك الحالي', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -324,7 +324,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/cancel',
         summary: '❌ إلغاء الاشتراك',
         description: 'إنهاء اشتراك عضو قبل موعد انتهائه.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -375,7 +375,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/payment',
         summary: '💳 تسجيل دفعة مالية',
         description: 'تسجيل دفعة مالية جديدة على اشتراك العضو.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -427,7 +427,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}',
         summary: '🗑️ حذف اشتراك متدرب (Soft Delete)',
         description: 'حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -444,7 +444,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/restore',
         summary: '♻️ استرجاع اشتراك محذوف',
         description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
