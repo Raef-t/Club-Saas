@@ -47,7 +47,6 @@ class UpdateCoachRequest extends FormRequest
             'age'                     => ['nullable', 'integer', 'min:18', 'max:100'],
             'dob'                     => ['nullable', 'date'],
             'phone_number'            => ['nullable', 'string', 'max:20'],
-            'country_code'            => ['nullable', 'string', 'max:5'],
             'national_id'             => ['nullable', 'string', 'max:20'],
             'address'                 => ['nullable', 'string', 'max:500'],
 
