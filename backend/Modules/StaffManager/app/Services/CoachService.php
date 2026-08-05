@@ -60,7 +60,6 @@ class CoachService
                     'name'         => 'Personal',
                     'relation'     => 'self',
                     'phone_number' => $data['phone_number'],
-                    'country_code' => $data['country_code'] ?? null,
                 ]);
             }
 
@@ -224,7 +223,6 @@ class CoachService
                     if ($contact) {
                         $contact->update([
                             'phone_number' => $data['phone_number'],
-                            'country_code' => $data['country_code'] ?? $contact->country_code,
                         ]);
                     } else {
                         PersonContact::create([
@@ -232,7 +230,6 @@ class CoachService
                             'name'         => 'Personal',
                             'relation'     => 'self',
                             'phone_number' => $data['phone_number'],
-                            'country_code' => $data['country_code'] ?? null,
                         ]);
                     }
                 }
