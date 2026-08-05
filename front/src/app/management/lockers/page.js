@@ -9,10 +9,11 @@ export const metadata = {
 
 export default async function LockersPage() {
   const { token } = await verifySession();
-  const [lockers, branches, members] = await Promise.all([
+  const [lockers, branches, members, staff] = await Promise.all([
     requestBackend("lockers", { token }),
     requestBackend("branches", { token }),
     requestBackend("members", { token }),
+    requestBackend("staff", { token }),
   ]);
 
   return (
@@ -21,6 +22,7 @@ export default async function LockersPage() {
         lockers,
         branches,
         members,
+        staff,
       }}
     />
   );

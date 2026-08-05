@@ -79,7 +79,7 @@ export function useSubscriptions({ initialData } = {}) {
       const member = subscription.member || {};
       const person = member.person || {};
       const plan = subscription.plan || {};
-      const planName = plan.name?.ar || plan.name?.en || "";
+      const planName = typeof plan.name === "string" ? plan.name : (plan.name?.ar || plan.name?.en || "");
       const matchesStatus = status === "all" || subscription.status === status;
       const matchesSearch =
         !normalizedSearch ||

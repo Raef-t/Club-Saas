@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
-import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+import { useGetStaffQuery } from "@/lib/api/staffApi";
 import { ATTENDANCE_SCAN_MODES } from "./attendanceConstants";
 import {
   createAttendanceBranchOptions,
@@ -64,11 +64,10 @@ export function useAttendance({ initialBranches } = {}) {
   const [manualCheckIn, { isLoading: isManualCheckingIn }] = useManualCheckInMutation();
   const [manualCheckOut, { isLoading: isManualCheckingOut }] = useManualCheckOutMutation();
   const [bulkCheckOut, { isLoading: isBulkCheckingOut }] = useBulkCheckOutMutation();
-  const [rollbackAttendance, { isLoading: isRollingBack }] =
-    useRollbackAttendanceMutation();
+  const [rollbackAttendance, { isLoading: isRollingBack }] = useRollbackAttendanceMutation();
   const peopleQueryParams = branchId ? { branch_id: branchId } : {};
   const { currentData: attendanceMembersResponse } = useGetMembersQuery(peopleQueryParams);
-  const { currentData: attendanceStaffResponse } = useGetCoachesQuery(peopleQueryParams);
+  const { currentData: attendanceStaffResponse } = useGetStaffQuery(peopleQueryParams);
   const attendanceHistoryParams = useMemo(
     () => ({
       attendable_type: attendanceTypeFilter,
@@ -113,12 +112,7 @@ export function useAttendance({ initialBranches } = {}) {
         members: attendanceMembersResponse,
         staff: attendanceStaffResponse,
       }),
-    [
-      activeMember,
-      attendanceHistoryResponse,
-      attendanceMembersResponse,
-      attendanceStaffResponse,
-    ],
+    [activeMember, attendanceHistoryResponse, attendanceMembersResponse, attendanceStaffResponse],
   );
   const playerSubscriptions = useMemo(
     () => createAttendanceSubscriptions(memberSubscriptionsResponse),

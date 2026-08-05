@@ -219,13 +219,14 @@ export function DailyScheduleTable({ sessions }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[700px] border-separate border-spacing-y-2 text-right text-sm">
+      <table className="w-full min-w-[820px] border-separate border-spacing-y-2 text-right text-sm">
         <thead className="text-xs text-app-muted-light">
           <tr>
             <th className="px-4 pb-1 font-medium">الوقت</th>
             <th className="px-4 pb-1 font-medium">الحصة أو الفعالية</th>
             <th className="px-4 pb-1 font-medium">المدرب</th>
             <th className="px-4 pb-1 font-medium">الفرع</th>
+            <th className="px-4 pb-1 font-medium">اللاعبون الحاضرون</th>
             <th className="px-4 pb-1 font-medium">الحالة</th>
           </tr>
         </thead>
@@ -243,6 +244,19 @@ export function DailyScheduleTable({ sessions }) {
               <td className="px-4 py-3 text-app-text">{session.title}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.coach}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.branch}</td>
+              <td className="px-4 py-3">
+                {session.presentPlayersCount === null ? (
+                  <span
+                    className="inline-block h-6 w-20 animate-pulse rounded-lg bg-app-line-soft"
+                    role="status"
+                    aria-label="جاري تحميل عدد اللاعبين الحاضرين"
+                  />
+                ) : (
+                  <span className="inline-flex min-w-20 items-center justify-center rounded-lg border border-app-line bg-black/30 px-3 py-1 text-xs font-medium text-app-yellow">
+                    {session.presentPlayersCount.toLocaleString("ar")} لاعب
+                  </span>
+                )}
+              </td>
               <td className="rounded-e-xl px-4 py-3">
                 <span
                   className={`inline-flex min-w-16 items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-xs ${

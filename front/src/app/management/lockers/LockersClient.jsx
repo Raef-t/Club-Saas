@@ -9,6 +9,7 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import { LockerIcon, PlusIcon } from "@/components/icons/Icons";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { useGetStaffQuery } from "@/lib/api/staffApi";
 import LockerFilters from "./LockerFilters";
 import LockerGrid from "./LockerGrid";
 import LockerReserveForm from "./LockerReserveForm";
@@ -16,6 +17,7 @@ import { useLockers } from "./useLockers";
 import {
   createLockerBranchOptions,
   createLockerMemberOptions,
+  createLockerStaffOptions,
   getLockerCollection,
 } from "./lockerUtils";
 
@@ -40,6 +42,19 @@ export default function LockersClient({ initialData }) {
     [initialData?.members, selectedBranchId],
   );
   const memberOptions = useMemo(() => createLockerMemberOptions(branchMembers), [branchMembers]);
+  const staffQueryParams = useMemo(
+    () => (selectedBranchId === "all" ? {} : { branch_id: Number(selectedBranchId) }),
+    [selectedBranchId],
+  );
+  const { currentData: staffResponse } = useGetStaffQuery(staffQueryParams);
+  const staff = useMemo(
+    () =>
+      getLockerCollection(
+        staffResponse || (selectedBranchId === "all" ? initialData?.staff : null),
+      ),
+    [initialData?.staff, selectedBranchId, staffResponse],
+  );
+  const staffOptions = useMemo(() => createLockerStaffOptions(staff), [staff]);
 
   const statItems = useMemo(() => {
     if (!lockerState.lockerSummary) return null;
@@ -135,6 +150,7 @@ export default function LockersClient({ initialData }) {
         lockers={lockerState.lockers}
         branches={branches}
         memberOptions={memberOptions}
+        staffOptions={staffOptions}
         isLoading={lockerState.isLoading || lockerState.isFetching}
         actionsDisabled={lockerState.actionsDisabled}
         onReserve={lockerState.openReserve}
@@ -173,6 +189,7 @@ export default function LockersClient({ initialData }) {
             key={lockerState.reserveTarget.id}
             formId="reserve-locker-form"
             members={branchMembers}
+            staff={staff}
             onSubmit={lockerState.handleReserve}
             onCancel={lockerState.closeReserve}
             isLoading={lockerState.isReserving}
