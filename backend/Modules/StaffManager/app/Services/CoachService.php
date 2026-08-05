@@ -136,7 +136,7 @@ class CoachService
      */
     public function getAllCoaches(array $filters = [])
     {
-        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract'])->where('role', 'coach');
+        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract', 'shifts.branchShift'])->where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -188,7 +188,7 @@ class CoachService
      */
     public function getSingleCoach($id)
     {
-        return Staff::with(['coachDetail.certifications', 'activities', 'person.contacts', 'user', 'branches', 'activeContract'])
+        return Staff::with(['coachDetail', 'activities', 'person.contacts', 'user', 'branches', 'activeContract', 'shifts.branchShift'])
             ->where('role', 'coach')
             ->findOrFail($id);
     }
