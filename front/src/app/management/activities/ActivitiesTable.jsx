@@ -3,7 +3,7 @@ import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
 import RowActions from "@/components/ui/RowActions";
 import SearchInput from "@/components/ui/SearchInput";
-import { genderLabels } from "@/lib/constants";
+import { formatLocalizedName } from "@/lib/utils";
 import { ACTIVITY_TABLE_COLUMNS } from "./activityConstants";
 import { getActivityName } from "./activityUtils";
 
@@ -32,11 +32,13 @@ export default function ActivitiesTable({ state }) {
         ),
       },
       {
-        key: "gender_allowed",
+        key: "activity_type",
         label: "الفئة",
         align: "center",
-        render: (value) => (
-          <span className="text-xs text-app-muted-light">{genderLabels[value] || value}</span>
+        render: (_, activity) => (
+          <span className="text-xs text-app-muted-light">
+            {formatLocalizedName(activity.activity_type?.name)}
+          </span>
         ),
       },
       {

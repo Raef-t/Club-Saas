@@ -4,12 +4,13 @@ import { Field } from "@/components/forms/FormControls";
 import Dropdown from "@/components/ui/Dropdown";
 
 /**
- * Renders a member selector or a numeric holder identifier for other holder types.
+ * Renders a searchable person selector or a numeric identifier for guests.
  */
 export default function LockerHolderField({
   holderType,
   holderId,
-  memberOptions,
+  memberOptions = [],
+  staffOptions = [],
   onChange,
   error,
   required = false,
@@ -18,7 +19,10 @@ export default function LockerHolderField({
 
   const label = required ? "المستفيد" : "المستفيد (اختياري)";
 
-  if (holderType === "member") {
+  if (holderType === "member" || holderType === "staff") {
+    const isStaff = holderType === "staff";
+    const options = isStaff ? staffOptions : memberOptions;
+
     return (
       <div className="flex flex-col gap-1.5 text-start">
         <label className="flex items-center gap-1 text-sm font-medium text-white">
@@ -27,11 +31,11 @@ export default function LockerHolderField({
         </label>
         <Dropdown
           searchable
-          options={memberOptions}
+          options={options}
           value={String(holderId || "")}
           onChange={onChange}
           error={error}
-          placeholder="ابحث عن لاعب..."
+          placeholder={isStaff ? "ابحث عن موظف بالاسم..." : "ابحث عن لاعب بالاسم..."}
         />
       </div>
     );
@@ -45,7 +49,7 @@ export default function LockerHolderField({
       value={holderId}
       onChange={(event) => onChange(event.target.value)}
       error={error}
-      placeholder={holderType === "staff" ? "أدخل رقم الموظف" : "أدخل رقم الزائر"}
+      placeholder="أدخل رقم الزائر"
       min="1"
     />
   );

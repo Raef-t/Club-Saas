@@ -2,7 +2,6 @@ import { SCHEDULE_DAYS } from "../schedule/scheduleConstants";
 import { getEntityBranchIds } from "../../../lib/managementBranchUtils";
 import { formatLocalizedName } from "../../../lib/utils";
 
-const SUBSCRIPTION_COLORS = ["#16e79b", "#f2dc2e", "#f2f2f2", "#0755ff", "#7925ff"];
 const COACH_SUBSCRIPTION_COLORS = [
   "#16e79b",
   "#f2dc2e",
@@ -15,16 +14,6 @@ const COACH_SUBSCRIPTION_COLORS = [
   "#84cc16",
   "#60a5fa",
 ];
-
-/**
- * Extracts a collection from the response shapes returned by the backend.
- */
-export function getDashboardCollection(response) {
-  if (Array.isArray(response?.data?.data)) return response.data.data;
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response)) return response;
-  return [];
-}
 
 /**
  * Extracts the weekday map from the schedule response.
@@ -66,6 +55,41 @@ function getTimeInMinutes(value) {
 }
 
 /**
+ * Finds the live API record that belongs to one scheduled session.
+ */
+function getActiveSessionRecord(session, activeSessions) {
+  if (!Array.isArray(activeSessions)) return null;
+
+  const sessionTemplateId = session.id ?? session.session_template_id;
+  const exactMatch = activeSessions.find(
+    (activeSession) =>
+      sessionTemplateId != null &&
+      activeSession.session_template_id != null &&
+      String(activeSession.session_template_id) === String(sessionTemplateId),
+  );
+
+  if (exactMatch) return exactMatch;
+
+  const planId = session.plan_id ?? session.plan?.id;
+  const startTime = String(session.start_time || "").slice(0, 5);
+  const endTime = String(session.end_time || "").slice(0, 5);
+
+  if (planId == null || !startTime || !endTime) return null;
+
+  return (
+    activeSessions.find((activeSession) => {
+      const activePlanId = activeSession.plan_id ?? activeSession.plan?.id;
+      return (
+        activePlanId != null &&
+        String(activePlanId) === String(planId) &&
+        String(activeSession.start_time || "").slice(0, 5) === startTime &&
+        String(activeSession.end_time || "").slice(0, 5) === endTime
+      );
+    }) || null
+  );
+}
+
+/**
  * Resolves the current visual status of a recurring daily session.
  */
 function getSessionStatus(session, now) {
@@ -88,7 +112,12 @@ function getSessionStatus(session, now) {
 /**
  * Converts today's backend schedule into rows for the dashboard table.
  */
-export function createTodaySchedule(response, selectedBranchId = "all", now = new Date()) {
+export function createTodaySchedule(
+  response,
+  selectedBranchId = "all",
+  now = new Date(),
+  activeSessions = null,
+) {
   const day = SCHEDULE_DAYS.find((scheduleDay) => scheduleDay.dayIndex === now.getDay());
   const sessions = getSchedulePayload(response)[day?.apiKey];
 
@@ -96,22 +125,33 @@ export function createTodaySchedule(response, selectedBranchId = "all", now = ne
 
   return sessions
     .filter((session) => belongsToBranch(session, selectedBranchId))
-    .map((session, index) => ({
-      id: session.id || `${day.apiKey}-${session.start_time || index}-${index}`,
-      title: getDisplayName(
-        session.plan_name || session.plan?.name || session.activity_name || session.activity?.name,
-        "حصة مجدولة",
-      ),
-      coach:
-        session.coach?.person?.full_name ||
-        session.coach?.name ||
-        session.coach_name ||
-        "لم يحدد المدرب",
-      branch: getDisplayName(session.branch?.name || session.branch_name, "الفرع المحدد"),
-      startTime: String(session.start_time || "-").slice(0, 5),
-      endTime: String(session.end_time || "-").slice(0, 5),
-      status: getSessionStatus(session, now),
-    }))
+    .map((session, index) => {
+      const activeSession = getActiveSessionRecord(session, activeSessions);
+      const presentPlayersCount = Array.isArray(activeSessions)
+        ? Math.max(0, Number(activeSession?.present_players_count) || 0)
+        : null;
+
+      return {
+        id: session.id || `${day.apiKey}-${session.start_time || index}-${index}`,
+        title: getDisplayName(
+          session.plan_name ||
+            session.plan?.name ||
+            session.activity_name ||
+            session.activity?.name,
+          "حصة مجدولة",
+        ),
+        coach:
+          session.coach?.person?.full_name ||
+          session.coach?.name ||
+          session.coach_name ||
+          "لم يحدد المدرب",
+        branch: getDisplayName(session.branch?.name || session.branch_name, "الفرع المحدد"),
+        startTime: String(session.start_time || "-").slice(0, 5),
+        endTime: String(session.end_time || "-").slice(0, 5),
+        presentPlayersCount,
+        status: getSessionStatus(session, now),
+      };
+    })
     .sort((first, second) => first.startTime.localeCompare(second.startTime));
 }
 
@@ -141,36 +181,6 @@ export function createShiftAttendanceChart(response) {
 }
 
 /**
- * Groups active subscriptions into the plan distribution used by the donut.
- */
-export function createSubscriptionMix(subscriptions) {
-  const activeSubscriptions = subscriptions.filter(
-    (subscription) =>
-      subscription.status === "active" ||
-      (!subscription.status && subscription.is_active !== false),
-  );
-  const source = activeSubscriptions.length ? activeSubscriptions : subscriptions;
-  const totals = new Map();
-
-  source.forEach((subscription) => {
-    const label = getDisplayName(
-      subscription.plan?.name || subscription.subscription_plan?.name || subscription.plan_name,
-      "خطة أخرى",
-    );
-    totals.set(label, (totals.get(label) || 0) + 1);
-  });
-
-  return [...totals.entries()]
-    .sort((first, second) => second[1] - first[1])
-    .slice(0, SUBSCRIPTION_COLORS.length)
-    .map(([label, value], index) => ({
-      label,
-      value,
-      color: SUBSCRIPTION_COLORS[index],
-    }));
-}
-
-/**
  * Converts the coaches subscriptions report into interactive donut data.
  */
 export function createCoachSubscriptionMix(response) {
@@ -191,88 +201,14 @@ export function createCoachSubscriptionMix(response) {
 /**
  * Creates live management statistics and links each card to its source page.
  */
-export function createDashboardStats({
-  members,
-  coaches,
-  subscriptions,
-  todaySessions,
-  sseStats,
-  now = new Date(),
-}) {
-  // Use SSE data if available
-  if (sseStats) {
-    return [
-      {
-        title: "المشتركون النشطون",
-        value: (sseStats.total_active_subscribed_members ?? 0).toLocaleString("ar"),
-        helper: "اشتراكات نشطة حالياً",
-        tone: "yellow",
-        iconKey: "members",
-        compact: true,
-        href: "/management/members",
-      },
-      {
-        title: "اللاعبون في التدريب",
-        value: (sseStats.realtime_training_players_count ?? 0).toLocaleString("ar"),
-        helper: "يتدربون حالياً (عام / خاص)",
-        tone: "cyan",
-        iconKey: "coaches",
-        compact: true,
-        href: "/management/attendance",
-      },
-      {
-        title: "اشتراكات تقترب من الانتهاء",
-        value: (sseStats.expiring_subscriptions_count ?? 0).toLocaleString("ar"),
-        helper: "تنتهي قريباً",
-        tone: "orange",
-        iconKey: "expiring",
-        compact: true,
-        href: "/management/subscriptions",
-      },
-      {
-        title: "خزائن مسندة مجاناً",
-        value: (sseStats.free_assigned_player_lockers_count ?? 0).toLocaleString("ar"),
-        helper: "خزائن مجانية للاعبين",
-        tone: "green",
-        iconKey: "subscriptions",
-        compact: true,
-        href: "/management/lockers",
-      },
-      {
-        title: "الفعاليات الجارية الآن",
-        value: (sseStats.current_active_session_plans?.length ?? 0).toLocaleString("ar"),
-        helper: "أنشطة وحصص نشطة",
-        tone: "purple",
-        iconKey: "schedule",
-        compact: true,
-        href: "/management/schedule",
-      },
-    ];
-  }
-
-  // Fallback to client-side calculated stats if SSE is not provided yet or fails
-  const activeSubscriptions = subscriptions.filter(
-    (subscription) => subscription.status === "active" || subscription.is_active !== false,
-  );
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const sevenDaysLater = new Date(today);
-  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
-  const expiringSoon = subscriptions.filter((subscription) => {
-    const endDate = new Date(subscription.end_date);
-    return (
-      !Number.isNaN(endDate.getTime()) &&
-      endDate >= today &&
-      endDate <= sevenDaysLater &&
-      subscription.status !== "cancelled"
-    );
-  }).length;
+export function createDashboardStats({ sseStats }) {
+  if (!sseStats) return [];
 
   return [
     {
       title: "المشتركون النشطون",
-      value: activeSubscriptions.length.toLocaleString("ar"),
-      helper: "اشتراكات نشطة",
+      value: (sseStats.total_active_subscribed_members ?? 0).toLocaleString("ar"),
+      helper: "اشتراكات نشطة حالياً",
       tone: "yellow",
       iconKey: "members",
       compact: true,
@@ -280,8 +216,8 @@ export function createDashboardStats({
     },
     {
       title: "اللاعبون في التدريب",
-      value: coaches.length.toLocaleString("ar"),
-      helper: "متواجدون حالياً",
+      value: (sseStats.realtime_training_players_count ?? 0).toLocaleString("ar"),
+      helper: "يتدربون حالياً (عام / خاص)",
       tone: "cyan",
       iconKey: "coaches",
       compact: true,
@@ -289,7 +225,7 @@ export function createDashboardStats({
     },
     {
       title: "اشتراكات تقترب من الانتهاء",
-      value: expiringSoon.toLocaleString("ar"),
+      value: (sseStats.expiring_subscriptions_count ?? 0).toLocaleString("ar"),
       helper: "تنتهي قريباً",
       tone: "orange",
       iconKey: "expiring",
@@ -298,8 +234,8 @@ export function createDashboardStats({
     },
     {
       title: "خزائن مسندة مجاناً",
-      value: (0).toLocaleString("ar"),
-      helper: "خزائن مجانية",
+      value: (sseStats.free_assigned_player_lockers_count ?? 0).toLocaleString("ar"),
+      helper: "خزائن مجانية للاعبين",
       tone: "green",
       iconKey: "subscriptions",
       compact: true,
@@ -307,8 +243,8 @@ export function createDashboardStats({
     },
     {
       title: "الفعاليات الجارية الآن",
-      value: todaySessions.length.toLocaleString("ar"),
-      helper: "حسب الجدول اليومي",
+      value: (sseStats.current_active_session_plans?.length ?? 0).toLocaleString("ar"),
+      helper: "أنشطة وحصص نشطة",
       tone: "purple",
       iconKey: "schedule",
       compact: true,

@@ -10,6 +10,7 @@ import LockerHolderField from "./LockerHolderField";
 import {
   createLockerMemberOptions,
   createLockerReservationPayload,
+  createLockerStaffOptions,
   getLockerValidationErrors,
 } from "./lockerUtils";
 
@@ -21,6 +22,7 @@ const RESERVATION_HOLDER_OPTIONS = LOCKER_HOLDER_TYPE_OPTIONS.filter((option) =>
 export default function LockerReserveForm({
   formId,
   members,
+  staff,
   onSubmit,
   onCancel,
   isLoading,
@@ -29,6 +31,7 @@ export default function LockerReserveForm({
   const [form, setForm] = useState(initialReserveLockerForm);
   const [errors, setErrors] = useState({});
   const memberOptions = useMemo(() => createLockerMemberOptions(members), [members]);
+  const staffOptions = useMemo(() => createLockerStaffOptions(staff), [staff]);
 
   /**
    * Updates one reservation field and clears dependent holder state.
@@ -101,6 +104,7 @@ export default function LockerReserveForm({
           holderType={form.holder_type}
           holderId={form.holder_id}
           memberOptions={memberOptions}
+          staffOptions={staffOptions}
           onChange={(value) => updateField("holder_id", value)}
           error={errors.holder_id}
           required

@@ -12,10 +12,16 @@ const FORM_ID = "edit-locker-form";
 /**
  * Connects the server-loaded locker form to its update mutation.
  */
-export default function LockersEditClient({ lockerId, initialLocker, initialMembers }) {
+export default function LockersEditClient({
+  lockerId,
+  initialLocker,
+  initialMembers,
+  initialStaff,
+}) {
   const router = useRouter();
   const locker = getLockerRecord(initialLocker);
   const members = getLockerCollection(initialMembers);
+  const staff = getLockerCollection(initialStaff);
   const { formError, isLoading, submitLocker } = useUpdateLocker(lockerId);
 
   /**
@@ -41,6 +47,7 @@ export default function LockersEditClient({ lockerId, initialLocker, initialMemb
             formId={FORM_ID}
             initialData={locker}
             members={members}
+            staff={staff}
             onSubmit={submit}
             onCancel={() => router.push("/management/lockers")}
             isLoading={isLoading}

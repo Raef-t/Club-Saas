@@ -28,10 +28,7 @@ export const branchesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        "Branches",
-        { type: "Branches", id },
-      ],
+      invalidatesTags: (result, error, { id }) => ["Branches", { type: "Branches", id }],
     }),
     deleteBranch: builder.mutation({
       query: (id) => ({
@@ -45,10 +42,7 @@ export const branchesApi = createApi({
         url: `branches/${id}/toggle-status`,
         method: "POST",
       }),
-      invalidatesTags: (result, error, id) => [
-        "Branches",
-        { type: "Branches", id },
-      ],
+      invalidatesTags: (result, error, id) => ["Branches", { type: "Branches", id }],
     }),
     getBranchSettings: builder.query({
       query: (branchId) => `branches/${branchId}/settings`,
@@ -60,15 +54,11 @@ export const branchesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchSettings", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchSettings", id: branchId }],
     }),
     getBranchShifts: builder.query({
       query: (branchId) => `branches/${branchId}/shifts`,
-      providesTags: (result, error, branchId) => [
-        { type: "BranchShifts", id: branchId },
-      ],
+      providesTags: (result, error, branchId) => [{ type: "BranchShifts", id: branchId }],
     }),
     createBranchShift: builder.mutation({
       query: ({ branchId, body }) => ({
@@ -76,9 +66,7 @@ export const branchesApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchShifts", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchShifts", id: branchId }],
     }),
     updateBranchShift: builder.mutation({
       query: ({ branchId, shiftId, body }) => ({
@@ -86,24 +74,18 @@ export const branchesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchShifts", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchShifts", id: branchId }],
     }),
     deleteBranchShift: builder.mutation({
       query: ({ branchId, shiftId }) => ({
         url: `branches/${branchId}/shifts/${shiftId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchShifts", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchShifts", id: branchId }],
     }),
     getBranchHolidays: builder.query({
       query: (branchId) => `branches/${branchId}/holidays`,
-      providesTags: (result, error, branchId) => [
-        { type: "BranchHolidays", id: branchId },
-      ],
+      providesTags: (result, error, branchId) => [{ type: "BranchHolidays", id: branchId }],
     }),
     createBranchHoliday: builder.mutation({
       query: ({ branchId, body }) => ({
@@ -111,9 +93,7 @@ export const branchesApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchHolidays", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchHolidays", id: branchId }],
     }),
     updateBranchHoliday: builder.mutation({
       query: ({ branchId, holidayId, body }) => ({
@@ -121,18 +101,14 @@ export const branchesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchHolidays", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchHolidays", id: branchId }],
     }),
     deleteBranchHoliday: builder.mutation({
       query: ({ branchId, holidayId }) => ({
         url: `holidays/${holidayId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, { branchId }) => [
-        { type: "BranchHolidays", id: branchId },
-      ],
+      invalidatesTags: (result, error, { branchId }) => [{ type: "BranchHolidays", id: branchId }],
     }),
   }),
 });
@@ -147,6 +123,7 @@ export const {
   useGetBranchSettingsQuery,
   useUpdateBranchSettingsMutation,
   useGetBranchShiftsQuery,
+  useLazyGetBranchShiftsQuery,
   useCreateBranchShiftMutation,
   useUpdateBranchShiftMutation,
   useDeleteBranchShiftMutation,

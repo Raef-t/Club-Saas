@@ -3,9 +3,7 @@ import {
   createCoachSubscriptionMix,
   createDashboardStats,
   createShiftAttendanceChart,
-  createSubscriptionMix,
   createTodaySchedule,
-  getDashboardCollection,
 } from "./dashboardUtils";
 
 const scheduleResponse = {
@@ -33,11 +31,6 @@ const scheduleResponse = {
 };
 
 describe("management dashboard utilities", () => {
-  it("extracts supported backend collection shapes", () => {
-    expect(getDashboardCollection({ data: { data: [{ id: 1 }] } })).toEqual([{ id: 1 }]);
-    expect(getDashboardCollection({ data: [{ id: 2 }] })).toEqual([{ id: 2 }]);
-  });
-
   it("creates today's branch-filtered schedule rows", () => {
     const sundayMorning = new Date(2026, 6, 26, 9, 30);
     const sessions = createTodaySchedule(scheduleResponse, "3", sundayMorning);
@@ -49,6 +42,31 @@ describe("management dashboard utilities", () => {
       coach: "أحمد",
       startTime: "10:00",
       status: { label: "قادمة", tone: "yellow" },
+    });
+  });
+
+  it("adds the live API attendance count to its scheduled session", () => {
+    const sundayMorning = new Date(2026, 6, 26, 10, 30);
+    const sessions = createTodaySchedule(scheduleResponse, "3", sundayMorning, [
+      {
+        session_template_id: 1,
+        present_players_count: 6,
+      },
+    ]);
+
+    expect(sessions[0]).toMatchObject({
+      id: 1,
+      startTime: "10:00",
+      endTime: "11:00",
+      presentPlayersCount: 6,
+    });
+  });
+
+  it("keeps attendance pending until the live API responds", () => {
+    const sundayMorning = new Date(2026, 6, 26, 10, 30);
+
+    expect(createTodaySchedule(scheduleResponse, "3", sundayMorning)[0]).toMatchObject({
+      presentPlayersCount: null,
     });
   });
 
@@ -71,19 +89,6 @@ describe("management dashboard utilities", () => {
     };
     const chartData = createShiftAttendanceChart(reportResponse);
     expect(chartData[0]).toEqual({ label: "الاثنين - الوردية الثانية", value: 12 });
-  });
-
-  it("groups subscriptions by plan name", () => {
-    expect(
-      createSubscriptionMix([
-        { status: "active", plan: { name: { ar: "شهري" } } },
-        { status: "active", plan: { name: { ar: "شهري" } } },
-        { status: "active", plan_name: "سنوي" },
-      ]).map(({ label, value }) => ({ label, value })),
-    ).toEqual([
-      { label: "شهري", value: 2 },
-      { label: "سنوي", value: 1 },
-    ]);
   });
 
   it("maps the coaches subscriptions report into distinct chart items", () => {
@@ -150,7 +155,19 @@ describe("management dashboard utilities", () => {
     expect(stats.every((stat) => stat.href.startsWith("/management/"))).toBe(true);
   });
 
-  it("keeps zero values from SSE instead of using calculated fallback statistics", () => {
+  it("does not calculate statistics before the API stream responds", () => {
+    expect(
+      createDashboardStats({
+        members: [{ id: 1 }],
+        coaches: [{ id: 2 }],
+        subscriptions: [{ id: 3, status: "active" }],
+        todaySessions: [{ id: 4 }],
+        sseStats: null,
+      }),
+    ).toEqual([]);
+  });
+
+  it("keeps zero values returned by the API stream", () => {
     const stats = createDashboardStats({
       members: [{ id: 1 }],
       coaches: Array.from({ length: 9 }, (_, id) => ({ id })),

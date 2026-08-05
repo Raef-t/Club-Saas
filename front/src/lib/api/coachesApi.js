@@ -17,13 +17,6 @@ export const coachesApi = createApi({
       query: (id) => `coaches/${id}`,
       providesTags: (result, error, id) => [{ type: "Coaches", id }],
     }),
-    getCoachShifts: builder.query({
-      query: (id) => `coaches/${id}/shifts`,
-      providesTags: (result, error, id) => [
-        "Coaches",
-        { type: "Coaches", id },
-      ],
-    }),
     createCoach: builder.mutation({
       query: (body) => ({
         url: "coaches",
@@ -38,10 +31,7 @@ export const coachesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        "Coaches",
-        { type: "Coaches", id },
-      ],
+      invalidatesTags: (result, error, { id }) => ["Coaches", { type: "Coaches", id }],
     }),
     updateCoachDetails: builder.mutation({
       query: ({ id, body }) => ({
@@ -49,21 +39,23 @@ export const coachesApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        "Coaches",
-        { type: "Coaches", id },
-      ],
+      invalidatesTags: (result, error, { id }) => ["Coaches", { type: "Coaches", id }],
     }),
     updateCoach: builder.mutation({
       query: ({ id, body }) => ({
         url: `coaches/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => ["Coaches", { type: "Coaches", id }],
+    }),
+    updateCoachPhoto: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `coaches/${id}/photo`,
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        "Coaches",
-        { type: "Coaches", id },
-      ],
+      invalidatesTags: (result, error, { id }) => ["Coaches", { type: "Coaches", id }],
     }),
     deleteCoach: builder.mutation({
       query: (id) => ({
@@ -72,39 +64,16 @@ export const coachesApi = createApi({
       }),
       invalidatesTags: ["Coaches"],
     }),
-    addCoachActivities: builder.mutation({
-      query: ({ id, activity_ids }) => ({
-        url: `coaches/${id}/activities`,
-        method: "POST",
-        body: { activity_ids },
-      }),
-      invalidatesTags: (result, error, { id }) => [
-        "Coaches",
-        { type: "Coaches", id },
-      ],
-    }),
-    deleteCoachActivity: builder.mutation({
-      query: ({ id, activityId }) => ({
-        url: `coaches/${id}/activities/${activityId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: (result, error, { id }) => [
-        "Coaches",
-        { type: "Coaches", id },
-      ],
-    }),
   }),
 });
 
 export const {
   useGetCoachesQuery,
   useGetCoachQuery,
-  useGetCoachShiftsQuery,
   useCreateCoachMutation,
   useUpdateCoachBasicMutation,
   useUpdateCoachDetailsMutation,
   useUpdateCoachMutation,
+  useUpdateCoachPhotoMutation,
   useDeleteCoachMutation,
-  useAddCoachActivitiesMutation,
-  useDeleteCoachActivityMutation,
 } = coachesApi;

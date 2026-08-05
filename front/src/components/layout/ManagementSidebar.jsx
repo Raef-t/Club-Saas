@@ -24,6 +24,7 @@ const navGroups = [
     items: [
       { title: "الإحصائيات", href: "/management" },
       { title: "المدربين", href: "/management/coaches" },
+      { title: "الموظفين", href: "/management/staff" },
       { title: "الأنشطة الرياضية", href: "/management/activities" },
       { title: "الفعاليات", href: "/management/subscription-plans" },
       { title: "المشتركين", href: "/management/members" },

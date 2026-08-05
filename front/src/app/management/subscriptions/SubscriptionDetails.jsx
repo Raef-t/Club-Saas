@@ -86,7 +86,13 @@ export default function SubscriptionDetails({
   const member = subscription.member || {};
   const person = member.person || {};
   const plan = subscription.plan || {};
-  const planName = plan.name?.ar || plan.name?.en || "-";
+  const planName = typeof plan.name === "string" ? plan.name : (plan.name?.ar || plan.name?.en || "-");
+  const items = subscription.items || [];
+  const totalAllocated = items.reduce((sum, item) => sum + (item.sessions_allocated || 0), 0);
+  const totalConsumed = items.reduce((sum, item) => sum + (item.sessions_consumed || 0), 0);
+  const remainingSessions = totalAllocated - totalConsumed;
+  const coachNames = [...new Set(items.map(item => item.coach?.name).filter(Boolean))].join("، ") || "-";
+  const activityNames = [...new Set(items.map(item => item.activity?.name).filter(Boolean))].join("، ") || "-";
 
   return (
     <div className="space-y-6">
@@ -113,15 +119,16 @@ export default function SubscriptionDetails({
 
       <DetailSection title="الخطة والمدة">
         <DetailItem label="الخطة" value={planName} />
-        <DetailItem label="نوع الخطة" value={plan.type} />
+        <DetailItem label="النشاط" value={activityNames} />
         <DetailItem label="تاريخ البداية" value={formatDate(subscription.start_date)} />
         <DetailItem label="تاريخ النهاية" value={formatDate(subscription.end_date)} />
         <DetailItem label="عدد الجلسات" value={plan.session_count} />
         <DetailItem
           label="الجلسات المتبقية"
-          value={subscription.remaining_sessions}
+          value={totalAllocated > 0 ? `${remainingSessions} / ${totalAllocated}` : "-"}
           tone="yellow"
         />
+        <DetailItem label="عدد الأشهر" value={subscription.months_count} />
       </DetailSection>
 
       <DetailSection title="المدفوعات">
@@ -140,7 +147,7 @@ export default function SubscriptionDetails({
           value={formatSubscriptionMoney(subscription.remaining_amount)}
           tone={parseSubscriptionAmount(subscription.remaining_amount) > 0 ? "red" : "green"}
         />
-        <DetailItem label="المدرب المسؤول" value={subscription.coach?.person?.full_name || "-"} />
+        <DetailItem label="المدرب المسؤول" value={coachNames} />
       </DetailSection>
 
       {/* يعرض سجل الفترات التي جُمّد فيها الاشتراك. */}

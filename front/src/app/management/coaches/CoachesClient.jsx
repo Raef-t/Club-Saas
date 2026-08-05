@@ -75,9 +75,7 @@ function ActivityBadgeWithTooltip({ activity, plans = [] }) {
         ].join(" ")}
       >
         {activity.name}
-        {plans.length > 0 && (
-          <span className="mr-1 text-[9px] opacity-60">({plans.length})</span>
-        )}
+        {plans.length > 0 && <span className="mr-1 text-[9px] opacity-60">({plans.length})</span>}
       </span>
 
       {show &&
@@ -96,9 +94,7 @@ function ActivityBadgeWithTooltip({ activity, plans = [] }) {
             className="w-56 rounded-xl border border-app-line bg-app-card p-3 shadow-2xl"
             dir="rtl"
           >
-            <p className="mb-2 text-[11px] font-semibold text-app-yellow">
-              الفعاليات المرتبطة
-            </p>
+            <p className="mb-2 text-[11px] font-semibold text-app-yellow">الفعاليات المرتبطة</p>
             <div className="space-y-1.5">
               {plans.map((plan) => (
                 <div
@@ -149,8 +145,6 @@ export default function CoachesClient({ initialData }) {
     isCreating,
     isUpdating,
     isDeleting,
-    isAddingActivity,
-    isDeletingActivity,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -158,10 +152,6 @@ export default function CoachesClient({ initialData }) {
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
-    handleAddActivity,
-    handleRemoveActivity,
-    selectedActivityId,
-    setSelectedActivityId,
     getEditInitialValues,
     branches,
     activities,
@@ -426,15 +416,8 @@ export default function CoachesClient({ initialData }) {
         <CoachDetails
           coach={detailsCoach || selectedCoach}
           branches={branches}
-          allActivities={activities}
           isLoading={isFetchingDetails}
           error={detailsError}
-          selectedActivityId={selectedActivityId}
-          setSelectedActivityId={setSelectedActivityId}
-          onAddActivity={handleAddActivity}
-          onRemoveActivity={handleRemoveActivity}
-          isAddingActivity={isAddingActivity}
-          isRemovingActivity={isDeletingActivity}
         />
       </Drawer>
 

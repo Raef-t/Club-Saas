@@ -9,6 +9,7 @@ export default function LockerGrid({
   lockers,
   branches,
   memberOptions,
+  staffOptions,
   isLoading,
   actionsDisabled,
   onReserve,
@@ -41,6 +42,7 @@ export default function LockerGrid({
           locker={locker}
           branches={branches}
           memberOptions={memberOptions}
+          staffOptions={staffOptions}
           actionsDisabled={actionsDisabled}
           onReserve={onReserve}
           onRelease={onRelease}

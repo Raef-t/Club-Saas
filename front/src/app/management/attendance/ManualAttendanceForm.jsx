@@ -5,7 +5,7 @@ import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
-import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+import { useGetStaffQuery } from "@/lib/api/staffApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { formatLocalizedName } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ export default function ManualAttendanceForm({ attendance }) {
     peopleQueryParams,
     { skip: !attendance.branchId },
   );
-  const { currentData: coachesResponse, isFetching: isLoadingStaff } = useGetCoachesQuery(
+  const { currentData: staffResponse, isFetching: isLoadingStaff } = useGetStaffQuery(
     peopleQueryParams,
     { skip: !attendance.branchId },
   );
@@ -71,11 +71,11 @@ export default function ManualAttendanceForm({ attendance }) {
   );
   const staffOptions = useMemo(
     () =>
-      getCollection(coachesResponse).map((coach) => ({
-        value: String(coach.staff_id || coach.id),
-        label: coach.person?.full_name || coach.full_name || `موظف #${coach.staff_id || coach.id}`,
+      getCollection(staffResponse).map((staff) => ({
+        value: String(staff.id),
+        label: staff.person?.full_name || staff.full_name || `موظف #${staff.id}`,
       })),
-    [coachesResponse],
+    [staffResponse],
   );
   const checkInPersonOptions = attendableType === "staff" ? staffOptions : memberOptions;
   const checkOutPersonOptions = checkOutType === "staff" ? staffOptions : memberOptions;

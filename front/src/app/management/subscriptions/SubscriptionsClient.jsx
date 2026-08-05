@@ -88,7 +88,7 @@ export default function SubscriptionsClient({ initialData }) {
         align: "center",
         render: (_, subscription) => {
           const plan = subscription.plan || {};
-          const planName = plan.name?.ar || plan.name?.en || "-";
+          const planName = typeof plan.name === "string" ? plan.name : (plan.name?.ar || plan.name?.en || "-");
 
           return (
             <div className="min-w-0 text-center">

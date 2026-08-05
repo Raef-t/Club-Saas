@@ -7,7 +7,6 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import BarChart from "@/components/charts/BarChart";
 import {
   CoachSubscriptionsDonut,
-  CurrentActiveSessionsTable,
   DailyScheduleTable,
   DashboardSectionLink,
 } from "./ManagementDashboardWidgets";
@@ -25,7 +24,7 @@ export default function ManagementDashboard({ initialData }) {
         blocks={[
           { type: "stats", count: 5 },
           { type: "cards", count: 2 },
-          { type: "table", rows: 4, columns: 5 },
+          { type: "table", rows: 4, columns: 6 },
         ]}
       />
     );
@@ -51,12 +50,16 @@ export default function ManagementDashboard({ initialData }) {
         </div>
       )}
 
-      <StatsGrid items={dashboard.stats} variant="compact" />
+      {dashboard.isStatsLoading ? (
+        <SkeletonPage blocks={[{ type: "stats", count: 5 }]} className="space-y-0" />
+      ) : (
+        <StatsGrid items={dashboard.stats} variant="compact" />
+      )}
 
       {/* جدول الدوام اليومي بدل الفعاليات الجارية */}
       <SectionCard
         title="جدول الدوام اليومي"
-        subtitle="حصص اليوم مرتبة حسب وقت البداية"
+        subtitle="حصص اليوم مع الوقت وعدد اللاعبين الحاضرين"
         action={
           <DashboardSectionLink href="/management/schedule">
             فتح الجدول الأسبوعي
