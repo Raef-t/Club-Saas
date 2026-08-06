@@ -167,6 +167,7 @@ class LockerService
             $reservationType = $data['reservation_type']; // 'rental' or 'assign'
             
             $price = 0;
+            $paidAmount = 0;
             $startDate = now();
             $endDate = null;
             $invoiceId = null;
@@ -178,15 +179,23 @@ class LockerService
                 }
 
                 $price = $data['price'];
+                $paidAmount = isset($data['paid_amount']) ? floatval($data['paid_amount']) : floatval($price);
                 $startDate = $data['start_date'];
                 $endDate = $data['end_date'];
+
+                $invoiceStatus = 'unpaid';
+                if ($paidAmount >= $price && $price > 0) {
+                    $invoiceStatus = 'paid';
+                } elseif ($paidAmount > 0) {
+                    $invoiceStatus = 'partially_paid';
+                }
 
                 // Create Invoice
                 $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
                     'member_id' => $data['holder_id'],
                     'branch_id' => $locker->branch_id,
                     'total' => $price,
-                    'status' => 'unpaid',
+                    'status' => $invoiceStatus,
                 ]);
                 $invoiceId = $invoice->id;
             }
@@ -204,6 +213,35 @@ class LockerService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Link reservation to invoice & record payment
+            if ($invoiceId) {
+                DB::table('invoices')->where('id', $invoiceId)->update([
+                    'locker_reservation_id' => $reservationId,
+                ]);
+
+                if ($paidAmount > 0) {
+                    $safeId = $data['safe_id'] ?? null;
+                    if (!$safeId) {
+                        $safeId = DB::table('acc_branch_settings')
+                            ->where('branch_id', $locker->branch_id)
+                            ->value('default_safe_id');
+                        if (!$safeId) {
+                            $safeId = DB::table('acc_safes')
+                                ->where('branch_id', $locker->branch_id)
+                                ->value('id');
+                        }
+                    }
+
+                    \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoiceId,
+                        'safe_id' => $safeId,
+                        'amount' => $paidAmount,
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+                }
+            }
 
             // Update locker status
             $statusMap = [
@@ -323,7 +361,8 @@ class LockerService
 
         $rentedQuery = DB::table('locker_reservations as lr')
             ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
-            ->where('lr.status', 'active');
+            ->where('lr.status', 'active')
+            ->where('lr.price', '>', 0);
         if ($branchId) {
             $rentedQuery->where('l.branch_id', $branchId);
         }

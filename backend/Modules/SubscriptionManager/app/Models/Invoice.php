@@ -20,6 +20,7 @@ class Invoice extends Model
         'member_id',
         'branch_id',
         'player_subscription_id',
+        'locker_reservation_id',
         'offer_id',
         'total',
         'status',
@@ -43,6 +44,11 @@ class Invoice extends Model
     public function subscription()
     {
         return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id');
+    }
+
+    public function lockerReservation()
+    {
+        return $this->belongsTo(LockerReservation::class, 'locker_reservation_id');
     }
 
     public function offer()
