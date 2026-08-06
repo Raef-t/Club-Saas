@@ -53,12 +53,12 @@ class CoachService
             ]);
 
             // 1.5 Create Person Contact
-            if (!empty($data['phone_number']) || !empty($data['country_code'])) {
+            if (!empty($data['phone_number'])) {
                 PersonContact::create([
                     'person_id'    => $person->id,
                     'name'         => 'Personal',
                     'relation'     => 'self',
-                    'phone_number' => $data['phone_number'] ?? null,
+                    'phone_number' => $data['phone_number'],
                     'country_code' => $data['country_code'] ?? null,
                 ]);
             }
@@ -225,12 +225,12 @@ class CoachService
                         if (isset($data['phone_number'])) $contactData['phone_number'] = $data['phone_number'];
                         if (isset($data['country_code'])) $contactData['country_code'] = $data['country_code'];
                         $contact->update($contactData);
-                    } else {
+                    } elseif (!empty($data['phone_number'])) {
                         PersonContact::create([
                             'person_id'    => $person->id,
                             'name'         => 'Personal',
                             'relation'     => 'self',
-                            'phone_number' => $data['phone_number'] ?? null,
+                            'phone_number' => $data['phone_number'],
                             'country_code' => $data['country_code'] ?? null,
                         ]);
                     }
