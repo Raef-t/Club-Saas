@@ -222,40 +222,35 @@ class MemberService
         });
     }
 
-    public function deleteMember(int $id): void
+    public function deleteMember(int $id, string $confirmation = ''): bool
     {
-        $member = $this->repository->find($id);
-
-        // Check for financial records
-        $invoicesCount = \Modules\SubscriptionManager\Models\Invoice::where('member_id', $id)->count();
-
-        // Check for attendance records (polymorphic: attendable_type = Member class)
-        $attendanceCount = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
-            ->where('attendable_id', $id)
-            ->count();
-
-        $blocked = [];
-
-        if ($invoicesCount > 0) {
-            $blocked[] = "يوجد {$invoicesCount} " . ($invoicesCount === 1 ? 'فاتورة' : 'فواتير') . " مالية مرتبطة بهذا العضو";
-        }
-        if ($attendanceCount > 0) {
-            $blocked[] = "يوجد {$attendanceCount} " . ($attendanceCount === 1 ? 'سجل حضور' : 'سجلات حضور') . " مرتبطة بهذا العضو";
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف جميع الاشتراكات والحضور المتعلقين باللاعب، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
         }
 
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف هذا العضو لأن: {$reasons}. يمكنك تغيير حالة العضو إلى 'غير نشط' بدلاً من الحذف.",
-                [
-                    'invoices_count'   => $invoicesCount,
-                    'attendance_count' => $attendanceCount,
-                ]
-            );
+        $member = \Modules\MemberManager\Models\Member::findOrFail($id);
+        return (bool) $member->delete();
+    }
+
+    public function getTrashedMembers(array $filters = [])
+    {
+        $query = \Modules\MemberManager\Models\Member::onlyTrashed()
+            ->with(['person.contacts', 'branch', 'healthProfile']);
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
         }
 
-        // Safe to delete — cascade will clean up non-financial child records
-        $this->repository->delete($id);
+        return $query->latest()->get();
+    }
+
+    public function restoreMember(int $id)
+    {
+        $member = \Modules\MemberManager\Models\Member::onlyTrashed()->findOrFail($id);
+        $member->restore();
+        return $this->attachSharedDTOs($member);
     }
 
     public function getMeasurements(int $memberId)

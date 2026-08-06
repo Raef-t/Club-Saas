@@ -10,7 +10,7 @@ class CoachDetail extends Model
     use SoftDeletes;
 
     protected $table = 'coach_details';
-
+    
     protected $fillable = [
         'staff_id',
         'bio',

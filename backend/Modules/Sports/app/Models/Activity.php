@@ -4,10 +4,11 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Activity extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -30,6 +31,27 @@ class Activity extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function ($activity) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
+            }
+        });
+
+        static::deleted(function ($activity) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
+            }
+        });
+
+        static::restored(function ($activity) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
+            }
+        });
+    }
 
     /**
      * Get the activity type for the activity.

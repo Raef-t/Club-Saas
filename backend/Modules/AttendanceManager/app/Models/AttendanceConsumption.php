@@ -3,9 +3,11 @@
 namespace Modules\AttendanceManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AttendanceConsumption extends Model
 {
+    use SoftDeletes;
     protected $table = 'attendance_consumptions';
 
     protected $fillable = [
@@ -19,7 +21,7 @@ class AttendanceConsumption extends Model
      */
     public function attendance()
     {
-        return $this->belongsTo(Attendance::class, 'attendance_id');
+        return $this->belongsTo(Attendance::class, 'attendance_id')->withTrashed();
     }
 
     /**

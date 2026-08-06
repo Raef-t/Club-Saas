@@ -4,10 +4,11 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ActivityType extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -29,6 +30,13 @@ class ActivityType extends Model
         'has_unlimited_subscribers' => 'boolean',
         'has_shifts' => 'boolean',
     ];
+
+    protected static function booted()
+    {
+        static::deleted(function ($activityType) {
+            $activityType->activities()->delete();
+        });
+    }
 
     /**
      * Get the activities for the activity type.

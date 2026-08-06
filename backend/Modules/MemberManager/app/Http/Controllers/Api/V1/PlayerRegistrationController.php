@@ -293,20 +293,60 @@ class PlayerRegistrationController extends BaseController
 
     #[OA\Delete(
         path: '/v1/members/{id}',
-        summary: '🗑️ حذف عضو',
-        description: 'حذف عضو محدد من النظام.',
+        summary: '🗑️ حذف عضو (Soft Delete)',
+        description: 'حذف عضو محدد من النظام نرم. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب أو القارامتر.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['confirmation'],
+            properties: [
+                new OA\Property(property: 'confirmation', type: 'string', description: 'كلمة تأكيد الحذف (delete)', example: 'delete')
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
-    public function destroy($id)
+    public function destroy(\Illuminate\Http\Request $request, $id)
     {
-        $deleted = $this->memberService->deleteMember($id);
-        if (!$deleted) {
-            return response()->json(['message' => __('Member not found or could not be deleted')], 404);
-        }
+        $confirmation = $request->input('confirmation', '');
+        $this->memberService->deleteMember((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Member deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/members/trashed',
+        summary: '🗑️ عرض الأعضاء المحذوفين نرم (سلة المهملات)',
+        description: 'جلب قائمة بالأعضاء الذين تم حذفهم ناعماً لاسترجاعهم أو المعاينة.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء المحذوفين بنجاح')]
+    public function trashed(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->all();
+        $members = $this->memberService->getTrashedMembers($filters);
+        return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Trashed members retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/members/{id}/restore',
+        summary: '♻️ استرجاع عضو محذوف',
+        description: 'استرجاع عضو من سلة المهملات وإعادة تفعيل حسابه وملفه الشخصي.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو المحذوف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع العضو بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود بالسلة')]
+    public function restore($id)
+    {
+        $member = $this->memberService->restoreMember((int) $id);
+        return $this->successResponse(new \Modules\MemberManager\Http\Resources\MemberResource($member), __('Member restored successfully'));
     }
 }

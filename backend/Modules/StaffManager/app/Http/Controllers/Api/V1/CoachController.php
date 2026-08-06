@@ -898,89 +898,7 @@ class CoachController extends Controller
         }
     }
 
-    #[OA\Delete(
-        path: '/v1/coaches/{id}',
-        summary: 'Delete Coach',
-        description: 'Delete a coach. Cannot be deleted if associated with players, shifts, or activities.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(
-                response: 200, 
-                description: 'Coach deleted successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 409, 
-                description: 'Conflict - Cannot delete coach',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'status', type: 'string', example: 'error'),
-                    new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا المدرب لأنه مرتبط بـ 2 اشتراكات لاعبين. يمكنك إيقاف حساب المدرب بدلاً من حذفه.')
-                ])
-            ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach not found',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while deleting the coach.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
-        ]
-    )]
-    public function destroy($id)
-    {
-        try {
-            $this->coachService->deleteCoach($id);
-            return response()->json([
-                'message' => 'Coach deleted successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Coach not found.'
-            ], 404);
-        } catch (\Modules\Core\Exceptions\CannotDeleteException $e) {
-            throw $e; // Handled by global exception handler
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'An error occurred while deleting the coach.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
+
     #[OA\Post(
         path: '/v1/coaches/{id}/schedule',
         summary: 'Set Coach Schedule',
@@ -1207,5 +1125,35 @@ class CoachController extends Controller
         } catch (Exception $e) {
             return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    #[OA\Delete(
+        path: '/v1/coaches/{id}',
+        summary: '🗑️ حذف مدرب (Soft Delete)',
+        description: 'حذف مدرب من النظام نرم. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المدرب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['confirmation'],
+            properties: [
+                new OA\Property(property: 'confirmation', type: 'string', description: 'كلمة تأكيد الحذف (delete)', example: 'delete')
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم حذف المدرب بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
+    public function destroy(Request $request, $id)
+    {
+        $confirmation = $request->input('confirmation', '');
+        $this->coachService->deleteCoach((int) $id, (string) $confirmation);
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('Coach deleted successfully')
+        ], 200);
     }
 }

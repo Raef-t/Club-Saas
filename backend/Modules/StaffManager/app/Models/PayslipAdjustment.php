@@ -3,9 +3,11 @@
 namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayslipAdjustment extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'payslip_id',
         'type', // 'bonus' or 'deduction'

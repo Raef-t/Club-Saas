@@ -379,54 +379,47 @@ class StaffService
     }
 
     /**
-     * Delete a staff member only if they have no financial/attendance/activity records.
-     *
-     * @throws \Modules\Core\Exceptions\CannotDeleteException
+     * Soft delete a staff member. Requires confirmation string "delete".
      */
-    public function deleteStaff(int $id): void
+    public function deleteStaff(int $id, string $confirmation = ''): bool
     {
-        $staff = $this->staffRepository->find($id);
-
-        $payslipsCount = \Modules\StaffManager\Models\Payslip::where('staff_id', $id)->count();
-
-        $attendanceCount = \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\StaffManager\\Models\\Staff')
-            ->where('attendable_id', $id)
-            ->count();
-
-        // Also check if they recorded attendance for others
-        $recordedAttendanceCount = \Modules\AttendanceManager\Models\Attendance::where('recorded_by_staff_id', $id)->count();
-
-        $activitiesCount = \Modules\Sports\Models\StaffActivity::where('staff_id', $id)->count();
-
-        $blocked = [];
-
-        if ($payslipsCount > 0) {
-            $blocked[] = "يوجد {$payslipsCount} " . ($payslipsCount === 1 ? 'قسيمة راتب' : 'قسائم رواتب');
-        }
-        if ($attendanceCount > 0) {
-            $blocked[] = "يوجد {$attendanceCount} " . ($attendanceCount === 1 ? 'سجل حضور' : 'سجلات حضور');
-        }
-        if ($recordedAttendanceCount > 0) {
-            $blocked[] = "قام بتسجيل حضور لـ {$recordedAttendanceCount} " . ($recordedAttendanceCount === 1 ? 'شخص' : 'أشخاص');
-        }
-        if ($activitiesCount > 0) {
-            $blocked[] = "مرتبط بـ {$activitiesCount} " . ($activitiesCount === 1 ? 'نشاط رياضي' : 'أنشطة رياضية');
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('يجب إرسال كلمة "delete" لتأكيد عملية الحذف.')
+            ]);
         }
 
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف هذا الموظف/المدرب لأنه: {$reasons}. يرجى تغيير حالته إلى 'غير نشط' بدلاً من الحذف.",
-                [
-                    'payslips_count' => $payslipsCount,
-                    'attendance_count' => $attendanceCount,
-                    'recorded_attendance_count' => $recordedAttendanceCount,
-                    'activities_count' => $activitiesCount,
-                ]
-            );
+        $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
+        return (bool) $staff->delete();
+    }
+
+    public function getTrashedStaff(array $filters = [])
+    {
+        $query = \Modules\StaffManager\Models\Staff::onlyTrashed()
+            ->with(['coachDetail', 'branches', 'user']);
+
+        if (!empty($filters['branch_id'])) {
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
         }
 
-        // It is safe to delete
-        $this->staffRepository->delete($id);
+        if (!empty($filters['role'])) {
+            $query->where('role', $filters['role']);
+        }
+
+        $staffMembers = $query->latest()->get();
+        foreach ($staffMembers as $staff) {
+            $this->attachSharedDTOs($staff);
+        }
+
+        return $staffMembers;
+    }
+
+    public function restoreStaff(int $id)
+    {
+        $staff = \Modules\StaffManager\Models\Staff::onlyTrashed()->findOrFail($id);
+        $staff->restore();
+        return $this->attachSharedDTOs($staff);
     }
 }

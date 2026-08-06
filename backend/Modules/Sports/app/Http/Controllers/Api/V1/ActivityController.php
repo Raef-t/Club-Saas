@@ -221,11 +221,12 @@ class ActivityController extends BaseController
     #[OA\Delete(
         path: '/v1/activities/{activity}',
         summary: '🗑️ حذف النشاط',
-        description: 'إزالة نشاط رياضي من النظام. لا يمكن حذف النشاط إذا كان مرتبطاً بخطة اشتراك أو مدرب.',
+        description: 'إزالة نشاط رياضي من النظام. يقتضي تأكيد الحذف بإرسال كلمة "delete".',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: true, description: 'كلمة التأكيد (يجب أن تكون "delete")', schema: new OA\Schema(type: 'string', example: 'delete'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',
@@ -238,53 +239,62 @@ class ActivityController extends BaseController
         )
     )]
     #[OA\Response(
-        response: 409, 
-        description: '🚫 لا يمكن الحذف — النشاط مرتبط ببيانات أخرى', 
+        response: 422, 
+        description: '⚠️ لم يتم تأكيد الحذف بالشكل الصحيح', 
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا النشاط لأنه مرتبط بـ 2 خطة اشتراك، و 1 مدرب. يمكنك تعطيل النشاط (is_active = false) بدلاً من حذفه.')
+                new OA\Property(property: 'message', type: 'string', example: 'يرجى تأكيد الحذف بإرسال كلمة "delete" في حقل التأكيد (confirm).')
             ]
         )
     )]
     #[OA\Response(response: 404, description: '🚫 النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $activity = Activity::findOrFail($id);
 
-        // Check if activity is linked to any subscription plan (via staff_activities → plan_activities)
-        $planActivitiesCount = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::whereHas('staffActivity', function ($query) use ($id) {
-            $query->where('activity_id', $id);
-        })->count();
+        // 1. Check for active subscriptions referencing this activity
+        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+            $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)
+                ->whereHas('subscription', function ($query) {
+                    $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value);
+                })->count();
 
-        // Check if activity is linked to any staff (coach assignment)
-        $staffActivitiesCount = \Modules\Sports\Models\StaffActivity::where('activity_id', $id)->count();
-
-        // Check if activity is linked to any player subscription items
-        $subscriptionItemsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)->count();
-
-        $blocked = [];
-
-        if ($planActivitiesCount > 0) {
-            $blocked[] = "مرتبط بـ {$planActivitiesCount} " . ($planActivitiesCount === 1 ? 'خطة اشتراك' : 'خطط اشتراك');
-        }
-        if ($staffActivitiesCount > 0) {
-            $blocked[] = "مرتبط بـ {$staffActivitiesCount} " . ($staffActivitiesCount === 1 ? 'مدرب' : 'مدربين');
-        }
-        if ($subscriptionItemsCount > 0) {
-            $blocked[] = "مرتبط بـ {$subscriptionItemsCount} " . ($subscriptionItemsCount === 1 ? 'اشتراك عضو' : 'اشتراكات أعضاء');
+            if ($activeSubsCount > 0) {
+                return $this->errorResponse(
+                    __("لا يمكن حذف هذه الفعالية لوجود :count اشتراك(ات) نشط(ة) مرتبط(ة) بها حالياً.", ['count' => $activeSubsCount]),
+                    409
+                );
+            }
         }
 
-        if (!empty($blocked)) {
-            $reasons = implode('، و', $blocked);
+        // 2. Validate confirmation string
+        $confirm = strtolower(trim($request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? ''));
+
+        if ($confirm !== 'delete') {
             return $this->errorResponse(
-                "لا يمكن حذف هذا النشاط لأنه {$reasons}. يمكنك تعطيل النشاط (is_active = false) بدلاً من حذفه.",
-                409
+                __('سيتم حذف هذه الفعالية وكافة بنود الاشتراكات المنتهية وقواعد عمولات الموظفين المتعلقة بها، هل أنت متأكد؟ أرسل "delete" للتأكيد.'),
+                422
             );
         }
 
-        $activity->delete();
-        return $this->successResponse(null, __('Activity deleted successfully'));
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($activity, $id) {
+            // 3. Detach coaches mapped to this activity (staff_activities)
+            \Modules\Sports\Models\StaffActivity::where('activity_id', $id)->delete();
+
+            // 4. Remove staff commission rules for this activity
+            \Illuminate\Support\Facades\DB::table('staff_commission_rules')->where('activity_id', $id)->delete();
+
+            // 5. Soft delete associated expired subscription items
+            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)->delete();
+            }
+
+            // 6. Always Soft Delete activity
+            $activity->delete();
+
+            return $this->successResponse(null, __('Activity deleted successfully'));
+        });
     }
 }

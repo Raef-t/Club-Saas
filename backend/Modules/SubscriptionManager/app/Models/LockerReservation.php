@@ -3,10 +3,12 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\StaffManager\Models\Staff;
 
 class LockerReservation extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'locker_id',
         'member_id',
@@ -47,7 +49,16 @@ class LockerReservation extends Model
             }
         });
 
-        static::deleted(function () {
+        static::deleted(function ($reservation) {
+            if (class_exists(\Modules\ClubManager\Models\Locker::class)) {
+                if ($reservation->status === 'active') {
+                    $locker = \Modules\ClubManager\Models\Locker::find($reservation->locker_id);
+                    if ($locker) {
+                        $locker->update(['status' => 'available']);
+                    }
+                }
+            }
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
             }

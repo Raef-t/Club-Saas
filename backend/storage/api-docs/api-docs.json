@@ -7,16 +7,20 @@
     },
     "servers": [
         {
+            "url": "/api",
+            "description": "Current Server (Relative Path / Local)"
+        },
+        {
+            "url": "http://127.0.0.1:8000/api",
+            "description": "Local Development Server (127.0.0.1:8000)"
+        },
+        {
             "url": "http://31.70.108.63/api",
-            "description": "New Production API Server"
+            "description": "Production API Server"
         },
         {
             "url": "http://issgroup-001-site1.anytempurl.com/api",
             "description": "Legacy Staging Server"
-        },
-        {
-            "url": "http://127.0.0.1:8000/api",
-            "description": "Local Development Server"
         }
     ],
     "paths": {
@@ -7136,6 +7140,49 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/system/backup/download": {
+            "get": {
+                "tags": [
+                    "Database Backup"
+                ],
+                "summary": "📦 تحميل نسخة احتياطية من قاعدة البيانات",
+                "description": "توليد ملف مضغوط ZIP يحتوي على نسخة احتياطية من قاعدة البيانات وتحميله.",
+                "operationId": "7da7818fa90dc6be14205627b8ca2192",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إنشاء الملف وتنزيله بنجاح",
+                        "content": {
+                            "application/zip": {}
+                        }
+                    },
+                    "500": {
+                        "description": "❌ حدث خطأ أثناء التصدير",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to generate backup."
                                         }
                                     },
                                     "type": "object"
@@ -24784,6 +24831,10 @@
         {
             "name": "Club Settings",
             "description": "Club Settings"
+        },
+        {
+            "name": "Database Backup",
+            "description": "Database Backup"
         },
         {
             "name": "Facility Management",

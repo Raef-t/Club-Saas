@@ -358,38 +358,60 @@ class StaffController extends BaseController
 
     #[OA\Delete(
         path: '/v1/staff/{staff}',
-        summary: '🗑️ حذف موظف',
-        description: 'حذف موظف من النظام. لا يمكن حذفه إذا كان مرتبطاً ببيانات مالية، حضور، أو أنشطة.',
+        summary: '🗑️ حذف موظف (Soft Delete)',
+        description: 'حذف موظف/مدرب من النظام نرم. يتطلب إرسال كلمة التأكيد "delete".',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم حذف الموظف بنجاح',
+    #[OA\RequestBody(
+        required: true,
         content: new OA\JsonContent(
+            required: ['confirmation'],
             properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Staff deleted successfully'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'confirmation', type: 'string', description: 'كلمة تأكيد الحذف (delete)', example: 'delete')
             ]
         )
     )]
-    #[OA\Response(
-        response: 409, 
-        description: '🚫 لا يمكن الحذف — الموظف مرتبط ببيانات أخرى', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا الموظف/المدرب لأنه: يوجد 2 قسائم رواتب، و مرتبط بـ 1 أنشطة رياضية. يرجى تغيير حالته إلى \'غير نشط\' بدلاً من الحذف.')
-            ]
-        )
-    )]
-    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy($id)
+    #[OA\Response(response: 200, description: '✅ تم حذف الموظف بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود')]
+    public function destroy(Request $request, $id)
     {
-        $this->staffService->deleteStaff($id);
+        $confirmation = $request->input('confirmation', '');
+        $this->staffService->deleteStaff((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Staff deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/staff/trashed',
+        summary: '🗑️ عرض الموظفين المحذوفين نرم (سلة المهملات)',
+        description: 'جلب قائمة بالموظفين والمدربين المحذوفين ناعماً.',
+        tags: ['Staff Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب الموظفين المحذوفين بنجاح')]
+    public function trashed(Request $request)
+    {
+        $staff = $this->staffService->getTrashedStaff($request->all());
+        return $this->successResponse(
+            StaffResource::collection($staff)->response()->getData(true),
+            __('Trashed staff retrieved successfully')
+        );
+    }
+
+    #[OA\Post(
+        path: '/v1/staff/{id}/restore',
+        summary: '♻️ استرجاع موظف محذوف',
+        description: 'استرجاع موظف/مدرب من سلة المهملات وإعادة تفعيل حسابه.',
+        tags: ['Staff Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع الموظف بنجاح')]
+    public function restore($id)
+    {
+        $staff = $this->staffService->restoreStaff((int) $id);
+        return $this->successResponse(new StaffResource($staff), __('Staff restored successfully'));
     }
 }

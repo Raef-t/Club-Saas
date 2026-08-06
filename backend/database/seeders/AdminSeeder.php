@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Modules\StaffManager\Models\Staff;
 
 class AdminSeeder extends Seeder
 {
@@ -29,8 +30,10 @@ class AdminSeeder extends Seeder
         ]);
 
         // 2. Create Admin Staff Profile
-        $adminPerson->staffProfile()->create([
-            'job_title' => 'Manager',
+        Staff::create([
+            'person_id' => $adminPerson->id,
+            'role' => 'admin',
+            'is_active' => true,
         ]);
 
         // 3. Create Admin User Account

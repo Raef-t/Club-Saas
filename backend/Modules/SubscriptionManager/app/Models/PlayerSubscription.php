@@ -3,10 +3,11 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PlayerSubscription extends Model
 {
-    use \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes;
 
     protected $fillable = [
         'member_id',
@@ -33,17 +34,17 @@ class PlayerSubscription extends Model
 
     public function member()
     {
-        return $this->belongsTo(\Modules\MemberManager\Models\Member::class, 'member_id');
+        return $this->belongsTo(\Modules\MemberManager\Models\Member::class, 'member_id')->withTrashed();
     }
 
     public function plan()
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
     }
 
     public function offer()
     {
-        return $this->belongsTo(Offer::class, 'offer_id');
+        return $this->belongsTo(Offer::class, 'offer_id')->withTrashed();
     }
 
     public function freezes()

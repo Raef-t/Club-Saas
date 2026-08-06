@@ -434,85 +434,18 @@ class CoachService
      * - staff_contracts                     → KEPT (financial reference records)
      * - player_subscription_items.coach_id  → nullified manually (soft delete won't trigger DB onDelete)
      *
-     * @throws \Modules\Core\Exceptions\CannotDeleteException
+    /**
+     * Delete a coach (Soft Delete). Requires confirmation string "delete".
      */
-    public function deleteCoach($id)
+    public function deleteCoach($id, string $confirmation = ''): bool
     {
-        return DB::transaction(function () use ($id) {
-            $staff = Staff::where('role', 'coach')->findOrFail($id);
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('يجب إرسال كلمة "delete" لتأكيد عملية الحذف.')
+            ]);
+        }
 
-            $blocked = [];
-
-            // ── Guard 1: block if coach has active/frozen subscribers ──────────
-            // We only count items linked to active or frozen subscriptions.
-            // Finished/terminated subscriptions are historical and should not block deletion.
-            $activeSubscribersCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem
-                ::where('coach_id', $id)
-                ->whereHas('subscription', function ($q) {
-                    $q->whereIn('status', ['active', 'frozen']);
-                })
-                ->count();
-
-            if ($activeSubscribersCount > 0) {
-                $blocked[] = "مرتبط بـ {$activeSubscribersCount} " . ($activeSubscribersCount === 1 ? 'مشترك نشط' : 'مشتركين نشطين');
-            }
-
-            // ── Guard 2: block if coach has payslips (financial records) ───────
-            $payslipsCount = \Modules\StaffManager\Models\Payslip::where('staff_id', $id)->count();
-
-            if ($payslipsCount > 0) {
-                $blocked[] = "يوجد {$payslipsCount} " . ($payslipsCount === 1 ? 'قسيمة راتب' : 'قسائم رواتب');
-            }
-
-            if (!empty($blocked)) {
-                $reasons = implode('، و', $blocked);
-                throw new \Modules\Core\Exceptions\CannotDeleteException(
-                    "لا يمكن حذف هذا المدرب لأنه: {$reasons}. يرجى تغيير حالته إلى 'غير نشط' بدلاً من الحذف.",
-                    [
-                        'active_subscribers_count' => $activeSubscribersCount,
-                        'payslips_count'           => $payslipsCount,
-                    ]
-                );
-            }
-
-            // ── 1. Soft-delete coach certifications (through coachDetail) ──────
-            if ($staff->coachDetail) {
-                $staff->coachDetail->certifications()->delete();
-
-                // 2. Soft-delete coach details
-                $staff->coachDetail->delete();
-            }
-
-            // ── 3. Soft-delete staff leaves ────────────────────────────────────
-            $staff->leaves()->delete();
-
-            // ── 4. Soft-delete staff unavailabilities ──────────────────────────
-            $staff->unavailabilities()->delete();
-
-            // ── 5. Soft-delete coach's personal shifts ─────────────────────────
-            $staff->shifts()->delete();
-
-            // ── 6. Detach coach from activities pivot (staff_activities) ───────
-            $staff->activities()->detach();
-
-            // ── 7. staff_contracts → KEPT (financial records, do NOT delete) ───
-
-            // ── 8. Nullify coach_id in ALL subscription items manually ─────────
-            // NOTE: We use soft delete on `staff`, so the DB onDelete('set null') FK
-            // will NOT fire automatically. We must handle this ourselves.
-            \Modules\SubscriptionManager\Models\PlayerSubscriptionItem
-                ::where('coach_id', $id)
-                ->update(['coach_id' => null]);
-
-            // ── 9. Soft-delete the staff record itself ─────────────────────────
-            $staff->delete();
-
-            // ── 10. Deactivate the login account ──────────────────────────────
-            if ($staff->user) {
-                $staff->user->update(['is_active' => false]);
-            }
-
-            return true;
-        });
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        return (bool) $staff->delete();
     }
 }
