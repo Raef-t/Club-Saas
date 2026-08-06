@@ -30,7 +30,8 @@ class StaffService
      */
     public function getAllStaff(array $filters = [])
     {
-        $query = \Modules\StaffManager\Models\Staff::query();
+        $query = \Modules\StaffManager\Models\Staff::query()
+            ->where('role', '!=', 'coach');
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
