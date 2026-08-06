@@ -137,9 +137,15 @@ class CoachController extends Controller
                 'message' => 'Coach created successfully'
             ], 201);
         } catch (QueryException $e) {
+            if ($e->getCode() == 23000 || (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062)) {
+                return response()->json([
+                    'message' => 'Conflict occurred while creating coach. The data might already exist.'
+                ], 409);
+            }
             return response()->json([
-                'message' => 'Conflict occurred while creating coach. The data might already exist.'
-            ], 409);
+                'message' => 'An error occurred while creating the coach.',
+                'error' => $e->getMessage()
+            ], 500);
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while creating the coach.',
