@@ -39,6 +39,11 @@ class LockerReservation extends Model
         return $this->belongsTo(Staff::class);
     }
 
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id');
+    }
+
     /**
      * The "booted" method of the model.
      */
