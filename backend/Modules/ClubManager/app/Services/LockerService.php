@@ -25,7 +25,7 @@ class LockerService
 
     public function getAllLockers(array $filters = [])
     {
-        // Instead of just relying on the repository's all(), we want to fetch the active reservation details
+        // Fetch active reservation details along with holder name from people table
         $columns = [
             'lockers.id',
             'lockers.locker_number',
@@ -37,6 +37,8 @@ class LockerService
             'locker_reservations.start_date',
             'locker_reservations.end_date',
             'locker_reservations.price',
+            DB::raw('COALESCE(m_person.full_name, s_person.full_name) as holder_name'),
+            DB::raw('COALESCE(m_person.id, s_person.id) as holder_person_id'),
         ];
         if (Schema::hasColumn('lockers', 'key_number')) {
             $columns[] = 'lockers.key_number';
@@ -47,6 +49,10 @@ class LockerService
                 $join->on('lockers.id', '=', 'locker_reservations.locker_id')
                      ->where('locker_reservations.status', '=', 'active');
             })
+            ->leftJoin('members', 'locker_reservations.member_id', '=', 'members.id')
+            ->leftJoin('people as m_person', 'members.person_id', '=', 'm_person.id')
+            ->leftJoin('staff', 'locker_reservations.staff_id', '=', 'staff.id')
+            ->leftJoin('people as s_person', 'staff.person_id', '=', 's_person.id')
             ->select($columns)
             ->orderBy('lockers.locker_number');
 
@@ -62,7 +68,35 @@ class LockerService
             }
         }
 
-        return $query->get();
+        $lockers = $query->get();
+
+        // Batch fetch person_contacts for all holder person IDs
+        $personIds = $lockers->pluck('holder_person_id')->filter()->unique()->values()->all();
+
+        $contactsByPerson = [];
+        if (!empty($personIds)) {
+            $contacts = DB::table('person_contacts')
+                ->whereIn('person_id', $personIds)
+                ->whereNull('deleted_at')
+                ->select('id', 'person_id', 'name', 'country_code', 'phone_number', 'relation')
+                ->get();
+
+            foreach ($contacts as $contact) {
+                $contactsByPerson[$contact->person_id][] = [
+                    'id'           => $contact->id,
+                    'name'         => $contact->name,
+                    'country_code' => $contact->country_code,
+                    'phone_number' => $contact->phone_number,
+                    'relation'     => $contact->relation,
+                ];
+            }
+        }
+
+        foreach ($lockers as $locker) {
+            $locker->person_contacts = $contactsByPerson[$locker->holder_person_id] ?? [];
+        }
+
+        return $lockers;
     }
 
     public function createLocker(array $data)
