@@ -87,7 +87,6 @@ class LockerResource extends JsonResource
             'assigned_at'     => $assignedAt ? Carbon::parse($assignedAt)->toIso8601String() : null,
 
             // ── Contacts ──────────────────────────────────────────────────
-            'person_contacts' => $personContacts,
             'contact_person'  => $personContacts,
 
             // ── Relations ─────────────────────────────────────────────────
