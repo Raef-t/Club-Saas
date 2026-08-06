@@ -16792,7 +16792,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "required": [
                                     "first_name",
@@ -16854,7 +16854,7 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "shifts[]": {
+                                    "shifts": {
                                         "description": "مصفوفة معرفات الشفتات",
                                         "type": "array",
                                         "items": {

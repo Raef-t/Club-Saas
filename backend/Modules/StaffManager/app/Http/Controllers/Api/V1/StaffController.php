@@ -201,25 +201,22 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
-        content: new OA\MediaType(
-            mediaType: 'multipart/form-data',
-            schema: new OA\Schema(
-                required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
-                properties: [
-                    new OA\Property(property: 'first_name', type: 'string', example: 'John'),
-                    new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
-                    new OA\Property(property: 'country_code', type: 'string', example: '+1'),
-                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
-                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
-                    new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
-                    new OA\Property(property: 'base_salary', type: 'number', example: 5000),
-                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                    new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
-                    new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
-                    new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
-                    new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
-                ]
-            )
+        content: new OA\JsonContent(
+            required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
+            properties: [
+                new OA\Property(property: 'first_name', type: 'string', example: 'John'),
+                new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
+                new OA\Property(property: 'country_code', type: 'string', example: '+1'),
+                new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
+                new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
+                new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
+                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+            ]
         )
     )]
     #[OA\Response(
