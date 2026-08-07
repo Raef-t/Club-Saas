@@ -55,9 +55,9 @@ class Locker extends Model
         return $this->status === 'with_staff';
     }
 
-    public function isWithGuest(): bool
+    public function isWithCoach(): bool
     {
-        return $this->status === 'with_guest';
+        return $this->status === 'with_coach';
     }
 
     public function isOccupied(): bool
@@ -89,8 +89,8 @@ class Locker extends Model
         return $query->where('status', 'with_staff');
     }
 
-    public function scopeWithGuest($query)
+    public function scopeWithCoach($query)
     {
-        return $query->where('status', 'with_guest');
+        return $query->where('status', 'with_coach');
     }
 }
