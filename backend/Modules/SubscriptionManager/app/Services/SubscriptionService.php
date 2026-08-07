@@ -246,6 +246,11 @@ class SubscriptionService
                 throw new Exception(__('Freezing is not allowed in this branch.'));
             }
 
+            $currentStatus = is_object($subscription->status) ? $subscription->status->value : $subscription->status;
+            if ($currentStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
+                throw new Exception(__('Subscription is already frozen.'));
+            }
+
             $subscription->freezes()->create([
                 'freeze_start_date' => $startDate,
                 'freeze_end_date' => null,
