@@ -27,9 +27,6 @@ return new class extends Migration
             });
         }
 
-        // Clear half-inserted data from previous crash
-        DB::table('staff_contracts')->truncate();
-
         // 2. Data Migration: Migrate existing financial data to staff_contracts
         // To be safe in production, we do this using DB facade
         $staffMembers = DB::table('staff')->get();
