@@ -25,8 +25,8 @@ class LockerResource extends JsonResource
             } elseif ($this->status === 'with_staff') {
                 $holderType = 'staff';
                 $holderId = $this->holder_staff_id ?? null;
-            } elseif ($this->status === 'with_guest') {
-                $holderType = 'guest';
+            } elseif ($this->status === 'with_coach') {
+                $holderType = 'coach';
             }
             $holderName = $this->holder_name ?? null;
             $assignedAt = $this->start_date ?? null;
@@ -52,8 +52,8 @@ class LockerResource extends JsonResource
                     $holderId = $activeRes->staff_id;
                     $staff = DB::table('staff')->where('id', $holderId)->first();
                     $personId = $staff?->person_id;
-                } elseif ($this->status === 'with_guest') {
-                    $holderType = 'guest';
+                } elseif ($this->status === 'with_coach') {
+                    $holderType = 'coach';
                 }
 
                 if ($personId) {

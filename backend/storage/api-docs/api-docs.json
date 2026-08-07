@@ -9008,7 +9008,7 @@
                     "Locker Management"
                 ],
                 "summary": "📥 حجز خزانة / إسناد مجاني",
-                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `guest`).",
+                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `coach`).",
                 "operationId": "65e120e9e683833ce3738608a90b4ab7",
                 "parameters": [
                     {
@@ -9142,11 +9142,11 @@
                                 "properties": {
                                     "holder_type": {
                                         "type": "string",
-                                        "example": "guest",
+                                        "example": "coach",
                                         "enum": [
                                             "member",
                                             "staff",
-                                            "guest"
+                                            "coach"
                                         ]
                                     },
                                     "holder_id": {
@@ -23575,7 +23575,7 @@
                             "available",
                             "with_member",
                             "with_staff",
-                            "with_guest"
+                            "with_coach"
                         ]
                     }
                 },
@@ -23661,7 +23661,7 @@
                             "available",
                             "with_member",
                             "with_staff",
-                            "with_guest"
+                            "with_coach"
                         ]
                     },
                     "holder_id": {
@@ -23676,7 +23676,7 @@
                         "enum": [
                             "member",
                             "staff",
-                            "guest"
+                            "coach"
                         ]
                     },
                     "holder_name": {

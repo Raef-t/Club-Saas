@@ -247,7 +247,7 @@ class LockerService
             $statusMap = [
                 'member' => 'with_member',
                 'staff' => 'with_staff',
-                'guest' => 'with_guest',
+                'coach' => 'with_coach',
             ];
             $newStatus = $statusMap[$data['holder_type'] ?? 'member'] ?? 'with_member';
 
@@ -308,7 +308,7 @@ class LockerService
             $statusMap = [
                 'member' => 'with_member',
                 'staff' => 'with_staff',
-                'guest' => 'with_guest',
+                'coach' => 'with_coach',
             ];
             $newStatus = $statusMap[$holderType] ?? 'with_member';
 

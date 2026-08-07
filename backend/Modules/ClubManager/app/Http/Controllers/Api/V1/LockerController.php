@@ -216,7 +216,7 @@ class LockerController extends BaseController
     #[OA\Post(
         path: '/v1/lockers/{locker}/reservations',
         summary: '📥 حجز خزانة / إسناد مجاني',
-        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `guest`).',
+        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `coach`).',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -297,7 +297,7 @@ class LockerController extends BaseController
         content: new OA\JsonContent(
             required: ['holder_type'],
             properties: [
-                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'guest'),
+                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'coach'], example: 'coach'),
                 new OA\Property(property: 'holder_id', type: 'integer', example: 120),
                 new OA\Property(property: 'holder_name', type: 'string', example: 'صديق اللاعب'),
             ]
