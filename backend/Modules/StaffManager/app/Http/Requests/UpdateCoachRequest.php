@@ -30,12 +30,6 @@ class UpdateCoachRequest extends FormRequest
             }
         }
 
-        if ($this->has('is_active')) {
-            $this->merge([
-                'is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
-            ]);
-        }
-
         if ($this->has('work_types')) {
             $workTypes = $this->input('work_types', []);
         } else {
@@ -81,8 +75,7 @@ class UpdateCoachRequest extends FormRequest
             'end_date'                => ['nullable', 'date', 'after_or_equal:start_date'],
             'work_types'              => ['nullable', 'array'],
             'work_types.*'            => ['string', 'in:equipment,activities'],
-            'work_status'             => ['nullable', 'string'],
-            'is_active'               => ['nullable', 'boolean'],
+            'work_status'             => ['nullable', 'string', 'in:active,suspended,on_leave'],
             'branch_ids'              => ['nullable', 'array'],
             'branch_ids.*'            => ['exists:branches,id'],
 

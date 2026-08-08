@@ -14450,6 +14450,20 @@
                                 "mixed"
                             ]
                         }
+                    },
+                    {
+                        "name": "work_status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "suspended",
+                                "on_leave"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -14653,9 +14667,15 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "activity_ids[]": {
                                         "description": "مصفوفة معرفات الأنشطة (اختياري)",
@@ -15189,9 +15209,15 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "activity_ids[]": {
                                         "description": "مصفوفة معرفات الأنشطة (اختياري)",
@@ -16325,12 +16351,17 @@
                         }
                     },
                     {
-                        "name": "is_active",
+                        "name": "work_status",
                         "in": "query",
-                        "description": "تصفية حسب الحالة النشطة",
+                        "description": "تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
                         "required": false,
                         "schema": {
-                            "type": "boolean"
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "suspended",
+                                "on_leave"
+                            ]
                         }
                     }
                 ],
@@ -16457,9 +16488,15 @@
                                         "type": "number",
                                         "example": 5000
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "start_date": {
                                         "type": "string",
@@ -16869,9 +16906,15 @@
                                         "type": "number",
                                         "example": 5000
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "start_date": {
                                         "type": "string",
@@ -24237,10 +24280,6 @@
                         "type": "number",
                         "example": 5000
                     },
-                    "is_active": {
-                        "type": "boolean",
-                        "example": true
-                    },
                     "start_date": {
                         "type": "string",
                         "format": "date",
@@ -24277,8 +24316,14 @@
                         }
                     },
                     "work_status": {
+                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
                         "type": "string",
-                        "example": "active"
+                        "example": "active",
+                        "enum": [
+                            "active",
+                            "suspended",
+                            "on_leave"
+                        ]
                     },
                     "created_at": {
                         "type": "string",

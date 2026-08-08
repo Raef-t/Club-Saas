@@ -95,6 +95,29 @@ class PersonQrCodeService
     }
 
     /**
+     * Get today's QR code for a given person.
+     * If QR codes do not exist for this person, auto-generate all 7 codes and return today's.
+     *
+     * @param  int  $personId
+     * @return string|null
+     */
+    public function getTodayCodeForPerson(int $personId): ?string
+    {
+        $todayDay = (int) Carbon::now()->format('w'); // 0=Sun, 1=Mon, ..., 6=Sat
+
+        $record = PersonQrCode::where('person_id', $personId)
+            ->where('day_of_week', $todayDay)
+            ->first();
+
+        if ($record) {
+            return $record->code;
+        }
+
+        $codes = $this->generateForPerson($personId);
+        return $codes[$todayDay] ?? null;
+    }
+
+    /**
      * Generate a cryptographically unique code.
      * Format: QR-<random32chars>
      */
@@ -107,3 +130,4 @@ class PersonQrCodeService
         return $code;
     }
 }
+

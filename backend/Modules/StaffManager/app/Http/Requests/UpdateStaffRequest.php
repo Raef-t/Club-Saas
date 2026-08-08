@@ -28,12 +28,6 @@ class UpdateStaffRequest extends FormRequest
                     : [$this->branch_ids]
             ]);
         }
-
-        if ($this->has('is_active')) {
-            $this->merge([
-                'is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
-            ]);
-        }
     }
 
     public function rules(): array
@@ -74,7 +68,6 @@ class UpdateStaffRequest extends FormRequest
             'end_time' => 'nullable|date_format:H:i',
             'work_type' => 'nullable|in:part_time,full_time',
             'work_status' => 'nullable|in:active,suspended,on_leave',
-            'is_active' => 'nullable|boolean',
             'shifts' => 'nullable|array',
             'shifts.*' => 'exists:branch_shifts,id',
 

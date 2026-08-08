@@ -31,12 +31,6 @@ class StoreCoachRequest extends FormRequest
             }
         }
 
-        if ($this->has('is_active')) {
-            $this->merge([
-                'is_active' => filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
-            ]);
-        }
-
         $workTypes = $this->input('work_types', []);
         if (is_array($workTypes)) {
             if (in_array('equipment', $workTypes) && !in_array('activities', $workTypes)) {
@@ -83,8 +77,7 @@ class StoreCoachRequest extends FormRequest
             'end_date'                => ['nullable', 'date', 'after_or_equal:start_date'],
             'work_types'              => ['nullable', 'array'],
             'work_types.*'            => ['string', 'in:equipment,activities'],
-            'work_status'             => ['nullable', 'string'],
-            'is_active'               => ['nullable', 'boolean'],
+            'work_status'             => ['nullable', 'string', 'in:active,suspended,on_leave'],
             'activity_ids'            => ['nullable', 'array'],
             'activity_ids.*'          => ['exists:activities,id'],
             'shifts'                  => ['nullable', 'array'],

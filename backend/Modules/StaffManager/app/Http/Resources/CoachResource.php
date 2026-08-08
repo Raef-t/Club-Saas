@@ -17,7 +17,6 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "role", type: "string", example: "coach"),
         new OA\Property(property: "employment_type", type: "string", example: "fixed_salary"),
         new OA\Property(property: "base_salary", type: "number", example: 5000),
-        new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "start_date", type: "string", format: "date", example: "2023-01-01"),
         new OA\Property(property: "end_date", type: "string", format: "date", nullable: true),
         new OA\Property(property: "start_time", type: "string", format: "time", example: "09:00", nullable: true),
@@ -25,7 +24,13 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "experience_years", type: "integer"),
         new OA\Property(property: "payment_type", type: "string", nullable: true),
         new OA\Property(property: "work_types", type: "array", items: new OA\Items(type: "string")),
-        new OA\Property(property: "work_status", type: "string", example: "active"),
+        new OA\Property(
+            property: "work_status",
+            type: "string",
+            enum: ["active", "suspended", "on_leave"],
+            example: "active",
+            description: "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)"
+        ),
         new OA\Property(property: "created_at", type: "string", format: "date-time"),
         new OA\Property(property: "updated_at", type: "string", format: "date-time"),
         new OA\Property(property: "person", type: "object", description: "Person details"),
@@ -42,15 +47,18 @@ class CoachResource extends JsonResource
     {
         $contract = $this->activeContract;
         $detail = $this->coachDetail;
+        $todayQrCode = $this->person_id 
+            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getTodayCodeForPerson($this->person_id) 
+            : null;
 
         return [
             'id'              => $this->id,
             'person_id'       => $this->person_id,
+            'qr_code'         => $todayQrCode,
             'branch_ids'      => $this->branches->pluck('id'),
             'role'            => $this->role,
             'employment_type' => $contract ? $contract->employment_type : null,
             'base_salary'     => $contract ? $contract->base_salary : 0,
-            'is_active'       => $this->is_active,
             'start_date'      => $this->start_date?->toDateString() ?? $contract?->start_date?->toDateString() ?? $this->created_at?->toDateString(),
             'end_date'        => $this->end_date?->toDateString() ?? $contract?->end_date?->toDateString(),
             'start_time'      => $this->start_time,

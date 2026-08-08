@@ -49,6 +49,14 @@ class AttendanceDashboardController extends BaseController
     #[OA\Response(response: 200, description: '✅ stream مفتوح لتقنية SSE (text/event-stream)')]
     public function statsStream(Request $request): StreamedResponse
     {
+        // Release PHP session lock immediately to prevent blocking other HTTP requests
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        if ($request->hasSession()) {
+            $request->session()->save();
+        }
+
         $branchId = $request->query('branch_id') ? (int) $request->query('branch_id') : null;
 
         return response()->stream(function () use ($branchId) {
@@ -67,7 +75,7 @@ class AttendanceDashboardController extends BaseController
                     break;
                 }
 
-                $currentVersion = DashboardNotificationService::getBranchStatsVersion($branchId) . '_' . now()->format('YmdHi');
+                $currentVersion = DashboardNotificationService::getBranchStatsVersion($branchId);
 
                 if ($lastVersion === null || $currentVersion !== $lastVersion) {
                     $lastVersion = $currentVersion;
