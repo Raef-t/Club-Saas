@@ -45,7 +45,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('player-subscriptions/{id}/restore', [PlayerSubscriptionController::class, 'restore']);
 
     // Player Subscriptions CRUD
-    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update']);
+    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class);
 
 
     Route::apiResource('subscription-plan-activities', SubscriptionPlanActivityController::class);
