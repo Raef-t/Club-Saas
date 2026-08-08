@@ -85,7 +85,7 @@ class CoachService
                 'person_id'       => $person->id,
                 'role'            => 'coach',
                 'is_active'       => $data['is_active'] ?? true,
-                'start_date'      => $data['start_date'] ?? null,
+                'start_date'      => $data['start_date'] ?? now()->toDateString(),
                 'end_date'        => $data['end_date'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
             ]);
