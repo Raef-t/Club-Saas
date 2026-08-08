@@ -30,7 +30,8 @@ class UnifiedAttendanceController extends BaseController
                 new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'),
                 new OA\Property(property: 'attendable_id', type: 'integer', example: 1),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)')
+                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'),
+                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-08-08 14:30:00', description: 'تاريخ ووقت تسجيل الدخول اليدوي (اختياري)')
             ]
         )
     )]
@@ -66,11 +67,20 @@ class UnifiedAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'check_out_at', type: 'string', format: 'date-time', example: '2026-08-08 16:30:00', description: 'تاريخ ووقت تسجيل الانصراف اليدوي (اختياري، إذا لم يرسل يأخذ الوقت الحالي بالسيرفر)')
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم الانصراف', content: new OA\JsonContent())]
-    public function checkOut($attendanceId)
+    public function checkOut(Request $request, $attendanceId)
     {
         try {
-            $attendance = $this->attendanceService->checkOut((int) $attendanceId);
+            $checkOutAt = $request->input('check_out_at');
+            $attendance = $this->attendanceService->checkOut((int) $attendanceId, $checkOutAt);
             return $this->successResponse(new AttendanceResource($attendance), __('Checked out successfully'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);

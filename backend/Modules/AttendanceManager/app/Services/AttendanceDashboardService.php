@@ -238,6 +238,20 @@ class AttendanceDashboardService
                         ->whereRaw('(psi.sessions_allocated - psi.sessions_consumed) >= 0');
                 });
             })
+            // Exclude plans associated with daily entry activity types (is_daily_entry = true)
+            ->whereNotExists(function ($subQDaily) {
+                $subQDaily->select(DB::raw(1))
+                    ->from('subscription_plans as sp_daily')
+                    ->join('plan_activities as pa_daily', 'pa_daily.plan_id', '=', 'sp_daily.id')
+                    ->join('staff_activities as sa_daily', 'sa_daily.id', '=', 'pa_daily.staff_activity_id')
+                    ->join('activities as act_daily', 'act_daily.id', '=', 'sa_daily.activity_id')
+                    ->join('activity_types as at_daily', 'at_daily.id', '=', 'act_daily.activity_type_id')
+                    ->whereColumn('sp_daily.id', 'ps.plan_id')
+                    ->where('at_daily.is_daily_entry', true)
+                    ->whereNull('sp_daily.deleted_at')
+                    ->whereNull('act_daily.deleted_at')
+                    ->whereNull('at_daily.deleted_at');
+            })
             ->count();
     }
 

@@ -31,7 +31,16 @@ class StaffService
     public function getAllStaff(array $filters = [])
     {
         $query = \Modules\StaffManager\Models\Staff::query()
-            ->where('role', '!=', 'coach');
+            ->where(function ($q) {
+                $q->where('role', '!=', 'coach')
+                  ->orWhere(function ($coachQuery) {
+                      $coachQuery->where('role', 'coach')
+                          ->whereHas('activities.activityType', function ($actTypeQuery) {
+                              $actTypeQuery->where('name', 'like', '%تدريب عام%')
+                                           ->orWhere('id', 4);
+                          });
+                  });
+            });
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {

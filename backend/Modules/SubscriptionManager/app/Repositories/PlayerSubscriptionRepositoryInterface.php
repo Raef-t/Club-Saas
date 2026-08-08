@@ -7,6 +7,7 @@ interface PlayerSubscriptionRepositoryInterface
     public function all();
     public function find(int $id);
     public function create(array $data);
+    public function update(int $id, array $data);
     public function findActiveByMember(int $memberId);
     public function findActiveByMemberAndPlan(int $memberId, int $planId);
 }

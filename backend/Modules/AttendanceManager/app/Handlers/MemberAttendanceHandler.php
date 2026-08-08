@@ -61,9 +61,9 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
     /**
      * Check out a member.
      */
-    public function checkOut(int $attendanceId): Attendance
+    public function checkOut(int $attendanceId, ?string $checkOutAt = null): Attendance
     {
-        return DB::transaction(function () use ($attendanceId) {
+        return DB::transaction(function () use ($attendanceId, $checkOutAt) {
             /** @var Attendance $attendance */
             $attendance = Attendance::where('attendable_type', 'member')
                 ->findOrFail($attendanceId);
@@ -72,11 +72,11 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 throw new Exception(__('Member is already checked out.'));
             }
 
-            $checkOutAt      = now();
-            $durationMinutes = Carbon::parse($attendance->check_in_at)->diffInMinutes($checkOutAt);
+            $checkOutTimestamp = $checkOutAt ? Carbon::parse($checkOutAt) : now();
+            $durationMinutes   = Carbon::parse($attendance->check_in_at)->diffInMinutes($checkOutTimestamp);
 
             $attendance->update([
-                'check_out_at'     => $checkOutAt,
+                'check_out_at'     => $checkOutTimestamp,
                 'duration_minutes' => $durationMinutes,
                 'status'           => 'completed',
             ]);

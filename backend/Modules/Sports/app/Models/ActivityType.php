@@ -22,6 +22,7 @@ class ActivityType extends Model
         'is_session_based',
         'has_unlimited_subscribers',
         'has_shifts',
+        'is_daily_entry',
     ];
 
     /**
@@ -32,6 +33,7 @@ class ActivityType extends Model
         'is_session_based' => 'boolean',
         'has_unlimited_subscribers' => 'boolean',
         'has_shifts' => 'boolean',
+        'is_daily_entry' => 'boolean',
     ];
 
     /**

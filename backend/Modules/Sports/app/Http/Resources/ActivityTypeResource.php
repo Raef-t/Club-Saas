@@ -18,7 +18,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "is_session_based", type: "boolean", example: true),
         new OA\Property(property: "has_unlimited_subscribers", type: "boolean", example: false),
-        new OA\Property(property: "has_shifts", type: "boolean", example: false)
+        new OA\Property(property: "has_shifts", type: "boolean", example: false),
+        new OA\Property(property: "is_daily_entry", type: "boolean", example: false)
     ]
 )]
 class ActivityTypeResource extends JsonResource
@@ -32,6 +33,7 @@ class ActivityTypeResource extends JsonResource
             'is_session_based' => $this->is_session_based,
             'has_unlimited_subscribers' => $this->has_unlimited_subscribers,
             'has_shifts' => $this->has_shifts,
+            'is_daily_entry' => (bool) $this->is_daily_entry,
         ];
     }
 }

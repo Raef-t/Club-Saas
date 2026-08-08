@@ -20,10 +20,11 @@ interface AttendanceHandlerInterface
     /**
      * Record a check-out for the given attendance record.
      *
-     * @param  int  $attendanceId
+     * @param  int         $attendanceId
+     * @param  string|null $checkOutAt
      * @return Attendance
      */
-    public function checkOut(int $attendanceId): Attendance;
+    public function checkOut(int $attendanceId, ?string $checkOutAt = null): Attendance;
 
     /**
      * Get the open (checked-in) attendance record for this entity, if any.

@@ -3488,7 +3488,7 @@
                     "Reception"
                 ],
                 "summary": "↩️ إلغاء الحضور وإرجاع الجلسة (كلي أو جزئي)",
-                "description": "يتيح هذا المسار لموظف الاستقبال التراجع عن خصم جلسة واحدة أو أكثر لاشتراكات محددة ضمن نفس سجل الحضور، أو إلغاء الحضور بالكامل.\n\n**السلوك:**\n- **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.\n- **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.\n  - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.\n  - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.",
+                "description": "يتيح هذا المسار لموظف الاستقبال التراجع عن تسجيل حضور عضو أو موظف.\n\n**السلوك:**\n- **حضور الموظف (Staff):**\n  - يتم حذف سجل حضور الموظف بالكامل (عند عدم إرسال `player_subscription_ids`).\n- **حضور العضو (Member):**\n  - **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.\n  - **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.\n    - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.\n    - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.",
                 "operationId": "51fdf23443c8a41da1becdec63e72a25",
                 "parameters": [
                     {
@@ -3590,6 +3590,12 @@
                                         "description": "معرف المنشأة (اختياري)",
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "check_in_at": {
+                                        "description": "تاريخ ووقت تسجيل الدخول اليدوي (اختياري)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-08-08 14:30:00"
                                     }
                                 },
                                 "type": "object"
@@ -3631,6 +3637,24 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "check_out_at": {
+                                        "description": "تاريخ ووقت تسجيل الانصراف اليدوي (اختياري، إذا لم يرسل يأخذ الوقت الحالي بالسيرفر)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-08-08 16:30:00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم الانصراف",
@@ -19018,6 +19042,212 @@
                 ]
             }
         },
+        "/v1/player-subscriptions/{id}": {
+            "put": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "✏️ تعديل بيانات اشتراك عضو",
+                "description": "تعديل بيانات اشتراك عضو محدد كالتاريخ، الخطة، الملاحظات، الحالة أو المبالغ المالية.",
+                "operationId": "b01ae471a9f597465f359fe7e9471f83",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "member_id": {
+                                        "description": "معرف العضو (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "plan_id": {
+                                        "description": "معرف الخطة (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "offer_id": {
+                                        "description": "معرف العرض (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "months_count": {
+                                        "description": "عدد الأشهر (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "start_date": {
+                                        "description": "تاريخ بداية الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01"
+                                    },
+                                    "end_date": {
+                                        "description": "تاريخ نهاية الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-09-01"
+                                    },
+                                    "status": {
+                                        "description": "حالة الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "example": "active"
+                                    },
+                                    "paid_amount": {
+                                        "description": "المبلغ المدفوع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات (اختياري)",
+                                        "type": "string",
+                                        "example": "ملاحظات معدلة"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعديل الاشتراك بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription updated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في عملية التعديل",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription update failed."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "🗑️ حذف اشتراك متدرب (Soft Delete)",
+                "description": "حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.",
+                "operationId": "397414f0216c095ed8c6a7b15c216061",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الاشتراك غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/player-subscriptions/{id}/freeze": {
             "post": {
                 "tags": [
@@ -19673,41 +19903,6 @@
                                 }
                             }
                         }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/player-subscriptions/{id}": {
-            "delete": {
-                "tags": [
-                    "Player Subscriptions"
-                ],
-                "summary": "🗑️ حذف اشتراك متدرب (Soft Delete)",
-                "description": "حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.",
-                "operationId": "397414f0216c095ed8c6a7b15c216061",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "معرف الاشتراك",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح"
-                    },
-                    "404": {
-                        "description": "🚫 الاشتراك غير موجود"
                     }
                 },
                 "security": [
@@ -24001,6 +24196,10 @@
                         "example": false
                     },
                     "has_shifts": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "is_daily_entry": {
                         "type": "boolean",
                         "example": false
                     }

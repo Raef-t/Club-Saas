@@ -775,4 +775,90 @@ class SubscriptionService
             }
         }
     }
+
+    /**
+     * Update an existing player subscription and synchronize invoice & payments.
+     */
+    public function updateSubscription(int $id, array $data)
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $subscription = $this->subscriptionRepository->find($id);
+
+            $oldPaidAmount = (float) $subscription->paid_amount;
+            $oldTotalAmount = (float) $subscription->total_amount;
+
+            // 1. Calculate new total amount if plan_id or offer_id changes
+            if (!empty($data['plan_id']) && $data['plan_id'] != $subscription->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::findOrFail($data['plan_id']);
+                $totalAmount = (float) $plan->base_price;
+                $data['total_amount'] = $totalAmount;
+            } elseif (!empty($data['offer_id']) && $data['offer_id'] != $subscription->offer_id) {
+                $offer = \Modules\SubscriptionManager\Models\Offer::findOrFail($data['offer_id']);
+                $totalAmount = (float) $offer->price;
+                $data['total_amount'] = $totalAmount;
+            } else {
+                $totalAmount = $oldTotalAmount;
+            }
+
+            // 2. Financials Calculation
+            $paidAmount = array_key_exists('paid_amount', $data) ? (float) $data['paid_amount'] : $oldPaidAmount;
+            $remainingAmount = max(0, $totalAmount - $paidAmount);
+            $data['remaining_amount'] = $remainingAmount;
+
+            // 3. Update subscription model
+            $subscription = $this->subscriptionRepository->update($id, $data);
+            $subscription->refresh();
+
+            // 4. Synchronize linked Invoice
+            $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
+            $branchId = $memberDTO->branchId;
+
+            $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
+                ['player_subscription_id' => $subscription->id],
+                [
+                    'member_id' => $subscription->member_id,
+                    'branch_id' => $branchId,
+                    'total' => $totalAmount,
+                    'status' => 'unpaid',
+                ]
+            );
+
+            $invoice->update([
+                'member_id' => $subscription->member_id,
+                'total' => $totalAmount,
+                'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
+            ]);
+
+            // 5. If paid_amount increased, record new Payment for the difference
+            if ($paidAmount > $oldPaidAmount) {
+                $addedAmount = $paidAmount - $oldPaidAmount;
+
+                if ($branchId) {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                        ->where('branch_id', $branchId)
+                        ->value('default_safe_id');
+
+                    if (!$safeId) {
+                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                            ->where('branch_id', $branchId)
+                            ->value('id');
+                    }
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => $safeId,
+                        'amount' => $addedAmount,
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+
+                    event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
+                }
+            }
+
+            $subscription->member = $memberDTO;
+
+            return $subscription;
+        });
+    }
 }

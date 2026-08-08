@@ -49,14 +49,15 @@ class UnifiedAttendanceService
      * Check out by attendance ID.
      * Type is resolved from the attendance record itself.
      *
-     * @param  int  $attendanceId
+     * @param  int         $attendanceId
+     * @param  string|null $checkOutAt
      * @return Attendance
      * @throws Exception
      */
-    public function checkOut(int $attendanceId): Attendance
+    public function checkOut(int $attendanceId, ?string $checkOutAt = null): Attendance
     {
         $attendance = Attendance::findOrFail($attendanceId);
-        return $this->resolveHandler($attendance->attendable_type)->checkOut($attendanceId);
+        return $this->resolveHandler($attendance->attendable_type)->checkOut($attendanceId, $checkOutAt);
     }
 
     /**
