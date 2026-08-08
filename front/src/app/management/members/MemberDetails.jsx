@@ -1,10 +1,16 @@
 import DetailItem from "@/components/ui/DetailItem";
+import Button from "@/components/ui/Button";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import {
   MEMBER_GENDER_LABELS as genderLabels,
   RELATION_LABELS as relationLabels,
 } from "./memberConstants";
-export default function MemberDetails({ member, branches = [] }) {
+export default function MemberDetails({
+  member,
+  branches = [],
+  onShowSubscription,
+  isSubscriptionLoading = false,
+}) {
   if (!member) {
     return (
       <div className="rounded-xl border border-app-line bg-app-card-soft/60 p-6 text-center text-sm text-app-muted-light">
@@ -75,6 +81,17 @@ export default function MemberDetails({ member, branches = [] }) {
           </section>
         </div>
       )}
+
+      <div className="border-t border-app-line pt-4">
+        <Button
+          type="button"
+          className="h-11 w-full text-black"
+          loading={isSubscriptionLoading}
+          onClick={onShowSubscription}
+        >
+          عرض اشتراك اللاعب
+        </Button>
+      </div>
     </div>
   );
 }

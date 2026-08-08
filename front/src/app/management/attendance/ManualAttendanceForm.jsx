@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
+import TimePickerSmart from "@/components/forms/TimePickerSmart";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetStaffQuery } from "@/lib/api/staffApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
@@ -23,6 +24,7 @@ export default function ManualAttendanceForm({ attendance }) {
   const [manualMode, setManualMode] = useState("check-in");
   const [attendableType, setAttendableType] = useState("member");
   const [attendableId, setAttendableId] = useState("");
+  const [checkInTime, setCheckInTime] = useState("");
   const [checkOutType, setCheckOutType] = useState("member");
   const [checkOutAttendableId, setCheckOutAttendableId] = useState("");
   const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
@@ -92,6 +94,7 @@ export default function ManualAttendanceForm({ attendance }) {
     setSubscriptionPlanId("");
     setBulkResult(null);
     setAttendableId("");
+    setCheckInTime("");
     setCheckOutAttendableId("");
   }, [attendance.branchId]);
 
@@ -102,8 +105,12 @@ export default function ManualAttendanceForm({ attendance }) {
     const succeeded = await attendance.handleManualCheckIn({
       attendableType,
       attendableId,
+      checkInTime,
     });
-    if (succeeded) setAttendableId("");
+    if (succeeded) {
+      setAttendableId("");
+      setCheckInTime("");
+    }
   }
 
   async function submitCheckOut(event) {
@@ -184,6 +191,19 @@ export default function ManualAttendanceForm({ attendance }) {
                 disabled={!attendance.branchId || isLoadingCheckInPeople}
               />
             </label>
+            <div>
+              <TimePickerSmart
+                label="وقت الدخول (اختياري)"
+                value={checkInTime}
+                onChange={setCheckInTime}
+                placeholder="HH:MM"
+                allowClear
+                disabled={attendance.isManualCheckingIn}
+              />
+              <p className="mt-1.5 text-right text-[11px] text-app-muted-light">
+                اتركه فارغاً لاستخدام وقت السيرفر تلقائياً.
+              </p>
+            </div>
             <Button
               type="submit"
               className="h-11 w-full"

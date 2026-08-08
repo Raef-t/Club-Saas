@@ -1,3 +1,5 @@
+import { resolveWorkStatus } from "@/lib/workStatus";
+
 /**
  * Creates the controlled form state for coach creation and editing.
  */
@@ -25,7 +27,8 @@ export function createCoachFormInitialValues(
     branch_ids: initialValues?.branch_ids || (defaultBranchId ? [defaultBranchId] : []),
     experience_years: initialValues?.experience_years || "0",
     start_date: initialValues?.start_date || "",
-    is_active: initialValues?.is_active ?? true,
+    work_status: resolveWorkStatus(initialValues || {}),
+    is_active: resolveWorkStatus(initialValues || {}) === "active",
     employment_type: initialValues?.employment_type || "fixed_salary",
     base_salary: initialValues?.base_salary || "0",
     default_commission_rate: initialValues?.default_commission_rate || "0",

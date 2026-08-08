@@ -16,6 +16,7 @@ describe("coach form utilities", () => {
     expect(values.shifts).toEqual([]);
     expect(values).not.toHaveProperty("national_id");
     expect(values.start_date).toBe("");
+    expect(values.work_status).toBe("active");
     expect(values).not.toHaveProperty("shift_ids");
   });
 
@@ -25,11 +26,13 @@ describe("coach form utilities", () => {
       last_name: "Coach",
       dob: "1990-01-01",
       branch_ids: [3],
+      work_status: "on_leave",
     });
     expect(values.first_name).toBe("Test");
     expect(values.last_name).toBe("Coach");
     expect(values.dob).toBe("1990-01-01");
     expect(values.branch_ids).toEqual([3]);
+    expect(values.work_status).toBe("on_leave");
   });
 
   it("maps work types to employment types", () => {

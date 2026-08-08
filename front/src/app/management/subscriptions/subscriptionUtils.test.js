@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatSubscriptionMoney,
+  getCurrentMemberSubscription,
   getLocalDateValue,
   getSubscriptionDetail,
   getSubscriptionRows,
@@ -46,5 +47,32 @@ describe("subscription utilities", () => {
     expect(isDailyEntrySubscriptionPlan({ name: { ar: "دخولية أجهزة" } })).toBe(true);
     expect(isDailyEntrySubscriptionPlan({ name: { en: "Daily Entry" } })).toBe(true);
     expect(isDailyEntrySubscriptionPlan({ name: "اشتراك أجهزة شهري" })).toBe(false);
+  });
+
+  it("selects the active subscription belonging to the requested member", () => {
+    const response = {
+      data: [
+        { id: 8, member_id: 2, status: "active" },
+        { id: 7, member: { id: 5 }, status: "frozen" },
+        { id: 6, member_id: 5, status: "active" },
+      ],
+    };
+
+    expect(getCurrentMemberSubscription(response, 5)).toMatchObject({ id: 6 });
+    expect(getCurrentMemberSubscription(response, 99)).toBeNull();
+  });
+
+  it("falls back to the newest subscription when member identifiers are omitted", () => {
+    expect(
+      getCurrentMemberSubscription(
+        {
+          data: [
+            { id: 1, status: "expired", start_date: "2025-01-01" },
+            { id: 2, status: "expired", start_date: "2026-01-01" },
+          ],
+        },
+        5,
+      ),
+    ).toMatchObject({ id: 2 });
   });
 });

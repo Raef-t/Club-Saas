@@ -2,12 +2,14 @@
 
 import MemberDetails from "./MemberDetails";
 import { MemberForm } from "./MemberForm";
+import SubscriptionDetails from "@/app/management/subscriptions/SubscriptionDetails";
 
 import { useMemo, useState } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
 import Drawer from "@/components/ui/Drawer";
+import Modal from "@/components/ui/Modal";
 import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
@@ -18,6 +20,14 @@ import { memberSchema } from "@/lib/validations/membersSchema";
 import PhoneField from "@/components/forms/PhoneField";
 import { formatLocalizedName } from "@/lib/utils";
 import { useMembers } from "./useMembers";
+import {
+  useGetPlayerSubscriptionQuery,
+  useGetPlayerSubscriptionsQuery,
+} from "@/lib/api/playerSubscriptionsApi";
+import {
+  getCurrentMemberSubscription,
+  getSubscriptionDetail,
+} from "@/app/management/subscriptions/subscriptionUtils";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
 const CURRENCY_SYMBOL = "ل.س";
@@ -94,7 +104,17 @@ function DetailItem({ label, value, tone = "default" }) {
   );
 }
 
+function getMemberDisplayName(member) {
+  if (!member) return "";
+  return (
+    member.person?.full_name ||
+    `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
+    `العضو #${member.id}`
+  );
+}
+
 export default function MembersClient({ initialData }) {
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const {
     search,
     setSearch,
@@ -129,6 +149,50 @@ export default function MembersClient({ initialData }) {
     plans,
     closeDrawer,
   } = useMembers({ initialData });
+
+  const {
+    data: memberSubscriptionsResponse,
+    error: memberSubscriptionsError,
+    isLoading: isMemberSubscriptionsLoading,
+    isFetching: isMemberSubscriptionsFetching,
+    refetch: refetchMemberSubscriptions,
+  } = useGetPlayerSubscriptionsQuery(
+    { member_id: selectedMemberId },
+    { skip: !subscriptionModalOpen || !selectedMemberId },
+  );
+  const memberSubscriptionSummary = useMemo(
+    () => getCurrentMemberSubscription(memberSubscriptionsResponse, selectedMemberId),
+    [memberSubscriptionsResponse, selectedMemberId],
+  );
+  const memberSubscriptionId = memberSubscriptionSummary?.id || null;
+  const {
+    data: memberSubscriptionDetailResponse,
+    error: memberSubscriptionDetailError,
+    isLoading: isMemberSubscriptionDetailLoading,
+    isFetching: isMemberSubscriptionDetailFetching,
+    refetch: refetchMemberSubscriptionDetail,
+  } = useGetPlayerSubscriptionQuery(memberSubscriptionId, {
+    skip: !subscriptionModalOpen || !memberSubscriptionId,
+  });
+  const memberSubscription = useMemo(
+    () => getSubscriptionDetail(memberSubscriptionDetailResponse) || memberSubscriptionSummary,
+    [memberSubscriptionDetailResponse, memberSubscriptionSummary],
+  );
+  const isMemberSubscriptionLoading =
+    isMemberSubscriptionsLoading ||
+    isMemberSubscriptionsFetching ||
+    Boolean(
+      memberSubscriptionId &&
+      (isMemberSubscriptionDetailLoading || isMemberSubscriptionDetailFetching),
+    );
+
+  function retryMemberSubscription() {
+    if (memberSubscriptionsError || !memberSubscriptionId) {
+      refetchMemberSubscriptions();
+      return;
+    }
+    refetchMemberSubscriptionDetail();
+  }
 
   const columns = useMemo(
     () => [
@@ -342,7 +406,7 @@ export default function MembersClient({ initialData }) {
         open={drawerMode === "edit"}
         onClose={closeDrawer}
         title="تعديل بيانات اللاعب"
-        subtitle={selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ""}
+        subtitle={getMemberDisplayName(selectedMember)}
       >
         {editInitialValues && (
           <MemberForm
@@ -362,10 +426,30 @@ export default function MembersClient({ initialData }) {
         open={drawerMode === "details"}
         onClose={closeDrawer}
         title="تفاصيل اللاعب العضو"
-        subtitle={selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ""}
+        subtitle={getMemberDisplayName(selectedMember)}
       >
-        <MemberDetails member={selectedMember} branches={branches} />
+        <MemberDetails
+          member={selectedMember}
+          branches={branches}
+          onShowSubscription={() => setSubscriptionModalOpen(true)}
+          isSubscriptionLoading={isMemberSubscriptionLoading}
+        />
       </Drawer>
+
+      <Modal
+        open={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="تفاصيل اشتراك اللاعب"
+        subtitle={getMemberDisplayName(selectedMember)}
+      >
+        <SubscriptionDetails
+          subscription={memberSubscription}
+          error={memberSubscriptionsError || memberSubscriptionDetailError}
+          isLoading={isMemberSubscriptionLoading}
+          onRetry={retryMemberSubscription}
+          showActions={false}
+        />
+      </Modal>
 
       <ConfirmDialog
         open={deleteConfirmOpen}

@@ -8,6 +8,7 @@ import {
   createAttendanceRows,
   createAttendanceSubscriptions,
   createAvailableLockerOptions,
+  createManualCheckInTimestamp,
   formatAttendanceTime,
   findAttendanceLockerId,
   getInitialAttendanceSelection,
@@ -38,6 +39,30 @@ describe("attendance utilities", () => {
   it("formats valid times and rejects invalid values", () => {
     expect(formatAttendanceTime("invalid")).toBe("-");
     expect(formatAttendanceTime(null)).toBe("-");
+  });
+
+  it("builds an optional manual check-in timestamp using the local date", () => {
+    const date = new Date(2026, 7, 8, 12, 0, 0);
+
+    expect(createManualCheckInTimestamp("14:30", date)).toBe("2026-08-08 14:30:00");
+    expect(createManualCheckInTimestamp("", date)).toBeNull();
+    expect(createManualCheckInTimestamp("25:00", date)).toBeNull();
+  });
+
+  it("reads the new check_in_at history field", () => {
+    const [row] = createAttendanceRows({
+      data: [
+        {
+          id: 15,
+          attendable_type: "member",
+          attendable_id: 7,
+          check_in_at: "2026-08-08 14:30:00",
+          status: "checked_in",
+        },
+      ],
+    });
+
+    expect(row.checkIn).not.toBe("-");
   });
 
   it("maps attendance history with localized status values", () => {

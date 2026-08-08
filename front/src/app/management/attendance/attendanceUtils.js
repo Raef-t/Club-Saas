@@ -118,7 +118,11 @@ export function createAttendanceMember(response, memberId) {
 export function formatAttendanceTime(value) {
   if (!value) return "-";
 
-  const date = new Date(value);
+  const normalizedValue =
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)
+      ? value.replace(" ", "T")
+      : value;
+  const date = new Date(normalizedValue);
   if (Number.isNaN(date.getTime())) return "-";
 
   return date
@@ -128,6 +132,29 @@ export function formatAttendanceTime(value) {
       hour12: true,
     })
     .toLowerCase();
+}
+
+/**
+ * Combines an optional manual time with the local attendance date.
+ * An empty or invalid time returns null so the backend can use server time.
+ */
+export function createManualCheckInTimestamp(time, date = new Date()) {
+  if (!time || !(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+
+  const match = String(time).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = Number(match[3] || 0);
+  if (hour > 23 || minute > 59 || second > 59) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const timeValue = [hour, minute, second].map((part) => String(part).padStart(2, "0")).join(":");
+
+  return `${year}-${month}-${day} ${timeValue}`;
 }
 
 /**
@@ -153,11 +180,11 @@ export function createAttendanceRows(response, activeMember, people = {}) {
       attendableId: record.attendable_id || record.member_id || record.staff_id || null,
       attendableType: record.attendable_type || (record.staff_id ? "staff" : "member"),
       branchId: record.branch_id || null,
-      isOpen: record.status === "checked_in" && !record.check_out,
+      isOpen: record.status === "checked_in" && !(record.check_out_at || record.check_out),
       number: record.id ? `#${record.id}` : "-",
       type: record.attendable_type === "staff" ? "موظف" : "عضو",
-      checkIn: formatAttendanceTime(record.check_in),
-      checkOut: formatAttendanceTime(record.check_out),
+      checkIn: formatAttendanceTime(record.check_in_at || record.check_in),
+      checkOut: formatAttendanceTime(record.check_out_at || record.check_out),
       member:
         (activeMember &&
         record.attendable_type !== "staff" &&

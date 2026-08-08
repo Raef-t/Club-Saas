@@ -13,6 +13,7 @@ import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { coachFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
+import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   EMPLOYMENT_TYPES as employmentTypes,
   SHIFT_GENDER_LABELS as shiftGenderLabels,
@@ -235,7 +236,8 @@ export function CoachCreateForm({
       branch_ids: normalizedForm.branch_ids,
       experience_years: Number(normalizedForm.experience_years) || 0,
       start_date: normalizedForm.start_date || null,
-      is_active: normalizedForm.is_active,
+      work_status: normalizedForm.work_status,
+      is_active: normalizedForm.work_status === "active",
       employment_type: normalizedForm.employment_type,
       base_salary: Number(normalizedForm.base_salary) || 0,
       default_commission_rate: Number(normalizedForm.default_commission_rate) || 0,
@@ -506,13 +508,17 @@ export function CoachCreateForm({
         </label>
       </div>
 
-      <div className="rounded-lg border border-app-line bg-app-card-soft p-3">
-        <Checkbox
-          label="المدرب نشط"
-          checked={form.is_active}
-          onChange={(event) => updateField("is_active", event.target.checked)}
+      <label className="block text-right text-sm text-app-muted-light">
+        حالة العمل *
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="h-11 bg-app-card-soft"
+          value={form.work_status}
+          onChange={(value) => updateField("work_status", value)}
+          options={WORK_STATUS_OPTIONS}
+          error={errors.work_status}
         />
-      </div>
+      </label>
 
       <label className="block text-right text-sm text-app-muted-light">
         نوع التوظيف

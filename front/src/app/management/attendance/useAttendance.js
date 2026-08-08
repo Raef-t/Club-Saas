@@ -32,6 +32,7 @@ import {
   createAttendanceRows,
   createAttendanceSubscriptions,
   createAvailableLockerOptions,
+  createManualCheckInTimestamp,
   findAttendanceLockerId,
   getInitialAttendanceSelection,
   toggleRequiredSubscription,
@@ -421,17 +422,19 @@ export function useAttendance({ initialBranches } = {}) {
    * Registers a manual check-in for a member or staff record.
    * When successful, activates the scanned-member card (same as QR flow).
    */
-  async function handleManualCheckIn({ attendableType, attendableId }) {
+  async function handleManualCheckIn({ attendableType, attendableId, checkInTime = "" }) {
     if (!branchId) {
       toast.warning("اختر الفرع قبل تسجيل الدخول اليدوي.");
       return false;
     }
 
     try {
+      const checkInAt = createManualCheckInTimestamp(checkInTime);
       const response = await manualCheckIn({
         attendable_type: attendableType,
         attendable_id: Number(attendableId),
         branch_id: Number(branchId),
+        ...(checkInAt ? { check_in_at: checkInAt } : {}),
       }).unwrap();
 
       const memberId =

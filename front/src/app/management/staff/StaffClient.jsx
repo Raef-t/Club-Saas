@@ -11,6 +11,7 @@ import RowActions from "@/components/ui/RowActions";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { FilterIcon, PlusIcon, SearchIcon } from "@/components/icons/Icons";
 import { formatLocalizedName, formatMoney } from "@/lib/utils";
+import { getWorkStatusMeta, WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   STAFF_EMPLOYMENT_LABELS,
   STAFF_FILTER_ROLE_OPTIONS,
@@ -32,8 +33,8 @@ export default function StaffClient({ initialData }) {
     setRoleFilter,
     genderFilter,
     setGenderFilter,
-    activeStatusFilter,
-    setActiveStatusFilter,
+    workStatusFilter,
+    setWorkStatusFilter,
     drawerMode,
     setDrawerMode,
     setSelectedStaffId,
@@ -126,18 +127,20 @@ export default function StaffClient({ initialData }) {
         ),
       },
       {
-        key: "is_active",
+        key: "work_status",
         label: "الحالة",
         align: "center",
-        render: (value) => (
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-              value ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-            }`}
-          >
-            {value ? "نشط" : "غير نشط"}
-          </span>
-        ),
+        sortValue: (staff) => getWorkStatusMeta(staff).label,
+        render: (_, staff) => {
+          const status = getWorkStatusMeta(staff);
+          return (
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${status.className}`}
+            >
+              {status.label}
+            </span>
+          );
+        },
       },
       {
         key: "actions",
@@ -178,11 +181,7 @@ export default function StaffClient({ initialData }) {
     [],
   );
   const statusOptions = useMemo(
-    () => [
-      { value: "all", label: "كل الحالات" },
-      { value: "true", label: "نشط" },
-      { value: "false", label: "غير نشط" },
-    ],
+    () => [{ value: "all", label: "كل الحالات" }, ...WORK_STATUS_OPTIONS],
     [],
   );
 
@@ -274,9 +273,9 @@ export default function StaffClient({ initialData }) {
             <Dropdown
               className="min-w-40 text-app-text"
               icon={FilterIcon}
-              value={activeStatusFilter}
+              value={workStatusFilter}
               options={statusOptions}
-              onChange={setActiveStatusFilter}
+              onChange={setWorkStatusFilter}
             />
           </div>
         }

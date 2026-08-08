@@ -45,6 +45,7 @@ export const coachSchema = z.object({
     .nonnegative("لا يمكن أن يكون الراتب سالباً")
     .or(z.string().transform((val) => Number(val) || 0)),
 
+  work_status: z.enum(["active", "suspended", "on_leave"]).optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -101,6 +102,9 @@ export const coachFormSchema = z.object({
     .default([]),
   activity_ids: z.array(z.number().positive()).optional().default([]),
   shifts: z.array(z.number().positive()).optional().default([]),
+  work_status: z.enum(["active", "suspended", "on_leave"], {
+    message: "يرجى اختيار حالة عمل صالحة",
+  }),
   is_active: z.boolean().optional(),
 });
 
@@ -126,5 +130,6 @@ export const coachEditSchema = z.object({
     .nonnegative("لا يمكن أن يكون الراتب سالباً")
     .or(z.string().transform((val) => Number(val) || 0)),
 
+  work_status: z.enum(["active", "suspended", "on_leave"]).optional(),
   is_active: z.boolean().optional(),
 });

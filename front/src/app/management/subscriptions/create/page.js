@@ -3,7 +3,7 @@ import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
-  title: "إضافة اشتراك | TechnoGYM",
+  title: "إدارة الاشتراك | TechnoGYM",
 };
 
 export default async function CreateSubscriptionPage() {

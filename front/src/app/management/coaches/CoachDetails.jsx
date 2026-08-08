@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import DetailItem from "@/components/ui/DetailItem";
 import SkeletonPage from "@/components/ui/Skeleton";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { getWorkStatusMeta } from "@/lib/workStatus";
 import {
   COACH_GENDER_LABELS as genderLabels,
   EMPLOYMENT_LABELS as employmentLabels,
@@ -41,6 +42,7 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
   const commissionRate = coach.details?.default_commission_rate ?? coach.default_commission_rate;
   const startDate = coach.start_date || coach.details?.start_date;
   const coachAge = getCoachAge(coach);
+  const workStatus = getWorkStatusMeta(coach);
   const employmentLabel = compensation.isPrivateEquipment
     ? "تدريب خاص (بدون راتب أو نسبة)"
     : employmentLabels[compensation.paymentType] || compensation.paymentType || "-";
@@ -55,12 +57,8 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
             كود الموظف: #{coach.id} | دور: {coach.role}
           </p>
         </div>
-        <span
-          className={`rounded px-2.5 py-1 text-xs font-semibold ${
-            coach.is_active ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-          }`}
-        >
-          {coach.is_active ? "نشط" : "غير نشط"}
+        <span className={`rounded px-2.5 py-1 text-xs font-semibold ${workStatus.className}`}>
+          {workStatus.label}
         </span>
       </div>
 
@@ -81,6 +79,7 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
         />
         <DetailItem label="العمر" value={coachAge !== null ? `${coachAge} سنة` : "-"} />
         <DetailItem label="نوع التوظيف" value={employmentLabel} />
+        <DetailItem label="حالة العمل" value={workStatus.label} />
         {compensation.showSalary && (
           <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
         )}

@@ -88,7 +88,8 @@ export default function SubscriptionsClient({ initialData }) {
         align: "center",
         render: (_, subscription) => {
           const plan = subscription.plan || {};
-          const planName = typeof plan.name === "string" ? plan.name : (plan.name?.ar || plan.name?.en || "-");
+          const planName =
+            typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "-";
 
           return (
             <div className="min-w-0 text-center">
@@ -132,14 +133,14 @@ export default function SubscriptionsClient({ initialData }) {
         render: (_, subscription) => (
           <RowActions
             disabled={isDeleting}
-            onEdit={() => setSelectedSubscriptionId(subscription.id)}
-            editTitle="عرض وإدارة الاشتراك"
+            editHref={`/management/subscriptions/create?mode=edit&id=${subscription.id}`}
+            editTitle="تعديل الاشتراك"
             onDelete={() => handleDelete(subscription)}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setSelectedSubscriptionId],
+    [handleDelete, isDeleting],
   );
 
   const branchOptions = useMemo(
