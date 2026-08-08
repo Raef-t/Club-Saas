@@ -11,6 +11,7 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { staffFormSchema } from "@/lib/validations/staffSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
+import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   SHIFT_GENDER_LABELS,
   STAFF_EMPLOYMENT_OPTIONS,
@@ -361,13 +362,17 @@ export default function StaffForm({
         )}
       </label>
 
-      <div className="rounded-lg border border-app-line bg-app-card-soft p-3">
-        <Checkbox
-          label="الموظف نشط ويمكنه العمل في النظام"
-          checked={form.is_active}
-          onChange={(event) => updateField("is_active", event.target.checked)}
+      <label className="block text-right text-sm text-app-muted-light">
+        حالة العمل *
+        <Dropdown
+          className="mt-2 text-app-text"
+          buttonClassName="h-11 bg-app-card-soft"
+          value={form.work_status}
+          onChange={(value) => updateField("work_status", value)}
+          options={WORK_STATUS_OPTIONS}
+          error={errors.work_status}
         />
-      </div>
+      </label>
 
       {errorMessage && (
         <p

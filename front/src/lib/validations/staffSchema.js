@@ -37,7 +37,10 @@ export const staffFormSchema = z.object({
     .number()
     .nonnegative("الراتب الأساسي لا يمكن أن يكون سالبًا")
     .or(z.string().transform((value) => Number(value) || 0)),
-  is_active: z.boolean(),
+  work_status: z.enum(["active", "suspended", "on_leave"], {
+    message: "يرجى اختيار حالة عمل صالحة",
+  }),
+  is_active: z.boolean().optional(),
   start_date: z.string().optional().or(z.literal("")),
   shifts: z.array(z.number().positive()).optional().default([]),
   address: z

@@ -55,6 +55,7 @@ export default function SubscriptionDetails({
   isFreezing,
   isUnfreezing,
   isCancelling,
+  showActions = true,
 }) {
   const [showFreezeForm, setShowFreezeForm] = useState(false);
   const [daysCount, setDaysCount] = useState("7");
@@ -86,13 +87,16 @@ export default function SubscriptionDetails({
   const member = subscription.member || {};
   const person = member.person || {};
   const plan = subscription.plan || {};
-  const planName = typeof plan.name === "string" ? plan.name : (plan.name?.ar || plan.name?.en || "-");
+  const planName =
+    typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "-";
   const items = subscription.items || [];
   const totalAllocated = items.reduce((sum, item) => sum + (item.sessions_allocated || 0), 0);
   const totalConsumed = items.reduce((sum, item) => sum + (item.sessions_consumed || 0), 0);
   const remainingSessions = totalAllocated - totalConsumed;
-  const coachNames = [...new Set(items.map(item => item.coach?.name).filter(Boolean))].join("، ") || "-";
-  const activityNames = [...new Set(items.map(item => item.activity?.name).filter(Boolean))].join("، ") || "-";
+  const coachNames =
+    [...new Set(items.map((item) => item.coach?.name).filter(Boolean))].join("، ") || "-";
+  const activityNames =
+    [...new Set(items.map((item) => item.activity?.name).filter(Boolean))].join("، ") || "-";
 
   return (
     <div className="space-y-6">
@@ -113,12 +117,15 @@ export default function SubscriptionDetails({
       <DetailSection title="بيانات العضو">
         <DetailItem label="الاسم" value={person.full_name} />
         <DetailItem label="رقم العضوية" value={member.member_number} />
-        <DetailItem label="البريد الإلكتروني" value={person.email} />
         <DetailItem label="الهاتف" value={person.phone} />
       </DetailSection>
 
       <DetailSection title="الخطة والمدة">
         <DetailItem label="الخطة" value={planName} />
+        <DetailItem
+          label="العرض"
+          value={subscription.offer?.name || subscription.offer_id || "بدون عرض"}
+        />
         <DetailItem label="النشاط" value={activityNames} />
         <DetailItem label="تاريخ البداية" value={formatDate(subscription.start_date)} />
         <DetailItem label="تاريخ النهاية" value={formatDate(subscription.end_date)} />
@@ -150,6 +157,15 @@ export default function SubscriptionDetails({
         <DetailItem label="المدرب المسؤول" value={coachNames} />
       </DetailSection>
 
+      {subscription.notes && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium text-app-yellow">الملاحظات</h3>
+          <p className="whitespace-pre-wrap rounded-lg border border-app-line bg-app-card-soft/70 p-3 text-sm leading-6 text-app-text">
+            {subscription.notes}
+          </p>
+        </section>
+      )}
+
       {/* يعرض سجل الفترات التي جُمّد فيها الاشتراك. */}
       {subscription.freezes && subscription.freezes.length > 0 && (
         <div className="rounded-xl border border-app-line bg-app-card-soft/40 p-4 text-right space-y-2">
@@ -171,91 +187,93 @@ export default function SubscriptionDetails({
       )}
 
       {/* يقيّد الإجراءات بحسب حالة الاشتراك الحالية. */}
-      <div className="border-t border-app-line pt-4 space-y-3">
-        {subscription.status === "active" && (
-          <>
-            {!showFreezeForm ? (
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  tone="warning"
-                  className="flex-1 h-10 text-sm font-semibold"
-                  onClick={() => setShowFreezeForm(true)}
-                >
-                  تجميد الاشتراك
-                </Button>
-                <Button
-                  type="button"
-                  tone="danger"
-                  className="flex-1 h-10 text-sm font-semibold"
-                  onClick={() => onCancel(subscription.id)}
-                  loading={isCancelling}
-                >
-                  إلغاء الاشتراك
-                </Button>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-app-line bg-app-card-soft p-4 space-y-3 text-right">
-                <h4 className="text-xs font-bold text-white">تجميد الاشتراك الحالي</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <DatePickerSmart
-                    label="تاريخ البدء"
-                    value={startDate}
-                    onChange={setStartDate}
-                    compact={true}
-                  />
-                  <label className="block text-xs text-app-muted-light">
-                    عدد الأيام
-                    <input
-                      type="number"
-                      min="1"
-                      value={daysCount}
-                      onChange={(e) => setDaysCount(e.target.value)}
-                      className="app-input mt-1.5 h-9 w-full px-2 text-right bg-black/35 text-white"
-                    />
-                  </label>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    type="button"
-                    tone="outline"
-                    className="h-9 px-3 text-xs flex-1"
-                    onClick={() => setShowFreezeForm(false)}
-                  >
-                    تراجع
-                  </Button>
+      {showActions && (
+        <div className="border-t border-app-line pt-4 space-y-3">
+          {subscription.status === "active" && (
+            <>
+              {!showFreezeForm ? (
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     tone="warning"
-                    className="h-9 px-3 text-xs flex-1"
-                    loading={isFreezing}
-                    onClick={() => {
-                      onFreeze(subscription.id, {
-                        start_date: startDate,
-                        days_count: Number(daysCount) || 7,
-                      });
-                      setShowFreezeForm(false);
-                    }}
+                    className="flex-1 h-10 text-sm font-semibold"
+                    onClick={() => setShowFreezeForm(true)}
                   >
-                    تأكيد التجميد
+                    تجميد الاشتراك
+                  </Button>
+                  <Button
+                    type="button"
+                    tone="danger"
+                    className="flex-1 h-10 text-sm font-semibold"
+                    onClick={() => onCancel(subscription.id)}
+                    loading={isCancelling}
+                  >
+                    إلغاء الاشتراك
                   </Button>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              ) : (
+                <div className="rounded-xl border border-app-line bg-app-card-soft p-4 space-y-3 text-right">
+                  <h4 className="text-xs font-bold text-white">تجميد الاشتراك الحالي</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <DatePickerSmart
+                      label="تاريخ البدء"
+                      value={startDate}
+                      onChange={setStartDate}
+                      compact={true}
+                    />
+                    <label className="block text-xs text-app-muted-light">
+                      عدد الأيام
+                      <input
+                        type="number"
+                        min="1"
+                        value={daysCount}
+                        onChange={(e) => setDaysCount(e.target.value)}
+                        className="app-input mt-1.5 h-9 w-full px-2 text-right bg-black/35 text-white"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      type="button"
+                      tone="outline"
+                      className="h-9 px-3 text-xs flex-1"
+                      onClick={() => setShowFreezeForm(false)}
+                    >
+                      تراجع
+                    </Button>
+                    <Button
+                      type="button"
+                      tone="warning"
+                      className="h-9 px-3 text-xs flex-1"
+                      loading={isFreezing}
+                      onClick={() => {
+                        onFreeze(subscription.id, {
+                          start_date: startDate,
+                          days_count: Number(daysCount) || 7,
+                        });
+                        setShowFreezeForm(false);
+                      }}
+                    >
+                      تأكيد التجميد
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
-        {subscription.status === "frozen" && (
-          <Button
-            type="button"
-            className="w-full h-10 text-sm font-semibold"
-            loading={isUnfreezing}
-            onClick={() => onUnfreeze(subscription.id)}
-          >
-            إلغاء التجميد وتفعيل الاشتراك
-          </Button>
-        )}
-      </div>
+          {subscription.status === "frozen" && (
+            <Button
+              type="button"
+              className="w-full h-10 text-sm font-semibold"
+              loading={isUnfreezing}
+              onClick={() => onUnfreeze(subscription.id)}
+            >
+              إلغاء التجميد وتفعيل الاشتراك
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

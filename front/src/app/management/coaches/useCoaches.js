@@ -13,6 +13,7 @@ import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { formatLocalizedName } from "@/lib/utils";
+import { resolveWorkStatus } from "@/lib/workStatus";
 
 function getCoachesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -36,6 +37,7 @@ export function useCoaches(params = {}) {
   const [search, setSearch] = useState("");
   const [employmentFilter, setEmploymentFilter] = useState("all");
   const [activityFilter, setActivityFilter] = useState("all");
+  const [workStatusFilter, setWorkStatusFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
@@ -46,8 +48,9 @@ export function useCoaches(params = {}) {
     const params = {};
     if (branchFilter !== "all") params.branch_id = Number(branchFilter);
     if (activityFilter !== "all") params.activity_id = Number(activityFilter);
+    if (workStatusFilter !== "all") params.work_status = workStatusFilter;
     return params;
-  }, [branchFilter, activityFilter]);
+  }, [activityFilter, branchFilter, workStatusFilter]);
 
   const { data, error, isLoading, refetch } = useGetCoachesQuery(queryParams);
   const { data: branchesData } = useGetBranchesQuery();
@@ -146,6 +149,8 @@ export function useCoaches(params = {}) {
 
       const matchesEmployment =
         employmentFilter === "all" || coach.employment_type === employmentFilter;
+      const matchesWorkStatus =
+        workStatusFilter === "all" || resolveWorkStatus(coach) === workStatusFilter;
 
       const matchesSearch =
         !normalizedSearch ||
@@ -153,12 +158,14 @@ export function useCoaches(params = {}) {
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(normalizedSearch));
 
-      return matchesActivity && matchesEmployment && matchesSearch;
+      return matchesActivity && matchesEmployment && matchesWorkStatus && matchesSearch;
     });
-  }, [activityFilter, branchCoaches, employmentFilter, search]);
+  }, [activityFilter, branchCoaches, employmentFilter, search, workStatusFilter]);
 
   const stats = useMemo(() => {
-    const activeCount = branchCoaches.filter((c) => c.is_active).length;
+    const activeCount = branchCoaches.filter(
+      (coach) => resolveWorkStatus(coach) === "active",
+    ).length;
     const fixedCount = branchCoaches.filter((c) => c.employment_type === "fixed_salary").length;
     const commCount = branchCoaches.filter(
       (c) => c.employment_type === "commission" || c.employment_type === "hybrid",
@@ -219,7 +226,8 @@ export function useCoaches(params = {}) {
       }
       formData.append("experience_years", String(Number(values.experience_years) || 0));
       if (values.start_date) formData.append("start_date", values.start_date);
-      formData.append("is_active", values.is_active ? "1" : "0");
+      formData.append("work_status", values.work_status);
+      formData.append("is_active", values.work_status === "active" ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
       formData.append(
@@ -270,7 +278,8 @@ export function useCoaches(params = {}) {
       }
       formData.append("experience_years", String(Number(values.experience_years) || 0));
       formData.append("start_date", values.start_date || "");
-      formData.append("is_active", values.is_active ? "1" : "0");
+      formData.append("work_status", values.work_status);
+      formData.append("is_active", values.work_status === "active" ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
       formData.append(
@@ -360,7 +369,8 @@ export function useCoaches(params = {}) {
       start_date: (selectedCoach.start_date || selectedCoach.details?.start_date || "").split(
         "T",
       )[0],
-      is_active: selectedCoach.is_active ?? true,
+      work_status: resolveWorkStatus(selectedCoach),
+      is_active: resolveWorkStatus(selectedCoach) === "active",
       employment_type: selectedCoach.employment_type || "fixed_salary",
       base_salary: String(Number(selectedCoach.base_salary) || 0),
       default_commission_rate: String(
@@ -405,6 +415,8 @@ export function useCoaches(params = {}) {
     setEmploymentFilter,
     activityFilter,
     setActivityFilter,
+    workStatusFilter,
+    setWorkStatusFilter,
     drawerMode,
     setDrawerMode,
     selectedCoachId,

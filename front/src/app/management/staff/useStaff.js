@@ -13,6 +13,7 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { getBranchesArray } from "@/lib/utils";
+import { resolveWorkStatus } from "@/lib/workStatus";
 import {
   buildStaffQueryParams,
   createStaffInitialValues,
@@ -29,7 +30,8 @@ function createStaffFormData(values, { includePhoto = false } = {}) {
   formData.append("role", values.role);
   formData.append("employment_type", values.employment_type);
   formData.append("base_salary", String(Number(values.base_salary) || 0));
-  formData.append("is_active", values.is_active ? "1" : "0");
+  formData.append("work_status", values.work_status);
+  formData.append("is_active", values.work_status === "active" ? "1" : "0");
 
   if (values.country_code) formData.append("country_code", values.country_code.trim());
   if (values.start_date) formData.append("start_date", values.start_date);
@@ -58,7 +60,7 @@ export function useStaff({
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
-  const [activeStatusFilter, setActiveStatusFilter] = useState("all");
+  const [workStatusFilter, setWorkStatusFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedStaffId, setSelectedStaffId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
@@ -71,9 +73,9 @@ export function useStaff({
         branchId: branchFilter,
         role: roleFilter,
         gender: genderFilter,
-        activeStatus: activeStatusFilter,
+        workStatus: workStatusFilter,
       }),
-    [activeStatusFilter, branchFilter, genderFilter, roleFilter],
+    [branchFilter, genderFilter, roleFilter, workStatusFilter],
   );
 
   const {
@@ -128,7 +130,7 @@ export function useStaff({
   }, [search, staff]);
 
   const stats = useMemo(() => {
-    const activeCount = staff.filter((item) => item.is_active).length;
+    const activeCount = staff.filter((item) => resolveWorkStatus(item) === "active").length;
     const managementCount = staff.filter((item) =>
       ["admin", "management_admin", "manager"].includes(item.role),
     ).length;
@@ -247,8 +249,8 @@ export function useStaff({
     setRoleFilter,
     genderFilter,
     setGenderFilter,
-    activeStatusFilter,
-    setActiveStatusFilter,
+    workStatusFilter,
+    setWorkStatusFilter,
     drawerMode,
     setDrawerMode,
     selectedStaffId,

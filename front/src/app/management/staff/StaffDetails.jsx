@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import DetailItem from "@/components/ui/DetailItem";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { getWorkStatusMeta } from "@/lib/workStatus";
 import {
   SHIFT_GENDER_LABELS,
   STAFF_EMPLOYMENT_LABELS,
@@ -33,6 +34,7 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
   const branchNames = getStaffBranchNames(staff, branches);
   const shifts = Array.isArray(staff.shifts) ? staff.shifts : [];
   const phone = [staff.person?.country_code, staff.person?.phone_number].filter(Boolean).join(" ");
+  const workStatus = getWorkStatusMeta(staff);
 
   return (
     <div className="space-y-5">
@@ -57,11 +59,9 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
             رقم الموظف: #{staff.id} · {STAFF_ROLE_LABELS[staff.role] || staff.role || "غير محدد"}
           </p>
           <span
-            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-              staff.is_active ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-            }`}
+            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${workStatus.className}`}
           >
-            {staff.is_active ? "نشط" : "غير نشط"}
+            {workStatus.label}
           </span>
         </div>
       </div>
@@ -73,10 +73,7 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
           value={STAFF_EMPLOYMENT_LABELS[staff.employment_type] || staff.employment_type}
         />
         <DetailItem label="الراتب الأساسي" value={formatMoney(staff.base_salary)} tone="green" />
-        <DetailItem
-          label="حالة العمل"
-          value={staff.work_status === "active" ? "على رأس العمل" : staff.work_status}
-        />
+        <DetailItem label="حالة العمل" value={workStatus.label} />
         <DetailItem label="رقم الهاتف" value={phone || "-"} />
         <DetailItem label="اسم المستخدم" value={staff.username || "-"} />
         <DetailItem

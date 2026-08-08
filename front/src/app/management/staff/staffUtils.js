@@ -1,4 +1,5 @@
 import { formatLocalizedName } from "@/lib/utils";
+import { resolveWorkStatus, WORK_STATUSES } from "@/lib/workStatus";
 
 const MANAGER_STAFF_ROLES = new Set(["admin", "management_admin", "manager"]);
 
@@ -18,15 +19,13 @@ export function getStaffRecord(response) {
   return candidate && typeof candidate === "object" && !Array.isArray(candidate) ? candidate : null;
 }
 
-export function buildStaffQueryParams({ branchId, role, gender, activeStatus }) {
+export function buildStaffQueryParams({ branchId, role, gender, workStatus }) {
   const params = {};
 
   if (branchId && branchId !== "all") params.branch_id = Number(branchId);
   if (role && role !== "all") params.role = role;
   if (gender && gender !== "all") params.gender = gender;
-  if (activeStatus === "true" || activeStatus === "false") {
-    params.is_active = activeStatus === "true";
-  }
+  if (WORK_STATUSES.includes(workStatus)) params.work_status = workStatus;
 
   return params;
 }
@@ -113,6 +112,7 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
       role: "receptionist",
       employment_type: "fixed_salary",
       base_salary: "0",
+      work_status: "active",
       is_active: true,
       start_date: "",
       shifts: [],
@@ -131,7 +131,8 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
     role: staff.role || "staff",
     employment_type: staff.employment_type || "fixed_salary",
     base_salary: String(Number(staff.base_salary) || 0),
-    is_active: staff.is_active ?? true,
+    work_status: resolveWorkStatus(staff),
+    is_active: resolveWorkStatus(staff) === "active",
     start_date: String(staff.start_date || "").split("T")[0],
     shifts: getStaffShiftIds(staff),
     address: staff.person?.address || "",

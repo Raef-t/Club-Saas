@@ -1,5 +1,9 @@
 import { useMemo, useState } from "react";
-import { useCreatePlayerSubscriptionMutation } from "@/lib/api/playerSubscriptionsApi";
+import {
+  useCreatePlayerSubscriptionMutation,
+  useGetPlayerSubscriptionQuery,
+  useUpdatePlayerSubscriptionMutation,
+} from "@/lib/api/playerSubscriptionsApi";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
@@ -7,6 +11,7 @@ import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { getSubscriptionDetail } from "./subscriptionUtils";
 
 /**
  * Returns an array from the standard collection response used by the backend.
@@ -18,7 +23,7 @@ function getCollection(response) {
 /**
  * Coordinates the reference data and mutation used by the create-subscription page.
  */
-export function useCreateSubscription({ initialData } = {}) {
+export function useCreateSubscription({ initialData, selectedSubscriptionId = null } = {}) {
   const toast = useToast();
   const { selectedBranchId } = useManagementBranch();
   const [formError, setFormError] = useState("");
@@ -27,8 +32,19 @@ export function useCreateSubscription({ initialData } = {}) {
   const { data: plansData } = useGetSubscriptionPlansQuery(branchQueryParams);
   const { data: activitiesData } = useGetActivitiesQuery(branchQueryParams);
   const { data: coachesData } = useGetCoachesQuery(branchQueryParams);
+  const {
+    data: subscriptionDetailResponse,
+    error: subscriptionDetailError,
+    isLoading: isSubscriptionDetailLoading,
+    isFetching: isSubscriptionDetailFetching,
+    refetch: refetchSubscriptionDetail,
+  } = useGetPlayerSubscriptionQuery(selectedSubscriptionId, {
+    skip: !selectedSubscriptionId,
+  });
   const [createPlayerSubscription, { isLoading: isCreating }] =
     useCreatePlayerSubscriptionMutation();
+  const [updatePlayerSubscription, { isLoading: isUpdating }] =
+    useUpdatePlayerSubscriptionMutation();
 
   const allMembers = useMemo(
     () => getCollection(membersData || initialData?.members),
@@ -62,6 +78,10 @@ export function useCreateSubscription({ initialData } = {}) {
     () => filterEntitiesByBranch(allCoaches, selectedBranchId),
     [allCoaches, selectedBranchId],
   );
+  const selectedSubscription = useMemo(
+    () => getSubscriptionDetail(subscriptionDetailResponse),
+    [subscriptionDetailResponse],
+  );
 
   /**
    * Creates the subscription and reports validation or backend errors to the form.
@@ -81,13 +101,36 @@ export function useCreateSubscription({ initialData } = {}) {
     }
   }
 
+  async function handleUpdateSubscription(values) {
+    if (!selectedSubscriptionId) return false;
+    setFormError("");
+
+    try {
+      await updatePlayerSubscription({ id: selectedSubscriptionId, body: values }).unwrap();
+      toast.success("تم تعديل الاشتراك بنجاح!");
+      return true;
+    } catch (submitError) {
+      setFormError(
+        submitError?.data?.message || "تعذر تعديل الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
+      );
+      return false;
+    }
+  }
+
   return {
     members,
     plans,
     activities,
     coaches,
+    selectedSubscription,
+    subscriptionDetailError,
+    isSubscriptionDetailLoading,
+    isSubscriptionDetailFetching,
+    refetchSubscriptionDetail,
     formError,
     isCreating,
+    isUpdating,
     handleCreateSubscription,
+    handleUpdateSubscription,
   };
 }

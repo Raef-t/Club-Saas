@@ -95,3 +95,41 @@ export function getSubscriptionRows(response) {
 export function getSubscriptionDetail(response) {
   return response?.data || null;
 }
+
+function getSubscriptionMemberId(subscription) {
+  return (
+    subscription?.member_id ??
+    subscription?.player_id ??
+    subscription?.member?.id ??
+    subscription?.player?.id ??
+    null
+  );
+}
+
+/**
+ * Selects the most relevant subscription for a member from a list response.
+ */
+export function getCurrentMemberSubscription(response, memberId) {
+  const rows = getSubscriptionRows(response);
+  const hasMemberIdentifiers = rows.some((subscription) => getSubscriptionMemberId(subscription));
+  const memberRows = hasMemberIdentifiers
+    ? rows.filter(
+        (subscription) => String(getSubscriptionMemberId(subscription)) === String(memberId),
+      )
+    : rows;
+  const statusPriority = { active: 0, frozen: 1, pending: 2 };
+
+  return (
+    [...memberRows].sort((first, second) => {
+      const firstPriority = statusPriority[first.status] ?? 3;
+      const secondPriority = statusPriority[second.status] ?? 3;
+      if (firstPriority !== secondPriority) return firstPriority - secondPriority;
+
+      const firstDate = new Date(first.start_date || first.created_at || 0).getTime() || 0;
+      const secondDate = new Date(second.start_date || second.created_at || 0).getTime() || 0;
+      if (firstDate !== secondDate) return secondDate - firstDate;
+
+      return Number(second.id || 0) - Number(first.id || 0);
+    })[0] || null
+  );
+}

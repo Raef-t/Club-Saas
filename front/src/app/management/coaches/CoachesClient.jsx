@@ -33,6 +33,7 @@ import {
   SHIFT_GENDER_LABELS as shiftGenderLabels,
 } from "@/app/management/coaches/coachConstants";
 import { CURRENCY_SYMBOL, formatDate, formatMoney } from "@/lib/utils";
+import { getWorkStatusMeta, WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   createCoachFormInitialValues,
   getEmploymentTypeForWorkTypes,
@@ -129,6 +130,8 @@ export default function CoachesClient({ initialData }) {
     setEmploymentFilter,
     activityFilter,
     setActivityFilter,
+    workStatusFilter,
+    setWorkStatusFilter,
     drawerMode,
     setDrawerMode,
     setSelectedCoachId,
@@ -280,18 +283,20 @@ export default function CoachesClient({ initialData }) {
         },
       },
       {
-        key: "is_active",
+        key: "work_status",
         label: "الحالة",
         align: "center",
-        render: (value) => (
-          <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-              value ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-            }`}
-          >
-            {value ? "نشط" : "غير نشط"}
-          </span>
-        ),
+        sortValue: (coach) => getWorkStatusMeta(coach).label,
+        render: (_, coach) => {
+          const status = getWorkStatusMeta(coach);
+          return (
+            <span
+              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.className}`}
+            >
+              {status.label}
+            </span>
+          );
+        },
       },
       {
         key: "actions",
@@ -419,6 +424,14 @@ export default function CoachesClient({ initialData }) {
               value={employmentFilter}
               options={employmentOptions}
               onChange={setEmploymentFilter}
+            />
+
+            <Dropdown
+              className="min-w-48 bg-app-card-soft border-app-line text-white"
+              icon={FilterIcon}
+              value={workStatusFilter}
+              options={[{ value: "all", label: "كل الحالات" }, ...WORK_STATUS_OPTIONS]}
+              onChange={setWorkStatusFilter}
             />
           </div>
         }

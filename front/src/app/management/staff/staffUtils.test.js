@@ -12,19 +12,19 @@ describe("staff utilities", () => {
     expect(getStaffCollection({ data: { data: rows } })).toEqual(rows);
   });
 
-  it("builds the documented staff filters with a boolean active value", () => {
+  it("builds the documented staff filters with work_status", () => {
     expect(
       buildStaffQueryParams({
         branchId: "5",
         role: "receptionist",
         gender: "female",
-        activeStatus: "false",
+        workStatus: "on_leave",
       }),
     ).toEqual({
       branch_id: 5,
       role: "receptionist",
       gender: "female",
-      is_active: false,
+      work_status: "on_leave",
     });
   });
 
@@ -44,6 +44,7 @@ describe("staff utilities", () => {
         employment_type: "fixed_salary",
         base_salary: "4500.00",
         is_active: true,
+        work_status: "suspended",
         start_date: "2026-02-16",
         branch_name: ["تكنو جيم بنات"],
         shifts: [{ branch_shift_id: 12, branch_shift: { id: 12, branch_id: 5 } }],
@@ -62,6 +63,7 @@ describe("staff utilities", () => {
       branch_ids: [5],
       shifts: [12],
       base_salary: "4500",
+      work_status: "suspended",
     });
   });
 });
