@@ -24,7 +24,6 @@ class StaffResource extends JsonResource
             'end_date' => $this->end_date?->toDateString(),
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
-            'is_active' => $this->is_active,
 
             // Coach-specific details (only present when role = coach)
             'coach_details' => $this->when($this->isCoach() && $this->relationLoaded('coachDetail'), function () {

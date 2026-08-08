@@ -41,6 +41,25 @@ class Staff extends Model
     public ?\Modules\Core\DTOs\PersonDTO $personDto = null;
     public ?\Modules\Core\DTOs\BranchDTO $branchDto = null;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($staff) {
+            if ($staff->isDirty('work_status') || !isset($staff->is_active)) {
+                $workStatus = $staff->work_status ?? 'active';
+                $staff->work_status = $workStatus;
+                $staff->is_active = ($workStatus === 'active');
+            }
+        });
+
+        static::updated(function ($staff) {
+            if ($staff->wasChanged('is_active') && $staff->user) {
+                $staff->user->update(['is_active' => $staff->is_active]);
+            }
+        });
+    }
+
     // ── Relationships ───────────────────────────────────────────
 
     public function person()

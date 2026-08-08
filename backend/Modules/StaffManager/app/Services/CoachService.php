@@ -84,7 +84,6 @@ class CoachService
             $staff = Staff::create([
                 'person_id'       => $person->id,
                 'role'            => 'coach',
-                'is_active'       => $data['is_active'] ?? true,
                 'start_date'      => $data['start_date'] ?? now()->toDateString(),
                 'end_date'        => $data['end_date'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
@@ -148,6 +147,12 @@ class CoachService
             $query->whereHas('person', function ($q) use ($filters) {
                 $q->where('gender', $filters['gender']);
             });
+        }
+
+        if (!empty($filters['work_status'])) {
+            $query->where('work_status', $filters['work_status']);
+        } elseif (isset($filters['is_active'])) {
+            $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
         if (!empty($filters['activity_id'])) {
@@ -237,7 +242,7 @@ class CoachService
                 }
             }
 
-            $basicFillable = ['work_status', 'is_active', 'start_date', 'end_date'];
+            $basicFillable = ['work_status', 'start_date', 'end_date'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
