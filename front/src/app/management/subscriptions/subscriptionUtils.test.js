@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   formatSubscriptionMoney,
+  getLocalDateValue,
   getSubscriptionDetail,
   getSubscriptionRows,
+  isDailyEntrySubscriptionPlan,
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
 
@@ -27,5 +29,22 @@ describe("subscription utilities", () => {
   it("extracts a subscription detail safely", () => {
     expect(getSubscriptionDetail({ data: { id: 1 } })).toEqual({ id: 1 });
     expect(getSubscriptionDetail(null)).toBeNull();
+  });
+
+  it("formats a local date for subscription fields", () => {
+    expect(getLocalDateValue(new Date(2026, 7, 8, 12))).toBe("2026-08-08");
+    expect(getLocalDateValue(new Date("invalid"))).toBe("");
+  });
+
+  it("detects daily-entry plans from API type fields", () => {
+    expect(isDailyEntrySubscriptionPlan({ type: "daily_entry" })).toBe(true);
+    expect(isDailyEntrySubscriptionPlan({ plan_type: "day-pass" })).toBe(true);
+    expect(isDailyEntrySubscriptionPlan({ is_daily_entry: true })).toBe(true);
+  });
+
+  it("detects localized daily-entry plan names as a fallback", () => {
+    expect(isDailyEntrySubscriptionPlan({ name: { ar: "دخولية أجهزة" } })).toBe(true);
+    expect(isDailyEntrySubscriptionPlan({ name: { en: "Daily Entry" } })).toBe(true);
+    expect(isDailyEntrySubscriptionPlan({ name: "اشتراك أجهزة شهري" })).toBe(false);
   });
 });

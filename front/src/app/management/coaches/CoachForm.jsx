@@ -494,7 +494,7 @@ export function CoachCreateForm({
         </label>
 
         <label className="block text-right text-sm text-app-muted-light">
-          تاريخ بدء العمل
+          تاريخ المباشرة
           <div className="mt-2">
             <DatePickerSmart
               value={form.start_date}

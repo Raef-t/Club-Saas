@@ -195,8 +195,9 @@ export default function StaffClient({ initialData }) {
         action={
           <Button
             href="/management/staff/create"
-            icon={<PlusIcon className="size-4 text-black" />}
+            icon={<PlusIcon className="size-4 text-black" style={{ color: "#000000" }} />}
             className="text-black"
+            style={{ color: "#000000" }}
           >
             إضافة موظف
           </Button>

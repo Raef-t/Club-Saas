@@ -1,5 +1,67 @@
 const CURRENCY_SYMBOL = "$";
 
+const DAILY_ENTRY_TYPE_VALUES = new Set([
+  "daily",
+  "daily entry",
+  "day pass",
+  "single day",
+  "walk in",
+]);
+
+function normalizePlanValue(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function getLocalizedValues(value) {
+  if (typeof value === "string" || typeof value === "number") return [value];
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.values(value).filter(
+    (entry) => typeof entry === "string" || typeof entry === "number",
+  );
+}
+
+/**
+ * Returns a local calendar date in the ISO value expected by date inputs.
+ */
+export function getLocalDateValue(date = new Date()) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Identifies one-day entry plans using API type fields, with the localized
+ * plan name as a fallback for older responses that do not expose a type.
+ */
+export function isDailyEntrySubscriptionPlan(plan) {
+  if (!plan || typeof plan !== "object") return false;
+  if (plan.is_daily_entry === true || plan.is_day_pass === true) return true;
+
+  const typeValues = [plan.type, plan.plan_type, plan.subscription_type, plan.duration_type]
+    .flatMap(getLocalizedValues)
+    .map(normalizePlanValue);
+
+  if (typeValues.some((value) => DAILY_ENTRY_TYPE_VALUES.has(value))) return true;
+
+  const nameValues = [plan.name, plan.title].flatMap(getLocalizedValues).map(normalizePlanValue);
+
+  return nameValues.some(
+    (value) =>
+      value.includes("دخولية") ||
+      value.includes("دخول يومي") ||
+      value.includes("daily entry") ||
+      value.includes("day pass") ||
+      value.includes("walk in"),
+  );
+}
+
 /**
  * Converts an API amount into a safe finite number.
  */

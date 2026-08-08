@@ -1,5 +1,4 @@
-export const COACH_TABLE_GRID =
-  "minmax(160px,1.2fr) 120px 140px 120px 100px 100px";
+export const COACH_TABLE_GRID = "minmax(160px,1.2fr) 120px 140px 120px 120px 100px 100px";
 
 export const DAYS_OF_WEEK = {
   0: "الأحد",

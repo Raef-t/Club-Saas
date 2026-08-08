@@ -55,15 +55,19 @@ export default function AttendanceClient({ initialBranches }) {
             selectedSubscriptionIds={attendance.selectedSubscriptionIds}
             selectedActivityId={attendance.selectedActivityId}
             lockerNumber={attendance.lockerNumber}
+            availableLockerOptions={attendance.availableLockerOptions}
             isMemberLoading={attendance.isMemberLoading}
             memberErrorMessage={attendance.memberErrorMessage}
             isSubscriptionsLoading={attendance.isSubscriptionsLoading}
             subscriptionsErrorMessage={attendance.subscriptionsErrorMessage}
+            isAvailableLockersLoading={attendance.isAvailableLockersLoading}
+            availableLockersErrorMessage={attendance.availableLockersErrorMessage}
             isRegistered={attendance.isRegistered}
             isPendingDeduction={attendance.isPendingDeduction}
             isRegistering={attendance.isRegistering}
             onRetryMember={attendance.retryMember}
             onRetrySubscriptions={attendance.retrySubscriptions}
+            onRetryAvailableLockers={attendance.retryAvailableLockers}
             onSubscriptionToggle={attendance.handleSubscriptionToggle}
             onActivityChange={attendance.handleActivityChange}
             onLockerChange={attendance.handleLockerChange}
@@ -85,6 +89,10 @@ export default function AttendanceClient({ initialBranches }) {
         onFromDateChange={attendance.setAttendanceFromDate}
         onToDateChange={attendance.setAttendanceToDate}
         onResetFilters={attendance.resetAttendanceFilters}
+        onCheckOut={attendance.handleManualCheckOut}
+        onRollback={attendance.handleRollbackAttendance}
+        isCheckingOut={attendance.isManualCheckingOut}
+        isRollingBack={attendance.isRollingBack}
       />
     </div>
   );

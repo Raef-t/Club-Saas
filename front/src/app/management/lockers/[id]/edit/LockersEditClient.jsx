@@ -16,11 +16,13 @@ export default function LockersEditClient({
   lockerId,
   initialLocker,
   initialMembers,
+  initialCoaches,
   initialStaff,
 }) {
   const router = useRouter();
   const locker = getLockerRecord(initialLocker);
   const members = getLockerCollection(initialMembers);
+  const coaches = getLockerCollection(initialCoaches);
   const staff = getLockerCollection(initialStaff);
   const { formError, isLoading, submitLocker } = useUpdateLocker(lockerId);
 
@@ -47,6 +49,7 @@ export default function LockersEditClient({
             formId={FORM_ID}
             initialData={locker}
             members={members}
+            coaches={coaches}
             staff={staff}
             onSubmit={submit}
             onCancel={() => router.push("/management/lockers")}

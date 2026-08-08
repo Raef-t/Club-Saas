@@ -5,16 +5,23 @@ import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field } from "@/components/forms/FormControls";
 import { initialReserveLockerForm, reserveLockerSchema } from "@/lib/validations/lockersSchema";
-import { LOCKER_HOLDER_TYPE_OPTIONS, LOCKER_RESERVATION_TYPE_OPTIONS } from "./lockerConstants";
+import {
+  LOCKER_HOLDER_TYPE_OPTIONS,
+  LOCKER_RESERVATION_HOLDER_TYPES,
+  LOCKER_RESERVATION_TYPE_OPTIONS,
+} from "./lockerConstants";
 import LockerHolderField from "./LockerHolderField";
 import {
+  createLockerCoachOptions,
   createLockerMemberOptions,
   createLockerReservationPayload,
   createLockerStaffOptions,
   getLockerValidationErrors,
 } from "./lockerUtils";
 
-const RESERVATION_HOLDER_OPTIONS = LOCKER_HOLDER_TYPE_OPTIONS.filter((option) => option.value);
+const RESERVATION_HOLDER_OPTIONS = LOCKER_HOLDER_TYPE_OPTIONS.filter((option) =>
+  LOCKER_RESERVATION_HOLDER_TYPES.includes(option.value),
+);
 
 /**
  * Collects and validates a new locker reservation.
@@ -22,6 +29,7 @@ const RESERVATION_HOLDER_OPTIONS = LOCKER_HOLDER_TYPE_OPTIONS.filter((option) =>
 export default function LockerReserveForm({
   formId,
   members,
+  coaches,
   staff,
   onSubmit,
   onCancel,
@@ -31,6 +39,7 @@ export default function LockerReserveForm({
   const [form, setForm] = useState(initialReserveLockerForm);
   const [errors, setErrors] = useState({});
   const memberOptions = useMemo(() => createLockerMemberOptions(members), [members]);
+  const coachOptions = useMemo(() => createLockerCoachOptions(coaches), [coaches]);
   const staffOptions = useMemo(() => createLockerStaffOptions(staff), [staff]);
 
   /**
@@ -104,6 +113,7 @@ export default function LockerReserveForm({
           holderType={form.holder_type}
           holderId={form.holder_id}
           memberOptions={memberOptions}
+          coachOptions={coachOptions}
           staffOptions={staffOptions}
           onChange={(value) => updateField("holder_id", value)}
           error={errors.holder_id}

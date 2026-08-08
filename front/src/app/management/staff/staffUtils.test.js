@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildStaffQueryParams, createStaffInitialValues, getStaffCollection } from "./staffUtils";
+import {
+  buildStaffQueryParams,
+  createStaffInitialValues,
+  getStaffCollection,
+  isManagerStaffRole,
+} from "./staffUtils";
 
 describe("staff utilities", () => {
   it("extracts staff from the paginated API response", () => {
@@ -21,6 +26,13 @@ describe("staff utilities", () => {
       gender: "female",
       is_active: false,
     });
+  });
+
+  it("identifies every manager role", () => {
+    expect(isManagerStaffRole("admin")).toBe(true);
+    expect(isManagerStaffRole("management_admin")).toBe(true);
+    expect(isManagerStaffRole("manager")).toBe(true);
+    expect(isManagerStaffRole("receptionist")).toBe(false);
   });
 
   it("maps staff names, branches, and shift identifiers into edit values", () => {

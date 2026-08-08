@@ -38,7 +38,9 @@ import {
   getEmploymentTypeForWorkTypes,
 } from "@/app/management/coaches/coachFormUtils";
 import {
+  formatCoachCommission,
   getCoachBranchNames,
+  getCoachCompensationVisibility,
   getUnassignedActivities,
 } from "@/app/management/coaches/coachDetailsUtils";
 
@@ -222,36 +224,59 @@ export default function CoachesClient({ initialData }) {
         key: "employment_type",
         label: "التوظيف",
         align: "center",
-        render: (value) => (
-          <span className="text-xs text-app-muted-light">{employmentLabels[value] || value}</span>
-        ),
+        render: (value, coach) => {
+          const compensation = getCoachCompensationVisibility(coach);
+          const label = compensation.isPrivateEquipment
+            ? "تدريب خاص"
+            : employmentLabels[compensation.paymentType] || value;
+
+          return <span className="text-xs text-app-muted-light">{label}</span>;
+        },
       },
       {
         key: "base_salary",
         label: "الراتب / النسبة",
         align: "center",
         render: (_, coach) => {
-          const type = coach.employment_type;
+          const compensation = getCoachCompensationVisibility(coach);
           const salary = formatMoney(coach.base_salary);
-          const commission = Number(coach.details?.default_commission_rate || 0);
+          const commission = formatCoachCommission(
+            coach.details?.default_commission_rate ?? coach.default_commission_rate,
+          );
 
-          if (type === "commission_based" || type === "commission") {
+          if (compensation.isPrivateEquipment) {
+            return <span className="text-xs text-app-muted-light">-</span>;
+          }
+
+          if (compensation.showCommission && !compensation.showSalary) {
             return (
               <span className="text-xs font-semibold text-app-green" dir="ltr">
-                {commission}%
+                {commission}
               </span>
             );
-          } else if (type === "hybrid") {
+          }
+
+          if (compensation.showSalary && compensation.showCommission) {
             return (
               <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-app-green">
                 <span>{salary}</span>
                 <span className="text-app-muted-light">+</span>
-                <span dir="ltr">{commission}%</span>
+                <span dir="ltr">{commission}</span>
               </div>
             );
           }
 
           return <span className="text-xs font-semibold text-app-green">{salary}</span>;
+        },
+      },
+      {
+        key: "start_date",
+        label: "تاريخ المباشرة",
+        align: "center",
+        sortValue: (coach) => coach.start_date || coach.details?.start_date || "",
+        render: (_, coach) => {
+          const startDate = coach.start_date || coach.details?.start_date;
+          return <span className="text-xs text-app-muted-light">{formatDate(startDate)}</span>;
         },
       },
       {

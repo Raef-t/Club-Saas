@@ -12,6 +12,7 @@ export default function LockerCard({
   locker,
   branches,
   memberOptions,
+  coachOptions,
   staffOptions,
   actionsDisabled,
   onReserve,
@@ -19,7 +20,7 @@ export default function LockerCard({
   onDelete,
 }) {
   const statusClass = LOCKER_STATUS_CLASSES[locker.status] || LOCKER_STATUS_CLASSES.disabled;
-  const holderLabel = getLockerHolderLabel(locker, memberOptions, staffOptions);
+  const holderLabel = getLockerHolderLabel(locker, memberOptions, coachOptions, staffOptions);
   const occupied = isLockerOccupied(locker);
 
   return (

@@ -15,12 +15,14 @@ export default async function EditLockerPage({ params }) {
   const { token } = await verifySession();
   let locker;
   let members;
+  let coaches;
   let staff;
 
   try {
-    [locker, members, staff] = await Promise.all([
+    [locker, members, coaches, staff] = await Promise.all([
       requestBackend(`lockers/${id}`, { token }),
       requestBackend("members", { token }),
+      requestBackend("coaches", { token }),
       requestBackend("staff", { token }),
     ]);
   } catch (error) {
@@ -36,6 +38,7 @@ export default async function EditLockerPage({ params }) {
       lockerId={id}
       initialLocker={lockerRecord}
       initialMembers={members}
+      initialCoaches={coaches}
       initialStaff={staff}
     />
   );

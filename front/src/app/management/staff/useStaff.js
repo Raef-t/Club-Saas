@@ -18,6 +18,7 @@ import {
   createStaffInitialValues,
   getStaffCollection,
   getStaffRecord,
+  isManagerStaffRole,
 } from "./staffUtils";
 
 function createStaffFormData(values, { includePhoto = false } = {}) {
@@ -35,7 +36,9 @@ function createStaffFormData(values, { includePhoto = false } = {}) {
   if (values.address) formData.append("address", values.address.trim());
 
   values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
-  values.shifts.forEach((id) => formData.append("shifts[]", String(id)));
+  if (!isManagerStaffRole(values.role)) {
+    values.shifts.forEach((id) => formData.append("shifts[]", String(id)));
+  }
 
   if (includePhoto && values.photo instanceof File) {
     formData.append("photo", values.photo);

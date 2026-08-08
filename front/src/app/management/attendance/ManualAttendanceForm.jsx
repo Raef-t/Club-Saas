@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetStaffQuery } from "@/lib/api/staffApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
@@ -18,7 +17,6 @@ const MANUAL_MODES = [
   { value: "check-in", label: "دخول" },
   { value: "check-out", label: "انصراف" },
   { value: "bulk", label: "جماعي" },
-  { value: "rollback", label: "تراجع" },
 ];
 
 export default function ManualAttendanceForm({ attendance }) {
@@ -29,9 +27,6 @@ export default function ManualAttendanceForm({ attendance }) {
   const [checkOutAttendableId, setCheckOutAttendableId] = useState("");
   const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
   const [bulkResult, setBulkResult] = useState(null);
-  const [rollbackAttendanceId, setRollbackAttendanceId] = useState("");
-  const [rollbackSubscriptionIds, setRollbackSubscriptionIds] = useState("");
-  const [pendingRollback, setPendingRollback] = useState(null);
   const peopleQueryParams = attendance.branchId ? { branch_id: attendance.branchId } : {};
   const { currentData: membersResponse, isFetching: isLoadingMembers } = useGetMembersQuery(
     peopleQueryParams,
@@ -114,7 +109,7 @@ export default function ManualAttendanceForm({ attendance }) {
   async function submitCheckOut(event) {
     event.preventDefault();
     if (!openCheckOutAttendance?.id) return;
-    const succeeded = await attendance.handleManualCheckOut(openCheckOutAttendance.id);
+    const succeeded = await attendance.handleManualCheckOut(openCheckOutAttendance);
     if (succeeded) setCheckOutAttendableId("");
   }
 
@@ -123,39 +118,6 @@ export default function ManualAttendanceForm({ attendance }) {
     if (!subscriptionPlanId) return;
     const result = await attendance.handleBulkCheckOut(subscriptionPlanId);
     if (result) setBulkResult(result);
-  }
-
-  function submitRollback(event) {
-    event.preventDefault();
-    if (!rollbackAttendanceId) return;
-
-    const playerSubscriptionIds = [
-      ...new Set(
-        rollbackSubscriptionIds
-          .split(/[\s,،]+/)
-          .map(Number)
-          .filter((id) => Number.isInteger(id) && id > 0),
-      ),
-    ];
-
-    setPendingRollback({
-      attendanceId: rollbackAttendanceId,
-      playerSubscriptionIds,
-    });
-  }
-
-  async function confirmRollback() {
-    if (!pendingRollback) return;
-    const succeeded = await attendance.handleRollbackAttendance(
-      pendingRollback.attendanceId,
-      pendingRollback.playerSubscriptionIds,
-    );
-
-    if (succeeded) {
-      setRollbackAttendanceId("");
-      setRollbackSubscriptionIds("");
-      setPendingRollback(null);
-    }
   }
 
   return (
@@ -167,7 +129,7 @@ export default function ManualAttendanceForm({ attendance }) {
         </p>
       </div>
 
-      <div className="mb-4 grid grid-cols-4 gap-1 rounded-lg bg-app-card-soft p-1">
+      <div className="mb-4 grid grid-cols-3 gap-1 rounded-lg bg-app-card-soft p-1">
         {MANUAL_MODES.map((mode) => (
           <button
             key={mode.value}
@@ -263,6 +225,17 @@ export default function ManualAttendanceForm({ attendance }) {
                 لا يوجد سجل حضور مفتوح لهذا الشخص في الفرع المحدد.
               </p>
             )}
+            {openCheckOutAttendance?.lockerNumber && (
+              <div className="rounded-lg border border-app-yellow/30 bg-app-yellow/10 p-3 text-right">
+                <p className="text-xs text-app-muted-light">الخزانة المرتبطة بالحضور</p>
+                <p className="mt-1 font-semibold text-app-yellow" dir="ltr">
+                  {openCheckOutAttendance.lockerNumber}
+                </p>
+                <p className="mt-1 text-xs text-app-muted-light">
+                  سيتم فك حجزها تلقائياً بعد تسجيل الانصراف.
+                </p>
+              </div>
+            )}
             <Button
               type="submit"
               tone="outline"
@@ -305,53 +278,7 @@ export default function ManualAttendanceForm({ attendance }) {
             {bulkResult && <BulkResult result={bulkResult} />}
           </form>
         )}
-
-        {manualMode === "rollback" && (
-          <form onSubmit={submitRollback} className="space-y-3 rounded-xl bg-app-card-soft p-4">
-            <h3 className="text-sm font-semibold text-app-text">التراجع عن الحضور</h3>
-            <p className="text-right text-xs leading-5 text-app-muted-light">
-              اترك أرقام الاشتراكات فارغة لإرجاع جميع الجلسات وحذف سجل الحضور بالكامل.
-            </p>
-            <ManualNumberField
-              label="رقم سجل الحضور (Attendance ID)"
-              value={rollbackAttendanceId}
-              onChange={setRollbackAttendanceId}
-            />
-            <label className="block text-right text-xs text-app-muted-light">
-              أرقام اشتراكات اللاعب (اختياري)
-              <input
-                type="text"
-                value={rollbackSubscriptionIds}
-                onChange={(event) => setRollbackSubscriptionIds(event.target.value)}
-                placeholder="مثال: 7, 9, 12"
-                className="app-input mt-2 h-11 w-full px-3 text-right text-app-text outline-none focus:border-app-yellow"
-              />
-            </label>
-            <Button
-              type="submit"
-              tone="danger"
-              className="h-11 w-full"
-              disabled={!rollbackAttendanceId || attendance.isRollingBack}
-            >
-              التراجع وإرجاع الجلسات
-            </Button>
-          </form>
-        )}
       </div>
-
-      <ConfirmDialog
-        open={Boolean(pendingRollback)}
-        onClose={() => setPendingRollback(null)}
-        onConfirm={confirmRollback}
-        title="تأكيد التراجع عن الحضور"
-        message={
-          pendingRollback?.playerSubscriptionIds.length
-            ? `سيتم إرجاع الجلسات للاشتراكات المحددة من سجل الحضور #${pendingRollback.attendanceId}.`
-            : `سيتم إرجاع جميع الجلسات وحذف سجل الحضور #${pendingRollback?.attendanceId || ""} بالكامل.`
-        }
-        confirmLabel="تأكيد التراجع"
-        isLoading={attendance.isRollingBack}
-      />
     </section>
   );
 }
@@ -374,22 +301,6 @@ function ResultCount({ label, value, tone = "text-app-text" }) {
       </div>
       <div className="text-app-muted-light">{label}</div>
     </div>
-  );
-}
-
-function ManualNumberField({ label, value, onChange }) {
-  return (
-    <label className="block text-right text-xs text-app-muted-light">
-      {label}
-      <input
-        type="number"
-        min="1"
-        required
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="app-input mt-2 h-11 w-full px-3 text-right text-app-text outline-none focus:border-app-yellow"
-      />
-    </label>
   );
 }
 
