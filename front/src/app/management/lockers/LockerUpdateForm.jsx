@@ -12,6 +12,7 @@ import {
 } from "./lockerConstants";
 import LockerHolderField from "./LockerHolderField";
 import {
+  createLockerCoachOptions,
   createLockerMemberOptions,
   createLockerStaffOptions,
   createLockerUpdateInitialValues,
@@ -26,6 +27,7 @@ export default function LockerUpdateForm({
   formId,
   initialData,
   members,
+  coaches,
   staff,
   onSubmit,
   onCancel,
@@ -35,6 +37,7 @@ export default function LockerUpdateForm({
   const [form, setForm] = useState(() => createLockerUpdateInitialValues(initialData));
   const [errors, setErrors] = useState({});
   const memberOptions = useMemo(() => createLockerMemberOptions(members), [members]);
+  const coachOptions = useMemo(() => createLockerCoachOptions(coaches), [coaches]);
   const staffOptions = useMemo(() => createLockerStaffOptions(staff), [staff]);
   const canHaveHolder = LOCKER_OCCUPIED_STATUSES.includes(form.status);
 
@@ -146,6 +149,7 @@ export default function LockerUpdateForm({
               holderType={form.holder_type}
               holderId={form.holder_id}
               memberOptions={memberOptions}
+              coachOptions={coachOptions}
               staffOptions={staffOptions}
               onChange={(value) => updateField("holder_id", value)}
               error={errors.holder_id}

@@ -71,7 +71,7 @@ export default function ManagementDashboard({ initialData }) {
         <DailyScheduleTable sessions={dashboard.todaySessions} />
       </SectionCard>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(440px,0.85fr)]">
         <SectionCard
           title="أكثر الورديات ازدحاماً"
           subtitle="أعلى 7 ورديات نشاطاً حسب نسبة الحضور الفعلي"
@@ -87,7 +87,7 @@ export default function ManagementDashboard({ initialData }) {
           action={
             <DashboardSectionLink href="/management/coaches">عرض الكوتشات</DashboardSectionLink>
           }
-          className="min-h-[230px]"
+          className="min-h-[340px]"
         >
           <CoachSubscriptionsDonut
             items={dashboard.coachSubscriptionMix}

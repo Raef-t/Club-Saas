@@ -9,12 +9,14 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import { LockerIcon, PlusIcon } from "@/components/icons/Icons";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useGetStaffQuery } from "@/lib/api/staffApi";
 import LockerFilters from "./LockerFilters";
 import LockerGrid from "./LockerGrid";
 import LockerReserveForm from "./LockerReserveForm";
 import { useLockers } from "./useLockers";
 import {
+  createLockerCoachOptions,
   createLockerBranchOptions,
   createLockerMemberOptions,
   createLockerStaffOptions,
@@ -42,11 +44,20 @@ export default function LockersClient({ initialData }) {
     [initialData?.members, selectedBranchId],
   );
   const memberOptions = useMemo(() => createLockerMemberOptions(branchMembers), [branchMembers]);
-  const staffQueryParams = useMemo(
+  const peopleQueryParams = useMemo(
     () => (selectedBranchId === "all" ? {} : { branch_id: Number(selectedBranchId) }),
     [selectedBranchId],
   );
-  const { currentData: staffResponse } = useGetStaffQuery(staffQueryParams);
+  const { currentData: coachesResponse } = useGetCoachesQuery(peopleQueryParams);
+  const coaches = useMemo(
+    () =>
+      getLockerCollection(
+        coachesResponse || (selectedBranchId === "all" ? initialData?.coaches : null),
+      ),
+    [coachesResponse, initialData?.coaches, selectedBranchId],
+  );
+  const coachOptions = useMemo(() => createLockerCoachOptions(coaches), [coaches]);
+  const { currentData: staffResponse } = useGetStaffQuery(peopleQueryParams);
   const staff = useMemo(
     () =>
       getLockerCollection(
@@ -150,6 +161,7 @@ export default function LockersClient({ initialData }) {
         lockers={lockerState.lockers}
         branches={branches}
         memberOptions={memberOptions}
+        coachOptions={coachOptions}
         staffOptions={staffOptions}
         isLoading={lockerState.isLoading || lockerState.isFetching}
         actionsDisabled={lockerState.actionsDisabled}
@@ -189,6 +201,7 @@ export default function LockersClient({ initialData }) {
             key={lockerState.reserveTarget.id}
             formId="reserve-locker-form"
             members={branchMembers}
+            coaches={coaches}
             staff={staff}
             onSubmit={lockerState.handleReserve}
             onCancel={lockerState.closeReserve}

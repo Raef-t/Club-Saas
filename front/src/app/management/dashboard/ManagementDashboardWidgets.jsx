@@ -78,9 +78,9 @@ export function SubscriptionDonut({ items }) {
  */
 export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasError = false }) {
   const [activeCoachId, setActiveCoachId] = useState(null);
-  const total = items.reduce((sum, item) => sum + item.value, 0);
-  const visualTotal = items.reduce((sum, item) => sum + Math.max(item.value, 1), 0);
-  const activeItem = items.find((item) => item.id === activeCoachId) || null;
+  const visibleItems = items.filter((item) => Number(item.value) > 0);
+  const total = visibleItems.reduce((sum, item) => sum + item.value, 0);
+  const activeItem = visibleItems.find((item) => item.id === activeCoachId) || null;
   const circumference = 2 * Math.PI * 38;
   let offset = 0;
 
@@ -95,55 +95,45 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
     );
   }
 
-  if (!items.length) {
+  if (!visibleItems.length) {
     return (
       <p
-        className="grid min-h-44 place-items-center px-5 pb-5 text-center text-sm text-app-muted"
+        className="grid min-h-56 place-items-center px-5 pb-5 text-center text-sm text-app-muted"
         role={hasError ? "alert" : undefined}
       >
         {hasError
           ? "تعذر تحميل إحصائيات اشتراكات الكوتشات."
-          : "لا توجد بيانات اشتراكات للكوتشات في الفرع المختار."}
+          : "لا توجد اشتراكات نشطة للكوتشات في الفرع المختار."}
       </p>
     );
   }
 
   return (
-    <div className="flex min-h-44 items-center gap-4 px-5 pb-5 pt-1">
-      <div className="max-h-40 min-w-0 flex-1 overflow-y-auto overscroll-contain pe-2 [scrollbar-color:var(--app-yellow)_transparent] [scrollbar-width:thin]">
-        <ul className="space-y-1.5 text-sm text-app-text">
-          {items.map((item) => {
-            const activities = item.activities.join("، ");
-            const details = activities ? `${item.label} — ${activities}` : item.label;
-
-            return (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start transition ${
-                    activeItem && activeItem.id !== item.id
-                      ? "opacity-45"
-                      : "bg-transparent hover:bg-white/5 focus-visible:bg-white/5"
-                  }`}
-                  title={`${details}: ${item.value.toLocaleString("ar")} لاعب`}
-                  onMouseEnter={() => setActiveCoachId(item.id)}
-                  onMouseLeave={() => setActiveCoachId(null)}
-                  onFocus={() => setActiveCoachId(item.id)}
-                  onBlur={() => setActiveCoachId(null)}
-                >
-                  <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+    <div className="flex min-h-64 flex-col items-center px-5 pb-5 pt-1">
+      <div className="flex min-h-14 w-full items-center justify-center pb-2">
+        {activeItem && (
+          <div
+            className="max-w-full rounded-xl border border-app-yellow/30 bg-app-panel px-4 py-2 text-center shadow-xl"
+            role="tooltip"
+          >
+            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-app-text">
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: activeItem.color }}
+              />
+              <span className="truncate">{activeItem.label}</span>
+              <span className="text-app-yellow">{activeItem.value.toLocaleString("ar")} لاعب</span>
+            </div>
+            {activeItem.activities.length > 0 && (
+              <p className="mt-1 truncate text-[11px] text-app-muted-light">
+                {activeItem.activities.join("، ")}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="relative size-36 shrink-0">
+      <div className="relative size-44 shrink-0">
         <svg
           className="size-full"
           viewBox="0 0 120 120"
@@ -152,9 +142,8 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
         >
           <g transform="rotate(-90 60 60)">
             <circle cx="60" cy="60" r="38" fill="none" stroke="#222" strokeWidth="18" />
-            {items.map((item) => {
-              const visualValue = Math.max(item.value, 1);
-              const length = (visualValue / visualTotal) * circumference;
+            {visibleItems.map((item) => {
+              const length = (item.value / total) * circumference;
               const segmentOffset = offset;
               offset += length;
 
@@ -170,18 +159,17 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
                   strokeDasharray={`${length} ${circumference - length}`}
                   strokeDashoffset={-segmentOffset}
                   tabIndex={0}
-                  className={`cursor-pointer transition-opacity outline-none ${
-                    activeItem && activeItem.id !== item.id ? "opacity-30" : "opacity-100"
+                  className={`cursor-pointer outline-none transition-all duration-200 ${
+                    activeItem && activeItem.id !== item.id
+                      ? "opacity-25"
+                      : "opacity-100 focus-visible:brightness-125"
                   }`}
                   onMouseEnter={() => setActiveCoachId(item.id)}
                   onMouseLeave={() => setActiveCoachId(null)}
                   onFocus={() => setActiveCoachId(item.id)}
                   onBlur={() => setActiveCoachId(null)}
-                >
-                  <title>
-                    {item.label}: {item.value.toLocaleString("ar")} لاعب
-                  </title>
-                </circle>
+                  aria-label={`${item.label}: ${item.value.toLocaleString("ar")} لاعب`}
+                />
               );
             })}
           </g>
@@ -191,13 +179,49 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-5 text-center"
           aria-live="polite"
         >
-          <strong className="text-xl text-app-text">
+          <strong className="text-2xl text-app-text">
             {(activeItem?.value ?? total).toLocaleString("ar")}
           </strong>
-          <span className="mt-0.5 max-w-20 truncate text-[11px] text-app-muted">
+          <span className="mt-0.5 max-w-24 truncate text-[11px] text-app-muted">
             {activeItem?.label || "إجمالي اللاعبين"}
           </span>
         </div>
+      </div>
+
+      <div className="mt-4 w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-color:var(--app-yellow)_transparent] [scrollbar-width:thin]">
+        <ul className="flex min-w-max items-center gap-2 text-sm text-app-text">
+          {visibleItems.map((item) => {
+            const activities = item.activities.join("، ");
+            const details = activities ? `${item.label} — ${activities}` : item.label;
+
+            return (
+              <li key={item.id} className="shrink-0">
+                <button
+                  type="button"
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-start transition ${
+                    activeItem && activeItem.id !== item.id
+                      ? "border-transparent opacity-35"
+                      : "border-app-line bg-black/20 hover:border-app-yellow/40 hover:bg-white/5 focus-visible:border-app-yellow/50"
+                  }`}
+                  title={`${details}: ${item.value.toLocaleString("ar")} لاعب`}
+                  onMouseEnter={() => setActiveCoachId(item.id)}
+                  onMouseLeave={() => setActiveCoachId(null)}
+                  onFocus={() => setActiveCoachId(item.id)}
+                  onBlur={() => setActiveCoachId(null)}
+                >
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="max-w-40 truncate">{item.label}</span>
+                  <span className="text-xs font-semibold text-app-yellow">
+                    {item.value.toLocaleString("ar")}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

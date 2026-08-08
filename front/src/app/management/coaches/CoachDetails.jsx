@@ -8,7 +8,12 @@ import {
   COACH_GENDER_LABELS as genderLabels,
   EMPLOYMENT_LABELS as employmentLabels,
 } from "./coachConstants";
-import { getCoachBranchNames } from "./coachDetailsUtils";
+import {
+  formatCoachCommission,
+  getCoachAge,
+  getCoachBranchNames,
+  getCoachCompensationVisibility,
+} from "./coachDetailsUtils";
 export default function CoachDetails({ coach, branches = [], isLoading, error }) {
   if (isLoading) {
     return <SkeletonPage blocks={[{ type: "details", sections: 2, itemsPerSection: 3 }]} />;
@@ -32,6 +37,13 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
 
   const branchNames = getCoachBranchNames(coach, branches);
   const coachActivities = coach.activities || [];
+  const compensation = getCoachCompensationVisibility(coach);
+  const commissionRate = coach.details?.default_commission_rate ?? coach.default_commission_rate;
+  const startDate = coach.start_date || coach.details?.start_date;
+  const coachAge = getCoachAge(coach);
+  const employmentLabel = compensation.isPrivateEquipment
+    ? "تدريب خاص (بدون راتب أو نسبة)"
+    : employmentLabels[compensation.paymentType] || compensation.paymentType || "-";
 
   return (
     <div className="space-y-6">
@@ -67,16 +79,22 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
           label="الجنس"
           value={genderLabels[coach.person?.gender] || coach.person?.gender}
         />
-        <DetailItem label="تاريخ الميلاد" value={formatDate(coach.person?.dob)} />
-        <DetailItem
-          label="نوع التوظيف"
-          value={employmentLabels[coach.employment_type] || coach.employment_type}
-        />
-        <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
+        <DetailItem label="العمر" value={coachAge !== null ? `${coachAge} سنة` : "-"} />
+        <DetailItem label="نوع التوظيف" value={employmentLabel} />
+        {compensation.showSalary && (
+          <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
+        )}
+        {compensation.showCommission && (
+          <DetailItem
+            label="نسبة المدرب"
+            value={formatCoachCommission(commissionRate)}
+            tone="green"
+          />
+        )}
         <DetailItem label="العنوان" value={coach.person?.address} />
         {/* <DetailItem label="البريد الإلكتروني" value={coach.person?.email} /> */}
         {/* <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} /> */}
-        <DetailItem label="تاريخ المباشرة" value={formatDate(coach.start_date)} />
+        <DetailItem label="تاريخ المباشرة" value={startDate ? formatDate(startDate) : "غير مسجل"} />
       </section>
 
       {/* Activities Section */}

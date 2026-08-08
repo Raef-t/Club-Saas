@@ -17,7 +17,7 @@ import {
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
 } from "./staffConstants";
-import { createStaffInitialValues, getStaffCollection } from "./staffUtils";
+import { createStaffInitialValues, getStaffCollection, isManagerStaffRole } from "./staffUtils";
 
 function StaffTextField({ label, value, onChange, error, placeholder, type = "text", min }) {
   return (
@@ -71,6 +71,7 @@ export default function StaffForm({
   const [loadBranchShifts] = useLazyGetBranchShiftsQuery();
   const primaryBranchId = form.branch_ids[0];
   const branchIdsKey = form.branch_ids.join(",");
+  const isManagerRole = isManagerStaffRole(form.role);
   const { data: branchSettingsResponse } = useGetBranchSettingsQuery(primaryBranchId, {
     skip: !primaryBranchId,
   });
@@ -88,6 +89,15 @@ export default function StaffForm({
 
   useEffect(() => {
     let active = true;
+
+    if (isManagerRole) {
+      setShiftResponses([]);
+      setIsLoadingShifts(false);
+      return () => {
+        active = false;
+      };
+    }
+
     const branchIds = branchIdsKey
       .split(",")
       .map(Number)
@@ -117,7 +127,7 @@ export default function StaffForm({
     return () => {
       active = false;
     };
-  }, [branchIdsKey, loadBranchShifts]);
+  }, [branchIdsKey, isManagerRole, loadBranchShifts]);
 
   const availableShifts = useMemo(() => {
     const byId = new Map();
@@ -138,6 +148,7 @@ export default function StaffForm({
     setForm((current) => {
       const next = { ...current, [field]: value };
       if (field === "branch_ids") next.shifts = [];
+      if (field === "role" && isManagerStaffRole(value)) next.shifts = [];
       return next;
     });
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
@@ -145,7 +156,10 @@ export default function StaffForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const result = staffFormSchema.safeParse(form);
+    const result = staffFormSchema.safeParse({
+      ...form,
+      shifts: isManagerRole ? [] : form.shifts,
+    });
 
     if (!result.success) {
       const nextErrors = {};
@@ -287,44 +301,46 @@ export default function StaffForm({
         )}
       </div>
 
-      <div className="block text-right text-sm text-app-muted-light">
-        الورديات / الشفتات المتاحة
-        <div className="mt-2 grid max-h-52 grid-cols-1 gap-3 overflow-y-auto rounded-lg border border-app-line bg-app-card-soft p-3 sm:grid-cols-2">
-          {isLoadingShifts ? (
-            <p className="py-2 text-center text-xs text-app-muted-light sm:col-span-2">
-              جاري تحميل الورديات...
-            </p>
-          ) : availableShifts.length ? (
-            availableShifts.map((shift) => {
-              const id = Number(shift.id);
-              const checked = form.shifts.includes(id);
-              const start = shift.start_time ? formatTime(shift.start_time) : "";
-              const end = shift.end_time ? formatTime(shift.end_time) : "";
-              const gender = SHIFT_GENDER_LABELS[shift.gender_allowed] || "مختلط";
-              const label = `${shift.name || "وردية"} | ${start} - ${end} (${gender})`;
-              return (
-                <Checkbox
-                  key={shift.id}
-                  label={label}
-                  checked={checked}
-                  onChange={() =>
-                    updateField(
-                      "shifts",
-                      checked
-                        ? form.shifts.filter((shiftId) => shiftId !== id)
-                        : [...form.shifts, id],
-                    )
-                  }
-                />
-              );
-            })
-          ) : (
-            <p className="py-2 text-center text-xs text-app-muted-light sm:col-span-2">
-              لا توجد ورديات مسجلة للفروع المحددة.
-            </p>
-          )}
+      {!isManagerRole && (
+        <div className="block text-right text-sm text-app-muted-light">
+          الورديات / الشفتات المتاحة
+          <div className="mt-2 grid max-h-52 grid-cols-1 gap-3 overflow-y-auto rounded-lg border border-app-line bg-app-card-soft p-3 sm:grid-cols-2">
+            {isLoadingShifts ? (
+              <p className="py-2 text-center text-xs text-app-muted-light sm:col-span-2">
+                جاري تحميل الورديات...
+              </p>
+            ) : availableShifts.length ? (
+              availableShifts.map((shift) => {
+                const id = Number(shift.id);
+                const checked = form.shifts.includes(id);
+                const start = shift.start_time ? formatTime(shift.start_time) : "";
+                const end = shift.end_time ? formatTime(shift.end_time) : "";
+                const gender = SHIFT_GENDER_LABELS[shift.gender_allowed] || "مختلط";
+                const label = `${shift.name || "وردية"} | ${start} - ${end} (${gender})`;
+                return (
+                  <Checkbox
+                    key={shift.id}
+                    label={label}
+                    checked={checked}
+                    onChange={() =>
+                      updateField(
+                        "shifts",
+                        checked
+                          ? form.shifts.filter((shiftId) => shiftId !== id)
+                          : [...form.shifts, id],
+                      )
+                    }
+                  />
+                );
+              })
+            ) : (
+              <p className="py-2 text-center text-xs text-app-muted-light sm:col-span-2">
+                لا توجد ورديات مسجلة للفروع المحددة.
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <label className="block text-right text-sm text-app-muted-light">
         العنوان

@@ -73,6 +73,7 @@ export const lockersApi = createApi({
 
 export const {
   useGetLockersQuery,
+  useLazyGetLockersQuery,
   useGetLockerQuery,
   useCreateLockerMutation,
   useUpdateLockerMutation,

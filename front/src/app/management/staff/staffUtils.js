@@ -1,5 +1,11 @@
 import { formatLocalizedName } from "@/lib/utils";
 
+const MANAGER_STAFF_ROLES = new Set(["admin", "management_admin", "manager"]);
+
+export function isManagerStaffRole(role) {
+  return MANAGER_STAFF_ROLES.has(String(role || ""));
+}
+
 export function getStaffCollection(response) {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.data)) return response.data;

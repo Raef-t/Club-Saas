@@ -68,15 +68,19 @@ export default function AttendancePlayerCard({
   selectedSubscriptionIds,
   selectedActivityId,
   lockerNumber,
+  availableLockerOptions,
   isMemberLoading,
   memberErrorMessage,
   isSubscriptionsLoading,
   subscriptionsErrorMessage,
+  isAvailableLockersLoading,
+  availableLockersErrorMessage,
   isRegistered,
   isPendingDeduction,
   isRegistering,
   onRetryMember,
   onRetrySubscriptions,
+  onRetryAvailableLockers,
   onSubscriptionToggle,
   onActivityChange,
   onLockerChange,
@@ -204,17 +208,38 @@ export default function AttendancePlayerCard({
           />
         </label>
 
-        <label className="block text-right text-sm text-app-muted-light">
-          رقم الخزانة
-          <input
+        <div className="block text-right text-sm text-app-muted-light">
+          <span>الخزانة (اختياري)</span>
+          <Dropdown
+            searchable
+            className="mt-2 text-white"
+            buttonClassName="h-11 bg-app-card-soft"
             value={lockerNumber}
-            onChange={(event) => onLockerChange(event.target.value)}
-            className="app-input mt-2 h-11 w-full px-3 text-right outline-none transition focus:border-app-yellow/70 disabled:cursor-not-allowed disabled:opacity-60"
-            placeholder="مثال: 18"
-            inputMode="numeric"
-            disabled={isRegistering}
+            onChange={onLockerChange}
+            options={availableLockerOptions}
+            placeholder={
+              isAvailableLockersLoading
+                ? "جاري تحميل الخزائن المتاحة..."
+                : availableLockerOptions.length
+                  ? "اختر الخزانة"
+                  : "لا توجد خزائن متاحة"
+            }
+            disabled={isRegistering || isAvailableLockersLoading || !availableLockerOptions.length}
           />
-        </label>
+          {availableLockersErrorMessage && (
+            <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-app-red/30 bg-app-red/10 p-3">
+              <p className="text-xs text-app-red">{availableLockersErrorMessage}</p>
+              <Button
+                type="button"
+                tone="outline"
+                className="h-8 shrink-0 px-3 text-xs"
+                onClick={onRetryAvailableLockers}
+              >
+                إعادة المحاولة
+              </Button>
+            </div>
+          )}
+        </div>
 
         <Button
           type="button"

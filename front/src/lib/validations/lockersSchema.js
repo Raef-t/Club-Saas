@@ -26,16 +26,24 @@ export const updateLockerSchema = z.object({
 });
 
 export const reserveLockerSchema = z.object({
-  reservation_type: z.string({ required_error: "نوع الحجز مطلوب" }).min(1, "نوع الحجز مطلوب"),
-  holder_type: z.string({ required_error: "نوع المستفيد مطلوب" }).min(1, "نوع المستفيد مطلوب"),
+  reservation_type: z.enum(["rental", "assign"], {
+    error: "نوع الحجز مطلوب",
+  }),
+  holder_type: z.enum(["member", "coach", "staff"], {
+    error: "نوع المستفيد يجب أن يكون لاعباً أو كوتشاً أو موظفاً",
+  }),
   holder_id: z.union([
     z.number({ invalid_type_error: "رقم المستفيد مطلوب" }).positive("رقم المستفيد مطلوب"),
     z.string().min(1, "رقم المستفيد مطلوب").transform(Number),
   ]),
-  price: z.union([
-    z.number({ invalid_type_error: "السعر مطلوب" }).min(0, "السعر يجب أن يكون أكبر من أو يساوي الصفر"),
-    z.string().min(1, "السعر مطلوب").transform(Number),
-  ]).optional(),
+  price: z
+    .union([
+      z
+        .number({ invalid_type_error: "السعر مطلوب" })
+        .min(0, "السعر يجب أن يكون أكبر من أو يساوي الصفر"),
+      z.string().min(1, "السعر مطلوب").transform(Number),
+    ])
+    .optional(),
   start_date: z.string({ required_error: "تاريخ البداية مطلوب" }).min(1, "تاريخ البداية مطلوب"),
   end_date: z.string().optional(),
 });

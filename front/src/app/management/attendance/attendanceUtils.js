@@ -14,6 +14,86 @@ export function getAttendanceCollection(response) {
 }
 
 /**
+ * Converts available lockers into searchable attendance dropdown options.
+ * The client-side guard keeps occupied lockers out even if a backend ignores the status filter.
+ */
+export function createAvailableLockerOptions(response) {
+  const lockers = getAttendanceLockerCollection(response);
+
+  return lockers
+    .filter((locker) => locker?.status === "available" && !locker?.holder_id)
+    .map((locker) => ({
+      value: String(locker.locker_number),
+      label: `خزانة ${locker.locker_number}`,
+    }))
+    .sort((first, second) =>
+      first.value.localeCompare(second.value, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
+    );
+}
+
+/**
+ * Extracts locker records from the list endpoint response shapes.
+ */
+export function getAttendanceLockerCollection(response) {
+  if (Array.isArray(response?.data?.lockers)) return response.data.lockers;
+  if (Array.isArray(response?.data?.data?.lockers)) return response.data.data.lockers;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.lockers)) return response.lockers;
+  if (Array.isArray(response)) return response;
+  return [];
+}
+
+/**
+ * Resolves a locker id from its displayed locker number.
+ */
+export function findAttendanceLockerId(response, lockerNumber) {
+  if (!lockerNumber) return null;
+  const locker = getAttendanceLockerCollection(response).find(
+    (item) => String(item?.locker_number) === String(lockerNumber),
+  );
+
+  return locker?.id ?? null;
+}
+
+/**
+ * Adds locker details to attendance rows when history only returns the holder reference.
+ */
+export function attachAttendanceLockers(rows, lockersResponse) {
+  const lockers = getAttendanceLockerCollection(lockersResponse);
+
+  return rows.map((row) => {
+    const locker = lockers.find((item) => {
+      if (row.branchId && item.branch_id && String(item.branch_id) !== String(row.branchId)) {
+        return false;
+      }
+      if (row.lockerId && String(item.id) === String(row.lockerId)) return true;
+      if (row.lockerNumber && String(item.locker_number) === String(row.lockerNumber)) {
+        return true;
+      }
+
+      return (
+        item.holder_type === row.attendableType &&
+        String(item.holder_id) === String(row.attendableId)
+      );
+    });
+
+    if (!locker) return row;
+    const lockerNumber = locker.locker_number || row.lockerNumber;
+
+    return {
+      ...row,
+      lockerId: locker.id || row.lockerId,
+      lockerNumber,
+      locker: lockerNumber || "-",
+    };
+  });
+}
+
+/**
  * Converts a member response into the compact model required by the attendance UI.
  */
 export function createAttendanceMember(response, memberId) {
@@ -64,37 +144,43 @@ export function createAttendanceRows(response, activeMember, people = {}) {
   const memberNames = createPersonNameMap(people.members, "member");
   const staffNames = createPersonNameMap(people.staff, "staff");
 
-  return getAttendanceCollection(response).map((record, index) => ({
-    id: record.id || `attendance-${index}`,
-    attendableId: record.attendable_id || record.member_id || record.staff_id || null,
-    attendableType: record.attendable_type || (record.staff_id ? "staff" : "member"),
-    branchId: record.branch_id || null,
-    isOpen: record.status === "checked_in" && !record.check_out,
-    number: record.id ? `#${record.id}` : "-",
-    type: record.attendable_type === "staff" ? "موظف" : "عضو",
-    checkIn: formatAttendanceTime(record.check_in),
-    checkOut: formatAttendanceTime(record.check_out),
-    member:
-      (activeMember &&
-      record.attendable_type !== "staff" &&
-      String(activeMember.id) === String(record.attendable_id)
-        ? activeMember.name
-        : null) ||
-      record.member?.person?.full_name ||
-      record.staff?.person?.full_name ||
-      record.member_name ||
-      record.staff_name ||
-      (record.attendable_type === "staff"
-        ? staffNames.get(String(record.attendable_id || record.staff_id))
-        : memberNames.get(String(record.attendable_id || record.member_id))) ||
-      `${record.attendable_type === "staff" ? "موظف" : "عضو"} #${record.attendable_id || record.member_id || record.staff_id || "-"}`,
-    activity: formatLocalizedName(record.activity?.name || record.activity_name) || "-",
-    coach: record.coach?.person?.full_name || record.coach?.name || record.coach_name || "-",
-    locker:
-      record.locker?.number || record.locker_number || record.active_locker?.locker_number || "-",
-    duration: record.duration_minutes ?? null,
-    status: getAttendanceStatusLabel(record.status),
-  }));
+  return getAttendanceCollection(response).map((record, index) => {
+    const locker = record.locker || record.active_locker || {};
+    const lockerNumber = locker.locker_number || locker.number || record.locker_number || null;
+
+    return {
+      id: record.id || `attendance-${index}`,
+      attendableId: record.attendable_id || record.member_id || record.staff_id || null,
+      attendableType: record.attendable_type || (record.staff_id ? "staff" : "member"),
+      branchId: record.branch_id || null,
+      isOpen: record.status === "checked_in" && !record.check_out,
+      number: record.id ? `#${record.id}` : "-",
+      type: record.attendable_type === "staff" ? "موظف" : "عضو",
+      checkIn: formatAttendanceTime(record.check_in),
+      checkOut: formatAttendanceTime(record.check_out),
+      member:
+        (activeMember &&
+        record.attendable_type !== "staff" &&
+        String(activeMember.id) === String(record.attendable_id)
+          ? activeMember.name
+          : null) ||
+        record.member?.person?.full_name ||
+        record.staff?.person?.full_name ||
+        record.member_name ||
+        record.staff_name ||
+        (record.attendable_type === "staff"
+          ? staffNames.get(String(record.attendable_id || record.staff_id))
+          : memberNames.get(String(record.attendable_id || record.member_id))) ||
+        `${record.attendable_type === "staff" ? "موظف" : "عضو"} #${record.attendable_id || record.member_id || record.staff_id || "-"}`,
+      activity: formatLocalizedName(record.activity?.name || record.activity_name) || "-",
+      coach: record.coach?.person?.full_name || record.coach?.name || record.coach_name || "-",
+      lockerId: locker.id || record.locker_id || record.active_locker_id || null,
+      lockerNumber,
+      locker: lockerNumber || "-",
+      duration: record.duration_minutes ?? null,
+      status: getAttendanceStatusLabel(record.status),
+    };
+  });
 }
 
 /**
@@ -110,10 +196,7 @@ function createPersonNameMap(records, type) {
       [record.person?.first_name, record.person?.last_name].filter(Boolean).join(" ");
     if (!name) return;
 
-    const ids =
-      type === "staff"
-        ? [record.staff_id, record.id]
-        : [record.member_id, record.id];
+    const ids = type === "staff" ? [record.staff_id, record.id] : [record.member_id, record.id];
     ids
       .filter((id) => id !== null && id !== undefined)
       .forEach((id) => names.set(String(id), name));
@@ -181,7 +264,32 @@ export function getInitialAttendanceSelection(subscriptions) {
   return {
     subscriptionIds: selectedSubscriptions.map((subscription) => String(subscription.id)),
     activityId: String(firstSubscription.activities?.[0]?.id || ""),
-    lockerNumber: String(firstSubscription.activeLockers?.[0]?.locker_number || ""),
+    lockerNumber: "",
+  };
+}
+
+/**
+ * Builds the session-deduction body.
+ */
+export function createAttendanceDeductionBody(subscriptionIds) {
+  return {
+    player_subscription_ids: subscriptionIds.map(Number).filter(Number.isFinite),
+  };
+}
+
+/**
+ * Builds the free locker assignment used while confirming member attendance.
+ */
+export function createAttendanceLockerReservation(memberId, date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return {
+    reservation_type: "assign",
+    holder_type: "member",
+    holder_id: Number(memberId),
+    start_date: `${year}-${month}-${day}`,
   };
 }
 
