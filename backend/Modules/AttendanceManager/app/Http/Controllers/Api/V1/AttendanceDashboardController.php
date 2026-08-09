@@ -101,7 +101,7 @@ class AttendanceDashboardController extends BaseController
                 }
                 flush();
 
-                sleep(2);
+                usleep(300000); // 300ms polling loop for sub-second real-time responsiveness
             }
         }, 200, [
             'Content-Type'      => 'text/event-stream',

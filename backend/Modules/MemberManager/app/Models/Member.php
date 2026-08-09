@@ -80,6 +80,30 @@ class Member extends Model
     }
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($member) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+
+        static::deleted(function ($member) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+
+        static::restored(function ($member) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+    }
+
+    /**
      * Scopes
      */
     public function scopeActive($query)
