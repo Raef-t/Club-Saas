@@ -67,8 +67,6 @@ class StoreStaffRequest extends FormRequest
             'end_time' => 'nullable|date_format:H:i',
             'work_type' => 'nullable|in:part_time,full_time',
             'work_status' => 'nullable|in:active,suspended,on_leave',
-            'shifts' => 'nullable|array',
-            'shifts.*' => 'exists:branch_shifts,id',
 
             // ── Coach Details (coach_details table, only when role=coach) ──
             'specialization' => 'nullable|required_if:role,coach|string|max:100',

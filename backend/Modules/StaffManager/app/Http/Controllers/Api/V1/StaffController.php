@@ -90,7 +90,8 @@ class StaffController extends BaseController
                     new OA\Property(property: 'base_salary', type: 'number', example: 5000),
                     new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
                     new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
-                    new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
+                    new OA\Property(property: 'start_time', type: 'string', example: '08:00', description: 'وقت بداية الدوام (HH:MM)'),
+                    new OA\Property(property: 'end_time', type: 'string', example: '16:00', description: 'وقت نهاية الدوام (HH:MM)'),
                     new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
                     new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
@@ -213,7 +214,8 @@ class StaffController extends BaseController
                 new OA\Property(property: 'base_salary', type: 'number', example: 5000),
                 new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
-                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
+                new OA\Property(property: 'start_time', type: 'string', example: '08:00', description: 'وقت بداية الدوام (HH:MM)'),
+                new OA\Property(property: 'end_time', type: 'string', example: '16:00', description: 'وقت نهاية الدوام (HH:MM)'),
                 new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                 new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
             ]
