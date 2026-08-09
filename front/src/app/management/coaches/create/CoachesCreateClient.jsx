@@ -94,7 +94,7 @@ export default function CoachesCreateClient() {
                 </p>
               ) : (
                 <CoachCreateForm
-                  key={`coach-edit-${editId}`}
+                  key={`coach-edit-${editId}-${editInitialValues.country_code}-${editInitialValues.phone_number}`}
                   formId={FORM_ID}
                   initialValues={editInitialValues}
                   branches={branches}

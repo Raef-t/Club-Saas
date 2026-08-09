@@ -42,6 +42,7 @@ import {
   formatCoachCommission,
   getCoachBranchNames,
   getCoachCompensationVisibility,
+  getCoachActivityPlanKey,
   getUnassignedActivities,
 } from "@/app/management/coaches/coachDetailsUtils";
 
@@ -160,7 +161,7 @@ export default function CoachesClient({ initialData }) {
     getEditInitialValues,
     branches,
     activities,
-    activityPlansMap,
+    coachActivityPlansMap,
     closeDrawer,
   } = useCoaches({ initialData });
 
@@ -216,7 +217,7 @@ export default function CoachesClient({ initialData }) {
                 <ActivityBadgeWithTooltip
                   key={act.id}
                   activity={act}
-                  plans={activityPlansMap.get(String(act.id)) || []}
+                  plans={coachActivityPlansMap.get(getCoachActivityPlanKey(coach.id, act.id)) || []}
                 />
               ))}
             </div>

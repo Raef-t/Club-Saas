@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  createCoachActivityPlansMap,
   formatCoachCommission,
+  getCoachActivityPlanKey,
   getCoachAge,
   getCoachCompensationVisibility,
   getCoachBranchNames,
@@ -9,6 +11,36 @@ import {
 } from "./coachDetailsUtils";
 
 describe("coach details utilities", () => {
+  it("groups linked events by coach and activity instead of activity alone", () => {
+    const plansMap = createCoachActivityPlansMap([
+      {
+        id: 10,
+        name: { ar: "فعالية الكوتش الأول" },
+        session_count: 12,
+        activities: [{ activity_id: 4, coach_id: 7 }],
+      },
+      {
+        id: 11,
+        name: { ar: "فعالية الكوتش الثاني" },
+        session_count: 8,
+        activities: [{ activity_id: 4, coach_id: 9 }],
+      },
+      {
+        id: 12,
+        name: { ar: "فعالية بلا كوتش" },
+        activities: [{ activity_id: 4 }],
+      },
+    ]);
+
+    expect(plansMap.get(getCoachActivityPlanKey(7, 4))).toEqual([
+      expect.objectContaining({ id: 10, name: "فعالية الكوتش الأول" }),
+    ]);
+    expect(plansMap.get(getCoachActivityPlanKey(9, 4))).toEqual([
+      expect.objectContaining({ id: 11, name: "فعالية الكوتش الثاني" }),
+    ]);
+    expect([...plansMap.values()].flat()).toHaveLength(2);
+  });
+
   it("resolves localized branch names", () => {
     const coach = { branch_ids: [2, 7] };
     const branches = [{ id: 2, name: { ar: "الرئيسي" } }];
