@@ -3888,7 +3888,7 @@
                                     "username": {
                                         "description": "اسم المستخدم الفريد أو رقم الموبايل أو المعرف المولد",
                                         "type": "string",
-                                        "example": "tec-ply-75054"
+                                        "example": "tec-adm-75054"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
