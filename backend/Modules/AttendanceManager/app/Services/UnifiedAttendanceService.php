@@ -77,6 +77,10 @@ class UnifiedAttendanceService
             ->pluck('id')
             ->toArray();
 
+        if (empty($targetIds)) {
+            throw new Exception(__('No active check-ins found for this subscription plan in the selected branch.'));
+        }
+
         $successful = [];
         $failed = [];
 

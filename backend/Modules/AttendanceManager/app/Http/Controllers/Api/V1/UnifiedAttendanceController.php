@@ -107,7 +107,34 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Response(
         response: 200,
         description: '✅ تم تنفيذ الانصراف الجماعي بنجاح',
-        content: new OA\JsonContent()
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Bulk check-out process completed'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'total_processed', type: 'integer', example: 3),
+                        new OA\Property(property: 'success_count', type: 'integer', example: 3),
+                        new OA\Property(property: 'failed_count', type: 'integer', example: 0),
+                        new OA\Property(property: 'successful', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'failed', type: 'array', items: new OA\Items(type: 'object'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: '❌ خطأ: لا يوجد أي شخص مسجل حضور حالياً لهذه الخطة في هذا الفرع',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: false),
+                new OA\Property(property: 'message', type: 'string', example: 'No active check-ins found for this subscription plan in the selected branch.'),
+                new OA\Property(property: 'data', type: 'null', example: null)
+            ]
+        )
     )]
     public function bulkCheckOut(BulkCheckOutRequest $request)
     {

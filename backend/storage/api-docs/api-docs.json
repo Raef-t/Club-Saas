@@ -3711,7 +3711,72 @@
                         "description": "✅ تم تنفيذ الانصراف الجماعي بنجاح",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bulk check-out process completed"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_processed": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "success_count": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "failed_count": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                },
+                                                "successful": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "failed": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ: لا يوجد أي شخص مسجل حضور حالياً لهذه الخطة في هذا الفرع",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No active check-ins found for this subscription plan in the selected branch."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
                             }
                         }
                     }
