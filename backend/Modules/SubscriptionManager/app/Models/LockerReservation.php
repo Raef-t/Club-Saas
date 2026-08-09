@@ -44,20 +44,27 @@ class LockerReservation extends Model
         return $this->belongsTo(Invoice::class, 'invoice_id');
     }
 
+    public function locker()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Locker::class, 'locker_id');
+    }
+
     /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
     {
-        static::saved(function () {
+        static::saved(function ($reservation) {
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
+                $branchId = $reservation->locker?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
             }
         });
 
-        static::deleted(function () {
+        static::deleted(function ($reservation) {
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
+                $branchId = $reservation->locker?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
             }
         });
     }

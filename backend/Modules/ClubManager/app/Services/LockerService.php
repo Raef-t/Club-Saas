@@ -253,6 +253,10 @@ class LockerService
 
             $this->repository->update($lockerId, ['status' => $newStatus]);
 
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
+            }
+
             return DB::table('locker_reservations')->where('id', $reservationId)->first();
         });
     }
@@ -279,6 +283,10 @@ class LockerService
                 ]);
 
             $this->repository->update($lockerId, ['status' => 'available']);
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
+            }
 
             return true;
         });
@@ -313,6 +321,11 @@ class LockerService
             $newStatus = $statusMap[$holderType] ?? 'with_member';
 
             $this->repository->update($reservation->locker_id, ['status' => $newStatus]);
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                $locker = \Modules\ClubManager\Models\Locker::find($reservation->locker_id);
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker?->branch_id);
+            }
 
             return DB::table('locker_reservations')->where('id', $reservationId)->first();
         });
