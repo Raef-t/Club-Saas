@@ -18,24 +18,15 @@ class ClubService
     public function create(array $data) { return $this->repository->create($data); }
     public function update($id, array $data) { return $this->repository->update($id, $data); }
 
-    /**
-     * Delete a club only if it has no branches.
-     *
-     * @throws CannotDeleteException
-     */
-    public function delete($id): void
+    public function delete(int $id, string $confirmation = ''): void
     {
-        $club = Club::findOrFail($id);
-
-        $branchesCount = $club->branches()->count();
-
-        if ($branchesCount > 0) {
-            throw new CannotDeleteException(
-                "لا يمكن حذف النادي لأنه يحتوي على {$branchesCount} " . ($branchesCount === 1 ? 'فرع' : 'فروع') . ". يرجى حذف جميع الفروع أولاً أو تعطيل النادي بدلاً من حذفه.",
-                ['branches_count' => $branchesCount]
-            );
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف هذا النادي بالكامل مع كافة الفروع والمشتركين والمدربين والاشتراكات المتعلقة به، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
         }
 
-        $this->repository->delete($id);
+        $club = Club::findOrFail($id);
+        $club->delete();
     }
 }

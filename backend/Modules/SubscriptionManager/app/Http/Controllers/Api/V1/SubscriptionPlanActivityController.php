@@ -1,6 +1,7 @@
 <?php
 namespace Modules\SubscriptionManager\Http\Controllers\Api\V1;
 
+use Illuminate\Http\Request;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\SubscriptionManager\Services\SubscriptionPlanActivityService;
 use Modules\SubscriptionManager\Http\Requests\StoreSubscriptionPlanActivityRequest;
@@ -162,5 +163,35 @@ class SubscriptionPlanActivityController extends BaseController
     public function destroy($id) {
         $this->service->delete($id);
         return $this->successResponse(null, 'Deleted successfully');
+    }
+
+    #[OA\Get(
+        path: '/v1/subscription-plan-activities/trashed',
+        summary: '🗑️ عرض نشاطات الخطط المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بنشاطات الخطط المحذوفة.',
+        tags: ['Subscription Plan Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب النشاطات المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $activities = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::onlyTrashed()->get();
+        return $this->successResponse(SubscriptionPlanActivityResource::collection($activities), 'Trashed retrieved successfully');
+    }
+
+    #[OA\Post(
+        path: '/v1/subscription-plan-activities/{id}/restore',
+        summary: '♻️ استرجاع نشاط خطة محذوف',
+        description: 'استرجاع نشاط خطة محذوف من سلة المهملات.',
+        tags: ['Subscription Plan Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف ارتباط النشاط بالخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع النشاط بنجاح')]
+    public function restore($id)
+    {
+        $activity = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::onlyTrashed()->findOrFail($id);
+        $activity->restore();
+        return $this->successResponse(new SubscriptionPlanActivityResource($activity), 'Restored successfully');
     }
 }

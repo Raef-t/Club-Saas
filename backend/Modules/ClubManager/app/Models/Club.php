@@ -10,4 +10,31 @@ class Club extends Model {
     protected $casts = ['is_active' => 'boolean'];
     public function branches(): HasMany { return $this->hasMany(Branch::class); }
     public function settings() { return $this->hasOne(ClubSetting::class); }
+
+    protected static function booted(): void
+    {
+        static::deleted(function ($club) {
+            if ($club->isForceDeleting()) {
+                return;
+            }
+
+            if ($club->settings) {
+                $club->settings->delete();
+            }
+
+            $club->branches()->get()->each(function ($branch) {
+                $branch->delete();
+            });
+        });
+
+        static::restored(function ($club) {
+            if ($club->settings()->onlyTrashed()->exists()) {
+                $club->settings()->onlyTrashed()->restore();
+            }
+
+            $club->branches()->onlyTrashed()->get()->each(function ($branch) {
+                $branch->restore();
+            });
+        });
+    }
 }

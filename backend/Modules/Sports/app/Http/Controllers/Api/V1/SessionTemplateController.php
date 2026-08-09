@@ -277,6 +277,7 @@ class SessionTemplateController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: true, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: 'delete'))]
     #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Template deleted successfully')]))]
     #[OA\Response(
         response: 409, 

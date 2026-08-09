@@ -145,39 +145,57 @@ class FacilityController extends BaseController
 
     #[OA\Delete(
         path: '/v1/facilities/{id}',
-        summary: '🗑️ حذف المرفق',
-        description: 'حذف مرفق بالكامل من النظام.',
+        summary: '🗑️ حذف المرفق (Soft Delete)',
+        description: 'حذف المرفق بالكامل من النظام مع كافة الخزائن والورديات وقوالب الجلسات التدريبية المعتمدة عليه. يتطلب إرسال كلمة التأكيد "delete" اختيارياً.',
         tags: ['Facility Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم حذف المرفق بنجاح',
+    #[OA\RequestBody(
+        required: false,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Facility deleted successfully'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'confirmation', type: 'string', description: 'تأكيد الحذف (delete)', example: '')
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على المرفق', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Facility not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    #[OA\Response(
-        response: 409, 
-        description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا المرفق لأنه: يوجد 2 قوالب جلسات تدريبية تعتمد على هذا المرفق، و يحتوي على 5 خزائن. يُنصح بتعطيل المرفق بدلاً من حذفه.')
-            ]
-        )
-    )]
-    public function destroy($id)
+    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    public function destroy(Request $request, $id)
     {
-        $this->facilityService->deleteFacility($id);
+        $confirmation = $request->input('confirmation', '');
+        $this->facilityService->deleteFacility((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Facility deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/facilities/trashed',
+        summary: '🗑️ عرض المرافق المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بالمرافق التي تم حذفها.',
+        tags: ['Facility Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب المرافق المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $facilities = \Modules\ClubManager\Models\Facility::onlyTrashed()->get();
+        return $this->successResponse(FacilityResource::collection($facilities), __('Trashed facilities retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/facilities/{id}/restore',
+        summary: '♻️ استرجاع مرفق محذوف',
+        description: 'استرجاع المرفق وكافة العلاقات التابعة له من سلة المهملات.',
+        tags: ['Facility Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المرفق', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع المرفق بنجاح')]
+    public function restore($id)
+    {
+        $facility = \Modules\ClubManager\Models\Facility::onlyTrashed()->findOrFail($id);
+        $facility->restore();
+        return $this->successResponse(new FacilityResource($facility), __('Facility restored successfully'));
     }
 
     #[OA\Patch(

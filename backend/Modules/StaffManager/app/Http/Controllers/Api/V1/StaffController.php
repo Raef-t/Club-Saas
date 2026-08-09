@@ -359,20 +359,12 @@ class StaffController extends BaseController
     #[OA\Delete(
         path: '/v1/staff/{staff}',
         summary: '🗑️ حذف موظف (Soft Delete)',
-        description: 'حذف موظف/مدرب من النظام نرم. يتطلب إرسال كلمة التأكيد "delete".',
+        description: 'حذف موظف/مدرب من النظام. يتطلب إرسال كلمة التأكيد "delete".',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            required: ['confirmation'],
-            properties: [
-                new OA\Property(property: 'confirmation', type: 'string', description: 'كلمة تأكيد الحذف (delete)', example: 'delete')
-            ]
-        )
-    )]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(response: 200, description: '✅ تم حذف الموظف بنجاح')]
     #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 404, description: '🚫 الموظف غير موجود')]
@@ -385,8 +377,8 @@ class StaffController extends BaseController
 
     #[OA\Get(
         path: '/v1/staff/trashed',
-        summary: '🗑️ عرض الموظفين المحذوفين نرم (سلة المهملات)',
-        description: 'جلب قائمة بالموظفين والمدربين المحذوفين ناعماً.',
+        summary: '🗑️ عرض الموظفين المحذوفين (سلة المهملات)',
+        description: 'جلب قائمة بالموظفين والمدربين المحذوفين.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]

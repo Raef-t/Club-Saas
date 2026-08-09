@@ -11,12 +11,18 @@ use Modules\ClubManager\Http\Controllers\Api\V1\BranchSettingController;
 use Modules\ClubManager\Http\Controllers\Api\V1\DatabaseBackupController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    Route::get('clubs/trashed', [ClubController::class, 'trashed']);
+    Route::post('clubs/{id}/restore', [ClubController::class, 'restore']);
     Route::apiResource('clubs', ClubController::class);
 
     Route::get('branches/stats', [BranchController::class, 'stats']);
+    Route::get('branches/trashed', [BranchController::class, 'trashed']);
+    Route::post('branches/{id}/restore', [BranchController::class, 'restore']);
     Route::apiResource('branches', BranchController::class);
     Route::patch('branches/{id}/toggle-status', [BranchController::class, 'toggleStatus']);
     
+    Route::get('facilities/trashed', [FacilityController::class, 'trashed']);
+    Route::post('facilities/{id}/restore', [FacilityController::class, 'restore']);
     Route::apiResource('facilities', FacilityController::class);
     Route::patch('facilities/{id}/toggle-status', [FacilityController::class, 'toggleStatus']);
     
@@ -28,6 +34,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Branch Shifts
     Route::get('branches/{branch}/shifts', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'index']);
     Route::post('branches/{branch}/shifts', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'store']);
+    Route::get('branches/{branch}/shifts/trashed', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'trashed']);
+    Route::post('branches/{branch}/shifts/{id}/restore', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'restore']);
     Route::put('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'update']);
     Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
 
@@ -44,6 +52,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Branch Holidays
     Route::get('branches/{branch}/holidays', [BranchHolidayController::class, 'index']);
     Route::post('branches/{branch}/holidays', [BranchHolidayController::class, 'store']);
+    Route::get('holidays/trashed', [BranchHolidayController::class, 'trashed']);
+    Route::post('holidays/{id}/restore', [BranchHolidayController::class, 'restore']);
     Route::apiResource('holidays', BranchHolidayController::class)->except(['index', 'store']);
 
     // Branch Settings

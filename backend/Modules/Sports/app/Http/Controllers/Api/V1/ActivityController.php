@@ -226,7 +226,7 @@ class ActivityController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'confirm', in: 'query', required: true, description: 'كلمة التأكيد (يجب أن تكون "delete")', schema: new OA\Schema(type: 'string', example: 'delete'))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (يجب أن تكون "delete")', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الحذف بنجاح',
@@ -255,24 +255,25 @@ class ActivityController extends BaseController
         $activity = Activity::findOrFail($id);
 
         // 1. Check for active subscriptions referencing this activity
+        $activeSubsCount = 0;
         if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
             $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)
                 ->whereHas('subscription', function ($query) {
                     $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value);
                 })->count();
-
-            if ($activeSubsCount > 0) {
-                return $this->errorResponse(
-                    __("لا يمكن حذف هذه الفعالية لوجود :count اشتراك(ات) نشط(ة) مرتبط(ة) بها حالياً.", ['count' => $activeSubsCount]),
-                    409
-                );
-            }
         }
 
         // 2. Validate confirmation string
         $confirm = strtolower(trim($request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? ''));
 
         if ($confirm !== 'delete') {
+            if ($activeSubsCount > 0) {
+                return $this->errorResponse(
+                    __('تنبيه: يوجد :count اشتراك(ات) نشطة حالية لهذه الفعالية. حذفها سيؤدي إلى حذفها من اشتراكات اللاعبين النشطة والمنتهية وإلغاء إمكانية حضورهم لها. هل أنت متأكد؟ أرسل "delete" للتأكيد.', ['count' => $activeSubsCount]),
+                    422
+                );
+            }
+
             return $this->errorResponse(
                 __('سيتم حذف هذه الفعالية وكافة بنود الاشتراكات المنتهية وقواعد عمولات الموظفين المتعلقة بها، هل أنت متأكد؟ أرسل "delete" للتأكيد.'),
                 422
@@ -296,5 +297,48 @@ class ActivityController extends BaseController
 
             return $this->successResponse(null, __('Activity deleted successfully'));
         });
+    }
+
+    #[OA\Get(
+        path: '/v1/activities/trashed',
+        summary: '🗑️ عرض الأنشطة المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بالأنشطة والرياضات التي تم حذفها لاسترجاعها أو المعاينة.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب الأنشطة المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $activities = Activity::onlyTrashed()->get();
+        return $this->successResponse(ActivityResource::collection($activities), __('Trashed activities retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/activities/{id}/restore',
+        summary: '♻️ استرجاع نشاط رياضي محذوف',
+        description: 'استرجاع نشاط رياضي من سلة المهملات وإعادة تفعيله.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع النشاط بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود')]
+    public function restore(Request $request, int $id)
+    {
+        $activity = Activity::onlyTrashed()->findOrFail($id);
+        $activity->restore();
+
+        // Cascade restore to staff activities, commission rules, and expired subscription items
+        \Modules\Sports\Models\StaffActivity::onlyTrashed()->where('activity_id', $id)->restore();
+        
+        if (class_exists(\Modules\Sports\Models\StaffCommissionRule::class)) {
+            \Modules\Sports\Models\StaffCommissionRule::onlyTrashed()->where('activity_id', $id)->restore();
+        }
+
+        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+            \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::onlyTrashed()->where('activity_id', $id)->restore();
+        }
+
+        return $this->successResponse(new ActivityResource($activity), __('Activity restored successfully'));
     }
 }

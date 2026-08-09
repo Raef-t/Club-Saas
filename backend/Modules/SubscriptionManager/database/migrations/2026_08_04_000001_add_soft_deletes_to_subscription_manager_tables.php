@@ -14,6 +14,7 @@ return new class extends Migration
         $tables = [
             'subscription_plans',
             'subscription_plan_activities',
+            'plan_activities',
             'offers',
             'offer_subscription_plan',
             'player_subscriptions',
@@ -42,6 +43,7 @@ return new class extends Migration
         $tables = [
             'subscription_plans',
             'subscription_plan_activities',
+            'plan_activities',
             'offers',
             'offer_subscription_plan',
             'player_subscriptions',

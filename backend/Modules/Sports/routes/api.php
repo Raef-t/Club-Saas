@@ -14,6 +14,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Activities CRUD
     Route::get('activities/stats', [ActivityController::class, 'stats']);
+    Route::get('activities/trashed', [ActivityController::class, 'trashed']);
+    Route::post('activities/{id}/restore', [ActivityController::class, 'restore']);
     Route::apiResource('activities', ActivityController::class);
 
     // Session Templates

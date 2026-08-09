@@ -144,38 +144,56 @@ class ClubController extends BaseController
 
     #[OA\Delete(
         path: '/v1/clubs/{id}',
-        summary: '🗑️ حذف النادي',
-        description: 'حذف النادي بالكامل من النظام.',
+        summary: '🗑️ حذف النادي (Soft Delete)',
+        description: 'حذف النادي بالكامل من النظام مع كافة الفروع والمشتركين والمدربين التابعين له. يتطلب إرسال كلمة التأكيد "delete".',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم الحذف بنجاح',
+    #[OA\RequestBody(
+        required: false,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Deleted successfully'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'confirmation', type: 'string', description: 'تأكيد الحذف (delete)', example: '')
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على النادي', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    #[OA\Response(
-        response: 409, 
-        description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف النادي لأنه يحتوي على 2 فروع. يرجى حذف جميع الفروع أولاً أو تعطيل النادي بدلاً من حذفه.')
-            ]
-        )
-    )]
-    public function destroy($id)
+    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    public function destroy(Request $request, $id)
     {
-        $this->service->delete($id);
-        return $this->successResponse(null, 'Deleted successfully');
+        $confirmation = $request->input('confirmation', '');
+        $this->service->delete((int) $id, (string) $confirmation);
+        return $this->successResponse(null, __('Deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/clubs/trashed',
+        summary: '🗑️ عرض الأندية المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بالأندية التي تم حذفها.',
+        tags: ['Club Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب الأندية المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $clubs = Club::onlyTrashed()->get();
+        return $this->successResponse(ClubResource::collection($clubs), __('Trashed clubs retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/clubs/{id}/restore',
+        summary: '♻️ استرجاع نادي محذوف',
+        description: 'استرجاع النادي وكافة الفروع والمشتركين التابعين له من سلة المهملات.',
+        tags: ['Club Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع النادي بنجاح')]
+    public function restore($id)
+    {
+        $club = Club::onlyTrashed()->findOrFail($id);
+        $club->restore();
+        return $this->successResponse(new ClubResource($club), __('Club restored successfully'));
     }
 }

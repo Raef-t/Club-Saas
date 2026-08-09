@@ -448,4 +448,34 @@ class CoachService
         $staff = Staff::where('role', 'coach')->findOrFail($id);
         return (bool) $staff->delete();
     }
+
+    /**
+     * Get trashed coaches (role = coach)
+     */
+    public function getTrashedCoaches(array $filters = [])
+    {
+        $query = Staff::onlyTrashed()
+            ->where('role', 'coach')
+            ->with(['coachDetail.certifications', 'activities', 'person.contacts', 'user', 'branches', 'activeContract']);
+
+        if (!empty($filters['branch_id'])) {
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
+        }
+
+        return $query->latest()->get();
+    }
+
+    /**
+     * Restore a deleted coach
+     */
+    public function restoreCoach(int $id)
+    {
+        $staff = Staff::onlyTrashed()
+            ->where('role', 'coach')
+            ->findOrFail($id);
+        $staff->restore();
+        return $this->getSingleCoach($staff->id);
+    }
 }

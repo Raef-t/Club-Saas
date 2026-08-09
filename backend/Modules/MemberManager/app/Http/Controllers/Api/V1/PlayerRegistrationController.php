@@ -294,20 +294,12 @@ class PlayerRegistrationController extends BaseController
     #[OA\Delete(
         path: '/v1/members/{id}',
         summary: '🗑️ حذف عضو (Soft Delete)',
-        description: 'حذف عضو محدد من النظام نرم. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب أو القارامتر.',
+        description: 'حذف عضو محدد من النظام. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب أو البارامتر.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            required: ['confirmation'],
-            properties: [
-                new OA\Property(property: 'confirmation', type: 'string', description: 'كلمة تأكيد الحذف (delete)', example: 'delete')
-            ]
-        )
-    )]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
     #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
@@ -320,8 +312,8 @@ class PlayerRegistrationController extends BaseController
 
     #[OA\Get(
         path: '/v1/members/trashed',
-        summary: '🗑️ عرض الأعضاء المحذوفين نرم (سلة المهملات)',
-        description: 'جلب قائمة بالأعضاء الذين تم حذفهم ناعماً لاسترجاعهم أو المعاينة.',
+        summary: '🗑️ عرض الأعضاء المحذوفين (سلة المهملات)',
+        description: 'جلب قائمة بالأعضاء الذين تم حذفهم لاسترجاعهم أو المعاينة.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]

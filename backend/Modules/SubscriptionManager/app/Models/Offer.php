@@ -49,4 +49,23 @@ class Offer extends Model
     {
         return $this->hasMany(PlayerSubscription::class, 'offer_id');
     }
+
+    protected static function booted(): void
+    {
+        static::deleted(function ($offer) {
+            if ($offer->isForceDeleting()) {
+                return;
+            }
+
+            $offer->subscriptions()->get()->each(function ($subscription) {
+                $subscription->delete();
+            });
+        });
+
+        static::restored(function ($offer) {
+            $offer->subscriptions()->onlyTrashed()->get()->each(function ($subscription) {
+                $subscription->restore();
+            });
+        });
+    }
 }

@@ -1130,20 +1130,12 @@ class CoachController extends Controller
     #[OA\Delete(
         path: '/v1/coaches/{id}',
         summary: '🗑️ حذف مدرب (Soft Delete)',
-        description: 'حذف مدرب من النظام نرم. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب.',
+        description: 'حذف مدرب من النظام. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المدرب', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            required: ['confirmation'],
-            properties: [
-                new OA\Property(property: 'confirmation', type: 'string', description: 'كلمة تأكيد الحذف (delete)', example: 'delete')
-            ]
-        )
-    )]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(response: 200, description: '✅ تم حذف المدرب بنجاح')]
     #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
@@ -1155,5 +1147,66 @@ class CoachController extends Controller
             'status'  => 'success',
             'message' => __('Coach deleted successfully')
         ], 200);
+    }
+
+    #[OA\Get(
+        path: '/v1/coaches/trashed',
+        summary: '🗑️ عرض المدربين المحذوفين (سلة المهملات)',
+        description: 'جلب قائمة بالمدربين المحذوفين.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم جلب المدربين المحذوفين بنجاح',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'status', type: 'string', example: 'success'),
+            new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CoachResource')),
+            new OA\Property(property: 'message', type: 'string', example: 'Trashed coaches retrieved successfully')
+        ])
+    )]
+    public function trashed(Request $request)
+    {
+        $coaches = $this->coachService->getTrashedCoaches($request->all());
+        return response()->json([
+            'status' => 'success',
+            'data' => CoachResource::collection($coaches),
+            'message' => __('Trashed coaches retrieved successfully')
+        ], 200);
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/restore',
+        summary: '♻️ استرجاع مدرب محذوف',
+        description: 'استرجاع مدرب من سلة المهملات وإعادة تفعيل حسابه.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المدرب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم استرجاع المدرب بنجاح',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'status', type: 'string', example: 'success'),
+            new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+            new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
+        ])
+    )]
+    #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
+    public function restore($id)
+    {
+        try {
+            $coach = $this->coachService->restoreCoach((int) $id);
+            return response()->json([
+                'status' => 'success',
+                'data' => new CoachResource($coach),
+                'message' => __('Coach restored successfully')
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Coach not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
     }
 }
