@@ -3872,7 +3872,7 @@
                     "Authentication"
                 ],
                 "summary": "🔐 تسجيل الدخول",
-                "description": "تسجيل دخول المستخدم وإنشاء رمز مرور (Bearer Token).",
+                "description": "تسجيل دخول المستخدم عبر ٣ طرق (رقم الهاتف / معرف النظام tec-* / اسم المستخدم المخصص).",
                 "operationId": "9d2e018daa68436007e395ec397ef681",
                 "requestBody": {
                     "description": "بيانات تسجيل الدخول",
@@ -3886,9 +3886,9 @@
                                 ],
                                 "properties": {
                                     "username": {
-                                        "description": "اسم المستخدم الفريد (للموظف أو المدير)",
+                                        "description": "اسم المستخدم الفريد أو رقم الموبايل أو المعرف المولد",
                                         "type": "string",
-                                        "example": "tec-adm-75054"
+                                        "example": "tec-ply-75054"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
@@ -3973,7 +3973,16 @@
                                                         },
                                                         "username": {
                                                             "type": "string",
-                                                            "example": "admin"
+                                                            "example": "tec-ply-75054"
+                                                        },
+                                                        "custom_username": {
+                                                            "type": "string",
+                                                            "example": "ahmed_player",
+                                                            "nullable": true
+                                                        },
+                                                        "must_change_password": {
+                                                            "type": "boolean",
+                                                            "example": true
                                                         },
                                                         "full_name": {
                                                             "type": "string",
@@ -4446,11 +4455,11 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "🔑 تغيير كلمة المرور",
-                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id.",
+                "summary": "🔑 تغيير كلمة المرور وتعيين اسم المستخدِم المخصص (اختياري)",
+                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.",
                 "operationId": "adee7bb230546c3fae464b3ec1f457b6",
                 "requestBody": {
-                    "description": "بيانات تغيير كلمة المرور",
+                    "description": "بيانات تغيير كلمة المرور وتحديث اسم المستخدم المخصص",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -4481,6 +4490,12 @@
                                         "description": "تأكيد كلمة المرور الجديدة",
                                         "type": "string",
                                         "example": "12345678"
+                                    },
+                                    "custom_username": {
+                                        "description": "اسم المستخدم المخصص الفريد (اختياري)",
+                                        "type": "string",
+                                        "example": "ahmed_player99",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -4501,12 +4516,21 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "تم تغيير كلمة المرور بنجاح"
+                                            "example": "تم تغيير كلمة المرور والتأكيدات بنجاح"
                                         },
                                         "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "tec-ply-75054"
+                                                },
+                                                "custom_username": {
+                                                    "type": "string",
+                                                    "example": "ahmed_player99",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -4531,7 +4555,7 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات أو كلمة المرور الحالية غير صحيحة",
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4554,6 +4578,13 @@
                                                     "items": {
                                                         "type": "string",
                                                         "example": "كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف."
+                                                    }
+                                                },
+                                                "custom_username": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "اسم المستخدم المخصص مُستخدَم بالفعل."
                                                     }
                                                 }
                                             },
@@ -4705,6 +4736,93 @@
                                         "message": {
                                             "type": "string",
                                             "example": "تم حذف الصورة الشخصية بنجاح"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/set-custom-username": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "✏️ تعيين أو تحديث اسم المستخدم المخصص",
+                "description": "يسمح للمستخدم المصادق عليه (مثلاً اللاعب) بتحديد اسم مستخدم فريد خاص به ليتسنى له الدخول به لاحقاً.",
+                "operationId": "494a585f146e42b25fac0323a789a019",
+                "requestBody": {
+                    "description": "اسم المستخدم المخصص الجديد",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "custom_username"
+                                ],
+                                "properties": {
+                                    "custom_username": {
+                                        "description": "اسم المستخدم المخصص الفريد",
+                                        "type": "string",
+                                        "example": "ahmed_player99"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث اسم المستخدم المخصص بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث اسم المستخدم المخصص بنجاح"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "tec-ply-75054"
+                                                },
+                                                "custom_username": {
+                                                    "type": "string",
+                                                    "example": "ahmed_player99"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "اسم المستخدم المخصص مستخدم بالفعل."
                                         }
                                     },
                                     "type": "object"

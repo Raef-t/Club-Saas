@@ -15,6 +15,7 @@ Route::prefix('v1/auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
         Route::post('reset-password', [AuthController::class, 'resetPassword']);
+        Route::post('set-custom-username', [AuthController::class, 'setCustomUsername']);
         Route::post('change-photo', [AuthController::class, 'updatePhoto']);
         Route::delete('delete-photo', [AuthController::class, 'deletePhoto']);
     });
