@@ -30,7 +30,7 @@ class AuthController extends BaseController
         content: new OA\JsonContent(
             required: ['username', 'password'],
             properties: [
-                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد أو رقم الموبايل أو المعرف المولد', example: 'tec-ply-75054'),
+                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد أو رقم الموبايل أو المعرف المولد', example: 'tec-adm-75054'),
                 new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: '12345678'),
                 new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here', nullable: true),
                 new OA\Property(
@@ -126,7 +126,7 @@ class AuthController extends BaseController
         $user = User::where('username', $input)
             ->orWhere('custom_username', $input)
             ->orWhereHas('person.contacts', function ($q) use ($input) {
-                $q->where('contact_value', $input);
+                $q->where('phone_number', $input);
             })
             ->first();
 

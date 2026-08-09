@@ -537,8 +537,7 @@ class SubscriptionPlanController extends BaseController
             $member = $sub->member;
             $person = $member?->person;
             $user   = $person?->user;
-            $primaryPhone = $person?->contacts?->where('is_primary', true)->first()?->contact_value 
-                         ?? $person?->contacts?->first()?->contact_value;
+            $primaryPhone = $person?->contacts?->first()?->phone_number;
 
             return [
                 'subscription_id'     => $sub->id,
