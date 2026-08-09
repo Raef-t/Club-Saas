@@ -18,11 +18,9 @@ class DashboardNotificationService
 
         if ($branchId !== null) {
             Cache::forever("dashboard_version_branch_{$branchId}", $newVersion);
-            Cache::forget("dashboard_stats_cache_{$branchId}");
         }
 
         Cache::forever("dashboard_version_branch_all", $newVersion);
-        Cache::forget("dashboard_stats_cache_all");
     }
 
     /**

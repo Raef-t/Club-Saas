@@ -31,17 +31,11 @@ class AttendanceDashboardService
      * @param int $ttlSeconds
      * @return array
      */
-    /**
-     * Get cached aggregated stats for the reception dashboard.
-     *
-     * @param int|null $branchId
-     * @param int $ttlSeconds
-     * @return array
-     */
     public function getCachedDashboardStats(?int $branchId = null, int $ttlSeconds = 60): array
     {
         $branchKey = $branchId ? (string) $branchId : 'all';
-        $cacheKey  = "dashboard_stats_cache_{$branchKey}";
+        $version   = DashboardNotificationService::getBranchStatsVersion($branchId);
+        $cacheKey  = "dashboard_stats_cache_{$branchKey}_v{$version}";
 
         return Cache::remember($cacheKey, $ttlSeconds, function () use ($branchId) {
             return $this->getDashboardStats($branchId);
