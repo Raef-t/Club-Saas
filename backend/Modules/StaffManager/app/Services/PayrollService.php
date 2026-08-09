@@ -141,6 +141,7 @@ class PayrollService
         }
 
         $staffMembers = Staff::where('is_active', true)
+            ->where('work_status', 'active')
             ->whereHas('branches', function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId);
             })->with(['activeContract', 'person', 'coachDetail'])->get();
