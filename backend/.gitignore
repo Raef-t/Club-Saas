@@ -27,3 +27,7 @@ database.dbml
 deploy.zip
 *.zip
 _laravel_base.zip
+
+**/caddy
+frankenphp
+frankenphp-worker.php
