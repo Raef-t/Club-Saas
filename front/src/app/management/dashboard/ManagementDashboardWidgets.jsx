@@ -78,10 +78,10 @@ export function SubscriptionDonut({ items }) {
  */
 export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasError = false }) {
   const [activeCoachId, setActiveCoachId] = useState(null);
-  const visibleItems = items.filter((item) => Number(item.value) > 0);
-  const total = visibleItems.reduce((sum, item) => sum + item.value, 0);
-  const activeItem = visibleItems.find((item) => item.id === activeCoachId) || null;
-  const circumference = 2 * Math.PI * 38;
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const activeItem = items.find((item) => item.id === activeCoachId) || null;
+  const radius = 43;
+  const circumference = 2 * Math.PI * radius;
   let offset = 0;
 
   if (isLoading) {
@@ -95,7 +95,7 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
     );
   }
 
-  if (!visibleItems.length) {
+  if (!items.length) {
     return (
       <p
         className="grid min-h-56 place-items-center px-5 pb-5 text-center text-sm text-app-muted"
@@ -133,7 +133,7 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
         )}
       </div>
 
-      <div className="relative size-44 shrink-0">
+      <div className="relative size-52 shrink-0">
         <svg
           className="size-full"
           viewBox="0 0 120 120"
@@ -141,9 +141,9 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
           aria-label="توزيع اللاعبين النشطين حسب الكوتش"
         >
           <g transform="rotate(-90 60 60)">
-            <circle cx="60" cy="60" r="38" fill="none" stroke="#222" strokeWidth="18" />
-            {visibleItems.map((item) => {
-              const length = (item.value / total) * circumference;
+            <circle cx="60" cy="60" r={radius} fill="none" stroke="#222" strokeWidth="12" />
+            {items.map((item) => {
+              const length = total > 0 ? (item.value / total) * circumference : 0;
               const segmentOffset = offset;
               offset += length;
 
@@ -152,10 +152,10 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
                   key={item.id}
                   cx="60"
                   cy="60"
-                  r="38"
+                  r={radius}
                   fill="none"
                   stroke={item.color}
-                  strokeWidth="18"
+                  strokeWidth="12"
                   strokeDasharray={`${length} ${circumference - length}`}
                   strokeDashoffset={-segmentOffset}
                   tabIndex={0}
@@ -188,17 +188,17 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
         </div>
       </div>
 
-      <div className="mt-4 w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-color:var(--app-yellow)_transparent] [scrollbar-width:thin]">
-        <ul className="flex min-w-max items-center gap-2 text-sm text-app-text">
-          {visibleItems.map((item) => {
+      <div className="mt-4 w-full max-h-48 overflow-y-auto px-0.5">
+        <ul className="grid grid-cols-3 gap-2 text-sm text-app-text">
+          {items.map((item) => {
             const activities = item.activities.join("، ");
             const details = activities ? `${item.label} — ${activities}` : item.label;
 
             return (
-              <li key={item.id} className="shrink-0">
+              <li key={item.id} className="min-w-0">
                 <button
                   type="button"
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-start transition ${
+                  className={`flex w-full items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs text-start transition ${
                     activeItem && activeItem.id !== item.id
                       ? "border-transparent opacity-35"
                       : "border-app-line bg-black/20 hover:border-app-yellow/40 hover:bg-white/5 focus-visible:border-app-yellow/50"
@@ -209,12 +209,14 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
                   onFocus={() => setActiveCoachId(item.id)}
                   onBlur={() => setActiveCoachId(null)}
                 >
-                  <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="max-w-40 truncate">{item.label}</span>
-                  <span className="text-xs font-semibold text-app-yellow">
+                  <span className="flex items-center gap-1.5 min-w-0 truncate">
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="truncate text-app-text">{item.label}</span>
+                  </span>
+                  <span className="text-xs font-semibold text-app-yellow shrink-0">
                     {item.value.toLocaleString("ar")}
                   </span>
                 </button>

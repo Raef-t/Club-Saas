@@ -76,9 +76,9 @@ export default function ManagementDashboard({ initialData }) {
           title="أكثر الورديات ازدحاماً"
           subtitle="أعلى 7 ورديات نشاطاً حسب نسبة الحضور الفعلي"
           action={<DashboardSectionLink href="/reports">عرض التقارير</DashboardSectionLink>}
-          className="min-h-[208px]"
+          className="min-h-[340px] flex flex-col justify-between"
         >
-          <BarChart data={dashboard.shiftChart} />
+          <BarChart data={dashboard.shiftChart} height={210} />
         </SectionCard>
 
         <SectionCard

@@ -2,6 +2,7 @@
 
 import Button from "@/components/ui/Button";
 import DetailItem from "@/components/ui/DetailItem";
+import ProfileIdentityCard from "@/components/ui/ProfileIdentityCard";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { getWorkStatusMeta } from "@/lib/workStatus";
@@ -9,9 +10,8 @@ import {
   SHIFT_GENDER_LABELS,
   STAFF_EMPLOYMENT_LABELS,
   STAFF_GENDER_LABELS,
-  STAFF_ROLE_LABELS,
 } from "./staffConstants";
-import { getStaffBranchNames, resolveStaffPhotoUrl } from "./staffUtils";
+import { getStaffBranchNames } from "./staffUtils";
 
 export default function StaffDetails({ staff, branches = [], isLoading, error }) {
   const { formatTime } = useTimeFormat();
@@ -30,7 +30,6 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
     return <p className="py-10 text-center text-sm text-app-muted-light">لا توجد بيانات متاحة.</p>;
   }
 
-  const photoUrl = resolveStaffPhotoUrl(staff.person?.photo_url || staff.person?.photo);
   const branchNames = getStaffBranchNames(staff, branches);
   const shifts = Array.isArray(staff.shifts) ? staff.shifts : [];
   const phone = [staff.person?.country_code, staff.person?.phone_number].filter(Boolean).join(" ");
@@ -38,44 +37,20 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-4 rounded-xl border border-app-line bg-app-card-soft p-4">
-        {photoUrl ? (
-          <div
-            className="size-16 shrink-0 rounded-full border border-app-line bg-cover bg-center"
-            style={{ backgroundImage: `url(${photoUrl})` }}
-            role="img"
-            aria-label={`صورة ${staff.person?.full_name || "الموظف"}`}
-          />
-        ) : (
-          <div className="grid size-16 shrink-0 place-items-center rounded-full border border-app-line bg-app-panel text-xl font-bold text-app-yellow">
-            {staff.person?.full_name?.charAt(0) || "م"}
-          </div>
-        )}
-        <div className="min-w-0 flex-1 text-right">
-          <h3 className="truncate text-lg font-medium text-app-text">
-            {staff.person?.full_name || "موظف بدون اسم"}
-          </h3>
-          <p className="mt-1 text-xs text-app-muted-light">
-            رقم الموظف: #{staff.id} · {STAFF_ROLE_LABELS[staff.role] || staff.role || "غير محدد"}
-          </p>
-          <span
-            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${workStatus.className}`}
-          >
-            {workStatus.label}
-          </span>
-        </div>
-      </div>
+      <ProfileIdentityCard
+        name={staff.person?.full_name || "موظف بدون اسم"}
+        username={staff.username || staff.generated_username}
+        qrCode={staff.qr_code}
+        status={workStatus}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <DetailItem label="الدور الوظيفي" value={STAFF_ROLE_LABELS[staff.role] || staff.role} />
         <DetailItem
           label="نوع التوظيف"
           value={STAFF_EMPLOYMENT_LABELS[staff.employment_type] || staff.employment_type}
         />
         <DetailItem label="الراتب الأساسي" value={formatMoney(staff.base_salary)} tone="green" />
-        <DetailItem label="حالة العمل" value={workStatus.label} />
         <DetailItem label="رقم الهاتف" value={phone || "-"} />
-        <DetailItem label="اسم المستخدم" value={staff.username || "-"} />
         <DetailItem
           label="الجنس"
           value={STAFF_GENDER_LABELS[staff.person?.gender] || staff.person?.gender || "-"}

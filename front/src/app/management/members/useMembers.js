@@ -96,7 +96,13 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       const matchesSearch =
         !normalizedSearch ||
         fullName.includes(normalizedSearch) ||
-        String(mobileVal).includes(normalizedSearch);
+        String(mobileVal).includes(normalizedSearch) ||
+        String(m.qr_code || "")
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        String(m.generated_username || m.username || "")
+          .toLowerCase()
+          .includes(normalizedSearch);
 
       return matchesGender && matchesSearch;
     });
@@ -161,7 +167,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
 
       toast.success("تم تسجيل اللاعب العضو بنجاح!");
       closeDrawer();
-      return memberId;
+      return memberResult;
     } catch (submitError) {
       console.error("Create member error:", submitError);
       const rawMsg = submitError?.data?.message || "";

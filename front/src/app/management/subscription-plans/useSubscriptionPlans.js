@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useCreateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
+  useGetSubscriptionPlanPlayersQuery,
   useGetSubscriptionPlanQuery,
   useGetSubscriptionPlansQuery,
   useUpdateSubscriptionPlanMutation,
@@ -62,6 +63,16 @@ export function useSubscriptionPlans({
   } = useGetSubscriptionPlanQuery(selectedPlanId, {
     skip: !selectedPlanId,
   });
+  const {
+    data: playersData,
+    error: playersError,
+    isFetching: isFetchingPlayers,
+    isLoading: isLoadingPlayers,
+    refetch: refetchPlayers,
+  } = useGetSubscriptionPlanPlayersQuery(selectedPlanId, {
+    skip: !selectedPlanId || drawerMode !== "details",
+    refetchOnMountOrArgChange: true,
+  });
 
   const { data: branchesData, error: branchesError } = useGetBranchesQuery();
   const branches = useMemo(
@@ -102,7 +113,13 @@ export function useSubscriptionPlans({
     if (branchesError) {
       console.warn("[useSubscriptionPlans] Error fetching branches:", branchesError);
     }
-  }, [error, detailsError, branchesError]);
+    if (playersError) {
+      console.warn(
+        "[useSubscriptionPlans] Error fetching subscription plan players:",
+        playersError,
+      );
+    }
+  }, [error, detailsError, branchesError, playersError]);
 
   const [createPlan, { isLoading: isCreating }] = useCreateSubscriptionPlanMutation();
   const [updatePlan, { isLoading: isUpdating }] = useUpdateSubscriptionPlanMutation();
@@ -209,9 +226,7 @@ export function useSubscriptionPlans({
       base_price: values.price,
       status:
         values.status ||
-        (values.is_active
-          ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
-          : SUBSCRIPTION_PLAN_STATUS.INACTIVE),
+        (values.is_active ? SUBSCRIPTION_PLAN_STATUS.ACTIVE : SUBSCRIPTION_PLAN_STATUS.INACTIVE),
     };
     delete apiPayload.price;
     delete apiPayload.is_active;
@@ -304,6 +319,11 @@ export function useSubscriptionPlans({
     isFetchingDetails,
     isLoadingDetails,
     detailsError,
+    playersData,
+    playersError,
+    isFetchingPlayers,
+    isLoadingPlayers,
+    refetchPlayers,
     isCreating,
     isUpdating,
     isDeleting,

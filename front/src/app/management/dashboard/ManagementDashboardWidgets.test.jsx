@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CoachSubscriptionsDonut } from "./ManagementDashboardWidgets";
 
 describe("coach subscriptions donut", () => {
-  it("hides zero-value coaches and shows a detailed tooltip on hover", () => {
+  it("shows zero-value coaches and displays their tooltip on hover", () => {
     render(
       <CoachSubscriptionsDonut
         items={[
@@ -26,12 +26,31 @@ describe("coach subscriptions donut", () => {
     );
 
     expect(screen.getByText("Active Coach")).toBeInTheDocument();
-    expect(screen.queryByText("Empty Coach")).not.toBeInTheDocument();
+    expect(screen.getByText("Empty Coach")).toBeInTheDocument();
 
-    fireEvent.mouseEnter(screen.getByLabelText(/Active Coach/));
+    fireEvent.mouseEnter(screen.getByTitle(/Empty Coach/));
 
     const tooltip = screen.getByRole("tooltip");
-    expect(tooltip).toHaveTextContent("Active Coach");
-    expect(tooltip).toHaveTextContent("Ballet");
+    expect(tooltip).toHaveTextContent("Empty Coach");
+  });
+
+  it("renders a valid empty ring when every coach has zero players", () => {
+    const { container } = render(
+      <CoachSubscriptionsDonut
+        items={[
+          {
+            id: "empty-coach",
+            label: "Empty Coach",
+            value: 0,
+            activities: [],
+            color: "#fb7185",
+          },
+        ]}
+      />,
+    );
+
+    expect(container).toHaveTextContent("Empty Coach");
+    expect(container.querySelector('svg[role="img"]')).toHaveAccessibleName(/توزيع اللاعبين/);
+    expect(container.innerHTML).not.toContain("NaN");
   });
 });

@@ -154,7 +154,7 @@ export function useCoaches(params = {}) {
 
       const matchesSearch =
         !normalizedSearch ||
-        [nameVal, activitiesVal, phoneVal]
+        [nameVal, activitiesVal, phoneVal, coach.qr_code, coach.username]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(normalizedSearch));
 
@@ -248,9 +248,9 @@ export function useCoaches(params = {}) {
         formData.append("photo", values.photo);
       }
 
-      await createCoach(formData).unwrap();
+      const response = await createCoach(formData).unwrap();
       closeDrawer();
-      return true;
+      return response;
     } catch (submitError) {
       console.error("Create coach validation/API error:", submitError);
       setFormError(
