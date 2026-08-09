@@ -5,6 +5,7 @@ use Modules\Authentication\Http\Controllers\Api\AuthController;
 use Modules\Authentication\Http\Controllers\Api\PersonContactController;
 use Modules\Authentication\Http\Controllers\Api\V1\PermissionController;
 use Modules\Authentication\Http\Controllers\Api\V1\RoleController;
+use Modules\Authentication\Http\Controllers\Api\V1\UserController;
 use Modules\Authentication\Http\Controllers\Api\V1\UserRoleController;
 
 Route::prefix('v1/auth')->group(function () {
@@ -41,6 +42,10 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('roles/{id}', [RoleController::class, 'show']);
     Route::put('roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
     Route::delete('roles/{id}', [RoleController::class, 'destroy']);
+
+    // ─── Users ──────────────────────────────────────────────────────────────────
+    // GET    /v1/users                → list users (with optional ?role= filter)
+    Route::get('users', [UserController::class, 'index']);
 
     // ─── User Roles ─────────────────────────────────────────────────────────────
     // GET    /v1/users/{userId}/roles → get user's roles & permissions

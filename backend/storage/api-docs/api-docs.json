@@ -5231,6 +5231,37 @@
                 ]
             }
         },
+        "/v1/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "👥 جلب قائمة المستخدمين مع الفلترة حسب الدور",
+                "description": "يعيد قائمة جميع المستخدمين ويتضمن الاسم، اسم المستخدم، الدور، وحالة تغيير كلمة السر.",
+                "operationId": "getUsersList",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "اسم الدور للفلترة (مثال: admin, coach, staff, player)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة المستخدمين بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/users/{userId}/roles": {
             "get": {
                 "tags": [
@@ -24782,6 +24813,10 @@
         {
             "name": "Roles",
             "description": "إدارة الأدوار (Roles) وتعيين الصلاحيات لها"
+        },
+        {
+            "name": "Users",
+            "description": "إدارة واستعلام بيانات المستخدمين"
         },
         {
             "name": "User Roles",
