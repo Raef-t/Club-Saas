@@ -31,7 +31,7 @@ class AuthController extends BaseController
             required: ['username', 'password'],
             properties: [
                 new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'technogym'),
-                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
+                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: '12345678'),
                 new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here', nullable: true),
                 new OA\Property(
                     property: 'device_info', 
@@ -200,18 +200,19 @@ class AuthController extends BaseController
                 if ($staffBranch) {
                     $userData['branch_id'] = $staffBranch->branch_id;
                 }
+                $userData['qr_code'] = $this->qrCodeService->getSingleCodeForPerson($personId);
+            } else {
+                // Attach the 7 QR codes for members (Frontend caches them)
+                $rawQrCodes = $this->qrCodeService->getCodesForPerson($personId);
+                $formattedQrCodes = [];
+                foreach ($rawQrCodes as $day => $code) {
+                    $formattedQrCodes[] = [
+                        'day' => $day,
+                        'code' => $code
+                    ];
+                }
+                $userData['qr_codes'] = $formattedQrCodes;
             }
-
-            // Attach the 7 QR codes for this person (Frontend caches them)
-            $rawQrCodes = $this->qrCodeService->getCodesForPerson($personId);
-            $formattedQrCodes = [];
-            foreach ($rawQrCodes as $day => $code) {
-                $formattedQrCodes[] = [
-                    'day' => $day,
-                    'code' => $code
-                ];
-            }
-            $userData['qr_codes'] = $formattedQrCodes;
         }
 
         return $this->successResponse([

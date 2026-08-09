@@ -3893,7 +3893,7 @@
                                     "password": {
                                         "description": "كلمة المرور",
                                         "type": "string",
-                                        "example": "password123"
+                                        "example": "12345678"
                                     },
                                     "fcm_token": {
                                         "description": "رمز الجهاز لإشعارات Firebase",

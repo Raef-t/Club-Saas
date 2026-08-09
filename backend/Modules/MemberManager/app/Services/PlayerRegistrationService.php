@@ -99,7 +99,7 @@ class PlayerRegistrationService
 
             // 6. Create User Account automatically
             $username = 'Mem-' . $person->id . '-' . strtolower(\Illuminate\Support\Str::random(6));
-            $password = 'password123';
+            $password = '12345678';
             $user = User::create([
                 'person_id' => $person->id,
                 'username' => $username,
