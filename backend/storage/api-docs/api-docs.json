@@ -3888,7 +3888,7 @@
                                     "username": {
                                         "description": "اسم المستخدم الفريد (للموظف أو المدير)",
                                         "type": "string",
-                                        "example": "technogym"
+                                        "example": "tec-adm-75054"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
