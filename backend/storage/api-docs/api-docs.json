@@ -16698,13 +16698,15 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "shifts[]": {
-                                        "description": "مصفوفة معرفات الشفتات",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
+                                    "start_time": {
+                                        "description": "وقت بداية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "08:00"
+                                    },
+                                    "end_time": {
+                                        "description": "وقت نهاية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "16:00"
                                     },
                                     "address": {
                                         "description": "العنوان",
@@ -17116,13 +17118,15 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "shifts": {
-                                        "description": "مصفوفة معرفات الشفتات",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
+                                    "start_time": {
+                                        "description": "وقت بداية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "08:00"
+                                    },
+                                    "end_time": {
+                                        "description": "وقت نهاية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "16:00"
                                     },
                                     "address": {
                                         "description": "العنوان",

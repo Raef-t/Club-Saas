@@ -150,12 +150,6 @@ class StaffService
                 $staff->branches()->sync($data['branch_ids']);
             }
 
-            if (isset($data['shifts']) && is_array($data['shifts'])) {
-                foreach ($data['shifts'] as $shiftId) {
-                    $staff->shifts()->create(['branch_shift_id' => $shiftId]);
-                }
-            }
-
             // 3. If coach, create coach_details record
             if (($data['role'] ?? 'staff') === 'coach') {
                 $staff->coachDetail()->create([
@@ -324,13 +318,6 @@ class StaffService
 
             if (isset($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
-            }
-
-            if (isset($data['shifts']) && is_array($data['shifts'])) {
-                $staff->shifts()->delete();
-                foreach ($data['shifts'] as $shiftId) {
-                    $staff->shifts()->create(['branch_shift_id' => $shiftId]);
-                }
             }
 
             // Update coach_details if this is a coach
