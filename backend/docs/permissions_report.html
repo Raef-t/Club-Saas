@@ -386,18 +386,22 @@
         <h1>🔐 تقرير الصلاحيات الكامل</h1>
         <p>Club SaaS — نظام إدارة الأندية الرياضية</p>
         <div class="badge-row">
-            <span class="badge badge-blue">📅 2026-08-06</span>
-            <span class="badge badge-green">✅ 83 صلاحية</span>
+            <span class="badge badge-blue">📅 2026-08-09</span>
+            <span class="badge badge-green">✅ 94 صلاحية</span>
             <span class="badge badge-amber">⚙️ 7 أدوار</span>
-            <span class="badge badge-blue">🧩 10 موديولات</span>
+            <span class="badge badge-blue">🧩 11 موديولاً</span>
         </div>
     </div>
 
     <!-- ══════════════════ STATS ══════════════════ -->
     <div class="stats-bar">
         <div class="stat-card">
-            <div class="stat-number" style="color:#3b82f6">83</div>
+            <div class="stat-number" style="color:#3b82f6">94</div>
             <div class="stat-label">إجمالي الصلاحيات</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#6366f1">10</div>
+            <div class="stat-label">Users & Roles</div>
         </div>
         <div class="stat-card">
             <div class="stat-number" style="color:#10b981">22</div>
@@ -416,7 +420,7 @@
             <div class="stat-label">Activities</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" style="color:#fb923c">9</div>
+            <div class="stat-number" style="color:#fb923c">15</div>
             <div class="stat-label">Subscriptions</div>
         </div>
         <div class="stat-card">
@@ -424,7 +428,7 @@
             <div class="stat-label">Lockers</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" style="color:#ef4444">7</div>
+            <div class="stat-number" style="color:#ef4444">8</div>
             <div class="stat-label">Attendance</div>
         </div>
         <div class="stat-card">
@@ -444,6 +448,7 @@
         <aside class="sidebar">
             <h3>🗂 التنقل السريع</h3>
             <a href="#roles">👥 الأدوار <span class="count">7</span></a>
+            <a href="#users-roles">🔑 Users & Roles <span class="count">10</span></a>
             <a href="#members">👤 Members <span class="count">22</span></a>
             <a href="#coaches">🏋️ Coaches <span class="count">9</span></a>
             <a href="#staff">🧑‍💼 Staff <span class="count">8</span></a>
@@ -451,10 +456,10 @@
             <a href="#sub-plans">📋 Sub. Plans <span class="count">6</span></a>
             <a href="#player-subs">🎽 Player Subs. <span class="count">9</span></a>
             <a href="#lockers">🔒 Lockers <span class="count">7</span></a>
-            <a href="#attendance">📍 Attendance <span class="count">7</span></a>
+            <a href="#attendance">📍 Attendance <span class="count">8</span></a>
             <a href="#payments">💳 Payments <span class="count">4</span></a>
             <a href="#reception">🏢 Reception <span class="count">4</span></a>
-            <a href="#full-list">📊 القائمة الكاملة <span class="count">83</span></a>
+            <a href="#full-list">📊 القائمة الكاملة <span class="count">94</span></a>
         </aside>
 
         <!-- ── MAIN CONTENT ── -->
@@ -479,6 +484,34 @@
                     <div class="role-card"><div class="role-dot" style="background:#f59e0b"></div><div><div class="role-name">accountant</div><div class="role-desc">محاسب</div></div></div>
                     <div class="role-card"><div class="role-dot" style="background:#6366f1"></div><div><div class="role-name">reception</div><div class="role-desc">موظف استقبال</div></div></div>
                 </div>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── USERS & ROLES ───── -->
+            <div class="module-card" id="users-roles">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(99,102,241,0.15)">🔑</div>
+                    <div class="module-title">
+                        <h2>Users & Roles — إدارة المستخدمين والأدوار</h2>
+                        <small>Authentication Module · 10 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-done">✅ مُنفَّذ بالكامل</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">user.view-any</span></td><td>عرض واستعراض قائمة المستخدمين بالتصفية</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/users</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">permission.view-any</span></td><td>جلب قائمة الصلاحيات في النظام</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/permissions</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">role.view-any</span></td><td>جلب قائمة الأدوار المعرفة</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/roles</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">role.create</span></td><td>إنشاء دور جديد في النظام</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/roles</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">role.view</span></td><td>عرض تفاصيل دور محدد وصلاحياته</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/roles/{id}</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">role.sync-permissions</span></td><td>مزامنة وتحديث صلاحيات الدور</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/roles/{id}/permissions</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">role.delete</span></td><td>حذف دور من النظام</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/roles/{id}</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">user-role.view</span></td><td>عرض أدوار وصلاحيات مستخدم محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/users/{userId}/roles</td></tr>
+                        <tr><td>9</td><td><span class="perm-name">user-role.assign</span></td><td>إسناد دور لمستخدم</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/users/{userId}/roles</td></tr>
+                        <tr><td>10</td><td><span class="perm-name">user-role.revoke</span></td><td>سحب دور من مستخدم</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/users/{userId}/roles</td></tr>
+                    </tbody>
+                </table>
                 <a href="#top" class="back-top">↑ العودة للأعلى</a>
             </div>
 
@@ -721,7 +754,7 @@
                     <div class="module-icon" style="background:rgba(239,68,68,0.15)">📍</div>
                     <div class="module-title">
                         <h2>Attendances — الحضور</h2>
-                        <small>AttendanceManager Module · 7 صلاحيات</small>
+                        <small>AttendanceManager Module · 8 صلاحيات</small>
                     </div>
                     <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
                 </div>
@@ -735,6 +768,7 @@
                         <tr><td>5</td><td><span class="perm-name">attendance.delete</span></td><td>حذف سجل حضور</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/attendances/{id}</td></tr>
                         <tr><td>6</td><td><span class="perm-name">attendance.restore</span></td><td>استعادة سجل حضور محذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/attendances/{id}/restore</td></tr>
                         <tr><td>7</td><td><span class="perm-name">attendance.dashboard</span></td><td>عرض لوحة الحضور</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/attendance-manager/dashboard-stats</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">attendance.dashboard-stream</span></td><td>بث حي لإحصائيات الحضور (SSE)</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/attendance-manager/dashboard-stats-stream</td></tr>
                     </tbody>
                 </table>
                 <a href="#top" class="back-top">↑ العودة للأعلى</a>
@@ -789,7 +823,7 @@
                 <div class="module-header">
                     <div class="module-icon" style="background:rgba(59,130,246,0.15)">📊</div>
                     <div class="module-title">
-                        <h2>القائمة الكاملة — جميع الـ 83 صلاحية</h2>
+                        <h2>القائمة الكاملة — جميع الـ 94 صلاحية</h2>
                         <small>مع إمكانية البحث والتصفية</small>
                     </div>
                 </div>
@@ -894,6 +928,17 @@
                         <tr data-search="reception.deduct-session Reception خصم جلسة من اشتراك"><td>81</td><td><span class="perm-name">reception.deduct-session</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>خصم جلسة من اشتراك</td></tr>
                         <tr data-search="reception.rollback-attendance Reception التراجع عن حضور وإرجاع الجلسة"><td>82</td><td><span class="perm-name">reception.rollback-attendance</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>التراجع عن حضور وإرجاع الجلسة</td></tr>
                         <tr data-search="reception.qr-check-in Reception تسجيل حضور عبر QR"><td>83</td><td><span class="perm-name">reception.qr-check-in</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>تسجيل حضور عبر QR</td></tr>
+                        <tr data-search="user.view-any Auth Users عرض قائمة المستخدمين بالتصفية"><td>84</td><td><span class="perm-name">user.view-any</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>عرض واستعراض قائمة المستخدمين بالتصفية</td></tr>
+                        <tr data-search="permission.view-any Auth Users جلب قائمة الصلاحيات في النظام"><td>85</td><td><span class="perm-name">permission.view-any</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>جلب قائمة الصلاحيات في النظام</td></tr>
+                        <tr data-search="role.view-any Auth Users جلب قائمة الأدوار المعرفة"><td>86</td><td><span class="perm-name">role.view-any</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>جلب قائمة الأدوار المعرفة</td></tr>
+                        <tr data-search="role.create Auth Users إنشاء دور جديد"><td>87</td><td><span class="perm-name">role.create</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>إنشاء دور جديد في النظام</td></tr>
+                        <tr data-search="role.view Auth Users عرض تفاصيل دور محدد"><td>88</td><td><span class="perm-name">role.view</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>عرض تفاصيل دور محدد وصلاحياته</td></tr>
+                        <tr data-search="role.sync-permissions Auth Users مزامنة وتحديث صلاحيات الدور"><td>89</td><td><span class="perm-name">role.sync-permissions</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>مزامنة وتحديث صلاحيات الدور</td></tr>
+                        <tr data-search="role.delete Auth Users حذف دور"><td>90</td><td><span class="perm-name">role.delete</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>حذف دور من النظام</td></tr>
+                        <tr data-search="user-role.view Auth Users عرض أدوار وصلاحيات مستخدم محدد"><td>91</td><td><span class="perm-name">user-role.view</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>عرض أدوار وصلاحيات مستخدم محدد</td></tr>
+                        <tr data-search="user-role.assign Auth Users إسناد دور لمستخدم"><td>92</td><td><span class="perm-name">user-role.assign</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>إسناد دور لمستخدم</td></tr>
+                        <tr data-search="user-role.revoke Auth Users سحب دور من مستخدم"><td>93</td><td><span class="perm-name">user-role.revoke</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>سحب دور من مستخدم</td></tr>
+                        <tr data-search="attendance.dashboard-stream Attendance بث حي لإحصائيات الحضور"><td>94</td><td><span class="perm-name">attendance.dashboard-stream</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>بث حي لإحصائيات الحضور (SSE)</td></tr>
                     </tbody>
                 </table>
                 </div>
@@ -904,7 +949,7 @@
     </div><!-- /layout -->
 
     <footer>
-        <p>📁 Club SaaS — Permissions Report &nbsp;|&nbsp; تم الإنشاء بتاريخ 2026-08-06 &nbsp;|&nbsp; إجمالي الصلاحيات: <strong>83</strong></p>
+        <p>📁 Club SaaS — Permissions Report &nbsp;|&nbsp; تم التحديث بتاريخ 2026-08-09 &nbsp;|&nbsp; إجمالي الصلاحيات: <strong>94</strong></p>
     </footer>
 
 </div><!-- /container -->
