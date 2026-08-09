@@ -22,8 +22,8 @@ export default function AccountingDashboard() {
       <StatsGrid items={overviewStats} variant="wide" />
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
-        <SectionCard title="الربح الشهري" className="h-[206px] xl:order-2">
-          <BarChart data={monthlyProfit} />
+        <SectionCard title="الربح الشهري" className="min-h-[220px] xl:order-2">
+          <BarChart data={monthlyProfit} height={125} />
         </SectionCard>
 
         <SectionCard

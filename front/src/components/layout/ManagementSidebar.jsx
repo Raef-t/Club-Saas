@@ -37,6 +37,7 @@ const navGroups = [
   {
     title: "لوحة التحكم",
     items: [
+      { title: "حسابات المستخدمين", href: "/management/users" },
       { title: "الإعدادات", href: "/management/settings" },
       { title: "إدارة النادي", href: "/management/clubs" },
       { title: "الفروع", href: "/management/branches" },

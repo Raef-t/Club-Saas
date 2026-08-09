@@ -2,6 +2,7 @@
 
 import Button from "@/components/ui/Button";
 import DetailItem from "@/components/ui/DetailItem";
+import ProfileIdentityCard from "@/components/ui/ProfileIdentityCard";
 import SkeletonPage from "@/components/ui/Skeleton";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { getWorkStatusMeta } from "@/lib/workStatus";
@@ -49,18 +50,12 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
 
   return (
     <div className="space-y-6">
-      {/* Basic Profile */}
-      <div className="rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-medium text-white">{coach.person?.full_name || "-"}</h3>
-          <p className="mt-1 text-xs text-app-muted-light">
-            كود الموظف: #{coach.id} | دور: {coach.role}
-          </p>
-        </div>
-        <span className={`rounded px-2.5 py-1 text-xs font-semibold ${workStatus.className}`}>
-          {workStatus.label}
-        </span>
-      </div>
+      <ProfileIdentityCard
+        name={coach.person?.full_name}
+        username={coach.username || coach.generated_username}
+        qrCode={coach.qr_code}
+        status={workStatus}
+      />
 
       {/* Info Grid */}
       <section className="grid gap-3 sm:grid-cols-2">
@@ -79,7 +74,6 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
         />
         <DetailItem label="العمر" value={coachAge !== null ? `${coachAge} سنة` : "-"} />
         <DetailItem label="نوع التوظيف" value={employmentLabel} />
-        <DetailItem label="حالة العمل" value={workStatus.label} />
         {compensation.showSalary && (
           <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
         )}

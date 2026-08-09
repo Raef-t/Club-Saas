@@ -13,6 +13,19 @@ function getPlanRecord(response) {
   return record && typeof record === "object" && !Array.isArray(record) ? record : null;
 }
 
+export function normalizeSubscriptionPlanPlayersResponse(response) {
+  const payload = response?.data?.data || response?.data || response;
+  const players = Array.isArray(payload?.players) ? payload.players : [];
+  const total = Number(payload?.total_active_subscribers);
+
+  return {
+    plan_id: payload?.plan_id ?? null,
+    plan_name: payload?.plan_name ?? "",
+    total_active_subscribers: Number.isFinite(total) ? total : players.length,
+    players,
+  };
+}
+
 /**
  * Keeps an updated plan in an already loaded list even when the backend's list
  * endpoint temporarily omits inactive records.
@@ -49,6 +62,11 @@ export const subscriptionPlansApi = createApi({
       query: (id) => `subscription-plans/${id}`,
       providesTags: (result, error, id) => [{ type: "SubscriptionPlans", id }],
     }),
+    getSubscriptionPlanPlayers: builder.query({
+      query: (id) => `subscription-plans/${id}/players`,
+      transformResponse: normalizeSubscriptionPlanPlayersResponse,
+      providesTags: (result, error, id) => [{ type: "SubscriptionPlans", id }],
+    }),
     createSubscriptionPlan: builder.mutation({
       query: (body) => ({
         url: "subscription-plans",
@@ -73,10 +91,8 @@ export const subscriptionPlansApi = createApi({
 
         const patches = queryArgs.map((queryArg) =>
           dispatch(
-            subscriptionPlansApi.util.updateQueryData(
-              "getSubscriptionPlans",
-              queryArg,
-              (draft) => mergeSubscriptionPlanIntoResponse(draft, optimisticPlan),
+            subscriptionPlansApi.util.updateQueryData("getSubscriptionPlans", queryArg, (draft) =>
+              mergeSubscriptionPlanIntoResponse(draft, optimisticPlan),
             ),
           ),
         );
@@ -116,6 +132,7 @@ export const {
   useCreateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
   useGetSubscriptionPlanQuery,
+  useGetSubscriptionPlanPlayersQuery,
   useGetSubscriptionPlansQuery,
   useUpdateSubscriptionPlanMutation,
 } = subscriptionPlansApi;

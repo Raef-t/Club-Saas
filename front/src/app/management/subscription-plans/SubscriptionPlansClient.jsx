@@ -8,7 +8,7 @@ import Drawer from "@/components/ui/Drawer";
 import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { PlusIcon } from "@/components/icons/Icons";
+import { PlusIcon, UsersIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import DetailItem from "@/components/ui/DetailItem";
 import SearchInput from "@/components/ui/SearchInput";
@@ -19,16 +19,10 @@ import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import {
-  getPreferredBranchId,
-  getGenderForBranchId,
-} from "@/lib/managementBranchUtils";
+import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
-import {
-  getSubscriptionPlanStatusMeta,
-  SUBSCRIPTION_PLAN_STATUS,
-} from "./subscriptionPlanStatus";
+import { getSubscriptionPlanStatusMeta, SUBSCRIPTION_PLAN_STATUS } from "./subscriptionPlanStatus";
 
 function CoachDropdown({ branchId, activityId, value, onChange }) {
   const { data, isLoading } = useGetCoachesQuery(
@@ -81,8 +75,6 @@ function formatMoney(value) {
 
 const planName = (plan) => formatLocalizedName(plan?.name);
 
-
-
 function StatusBadge({ plan }) {
   const status = getSubscriptionPlanStatusMeta(plan);
 
@@ -95,7 +87,81 @@ function StatusBadge({ plan }) {
   );
 }
 
-function PlanDetails({ plan, isLoading, error }) {
+function PlanPlayers({ data, isLoading, error, onRetry }) {
+  const players = data?.players || [];
+  const total = data?.total_active_subscribers ?? players.length;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <UsersIcon className="size-5 text-app-yellow" />
+          <h4 className="text-sm font-semibold text-app-text">اللاعبون المنتمون للفعالية</h4>
+        </div>
+        {!isLoading && !error && (
+          <span className="rounded-full bg-app-yellow/15 px-2.5 py-1 text-xs font-medium text-app-yellow">
+            {total.toLocaleString("ar")} لاعب
+          </span>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2" aria-label="جاري تحميل أسماء اللاعبين">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="h-14 animate-pulse rounded-xl border border-app-line bg-app-card-soft/70"
+            />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="space-y-3 rounded-xl border border-app-red/30 bg-app-red/10 p-4 text-center text-sm text-app-red">
+          <p>تعذر تحميل أسماء اللاعبين المنتمين لهذه الفعالية.</p>
+          <Button type="button" tone="outline" className="h-9 px-3 text-xs" onClick={onRetry}>
+            إعادة المحاولة
+          </Button>
+        </div>
+      ) : players.length === 0 ? (
+        <div className="rounded-xl border border-app-line bg-app-card-soft/60 p-5 text-center text-sm text-app-muted-light">
+          لا يوجد لاعبون نشطون منتمون لهذه الفعالية حالياً.
+        </div>
+      ) : (
+        <div className="divide-y divide-app-line overflow-hidden rounded-xl border border-app-line bg-app-card-soft/70">
+          {players.map((player, index) => (
+            <div
+              key={player.subscription_id ?? player.member_id ?? `${player.full_name}-${index}`}
+              className="flex items-center gap-3 px-4 py-3 text-right"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-app-yellow/15 text-xs font-semibold text-app-yellow">
+                {(index + 1).toLocaleString("ar")}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-app-text">
+                  {player.full_name || "اسم غير متوفر"}
+                </p>
+                {player.member_number && (
+                  <p className="mt-0.5 text-[11px] text-app-muted-light">
+                    رقم العضوية: {player.member_number}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PlanDetails({
+  plan,
+  isLoading,
+  error,
+  playersData,
+  isLoadingPlayers,
+  playersError,
+  onRetryPlayers,
+}) {
   if (isLoading) {
     return <SkeletonPage blocks={[{ type: "details", sections: 2, itemsPerSection: 4 }]} />;
   }
@@ -135,6 +201,13 @@ function PlanDetails({ plan, isLoading, error }) {
         <DetailItem label="الجلسات أسبوعياً" value={plan.sessions_per_week || "-"} />
         <DetailItem label="عدد الجلسات الإجمالي" value={plan.session_count || "-"} />
       </section>
+
+      <PlanPlayers
+        data={playersData}
+        isLoading={isLoadingPlayers}
+        error={playersError}
+        onRetry={onRetryPlayers}
+      />
     </div>
   );
 }
@@ -269,8 +342,6 @@ export function PlanForm({
         type="text"
         error={errors.name}
       />
-
-
 
       <label className="block text-right text-sm text-app-muted-light">
         تخصيص الجنس *
@@ -571,9 +642,7 @@ export function PlanForm({
           setForm((current) => ({
             ...current,
             is_active: isActive,
-            status: isActive
-              ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
-              : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
+            status: isActive ? SUBSCRIPTION_PLAN_STATUS.ACTIVE : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
           }));
         }}
       />
@@ -621,6 +690,11 @@ export default function SubscriptionPlansClient({ initialData }) {
     isFetchingDetails,
     isLoadingDetails,
     detailsError,
+    playersData,
+    playersError,
+    isFetchingPlayers,
+    isLoadingPlayers,
+    refetchPlayers,
     isCreating,
     isUpdating,
     isDeleting,
@@ -796,6 +870,10 @@ export default function SubscriptionPlansClient({ initialData }) {
           plan={detailsPlan || selectedPlan}
           isLoading={isLoadingDetails || isFetchingDetails}
           error={detailsError}
+          playersData={playersData}
+          isLoadingPlayers={isLoadingPlayers || isFetchingPlayers}
+          playersError={playersError}
+          onRetryPlayers={refetchPlayers}
         />
       </Drawer>
 
