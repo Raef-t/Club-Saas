@@ -34,4 +34,28 @@ describe("ProfileIdentityCard", () => {
 
     expect(screen.getByText("QR غير متوفر")).toBeInTheDocument();
   });
+
+  it("downloads the QR image and copies the value on click", async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    render(
+      <ProfileIdentityCard
+        name="عبيدة أيوبي"
+        username="tec-adm-68096"
+        qrCode="QR-123456"
+        status={{ label: "نشط" }}
+      />,
+    );
+
+    const button = await screen.findByRole("button", { name: /تنزيل ونسخ رمز QR/ });
+    button.click();
+
+    expect(writeTextMock).toHaveBeenCalledWith("QR-123456");
+    expect(await screen.findByText(/تم التنزيل/)).toBeInTheDocument();
+  });
 });
