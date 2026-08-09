@@ -3,6 +3,39 @@ import { calculateAge, COACH_ACTIVITY_KINDS, getCoachActivityKind } from "./coac
 
 const COMMISSION_PAYMENT_TYPES = new Set(["commission", "commission_based"]);
 
+export function getCoachActivityPlanKey(coachId, activityId) {
+  return `${String(coachId)}:${String(activityId)}`;
+}
+
+/**
+ * Groups subscription plans by both coach and activity so coaches sharing the
+ * same activity never see each other's linked events.
+ */
+export function createCoachActivityPlansMap(plans = []) {
+  const map = new Map();
+
+  plans.forEach((plan) => {
+    const planActivities = Array.isArray(plan?.activities) ? plan.activities : [];
+
+    planActivities.forEach((item) => {
+      const activityId = item?.activity_id ?? item?.activity?.id;
+      const coachId = item?.coach_id ?? item?.coach?.id ?? item?.coach?.coach_id;
+      if (activityId == null || coachId == null) return;
+
+      const key = getCoachActivityPlanKey(coachId, activityId);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push({
+        id: plan.id,
+        name: formatLocalizedName(plan.name),
+        price: plan.base_price,
+        sessions: plan.session_count,
+      });
+    });
+  });
+
+  return map;
+}
+
 /**
  * Uses the age returned by the API and falls back to calculating it from DOB.
  */

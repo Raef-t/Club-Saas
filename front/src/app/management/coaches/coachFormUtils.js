@@ -1,6 +1,66 @@
 import { resolveWorkStatus } from "@/lib/workStatus";
 
 /**
+ * Maps the coach details response to the controlled edit-form values.
+ */
+export function createCoachEditInitialValues(coach) {
+  if (!coach) return null;
+
+  const branchIds = Array.isArray(coach.branch_ids)
+    ? coach.branch_ids.map(Number)
+    : Array.isArray(coach.branches)
+      ? coach.branches.map((branch) => Number(branch.id))
+      : [];
+  const activityIds = Array.isArray(coach.activities)
+    ? coach.activities.map((activity) => Number(activity.id))
+    : Array.isArray(coach.activity_ids)
+      ? coach.activity_ids.map(Number)
+      : [];
+  const coachShifts = Array.isArray(coach.shifts)
+    ? coach.shifts
+    : Array.isArray(coach.details?.shifts)
+      ? coach.details.shifts
+      : [];
+  const shifts = coachShifts
+    .map((shift) =>
+      Number(
+        typeof shift === "object"
+          ? shift.branch_shift_id || shift.branch_shift?.id || shift.id
+          : shift,
+      ),
+    )
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const workTypes = coach.work_types || coach.details?.work_types || [];
+  const [firstName, ...remainingNameParts] = (coach.person?.full_name || "").split(/\s+/);
+  const primaryContact = coach.person?.contacts?.[0] || null;
+
+  return {
+    first_name: coach.person?.first_name || firstName || "",
+    last_name: coach.person?.last_name || remainingNameParts.join(" ") || "",
+    gender: coach.person?.gender || "male",
+    dob: coach.person?.dob ? coach.person.dob.split("T")[0] : "",
+    phone_number:
+      coach.person?.phone_number || coach.person?.phone || primaryContact?.phone_number || "",
+    country_code: coach.person?.country_code || primaryContact?.country_code || "+963",
+    address: coach.person?.address || "",
+    branch_ids: branchIds,
+    experience_years: String(coach.experience_years || coach.details?.experience_years || 0),
+    start_date: (coach.start_date || coach.details?.start_date || "").split("T")[0],
+    work_status: resolveWorkStatus(coach),
+    is_active: resolveWorkStatus(coach) === "active",
+    employment_type: coach.employment_type || "fixed_salary",
+    base_salary: String(Number(coach.base_salary) || 0),
+    default_commission_rate: String(
+      Number(coach.default_commission_rate || coach.details?.default_commission_rate) || 0,
+    ),
+    work_types: Array.isArray(workTypes) ? workTypes : [],
+    activity_ids: activityIds,
+    shifts,
+    photo: coach.person?.photo_url || coach.person?.photo || null,
+  };
+}
+
+/**
  * Creates the controlled form state for coach creation and editing.
  */
 export function createCoachFormInitialValues(

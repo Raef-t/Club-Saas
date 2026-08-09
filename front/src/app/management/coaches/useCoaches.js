@@ -12,8 +12,9 @@ import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
-import { formatLocalizedName } from "@/lib/utils";
 import { resolveWorkStatus } from "@/lib/workStatus";
+import { createCoachActivityPlansMap } from "./coachDetailsUtils";
+import { createCoachEditInitialValues } from "./coachFormUtils";
 
 function getCoachesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -92,29 +93,9 @@ export function useCoaches(params = {}) {
     branchFilter === "all" ? {} : { branch_id: branchFilter },
   );
 
-  /**
-   * Maps each activity ID to the subscription plans (فعاليات) that reference it.
-   */
-  const activityPlansMap = useMemo(() => {
+  const coachActivityPlansMap = useMemo(() => {
     const plans = Array.isArray(plansData?.data) ? plansData.data : [];
-    const map = new Map();
-
-    plans.forEach((plan) => {
-      const planActivities = Array.isArray(plan.activities) ? plan.activities : [];
-      planActivities.forEach((item) => {
-        const actId = String(item.activity_id || item.activity?.id || "");
-        if (!actId) return;
-        if (!map.has(actId)) map.set(actId, []);
-        map.get(actId).push({
-          id: plan.id,
-          name: formatLocalizedName(plan.name),
-          price: plan.base_price,
-          sessions: plan.session_count,
-        });
-      });
-    });
-
-    return map;
+    return createCoachActivityPlansMap(plans);
   }, [plansData]);
 
   const selectedCoach = useMemo(
@@ -321,68 +302,7 @@ export function useCoaches(params = {}) {
 
   function getEditInitialValues() {
     if (!selectedCoach || (fetchDetails && !detailsData)) return null;
-
-    const branchIds = Array.isArray(selectedCoach.branch_ids)
-      ? selectedCoach.branch_ids.map(Number)
-      : Array.isArray(selectedCoach.branches)
-        ? selectedCoach.branches.map((b) => Number(b.id))
-        : [];
-    const activityIds = Array.isArray(selectedCoach.activities)
-      ? selectedCoach.activities.map((a) => Number(a.id))
-      : Array.isArray(selectedCoach.activity_ids)
-        ? selectedCoach.activity_ids.map(Number)
-        : [];
-    const coachShifts = Array.isArray(selectedCoach.shifts)
-      ? selectedCoach.shifts
-      : Array.isArray(selectedCoach.details?.shifts)
-        ? selectedCoach.details.shifts
-        : [];
-    const shifts = coachShifts
-      .map((shift) =>
-        Number(
-          typeof shift === "object"
-            ? shift.branch_shift_id || shift.branch_shift?.id || shift.id
-            : shift,
-        ),
-      )
-      .filter((id) => Number.isFinite(id) && id > 0);
-    const workTypes = selectedCoach.work_types || selectedCoach.details?.work_types || [];
-    const [firstName, ...remainingNameParts] = (selectedCoach.person?.full_name || "").split(/\s+/);
-    const primaryContact = selectedCoach.person?.contacts?.[0] || null;
-
-    return {
-      first_name: selectedCoach.person?.first_name || firstName || "",
-      last_name: selectedCoach.person?.last_name || remainingNameParts.join(" ") || "",
-      gender: selectedCoach.person?.gender || "male",
-      dob: selectedCoach.person?.dob ? selectedCoach.person.dob.split("T")[0] : "",
-      phone_number:
-        selectedCoach.person?.phone_number ||
-        selectedCoach.person?.phone ||
-        primaryContact?.phone_number ||
-        "",
-      country_code: selectedCoach.person?.country_code || primaryContact?.country_code || "+963",
-      address: selectedCoach.person?.address || "",
-      branch_ids: branchIds,
-      experience_years: String(
-        selectedCoach.experience_years || selectedCoach.details?.experience_years || 0,
-      ),
-      start_date: (selectedCoach.start_date || selectedCoach.details?.start_date || "").split(
-        "T",
-      )[0],
-      work_status: resolveWorkStatus(selectedCoach),
-      is_active: resolveWorkStatus(selectedCoach) === "active",
-      employment_type: selectedCoach.employment_type || "fixed_salary",
-      base_salary: String(Number(selectedCoach.base_salary) || 0),
-      default_commission_rate: String(
-        Number(
-          selectedCoach.default_commission_rate || selectedCoach.details?.default_commission_rate,
-        ) || 0,
-      ),
-      work_types: Array.isArray(workTypes) ? workTypes : [],
-      activity_ids: activityIds,
-      shifts,
-      photo: selectedCoach.person?.photo_url || selectedCoach.person?.photo || null,
-    };
+    return createCoachEditInitialValues(selectedCoach);
   }
 
   function handleDelete(coach) {
@@ -445,7 +365,7 @@ export function useCoaches(params = {}) {
     getEditInitialValues,
     branches,
     activities,
-    activityPlansMap,
+    coachActivityPlansMap,
     closeDrawer,
   };
 }

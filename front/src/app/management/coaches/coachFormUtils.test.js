@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COACH_ACTIVITY_KINDS,
+  createCoachEditInitialValues,
   createCoachFormInitialValues,
   getCoachActivityKind,
   getCoachRulesForActivities,
@@ -9,6 +10,36 @@ import {
 } from "./coachFormUtils";
 
 describe("coach form utilities", () => {
+  it("maps the nested phone fields from the coach details response", () => {
+    const values = createCoachEditInitialValues({
+      id: 51,
+      branch_ids: [5],
+      employment_type: "commission_based",
+      base_salary: "700.00",
+      start_date: "2026-08-09",
+      work_status: "active",
+      person: {
+        full_name: "رانية التنجي",
+        gender: "female",
+        dob: "1975-08-01",
+        phone_number: "999999999",
+        country_code: "+963",
+      },
+      details: {
+        experience_years: 20,
+        work_types: ["activities"],
+        default_commission_rate: "40.00",
+      },
+      activities: [{ id: 8 }],
+      shifts: [{ id: 4, branch_shift_id: 1 }],
+    });
+
+    expect(values.phone_number).toBe("999999999");
+    expect(values.country_code).toBe("+963");
+    expect(values.first_name).toBe("رانية");
+    expect(values.last_name).toBe("التنجي");
+  });
+
   it("selects the first branch for a new coach", () => {
     const values = createCoachFormInitialValues(null, [{ id: "12" }]);
 

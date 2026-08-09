@@ -121,7 +121,10 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
             <Button href="/management/members" tone="outline">
               العودة إلى اللاعبين
             </Button>
-            <Button href={`/management/members/create?mode=edit&id=${memberId}`}>
+            <Button
+              href={`/management/members/create?mode=edit&id=${memberId}`}
+              style={{ color: "#000000" }}
+            >
               تعديل بيانات اللاعب
             </Button>
           </div>
