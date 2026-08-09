@@ -41,8 +41,7 @@ class AttendanceDashboardService
     public function getCachedDashboardStats(?int $branchId = null, int $ttlSeconds = 60): array
     {
         $branchKey = $branchId ? (string) $branchId : 'all';
-        $minuteKey = now()->format('YmdHi');
-        $cacheKey  = "dashboard_stats_cache_{$branchKey}_{$minuteKey}";
+        $cacheKey  = "dashboard_stats_cache_{$branchKey}";
 
         return Cache::remember($cacheKey, $ttlSeconds, function () use ($branchId) {
             return $this->getDashboardStats($branchId);

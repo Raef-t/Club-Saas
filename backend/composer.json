@@ -19,6 +19,9 @@
         "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-permission": "^6.25",
         "spatie/laravel-translatable": "^6.11",
+        "spiral/roadrunner": "2025.1",
+        "spiral/roadrunner-cli": "2.7.2",
+        "spiral/roadrunner-http": "3.6.0",
         "symfony/expression-language": "^7.4"
     },
     "require-dev": {
