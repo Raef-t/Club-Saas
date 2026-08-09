@@ -114,7 +114,8 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
             chronicDiseases: $person->chronic_diseases,
             childrenCount: $person->children_count,
             howDidYouHear: $person->how_did_you_hear,
-            notes: $person->notes
+            notes: $person->notes,
+            dob: $person->dob
         );
     }
 }

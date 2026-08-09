@@ -1,16 +1,26 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\SubscriptionManager\Http\Controllers\Api\V1\ExtraServiceController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanController;
+
+
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionController;
-use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionFreezeController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanActivityController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemController;
-use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionServiceController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\InvoiceController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\OfferController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionReportController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+
+    // Subscription & Renewal Reports
+    Route::get('reports/subscriptions', [SubscriptionReportController::class, 'allSubscriptionsReport']);
+    Route::get('reports/subscriptions/renewal-status', [SubscriptionReportController::class, 'renewalStatusReport']);
+    Route::get('reports/subscriptions/frozen-terminated', [SubscriptionReportController::class, 'frozenAndTerminatedReport']);
+    Route::get('reports/sessions/time-capacity', [SubscriptionReportController::class, 'timeCapacityReport']);
+    Route::get('reports/attendance/peak-hours', [SubscriptionReportController::class, 'peakHoursReport']);
+    Route::get('reports/shifts/attendance', [SubscriptionReportController::class, 'shiftAttendanceReport']);
+    Route::get('reports/coaches/subscriptions', [SubscriptionReportController::class, 'coachSubscriptionReport']);
 
     // Authenticated Member's Invoices
     Route::get('my-invoices', [InvoiceController::class, 'myInvoices']);
@@ -18,7 +28,14 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Subscription Plans CRUD
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
+    Route::get('subscription-plans/{id}/players', [SubscriptionPlanController::class, 'players']);
+    Route::get('subscription-plans/{id}/delete-check', [SubscriptionPlanController::class, 'deleteCheck']);
+    Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
+
+    // Offers CRUD & Actions
+    Route::post('offers/{id}/subscribe', [OfferController::class, 'subscribe']);
+    Route::apiResource('offers', OfferController::class);
 
     // Player Subscriptions — Actions
     Route::post('player-subscriptions/{id}/freeze', [PlayerSubscriptionController::class, 'freeze']);
@@ -26,16 +43,14 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('player-subscriptions/{id}/renew', [PlayerSubscriptionController::class, 'renew']);
     Route::post('player-subscriptions/{id}/cancel', [PlayerSubscriptionController::class, 'cancel']);
     Route::post('player-subscriptions/{id}/payment', [PlayerSubscriptionController::class, 'recordPayment']);
+    Route::post('player-subscriptions/{id}/restore', [PlayerSubscriptionController::class, 'restore']);
 
     // Player Subscriptions CRUD
-    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update', 'destroy']);
+    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class);
 
-    // Missing basic CRUD endpoints
-    Route::apiResource('subscription-freezes', SubscriptionFreezeController::class);
+
     Route::apiResource('subscription-plan-activities', SubscriptionPlanActivityController::class);
     Route::apiResource('player-subscription-items', PlayerSubscriptionItemController::class);
 
-    // Extra Services
-    Route::apiResource('extra-services', ExtraServiceController::class);
-    Route::apiResource('player-subscription-services', PlayerSubscriptionServiceController::class);
+
 });

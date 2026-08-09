@@ -32,6 +32,10 @@ class StaffController extends BaseController
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'role', in: 'query', required: false, description: 'تصفية حسب الدور', schema: new OA\Schema(type: 'string', enum: ['admin', 'management_admin', 'manager', 'coach', 'receptionist', 'cleaner']))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
+    #[OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave']))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الموظفين بنجاح',
@@ -40,8 +44,8 @@ class StaffController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
                 new OA\Property(
-                    property: 'data', 
-                    type: 'array', 
+                    property: 'data',
+                    type: 'array',
                     items: new OA\Items(
                         type: 'object',
                         properties: [
@@ -75,12 +79,20 @@ class StaffController extends BaseController
         content: new OA\MediaType(
             mediaType: 'multipart/form-data',
             schema: new OA\Schema(
-                required: ['first_name', 'last_name', 'role', 'email', 'branch_ids'],
+                required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
                 properties: [
                     new OA\Property(property: 'first_name', type: 'string', example: 'John'),
                     new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
-                    new OA\Property(property: 'role', type: 'string', example: 'Coach'),
-                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'john@example.com'),
+                    new OA\Property(property: 'country_code', type: 'string', example: '+1'),
+                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                    new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
+                    new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                    new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
+                    new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                    new OA\Property(property: 'start_time', type: 'string', example: '08:00', description: 'وقت بداية الدوام (HH:MM)'),
+                    new OA\Property(property: 'end_time', type: 'string', example: '16:00', description: 'وقت نهاية الدوام (HH:MM)'),
+                    new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
                     new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
                 ]
@@ -119,7 +131,7 @@ class StaffController extends BaseController
         content: new OA\JsonContent(
             required: ['shifts'],
             properties: [
-                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'object', example: ['day' => 'Monday', 'start_time' => '09:00', 'end_time' => '17:00']))
+                new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الورديات من جدول branch_shifts')
             ]
         )
     )]
@@ -162,7 +174,7 @@ class StaffController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff retrieved successfully'),
                 new OA\Property(
-                    property: 'data', 
+                    property: 'data',
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
@@ -183,7 +195,7 @@ class StaffController extends BaseController
     #[OA\Put(
         path: '/v1/staff/{staff}',
         summary: '✏️ تحديث بيانات الموظف',
-        description: 'تعديل المعلومات الخاصة بموظف مسجل.',
+        description: 'تعديل المعلومات الخاصة بموظف مسجل. لتحديث الصورة استخدم endpoint منفصل: POST /v1/staff/{id}/photo',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -191,9 +203,20 @@ class StaffController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
+            required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
             properties: [
                 new OA\Property(property: 'first_name', type: 'string', example: 'John'),
-                new OA\Property(property: 'last_name', type: 'string', example: 'Smith'),
+                new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
+                new OA\Property(property: 'country_code', type: 'string', example: '+1'),
+                new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
+                new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                new OA\Property(property: 'start_time', type: 'string', example: '08:00', description: 'وقت بداية الدوام (HH:MM)'),
+                new OA\Property(property: 'end_time', type: 'string', example: '16:00', description: 'وقت نهاية الدوام (HH:MM)'),
+                new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                 new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
             ]
         )
@@ -220,6 +243,35 @@ class StaffController extends BaseController
         return $this->successResponse(new StaffResource($staff), __('Staff updated successfully'));
     }
 
+    #[OA\Post(
+        path: '/v1/staff/{id}/photo',
+        summary: '🖼️ تحديث صورة الموظف',
+        description: 'رفع أو تحديث صورة الموظف. يجب استخدام هذا الـ endpoint المخصص بدلاً من إرسال الصورة ضمن طلب التحديث العام.',
+        tags: ['Staff Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['photo'],
+                properties: [
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف')
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم تحديث الصورة بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Staff photo updated successfully'), new OA\Property(property: 'data', type: 'object')]))]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function updatePhoto(\Modules\StaffManager\Http\Requests\UpdateStaffPhotoRequest $request, $id)
+    {
+        $staff = $this->staffService->updateStaffPhoto($id, $request->file('photo'));
+        return $this->successResponse(new StaffResource($staff), __('Staff photo updated successfully'));
+    }
 
     #[OA\Patch(
         path: '/v1/staff/{id}/toggle-status',
@@ -284,11 +336,11 @@ class StaffController extends BaseController
         $validated = $request->validated();
 
         $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
-        
+
         // Zero code-coupling: Delete existing and insert new instead of relying on Eloquent relationships with foreign modules
         \Modules\StaffManager\Models\StaffBranch::where('staff_id', $staff->id)->delete();
-        
-        $inserts = array_map(function($branchId) use ($staff) {
+
+        $inserts = array_map(function ($branchId) use ($staff) {
             return [
                 'staff_id' => $staff->id,
                 'branch_id' => $branchId,
@@ -296,7 +348,7 @@ class StaffController extends BaseController
                 'updated_at' => now(),
             ];
         }, $validated['branch_ids']);
-        
+
         \Modules\StaffManager\Models\StaffBranch::insert($inserts);
 
         return $this->successResponse(null, __('Branches synced successfully'));
@@ -305,15 +357,15 @@ class StaffController extends BaseController
 
     #[OA\Delete(
         path: '/v1/staff/{staff}',
-        summary: '🗑️ حذف موظف',
-        description: 'حذف موظف (Soft Delete) من النظام.',
+        summary: '🗑️ حذف موظف (Soft Delete)',
+        description: 'حذف موظف أو مدرب ناعماً من النظام مع كافّة عقوده وشفتاته وسجلاته التابعة متتابعاً.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم حذف الموظف بنجاح',
+        description: '✅ تم حذف الموظف وسجلاته التابعة ناعماً بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -326,7 +378,33 @@ class StaffController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy($id)
     {
-        $this->staffRepository->delete($id);
+        $this->staffService->deleteStaff($id);
         return $this->successResponse(null, __('Staff deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/staff/{id}/restore',
+        summary: '♻️ استرجاع موظف محذوف',
+        description: 'استرجاع الموظف أو المدرب المحذوف ناعماً وكافّة عقوده وشفتاته وسجلاته التابعة تلقائياً.',
+        tags: ['Staff Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الموظف وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود في الأرشيف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    public function restore($id)
+    {
+        $this->staffService->restoreStaff($id);
+        return $this->successResponse(null, __('Staff restored successfully'));
     }
 }

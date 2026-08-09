@@ -136,31 +136,4 @@ class PayrollController extends BaseController
         $run = $this->payrollService->generatePayslips($id);
         return $this->successResponse(new PayrollRunResource($run), __('Payslips generated successfully'));
     }
-
-    #[OA\Post(
-        path: '/v1/payroll-runs/{id}/approve',
-        summary: '✅ اعتماد مسير الرواتب',
-        description: 'الموافقة على مسير الرواتب واعتماده للصرف.',
-        tags: ['Payroll Management'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف مسير الرواتب', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم اعتماد المسير بنجاح',
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Payroll run approved'),
-                new OA\Property(property: 'data', type: 'object')
-            ]
-        )
-    )]
-    #[OA\Response(response: 404, description: '🚫 مسير الرواتب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function approve(int $id)
-    {
-        $run = $this->payrollService->approvePayrollRun($id);
-        return $this->successResponse(new PayrollRunResource($run), __('Payroll run approved'));
-    }
 }

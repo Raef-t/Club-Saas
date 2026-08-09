@@ -31,9 +31,9 @@ class GateController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['qr_token'],
+            required: ['qr_code'],
             properties: [
-                new OA\Property(property: 'qr_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...')
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...')
             ]
         )
     )]
@@ -79,7 +79,7 @@ class GateController extends BaseController
 
         try {
             // 2. Validate QR Token (Fast, Cache-First Validation inside QRSecurityService)
-            $memberId = $this->qrService->validateToken($validated['qr_token']);
+            $memberId = $this->qrService->validateToken($validated['qr_code']);
             
             // 3. Concurrency Protection (Redis Atomic Lock)
             // Lock for 2 seconds to prevent double scans from bouncing signals
@@ -96,12 +96,20 @@ class GateController extends BaseController
                 $attendance = $this->attendanceService->checkIn(
                     type: 'member',
                     entityId: (int) $memberId,
-                    clubId: (int) $gate->club_id,
-                    branchId: (int) $gate->branch_id,
-                    metadata: ['source' => 'gate_hardware', 'gate_id' => $gate->id]
+                    branchId: (int) $gate->branch_id
                 );
 
-                // 5. Success - Instruct Gate to Unlock
+                try {
+                    // 5. Attempt auto-deduction and validation (this throws if frozen/expired/debt)
+                    $deductionService = app(\Modules\AttendanceManager\Services\SessionDeductionService::class);
+                    $deductionService->autoDeductSessionForGate($attendance->id, $memberId);
+                } catch (\Exception $e) {
+                    // 6. If deduction fails, we rollback the attendance and deny entry
+                    $attendance->delete();
+                    return $this->errorResponse($e->getMessage(), 403);
+                }
+
+                // 7. Success - Instruct Gate to Unlock
                 return $this->successResponse([
                     'member_id' => $memberId,
                     'action'    => 'unlock_door',

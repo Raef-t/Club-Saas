@@ -7,6 +7,9 @@ class UpdateStaffShiftRequest extends FormRequest
 {
     public function authorize() { return true; }
     public function rules() {
-        return [];
+        return [
+            'staff_id' => 'sometimes|integer|exists:staff,id',
+            'branch_shift_id' => 'sometimes|integer|exists:branch_shifts,id',
+        ];
     }
 }

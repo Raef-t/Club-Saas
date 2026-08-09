@@ -13,25 +13,18 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Staff Actions
     Route::post('staff/{id}/schedule', [StaffController::class, 'setSchedule']);
     Route::patch('staff/{id}/toggle-status', [StaffController::class, 'toggleStatus']);
-    Route::post('staff/{id}/sync-branches', [StaffController::class, 'syncBranches']);
-
-    // Staff Unavailabilities
-    Route::get('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'index']);
-    Route::post('staff/{staff}/unavailabilities', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'store']);
-    Route::delete('staff/{staff}/unavailabilities/{unavailability}', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffUnavailabilityController::class, 'destroy']);
-
-    // Staff Working Hours
-    Route::get('staff/{staff}/working-hours', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffWorkingHourController::class, 'index']);
-    Route::post('staff/{staff}/working-hours', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffWorkingHourController::class, 'store']);
-    Route::delete('staff/{staff}/working-hours/{working_hour}', [\Modules\StaffManager\Http\Controllers\Api\V1\StaffWorkingHourController::class, 'destroy']);
+    Route::post('staff/{id}/restore', [StaffController::class, 'restore']);
+    Route::post('staff/{id}/photo', [StaffController::class, 'updatePhoto']);
 
 
     // Payroll & Payslips
     Route::post('payroll-runs/{id}/generate-payslips', [PayrollController::class, 'generatePayslips']);
-    Route::post('payroll-runs/{id}/approve', [PayrollController::class, 'approve']);
     Route::post('payroll-runs/{id}/process', [PayrollController::class, 'process']);
     Route::apiResource('payroll-runs', PayrollController::class)->except(['update', 'destroy']);
-    Route::apiResource('payslips', PayslipController::class);
+    Route::get('payslips', [PayslipController::class, 'index']);
+    Route::post('payslips/generate', [PayslipController::class, 'generate']);
+    Route::post('payslips/confirm', [PayslipController::class, 'confirm']);
+    Route::put('payslips/{payslip}', [PayslipController::class, 'update']);
 
     // Coach Management
     Route::prefix('coaches')->group(function () {
@@ -40,11 +33,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
         Route::post('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'store']);
         Route::get('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'show']);
         Route::patch('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'update']);
-        Route::post('/{id}/activities', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'assignActivities']);
-        Route::delete('/{id}/activities/{activityId}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'removeActivity']);
-        Route::post('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'uploadCertification']);
-        Route::get('/{id}/certifications', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'getCertifications']);
+        Route::post('/{id}/photo', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updatePhoto']);
+        Route::post('/{id}/schedule', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'setSchedule']);
         Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
+        Route::post('/{id}/restore', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'restore']);
     });
 
     // Shifts

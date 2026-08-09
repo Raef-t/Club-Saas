@@ -28,7 +28,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activities retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ActivityResource'))
             ]
         )
     )]
@@ -39,18 +39,15 @@ class ActivityController extends BaseController
 
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+
         }
 
         if ($request->has('facility_id')) {
-            $facility = Facility::find($request->facility_id);
-            if ($facility && $facility->gender_restriction !== 'mixed') {
-                $query->whereIn('gender_allowed', [$facility->gender_restriction, 'mixed']);
-            }
-        } elseif ($request->has('gender_allowed')) {
-            $query->where('gender_allowed', $request->gender_allowed);
+            $facility = \Modules\ClubManager\Models\Facility::find($request->facility_id);
+            // Gender restrictions for facility are applied at the facility/session level.
         }
 
-        $activities = $query->orderBy('id')->get();
+        $activities = $query->orderBy('id', 'desc')->get();
         return $this->successResponse(ActivityResource::collection($activities), __('Activities retrieved successfully'));
     }
 
@@ -121,21 +118,10 @@ class ActivityController extends BaseController
             required: ['name', 'activity_type_id', 'branch_id'],
             properties: [
                 new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 1),
-                new OA\Property(
-                    property: 'name',
-                    type: 'object',
-                    required: ['ar'],
-                    description: 'اسم النشاط (مطلوب)',
-                    properties: [
-                        new OA\Property(property: 'ar', type: 'string', description: '(مطلوب) الاسم بالعربية', example: 'يوغا'),
-                        new OA\Property(property: 'en', type: 'string', description: '(اختياري) الاسم بالإنجليزية', example: 'Yoga')
-                    ]
-                ),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط (مطلوب)', example: 'يوغا'),
                 new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
                 new OA\Property(property: 'activity_type_id', description: '(مطلوب) معرف نوع النشاط', type: 'integer', example: 1),
-                new OA\Property(property: 'default_capacity', type: 'integer', description: '(اختياري) السعة الافتراضية للنشاط', example: 20),
-                new OA\Property(property: 'is_private_equipment', type: 'boolean', description: '(اختياري) هل يتطلب معدات خاصة؟', example: false),
-                new OA\Property(property: 'gender_allowed', type: 'string', description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed')
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]
@@ -146,7 +132,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity created successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -157,6 +143,7 @@ class ActivityController extends BaseController
         $data = $request->validated();
 
         $activity = Activity::create($data);
+        $activity->load('activityType');
         return $this->successResponse(new ActivityResource($activity), __('Activity created successfully'), 201);
     }
 
@@ -175,7 +162,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -199,15 +186,11 @@ class ActivityController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(
-                    property: 'name',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'ar', type: 'string', example: 'سباحة متقدمة'),
-                        new OA\Property(property: 'en', type: 'string', example: 'Advanced Swimming')
-                    ]
-                ),
-                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 1),
+                new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 2),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط', example: 'اجهزة عام'),
+                new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
+                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 4),
+                new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
     )]
@@ -218,7 +201,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -231,20 +214,21 @@ class ActivityController extends BaseController
 
         $activity = Activity::findOrFail($id);
         $activity->update($data);
+        $activity->load('activityType');
         return $this->successResponse(new ActivityResource($activity), __('Activity updated successfully'));
     }
 
     #[OA\Delete(
         path: '/v1/activities/{activity}',
-        summary: '🗑️ حذف النشاط',
-        description: 'إزالة نشاط رياضي من النظام.',
+        summary: '🗑️ حذف النشاط (Soft Delete)',
+        description: 'إزالة نشاط رياضي ناعماً من النظام مع كافّة قوالب الجلسات والحجوزات التابعة له متتابعاً.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم الحذف بنجاح',
+        description: '✅ تم حذف النشاط بنجاح ناعماً',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -260,5 +244,32 @@ class ActivityController extends BaseController
         $activity = Activity::findOrFail($id);
         $activity->delete();
         return $this->successResponse(null, __('Activity deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/activities/{id}/restore',
+        summary: '♻️ استرجاع نشاط رياضي محذوف',
+        description: 'استرجاع النشاط الرياضي المحذوف ناعماً وكافّة قوالبه وحجوزاته التابعة تلقائياً.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع النشاط وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود في الأرشيف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    public function restore(int $id)
+    {
+        $activity = Activity::onlyTrashed()->findOrFail($id);
+        $activity->restore();
+        return $this->successResponse(null, __('Activity restored successfully'));
     }
 }

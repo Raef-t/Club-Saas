@@ -30,7 +30,11 @@ class RecordSubscriptionPayment
             return;
         }
 
-        // 2. Get invoice and branch
+        // 2. Ensure payment is for an invoice and get it
+        if (!$payment->invoice_id) {
+            return;
+        }
+
         $invoice = DB::table('invoices')->where('id', $payment->invoice_id)->first();
         if (!$invoice) {
             return;

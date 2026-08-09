@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('member_id')->constrained('members')->cascadeOnDelete();
             
-            // Polymorphic relation for SportSession or Staff
+            // Polymorphic relation for SportSessionTemplate or Staff
             $table->string('evaluatable_type');
             $table->unsignedBigInteger('evaluatable_id');
             

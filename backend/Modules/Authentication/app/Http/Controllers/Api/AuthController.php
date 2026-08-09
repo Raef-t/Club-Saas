@@ -21,7 +21,7 @@ class AuthController extends BaseController
     #[OA\Post(
         path: '/v1/auth/login',
         summary: '🔐 تسجيل الدخول',
-        description: 'تسجيل دخول المستخدم وإنشاء رمز مرور (Bearer Token).',
+        description: 'تسجيل دخول المستخدم عبر ٣ طرق (رقم الهاتف / معرف النظام tec-* / اسم المستخدم المخصص).',
         tags: ['Authentication']
     )]
     #[OA\RequestBody(
@@ -30,15 +30,15 @@ class AuthController extends BaseController
         content: new OA\JsonContent(
             required: ['username', 'password'],
             properties: [
-                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد (للموظف أو المدير)', example: 'technogym'),
-                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: 'password123'),
+                new OA\Property(property: 'username', type: 'string', description: 'اسم المستخدم الفريد أو رقم الموبايل أو المعرف المولد', example: 'tec-adm-75054'),
+                new OA\Property(property: 'password', type: 'string', description: 'كلمة المرور', example: '12345678'),
                 new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here', nullable: true),
                 new OA\Property(
                     property: 'device_info', 
                     type: 'object', 
                     description: 'معلومات الجهاز', 
                     nullable: true,
-                    example: ["sdk" => 33, "brand" => "Redmi", "model" => "M2101K6G", "version" => "13", "manufacturer" => "Xiaomi", "isPhysicalDevice" => true]
+                    example: ["device_id" => "unique_id_123", "sdk" => 33, "brand" => "Redmi", "model" => "M2101K6G", "version" => "13", "manufacturer" => "Xiaomi", "isPhysicalDevice" => true]
                 ),
             ]
         )
@@ -65,7 +65,9 @@ class AuthController extends BaseController
                                 new OA\Property(property: 'person_id', type: 'integer', nullable: true, example: 5),
                                 new OA\Property(property: 'member_id', type: 'integer', nullable: true, example: 10),
                                 new OA\Property(property: 'staff_id', type: 'integer', nullable: true, example: 3),
-                                new OA\Property(property: 'username', type: 'string', example: 'admin'),
+                                new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
+                                new OA\Property(property: 'custom_username', type: 'string', nullable: true, example: 'ahmed_player'),
+                                new OA\Property(property: 'must_change_password', type: 'boolean', example: true),
                                 new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
                                 new OA\Property(property: 'photo_url', type: 'string', nullable: true, example: 'https://example.com/photo.jpg'),
                                 new OA\Property(property: 'gender', type: 'string', nullable: true, example: 'male'),
@@ -118,8 +120,15 @@ class AuthController extends BaseController
     public function login(LoginRequest $request)
     {
         $validated = $request->validated();
+        $input = trim($validated['username']);
 
-        $user = User::where('username', $validated['username'])->first();
+        // البحث بـ ٣ طرق: معرف النظام (username), الاسم المخصص (custom_username), أو رقم الجوال في person.contacts
+        $user = User::where('username', $input)
+            ->orWhere('custom_username', $input)
+            ->orWhereHas('person.contacts', function ($q) use ($input) {
+                $q->where('phone_number', $input);
+            })
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return $this->errorResponse(__('Invalid credentials'), 401);
@@ -130,13 +139,41 @@ class AuthController extends BaseController
         }
 
         if (!empty($validated['fcm_token'])) {
-            \Modules\Authentication\Models\UserDevice::updateOrCreate(
-                ['fcm_token' => $validated['fcm_token']],
-                [
-                    'user_id' => $user->id,
-                    'device_info' => $validated['device_info'] ?? null,
-                ]
-            );
+            $deviceInfo = $validated['device_info'] ?? null;
+            $deviceId = $deviceInfo['device_id'] ?? null;
+
+            if ($deviceId) {
+                $existingDevice = \Modules\Authentication\Models\UserDevice::where('user_id', $user->id)
+                    ->where('device_info->device_id', $deviceId)
+                    ->first();
+
+                if ($existingDevice) {
+                    \Modules\Authentication\Models\UserDevice::where('fcm_token', $validated['fcm_token'])
+                        ->where('id', '!=', $existingDevice->id)
+                        ->delete();
+
+                    $existingDevice->update([
+                        'fcm_token' => $validated['fcm_token'],
+                        'device_info' => $deviceInfo,
+                    ]);
+                } else {
+                    \Modules\Authentication\Models\UserDevice::updateOrCreate(
+                        ['fcm_token' => $validated['fcm_token']],
+                        [
+                            'user_id' => $user->id,
+                            'device_info' => $deviceInfo,
+                        ]
+                    );
+                }
+            } else {
+                \Modules\Authentication\Models\UserDevice::updateOrCreate(
+                    ['fcm_token' => $validated['fcm_token']],
+                    [
+                        'user_id' => $user->id,
+                        'device_info' => $deviceInfo,
+                    ]
+                );
+            }
         }
 
         // Generate Token
@@ -150,6 +187,8 @@ class AuthController extends BaseController
             'user_id' => $user->id,
             'person_id' => $personId,
             'username' => $user->username,
+            'custom_username' => $user->custom_username,
+            'must_change_password' => (bool) ($user->must_change_password ?? true),
             'full_name' => $person->full_name ?? null,
             'photo_url' => $person->photo_url ?? null,
             'gender' => $person->gender ?? null,
@@ -171,18 +210,19 @@ class AuthController extends BaseController
                 if ($staffBranch) {
                     $userData['branch_id'] = $staffBranch->branch_id;
                 }
+                $userData['qr_code'] = $this->qrCodeService->getSingleCodeForPerson($personId);
+            } else {
+                // Attach the 7 QR codes for members (Frontend caches them)
+                $rawQrCodes = $this->qrCodeService->getCodesForPerson($personId);
+                $formattedQrCodes = [];
+                foreach ($rawQrCodes as $day => $code) {
+                    $formattedQrCodes[] = [
+                        'day' => $day,
+                        'code' => $code
+                    ];
+                }
+                $userData['qr_codes'] = $formattedQrCodes;
             }
-
-            // Attach the 7 QR codes for this person (Frontend caches them)
-            $rawQrCodes = $this->qrCodeService->getCodesForPerson($personId);
-            $formattedQrCodes = [];
-            foreach ($rawQrCodes as $day => $code) {
-                $formattedQrCodes[] = [
-                    'day' => $day,
-                    'code' => $code
-                ];
-            }
-            $userData['qr_codes'] = $formattedQrCodes;
         }
 
         return $this->successResponse([
@@ -367,21 +407,79 @@ class AuthController extends BaseController
     }
 
     #[OA\Post(
-        path: '/v1/auth/change-password',
-        summary: '🔑 تغيير كلمة المرور',
-        description: 'تغيير كلمة المرور الخاصة بالمستخدم المصادق عليه حالياً.',
+        path: '/v1/auth/reset-password',
+        summary: '🔄 تصفير كلمة المرور لمستخدم إلى 12345678',
+        description: 'يقوم بتصفير كلمة السر لأي مستخدم (عضو / موظف / مدرب) بتمرير user_id لتصبح تلقائياً 12345678.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
         required: true,
-        description: 'بيانات تغيير كلمة المرور',
+        description: 'معرف المستخدم (user_id)',
         content: new OA\JsonContent(
-            required: ['current_password', 'new_password', 'new_password_confirmation'],
+            required: ['user_id'],
             properties: [
-                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية', example: 'oldPassword123'),
-                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: 'newPassword123'),
-                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: 'newPassword123'),
+                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم من جدول authentication_users', example: 15),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تصفير كلمة المرور بنجاح إلى 12345678',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم إعادة تعيين كلمة المرور بنجاح إلى 12345678'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'user_id', type: 'integer', example: 15),
+                        new OA\Property(property: 'username', type: 'string', example: 'coach_15'),
+                    ]
+                )
+            ]
+        )
+    )]
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:authentication_users,id',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+
+        $user->update([
+            'password' => Hash::make('12345678'),
+            'must_change_password' => true,
+        ]);
+
+        $user->tokens()->delete();
+
+        return $this->successResponse([
+            'user_id'  => $user->id,
+            'username' => $user->username,
+        ], __('تم إعادة تعيين كلمة المرور بنجاح إلى 12345678'));
+    }
+
+    #[OA\Post(
+        path: '/v1/auth/change-password',
+        summary: '🔑 تغيير كلمة المرور وتعيين اسم المستخدِم المخصص (اختياري)',
+        description: 'تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: 'بيانات تغيير كلمة المرور وتحديث اسم المستخدم المخصص',
+        content: new OA\JsonContent(
+            required: ['new_password', 'new_password_confirmation'],
+            properties: [
+                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)', example: 15, nullable: true),
+                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)', example: 'oldPassword123', nullable: true),
+                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: '12345678'),
+                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: '12345678'),
+                new OA\Property(property: 'custom_username', type: 'string', description: 'اسم المستخدم المخصص الفريد (اختياري)', example: 'ahmed_player99', nullable: true),
             ]
         )
     )]
@@ -391,8 +489,15 @@ class AuthController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تغيير كلمة المرور بنجاح'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'message', type: 'string', example: 'تم تغيير كلمة المرور والتأكيدات بنجاح'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
+                        new OA\Property(property: 'custom_username', type: 'string', nullable: true, example: 'ahmed_player99')
+                    ]
+                )
             ]
         )
     )]
@@ -407,7 +512,7 @@ class AuthController extends BaseController
     )]
     #[OA\Response(
         response: 422,
-        description: '⚠️ خطأ في التحقق من صحة البيانات أو كلمة المرور الحالية غير صحيحة',
+        description: '⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'كلمة المرور الحالية غير صحيحة.'),
@@ -416,7 +521,8 @@ class AuthController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'current_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الحالية غير مطابقة.')),
-                        new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف.'))
+                        new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف.')),
+                        new OA\Property(property: 'custom_username', type: 'array', items: new OA\Items(type: 'string', example: 'اسم المستخدم المخصص مُستخدَم بالفعل.'))
                     ]
                 )
             ]
@@ -425,21 +531,47 @@ class AuthController extends BaseController
     #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function changePassword(ChangePasswordRequest $request)
     {
-        $user = $request->user();
         $validated = $request->validated();
 
-        if (!Hash::check($validated['current_password'], $user->password)) {
-            return $this->errorResponse(__('Current password is incorrect'), 422);
+        if (!empty($validated['user_id'])) {
+            $user = User::findOrFail($validated['user_id']);
+        } else {
+            $user = $request->user();
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return $this->errorResponse(__('Current password is incorrect'), 422);
+            }
         }
 
-        $user->update([
-            'password' => Hash::make($validated['new_password']),
-        ]);
+        // فحص وتحديث custom_username في حال إرساله في نفس الطلب
+        if (!empty($validated['custom_username'])) {
+            $customUsername = trim($validated['custom_username']);
 
-        // مسح جميع الجلسات (Tokens) الحالية للمستخدم لإجباره على تسجيل الدخول مرة أخرى
+            $existsInCustom = User::where('custom_username', $customUsername)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            $existsInSystem = User::where('username', $customUsername)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($existsInCustom || $existsInSystem) {
+                return $this->errorResponse(__('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'), 422);
+            }
+
+            $user->custom_username = $customUsername;
+        }
+
+        $user->password = Hash::make($validated['new_password']);
+        $user->must_change_password = false;
+        $user->save();
+
+        // مسح جميع الجلسات (Tokens) الحالية للمستخدم لإجباره على تسجيل الدخول كلمة المرور الجديدة
         $user->tokens()->delete();
 
-        return $this->successResponse(null, __('Password changed successfully'));
+        return $this->successResponse([
+            'username'        => $user->username,
+            'custom_username' => $user->custom_username,
+        ], __('Password changed successfully'));
     }
 
     /**
@@ -585,5 +717,86 @@ class AuthController extends BaseController
         $person->update(['photo_url' => null]);
 
         return $this->successResponse(null, __('تم حذف الصورة الشخصية بنجاح'));
+    }
+
+    #[OA\Post(
+        path: '/v1/auth/set-custom-username',
+        summary: '✏️ تعيين أو تحديث اسم المستخدم المخصص',
+        description: 'يسمح للمستخدم المصادق عليه (مثلاً اللاعب) بتحديد اسم مستخدم فريد خاص به ليتسنى له الدخول به لاحقاً.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: 'اسم المستخدم المخصص الجديد',
+        content: new OA\JsonContent(
+            required: ['custom_username'],
+            properties: [
+                new OA\Property(property: 'custom_username', type: 'string', description: 'اسم المستخدم المخصص الفريد', example: 'ahmed_player99'),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث اسم المستخدم المخصص بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تحديث اسم المستخدم المخصص بنجاح'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
+                        new OA\Property(property: 'custom_username', type: 'string', example: 'ahmed_player99')
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'اسم المستخدم المخصص مستخدم بالفعل.')
+            ]
+        )
+    )]
+    public function setCustomUsername(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'custom_username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:30',
+                'regex:/^[a-zA-Z0-9_.-]+$/',
+                function ($attribute, $value, $fail) use ($user) {
+                    $existsInCustom = User::where('custom_username', $value)
+                        ->where('id', '!=', $user->id)
+                        ->exists();
+
+                    $existsInSystem = User::where('username', $value)
+                        ->where('id', '!=', $user->id)
+                        ->exists();
+
+                    if ($existsInCustom || $existsInSystem) {
+                        $fail(__('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'));
+                    }
+                },
+            ],
+        ]);
+
+        $user->update([
+            'custom_username' => $validated['custom_username'],
+        ]);
+
+        return $this->successResponse([
+            'username'        => $user->username,
+            'custom_username' => $user->custom_username,
+        ], __('Custom username set successfully'));
     }
 }

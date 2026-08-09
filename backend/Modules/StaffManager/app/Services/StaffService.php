@@ -6,6 +6,7 @@ use Modules\StaffManager\Repositories\StaffRepositoryInterface;
 use Modules\Core\Contracts\PersonSharedServiceInterface;
 use Modules\Core\Contracts\BranchSharedServiceInterface;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Exception;
 
 class StaffService
@@ -29,7 +30,17 @@ class StaffService
      */
     public function getAllStaff(array $filters = [])
     {
-        $query = \Modules\StaffManager\Models\Staff::query();
+        $query = \Modules\StaffManager\Models\Staff::query()
+            ->where(function ($q) {
+                $q->where('role', '!=', 'coach')
+                  ->orWhere(function ($coachQuery) {
+                      $coachQuery->where('role', 'coach')
+                          ->whereHas('activities.activityType', function ($actTypeQuery) {
+                              $actTypeQuery->where('name', 'like', '%تدريب عام%')
+                                           ->orWhere('id', 4);
+                          });
+                  });
+            });
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -41,38 +52,22 @@ class StaffService
             $query->where('role', $filters['role']);
         }
 
-        if (isset($filters['is_active'])) {
+        if (!empty($filters['work_status'])) {
+            $query->where('work_status', $filters['work_status']);
+        } elseif (isset($filters['is_active'])) {
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
-        if (!empty($filters['gender']) || !empty($filters['search'])) {
-            $peopleQuery = \Modules\Authentication\Models\Person::query();
-
-            if (!empty($filters['gender'])) {
-                $peopleQuery->where('gender', $filters['gender']);
-            }
-
-            if (!empty($filters['search'])) {
-                $search = $filters['search'];
-                $peopleQuery->where(function ($sq) use ($search) {
-                    $sq->where('full_name', 'like', "%{$search}%")
-                        ->orWhereHas('contacts', function ($cq) use ($search) {
-                            $cq->where('phone_number', 'like', "%{$search}%");
-                        })
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('national_id', 'like', "%{$search}%");
-                });
-            }
-
-            $personIds = $peopleQuery->pluck('id')->toArray();
-            $query->whereIn('person_id', $personIds);
+        if (!empty($filters['gender'])) {
+            $query->whereHas('person', function ($q) use ($filters) {
+                $q->where('gender', $filters['gender']);
+            });
         }
 
-        // Eager-load coach details and branches and user
-        $query->with(['coachDetail', 'branches', 'user']);
+        // Eager-load coach details, active contract, branches, user and shifts
+        $query->with(['coachDetail', 'activeContract', 'branches', 'user', 'shifts.branchShift']);
 
-        $perPage = $filters['per_page'] ?? 15;
-        $staffMembers = $query->latest()->paginate($perPage);
+        $staffMembers = $query->latest()->get();
 
         foreach ($staffMembers as $staff) {
             $this->attachSharedDTOs($staff);
@@ -87,7 +82,7 @@ class StaffService
     public function getStaffById($id)
     {
         $staff = $this->staffRepository->find($id);
-        $staff->load(['coachDetail.certifications', 'user']);
+        $staff->load(['coachDetail.certifications', 'activeContract', 'user', 'shifts.branchShift']);
         return $this->attachSharedDTOs($staff);
     }
 
@@ -130,10 +125,26 @@ class StaffService
             );
             $person = $this->personService->createPerson($personDto);
 
+            // Generate single permanent QR code for staff
+            app(\Modules\Authentication\Services\PersonQrCodeService::class)->generateSingleForPerson($person->id);
+
             // 2. Create the staff record
             $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
             ]));
+
+            // Create Staff Contract
+            $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? 0);
+            $commissionType = $data['commission_type'] ?? ($commissionRate > 0 ? 'percentage' : null);
+
+            $staff->contracts()->create([
+                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
+                'base_salary' => $data['base_salary'] ?? 0,
+                'commission_type' => $commissionType,
+                'commission_rate' => $commissionRate,
+                'start_date' => now()->toDateString(),
+                'is_active' => true,
+            ]);
 
             if (!empty($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
@@ -145,9 +156,6 @@ class StaffService
                     'specialization'          => $data['specialization'] ?? null,
                     'bio'                     => $data['bio'] ?? null,
                     'experience_years'        => $data['experience_years'] ?? 0,
-                    'payment_type'            => $data['payment_type'] ?? null,
-                    'commission_type'         => $data['commission_type'] ?? null,
-                    'default_commission_rate' => $data['default_commission_rate'] ?? null,
                     'working_hours_per_week'  => $data['working_hours_per_week'] ?? null,
                     'gym_type'                => $data['gym_type'] ?? null,
                 ]);
@@ -166,9 +174,11 @@ class StaffService
                 }
             }
 
-            // 4. Create active User Account so they can login to the Employee/Trainer App
-            $username = $data['username'] ?? ('staff_' . $person->id . '_' . \Illuminate\Support\Str::random(4));
-            $password = $data['password'] ?? 'password123';
+            $roleName = $data['role'] ?? 'staff';
+            $username = !empty($data['username']) 
+                ? $data['username'] 
+                : \Modules\Authentication\Services\UsernameGeneratorService::generateForRole($roleName);
+            $password = $data['password'] ?? '12345678';
 
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,
@@ -177,15 +187,17 @@ class StaffService
                 'is_active' => true,
             ]);
 
-            // Assign matching role (admin, receptionist, coach, cleaner, manager)
+            // Assign matching role (admin, receptionist, cleaner, manager, staff, etc.)
             $roleName = $data['role'] ?? 'staff';
-            $user->assignRole($roleName);
+            $spatieRoleName = $roleName === 'receptionist' ? 'reception' : $roleName;
+            $spatieRole = Role::firstOrCreate(['name' => $spatieRoleName, 'guard_name' => 'sanctum']);
+            $user->assignRole($spatieRole);
 
             // Expose credentials temporarily
             $staff->generated_username = $username;
             $staff->generated_password = $password;
 
-            $staff->load('coachDetail.certifications');
+            $staff->load(['coachDetail.certifications', 'shifts.branchShift']);
             return $this->attachSharedDTOs($staff);
         });
     }
@@ -202,11 +214,11 @@ class StaffService
             $staff->shifts()->delete();
 
             // Add new shifts
-            foreach ($shifts as $shift) {
-                $staff->shifts()->create($shift);
+            foreach ($shifts as $branchShiftId) {
+                $staff->shifts()->create(['branch_shift_id' => $branchShiftId]);
             }
 
-            $staff->load('shifts');
+            $staff->load('shifts.branchShift');
             return $this->attachSharedDTOs($staff);
         });
     }
@@ -265,8 +277,44 @@ class StaffService
                 }
             }
 
-            // Update Staff record
+            // Update Staff record (fillable will ignore removed fields)
             $staff->update($data);
+
+            // Handle Contract Updates
+            $activeContract = $staff->activeContract;
+            
+            $newEmploymentType = $data['employment_type'] ?? ($activeContract ? $activeContract->employment_type : 'fixed_salary');
+            $newBaseSalary = $data['base_salary'] ?? ($activeContract ? $activeContract->base_salary : 0);
+            
+            $newCommissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? ($activeContract ? $activeContract->commission_rate : 0));
+            $newCommissionType = $data['commission_type'] ?? ($activeContract ? $activeContract->commission_type : null);
+            if (empty($newCommissionType) && $newCommissionRate > 0) {
+                $newCommissionType = 'percentage';
+            }
+
+            // Only create new contract if financial data actually changed
+            if (!$activeContract || 
+                $activeContract->employment_type !== $newEmploymentType ||
+                (float)$activeContract->base_salary !== (float)$newBaseSalary ||
+                $activeContract->commission_type !== $newCommissionType ||
+                (float)$activeContract->commission_rate !== (float)$newCommissionRate
+            ) {
+                if ($activeContract) {
+                    $activeContract->update([
+                        'end_date' => now()->toDateString(),
+                        'is_active' => false
+                    ]);
+                }
+
+                $staff->contracts()->create([
+                    'employment_type' => $newEmploymentType,
+                    'base_salary' => $newBaseSalary,
+                    'commission_type' => $newCommissionType,
+                    'commission_rate' => $newCommissionRate,
+                    'start_date' => now()->toDateString(),
+                    'is_active' => true,
+                ]);
+            }
 
             if (isset($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
@@ -278,9 +326,6 @@ class StaffService
                     'specialization'          => $data['specialization'] ?? null,
                     'bio'                     => $data['bio'] ?? null,
                     'experience_years'        => $data['experience_years'] ?? null,
-                    'payment_type'            => $data['payment_type'] ?? null,
-                    'commission_type'         => $data['commission_type'] ?? null,
-                    'default_commission_rate' => $data['default_commission_rate'] ?? null,
                     'working_hours_per_week'  => $data['working_hours_per_week'] ?? null,
                     'gym_type'                => $data['gym_type'] ?? null,
                 ], fn($value) => !is_null($value));
@@ -292,6 +337,33 @@ class StaffService
                     );
                 }
             }
+
+            $staff->load(['coachDetail.certifications', 'activeContract', 'shifts.branchShift']);
+            return $this->attachSharedDTOs($staff->fresh());
+        });
+    }
+
+    /**
+     * Update staff profile photo.
+     */
+    public function updateStaffPhoto($id, \Illuminate\Http\UploadedFile $photo)
+    {
+        return DB::transaction(function () use ($id, $photo) {
+            $staff = $this->staffRepository->find($id);
+            $person = \Modules\Authentication\Models\Person::find($staff->person_id);
+
+            if (!$person) {
+                throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Staff person record not found.');
+            }
+
+            // Delete old photo if exists
+            if ($person->photo_url) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            }
+
+            $person->update([
+                'photo_url' => $photo->store('people/photos', 'public'),
+            ]);
 
             $staff->load('coachDetail.certifications');
             return $this->attachSharedDTOs($staff->fresh());
@@ -306,5 +378,38 @@ class StaffService
         $staff = $this->staffRepository->find($id);
         $staff->update(['is_active' => !$staff->is_active]);
         return $this->attachSharedDTOs($staff->fresh());
+    }
+
+    /**
+     * Delete a staff member with full cascading soft delete for all related records.
+     */
+    public function deleteStaff(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
+            return $staff->delete();
+        });
+    }
+
+    /**
+     * Restore a deleted staff member and all cascaded children.
+     */
+    public function restoreStaff(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $staff = \Modules\StaffManager\Models\Staff::onlyTrashed()->findOrFail($id);
+            return $staff->restore();
+        });
+    }
+
+    /**
+     * Force delete a staff member permanently.
+     */
+    public function forceDeleteStaff(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $staff = \Modules\StaffManager\Models\Staff::withTrashed()->findOrFail($id);
+            return $staff->forceDelete();
+        });
     }
 }

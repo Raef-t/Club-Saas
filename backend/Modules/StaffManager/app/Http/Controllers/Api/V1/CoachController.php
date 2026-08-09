@@ -8,9 +8,12 @@ use Modules\StaffManager\Services\CoachService;
 use Modules\StaffManager\Http\Requests\StoreCoachRequest;
 use Modules\StaffManager\Http\Requests\UpdateCoachBasicInfoRequest;
 use Modules\StaffManager\Http\Requests\UpdateCoachDetailsRequest;
-use Modules\StaffManager\Http\Requests\AssignCoachActivitiesRequest;
-use Modules\StaffManager\Http\Requests\UploadCoachCertificationRequest;
 use Modules\StaffManager\Http\Resources\CoachResource;
+use Modules\StaffManager\Http\Resources\StaffResource;
+use Modules\StaffManager\Http\Resources\StaffShiftResource;
+use Modules\StaffManager\Services\StaffService;
+use Modules\StaffManager\Services\StaffShiftService;
+use Modules\StaffManager\Http\Requests\SetStaffScheduleRequest;
 use OpenApi\Attributes as OA;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -20,10 +23,17 @@ use Exception;
 class CoachController extends Controller
 {
     protected CoachService $coachService;
+    protected StaffService $staffService;
+    protected StaffShiftService $staffShiftService;
 
-    public function __construct(CoachService $coachService)
-    {
+    public function __construct(
+        CoachService $coachService,
+        StaffService $staffService,
+        StaffShiftService $staffShiftService
+    ) {
         $this->coachService = $coachService;
+        $this->staffService = $staffService;
+        $this->staffShiftService = $staffShiftService;
     }
 
     #[OA\Post(
@@ -37,7 +47,7 @@ class CoachController extends Controller
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['first_name', 'last_name', 'branch_ids', 'age'],
+                    required: ['first_name', 'last_name', 'branch_ids[]'],
                     properties: [
                         new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
                         new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
@@ -46,12 +56,18 @@ class CoachController extends Controller
                         new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1990-01-01'),
                         new OA\Property(property: 'phone_number', type: 'string', example: '500000000'),
                         new OA\Property(property: 'country_code', type: 'string', example: '+966'),
+                        new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                         new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب', nullable: true),
-                        new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'branch_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
                         new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                         new OA\Property(property: 'base_salary', type: 'number', example: 5000),
-                        new OA\Property(property: 'specialization', type: 'string', example: 'Bodybuilding'),
+                        new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 20.5),
+                        new OA\Property(property: 'work_types[]', type: 'array', items: new OA\Items(type: 'string', enum: ['equipment', 'activities'], example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة: equipment، فعاليات/حصص: activities)'),
                         new OA\Property(property: 'experience_years', type: 'integer', example: 5),
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                        new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
+                        new OA\Property(property: 'activity_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الأنشطة (اختياري)'),
+                        new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)'),
                     ]
                 )
             )
@@ -61,7 +77,7 @@ class CoachController extends Controller
                 response: 201, 
                 description: 'Coach created successfully',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
                     new OA\Property(property: 'message', type: 'string', example: 'Coach created successfully')
                 ])
             ),
@@ -121,9 +137,15 @@ class CoachController extends Controller
                 'message' => 'Coach created successfully'
             ], 201);
         } catch (QueryException $e) {
+            if ($e->getCode() == 23000 || (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062)) {
+                return response()->json([
+                    'message' => 'Conflict occurred while creating coach. The data might already exist.'
+                ], 409);
+            }
             return response()->json([
-                'message' => 'Conflict occurred while creating coach. The data might already exist.'
-            ], 409);
+                'message' => 'An error occurred while creating the coach.',
+                'error' => $e->getMessage()
+            ], 500);
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while creating the coach.',
@@ -141,6 +163,8 @@ class CoachController extends Controller
         parameters: [
             new OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'activity_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed'])),
+            new OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave'])),
         ],
         responses: [
             new OA\Response(
@@ -150,13 +174,7 @@ class CoachController extends Controller
                     new OA\Property(
                         property: 'data', 
                         type: 'array', 
-                        items: new OA\Items(
-                            type: 'object',
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                new OA\Property(property: 'username', type: 'string', nullable: true, example: 'coach_123')
-                            ]
-                        )
+                        items: new OA\Items(ref: '#/components/schemas/CoachResource')
                     )
                 ])
             ),
@@ -194,7 +212,7 @@ class CoachController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['branch_id', 'activity_id']);
+            $filters = $request->only(['branch_id', 'activity_id', 'gender']);
             $coaches = $this->coachService->getAllCoaches($filters);
 
             return CoachResource::collection($coaches);
@@ -269,14 +287,7 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'Coach details',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(
-                        property: 'data', 
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'coach_123')
-                        ]
-                    )
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource')
                 ])
             ),
             new OA\Response(
@@ -337,22 +348,37 @@ class CoachController extends Controller
     #[OA\Patch(
         path: '/v1/coaches/{id}',
         summary: 'Update Coach Data',
-        description: 'Update base salary, employment type, status, specialization, bio, experience, etc.',
+        description: 'Update base salary, employment type, status, specialization, bio, experience, etc. لتحديث الصورة استخدم endpoint منفصل: POST /v1/coaches/{id}/photo',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'base_salary', type: 'number', example: 6000),
-                    new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
-                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                    new OA\Property(property: 'specialization', type: 'string', example: 'CrossFit'),
-                    new OA\Property(property: 'experience_years', type: 'integer', example: 7),
-                ]
+            required: false,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
+                        new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
+                        new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                        new OA\Property(property: 'age', type: 'integer', example: 30),
+                        new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1990-01-01'),
+                        new OA\Property(property: 'phone_number', type: 'string', example: '500000000'),
+                        new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
+                        new OA\Property(property: 'branch_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1)),
+                        new OA\Property(property: 'employment_type', description: 'نوع التوظيف', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'hybrid'),
+                        new OA\Property(property: 'base_salary', type: 'number', example: 6000),
+                        new OA\Property(property: 'default_commission_rate', type: 'number', format: 'float', description: 'نسبة العمولة الثابتة للمدرب (مئوية)', example: 25.0),
+                        new OA\Property(property: 'work_types[]', type: 'array', items: new OA\Items(type: 'string', enum: ['equipment', 'activities'], example: 'equipment'), description: 'أنواع عمل المدرب (أجهزة: equipment، فعاليات/حصص: activities)'),
+                        new OA\Property(property: 'experience_years', type: 'integer', example: 7),
+                        new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                        new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
+                        new OA\Property(property: 'activity_ids[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الأنشطة (اختياري)'),
+                        new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات (اختياري - مسموح فقط إذا كان النشاط تدريب جماعي أو خاص)'),
+                    ]
+                )
             )
         ),
         responses: [
@@ -360,7 +386,7 @@ class CoachController extends Controller
                 response: 200, 
                 description: 'Coach updated successfully',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object'),
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
                     new OA\Property(property: 'message', type: 'string', example: 'Coach updated successfully')
                 ])
             ),
@@ -419,6 +445,7 @@ class CoachController extends Controller
     )]
     public function update(\Modules\StaffManager\Http\Requests\UpdateCoachRequest $request, $id)
     {
+
         try {
             $coach = $this->coachService->updateCoach($id, $request->validated());
 
@@ -443,189 +470,9 @@ class CoachController extends Controller
     }
 
     #[OA\Post(
-        path: '/v1/coaches/{id}/activities',
-        summary: 'Assign Activities to Coach',
-        description: 'Assign multiple activities to a coach.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['activity_ids'],
-                properties: [
-                    new OA\Property(
-                        property: 'activity_ids',
-                        type: 'array',
-                        items: new OA\Items(type: 'integer', example: 1)
-                    )
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(
-                response: 200, 
-                description: 'Activities assigned successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
-                    new OA\Property(property: 'message', type: 'string', example: 'Activities assigned successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach not found',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 409, 
-                description: 'Conflict',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Conflict occurred.')
-                ])
-            ),
-            new OA\Response(
-                response: 422, 
-                description: 'Validation errors',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
-                    new OA\Property(property: 'errors', type: 'object')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while assigning activities.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
-        ]
-    )]
-    public function assignActivities(AssignCoachActivitiesRequest $request, $id)
-    {
-        try {
-            $validated = $request->validated();
-            $coach = $this->coachService->assignActivities($id, $validated['activity_ids']);
-
-            return response()->json([
-                'data' => $coach->activities,
-                'message' => 'Activities assigned successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Coach not found.'
-            ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'An error occurred while assigning activities.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[OA\Delete(
-        path: '/v1/coaches/{id}/activities/{activityId}',
-        summary: 'Remove Activity from Coach',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'activityId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(
-                response: 200, 
-                description: 'Activity removed successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Activity removed successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach or Activity not found',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while removing the activity.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
-        ]
-    )]
-    public function removeActivity($id, $activityId)
-    {
-        try {
-            $this->coachService->removeActivity($id, $activityId);
-            return response()->json([
-                'message' => 'Activity removed successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Coach not found.'
-            ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'An error occurred while removing the activity.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[OA\Post(
-        path: '/v1/coaches/{id}/certifications',
-        summary: 'Upload Coach Certification',
-        description: 'Upload a certification or provide a document URL for a coach.',
+        path: '/v1/coaches/{id}/photo',
+        summary: 'Update Coach Photo',
+        description: 'Upload or update the profile photo of a coach. Use this dedicated endpoint instead of sending the photo in the general update request.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -636,172 +483,36 @@ class CoachController extends Controller
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['name'],
+                    required: ['photo'],
                     properties: [
-                        new OA\Property(property: 'name', type: 'string'),
-                        new OA\Property(property: 'issuer', type: 'string'),
-                        new OA\Property(property: 'issue_date', type: 'string', format: 'date'),
-                        new OA\Property(property: 'expiry_date', type: 'string', format: 'date'),
-                        new OA\Property(property: 'file', type: 'string', format: 'binary'),
-                        new OA\Property(property: 'document_url', type: 'string'),
+                        new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب'),
                     ]
                 )
             )
         ),
         responses: [
             new OA\Response(
-                response: 201, 
-                description: 'Certification uploaded successfully',
+                response: 200,
+                description: 'Photo updated successfully',
                 content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object'),
-                    new OA\Property(property: 'message', type: 'string', example: 'Certification uploaded successfully')
+                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach photo updated successfully')
                 ])
             ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Please provide either a file or a document_url')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach not found',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 422, 
-                description: 'Validation errors',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
-                    new OA\Property(property: 'errors', type: 'object')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while uploading certification.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')])),
+            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')])),
+            new OA\Response(response: 422, description: 'Validation errors', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'), new OA\Property(property: 'errors', type: 'object')])),
+            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'An error occurred while updating the photo.')])),
         ]
     )]
-    public function uploadCertification(UploadCoachCertificationRequest $request, $id)
+    public function updatePhoto(\Modules\StaffManager\Http\Requests\UpdateCoachPhotoRequest $request, $id)
     {
         try {
-            $validated = $request->validated();
-
-            if (empty($validated['file']) && empty($validated['document_url'])) {
-                return response()->json([
-                    'message' => 'Please provide either a file or a document_url'
-                ], 422);
-            }
-
-            $certification = $this->coachService->uploadCertification($id, $validated);
+            $coach = $this->coachService->updateCoachPhoto($id, $request->file('photo'));
 
             return response()->json([
-                'data' => $certification,
-                'message' => 'Certification uploaded successfully'
-            ], 201);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Coach not found.'
-            ], 404);
-        } catch (Exception $e) {
-            // CoachService throws Exception for missing details
-            if ($e->getMessage() === 'Coach details not found.' || $e->getMessage() === 'A document file or URL is required.') {
-                return response()->json([
-                    'message' => $e->getMessage()
-                ], 400);
-            }
-            return response()->json([
-                'message' => 'An error occurred while uploading certification.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[OA\Get(
-        path: '/v1/coaches/{id}/certifications',
-        summary: 'Get Coach Certifications',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(
-                response: 200, 
-                description: 'List of certifications',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
-                    new OA\Property(property: 'message', type: 'string', example: 'Certifications retrieved successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach not found',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while retrieving certifications.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
-        ]
-    )]
-    public function getCertifications($id)
-    {
-        try {
-            $coach = $this->coachService->getSingleCoach($id);
-            $certifications = $coach->coachDetail ? $coach->coachDetail->certifications : [];
-
-            return response()->json([
-                'data' => $certifications,
-                'message' => 'Certifications retrieved successfully'
+                'data'    => new CoachResource($coach),
+                'message' => 'Coach photo updated successfully'
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -809,16 +520,16 @@ class CoachController extends Controller
             ], 404);
         } catch (Exception $e) {
             return response()->json([
-                'message' => 'An error occurred while retrieving certifications.',
-                'error' => $e->getMessage()
+                'message' => 'An error occurred while updating the photo.',
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
 
     #[OA\Delete(
         path: '/v1/coaches/{id}',
-        summary: 'Delete Coach',
-        description: 'Soft delete a coach.',
+        summary: 'Delete Coach (Soft Delete)',
+        description: 'Soft deletes a coach and all associated details, contracts, certifications, and shifts automatically.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -827,30 +538,9 @@ class CoachController extends Controller
         responses: [
             new OA\Response(
                 response: 200, 
-                description: 'Coach deleted successfully',
+                description: 'Coach soft-deleted successfully',
                 content: new OA\JsonContent(properties: [
                     new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 400, 
-                description: 'Bad Request',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Bad Request')
-                ])
-            ),
-            new OA\Response(
-                response: 401, 
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
-                ])
-            ),
-            new OA\Response(
-                response: 403, 
-                description: 'Forbidden',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'This action is unauthorized.')
                 ])
             ),
             new OA\Response(
@@ -886,6 +576,94 @@ class CoachController extends Controller
                 'message' => 'An error occurred while deleting the coach.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/restore',
+        summary: 'Restore Soft Deleted Coach',
+        description: 'Restores a soft-deleted coach and all associated details, contracts, certifications, and shifts automatically.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: 'Coach restored successfully',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
+                ])
+            ),
+            new OA\Response(
+                response: 404, 
+                description: 'Coach not found in trashed',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error',
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while restoring the coach.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            ),
+        ]
+    )]
+    public function restore($id)
+    {
+        try {
+            $this->coachService->restoreCoach($id);
+            return response()->json([
+                'message' => 'Coach restored successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Coach not found.'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while restoring the coach.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    #[OA\Post(
+        path: '/v1/coaches/{id}/schedule',
+        summary: 'Set Coach Schedule',
+        description: 'Assigns a full schedule (multiple shifts) to a coach, overwriting existing ones.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['shifts'],
+                properties: [
+                    new OA\Property(property: 'shifts', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'Array of branch_shift IDs')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Schedule updated successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function setSchedule(SetStaffScheduleRequest $request, $id)
+    {
+        try {
+            $data = $request->validated();
+            $staff = $this->staffService->setStaffSchedule($id, $data['shifts']);
+            return response()->json([
+                'data' => new StaffResource($staff),
+                'message' => 'Schedule updated successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Coach not found.'], 404);
         }
     }
 }

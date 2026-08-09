@@ -41,7 +41,7 @@ class EloquentMemberRepository implements MemberRepositoryInterface
 
     public function findByPersonId(int $personId): ?Member
     {
-        return Member::where('person_id', $personId)->whereNull('deleted_at')->first();
+        return Member::where('person_id', $personId)->first();
     }
 
     /**

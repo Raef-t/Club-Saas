@@ -36,8 +36,8 @@ class PlayerRegistrationRequest extends FormRequest
             'mobile_country_code' => 'nullable|string|max:5',
             'mobile' => 'required|string|max:20',
             'gender' => 'required|in:male,female',
-            'age' => 'required_without:dob|nullable|integer|min:0|max:100',
-            'dob' => 'required_without:age|nullable|date',
+            'age' => 'nullable|integer|min:0|max:100',
+            'dob' => 'nullable|date',
             'address' => 'nullable|string|max:500',
             'photo' => 'nullable|image|max:2048', // max 2MB
             

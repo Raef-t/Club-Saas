@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الصلاحيات الكامل - Club SaaS</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-bg2: #162032;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --accent: #10b981;
+            --border: #334155;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+            --cyan: #22d3ee;
+            --orange: #fb923c;
+            --indigo: #6366f1;
+            --teal: #14b8a6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.8;
+        }
+
+        .container { max-width: 1300px; margin: 0 auto; }
+
+        /* ─── Header ─────────────────────────────────────────────── */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.12));
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        .header h1 {
+            font-size: 2.6rem;
+            margin: 0 0 0.4rem;
+            background: linear-gradient(135deg, #3b82f6, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin: 0;
+        }
+        .header .badge-row {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 1.2rem;
+        }
+        .badge {
+            padding: 0.3rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .badge-blue  { background: rgba(59,130,246,0.2);  color: #93c5fd; border: 1px solid rgba(59,130,246,0.4); }
+        .badge-green { background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }
+        .badge-amber { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
+
+        /* ─── Stats Bar ──────────────────────────────────────────── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem 1rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-number { font-size: 2rem; font-weight: 700; line-height: 1; }
+        .stat-label  { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem; }
+
+        /* ─── Nav Sidebar ────────────────────────────────────────── */
+        .layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        .sidebar {
+            position: sticky;
+            top: 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+        }
+        .sidebar h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 0 0 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.7rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            margin-bottom: 0.2rem;
+        }
+        .sidebar a:hover { background: rgba(255,255,255,0.06); color: var(--text-main); }
+        .sidebar a .count {
+            margin-right: auto;
+            font-size: 0.72rem;
+            background: rgba(255,255,255,0.08);
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        /* ─── Section Cards ──────────────────────────────────────── */
+        .module-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            scroll-margin-top: 1.5rem;
+        }
+        .module-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.4rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .module-icon {
+            font-size: 1.9rem;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+        .module-title { flex: 1; }
+        .module-title h2 { margin: 0; font-size: 1.25rem; }
+        .module-title small { color: var(--text-muted); font-size: 0.82rem; }
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-done    { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+        .status-pending { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+        /* ─── Sub-section ────────────────────────────────────────── */
+        .sub-section {
+            margin-bottom: 1.5rem;
+        }
+        .sub-section h4 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 0 0 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .sub-section h4::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ─── Permission Table ───────────────────────────────────── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        thead th {
+            background: rgba(255,255,255,0.04);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 0.7rem 0.9rem;
+            text-align: right;
+            border-bottom: 2px solid var(--border);
+        }
+        tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.15s;
+        }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+        tbody td { padding: 0.65rem 0.9rem; vertical-align: middle; }
+        td:first-child { color: var(--text-muted); font-size: 0.8rem; }
+
+        /* permission name pill */
+        .perm-name {
+            display: inline-block;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.25);
+            color: #c4b5fd;
+            padding: 0.18rem 0.65rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.83rem;
+            letter-spacing: 0.2px;
+        }
+
+        /* HTTP method pills */
+        .method {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 5px;
+            font-weight: 700;
+            font-size: 0.73rem;
+            letter-spacing: 0.5px;
+        }
+        .method-get    { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+        .method-post   { background: rgba(59,130,246,0.15); color: #93c5fd; }
+        .method-put    { background: rgba(245,158,11,0.15); color: #fcd34d; }
+        .method-patch  { background: rgba(251,146,60,0.15); color: #fdba74; }
+        .method-delete { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+
+        /* route code */
+        .route-path {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── Roles Section ──────────────────────────────────────── */
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .role-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        .role-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .role-name { font-weight: 600; font-size: 0.9rem; }
+        .role-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+        /* ─── Full List Section ──────────────────────────────────── */
+        .full-list-table tbody tr td:nth-child(2) { width: 280px; }
+        .module-tag {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 5px;
+            font-size: 0.73rem;
+            font-weight: 600;
+        }
+
+        /* ─── Info Boxes ─────────────────────────────────────────── */
+        .info-box {
+            padding: 1rem 1.2rem;
+            border-radius: 10px;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .info-box.warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); color: #fde68a; }
+        .info-box.note    { background: rgba(59,130,246,0.08);  border: 1px solid rgba(59,130,246,0.25);  color: #bfdbfe; }
+        .info-box.success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: #a7f3d0; }
+        .info-box-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+        /* ─── Search ─────────────────────────────────────────────── */
+        .search-wrap {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        #search-input {
+            width: 100%;
+            padding: 0.7rem 1rem 0.7rem 2.8rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        #search-input:focus { border-color: var(--primary); }
+        #search-input::placeholder { color: var(--text-muted); }
+        .search-icon {
+            position: absolute;
+            right: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+        #search-count { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem; }
+        .highlight { background: rgba(251,191,36,0.3); border-radius: 3px; padding: 0 2px; }
+        .hidden-row { display: none; }
+
+        /* ─── Back to top ────────────────────────────────────────── */
+        .back-top {
+            display: block;
+            text-align: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            margin-top: 0.5rem;
+            padding: 0.4rem;
+            transition: color 0.2s;
+        }
+        .back-top:hover { color: var(--primary); }
+
+        /* ─── Footer ─────────────────────────────────────────────── */
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { position: static; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ══════════════════ HEADER ══════════════════ -->
+    <div class="header" id="top">
+        <h1>🔐 تقرير الصلاحيات الكامل</h1>
+        <p>Club SaaS — نظام إدارة الأندية الرياضية</p>
+        <div class="badge-row">
+            <span class="badge badge-blue">📅 2026-08-09</span>
+            <span class="badge badge-green">✅ 94 صلاحية</span>
+            <span class="badge badge-amber">⚙️ 7 أدوار</span>
+            <span class="badge badge-blue">🧩 11 موديولاً</span>
+        </div>
+    </div>
+
+    <!-- ══════════════════ STATS ══════════════════ -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number" style="color:#3b82f6">94</div>
+            <div class="stat-label">إجمالي الصلاحيات</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#6366f1">10</div>
+            <div class="stat-label">Users & Roles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#10b981">22</div>
+            <div class="stat-label">Members</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#a78bfa">9</div>
+            <div class="stat-label">Coaches</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#f472b6">8</div>
+            <div class="stat-label">Staff</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#22d3ee">7</div>
+            <div class="stat-label">Activities</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#fb923c">15</div>
+            <div class="stat-label">Subscriptions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#f59e0b">7</div>
+            <div class="stat-label">Lockers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#ef4444">8</div>
+            <div class="stat-label">Attendance</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#14b8a6">4</div>
+            <div class="stat-label">Payments</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color:#6366f1">4</div>
+            <div class="stat-label">Reception</div>
+        </div>
+    </div>
+
+    <!-- ══════════════════ LAYOUT ══════════════════ -->
+    <div class="layout">
+
+        <!-- ── SIDEBAR ── -->
+        <aside class="sidebar">
+            <h3>🗂 التنقل السريع</h3>
+            <a href="#roles">👥 الأدوار <span class="count">7</span></a>
+            <a href="#users-roles">🔑 Users & Roles <span class="count">10</span></a>
+            <a href="#members">👤 Members <span class="count">22</span></a>
+            <a href="#coaches">🏋️ Coaches <span class="count">9</span></a>
+            <a href="#staff">🧑‍💼 Staff <span class="count">8</span></a>
+            <a href="#activities">⚽ Activities <span class="count">7</span></a>
+            <a href="#sub-plans">📋 Sub. Plans <span class="count">6</span></a>
+            <a href="#player-subs">🎽 Player Subs. <span class="count">9</span></a>
+            <a href="#lockers">🔒 Lockers <span class="count">7</span></a>
+            <a href="#attendance">📍 Attendance <span class="count">8</span></a>
+            <a href="#payments">💳 Payments <span class="count">4</span></a>
+            <a href="#reception">🏢 Reception <span class="count">4</span></a>
+            <a href="#full-list">📊 القائمة الكاملة <span class="count">94</span></a>
+        </aside>
+
+        <!-- ── MAIN CONTENT ── -->
+        <main>
+
+            <!-- ───── ROLES ───── -->
+            <div class="module-card" id="roles">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(59,130,246,0.15)">👥</div>
+                    <div class="module-title">
+                        <h2>الأدوار المعرّفة في النظام</h2>
+                        <small>Roles — Spatie Permission Guard: sanctum</small>
+                    </div>
+                    <span class="status-badge status-done">✅ مُنفَّذ</span>
+                </div>
+                <div class="roles-grid">
+                    <div class="role-card"><div class="role-dot" style="background:#ef4444"></div><div><div class="role-name">super_admin</div><div class="role-desc">يتجاوز جميع فحوصات الصلاحيات</div></div></div>
+                    <div class="role-card"><div class="role-dot" style="background:#3b82f6"></div><div><div class="role-name">admin</div><div class="role-desc">مدير النادي</div></div></div>
+                    <div class="role-card"><div class="role-dot" style="background:#a78bfa"></div><div><div class="role-name">management_admin</div><div class="role-desc">مدير إداري</div></div></div>
+                    <div class="role-card"><div class="role-dot" style="background:#22d3ee"></div><div><div class="role-name">coach</div><div class="role-desc">مدرب</div></div></div>
+                    <div class="role-card"><div class="role-dot" style="background:#10b981"></div><div><div class="role-name">player</div><div class="role-desc">لاعب / عضو</div></div></div>
+                    <div class="role-card"><div class="role-dot" style="background:#f59e0b"></div><div><div class="role-name">accountant</div><div class="role-desc">محاسب</div></div></div>
+                    <div class="role-card"><div class="role-dot" style="background:#6366f1"></div><div><div class="role-name">reception</div><div class="role-desc">موظف استقبال</div></div></div>
+                </div>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── USERS & ROLES ───── -->
+            <div class="module-card" id="users-roles">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(99,102,241,0.15)">🔑</div>
+                    <div class="module-title">
+                        <h2>Users & Roles — إدارة المستخدمين والأدوار</h2>
+                        <small>Authentication Module · 10 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-done">✅ مُنفَّذ بالكامل</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">user.view-any</span></td><td>عرض واستعراض قائمة المستخدمين بالتصفية</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/users</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">permission.view-any</span></td><td>جلب قائمة الصلاحيات في النظام</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/permissions</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">role.view-any</span></td><td>جلب قائمة الأدوار المعرفة</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/roles</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">role.create</span></td><td>إنشاء دور جديد في النظام</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/roles</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">role.view</span></td><td>عرض تفاصيل دور محدد وصلاحياته</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/roles/{id}</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">role.sync-permissions</span></td><td>مزامنة وتحديث صلاحيات الدور</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/roles/{id}/permissions</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">role.delete</span></td><td>حذف دور من النظام</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/roles/{id}</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">user-role.view</span></td><td>عرض أدوار وصلاحيات مستخدم محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/users/{userId}/roles</td></tr>
+                        <tr><td>9</td><td><span class="perm-name">user-role.assign</span></td><td>إسناد دور لمستخدم</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/users/{userId}/roles</td></tr>
+                        <tr><td>10</td><td><span class="perm-name">user-role.revoke</span></td><td>سحب دور من مستخدم</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/users/{userId}/roles</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── MEMBERS ───── -->
+            <div class="module-card" id="members">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(16,185,129,0.15)">👤</div>
+                    <div class="module-title">
+                        <h2>Members — الأعضاء</h2>
+                        <small>MemberManager Module · 22 صلاحية</small>
+                    </div>
+                    <span class="status-badge status-done">✅ مُنفَّذ بالكامل</span>
+                </div>
+
+                <div class="sub-section">
+                    <h4>CRUD الأساسي</h4>
+                    <table>
+                        <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                        <tbody>
+                            <tr><td>1</td><td><span class="perm-name">member.view-any</span></td><td>جلب قائمة الأعضاء</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/members</td></tr>
+                            <tr><td>2</td><td><span class="perm-name">member.view</span></td><td>عرض عضو محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/members/{id}</td></tr>
+                            <tr><td>3</td><td><span class="perm-name">member.create</span></td><td>تسجيل عضو جديد</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/members/register</td></tr>
+                            <tr><td>4</td><td><span class="perm-name">member.update</span></td><td>تعديل بيانات العضو</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/members/{id}</td></tr>
+                            <tr><td>5</td><td><span class="perm-name">member.update-photo</span></td><td>تحديث صورة العضو</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/members/{id}/photo</td></tr>
+                            <tr><td>6</td><td><span class="perm-name">member.delete</span></td><td>حذف العضو</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/members/{id}</td></tr>
+                            <tr><td>7</td><td><span class="perm-name">member.restore</span></td><td>استعادة العضو المحذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/members/{id}/restore</td></tr>
+                            <tr><td>8</td><td><span class="perm-name">member.stats</span></td><td>عرض إحصائيات الأعضاء</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/members/stats</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="sub-section">
+                    <h4>الملفات الصحية — Health Profiles</h4>
+                    <table>
+                        <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                        <tbody>
+                            <tr><td>9</td><td><span class="perm-name">member.health-profile.view-any</span></td><td>جلب قائمة الملفات الصحية</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/member/health-profiles</td></tr>
+                            <tr><td>10</td><td><span class="perm-name">member.health-profile.view</span></td><td>عرض ملف صحي محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/member/health-profiles/{id}</td></tr>
+                            <tr><td>11</td><td><span class="perm-name">member.health-profile.create</span></td><td>إنشاء ملف صحي</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/member/health-profiles</td></tr>
+                            <tr><td>12</td><td><span class="perm-name">member.health-profile.update</span></td><td>تعديل ملف صحي</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/member/health-profiles/{id}</td></tr>
+                            <tr><td>13</td><td><span class="perm-name">member.health-profile.delete</span></td><td>حذف ملف صحي</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/member/health-profiles/{id}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="sub-section">
+                    <h4>القياسات — Measurements</h4>
+                    <table>
+                        <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                        <tbody>
+                            <tr><td>14</td><td><span class="perm-name">member.measurement.view-any</span></td><td>جلب قائمة القياسات</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/member/measurements</td></tr>
+                            <tr><td>15</td><td><span class="perm-name">member.measurement.view</span></td><td>عرض قياس محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/member/measurements/{id}</td></tr>
+                            <tr><td>16</td><td><span class="perm-name">member.measurement.create</span></td><td>إضافة قياس جديد</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/member/measurements</td></tr>
+                            <tr><td>17</td><td><span class="perm-name">member.measurement.update</span></td><td>تعديل قياس</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/member/measurements/{id}</td></tr>
+                            <tr><td>18</td><td><span class="perm-name">member.measurement.delete</span></td><td>حذف قياس</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/member/measurements/{id}</td></tr>
+                            <tr><td>19</td><td><span class="perm-name">member.measurement.report</span></td><td>تقرير القياسات</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/member/measurements/report</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="sub-section">
+                    <h4>أوقات عدم التوفر — Unavailabilities</h4>
+                    <table>
+                        <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                        <tbody>
+                            <tr><td>20</td><td><span class="perm-name">member.unavailability.view-any</span></td><td>جلب أوقات عدم التوفر</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/members/{member}/unavailabilities</td></tr>
+                            <tr><td>21</td><td><span class="perm-name">member.unavailability.create</span></td><td>إضافة وقت عدم توفر</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/members/{member}/unavailabilities</td></tr>
+                            <tr><td>22</td><td><span class="perm-name">member.unavailability.delete</span></td><td>حذف وقت عدم توفر</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/members/{member}/unavailabilities/{id}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── COACHES ───── -->
+            <div class="module-card" id="coaches">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(167,139,250,0.15)">🏋️</div>
+                    <div class="module-title">
+                        <h2>Coaches — المدربين</h2>
+                        <small>StaffManager Module · 9 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <div class="info-box warning">
+                    <span class="info-box-icon">⚠️</span>
+                    يحتاج إنشاء <strong>CoachPermissionsSeeder</strong> وإضافة الـ routes إلى <code>routePermissionMap</code> في CheckPermissionMiddleware
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">coach.view-any</span></td><td>جلب قائمة المدربين</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/coaches</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">coach.view</span></td><td>عرض مدرب محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/coaches/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">coach.create</span></td><td>إضافة مدرب جديد</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/coaches</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">coach.update</span></td><td>تعديل بيانات المدرب</td><td><span class="method method-patch">PATCH</span></td><td class="route-path">/v1/coaches/{id}</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">coach.update-photo</span></td><td>تحديث صورة المدرب</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/coaches/{id}/photo</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">coach.set-schedule</span></td><td>تعيين جدول المدرب</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/coaches/{id}/schedule</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">coach.delete</span></td><td>حذف المدرب</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/coaches/{id}</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">coach.restore</span></td><td>استعادة المدرب المحذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/coaches/{id}/restore</td></tr>
+                        <tr><td>9</td><td><span class="perm-name">coach.stats</span></td><td>عرض إحصائيات المدربين</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/coaches/stats</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── STAFF ───── -->
+            <div class="module-card" id="staff">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(244,114,182,0.15)">🧑‍💼</div>
+                    <div class="module-title">
+                        <h2>Staff — الموظفين</h2>
+                        <small>StaffManager Module · 8 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <div class="info-box warning">
+                    <span class="info-box-icon">⚠️</span>
+                    يحتاج إنشاء <strong>StaffPermissionsSeeder</strong> وإضافة الـ routes إلى <code>routePermissionMap</code>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">staff.view-any</span></td><td>جلب قائمة الموظفين</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/staff</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">staff.view</span></td><td>عرض موظف محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/staff/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">staff.create</span></td><td>إضافة موظف جديد</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/staff</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">staff.update</span></td><td>تعديل بيانات الموظف</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/staff/{id}</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">staff.update-photo</span></td><td>تحديث صورة الموظف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/staff/{id}/photo</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">staff.set-schedule</span></td><td>تعيين جدول الموظف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/staff/{id}/schedule</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">staff.toggle-status</span></td><td>تفعيل/تعطيل الموظف</td><td><span class="method method-patch">PATCH</span></td><td class="route-path">/v1/staff/{id}/toggle-status</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">staff.restore</span></td><td>استعادة الموظف المحذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/staff/{id}/restore</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── ACTIVITIES ───── -->
+            <div class="module-card" id="activities">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(34,211,238,0.15)">⚽</div>
+                    <div class="module-title">
+                        <h2>Activities — الأنشطة</h2>
+                        <small>Sports Module · 7 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">activity.view-any</span></td><td>جلب قائمة الأنشطة</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/activities</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">activity.view</span></td><td>عرض نشاط محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/activities/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">activity.create</span></td><td>إضافة نشاط جديد</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/activities</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">activity.update</span></td><td>تعديل نشاط</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/activities/{id}</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">activity.delete</span></td><td>حذف نشاط</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/activities/{id}</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">activity.restore</span></td><td>استعادة نشاط محذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/activities/{id}/restore</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">activity.stats</span></td><td>عرض إحصائيات الأنشطة</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/activities/stats</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── SUBSCRIPTION PLANS ───── -->
+            <div class="module-card" id="sub-plans">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(251,146,60,0.15)">📋</div>
+                    <div class="module-title">
+                        <h2>Subscription Plans — خطط الاشتراك</h2>
+                        <small>SubscriptionManager Module · 6 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">subscription-plan.view-any</span></td><td>جلب قائمة خطط الاشتراك</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/subscription-plans</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">subscription-plan.view</span></td><td>عرض خطة اشتراك محددة</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/subscription-plans/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">subscription-plan.create</span></td><td>إنشاء خطة اشتراك جديدة</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/subscription-plans</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">subscription-plan.update</span></td><td>تعديل خطة اشتراك</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/subscription-plans/{id}</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">subscription-plan.delete</span></td><td>حذف خطة اشتراك</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/subscription-plans/{id}</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">subscription-plan.restore</span></td><td>استعادة خطة اشتراك محذوفة</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/subscription-plans/{id}/restore</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── PLAYER SUBSCRIPTIONS ───── -->
+            <div class="module-card" id="player-subs">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(251,146,60,0.12)">🎽</div>
+                    <div class="module-title">
+                        <h2>Player Subscriptions — اشتراكات اللاعبين</h2>
+                        <small>SubscriptionManager Module · 9 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">player-subscription.view-any</span></td><td>جلب قائمة اشتراكات اللاعبين</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/player-subscriptions</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">player-subscription.view</span></td><td>عرض اشتراك لاعب محدد</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/player-subscriptions/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">player-subscription.create</span></td><td>إنشاء اشتراك لاعب جديد</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">player-subscription.delete</span></td><td>حذف اشتراك لاعب</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/player-subscriptions/{id}</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">player-subscription.freeze</span></td><td>تجميد اشتراك لاعب</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions/{id}/freeze</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">player-subscription.unfreeze</span></td><td>إلغاء تجميد اشتراك</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions/{id}/unfreeze</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">player-subscription.renew</span></td><td>تجديد اشتراك لاعب</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions/{id}/renew</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">player-subscription.cancel</span></td><td>إلغاء اشتراك لاعب</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions/{id}/cancel</td></tr>
+                        <tr><td>9</td><td><span class="perm-name">player-subscription.restore</span></td><td>استعادة اشتراك محذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions/{id}/restore</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── LOCKERS ───── -->
+            <div class="module-card" id="lockers">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(245,158,11,0.15)">🔒</div>
+                    <div class="module-title">
+                        <h2>Lockers — الخزائن</h2>
+                        <small>ClubManager Module · 7 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">locker.view-any</span></td><td>جلب قائمة الخزائن</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/lockers</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">locker.view</span></td><td>عرض خزانة محددة</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/lockers/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">locker.create</span></td><td>إنشاء خزانة جديدة</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/lockers</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">locker.update</span></td><td>تعديل خزانة</td><td><span class="method method-put">PUT</span></td><td class="route-path">/v1/lockers/{id}</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">locker.delete</span></td><td>حذف خزانة</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/lockers/{id}</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">locker.restore</span></td><td>استعادة خزانة محذوفة</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/lockers/{id}/restore</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">locker.reserve</span></td><td>حجز خزانة للاعب</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/lockers/{locker}/reservations</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── ATTENDANCE ───── -->
+            <div class="module-card" id="attendance">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(239,68,68,0.15)">📍</div>
+                    <div class="module-title">
+                        <h2>Attendances — الحضور</h2>
+                        <small>AttendanceManager Module · 8 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">attendance.check-in</span></td><td>تسجيل حضور (دخول)</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/attendances/check-in</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">attendance.check-out</span></td><td>تسجيل انصراف (خروج)</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/attendances/check-out/{id}</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">attendance.bulk-check-out</span></td><td>تسجيل خروج جماعي</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/attendances/bulk-check-out</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">attendance.history</span></td><td>عرض سجل الحضور</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/attendances/history</td></tr>
+                        <tr><td>5</td><td><span class="perm-name">attendance.delete</span></td><td>حذف سجل حضور</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/attendances/{id}</td></tr>
+                        <tr><td>6</td><td><span class="perm-name">attendance.restore</span></td><td>استعادة سجل حضور محذوف</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/attendances/{id}/restore</td></tr>
+                        <tr><td>7</td><td><span class="perm-name">attendance.dashboard</span></td><td>عرض لوحة الحضور</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/attendance-manager/dashboard-stats</td></tr>
+                        <tr><td>8</td><td><span class="perm-name">attendance.dashboard-stream</span></td><td>بث حي لإحصائيات الحضور (SSE)</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/attendance-manager/dashboard-stats-stream</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── PAYMENTS ───── -->
+            <div class="module-card" id="payments">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(20,184,166,0.15)">💳</div>
+                    <div class="module-title">
+                        <h2>Payments — المدفوعات</h2>
+                        <small>SubscriptionManager + Accounting · 4 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">payment.record</span></td><td>تسجيل دفعة على اشتراك</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/player-subscriptions/{id}/payment</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">payment.view-invoices</span></td><td>عرض فواتيري</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/my-invoices</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">payment.view-reports</span></td><td>عرض تقارير الاشتراكات</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/reports/subscriptions</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">payment.wallet-deposit</span></td><td>إيداع في المحفظة</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/people/{person_id}/wallet/deposit</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── RECEPTION ───── -->
+            <div class="module-card" id="reception">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(99,102,241,0.15)">🏢</div>
+                    <div class="module-title">
+                        <h2>Reception — الاستقبال</h2>
+                        <small>AttendanceManager Module · 4 صلاحيات</small>
+                    </div>
+                    <span class="status-badge status-pending">⚠️ يحتاج تنفيذ</span>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>اسم الصلاحية</th><th>الوصف</th><th>Method</th><th>Route</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td><span class="perm-name">reception.view-member-subscriptions</span></td><td>استعراض اشتراكات اللاعب</td><td><span class="method method-get">GET</span></td><td class="route-path">/v1/reception/members/{memberId}/subscriptions</td></tr>
+                        <tr><td>2</td><td><span class="perm-name">reception.deduct-session</span></td><td>خصم جلسة من اشتراك</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/reception/attendances/{id}/deduct</td></tr>
+                        <tr><td>3</td><td><span class="perm-name">reception.rollback-attendance</span></td><td>التراجع عن حضور وإرجاع الجلسة</td><td><span class="method method-delete">DELETE</span></td><td class="route-path">/v1/reception/attendances/{id}/rollback</td></tr>
+                        <tr><td>4</td><td><span class="perm-name">reception.qr-check-in</span></td><td>تسجيل حضور عبر QR</td><td><span class="method method-post">POST</span></td><td class="route-path">/v1/qr/check-in</td></tr>
+                    </tbody>
+                </table>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+            <!-- ───── FULL LIST ───── -->
+            <div class="module-card" id="full-list">
+                <div class="module-header">
+                    <div class="module-icon" style="background:rgba(59,130,246,0.15)">📊</div>
+                    <div class="module-title">
+                        <h2>القائمة الكاملة — جميع الـ 94 صلاحية</h2>
+                        <small>مع إمكانية البحث والتصفية</small>
+                    </div>
+                </div>
+
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="ابحث باسم الصلاحية أو الموديول أو الوصف...">
+                </div>
+                <div id="search-count"></div>
+
+                <div style="overflow-x:auto">
+                <table class="full-list-table" id="full-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px">#</th>
+                            <th>اسم الصلاحية</th>
+                            <th>Module</th>
+                            <th>الوصف</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-search="member.view-any Member جلب قائمة الأعضاء"><td>1</td><td><span class="perm-name">member.view-any</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>جلب قائمة الأعضاء</td></tr>
+                        <tr data-search="member.view Member عرض عضو محدد"><td>2</td><td><span class="perm-name">member.view</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>عرض عضو محدد</td></tr>
+                        <tr data-search="member.create Member تسجيل عضو جديد"><td>3</td><td><span class="perm-name">member.create</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>تسجيل عضو جديد</td></tr>
+                        <tr data-search="member.update Member تعديل بيانات العضو"><td>4</td><td><span class="perm-name">member.update</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>تعديل بيانات العضو</td></tr>
+                        <tr data-search="member.update-photo Member تحديث صورة العضو"><td>5</td><td><span class="perm-name">member.update-photo</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>تحديث صورة العضو</td></tr>
+                        <tr data-search="member.delete Member حذف العضو"><td>6</td><td><span class="perm-name">member.delete</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>حذف العضو</td></tr>
+                        <tr data-search="member.restore Member استعادة العضو المحذوف"><td>7</td><td><span class="perm-name">member.restore</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>استعادة العضو المحذوف</td></tr>
+                        <tr data-search="member.stats Member عرض إحصائيات الأعضاء"><td>8</td><td><span class="perm-name">member.stats</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>عرض إحصائيات الأعضاء</td></tr>
+                        <tr data-search="member.health-profile.view-any Member جلب قائمة الملفات الصحية"><td>9</td><td><span class="perm-name">member.health-profile.view-any</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>جلب قائمة الملفات الصحية</td></tr>
+                        <tr data-search="member.health-profile.view Member عرض ملف صحي محدد"><td>10</td><td><span class="perm-name">member.health-profile.view</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>عرض ملف صحي محدد</td></tr>
+                        <tr data-search="member.health-profile.create Member إنشاء ملف صحي"><td>11</td><td><span class="perm-name">member.health-profile.create</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>إنشاء ملف صحي</td></tr>
+                        <tr data-search="member.health-profile.update Member تعديل ملف صحي"><td>12</td><td><span class="perm-name">member.health-profile.update</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>تعديل ملف صحي</td></tr>
+                        <tr data-search="member.health-profile.delete Member حذف ملف صحي"><td>13</td><td><span class="perm-name">member.health-profile.delete</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>حذف ملف صحي</td></tr>
+                        <tr data-search="member.measurement.view-any Member جلب قائمة القياسات"><td>14</td><td><span class="perm-name">member.measurement.view-any</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>جلب قائمة القياسات</td></tr>
+                        <tr data-search="member.measurement.view Member عرض قياس محدد"><td>15</td><td><span class="perm-name">member.measurement.view</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>عرض قياس محدد</td></tr>
+                        <tr data-search="member.measurement.create Member إضافة قياس جديد"><td>16</td><td><span class="perm-name">member.measurement.create</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>إضافة قياس جديد</td></tr>
+                        <tr data-search="member.measurement.update Member تعديل قياس"><td>17</td><td><span class="perm-name">member.measurement.update</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>تعديل قياس</td></tr>
+                        <tr data-search="member.measurement.delete Member حذف قياس"><td>18</td><td><span class="perm-name">member.measurement.delete</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>حذف قياس</td></tr>
+                        <tr data-search="member.measurement.report Member تقرير القياسات"><td>19</td><td><span class="perm-name">member.measurement.report</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>تقرير القياسات</td></tr>
+                        <tr data-search="member.unavailability.view-any Member جلب أوقات عدم التوفر"><td>20</td><td><span class="perm-name">member.unavailability.view-any</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>جلب أوقات عدم التوفر</td></tr>
+                        <tr data-search="member.unavailability.create Member إضافة وقت عدم توفر"><td>21</td><td><span class="perm-name">member.unavailability.create</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>إضافة وقت عدم توفر</td></tr>
+                        <tr data-search="member.unavailability.delete Member حذف وقت عدم توفر"><td>22</td><td><span class="perm-name">member.unavailability.delete</span></td><td><span class="module-tag" style="background:rgba(16,185,129,0.15);color:#6ee7b7">Member</span></td><td>حذف وقت عدم توفر</td></tr>
+                        <tr data-search="coach.view-any Coach جلب قائمة المدربين"><td>23</td><td><span class="perm-name">coach.view-any</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>جلب قائمة المدربين</td></tr>
+                        <tr data-search="coach.view Coach عرض مدرب محدد"><td>24</td><td><span class="perm-name">coach.view</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>عرض مدرب محدد</td></tr>
+                        <tr data-search="coach.create Coach إضافة مدرب جديد"><td>25</td><td><span class="perm-name">coach.create</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>إضافة مدرب جديد</td></tr>
+                        <tr data-search="coach.update Coach تعديل بيانات المدرب"><td>26</td><td><span class="perm-name">coach.update</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>تعديل بيانات المدرب</td></tr>
+                        <tr data-search="coach.update-photo Coach تحديث صورة المدرب"><td>27</td><td><span class="perm-name">coach.update-photo</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>تحديث صورة المدرب</td></tr>
+                        <tr data-search="coach.set-schedule Coach تعيين جدول المدرب"><td>28</td><td><span class="perm-name">coach.set-schedule</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>تعيين جدول المدرب</td></tr>
+                        <tr data-search="coach.delete Coach حذف المدرب"><td>29</td><td><span class="perm-name">coach.delete</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>حذف المدرب</td></tr>
+                        <tr data-search="coach.restore Coach استعادة المدرب المحذوف"><td>30</td><td><span class="perm-name">coach.restore</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>استعادة المدرب المحذوف</td></tr>
+                        <tr data-search="coach.stats Coach إحصائيات المدربين"><td>31</td><td><span class="perm-name">coach.stats</span></td><td><span class="module-tag" style="background:rgba(167,139,250,0.15);color:#c4b5fd">Coach</span></td><td>إحصائيات المدربين</td></tr>
+                        <tr data-search="staff.view-any Staff جلب قائمة الموظفين"><td>32</td><td><span class="perm-name">staff.view-any</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>جلب قائمة الموظفين</td></tr>
+                        <tr data-search="staff.view Staff عرض موظف محدد"><td>33</td><td><span class="perm-name">staff.view</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>عرض موظف محدد</td></tr>
+                        <tr data-search="staff.create Staff إضافة موظف جديد"><td>34</td><td><span class="perm-name">staff.create</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>إضافة موظف جديد</td></tr>
+                        <tr data-search="staff.update Staff تعديل بيانات الموظف"><td>35</td><td><span class="perm-name">staff.update</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>تعديل بيانات الموظف</td></tr>
+                        <tr data-search="staff.update-photo Staff تحديث صورة الموظف"><td>36</td><td><span class="perm-name">staff.update-photo</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>تحديث صورة الموظف</td></tr>
+                        <tr data-search="staff.set-schedule Staff تعيين جدول الموظف"><td>37</td><td><span class="perm-name">staff.set-schedule</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>تعيين جدول الموظف</td></tr>
+                        <tr data-search="staff.toggle-status Staff تفعيل تعطيل الموظف"><td>38</td><td><span class="perm-name">staff.toggle-status</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>تفعيل/تعطيل الموظف</td></tr>
+                        <tr data-search="staff.restore Staff استعادة الموظف المحذوف"><td>39</td><td><span class="perm-name">staff.restore</span></td><td><span class="module-tag" style="background:rgba(244,114,182,0.15);color:#f9a8d4">Staff</span></td><td>استعادة الموظف المحذوف</td></tr>
+                        <tr data-search="activity.view-any Activity جلب قائمة الأنشطة"><td>40</td><td><span class="perm-name">activity.view-any</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>جلب قائمة الأنشطة</td></tr>
+                        <tr data-search="activity.view Activity عرض نشاط محدد"><td>41</td><td><span class="perm-name">activity.view</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>عرض نشاط محدد</td></tr>
+                        <tr data-search="activity.create Activity إضافة نشاط جديد"><td>42</td><td><span class="perm-name">activity.create</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>إضافة نشاط جديد</td></tr>
+                        <tr data-search="activity.update Activity تعديل نشاط"><td>43</td><td><span class="perm-name">activity.update</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>تعديل نشاط</td></tr>
+                        <tr data-search="activity.delete Activity حذف نشاط"><td>44</td><td><span class="perm-name">activity.delete</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>حذف نشاط</td></tr>
+                        <tr data-search="activity.restore Activity استعادة نشاط محذوف"><td>45</td><td><span class="perm-name">activity.restore</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>استعادة نشاط محذوف</td></tr>
+                        <tr data-search="activity.stats Activity إحصائيات الأنشطة"><td>46</td><td><span class="perm-name">activity.stats</span></td><td><span class="module-tag" style="background:rgba(34,211,238,0.15);color:#67e8f9">Activity</span></td><td>إحصائيات الأنشطة</td></tr>
+                        <tr data-search="subscription-plan.view-any Sub Plan جلب قائمة خطط الاشتراك"><td>47</td><td><span class="perm-name">subscription-plan.view-any</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.15);color:#fdba74">Sub Plan</span></td><td>جلب قائمة خطط الاشتراك</td></tr>
+                        <tr data-search="subscription-plan.view Sub Plan عرض خطة اشتراك"><td>48</td><td><span class="perm-name">subscription-plan.view</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.15);color:#fdba74">Sub Plan</span></td><td>عرض خطة اشتراك</td></tr>
+                        <tr data-search="subscription-plan.create Sub Plan إنشاء خطة اشتراك جديدة"><td>49</td><td><span class="perm-name">subscription-plan.create</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.15);color:#fdba74">Sub Plan</span></td><td>إنشاء خطة اشتراك جديدة</td></tr>
+                        <tr data-search="subscription-plan.update Sub Plan تعديل خطة اشتراك"><td>50</td><td><span class="perm-name">subscription-plan.update</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.15);color:#fdba74">Sub Plan</span></td><td>تعديل خطة اشتراك</td></tr>
+                        <tr data-search="subscription-plan.delete Sub Plan حذف خطة اشتراك"><td>51</td><td><span class="perm-name">subscription-plan.delete</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.15);color:#fdba74">Sub Plan</span></td><td>حذف خطة اشتراك</td></tr>
+                        <tr data-search="subscription-plan.restore Sub Plan استعادة خطة اشتراك"><td>52</td><td><span class="perm-name">subscription-plan.restore</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.15);color:#fdba74">Sub Plan</span></td><td>استعادة خطة اشتراك</td></tr>
+                        <tr data-search="player-subscription.view-any Player Sub جلب قائمة اشتراكات اللاعبين"><td>53</td><td><span class="perm-name">player-subscription.view-any</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>جلب قائمة اشتراكات اللاعبين</td></tr>
+                        <tr data-search="player-subscription.view Player Sub عرض اشتراك لاعب محدد"><td>54</td><td><span class="perm-name">player-subscription.view</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>عرض اشتراك لاعب محدد</td></tr>
+                        <tr data-search="player-subscription.create Player Sub إنشاء اشتراك لاعب جديد"><td>55</td><td><span class="perm-name">player-subscription.create</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>إنشاء اشتراك لاعب جديد</td></tr>
+                        <tr data-search="player-subscription.delete Player Sub حذف اشتراك لاعب"><td>56</td><td><span class="perm-name">player-subscription.delete</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>حذف اشتراك لاعب</td></tr>
+                        <tr data-search="player-subscription.freeze Player Sub تجميد اشتراك"><td>57</td><td><span class="perm-name">player-subscription.freeze</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>تجميد اشتراك</td></tr>
+                        <tr data-search="player-subscription.unfreeze Player Sub إلغاء تجميد اشتراك"><td>58</td><td><span class="perm-name">player-subscription.unfreeze</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>إلغاء تجميد اشتراك</td></tr>
+                        <tr data-search="player-subscription.renew Player Sub تجديد اشتراك"><td>59</td><td><span class="perm-name">player-subscription.renew</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>تجديد اشتراك</td></tr>
+                        <tr data-search="player-subscription.cancel Player Sub إلغاء اشتراك"><td>60</td><td><span class="perm-name">player-subscription.cancel</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>إلغاء اشتراك</td></tr>
+                        <tr data-search="player-subscription.restore Player Sub استعادة اشتراك"><td>61</td><td><span class="perm-name">player-subscription.restore</span></td><td><span class="module-tag" style="background:rgba(251,146,60,0.12);color:#fdba74">Player Sub</span></td><td>استعادة اشتراك محذوف</td></tr>
+                        <tr data-search="locker.view-any Locker جلب قائمة الخزائن"><td>62</td><td><span class="perm-name">locker.view-any</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>جلب قائمة الخزائن</td></tr>
+                        <tr data-search="locker.view Locker عرض خزانة محددة"><td>63</td><td><span class="perm-name">locker.view</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>عرض خزانة محددة</td></tr>
+                        <tr data-search="locker.create Locker إنشاء خزانة جديدة"><td>64</td><td><span class="perm-name">locker.create</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>إنشاء خزانة جديدة</td></tr>
+                        <tr data-search="locker.update Locker تعديل خزانة"><td>65</td><td><span class="perm-name">locker.update</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>تعديل خزانة</td></tr>
+                        <tr data-search="locker.delete Locker حذف خزانة"><td>66</td><td><span class="perm-name">locker.delete</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>حذف خزانة</td></tr>
+                        <tr data-search="locker.restore Locker استعادة خزانة محذوفة"><td>67</td><td><span class="perm-name">locker.restore</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>استعادة خزانة محذوفة</td></tr>
+                        <tr data-search="locker.reserve Locker حجز خزانة للاعب"><td>68</td><td><span class="perm-name">locker.reserve</span></td><td><span class="module-tag" style="background:rgba(245,158,11,0.15);color:#fcd34d">Locker</span></td><td>حجز خزانة للاعب</td></tr>
+                        <tr data-search="attendance.check-in Attendance تسجيل حضور"><td>69</td><td><span class="perm-name">attendance.check-in</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>تسجيل حضور (دخول)</td></tr>
+                        <tr data-search="attendance.check-out Attendance تسجيل انصراف"><td>70</td><td><span class="perm-name">attendance.check-out</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>تسجيل انصراف (خروج)</td></tr>
+                        <tr data-search="attendance.bulk-check-out Attendance تسجيل خروج جماعي"><td>71</td><td><span class="perm-name">attendance.bulk-check-out</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>تسجيل خروج جماعي</td></tr>
+                        <tr data-search="attendance.history Attendance عرض سجل الحضور"><td>72</td><td><span class="perm-name">attendance.history</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>عرض سجل الحضور</td></tr>
+                        <tr data-search="attendance.delete Attendance حذف سجل حضور"><td>73</td><td><span class="perm-name">attendance.delete</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>حذف سجل حضور</td></tr>
+                        <tr data-search="attendance.restore Attendance استعادة سجل حضور"><td>74</td><td><span class="perm-name">attendance.restore</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>استعادة سجل حضور</td></tr>
+                        <tr data-search="attendance.dashboard Attendance لوحة الحضور"><td>75</td><td><span class="perm-name">attendance.dashboard</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>عرض لوحة الحضور</td></tr>
+                        <tr data-search="payment.record Payment تسجيل دفعة"><td>76</td><td><span class="perm-name">payment.record</span></td><td><span class="module-tag" style="background:rgba(20,184,166,0.15);color:#5eead4">Payment</span></td><td>تسجيل دفعة على اشتراك</td></tr>
+                        <tr data-search="payment.view-invoices Payment عرض الفواتير"><td>77</td><td><span class="perm-name">payment.view-invoices</span></td><td><span class="module-tag" style="background:rgba(20,184,166,0.15);color:#5eead4">Payment</span></td><td>عرض الفواتير</td></tr>
+                        <tr data-search="payment.view-reports Payment عرض تقارير الاشتراكات"><td>78</td><td><span class="perm-name">payment.view-reports</span></td><td><span class="module-tag" style="background:rgba(20,184,166,0.15);color:#5eead4">Payment</span></td><td>عرض تقارير الاشتراكات</td></tr>
+                        <tr data-search="payment.wallet-deposit Payment إيداع في المحفظة"><td>79</td><td><span class="perm-name">payment.wallet-deposit</span></td><td><span class="module-tag" style="background:rgba(20,184,166,0.15);color:#5eead4">Payment</span></td><td>إيداع في المحفظة</td></tr>
+                        <tr data-search="reception.view-member-subscriptions Reception استعراض اشتراكات اللاعب"><td>80</td><td><span class="perm-name">reception.view-member-subscriptions</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>استعراض اشتراكات اللاعب</td></tr>
+                        <tr data-search="reception.deduct-session Reception خصم جلسة من اشتراك"><td>81</td><td><span class="perm-name">reception.deduct-session</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>خصم جلسة من اشتراك</td></tr>
+                        <tr data-search="reception.rollback-attendance Reception التراجع عن حضور وإرجاع الجلسة"><td>82</td><td><span class="perm-name">reception.rollback-attendance</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>التراجع عن حضور وإرجاع الجلسة</td></tr>
+                        <tr data-search="reception.qr-check-in Reception تسجيل حضور عبر QR"><td>83</td><td><span class="perm-name">reception.qr-check-in</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Reception</span></td><td>تسجيل حضور عبر QR</td></tr>
+                        <tr data-search="user.view-any Auth Users عرض قائمة المستخدمين بالتصفية"><td>84</td><td><span class="perm-name">user.view-any</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>عرض واستعراض قائمة المستخدمين بالتصفية</td></tr>
+                        <tr data-search="permission.view-any Auth Users جلب قائمة الصلاحيات في النظام"><td>85</td><td><span class="perm-name">permission.view-any</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>جلب قائمة الصلاحيات في النظام</td></tr>
+                        <tr data-search="role.view-any Auth Users جلب قائمة الأدوار المعرفة"><td>86</td><td><span class="perm-name">role.view-any</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>جلب قائمة الأدوار المعرفة</td></tr>
+                        <tr data-search="role.create Auth Users إنشاء دور جديد"><td>87</td><td><span class="perm-name">role.create</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>إنشاء دور جديد في النظام</td></tr>
+                        <tr data-search="role.view Auth Users عرض تفاصيل دور محدد"><td>88</td><td><span class="perm-name">role.view</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>عرض تفاصيل دور محدد وصلاحياته</td></tr>
+                        <tr data-search="role.sync-permissions Auth Users مزامنة وتحديث صلاحيات الدور"><td>89</td><td><span class="perm-name">role.sync-permissions</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>مزامنة وتحديث صلاحيات الدور</td></tr>
+                        <tr data-search="role.delete Auth Users حذف دور"><td>90</td><td><span class="perm-name">role.delete</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>حذف دور من النظام</td></tr>
+                        <tr data-search="user-role.view Auth Users عرض أدوار وصلاحيات مستخدم محدد"><td>91</td><td><span class="perm-name">user-role.view</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>عرض أدوار وصلاحيات مستخدم محدد</td></tr>
+                        <tr data-search="user-role.assign Auth Users إسناد دور لمستخدم"><td>92</td><td><span class="perm-name">user-role.assign</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>إسناد دور لمستخدم</td></tr>
+                        <tr data-search="user-role.revoke Auth Users سحب دور من مستخدم"><td>93</td><td><span class="perm-name">user-role.revoke</span></td><td><span class="module-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc">Auth/Users</span></td><td>سحب دور من مستخدم</td></tr>
+                        <tr data-search="attendance.dashboard-stream Attendance بث حي لإحصائيات الحضور"><td>94</td><td><span class="perm-name">attendance.dashboard-stream</span></td><td><span class="module-tag" style="background:rgba(239,68,68,0.15);color:#fca5a5">Attendance</span></td><td>بث حي لإحصائيات الحضور (SSE)</td></tr>
+                    </tbody>
+                </table>
+                </div>
+                <a href="#top" class="back-top">↑ العودة للأعلى</a>
+            </div>
+
+        </main>
+    </div><!-- /layout -->
+
+    <footer>
+        <p>📁 Club SaaS — Permissions Report &nbsp;|&nbsp; تم التحديث بتاريخ 2026-08-09 &nbsp;|&nbsp; إجمالي الصلاحيات: <strong>94</strong></p>
+    </footer>
+
+</div><!-- /container -->
+
+<script>
+    const input   = document.getElementById('search-input');
+    const counter = document.getElementById('search-count');
+    const rows    = document.querySelectorAll('#full-table tbody tr');
+
+    input.addEventListener('input', function () {
+        const q = this.value.trim().toLowerCase();
+        let visible = 0;
+
+        rows.forEach(row => {
+            const text = (row.dataset.search || '') + ' ' + row.innerText;
+            if (!q || text.toLowerCase().includes(q)) {
+                row.classList.remove('hidden-row');
+                visible++;
+            } else {
+                row.classList.add('hidden-row');
+            }
+        });
+
+        counter.textContent = q
+            ? `نتائج البحث: ${visible} من أصل ${rows.length}`
+            : '';
+    });
+</script>
+</body>
+</html>

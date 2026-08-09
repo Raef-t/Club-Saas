@@ -5,9 +5,11 @@ namespace Modules\MemberManager\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MemberEvaluation extends Model
 {
+    use SoftDeletes;
     protected $table = 'member_evaluations';
 
     protected $fillable = [
@@ -31,7 +33,7 @@ class MemberEvaluation extends Model
     }
 
     /**
-     * Get the parent evaluatable model (SportSession or Staff).
+     * Get the parent evaluatable model (SportSessionTemplate or Staff).
      */
     public function evaluatable(): MorphTo
     {

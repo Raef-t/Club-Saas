@@ -14,9 +14,12 @@ class ActivityTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'branch_id' => 'required|exists:branches,id',
             'name' => 'required|string|max:255',
             'is_active' => 'boolean',
+            'is_session_based' => 'boolean',
+            'has_unlimited_subscribers' => 'boolean',
+            'has_shifts' => 'boolean',
+            'is_daily_entry' => 'boolean',
         ];
     }
 }
