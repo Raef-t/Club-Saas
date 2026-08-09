@@ -47,14 +47,14 @@ class CoachResource extends JsonResource
     {
         $contract = $this->activeContract;
         $detail = $this->coachDetail;
-        $todayQrCode = $this->person_id 
-            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getTodayCodeForPerson($this->person_id) 
+        $qrCode = $this->person_id 
+            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getSingleCodeForPerson($this->person_id) 
             : null;
 
         return [
             'id'              => $this->id,
             'person_id'       => $this->person_id,
-            'qr_code'         => $todayQrCode,
+            'qr_code'         => $qrCode,
             'branch_ids'      => $this->branches->pluck('id'),
             'role'            => $this->role,
             'employment_type' => $contract ? $contract->employment_type : null,

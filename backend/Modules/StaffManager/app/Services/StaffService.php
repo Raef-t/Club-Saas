@@ -125,6 +125,9 @@ class StaffService
             );
             $person = $this->personService->createPerson($personDto);
 
+            // Generate single permanent QR code for staff
+            app(\Modules\Authentication\Services\PersonQrCodeService::class)->generateSingleForPerson($person->id);
+
             // 2. Create the staff record
             $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
@@ -181,7 +184,7 @@ class StaffService
             $roleName = $data['role'] ?? 'staff';
             $prefix = ucfirst(substr(str_replace('_', '', $roleName), 0, 3)) . '-';
             $username = $data['username'] ?? ($prefix . $person->id . '-' . strtolower(\Illuminate\Support\Str::random(6)));
-            $password = $data['password'] ?? 'password123';
+            $password = $data['password'] ?? '12345678';
 
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,

@@ -62,9 +62,49 @@ class PersonQrCodeService
     }
 
     /**
+     * Generate a single permanent QR code (day_of_week = null) for a given person (e.g. Staff/Coach).
+     *
+     * @param  int  $personId
+     * @return string
+     */
+    public function generateSingleForPerson(int $personId): string
+    {
+        $existing = PersonQrCode::where('person_id', $personId)->first();
+        if ($existing) {
+            return $existing->code;
+        }
+
+        $code = $this->makeUniqueCode();
+        PersonQrCode::create([
+            'person_id'   => $personId,
+            'code'        => $code,
+            'day_of_week' => null,
+        ]);
+
+        return $code;
+    }
+
+    /**
+     * Get the single permanent QR code for a given person (Staff/Coach).
+     * If no QR code exists, auto-generate single code.
+     *
+     * @param  int  $personId
+     * @return string|null
+     */
+    public function getSingleCodeForPerson(int $personId): ?string
+    {
+        $record = PersonQrCode::where('person_id', $personId)->first();
+        if ($record) {
+            return $record->code;
+        }
+
+        return $this->generateSingleForPerson($personId);
+    }
+
+    /**
      * Given a QR code string, validate that:
      *   1. The code exists in the database.
-     *   2. The code's day_of_week matches TODAY.
+     *   2. If day_of_week is set, it matches TODAY.
      *
      * Returns the person_id on success, or throws an exception.
      *
@@ -80,15 +120,17 @@ class PersonQrCodeService
             throw new \Exception('Invalid QR code.');
         }
 
-        $todayDayOfWeek = (int) Carbon::now()->format('w'); // 0=Sun, 6=Sat
+        if ($record->day_of_week !== null) {
+            $todayDayOfWeek = (int) Carbon::now()->format('w'); // 0=Sun, 6=Sat
 
-        if ($record->day_of_week !== $todayDayOfWeek) {
-            $dayNames = PersonQrCode::DAY_NAMES;
-            $expected = $dayNames[$todayDayOfWeek] ?? 'today';
-            $actual   = $dayNames[$record->day_of_week] ?? 'unknown';
-            throw new \Exception(
-                "QR code is only valid on {$actual}. Please use today's ({$expected}) code."
-            );
+            if ($record->day_of_week !== $todayDayOfWeek) {
+                $dayNames = PersonQrCode::DAY_NAMES;
+                $expected = $dayNames[$todayDayOfWeek] ?? 'today';
+                $actual   = $dayNames[$record->day_of_week] ?? 'unknown';
+                throw new \Exception(
+                    "QR code is only valid on {$actual}. Please use today's ({$expected}) code."
+                );
+            }
         }
 
         return $record->person_id;

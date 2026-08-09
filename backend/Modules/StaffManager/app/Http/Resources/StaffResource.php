@@ -8,14 +8,14 @@ class StaffResource extends JsonResource
 {
     public function toArray($request): array
     {
-        $todayQrCode = $this->person_id 
-            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getTodayCodeForPerson($this->person_id) 
+        $qrCode = $this->person_id 
+            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getSingleCodeForPerson($this->person_id) 
             : null;
 
         return [
             'id' => $this->id,
             'person_id' => $this->person_id,
-            'qr_code' => $todayQrCode,
+            'qr_code' => $qrCode,
             'role' => $this->role,
             'employment_type' => $this->activeContract ? $this->activeContract->employment_type : null,
             'base_salary' => $this->activeContract ? $this->activeContract->base_salary : 0,

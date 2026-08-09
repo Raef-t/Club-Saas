@@ -71,7 +71,7 @@ class CoachService
             $user = User::create([
                 'person_id' => $person->id,
                 'username'  => $username,
-                'password'  => Hash::make('password123'), // Default password
+                'password'  => Hash::make('12345678'), // Default password
                 'is_active' => true,
                 'role'      => 'coach',
             ]);
@@ -104,8 +104,8 @@ class CoachService
 
             $staff->branches()->sync($data['branch_ids']);
 
-            // 6. Generate 7 QR codes for this coach
-            $this->qrCodeService->generateForPerson($person->id);
+            // 6. Generate single permanent QR code for this coach
+            $this->qrCodeService->generateSingleForPerson($person->id);
 
             CoachDetail::create([
                 'staff_id'               => $staff->id,
