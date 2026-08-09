@@ -21592,6 +21592,174 @@
                 ]
             }
         },
+        "/v1/subscription-plans/{id}/players": {
+            "get": {
+                "tags": [
+                    "Subscription Plans"
+                ],
+                "summary": "👥 جلب اللاعبين النشطين المسجلين في خطة اشتراك محددة",
+                "description": "استرجاع قائمة بكافة اللاعبين المشتركين باشتراك نشط (active) في هذه الخطة مع اسم المستخدم، الـ QR اليومي، وتاريخ الميلاد dob.",
+                "operationId": "d90ee86cec934a2d9d5c90d36020fad0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف خطة الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث اختياري بالاسم أو اسم المستخدم أو رقم العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ قائمة اللاعبين النشطين في الخطة",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Plan active players retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "plan_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "plan_name": {
+                                                    "type": "string",
+                                                    "example": "الاشتراك الذهبي"
+                                                },
+                                                "total_active_subscribers": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "players": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "subscription_id": {
+                                                                "type": "integer",
+                                                                "example": 105
+                                                            },
+                                                            "subscription_status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            },
+                                                            "start_date": {
+                                                                "type": "string",
+                                                                "example": "2026-08-01"
+                                                            },
+                                                            "end_date": {
+                                                                "type": "string",
+                                                                "example": "2026-09-01"
+                                                            },
+                                                            "total_amount": {
+                                                                "type": "number",
+                                                                "example": 350
+                                                            },
+                                                            "paid_amount": {
+                                                                "type": "number",
+                                                                "example": 350
+                                                            },
+                                                            "remaining_amount": {
+                                                                "type": "number",
+                                                                "example": 0
+                                                            },
+                                                            "is_fully_paid": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "member_id": {
+                                                                "type": "integer",
+                                                                "example": 12
+                                                            },
+                                                            "member_number": {
+                                                                "type": "string",
+                                                                "example": "MEM-2026-0012"
+                                                            },
+                                                            "membership_status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            },
+                                                            "person_id": {
+                                                                "type": "integer",
+                                                                "example": 45
+                                                            },
+                                                            "full_name": {
+                                                                "type": "string",
+                                                                "example": "أحمد علي"
+                                                            },
+                                                            "username": {
+                                                                "type": "string",
+                                                                "example": "ahmed_ali99"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "ahmed@example.com"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "0599123456"
+                                                            },
+                                                            "gender": {
+                                                                "type": "string",
+                                                                "example": "male"
+                                                            },
+                                                            "age": {
+                                                                "type": "integer",
+                                                                "example": 25
+                                                            },
+                                                            "dob": {
+                                                                "description": "تاريخ الميلاد",
+                                                                "type": "string",
+                                                                "example": "2001-05-15"
+                                                            },
+                                                            "photo_url": {
+                                                                "type": "string",
+                                                                "example": "storage/photos/ahmed.jpg"
+                                                            },
+                                                            "today_qr_code": {
+                                                                "type": "string",
+                                                                "example": "QR-A1B2C3D4E5F678901234567890ABCDEF"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/reports/subscriptions": {
             "get": {
                 "tags": [

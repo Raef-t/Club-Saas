@@ -28,6 +28,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Subscription Plans CRUD
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
+    Route::get('subscription-plans/{id}/players', [SubscriptionPlanController::class, 'players']);
     Route::get('subscription-plans/{id}/delete-check', [SubscriptionPlanController::class, 'deleteCheck']);
     Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);

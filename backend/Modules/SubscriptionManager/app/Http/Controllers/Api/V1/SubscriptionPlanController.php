@@ -447,4 +447,136 @@ class SubscriptionPlanController extends BaseController
         $plan->restore();
         return $this->successResponse(null, __('Subscription plan restored successfully'));
     }
+
+    #[OA\Get(
+        path: '/v1/subscription-plans/{id}/players',
+        summary: '👥 جلب اللاعبين النشطين المسجلين في خطة اشتراك محددة',
+        description: 'استرجاع قائمة بكافة اللاعبين المشتركين باشتراك نشط (active) في هذه الخطة مع اسم المستخدم، الـ QR اليومي، وتاريخ الميلاد dob.',
+        tags: ['Subscription Plans'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف خطة الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث اختياري بالاسم أو اسم المستخدم أو رقم العضوية', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ قائمة اللاعبين النشطين في الخطة',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Plan active players retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_name', type: 'string', example: 'الاشتراك الذهبي'),
+                        new OA\Property(property: 'total_active_subscribers', type: 'integer', example: 5),
+                        new OA\Property(
+                            property: 'players',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'subscription_id', type: 'integer', example: 105),
+                                    new OA\Property(property: 'subscription_status', type: 'string', example: 'active'),
+                                    new OA\Property(property: 'start_date', type: 'string', example: '2026-08-01'),
+                                    new OA\Property(property: 'end_date', type: 'string', example: '2026-09-01'),
+                                    new OA\Property(property: 'total_amount', type: 'number', example: 350.00),
+                                    new OA\Property(property: 'paid_amount', type: 'number', example: 350.00),
+                                    new OA\Property(property: 'remaining_amount', type: 'number', example: 0.00),
+                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: true),
+                                    new OA\Property(property: 'member_id', type: 'integer', example: 12),
+                                    new OA\Property(property: 'member_number', type: 'string', example: 'MEM-2026-0012'),
+                                    new OA\Property(property: 'membership_status', type: 'string', example: 'active'),
+                                    new OA\Property(property: 'person_id', type: 'integer', example: 45),
+                                    new OA\Property(property: 'full_name', type: 'string', example: 'أحمد علي'),
+                                    new OA\Property(property: 'username', type: 'string', example: 'ahmed_ali99'),
+                                    new OA\Property(property: 'email', type: 'string', example: 'ahmed@example.com'),
+                                    new OA\Property(property: 'phone', type: 'string', example: '0599123456'),
+                                    new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                                    new OA\Property(property: 'age', type: 'integer', example: 25),
+                                    new OA\Property(property: 'dob', type: 'string', example: '2001-05-15', description: 'تاريخ الميلاد'),
+                                    new OA\Property(property: 'photo_url', type: 'string', example: 'storage/photos/ahmed.jpg'),
+                                    new OA\Property(property: 'today_qr_code', type: 'string', example: 'QR-A1B2C3D4E5F678901234567890ABCDEF')
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    public function players(\Illuminate\Http\Request $request, $id)
+    {
+        $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::findOrFail($id);
+
+        $query = \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $id)
+            ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE)
+            ->with([
+                'member.person.user',
+                'member.person.contacts',
+            ]);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('member', function ($q) use ($search) {
+                $q->where('member_number', 'like', "%{$search}%")
+                  ->orWhereHas('person', function ($pq) use ($search) {
+                      $pq->where('full_name', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($uq) use ($search) {
+                            $uq->where('username', 'like', "%{$search}%");
+                        });
+                  });
+            });
+        }
+
+        $subscriptions = $query->get();
+        $qrCodeService = app(\Modules\Authentication\Services\PersonQrCodeService::class);
+
+        $playersData = $subscriptions->map(function ($sub) use ($qrCodeService) {
+            $member = $sub->member;
+            $person = $member?->person;
+            $user   = $person?->user;
+            $primaryPhone = $person?->contacts?->where('is_primary', true)->first()?->contact_value 
+                         ?? $person?->contacts?->first()?->contact_value;
+
+            return [
+                'subscription_id'     => $sub->id,
+                'subscription_status' => $sub->status?->value ?? $sub->status,
+                'start_date'          => $sub->start_date?->format('Y-m-d'),
+                'end_date'            => $sub->end_date?->format('Y-m-d'),
+                'total_amount'        => (float) $sub->total_amount,
+                'paid_amount'         => (float) $sub->paid_amount,
+                'remaining_amount'    => (float) $sub->remaining_amount,
+                'is_fully_paid'       => $sub->is_fully_paid,
+
+                'member_id'          => $member?->id,
+                'member_number'      => $member?->member_number,
+                'membership_status'  => $member?->membership_status,
+
+                'person_id'          => $person?->id,
+                'full_name'          => $person?->full_name,
+                'gender'             => $person?->gender,
+                'age'                => $person?->age,
+                'dob'                => $person?->dob ? \Carbon\Carbon::parse($person->dob)->format('Y-m-d') : null,
+                'email'              => $person?->email,
+                'phone'              => $primaryPhone,
+                'photo_url'          => $person?->photo_url,
+
+                'user_id'            => $user?->id,
+                'username'           => $user?->username,
+                'is_active'          => $user?->is_active ?? true,
+
+                'today_qr_code'      => $person ? $qrCodeService->getTodayCodeForPerson($person->id) : null,
+            ];
+        });
+
+        return $this->successResponse([
+            'plan_id'                  => $plan->id,
+            'plan_name'                => $plan->name,
+            'total_active_subscribers' => $playersData->count(),
+            'players'                  => $playersData,
+        ], __('Plan active players retrieved successfully'));
+    }
 }
+
