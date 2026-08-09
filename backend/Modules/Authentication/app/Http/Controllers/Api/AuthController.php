@@ -397,9 +397,64 @@ class AuthController extends BaseController
     }
 
     #[OA\Post(
+        path: '/v1/auth/reset-password',
+        summary: '🔄 تصفير كلمة المرور لمستخدم إلى 12345678',
+        description: 'يقوم بتصفير كلمة السر لأي مستخدم (عضو / موظف / مدرب) بتمرير user_id لتصبح تلقائياً 12345678.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: 'معرف المستخدم (user_id)',
+        content: new OA\JsonContent(
+            required: ['user_id'],
+            properties: [
+                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم من جدول authentication_users', example: 15),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تصفير كلمة المرور بنجاح إلى 12345678',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم إعادة تعيين كلمة المرور بنجاح إلى 12345678'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'user_id', type: 'integer', example: 15),
+                        new OA\Property(property: 'username', type: 'string', example: 'coach_15'),
+                    ]
+                )
+            ]
+        )
+    )]
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:authentication_users,id',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+
+        $user->update([
+            'password' => Hash::make('12345678'),
+        ]);
+
+        $user->tokens()->delete();
+
+        return $this->successResponse([
+            'user_id'  => $user->id,
+            'username' => $user->username,
+        ], __('تم إعادة تعيين كلمة المرور بنجاح إلى 12345678'));
+    }
+
+    #[OA\Post(
         path: '/v1/auth/change-password',
         summary: '🔑 تغيير كلمة المرور',
-        description: 'تغيير كلمة المرور الخاصة بالمستخدم المصادق عليه حالياً.',
+        description: 'تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
@@ -407,11 +462,12 @@ class AuthController extends BaseController
         required: true,
         description: 'بيانات تغيير كلمة المرور',
         content: new OA\JsonContent(
-            required: ['current_password', 'new_password', 'new_password_confirmation'],
+            required: ['new_password', 'new_password_confirmation'],
             properties: [
-                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية', example: 'oldPassword123'),
-                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: 'newPassword123'),
-                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: 'newPassword123'),
+                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)', example: 15, nullable: true),
+                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)', example: 'oldPassword123', nullable: true),
+                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: '12345678'),
+                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: '12345678'),
             ]
         )
     )]
@@ -446,7 +502,7 @@ class AuthController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'current_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الحالية غير مطابقة.')),
-                        new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف.'))
+                        new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف.'))
                     ]
                 )
             ]
@@ -455,11 +511,15 @@ class AuthController extends BaseController
     #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function changePassword(ChangePasswordRequest $request)
     {
-        $user = $request->user();
         $validated = $request->validated();
 
-        if (!Hash::check($validated['current_password'], $user->password)) {
-            return $this->errorResponse(__('Current password is incorrect'), 422);
+        if (!empty($validated['user_id'])) {
+            $user = User::findOrFail($validated['user_id']);
+        } else {
+            $user = $request->user();
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return $this->errorResponse(__('Current password is incorrect'), 422);
+            }
         }
 
         $user->update([
