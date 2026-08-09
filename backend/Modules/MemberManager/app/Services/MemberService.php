@@ -118,7 +118,7 @@ class MemberService
 
             if ($autoGenerate) {
                 // Generate User Account for Mobile App
-                $username = 'Mem-' . $personId . '-' . strtolower(Str::random(6));
+                $username = \Modules\Authentication\Services\UsernameGeneratorService::generateForRole('member');
                 $password = '12345678'; // Default password
 
                 $user = User::create([

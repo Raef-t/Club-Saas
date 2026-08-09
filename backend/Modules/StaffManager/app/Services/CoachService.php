@@ -64,7 +64,7 @@ class CoachService
             }
 
             // 2. Generate unique username
-            $username = 'Coa-' . $person->id . '-' . strtolower(Str::random(6));
+            $username = \Modules\Authentication\Services\UsernameGeneratorService::generateForRole('coach');
 
 
             // 4. Create User

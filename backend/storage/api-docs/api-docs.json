@@ -4370,13 +4370,84 @@
                 ]
             }
         },
+        "/v1/auth/reset-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "🔄 تصفير كلمة المرور لمستخدم إلى 12345678",
+                "description": "يقوم بتصفير كلمة السر لأي مستخدم (عضو / موظف / مدرب) بتمرير user_id لتصبح تلقائياً 12345678.",
+                "operationId": "c55fcd0a9ada2fa093ece4662b6e9823",
+                "requestBody": {
+                    "description": "معرف المستخدم (user_id)",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "description": "معرف المستخدم من جدول authentication_users",
+                                        "type": "integer",
+                                        "example": 15
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تصفير كلمة المرور بنجاح إلى 12345678",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إعادة تعيين كلمة المرور بنجاح إلى 12345678"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "coach_15"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/auth/change-password": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "🔑 تغيير كلمة المرور",
-                "description": "تغيير كلمة المرور الخاصة بالمستخدم المصادق عليه حالياً.",
+                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id.",
                 "operationId": "adee7bb230546c3fae464b3ec1f457b6",
                 "requestBody": {
                     "description": "بيانات تغيير كلمة المرور",
@@ -4385,25 +4456,31 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "current_password",
                                     "new_password",
                                     "new_password_confirmation"
                                 ],
                                 "properties": {
+                                    "user_id": {
+                                        "description": "معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)",
+                                        "type": "integer",
+                                        "example": 15,
+                                        "nullable": true
+                                    },
                                     "current_password": {
-                                        "description": "كلمة المرور الحالية",
+                                        "description": "كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)",
                                         "type": "string",
-                                        "example": "oldPassword123"
+                                        "example": "oldPassword123",
+                                        "nullable": true
                                     },
                                     "new_password": {
                                         "description": "كلمة المرور الجديدة",
                                         "type": "string",
-                                        "example": "newPassword123"
+                                        "example": "12345678"
                                     },
                                     "new_password_confirmation": {
                                         "description": "تأكيد كلمة المرور الجديدة",
                                         "type": "string",
-                                        "example": "newPassword123"
+                                        "example": "12345678"
                                     }
                                 },
                                 "type": "object"
@@ -4476,7 +4553,7 @@
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف."
+                                                        "example": "كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف."
                                                     }
                                                 }
                                             },
