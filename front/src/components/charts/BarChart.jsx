@@ -70,7 +70,7 @@ export default function BarChart({ data = [], height = 200 }) {
                     </span>
                   </>
                 ) : (
-                  <span className="text-[11px] font-medium text-app-text truncate group-hover:text-app-yellow transition-colors">
+                  <span className="text-[10px] sm:text-[11px] font-medium text-app-text whitespace-nowrap group-hover:text-app-yellow transition-colors">
                     {item.label}
                   </span>
                 )}
