@@ -14,4 +14,10 @@ class EloquentClubRepository implements ClubRepositoryInterface
         return $record;
     }
     public function delete($id) { return $this->find($id)->delete(); }
+    public function getTrashed() { return Club::onlyTrashed()->get(); }
+    public function restore($id) {
+        $club = Club::onlyTrashed()->findOrFail($id);
+        $club->restore();
+        return $club;
+    }
 }

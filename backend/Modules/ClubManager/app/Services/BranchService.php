@@ -70,6 +70,22 @@ class BranchService
     }
 
     /**
+     * Get all soft-deleted (trashed) branches.
+     */
+    public function getTrashed()
+    {
+        return $this->repository->getTrashed();
+    }
+
+    /**
+     * Restore a soft-deleted branch by ID.
+     */
+    public function restoreBranch($id)
+    {
+        return $this->repository->restore($id);
+    }
+
+    /**
      * Get statistics for branches.
      */
     public function getStats()

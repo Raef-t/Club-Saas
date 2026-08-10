@@ -395,7 +395,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم جلب الباقات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $plans = \Modules\SubscriptionManager\Models\SubscriptionPlan::onlyTrashed()->get();
+        $plans = $this->planRepository->getTrashed();
         return $this->successResponse(SubscriptionPlanResource::collection($plans), __('Trashed subscription plans retrieved successfully'));
     }
 
@@ -410,8 +410,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم استرجاع الباقة بنجاح')]
     public function restore($id)
     {
-        $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::onlyTrashed()->findOrFail($id);
-        $plan->restore();
+        $plan = $this->planRepository->restore((int) $id);
         return $this->successResponse(new SubscriptionPlanResource($plan), __('Subscription plan restored successfully'));
     }
 }

@@ -178,7 +178,7 @@ class FacilityController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم جلب المرافق المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $facilities = \Modules\ClubManager\Models\Facility::onlyTrashed()->get();
+        $facilities = $this->facilityService->getTrashed();
         return $this->successResponse(FacilityResource::collection($facilities), __('Trashed facilities retrieved successfully'));
     }
 
@@ -193,8 +193,7 @@ class FacilityController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم استرجاع المرفق بنجاح')]
     public function restore($id)
     {
-        $facility = \Modules\ClubManager\Models\Facility::onlyTrashed()->findOrFail($id);
-        $facility->restore();
+        $facility = $this->facilityService->restoreFacility($id);
         return $this->successResponse(new FacilityResource($facility), __('Facility restored successfully'));
     }
 

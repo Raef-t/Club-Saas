@@ -87,4 +87,16 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
         }
         return $prepared;
     }
+
+    public function getTrashed()
+    {
+        return SubscriptionPlan::onlyTrashed()->get();
+    }
+
+    public function restore(int $id)
+    {
+        $plan = SubscriptionPlan::onlyTrashed()->findOrFail($id);
+        $plan->restore();
+        return $plan;
+    }
 }

@@ -175,7 +175,7 @@ class SubscriptionPlanActivityController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم جلب النشاطات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $activities = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::onlyTrashed()->get();
+        $activities = $this->service->getTrashed();
         return $this->successResponse(SubscriptionPlanActivityResource::collection($activities), 'Trashed retrieved successfully');
     }
 
@@ -190,8 +190,7 @@ class SubscriptionPlanActivityController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم استرجاع النشاط بنجاح')]
     public function restore($id)
     {
-        $activity = \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::onlyTrashed()->findOrFail($id);
-        $activity->restore();
+        $activity = $this->service->restore($id);
         return $this->successResponse(new SubscriptionPlanActivityResource($activity), 'Restored successfully');
     }
 }

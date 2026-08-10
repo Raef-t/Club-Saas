@@ -29,4 +29,14 @@ class ClubService
         $club = Club::findOrFail($id);
         $club->delete();
     }
+
+    public function getTrashed()
+    {
+        return $this->repository->getTrashed();
+    }
+
+    public function restoreClub($id)
+    {
+        return $this->repository->restore($id);
+    }
 }

@@ -206,7 +206,7 @@ class BranchController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم جلب الفروع المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $branches = \Modules\ClubManager\Models\Branch::onlyTrashed()->get();
+        $branches = $this->branchService->getTrashed();
         return $this->successResponse(BranchResource::collection($branches), __('Trashed branches retrieved successfully'));
     }
 
@@ -221,8 +221,7 @@ class BranchController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم استرجاع الفرع بنجاح')]
     public function restore($id)
     {
-        $branch = \Modules\ClubManager\Models\Branch::onlyTrashed()->findOrFail($id);
-        $branch->restore();
+        $branch = $this->branchService->restoreBranch($id);
         return $this->successResponse(new BranchResource($branch), __('Branch restored successfully'));
     }
 

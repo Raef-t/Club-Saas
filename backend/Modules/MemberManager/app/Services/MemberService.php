@@ -236,20 +236,12 @@ class MemberService
 
     public function getTrashedMembers(array $filters = [])
     {
-        $query = \Modules\MemberManager\Models\Member::onlyTrashed()
-            ->with(['person.contacts', 'branch', 'healthProfile']);
-
-        if (!empty($filters['branch_id'])) {
-            $query->where('branch_id', $filters['branch_id']);
-        }
-
-        return $query->latest()->get();
+        return $this->repository->getTrashed($filters);
     }
 
     public function restoreMember(int $id)
     {
-        $member = \Modules\MemberManager\Models\Member::onlyTrashed()->findOrFail($id);
-        $member->restore();
+        $member = $this->repository->restore($id);
         return $this->attachSharedDTOs($member);
     }
 

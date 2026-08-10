@@ -71,4 +71,20 @@ class FacilityService
         $facility->update(['is_active' => !$facility->is_active]);
         return $facility;
     }
+
+    /**
+     * Get all soft-deleted (trashed) facilities.
+     */
+    public function getTrashed()
+    {
+        return $this->repository->getTrashed();
+    }
+
+    /**
+     * Restore a soft-deleted facility by ID.
+     */
+    public function restoreFacility($id)
+    {
+        return $this->repository->restore($id);
+    }
 }

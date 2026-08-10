@@ -38,4 +38,28 @@ class EloquentStaffRepository implements StaffRepositoryInterface
     {
         return Staff::where('role', 'coach')->get();
     }
+
+    public function getTrashed(array $filters = [])
+    {
+        $query = Staff::onlyTrashed()->with(['coachDetail', 'branches', 'user']);
+
+        if (!empty($filters['branch_id'])) {
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
+        }
+
+        if (!empty($filters['role'])) {
+            $query->where('role', $filters['role']);
+        }
+
+        return $query->latest()->get();
+    }
+
+    public function restore(int $id)
+    {
+        $staff = Staff::onlyTrashed()->findOrFail($id);
+        $staff->restore();
+        return $staff;
+    }
 }

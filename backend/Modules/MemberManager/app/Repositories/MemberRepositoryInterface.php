@@ -11,4 +11,6 @@ interface MemberRepositoryInterface
     public function delete($id);
     public function findByMemberNumber($number);
     public function findByBarcode($barcode);
+    public function getTrashed(array $filters = []);
+    public function restore(int $id);
 }

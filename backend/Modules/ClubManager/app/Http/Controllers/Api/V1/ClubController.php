@@ -177,7 +177,7 @@ class ClubController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم جلب الأندية المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $clubs = Club::onlyTrashed()->get();
+        $clubs = $this->service->getTrashed();
         return $this->successResponse(ClubResource::collection($clubs), __('Trashed clubs retrieved successfully'));
     }
 
@@ -192,8 +192,7 @@ class ClubController extends BaseController
     #[OA\Response(response: 200, description: '✅ تم استرجاع النادي بنجاح')]
     public function restore($id)
     {
-        $club = Club::onlyTrashed()->findOrFail($id);
-        $club->restore();
+        $club = $this->service->restoreClub($id);
         return $this->successResponse(new ClubResource($club), __('Club restored successfully'));
     }
 }

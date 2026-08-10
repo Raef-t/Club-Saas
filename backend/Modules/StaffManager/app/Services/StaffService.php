@@ -395,20 +395,7 @@ class StaffService
 
     public function getTrashedStaff(array $filters = [])
     {
-        $query = \Modules\StaffManager\Models\Staff::onlyTrashed()
-            ->with(['coachDetail', 'branches', 'user']);
-
-        if (!empty($filters['branch_id'])) {
-            $query->whereHas('branches', function ($q) use ($filters) {
-                $q->where('staff_branches.branch_id', $filters['branch_id']);
-            });
-        }
-
-        if (!empty($filters['role'])) {
-            $query->where('role', $filters['role']);
-        }
-
-        $staffMembers = $query->latest()->get();
+        $staffMembers = $this->staffRepository->getTrashed($filters);
         foreach ($staffMembers as $staff) {
             $this->attachSharedDTOs($staff);
         }
@@ -418,8 +405,7 @@ class StaffService
 
     public function restoreStaff(int $id)
     {
-        $staff = \Modules\StaffManager\Models\Staff::onlyTrashed()->findOrFail($id);
-        $staff->restore();
+        $staff = $this->staffRepository->restore($id);
         return $this->attachSharedDTOs($staff);
     }
 }
