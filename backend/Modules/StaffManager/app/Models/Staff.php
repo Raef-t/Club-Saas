@@ -58,6 +58,18 @@ class Staff extends Model
                 $staff->user->update(['is_active' => $staff->is_active]);
             }
         });
+
+        static::deleted(function ($staff) {
+            if (method_exists($staff, 'isForceDeleting') && $staff->isForceDeleting()) {
+                $staff->person()->withTrashed()->first()?->forceDelete();
+            } else {
+                $staff->person?->delete();
+            }
+        });
+
+        static::restored(function ($staff) {
+            $staff->person()->onlyTrashed()->first()?->restore();
+        });
     }
 
     // ── Relationships ───────────────────────────────────────────

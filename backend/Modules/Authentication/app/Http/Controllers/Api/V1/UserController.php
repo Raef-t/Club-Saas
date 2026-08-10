@@ -33,12 +33,20 @@ class UserController extends BaseController
         description: 'اسم الدور للفلترة (مثال: admin, coach, staff, player)',
         schema: new OA\Schema(type: 'string')
     )]
+    #[OA\Parameter(
+        name: 'branch_id',
+        in: 'query',
+        required: false,
+        description: 'معرف الفرع للفلترة',
+        schema: new OA\Schema(type: 'integer')
+    )]
     #[OA\Response(response: 200, description: '✅ تم جلب قائمة المستخدمين بنجاح')]
     public function index(Request $request): JsonResponse
     {
         $role = $request->query('role');
+        $branchId = $request->query('branch_id');
 
-        $query = User::with(['person', 'roles']);
+        $query = User::with(['person.member', 'person.staff.branches', 'roles']);
 
         if ($role) {
             $query->where(function ($q) use ($role) {
@@ -48,11 +56,27 @@ class UserController extends BaseController
             });
         }
 
+        if ($branchId) {
+            $query->whereHas('person', function ($p) use ($branchId) {
+                $p->whereHas('member', function ($m) use ($branchId) {
+                    $m->where('branch_id', $branchId);
+                })->orWhereHas('staff', function ($s) use ($branchId) {
+                    $s->whereHas('branches', function ($b) use ($branchId) {
+                        $b->where('branches.id', $branchId);
+                    });
+                });
+            });
+        }
+
         $users = $query->get()->map(function ($user) {
             $rolesList = $user->getRoleNames()->toArray();
             if (empty($rolesList) && $user->role) {
                 $rolesList = [$user->role];
             }
+
+            $userBranchId = $user->person?->member?->branch_id 
+                ?? $user->person?->staff?->branches?->first()?->id 
+                ?? null;
 
             return [
                 'id'                   => $user->id,
@@ -60,6 +84,7 @@ class UserController extends BaseController
                 'username'             => $user->username,
                 'custom_username'      => $user->custom_username,
                 'roles'                => $rolesList,
+                'branch_id'            => $userBranchId,
                 'must_change_password' => (bool) $user->must_change_password,
                 'is_password_changed'  => !(bool) $user->must_change_password,
             ];
