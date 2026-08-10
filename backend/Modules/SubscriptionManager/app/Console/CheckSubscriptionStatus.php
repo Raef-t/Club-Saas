@@ -51,13 +51,13 @@ class CheckSubscriptionStatus extends Command
         $today = now()->toDateString();
 
         // 1. Find subscriptions to expire by date
-        $toExpireByDate = PlayerSubscription::where('status', 'active')
+        $toExpireByDate = PlayerSubscription::with('plan')->where('status', 'active')
             ->whereNotNull('end_date')
             ->whereDate('end_date', '<', $today)
             ->get();
 
         // 2. Find subscriptions to expire by sessions (all items fully consumed)
-        $activeSubscriptions = PlayerSubscription::with('items')->where('status', 'active')->get();
+        $activeSubscriptions = PlayerSubscription::with(['items', 'plan'])->where('status', 'active')->get();
         $toExpireBySessions = collect();
 
         foreach ($activeSubscriptions as $sub) {
@@ -89,7 +89,9 @@ class CheckSubscriptionStatus extends Command
                 /** @var \Modules\SubscriptionManager\Services\SubscriptionService $subscriptionService */
                 // Update status
                 $sub->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
-                $subscriptionService->decrementPlanSubscribers($sub->plan);
+                if ($sub->plan) {
+                    $subscriptionService->decrementPlanSubscribers($sub->plan);
+                }
                 $expiredCount++;
             });
         }
@@ -99,7 +101,7 @@ class CheckSubscriptionStatus extends Command
 
         // 3. Find locker reservations to expire by date
         $expiredLockersCount = 0;
-        $toExpireLockers = LockerReservation::where('status', 'active')
+        $toExpireLockers = LockerReservation::with('locker')->where('status', 'active')
             ->whereNotNull('end_date')
             ->whereDate('end_date', '<', $today)
             ->get();
@@ -108,7 +110,7 @@ class CheckSubscriptionStatus extends Command
             DB::transaction(function () use ($reservation, &$expiredLockersCount) {
                 $reservation->update(['status' => 'expired']); // or completed/cancelled based on your status enum
 
-                $locker = Locker::find($reservation->locker_id);
+                $locker = $reservation->locker;
                 if ($locker) {
                     $locker->update(['status' => 'available']);
                 }

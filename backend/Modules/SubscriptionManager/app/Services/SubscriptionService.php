@@ -63,8 +63,13 @@ class SubscriptionService
 
         $subscriptions = $query->latest()->get();
 
-        foreach ($subscriptions as $subscription) {
-            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+        $memberIds = $subscriptions->pluck('member_id')->filter()->unique()->toArray();
+        if (!empty($memberIds)) {
+            $members = $this->memberSharedService->getMembersByIds($memberIds);
+            $membersMap = collect($members)->keyBy('id');
+            foreach ($subscriptions as $subscription) {
+                $subscription->member = $membersMap->get($subscription->member_id);
+            }
         }
 
         return $subscriptions;
@@ -747,7 +752,7 @@ class SubscriptionService
     /**
      * Increment plan subscribers and mark as completed if full.
      */
-    public function incrementPlanSubscribers($plan)
+    public function incrementPlanSubscribers(?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan)
     {
         if ($plan && $plan->max_subscribers > 0) {
             $plan->increment('current_subscribers');
@@ -760,7 +765,7 @@ class SubscriptionService
     /**
      * Decrement plan subscribers and mark as active if space opens up from completed state.
      */
-    public function decrementPlanSubscribers($plan)
+    public function decrementPlanSubscribers(?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan)
     {
         if ($plan && $plan->max_subscribers > 0) {
             if ($plan->current_subscribers > 0) {
