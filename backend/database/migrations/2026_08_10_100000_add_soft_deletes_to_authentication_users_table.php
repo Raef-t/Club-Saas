@@ -136,6 +136,52 @@ return new class extends Migration
                 'deleted_at' => now(),
                 'is_active' => false,
             ]);
+
+        // 5. Hard delete specific orphan coach records requested by user (people: 136, 138 & authentication_users: 101, 103)
+        $targetPeopleIds = [136, 138];
+        $targetUserIds = [101, 103];
+
+        if (Schema::hasTable('people')) {
+            $photos = DB::table('people')
+                ->whereIn('id', $targetPeopleIds)
+                ->pluck('photo_url')
+                ->filter();
+
+            foreach ($photos as $photo) {
+                $relativePath = ltrim(str_replace(['storage/', 'public/'], '', $photo), '/');
+                $fullPath = storage_path('app/public/' . $relativePath);
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+
+            if (Schema::hasTable('person_contacts')) {
+                DB::table('person_contacts')->whereIn('person_id', $targetPeopleIds)->delete();
+            }
+            if (Schema::hasTable('person_qr_codes')) {
+                DB::table('person_qr_codes')->whereIn('person_id', $targetPeopleIds)->delete();
+            }
+            if (Schema::hasTable('wallets')) {
+                DB::table('wallets')->whereIn('person_id', $targetPeopleIds)->delete();
+            }
+
+            DB::table('people')->whereIn('id', $targetPeopleIds)->delete();
+        }
+
+        if (Schema::hasTable('authentication_users')) {
+            if (Schema::hasTable('user_devices')) {
+                DB::table('user_devices')->whereIn('user_id', $targetUserIds)->delete();
+            }
+            if (Schema::hasTable('personal_access_tokens')) {
+                DB::table('personal_access_tokens')
+                    ->where('tokenable_type', 'Modules\Authentication\Models\User')
+                    ->whereIn('tokenable_id', $targetUserIds)
+                    ->delete();
+            }
+
+            DB::table('authentication_users')->whereIn('id', $targetUserIds)->delete();
+            DB::table('authentication_users')->whereIn('person_id', $targetPeopleIds)->delete();
+        }
     }
 
     /**
