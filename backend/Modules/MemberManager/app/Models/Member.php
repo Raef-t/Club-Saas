@@ -91,12 +91,20 @@ class Member extends Model
         });
 
         static::deleted(function ($member) {
+            if (method_exists($member, 'isForceDeleting') && $member->isForceDeleting()) {
+                $member->person()->withTrashed()->first()?->forceDelete();
+            } else {
+                $member->person?->delete();
+            }
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
             }
         });
 
         static::restored(function ($member) {
+            $member->person()->onlyTrashed()->first()?->restore();
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
             }

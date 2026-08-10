@@ -211,7 +211,7 @@ class AuthController extends BaseController
                     $userData['branch_id'] = $staffBranch->branch_id;
                 }
                 $userData['qr_code'] = $this->qrCodeService->getSingleCodeForPerson($personId);
-            } else {
+            } elseif (($person->type ?? null) !== 'admin') {
                 // Attach the 7 QR codes for members (Frontend caches them)
                 $rawQrCodes = $this->qrCodeService->getCodesForPerson($personId);
                 $formattedQrCodes = [];
@@ -222,6 +222,8 @@ class AuthController extends BaseController
                     ];
                 }
                 $userData['qr_codes'] = $formattedQrCodes;
+            } else {
+                $userData['qr_codes'] = [];
             }
         }
 
