@@ -83,13 +83,11 @@ class QRController extends BaseController
             }
 
             $now = now();
-            $dayOfWeek = $now->dayOfWeek; // 0 = Sunday, 6 = Saturday
             $time = $now->format('H:i:s');
 
             $activeShift = \Illuminate\Support\Facades\DB::table('staff_shifts')
                 ->join('branch_shifts', 'staff_shifts.branch_shift_id', '=', 'branch_shifts.id')
                 ->where('staff_shifts.staff_id', $scannerStaff->id)
-                ->where('branch_shifts.day_of_week', $dayOfWeek)
                 ->where('branch_shifts.start_time', '<=', $time)
                 ->where('branch_shifts.end_time', '>=', $time)
                 ->select('branch_shifts.branch_id')

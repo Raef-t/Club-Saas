@@ -81,7 +81,6 @@ class BranchShiftController extends BaseController
     {
         $validated = $request->validated();
         $validated['branch_id'] = $branchId;
-        $validated['day_of_week'] = 0; // Default for fixed daily shifts
 
         // Create shift
         $shift = BranchShift::create($validated);

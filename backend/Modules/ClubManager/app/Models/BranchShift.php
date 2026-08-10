@@ -18,7 +18,6 @@ class BranchShift extends Model
         'branch_id',
         'facility_id',
         'name',
-        'day_of_week',
         'start_time',
         'end_time',
         'gender_allowed',
