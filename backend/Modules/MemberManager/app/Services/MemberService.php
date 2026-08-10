@@ -57,7 +57,13 @@ class MemberService
             });
         }
 
-        return $query->latest()->get();
+        return $query->with([
+            'person.contacts',
+            'person.user',
+            'branch',
+            'healthProfile',
+            'measurements',
+        ])->latest()->get();
     }
 
     /**

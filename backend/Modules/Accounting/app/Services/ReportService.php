@@ -21,18 +21,21 @@ class ReportService
     {
         $period = AccPeriod::findOrFail($periodId);
 
+        $totalsByAccount = AccJournalEntry::whereHas('journal', fn($q) => $q->where('status', 'posted')->where('period_id', $periodId))
+            ->selectRaw('account_id, SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
         $accounts = AccAccount::active()->orderBy('code')->get();
 
-        $rows = $accounts->map(function ($account) use ($periodId) {
-            $entries = AccJournalEntry::where('account_id', $account->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('period_id', $periodId))
-                ->selectRaw('SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
-                ->first();
+        $rows = $accounts->map(function ($account) use ($totalsByAccount) {
+            $entries = $totalsByAccount->get($account->id);
 
-            $debitUsd  = (float) ($entries->debit_usd  ?? 0);
-            $creditUsd = (float) ($entries->credit_usd ?? 0);
-            $debitSyp  = (float) ($entries->debit_syp  ?? 0);
-            $creditSyp = (float) ($entries->credit_syp ?? 0);
+            $debitUsd  = (float) ($entries?->debit_usd  ?? 0);
+            $creditUsd = (float) ($entries?->credit_usd ?? 0);
+            $debitSyp  = (float) ($entries?->debit_syp  ?? 0);
+            $creditSyp = (float) ($entries?->credit_syp ?? 0);
 
             // تخطي الحسابات ذات الرصيد الصفري
             if ($debitUsd == 0 && $creditUsd == 0 && $debitSyp == 0 && $creditSyp == 0) {

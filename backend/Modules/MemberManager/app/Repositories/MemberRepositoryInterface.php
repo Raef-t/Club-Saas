@@ -11,4 +11,5 @@ interface MemberRepositoryInterface
     public function delete($id);
     public function findByMemberNumber($number);
     public function findByBarcode($barcode);
+    public function findByPersonId(int $personId);
 }
