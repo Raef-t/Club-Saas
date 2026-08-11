@@ -63,6 +63,7 @@ export default function StaffClient({ initialData }) {
         key: "name",
         label: "الموظف",
         align: "start",
+        sortValue: (staff) => staff.person?.full_name || "",
         render: (_, staff) => {
           const photoUrl = resolveStaffPhotoUrl(staff.person?.photo_url || staff.person?.photo);
           return (
@@ -215,6 +216,7 @@ export default function StaffClient({ initialData }) {
         showSearch={false}
         showFilter={false}
         showExport={false}
+        defaultSortColumn="name"
         isLoading={isLoading}
         emptyMessage={
           error ? (

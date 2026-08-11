@@ -64,7 +64,6 @@ export function useAttendance({ initialBranches } = {}) {
   const [alwaysOn, setAlwaysOn] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
   const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState([]);
-  const [selectedActivityId, setSelectedActivityId] = useState("");
   const [lockerNumber, setLockerNumber] = useState("");
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
   const [attendanceTypeFilter, setAttendanceTypeFilter] = useState("all");
@@ -186,7 +185,6 @@ export function useAttendance({ initialBranches } = {}) {
 
     const selection = getInitialAttendanceSelection(playerSubscriptions);
     setSelectedSubscriptionIds(selection.subscriptionIds);
-    setSelectedActivityId(selection.activityId);
     setLockerNumber(selection.lockerNumber);
   }, [playerSubscriptions, scannedMemberId]);
 
@@ -197,21 +195,7 @@ export function useAttendance({ initialBranches } = {}) {
       ) || playerSubscriptions[0],
     [playerSubscriptions, selectedSubscriptionIds],
   );
-  const activityOptions = useMemo(
-    () =>
-      (selectedSubscription?.activities || []).map((activity) => ({
-        value: String(activity.id),
-        label: activity.label,
-      })),
-    [selectedSubscription],
-  );
-  const selectedActivity = useMemo(
-    () =>
-      selectedSubscription?.activities?.find(
-        (activity) => String(activity.id) === String(selectedActivityId),
-      ) || selectedSubscription?.activities?.[0],
-    [selectedActivityId, selectedSubscription],
-  );
+  const selectedActivity = selectedSubscription?.activities?.[0];
 
   const memberErrorMessage = memberError
     ? getApiErrorMessage(memberError, "تعذر تحميل بيانات العضو.")
@@ -245,7 +229,6 @@ export function useAttendance({ initialBranches } = {}) {
    */
   function resetMemberSelection() {
     setSelectedSubscriptionIds([]);
-    setSelectedActivityId("");
     setLockerNumber("");
     setRegisteredMemberId(null);
   }
@@ -548,14 +531,6 @@ export function useAttendance({ initialBranches } = {}) {
   }
 
   /**
-   * Updates the activity chosen for the pending attendance.
-   */
-  function handleActivityChange(value) {
-    setSelectedActivityId(String(value));
-    setRegisteredMemberId(null);
-  }
-
-  /**
    * Updates the optional locker reference for the pending attendance.
    */
   function handleLockerChange(value) {
@@ -636,9 +611,7 @@ export function useAttendance({ initialBranches } = {}) {
     playerSubscriptions,
     selectedSubscription,
     selectedActivity,
-    activityOptions,
     selectedSubscriptionIds,
-    selectedActivityId,
     lockerNumber: selectedLockerNumber,
     availableLockerOptions,
     branchId,
@@ -682,7 +655,6 @@ export function useAttendance({ initialBranches } = {}) {
     handleScanSuccess,
     handleScannerError,
     handleSubscriptionToggle,
-    handleActivityChange,
     handleLockerChange,
     handleRegister,
     handleManualCheckIn,

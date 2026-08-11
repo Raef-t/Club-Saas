@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { AUTH_SESSION_COOKIE, getAuthCookieOptions } from "@/lib/authSession";
+import { getBackendBaseUrl } from "@/lib/server/backendUrl";
 
 export const dynamic = "force-dynamic";
-//test
-const API_BASE_URL = process.env.API_BASE_URL || "http://31.70.108.63";
 
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const PUBLIC_API_PATHS = new Set(["auth/login", "auth/forgot-password"]);
+const SENSITIVE_AUTH_PATHS = new Set([
+  "auth/login",
+  "auth/forgot-password",
+  "auth/change-password",
+]);
 
 function jsonError(message, status) {
   return NextResponse.json(
@@ -92,6 +96,14 @@ async function proxyBackendRequest(request, context) {
     return jsonError("Cross-origin request is not allowed.", 403);
   }
 
+  if (
+    process.env.NODE_ENV === "production" &&
+    SENSITIVE_AUTH_PATHS.has(pathName) &&
+    !secureCookie
+  ) {
+    return jsonError("A secure HTTPS connection is required.", 400);
+  }
+
   if (requiresAuth && !token) {
     return jsonError("Authentication is required.", 401);
   }
@@ -100,8 +112,15 @@ async function proxyBackendRequest(request, context) {
     return jsonError("API path is required.", 400);
   }
 
+  let backendBaseUrl;
+  try {
+    backendBaseUrl = getBackendBaseUrl();
+  } catch {
+    return jsonError("Backend API is not securely configured.", 503);
+  }
+
   const upstreamPath = path.map((segment) => encodeURIComponent(segment)).join("/");
-  const upstreamUrl = new URL(`/api/v1/${upstreamPath}`, API_BASE_URL);
+  const upstreamUrl = new URL(`/api/v1/${upstreamPath}`, backendBaseUrl);
 
   request.nextUrl.searchParams.forEach((value, key) => {
     upstreamUrl.searchParams.append(key, value);

@@ -74,6 +74,7 @@ export default function PhoneField({
           required={required}
           aria-invalid={Boolean(error)}
           dir="ltr"
+          style={{ textAlign: "left", direction: "ltr" }}
         />
       </div>
       {error && (

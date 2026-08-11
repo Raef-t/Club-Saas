@@ -345,7 +345,6 @@ export default function MemberDetails({
     <div className="space-y-5">
       <ProfileIdentityCard
         name={fullName}
-        username={member.generated_username || member.username}
         qrCode={member.today_qr_code || member.qr_code}
         status={status}
       />
@@ -404,14 +403,15 @@ export default function MemberDetails({
         </div>
 
         <div className="space-y-5">
-          <Section title="بيانات اللاعب" description={member.member_number || `#${member.id}`}>
+          <Section title="بيانات اللاعب">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               <DetailItem label="الفرع" value={branchName} tone="yellow" />
               <DetailItem label="الجنس" value={genderLabels[gender] || gender} />
               <DetailItem label="الهاتف" value={mobile ? `${countryCode} ${mobile}`.trim() : "-"} />
               <DetailItem label="تاريخ الميلاد" value={formatDate(dob)} />
               <DetailItem label="العمر" value={age !== "" && age != null ? `${age} سنة` : "-"} />
-              <DetailItem label="تاريخ التسجيل" value={formatDate(member.created_at)} />
+              <DetailItem label="تاريخ تسجيل الاستمارة" value={formatDate(member.created_at)} />
+              <DetailItem label="الموظف المسجل" value={member.registered_by?.full_name || "اسم الموظف"} />
             </div>
           </Section>
 

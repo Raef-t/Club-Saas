@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
-import { useLoginMutation } from "@/lib/api/authApi";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
 import { loginSchema } from "@/lib/validations/authSchema";
@@ -13,7 +12,7 @@ const DEFAULT_FCM_TOKEN = "fcm_token_string_here";
 
 export default function LoginForm() {
   const router = useRouter();
-  const [login, { isLoading }] = useLoginMutation();
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -57,20 +56,36 @@ export default function LoginForm() {
       return;
     }
 
+    setIsLoading(true);
     try {
-      await login({
-        username: form.username.trim(),
-        password: form.password,
-        fcm_token: DEFAULT_FCM_TOKEN,
-        remember: form.remember,
-      }).unwrap();
+      const response = await fetch("/api/backend/auth/login", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Remember-Me": form.remember ? "true" : "false",
+        },
+        body: JSON.stringify({
+          username: form.username.trim(),
+          password: form.password,
+          fcm_token: DEFAULT_FCM_TOKEN,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.");
+      }
 
       router.replace("/management");
       router.refresh();
     } catch (error) {
-      setErrorMessage(
-        error?.data?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.",
-      );
+      setForm((current) => ({ ...current, password: "" }));
+      setErrorMessage(error?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -78,7 +93,7 @@ export default function LoginForm() {
     <form
       noValidate
       onSubmit={handleSubmit}
-      autoComplete="off"
+      autoComplete="on"
       className="card-shell mx-auto w-full max-w-md rounded-3xl p-6 md:p-8"
       dir="rtl"
     >
@@ -97,7 +112,7 @@ export default function LoginForm() {
             value={form.username}
             type="text"
             dir="rtl"
-            autoComplete="off"
+            autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
             minLength={3}
@@ -127,7 +142,7 @@ export default function LoginForm() {
               value={form.password}
               type={showPassword ? "text" : "password"}
               dir="ltr"
-              autoComplete="new-password"
+              autoComplete="current-password"
               minLength={6}
               maxLength={100}
               required

@@ -17,6 +17,7 @@ export default function ActivitiesTable({ state }) {
         key: "name",
         label: "النشاط",
         align: "center",
+        sortValue: (activity) => getActivityName(activity) || "",
         render: (_, activity) => (
           <span className="text-sm font-medium text-app-text">{getActivityName(activity)}</span>
         ),
@@ -82,6 +83,7 @@ export default function ActivitiesTable({ state }) {
       showSearch={false}
       showFilter={false}
       showExport={false}
+      defaultSortColumn="name"
       isLoading={state.isLoading}
       emptyMessage={
         state.errorMessage ? (

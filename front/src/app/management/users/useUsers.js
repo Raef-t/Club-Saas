@@ -58,10 +58,7 @@ export function useUsers({ initialUsers } = {}) {
   );
   const users = useMemo(() => filterUsers(roleUsers, search), [roleUsers, search]);
   const stats = useMemo(() => createUserStats(allUsers), [allUsers]);
-  const roleOptions = useMemo(
-    () => [{ value: "all", label: "كل الأدوار" }, ...createUserRoleOptions(allUsers)],
-    [allUsers],
-  );
+  const roleOptions = useMemo(() => createUserRoleTabs(allUsers), [allUsers]);
   const isRoleFiltered = roleFilter !== "all";
   const activeError = isRoleFiltered ? roleUsersError : allUsersError;
   const hasVisibleSource = isRoleFiltered ? Boolean(roleUsersResponse) : allUsers.length > 0;

@@ -32,10 +32,72 @@ export function getLockerRecord(response) {
 }
 
 /**
+ * Reads a person's display name from the relation shapes returned by the API.
+ */
+function getLockerPersonName(record) {
+  if (!record || typeof record !== "object") return "";
+
+  const person = record.person && typeof record.person === "object" ? record.person : {};
+  const directName =
+    record.holder_name ||
+    record.full_name ||
+    record.display_name ||
+    (typeof record.name === "string" ? record.name : "") ||
+    person.full_name ||
+    person.display_name ||
+    (typeof person.name === "string" ? person.name : "");
+
+  if (directName) return directName;
+
+  return `${person.first_name || record.first_name || ""} ${
+    person.last_name || record.last_name || ""
+  }`.trim();
+}
+
+/**
+ * Normalizes the current holder whether it is returned on the locker itself or
+ * nested inside the active reservation relation.
+ */
+function getLockerHolder(locker) {
+  const reservation =
+    locker?.current_reservation ||
+    locker?.active_reservation ||
+    locker?.reservation ||
+    locker?.locker_reservation ||
+    {};
+  const relatedHolder = reservation.holder || locker?.holder || {};
+  const rawType = String(
+    locker?.holder_type || reservation.holder_type || relatedHolder.holder_type || "",
+  ).toLowerCase();
+  const typeFromValue = ["member", "coach", "staff", "guest"].find((type) =>
+    rawType.includes(type),
+  );
+  const typeFromStatus = String(locker?.status || "").replace(/^with_/, "");
+  const type =
+    typeFromValue || (["member", "coach", "staff"].includes(typeFromStatus) ? typeFromStatus : "");
+  const typedRelation =
+    locker?.[type] || reservation?.[type] || relatedHolder?.[type] || relatedHolder;
+  const id =
+    locker?.holder_id ??
+    reservation?.holder_id ??
+    relatedHolder?.holder_id ??
+    typedRelation?.id ??
+    null;
+  const name =
+    locker?.holder_name ||
+    reservation?.holder_name ||
+    getLockerPersonName(typedRelation) ||
+    getLockerPersonName(relatedHolder);
+
+  return { id, name, type };
+}
+
+/**
  * Reports whether a locker currently belongs to an active holder.
  */
 export function isLockerOccupied(locker) {
-  return LOCKER_OCCUPIED_STATUSES.includes(locker?.status) || Boolean(locker?.holder_id);
+  const holder = getLockerHolder(locker);
+  return LOCKER_OCCUPIED_STATUSES.includes(locker?.status) || Boolean(holder.id);
 }
 
 /**
@@ -157,34 +219,33 @@ export function getLockerHolderLabel(
   staffOptions = [],
 ) {
   if (!isLockerOccupied(locker)) return "";
-  if (locker.holder_name) return locker.holder_name;
+  const holder = getLockerHolder(locker);
+  if (holder.name) return holder.name;
 
-  if (locker.holder_type === "member" && locker.holder_id) {
+  if (holder.type === "member" && holder.id) {
     return (
-      memberOptions.find((member) => member.value === String(locker.holder_id))?.label ||
-      `لاعب #${locker.holder_id}`
+      memberOptions.find((member) => member.value === String(holder.id))?.label ||
+      `لاعب #${holder.id}`
     );
   }
 
-  if (locker.holder_type === "staff" && locker.holder_id) {
+  if (holder.type === "staff" && holder.id) {
     return (
-      staffOptions.find((staff) => staff.value === String(locker.holder_id))?.label ||
-      `موظف #${locker.holder_id}`
+      staffOptions.find((staff) => staff.value === String(holder.id))?.label || `موظف #${holder.id}`
     );
   }
 
-  if (locker.holder_type === "coach" && locker.holder_id) {
+  if (holder.type === "coach" && holder.id) {
     return (
-      coachOptions.find((coach) => coach.value === String(locker.holder_id))?.label ||
-      `كوتش #${locker.holder_id}`
+      coachOptions.find((coach) => coach.value === String(holder.id))?.label || `كوتش #${holder.id}`
     );
   }
 
-  if (locker.holder_type === "guest" && locker.holder_id) {
-    return `زائر #${locker.holder_id}`;
+  if (holder.type === "guest" && holder.id) {
+    return `زائر #${holder.id}`;
   }
 
-  return locker.holder_id ? `مستفيد #${locker.holder_id}` : "";
+  return holder.id ? `مستفيد #${holder.id}` : "";
 }
 
 /**

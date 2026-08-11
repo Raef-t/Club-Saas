@@ -51,9 +51,7 @@ export default function AttendanceClient({ initialBranches }) {
             selectedSubscription={attendance.selectedSubscription}
             selectedActivity={attendance.selectedActivity}
             playerSubscriptions={attendance.playerSubscriptions}
-            activityOptions={attendance.activityOptions}
             selectedSubscriptionIds={attendance.selectedSubscriptionIds}
-            selectedActivityId={attendance.selectedActivityId}
             lockerNumber={attendance.lockerNumber}
             availableLockerOptions={attendance.availableLockerOptions}
             isMemberLoading={attendance.isMemberLoading}
@@ -69,7 +67,6 @@ export default function AttendanceClient({ initialBranches }) {
             onRetrySubscriptions={attendance.retrySubscriptions}
             onRetryAvailableLockers={attendance.retryAvailableLockers}
             onSubscriptionToggle={attendance.handleSubscriptionToggle}
-            onActivityChange={attendance.handleActivityChange}
             onLockerChange={attendance.handleLockerChange}
             onRegister={attendance.handleRegister}
           />
