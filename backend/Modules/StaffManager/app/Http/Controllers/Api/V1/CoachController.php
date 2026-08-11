@@ -526,111 +526,7 @@ class CoachController extends Controller
         }
     }
 
-    #[OA\Delete(
-        path: '/v1/coaches/{id}',
-        summary: 'Delete Coach (Soft Delete)',
-        description: 'Soft deletes a coach and all associated details, contracts, certifications, and shifts automatically.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(
-                response: 200, 
-                description: 'Coach soft-deleted successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach not found',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while deleting the coach.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
-        ]
-    )]
-    public function destroy($id)
-    {
-        try {
-            $this->coachService->deleteCoach($id);
-            return response()->json([
-                'message' => 'Coach deleted successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Coach not found.'
-            ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'An error occurred while deleting the coach.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 
-    #[OA\Post(
-        path: '/v1/coaches/{id}/restore',
-        summary: 'Restore Soft Deleted Coach',
-        description: 'Restores a soft-deleted coach and all associated details, contracts, certifications, and shifts automatically.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(
-                response: 200, 
-                description: 'Coach restored successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
-                ])
-            ),
-            new OA\Response(
-                response: 404, 
-                description: 'Coach not found in trashed',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
-                ])
-            ),
-            new OA\Response(
-                response: 500, 
-                description: 'Server Error',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred while restoring the coach.'),
-                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
-                ])
-            ),
-        ]
-    )]
-    public function restore($id)
-    {
-        try {
-            $this->coachService->restoreCoach($id);
-            return response()->json([
-                'message' => 'Coach restored successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Coach not found.'
-            ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'An error occurred while restoring the coach.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
     #[OA\Post(
         path: '/v1/coaches/{id}/schedule',
         summary: 'Set Coach Schedule',
@@ -664,6 +560,282 @@ class CoachController extends Controller
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Coach not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/shifts',
+        summary: 'Add a single Shift to Coach',
+        description: 'Assigns a single specific shift to a coach on a specific date.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['branch_shift_id', 'date'],
+                properties: [
+                    new OA\Property(property: 'branch_shift_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2023-11-01')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201, 
+                description: 'Shift created successfully', 
+                content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])
+            ),
+            new OA\Response(
+                response: 422, 
+                description: 'Validation errors (e.g., invalid branch_shift_id)', 
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'The selected branch shift id is invalid.'),
+                    new OA\Property(property: 'errors', type: 'object', example: ['branch_shift_id' => ['The selected branch shift id is invalid.']])
+                ])
+            ),
+            new OA\Response(
+                response: 500, 
+                description: 'Server Error', 
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'message', type: 'string', example: 'An error occurred.'),
+                    new OA\Property(property: 'error', type: 'string', example: 'Error message details')
+                ])
+            )
+        ]
+    )]
+    public function addShift(Request $request, $id)
+    {
+        try {
+            $data = $request->validate([
+                'branch_shift_id' => 'required|integer|exists:branch_shifts,id',
+                'date' => 'required|date'
+            ]);
+            $data['staff_id'] = $id;
+            
+            $record = $this->staffShiftService->create($data);
+            return response()->json([
+                'data' => new StaffShiftResource($record),
+                'message' => 'Shift created successfully'
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Put(
+        path: '/v1/coaches/{id}/shifts/{shiftId}',
+        summary: 'Update Coach Shift',
+        description: 'Updates a specific assigned shift for a coach.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'shiftId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2023-11-02')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Shift updated successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function updateShift(Request $request, $id, $shiftId)
+    {
+        try {
+            $data = $request->validate([
+                'date' => 'sometimes|date',
+                'branch_shift_id' => 'sometimes|integer'
+            ]);
+            $record = $this->staffShiftService->update($shiftId, $data);
+            return response()->json([
+                'data' => new StaffShiftResource($record),
+                'message' => 'Shift updated successfully'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/v1/coaches/{id}/shifts/{shiftId}',
+        summary: 'Remove Coach Shift',
+        description: 'Removes a specific shift assigned to a coach.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'shiftId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Shift deleted successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+        ]
+    )]
+    public function removeShift($id, $shiftId)
+    {
+        try {
+            $this->staffShiftService->delete($shiftId);
+            return response()->json([
+                'message' => 'Shift deleted successfully'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/v1/coaches/{id}/shifts',
+        summary: 'Get Coach Shifts',
+        description: 'Returns all shifts assigned to a specific coach.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of shifts retrieved successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'error', type: 'string')]))
+        ]
+    )]
+    public function getShifts($id)
+    {
+        try {
+            $coach = $this->coachService->getSingleCoach($id);
+            $shifts = $coach->shifts()->with('branchShift')->get();
+            return response()->json([
+                'data' => StaffShiftResource::collection($shifts),
+                'message' => 'Shifts retrieved successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Coach not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/v1/coaches/{id}/activities',
+        summary: 'Get Coach Activities',
+        description: 'Returns all activities associated with a specific coach, including full activity details.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of activities retrieved successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'error', type: 'string')]))
+        ]
+    )]
+    public function getActivities($id)
+    {
+        try {
+            $coach = $this->coachService->getSingleCoach($id);
+            $activities = $coach->activities()->get();
+            
+            return response()->json([
+                'data' => \Modules\Sports\Http\Resources\ActivityResource::collection($activities),
+                'message' => 'Activities retrieved successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Coach not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/v1/coaches/{id}',
+        summary: '🗑️ حذف مدرب (Soft Delete)',
+        description: 'حذف مدرب من النظام. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المدرب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
+    #[OA\Response(response: 200, description: '✅ تم حذف المدرب بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
+
+    public function destroy(Request $request, $id)
+    {
+        $confirmation = $request->input('confirmation', '');
+        $this->coachService->deleteCoach((int) $id, (string) $confirmation);
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('Coach deleted successfully')
+        ], 200);
+    }
+
+    #[OA\Get(
+        path: '/v1/coaches/trashed',
+        summary: '🗑️ عرض المدربين المحذوفين (سلة المهملات)',
+        description: 'جلب قائمة بالمدربين المحذوفين.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم جلب المدربين المحذوفين بنجاح',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'status', type: 'string', example: 'success'),
+            new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CoachResource')),
+            new OA\Property(property: 'message', type: 'string', example: 'Trashed coaches retrieved successfully')
+        ])
+    )]
+    public function trashed(Request $request)
+    {
+        $coaches = $this->coachService->getTrashedCoaches($request->all());
+        return response()->json([
+            'status' => 'success',
+            'data' => CoachResource::collection($coaches),
+            'message' => __('Trashed coaches retrieved successfully')
+        ], 200);
+    }
+
+    #[OA\Post(
+        path: '/v1/coaches/{id}/restore',
+        summary: '♻️ استرجاع مدرب محذوف',
+        description: 'استرجاع مدرب من سلة المهملات وإعادة تفعيل حسابه.',
+        tags: ['Coach Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المدرب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم استرجاع المدرب بنجاح',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'status', type: 'string', example: 'success'),
+            new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+            new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
+        ])
+    )]
+    #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
+    public function restore($id)
+    {
+        try {
+            $coach = $this->coachService->restoreCoach((int) $id);
+            return response()->json([
+                'status' => 'success',
+                'data' => new CoachResource($coach),
+                'message' => __('Coach restored successfully')
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Coach not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
         }
     }
 }

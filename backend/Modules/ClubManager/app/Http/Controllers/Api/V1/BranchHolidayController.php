@@ -202,28 +202,65 @@ class BranchHolidayController extends BaseController
 
     #[OA\Delete(
         path: '/v1/holidays/{holiday}',
-        summary: '🗑️ حذف العطلة',
-        description: 'إزالة عطلة من النظام.',
+        summary: '🗑️ حذف العطلة (Soft Delete)',
+        description: 'إزالة عطلة من النظام. يتطلب إرسال كلمة التأكيد "delete" اختيارياً.',
         tags: ['Branch Holidays'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'holiday', in: 'path', required: true, description: 'معرف العطلة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم الحذف بنجاح',
+    #[OA\RequestBody(
+        required: false,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Holiday deleted successfully'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'confirmation', type: 'string', description: 'تأكيد الحذف (delete)', example: '')
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على العطلة')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    public function destroy(BranchHoliday $holiday)
+    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    public function destroy(Request $request, $id)
     {
+        $confirm = strtolower(trim($request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? ''));
+
+        if ($confirm !== 'delete') {
+            return $this->errorResponse(
+                __('سيتم حذف هذه العطلة، هل أنت متأكد؟ أرسل "delete" للتأكيد.'),
+                422
+            );
+        }
+
+        $holiday = BranchHoliday::findOrFail($id);
         $holiday->delete();
         return $this->successResponse(null, __('Holiday deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/holidays/trashed',
+        summary: '🗑️ عرض العطلات المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بأيام العطل المحذوفة.',
+        tags: ['Branch Holidays'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب العطلات المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $holidays = BranchHoliday::onlyTrashed()->get();
+        return $this->successResponse(BranchHolidayResource::collection($holidays), __('Trashed holidays retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/holidays/{id}/restore',
+        summary: '♻️ استرجاع عطلة محذوفة',
+        description: 'استرجاع العطلة من سلة المهملات وإعادة تفعيلها.',
+        tags: ['Branch Holidays'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العطلة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع العطلة بنجاح')]
+    public function restore($id)
+    {
+        $holiday = BranchHoliday::onlyTrashed()->findOrFail($id);
+        $holiday->restore();
+        return $this->successResponse(new BranchHolidayResource($holiday), __('Holiday restored successfully'));
     }
 }

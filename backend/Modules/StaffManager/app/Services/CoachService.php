@@ -341,36 +341,68 @@ class CoachService
     }
 
     /**
-     * Delete a coach (Soft Delete).
+     * Delete a coach.
+     *
+     * Blocked if:
+     *   - Coach has active/frozen subscribers (player_subscription_items via active subscriptions)
+     *   - Coach has payslips (financial records)
+     *
+     * Contracts are kept as financial records and NOT deleted.
+     *
+     * Soft-deletes (records that lose value without the coach):
+     * - coach_certifications    → soft-deleted (via coachDetail)
+     * - coach_details           → soft-deleted
+     * - staff_leaves            → soft-deleted
+     * - staff_unavailabilities  → soft-deleted
+     * - staff_shifts            → soft-deleted
+     *
+     * Other:
+     * - staff_activities                    → detached from pivot table
+     * - staff_contracts                     → KEPT (financial reference records)
+     * - player_subscription_items.coach_id  → nullified manually (soft delete won't trigger DB onDelete)
+     *
+    /**
+     * Delete a coach (Soft Delete). Requires confirmation string "delete".
      */
-    public function deleteCoach($id)
+    public function deleteCoach($id, string $confirmation = ''): bool
     {
-        return DB::transaction(function () use ($id) {
-            $staff = Staff::where('role', 'coach')->findOrFail($id);
-            $deleted = $staff->delete();
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('يجب إرسال كلمة "delete" لتأكيد عملية الحذف.')
+            ]);
+        }
 
-            if ($staff->user) {
-                $staff->user->update(['is_active' => false]);
-            }
-
-            return $deleted;
-        });
+        $staff = Staff::where('role', 'coach')->findOrFail($id);
+        return (bool) $staff->delete();
     }
 
     /**
-     * Restore a soft-deleted coach.
+     * Get trashed coaches (role = coach)
      */
-    public function restoreCoach($id)
+    public function getTrashedCoaches(array $filters = [])
     {
-        return DB::transaction(function () use ($id) {
-            $staff = Staff::onlyTrashed()->where('role', 'coach')->findOrFail($id);
-            $restored = $staff->restore();
+        $query = Staff::onlyTrashed()
+            ->where('role', 'coach')
+            ->with(['coachDetail.certifications', 'activities', 'person.contacts', 'user', 'branches', 'activeContract']);
 
-            if ($staff->user) {
-                $staff->user->update(['is_active' => true]);
-            }
+        if (!empty($filters['branch_id'])) {
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('staff_branches.branch_id', $filters['branch_id']);
+            });
+        }
 
-            return $restored;
-        });
+        return $query->latest()->get();
+    }
+
+    /**
+     * Restore a deleted coach
+     */
+    public function restoreCoach(int $id)
+    {
+        $staff = Staff::onlyTrashed()
+            ->where('role', 'coach')
+            ->findOrFail($id);
+        $staff->restore();
+        return $this->getSingleCoach($staff->id);
     }
 }

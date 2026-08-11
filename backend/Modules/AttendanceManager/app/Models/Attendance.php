@@ -3,15 +3,14 @@
 namespace Modules\AttendanceManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Attendance extends Model
 {
-    use SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['consumptions'];
+    use SoftDeletes;
     protected $table = 'attendances';
 
     protected $fillable = [
@@ -36,7 +35,7 @@ class Attendance extends Model
      */
     public function attendable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo()->withTrashed();
     }
 
     /**

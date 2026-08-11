@@ -257,50 +257,78 @@ class OfferController extends BaseController
 
     #[OA\Delete(
         path: '/v1/offers/{offer}',
-        summary: '🗑️ حذف العرض',
-        description: 'حذف العرض من النظام. لا يمكن حذفه إذا كان هناك أعضاء اشتركوا من خلاله.',
-        tags: ['Offers'],
+        summary: '🗑️ حذف العرض (Soft Delete)',
+        description: 'حذف العرض من النظام مع كافة الاشتراكات التابعة له. يتطلب إرسال كلمة التأكيد "delete" اختيارياً.',
+        tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'offer', in: 'path', required: true, description: 'معرف العرض', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(
-        response: 200,
-        description: '✅ تم حذف العرض بنجاح',
+    #[OA\RequestBody(
+        required: false,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Offer deleted successfully'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'confirmation', type: 'string', description: 'تأكيد الحذف (delete)', example: '')
             ]
         )
     )]
-    #[OA\Response(
-        response: 409, 
-        description: '🚫 لا يمكن الحذف — العرض مرتبط باشتراكات', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف هذا العرض لوجود 3 اشتراكات مرتبطة به. يمكنك تعطيل العرض بدلاً من حذفه.')
-            ]
-        )
-    )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على العرض', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy(int $id)
+    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
+    public function destroy(Request $request, int $id)
     {
         $offer = \Modules\SubscriptionManager\Models\Offer::findOrFail($id);
 
-        $subscriptionsCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('offer_id', $id)->count();
+        $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('offer_id', $id)
+            ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+            ->count();
 
-        if ($subscriptionsCount > 0) {
+        $confirm = strtolower(trim($request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? ''));
+
+        if ($confirm !== 'delete') {
+            if ($activeSubsCount > 0) {
+                return $this->errorResponse(
+                    __('تنبيه: يوجد :count اشتراك(ات) نشطة حالية لهذا العرض. حذف العرض سيؤدي إلى إلغاء إمكانية حضورهم. هل أنت متأكد؟ أرسل "delete" للتأكيد.', ['count' => $activeSubsCount]),
+                    422
+                );
+            }
+
             return $this->errorResponse(
-                "لا يمكن حذف هذا العرض لوجود {$subscriptionsCount} " . ($subscriptionsCount === 1 ? 'اشتراك مرتبط' : 'اشتراكات مرتبطة') . " به. يمكنك تعطيل العرض بدلاً من حذفه.",
-                409
+                __('سيتم حذف هذا العرض وكافة بنود الاشتراكات المنتهية المرتبطة به، هل أنت متأكد؟ أرسل "delete" للتأكيد.'),
+                422
             );
         }
 
         $offer->delete();
         return $this->successResponse(null, __('Offer deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/offers/trashed',
+        summary: '🗑️ عرض العروض المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بالعروض المحذوفة.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب العروض المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $offers = \Modules\SubscriptionManager\Models\Offer::onlyTrashed()->get();
+        return $this->successResponse(OfferResource::collection($offers), __('Trashed offers retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/offers/{id}/restore',
+        summary: '♻️ استرجاع عرض محذوف',
+        description: 'استرجاع العرض وكافة الاشتراكات التابعة له من سلة المهملات.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العرض', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع العرض بنجاح')]
+    public function restore($id)
+    {
+        $offer = \Modules\SubscriptionManager\Models\Offer::onlyTrashed()->findOrFail($id);
+        $offer->restore();
+        return $this->successResponse(new OfferResource($offer), __('Offer restored successfully'));
     }
 
     #[OA\Post(

@@ -4,14 +4,12 @@ namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
+
 use Modules\ClubManager\Models\Branch;
 
 class Offer extends Model
 {
-    use SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['invoices', 'subscriptions'];
+    use SoftDeletes;
 
 
     protected $fillable = [
@@ -50,5 +48,24 @@ class Offer extends Model
     public function subscriptions()
     {
         return $this->hasMany(PlayerSubscription::class, 'offer_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleted(function ($offer) {
+            if ($offer->isForceDeleting()) {
+                return;
+            }
+
+            $offer->subscriptions()->get()->each(function ($subscription) {
+                $subscription->delete();
+            });
+        });
+
+        static::restored(function ($offer) {
+            $offer->subscriptions()->onlyTrashed()->get()->each(function ($subscription) {
+                $subscription->restore();
+            });
+        });
     }
 }

@@ -228,37 +228,27 @@ class MemberService
         });
     }
 
-    /**
-     * Delete a member n-levels deep via CascadeSoftDeletes.
-     */
-    public function deleteMember(int $id): bool
+    public function deleteMember(int $id, string $confirmation = ''): bool
     {
-        return DB::transaction(function () use ($id) {
-            $member = \Modules\MemberManager\Models\Member::findOrFail($id);
-            return $member->delete();
-        });
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف جميع الاشتراكات والحضور المتعلقين باللاعب، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
+        }
+
+        $member = \Modules\MemberManager\Models\Member::findOrFail($id);
+        return (bool) $member->delete();
     }
 
-    /**
-     * Restore a deleted member and all cascaded children.
-     */
-    public function restoreMember(int $id): bool
+    public function getTrashedMembers(array $filters = [])
     {
-        return DB::transaction(function () use ($id) {
-            $member = \Modules\MemberManager\Models\Member::onlyTrashed()->findOrFail($id);
-            return $member->restore();
-        });
+        return $this->repository->getTrashed($filters);
     }
 
-    /**
-     * Force delete a member permanently.
-     */
-    public function forceDeleteMember(int $id): bool
+    public function restoreMember(int $id)
     {
-        return DB::transaction(function () use ($id) {
-            $member = \Modules\MemberManager\Models\Member::withTrashed()->findOrFail($id);
-            return $member->forceDelete();
-        });
+        $member = $this->repository->restore($id);
+        return $this->attachSharedDTOs($member);
     }
 
     public function getMeasurements(int $memberId)

@@ -4,20 +4,12 @@ namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
+
 
 class Staff extends Model
 {
-    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = [
-        'coachDetail',
-        'contracts',
-        'shifts',
-        'commissionRules',
-        'payslips',
-        'attendances',
-    ];
+    use SoftDeletes;
+    use \Modules\Core\Traits\HasCreatedBy;
 
     protected $table = 'staff';
 
@@ -41,34 +33,86 @@ class Staff extends Model
     public ?\Modules\Core\DTOs\PersonDTO $personDto = null;
     public ?\Modules\Core\DTOs\BranchDTO $branchDto = null;
 
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
-
-        static::saving(function ($staff) {
-            if ($staff->isDirty('work_status') || !isset($staff->is_active)) {
-                $workStatus = $staff->work_status ?? 'active';
-                $staff->work_status = $workStatus;
-                $staff->is_active = ($workStatus === 'active');
-            }
-        });
-
-        static::updated(function ($staff) {
-            if ($staff->wasChanged('is_active') && $staff->user) {
-                $staff->user->update(['is_active' => $staff->is_active]);
-            }
-        });
-
         static::deleted(function ($staff) {
-            if (method_exists($staff, 'isForceDeleting') && $staff->isForceDeleting()) {
-                $staff->person()->withTrashed()->first()?->forceDelete();
-            } else {
-                $staff->person?->delete();
+            if ($staff->isForceDeleting()) {
+                return;
+            }
+
+            // Nullify coach_id on active sessions and subscription items to mark them as Pending Assignment (قيد التعيين)
+            if (class_exists(\Modules\Sports\Models\SessionException::class)) {
+                \Modules\Sports\Models\SessionException::where('coach_id', $staff->id)->update(['coach_id' => null]);
+            }
+            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('coach_id', $staff->id)->update(['coach_id' => null]);
+            }
+
+            // Soft-delete linked staff details
+            if ($staff->coachDetail) {
+                $staff->coachDetail->delete();
+            }
+            $staff->contracts()->delete();
+            $staff->shifts()->delete();
+            $staff->leaves()->delete();
+            $staff->unavailabilities()->delete();
+
+            // Soft-delete Person & User
+            if ($staff->person) {
+                if ($staff->person->user) {
+                    $staff->person->user->delete();
+                }
+                $staff->person->delete();
+            }
+
+            // Soft-delete Attendance logs
+            if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\StaffManager\\Models\\Staff')
+                    ->where('attendable_id', $staff->id)
+                    ->delete();
             }
         });
 
         static::restored(function ($staff) {
-            $staff->person()->onlyTrashed()->first()?->restore();
+            $person = \Modules\Authentication\Models\Person::withTrashed()->find($staff->person_id);
+            if ($person) {
+                $person->restore();
+                $user = \Modules\Authentication\Models\User::withTrashed()->where('person_id', $person->id)->first();
+                if ($user) {
+                    $user->restore();
+                }
+            }
+
+            // Restore related staff details
+            if ($staff->coachDetail) {
+                $staff->coachDetail()->withTrashed()->restore();
+            }
+            $staff->contracts()->onlyTrashed()->restore();
+            $staff->shifts()->onlyTrashed()->restore();
+            $staff->leaves()->onlyTrashed()->restore();
+            $staff->unavailabilities()->onlyTrashed()->restore();
+
+            // Restore Locker Reservations only if the locker is still available
+            if (class_exists(\Modules\ClubManager\Models\Locker::class)) {
+                \Modules\SubscriptionManager\Models\LockerReservation::onlyTrashed()
+                    ->where('staff_id', $staff->id)
+                    ->get()
+                    ->each(function ($reservation) {
+                        $locker = \Modules\ClubManager\Models\Locker::find($reservation->locker_id);
+                        if ($locker && $locker->status === 'available') {
+                            $reservation->restore();
+                            $locker->update(['status' => 'with_staff']);
+                        }
+                    });
+            }
+
+            // Restore Attendance logs
+            if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                \Modules\AttendanceManager\Models\Attendance::onlyTrashed()
+                    ->where('attendable_type', 'Modules\\StaffManager\\Models\\Staff')
+                    ->where('attendable_id', $staff->id)
+                    ->restore();
+            }
         });
     }
 

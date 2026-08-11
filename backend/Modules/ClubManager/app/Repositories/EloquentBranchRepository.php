@@ -33,4 +33,16 @@ class EloquentBranchRepository implements BranchRepositoryInterface
         $branch = $this->find($id);
         return $branch->delete();
     }
+
+    public function getTrashed()
+    {
+        return Branch::onlyTrashed()->get();
+    }
+
+    public function restore($id)
+    {
+        $branch = Branch::onlyTrashed()->findOrFail($id);
+        $branch->restore();
+        return $branch;
+    }
 }

@@ -10,6 +10,7 @@ use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionItemCo
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\InvoiceController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\OfferController;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionReportController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\PaymentController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
@@ -27,6 +28,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
 
     // Subscription Plans CRUD
+    Route::get('subscription-plans/trashed', [SubscriptionPlanController::class, 'trashed']);
+    Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
     Route::get('subscription-plans/{id}/players', [SubscriptionPlanController::class, 'players']);
     Route::get('subscription-plans/{id}/delete-check', [SubscriptionPlanController::class, 'deleteCheck']);
@@ -34,6 +37,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
 
     // Offers CRUD & Actions
+    Route::get('offers/trashed', [OfferController::class, 'trashed']);
+    Route::post('offers/{id}/restore', [OfferController::class, 'restore']);
     Route::post('offers/{id}/subscribe', [OfferController::class, 'subscribe']);
     Route::apiResource('offers', OfferController::class);
 
@@ -48,7 +53,13 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Player Subscriptions CRUD
     Route::apiResource('player-subscriptions', PlayerSubscriptionController::class);
 
+    // Payments CRUD & Actions
+    Route::get('payments/trashed', [PaymentController::class, 'trashed']);
+    Route::post('payments/{id}/restore', [PaymentController::class, 'restore']);
+    Route::apiResource('payments', PaymentController::class);
 
+    Route::get('subscription-plan-activities/trashed', [SubscriptionPlanActivityController::class, 'trashed']);
+    Route::post('subscription-plan-activities/{id}/restore', [SubscriptionPlanActivityController::class, 'restore']);
     Route::apiResource('subscription-plan-activities', SubscriptionPlanActivityController::class);
     Route::apiResource('player-subscription-items', PlayerSubscriptionItemController::class);
 

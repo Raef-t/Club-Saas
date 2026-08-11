@@ -4,14 +4,13 @@ namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
 
 class CoachDetail extends Model
 {
     use SoftDeletes;
 
     protected $table = 'coach_details';
-
+    
     protected $fillable = [
         'staff_id',
         'bio',

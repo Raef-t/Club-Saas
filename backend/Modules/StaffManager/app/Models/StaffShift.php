@@ -5,9 +5,11 @@ namespace Modules\StaffManager\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class StaffShift extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'staff_id',
         'branch_shift_id',

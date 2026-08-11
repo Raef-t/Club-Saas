@@ -27,17 +27,17 @@ class SubscriptionPlanActivity extends Model
 
     public function plan()
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
     }
 
     public function staffActivity()
     {
-        return $this->belongsTo(\Modules\Sports\Models\StaffActivity::class, 'staff_activity_id');
+        return $this->belongsTo(\Modules\Sports\Models\StaffActivity::class, 'staff_activity_id')->withTrashed();
     }
 
     public function sessionTemplate()
     {
-        return $this->belongsTo(\Modules\Sports\Models\SportSessionTemplate::class, 'session_template_id');
+        return $this->belongsTo(\Modules\Sports\Models\SportSessionTemplate::class, 'session_template_id')->withTrashed();
     }
 
     public function getActivityIdAttribute()

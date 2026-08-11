@@ -381,35 +381,33 @@ class StaffService
     }
 
     /**
-     * Delete a staff member with full cascading soft delete for all related records.
+     * Soft delete a staff member. Requires confirmation string "delete".
      */
-    public function deleteStaff(int $id): bool
+    public function deleteStaff(int $id, string $confirmation = ''): bool
     {
-        return DB::transaction(function () use ($id) {
-            $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
-            return $staff->delete();
-        });
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('يجب إرسال كلمة "delete" لتأكيد عملية الحذف.')
+            ]);
+        }
+
+        $staff = \Modules\StaffManager\Models\Staff::findOrFail($id);
+        return (bool) $staff->delete();
     }
 
-    /**
-     * Restore a deleted staff member and all cascaded children.
-     */
-    public function restoreStaff(int $id): bool
+    public function getTrashedStaff(array $filters = [])
     {
-        return DB::transaction(function () use ($id) {
-            $staff = \Modules\StaffManager\Models\Staff::onlyTrashed()->findOrFail($id);
-            return $staff->restore();
-        });
+        $staffMembers = $this->staffRepository->getTrashed($filters);
+        foreach ($staffMembers as $staff) {
+            $this->attachSharedDTOs($staff);
+        }
+
+        return $staffMembers;
     }
 
-    /**
-     * Force delete a staff member permanently.
-     */
-    public function forceDeleteStaff(int $id): bool
+    public function restoreStaff(int $id)
     {
-        return DB::transaction(function () use ($id) {
-            $staff = \Modules\StaffManager\Models\Staff::withTrashed()->findOrFail($id);
-            return $staff->forceDelete();
-        });
+        $staff = $this->staffRepository->restore($id);
+        return $this->attachSharedDTOs($staff);
     }
 }

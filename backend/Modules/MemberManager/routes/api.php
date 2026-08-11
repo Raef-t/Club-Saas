@@ -9,11 +9,13 @@ use Modules\MemberManager\Http\Controllers\Api\V1\MemberMeasurementController;
 Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
     // Player Registration & Updates
     Route::get('members/stats', [PlayerRegistrationController::class, 'stats']);
+    Route::get('members/trashed', [PlayerRegistrationController::class, 'trashed']);
     Route::get('members', [PlayerRegistrationController::class, 'index']);
     Route::post('members/register', [PlayerRegistrationController::class, 'register']);
     Route::get('members/{id}', [PlayerRegistrationController::class, 'show']);
     Route::put('members/{id}', [PlayerRegistrationController::class, 'update']);
     Route::post('members/{id}/photo', [PlayerRegistrationController::class, 'updatePhoto']);
+    Route::post('members/{id}/restore', [PlayerRegistrationController::class, 'restore']);
     Route::delete('members/{id}', [PlayerRegistrationController::class, 'destroy']);
     Route::post('members/{id}/restore', [PlayerRegistrationController::class, 'restore']);
 

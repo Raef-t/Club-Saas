@@ -1,17 +1,14 @@
 <?php
 
 namespace Modules\SubscriptionManager\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
+
 use Modules\SubscriptionManager\Enums\SubscriptionPlanStatus;
 
 class SubscriptionPlan extends Model
 {
-    use SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['planActivities', 'sessionTemplates'];
+    use SoftDeletes;
 
 
     protected $fillable = [
@@ -33,6 +30,30 @@ class SubscriptionPlan extends Model
             if (empty($plan->subscription_number)) {
                 $plan->subscription_number = self::generateUniqueSubscriptionNumber();
             }
+        });
+
+        static::deleted(function ($plan) {
+            if ($plan->isForceDeleting()) {
+                return;
+            }
+
+            $plan->planActivities()->delete();
+
+            if (class_exists(\Modules\Sports\Models\SportSessionTemplate::class)) {
+                $plan->sessionTemplates()->delete();
+            }
+
+            \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $plan->id)->delete();
+        });
+
+        static::restored(function ($plan) {
+            $plan->planActivities()->onlyTrashed()->restore();
+
+            if (class_exists(\Modules\Sports\Models\SportSessionTemplate::class)) {
+                $plan->sessionTemplates()->onlyTrashed()->restore();
+            }
+
+            \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->where('plan_id', $plan->id)->restore();
         });
     }
 

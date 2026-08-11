@@ -77,6 +77,7 @@ class ActivityTypeController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'activity_type', in: 'path', required: true, description: 'معرف نوع النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (delete)', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف نوع النشاط بنجاح',
@@ -99,13 +100,32 @@ class ActivityTypeController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 نوع النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy(ActivityType $activity_type)
+    public function destroy(\Illuminate\Http\Request $request, ActivityType $activity_type)
     {
-        $activitiesCount = \Modules\Sports\Models\Activity::where('activity_type_id', $activity_type->id)->count();
-        if ($activitiesCount > 0) {
+        // 1. Check for active subscriptions referencing any activity of this type
+        $activeSubsCount = 0;
+        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+            $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('activity', function ($query) use ($activity_type) {
+                $query->where('activity_type_id', $activity_type->id);
+            })->whereHas('subscription', function ($query) {
+                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value);
+            })->count();
+        }
+
+        // 2. Validate confirmation string
+        $confirm = strtolower(trim($request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? ''));
+
+        if ($confirm !== 'delete') {
+            if ($activeSubsCount > 0) {
+                return $this->errorResponse(
+                    __('تنبيه: يوجد :count اشتراك(ات) نشطة حالية للأنشطة التي تندرج تحت نوع النشاط هذا. حذف نوع النشاط سيؤدي إلى إيقافها وإلغاء إمكانية حضورهم لها. هل أنت متأكد؟ أرسل "delete" للتأكيد.', ['count' => $activeSubsCount]),
+                    422
+                );
+            }
+
             return $this->errorResponse(
-                "لا يمكن حذف نوع النشاط لوجود {$activitiesCount} " . ($activitiesCount === 1 ? 'نشاط يندرج' : 'أنشطة تندرج') . " تحته. يمكنك تعطيله بدلاً من حذفه.",
-                409
+                __('سيتم حذف نوع النشاط هذا وكافة الأنشطة والاشتراكات المنتهية التابعة له، هل أنت متأكد؟ أرسل "delete" للتأكيد.'),
+                422
             );
         }
 

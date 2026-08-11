@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class SubscriptionFreeze extends Model
 {
     use SoftDeletes;
-
     protected $fillable = [
         'player_subscription_id',
         'freeze_start_date',

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class StaffContract extends Model
 {
     use SoftDeletes;
+
     protected $table = 'staff_contracts';
 
     protected $fillable = [

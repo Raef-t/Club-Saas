@@ -5,13 +5,10 @@ namespace Modules\Sports\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
 
 class ActivityType extends Model
 {
-    use HasFactory, SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['activities'];
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -33,8 +30,14 @@ class ActivityType extends Model
         'is_session_based' => 'boolean',
         'has_unlimited_subscribers' => 'boolean',
         'has_shifts' => 'boolean',
-        'is_daily_entry' => 'boolean',
     ];
+
+    protected static function booted()
+    {
+        static::deleted(function ($activityType) {
+            $activityType->activities()->delete();
+        });
+    }
 
     /**
      * Get the activities for the activity type.

@@ -291,38 +291,51 @@ class PlayerRegistrationController extends BaseController
     #[OA\Delete(
         path: '/v1/members/{id}',
         summary: '🗑️ حذف عضو (Soft Delete)',
-        description: 'حذف عضو محدد من النظام ناعماً مع إخفاء كافّة اشتراكاته ودفعاته المالية وحجوزاته وسجلاته التابعة ناعماً ومتتابعاً.',
+        description: 'حذف عضو محدد من النظام. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب أو البارامتر.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم حذف العضو وسجلاته التابعة ناعماً بنجاح')]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
+    #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
-    public function destroy($id)
+    public function destroy(\Illuminate\Http\Request $request, $id)
     {
-        $deleted = $this->memberService->deleteMember($id);
-        if (!$deleted) {
-            return response()->json(['message' => __('Member not found or could not be deleted')], 404);
-        }
+        $confirmation = $request->input('confirmation', '');
+        $this->memberService->deleteMember((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Member deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/members/trashed',
+        summary: '🗑️ عرض الأعضاء المحذوفين (سلة المهملات)',
+        description: 'جلب قائمة بالأعضاء الذين تم حذفهم لاسترجاعهم أو المعاينة.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء المحذوفين بنجاح')]
+    public function trashed(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->all();
+        $members = $this->memberService->getTrashedMembers($filters);
+        return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Trashed members retrieved successfully'));
     }
 
     #[OA\Post(
         path: '/v1/members/{id}/restore',
         summary: '♻️ استرجاع عضو محذوف',
-        description: 'استرجاع العضو المحذوف ناعماً وكافّة اشتراكاته ودفعاته وسجلاته التابعة تلقائياً.',
+        description: 'استرجاع عضو من سلة المهملات وإعادة تفعيل حسابه وملفه الشخصي.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع العضو وكافة سجلاته التابعة بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 العضو غير موجود في سلة المحذوفات')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو المحذوف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع العضو بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود بالسلة')]
     public function restore($id)
     {
-        $restored = $this->memberService->restoreMember($id);
-        if (!$restored) {
-            return response()->json(['message' => __('Member not found in trashed')], 404);
-        }
-        return $this->successResponse(null, __('Member restored successfully'));
+        $member = $this->memberService->restoreMember((int) $id);
+        return $this->successResponse(new \Modules\MemberManager\Http\Resources\MemberResource($member), __('Member restored successfully'));
     }
 }

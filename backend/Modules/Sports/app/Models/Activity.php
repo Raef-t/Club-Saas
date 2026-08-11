@@ -5,13 +5,10 @@ namespace Modules\Sports\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Activity extends Model
 {
-    use HasFactory, SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['commissionRules'];
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -34,6 +31,49 @@ class Activity extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function ($activity) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
+            }
+        });
+
+        static::deleted(function ($activity) {
+            // Cascade soft-delete
+            \Modules\Sports\Models\StaffActivity::where('activity_id', $activity->id)->delete();
+            
+            if (class_exists(\Modules\Sports\Models\StaffCommissionRule::class)) {
+                \Modules\Sports\Models\StaffCommissionRule::where('activity_id', $activity->id)->delete();
+            }
+
+            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $activity->id)->delete();
+            }
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
+            }
+        });
+
+        static::restored(function ($activity) {
+            // Cascade restore
+            \Modules\Sports\Models\StaffActivity::onlyTrashed()->where('activity_id', $activity->id)->restore();
+
+            if (class_exists(\Modules\Sports\Models\StaffCommissionRule::class)) {
+                \Modules\Sports\Models\StaffCommissionRule::onlyTrashed()->where('activity_id', $activity->id)->restore();
+            }
+
+            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::onlyTrashed()->where('activity_id', $activity->id)->restore();
+            }
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
+            }
+        });
+    }
 
     /**
      * Get the activity type for the activity.

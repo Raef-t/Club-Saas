@@ -47,37 +47,16 @@ class BranchService
         return $this->repository->update($id, $data);
     }
 
-    /**
-     * Delete a branch with full cascading soft delete for all related records.
-     */
-    public function deleteBranch($id): bool
+    public function deleteBranch(int $id, string $confirmation = ''): void
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            $branch = Branch::findOrFail($id);
-            return $branch->delete();
-        });
-    }
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف هذا الفرع بالكامل مع كافة المشتركين والمدربين والأنشطة والاشتراكات المتعلقة به، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
+        }
 
-    /**
-     * Restore a deleted branch and all cascaded children.
-     */
-    public function restoreBranch($id): bool
-    {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            $branch = Branch::onlyTrashed()->findOrFail($id);
-            return $branch->restore();
-        });
-    }
-
-    /**
-     * Force delete a branch permanently.
-     */
-    public function forceDeleteBranch($id): bool
-    {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            $branch = Branch::withTrashed()->findOrFail($id);
-            return $branch->forceDelete();
-        });
+        $branch = Branch::findOrFail($id);
+        $branch->delete();
     }
 
     /**
@@ -88,6 +67,22 @@ class BranchService
         $branch = $this->getBranchById($id);
         $branch->update(['is_active' => !$branch->is_active]);
         return $branch;
+    }
+
+    /**
+     * Get all soft-deleted (trashed) branches.
+     */
+    public function getTrashed()
+    {
+        return $this->repository->getTrashed();
+    }
+
+    /**
+     * Restore a soft-deleted branch by ID.
+     */
+    public function restoreBranch($id)
+    {
+        return $this->repository->restore($id);
     }
 
     /**

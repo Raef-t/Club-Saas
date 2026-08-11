@@ -282,6 +282,7 @@ class SessionTemplateController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: true, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: 'delete'))]
     #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Template deleted successfully')]))]
     #[OA\Response(
         response: 409, 
@@ -295,18 +296,18 @@ class SessionTemplateController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
-        $template = SportSessionTemplate::findOrFail($id);
+        $confirm = strtolower(trim($request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? ''));
 
-        $exceptionsCount = \Modules\Sports\Models\SessionException::where('sport_session_template_id', $id)->count();
-        if ($exceptionsCount > 0) {
+        if ($confirm !== 'delete') {
             return $this->errorResponse(
-                "لا يمكن حذف هذا القالب لوجود {$exceptionsCount} " . ($exceptionsCount === 1 ? 'استثناء مرتبط' : 'استثناءات مرتبطة') . " به. يمكنك تعطيله بدلاً من حذفه.",
-                409
+                __('يرجى تأكيد الحذف بإرسال كلمة "delete" في حقل التأكيد (confirm).'),
+                422
             );
         }
 
+        $template = SportSessionTemplate::findOrFail($id);
         $template->delete();
         return $this->successResponse(null, __('Template deleted successfully'));
     }

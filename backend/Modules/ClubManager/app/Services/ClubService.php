@@ -18,36 +18,25 @@ class ClubService
     public function create(array $data) { return $this->repository->create($data); }
     public function update($id, array $data) { return $this->repository->update($id, $data); }
 
-    /**
-     * Delete a club and all its branches (and all their members, subscriptions, etc.) via CascadeSoftDeletes.
-     */
-    public function delete($id): bool
+    public function delete(int $id, string $confirmation = ''): void
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            $club = Club::findOrFail($id);
-            return $club->delete();
-        });
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف هذا النادي بالكامل مع كافة الفروع والمشتركين والمدربين والاشتراكات المتعلقة به، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
+        }
+
+        $club = Club::findOrFail($id);
+        $club->delete();
     }
 
-    /**
-     * Restore a deleted club and all cascaded branches and child records.
-     */
-    public function restore($id): bool
+    public function getTrashed()
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            $club = Club::onlyTrashed()->findOrFail($id);
-            return $club->restore();
-        });
+        return $this->repository->getTrashed();
     }
 
-    /**
-     * Permanently delete a club.
-     */
-    public function forceDelete($id): bool
+    public function restoreClub($id)
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
-            $club = Club::withTrashed()->findOrFail($id);
-            return $club->forceDelete();
-        });
+        return $this->repository->restore($id);
     }
 }

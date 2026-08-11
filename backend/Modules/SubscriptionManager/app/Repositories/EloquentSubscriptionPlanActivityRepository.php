@@ -15,4 +15,10 @@ class EloquentSubscriptionPlanActivityRepository implements SubscriptionPlanActi
         return $record;
     }
     public function delete($id) { return $this->find($id)->delete(); }
+    public function getTrashed() { return SubscriptionPlanActivity::onlyTrashed()->get(); }
+    public function restore($id) {
+        $activity = SubscriptionPlanActivity::onlyTrashed()->findOrFail($id);
+        $activity->restore();
+        return $activity;
+    }
 }

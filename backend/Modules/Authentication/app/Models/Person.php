@@ -5,13 +5,10 @@ namespace Modules\Authentication\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Person extends Model
 {
-    use HasFactory, SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['contacts', 'user', 'wallet', 'member', 'staff'];
+    use HasFactory, SoftDeletes;
 
     protected $table = 'people';
 

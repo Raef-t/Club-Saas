@@ -4,22 +4,12 @@ namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
+
 use Modules\Authentication\Models\Person;
 
 class Member extends Model
 {
-    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = [
-        'healthProfile',
-        'measurements',
-        'subscriptions',
-        'evaluations',
-        'invoices',
-        'attendances',
-        'lockerReservations',
-    ];
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes;
 
     protected $fillable = [
         'branch_id',
@@ -33,6 +23,93 @@ class Member extends Model
     protected $casts = [
         'join_date' => 'date',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleted(function ($member) {
+            if ($member->isForceDeleting()) {
+                return;
+            }
+
+            // Soft-delete linked Person & User
+            if ($member->person) {
+                if ($member->person->user) {
+                    $member->person->user->delete();
+                }
+                $member->person->delete();
+            }
+
+            // Soft-delete active Subscriptions & Locker Reservations
+            $member->subscriptions()->get()->each(function ($sub) {
+                $sub->freezes()->delete();
+                $sub->items()->delete();
+                $sub->delete();
+            });
+
+            \Modules\SubscriptionManager\Models\LockerReservation::where('member_id', $member->id)->delete();
+
+            // Soft-delete Health Profile & Measurements
+            if ($member->healthProfile) {
+                $member->healthProfile->delete();
+            }
+            $member->measurements()->delete();
+
+            // Soft-delete Attendance logs
+            if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
+                    ->where('attendable_id', $member->id)
+                    ->delete();
+            }
+        });
+
+        static::restored(function ($member) {
+            $person = \Modules\Authentication\Models\Person::withTrashed()->find($member->person_id);
+            if ($person) {
+                $person->restore();
+                $user = \Modules\Authentication\Models\User::withTrashed()->where('person_id', $person->id)->first();
+                if ($user) {
+                    $user->restore();
+                }
+            }
+
+            // Restore Health Profile & Measurements
+            if ($member->healthProfile()->onlyTrashed()->exists()) {
+                $member->healthProfile()->onlyTrashed()->restore();
+            }
+            $member->measurements()->onlyTrashed()->restore();
+
+            // Restore Subscriptions, Freezes, Items and Locker Reservations
+            $member->subscriptions()->onlyTrashed()->get()->each(function ($sub) {
+                $sub->freezes()->onlyTrashed()->restore();
+                $sub->items()->onlyTrashed()->restore();
+                $sub->restore();
+            });
+
+            // Restore Locker Reservations only if the locker is still available
+            if (class_exists(\Modules\ClubManager\Models\Locker::class)) {
+                \Modules\SubscriptionManager\Models\LockerReservation::onlyTrashed()
+                    ->where('member_id', $member->id)
+                    ->get()
+                    ->each(function ($reservation) {
+                        $locker = \Modules\ClubManager\Models\Locker::find($reservation->locker_id);
+                        if ($locker && $locker->status === 'available') {
+                            $reservation->restore();
+                            $locker->update(['status' => 'with_member']);
+                        }
+                    });
+            }
+
+            // Restore Attendance logs
+            if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                \Modules\AttendanceManager\Models\Attendance::onlyTrashed()
+                    ->where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
+                    ->where('attendable_id', $member->id)
+                    ->restore();
+            }
+        });
+    }
+
+
 
     public function person()
     {

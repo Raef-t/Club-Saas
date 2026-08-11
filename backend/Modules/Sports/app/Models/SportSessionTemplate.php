@@ -4,13 +4,10 @@ namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
 
 class SportSessionTemplate extends Model
 {
-    use SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['exceptions'];
+    use SoftDeletes;
 
 
     protected $table = 'sport_session_templates';
@@ -30,6 +27,13 @@ class SportSessionTemplate extends Model
         'end_time' => 'datetime:H:i',
         'is_active' => 'boolean',
     ];
+
+    protected static function booted()
+    {
+        static::deleted(function ($template) {
+            $template->exceptions()->delete();
+        });
+    }
 
     // --- Cross-module data resolved via DTOs in Service layer ---
     public ?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan = null;

@@ -5,14 +5,11 @@ namespace Modules\WalletManager\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\CascadeSoftDeletes;
 use Modules\Authentication\Models\Person;
 
 class Wallet extends Model
 {
-    use HasFactory, SoftDeletes, CascadeSoftDeletes;
-
-    protected array $cascadeDeletes = ['transactions'];
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'person_id',

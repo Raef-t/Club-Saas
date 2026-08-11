@@ -7,6 +7,10 @@ use Modules\StaffManager\Http\Controllers\Api\V1\PayslipController;
 use Modules\StaffManager\Http\Controllers\Api\V1\StaffShiftController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+    // Staff Trash & Restoration Actions
+    Route::get('staff/trashed', [StaffController::class, 'trashed']);
+    Route::post('staff/{id}/restore', [StaffController::class, 'restore']);
+
     // Staff CRUD
     Route::apiResource('staff', StaffController::class);
 
@@ -29,6 +33,8 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Coach Management
     Route::prefix('coaches')->group(function () {
         Route::get('/stats', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'stats']);
+        Route::get('/trashed', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'trashed']);
+        Route::post('/{id}/restore', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'restore']);
         Route::get('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'index']);
         Route::post('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'store']);
         Route::get('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'show']);

@@ -151,4 +151,6 @@ class SubscriptionPlanActivityService
 
 
     public function delete($id) { return $this->repository->delete($id); }
+    public function getTrashed() { return $this->repository->getTrashed(); }
+    public function restore($id) { return $this->repository->restore($id); }
 }
