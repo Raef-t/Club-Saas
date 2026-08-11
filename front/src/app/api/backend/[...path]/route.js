@@ -6,11 +6,6 @@ export const dynamic = "force-dynamic";
 
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const PUBLIC_API_PATHS = new Set(["auth/login", "auth/forgot-password"]);
-const SENSITIVE_AUTH_PATHS = new Set([
-  "auth/login",
-  "auth/forgot-password",
-  "auth/change-password",
-]);
 
 function jsonError(message, status) {
   return NextResponse.json(
@@ -94,14 +89,6 @@ async function proxyBackendRequest(request, context) {
 
   if (METHODS_WITH_BODY.has(request.method) && !hasTrustedOrigin(request)) {
     return jsonError("Cross-origin request is not allowed.", 403);
-  }
-
-  if (
-    process.env.NODE_ENV === "production" &&
-    SENSITIVE_AUTH_PATHS.has(pathName) &&
-    !secureCookie
-  ) {
-    return jsonError("A secure HTTPS connection is required.", 400);
   }
 
   if (requiresAuth && !token) {

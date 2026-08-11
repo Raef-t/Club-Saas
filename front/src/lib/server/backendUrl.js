@@ -1,9 +1,8 @@
 /**
  * Resolves the private backend URL.
- * Remote HTTP is temporarily accepted in development, while production keeps
- * enforcing HTTPS so the exception cannot be shipped accidentally.
+ * HTTP is temporarily accepted until TLS is enabled on the remote backend.
  */
-export function resolveBackendBaseUrl(value, { nodeEnv = process.env.NODE_ENV } = {}) {
+export function resolveBackendBaseUrl(value) {
   if (!value) {
     throw new Error("API_BASE_URL is required.");
   }
@@ -19,10 +18,8 @@ export function resolveBackendBaseUrl(value, { nodeEnv = process.env.NODE_ENV } 
     throw new Error("API_BASE_URL must not contain credentials.");
   }
 
-  const isDevelopmentHttp = nodeEnv !== "production" && url.protocol === "http:";
-
-  if (url.protocol !== "https:" && !isDevelopmentHttp) {
-    throw new Error("Remote backend connections must use HTTPS.");
+  if (!new Set(["http:", "https:"]).has(url.protocol)) {
+    throw new Error("API_BASE_URL must use HTTP or HTTPS.");
   }
 
   return url;
