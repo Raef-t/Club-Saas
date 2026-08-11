@@ -22,7 +22,7 @@ Route::prefix('v1/auth')->group(function () {
     });
 });
 
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'check.permission'])->group(function () {
     // ─── Contacts ──────────────────────────────────────────────────────────────
     Route::apiResource('contacts', PersonContactController::class);
 

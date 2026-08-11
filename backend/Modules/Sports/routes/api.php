@@ -7,7 +7,7 @@ use Modules\Sports\Http\Controllers\Api\V1\StaffCommissionRuleController;
 
 use Modules\Sports\Http\Controllers\Api\V1\ActivityTypeController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
     // Activity Types CRUD
     Route::patch('activity-types/{activity_type}/settings', [ActivityTypeController::class, 'updateSettings']);
     Route::apiResource('activity-types', ActivityTypeController::class);

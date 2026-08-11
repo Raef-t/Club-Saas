@@ -10,7 +10,7 @@ use Modules\ClubManager\Http\Controllers\Api\V1\BranchHolidayController;
 use Modules\ClubManager\Http\Controllers\Api\V1\BranchSettingController;
 use Modules\ClubManager\Http\Controllers\Api\V1\DatabaseBackupController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
     Route::get('clubs/trashed', [ClubController::class, 'trashed']);
     Route::post('clubs/{id}/restore', [ClubController::class, 'restore']);
     Route::apiResource('clubs', ClubController::class);

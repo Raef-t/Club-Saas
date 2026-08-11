@@ -25,7 +25,7 @@ use Modules\NotificationManager\Http\Controllers\Api\V1\NotificationController;
 // ========================================
 // 🔹 واجهات المستخدم العادي (auth فقط)
 // ========================================
-Route::middleware(['auth:sanctum'])
+Route::middleware(['auth:sanctum', 'check.permission'])
     ->prefix('v1/notifications')
     ->as('api.notifications.')
     ->group(function () {
@@ -50,9 +50,9 @@ Route::middleware(['auth:sanctum'])
     });
 
 // ========================================
-// 🔹 واجهات الإدارة (auth + role أدمن)
+// 🔹 واجهات الإدارة (auth + check.permission)
 // ========================================
-Route::middleware(['auth:sanctum', 'role:admin|manager|super_admin'])
+Route::middleware(['auth:sanctum', 'check.permission'])
     ->prefix('v1/admin/notifications')
     ->as('api.admin.notifications.')
     ->group(function () {

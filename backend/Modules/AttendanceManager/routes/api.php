@@ -7,7 +7,7 @@ use Modules\AttendanceManager\Http\Controllers\Api\V1\ReceptionAttendanceControl
 
 use Modules\AttendanceManager\Http\Controllers\Api\V1\AttendanceDashboardController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
 
     // Reception & Attendance Dashboard Real-Time Stats
     Route::get('attendance-manager/dashboard-stats', [AttendanceDashboardController::class, 'stats']);
