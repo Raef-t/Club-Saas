@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createUserRoleOptions,
-  createUserRoleTabs,
+  buildUserRoleTabs,
   createUserStats,
   filterUsers,
   getPasswordStatus,
@@ -47,7 +47,7 @@ describe("usersUtils", () => {
   });
 
   it("creates readable role tabs", () => {
-    expect(createUserRoleTabs(users)).toEqual([
+    expect(buildUserRoleTabs(users)).toEqual([
       { value: "all", label: "الكل" },
       { value: "coach", label: "المدربون" },
       { value: "super_admin", label: "مديرو النظام" },

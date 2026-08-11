@@ -100,7 +100,7 @@ export function createUserRoleOptions(users) {
     .map((role) => ({ value: role, label: getUserRoleLabel(role) }));
 }
 
-export function createUserRoleTabs(users) {
+export function buildUserRoleTabs(users) {
   const roleOptions = createUserRoleOptions(users);
 
   return [
