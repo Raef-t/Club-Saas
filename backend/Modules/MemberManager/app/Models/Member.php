@@ -26,6 +26,12 @@ class Member extends Model
 
     protected static function booted(): void
     {
+        static::saved(function ($member) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+
         static::deleted(function ($member) {
             if ($member->isForceDeleting()) {
                 return;
@@ -59,6 +65,10 @@ class Member extends Model
                 \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
                     ->where('attendable_id', $member->id)
                     ->delete();
+            }
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
             }
         });
 
@@ -105,6 +115,10 @@ class Member extends Model
                     ->where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
                     ->where('attendable_id', $member->id)
                     ->restore();
+            }
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
             }
         });
     }
@@ -155,39 +169,6 @@ class Member extends Model
     {
         return $this->hasMany(\Modules\SubscriptionManager\Models\LockerReservation::class, 'member_id');
     }
-
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted(): void
-    {
-        static::saved(function ($member) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
-            }
-        });
-
-        static::deleted(function ($member) {
-            if (method_exists($member, 'isForceDeleting') && $member->isForceDeleting()) {
-                $member->person()->withTrashed()->first()?->forceDelete();
-            } else {
-                $member->person?->delete();
-            }
-
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
-            }
-        });
-
-        static::restored(function ($member) {
-            $member->person()->onlyTrashed()->first()?->restore();
-
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
-            }
-        });
-    }
-
     /**
      * Scopes
      */
