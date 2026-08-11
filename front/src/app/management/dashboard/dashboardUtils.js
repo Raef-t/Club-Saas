@@ -162,10 +162,10 @@ export function createTodaySchedule(
 export function createShiftAttendanceChart(response) {
   const data = response?.data?.records || [];
 
-  // Aggregate data by day + shift to combine branches
+  // Aggregate data by shift to combine branches
   const grouped = new Map();
   data.forEach((record) => {
-    const key = `${record.day_name} - ${record.shift_name}`;
+    const key = record.shift_name || "شيفت غير محدد";
     const count = record.attended_players_count || 0;
     grouped.set(key, (grouped.get(key) || 0) + count);
   });

@@ -73,7 +73,13 @@ class ClubSettingController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'setting_key', type: 'string', example: 'value')
+                new OA\Property(property: 'theme_colors', type: 'object'),
+                new OA\Property(property: 'language', type: 'string', example: 'ar'),
+                new OA\Property(property: 'allowed_debt_limit', type: 'number', format: 'float', example: 100.00),
+                new OA\Property(property: 'grace_period_days', type: 'integer', example: 5),
+                new OA\Property(property: 'allow_partial_payment', type: 'boolean', example: true),
+                new OA\Property(property: 'enabled_features', type: 'array', items: new OA\Items(type: 'string'), example: ['attendance', 'subscriptions']),
+                new OA\Property(property: 'bg_image_url', type: 'string', example: 'https://example.com/bg.jpg')
             ]
         )
     )]

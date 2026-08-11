@@ -3,14 +3,22 @@
 namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+
 class StaffShift extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'staff_id',
-        'day_of_week',
-        'start_time',
-        'end_time',
+        'branch_shift_id',
     ];
+
+    public function branchShift()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\BranchShift::class);
+    }
 
     public function staff()
     {

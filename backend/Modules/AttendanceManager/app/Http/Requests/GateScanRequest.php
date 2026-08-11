@@ -14,7 +14,7 @@ class GateScanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'qr_token' => 'required|string',
+            'qr_code' => 'required|string',
             'scan_timestamp' => 'sometimes|integer',
         ];
     }

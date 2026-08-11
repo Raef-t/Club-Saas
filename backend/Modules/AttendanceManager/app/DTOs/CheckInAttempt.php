@@ -9,7 +9,6 @@ class CheckInAttempt
         public readonly int|string $attendableId,
         public readonly int|string $clubId,
         public readonly int|string $branchId,
-        public readonly \DateTimeImmutable $timestamp,
-        public readonly array $metadata = []
+        public readonly \DateTimeImmutable $timestamp
     ) {}
 }

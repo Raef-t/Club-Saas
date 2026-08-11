@@ -40,7 +40,6 @@ class QRSecurityService
 
         $member = DB::table('members')
             ->where('person_id', $personId)
-            ->whereNull('deleted_at')
             ->first();
 
         if (!$member) {
@@ -63,7 +62,6 @@ class QRSecurityService
 
         $staff = DB::table('staff')
             ->where('person_id', $personId)
-            ->whereNull('deleted_at')
             ->first();
 
         if (!$staff) {

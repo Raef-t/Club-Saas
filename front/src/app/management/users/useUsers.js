@@ -1,30 +1,52 @@
 import { useMemo, useState } from "react";
 import { useGetUsersQuery } from "@/lib/api/usersApi";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getApiErrorMessage } from "@/lib/apiError";
-import { createUserRoleTabs, createUserStats, filterUsers, getUsersCollection } from "./usersUtils";
+import { ALL_BRANCHES_VALUE } from "@/lib/managementBranchUtils";
+import {
+  createUserRoleOptions,
+  createUserStats,
+  filterUsers,
+  getUsersCollection,
+} from "./usersUtils";
 
 export function useUsers({ initialUsers } = {}) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const { selectedBranchId } = useManagementBranch();
+
+  const baseQueryParams = useMemo(() => {
+    const params = {};
+    if (selectedBranchId && selectedBranchId !== ALL_BRANCHES_VALUE) {
+      params.branch_id = selectedBranchId;
+    }
+    return params;
+  }, [selectedBranchId]);
+
+  const roleQueryParams = useMemo(() => {
+    const params = { ...baseQueryParams };
+    if (roleFilter !== "all") {
+      params.role = roleFilter;
+    }
+    return params;
+  }, [baseQueryParams, roleFilter]);
+
   const {
     currentData: allUsersResponse,
     error: allUsersError,
     isLoading: isLoadingAllUsers,
     isFetching: isFetchingAllUsers,
     refetch: refetchAllUsers,
-  } = useGetUsersQuery({});
+  } = useGetUsersQuery(baseQueryParams);
   const {
     currentData: roleUsersResponse,
     error: roleUsersError,
     isLoading: isLoadingRoleUsers,
     isFetching: isFetchingRoleUsers,
     refetch: refetchRoleUsers,
-  } = useGetUsersQuery(
-    { role: roleFilter },
-    {
-      skip: roleFilter === "all",
-    },
-  );
+  } = useGetUsersQuery(roleQueryParams, {
+    skip: roleFilter === "all",
+  });
 
   const allUsers = useMemo(
     () => getUsersCollection(allUsersResponse || initialUsers),

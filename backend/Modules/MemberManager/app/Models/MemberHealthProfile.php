@@ -3,8 +3,11 @@
 namespace Modules\MemberManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class MemberHealthProfile extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'member_id',
         'allergies',

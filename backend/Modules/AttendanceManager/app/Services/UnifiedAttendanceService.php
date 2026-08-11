@@ -33,31 +33,76 @@ class UnifiedAttendanceService
     /**
      * Check in an entity (member, staff, …).
      *
-     * @param  string  $type      attendable_type ('member' | 'staff' | …)
-     * @param  int     $entityId  The primary entity id
-     * @param  int     $clubId
-     * @param  int     $branchId
-     * @param  array   $metadata  Extra context
+     * @param  string      $type      attendable_type ('member' | 'staff' | …)
+     * @param  int         $entityId  The primary entity id
+     * @param  int         $branchId
+     * @param  string|null $checkInAt
      * @return Attendance
      * @throws Exception
      */
-    public function checkIn(string $type, int $entityId, int $clubId, int $branchId, array $metadata = []): Attendance
+    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null): Attendance
     {
-        return $this->resolveHandler($type)->checkIn($entityId, $clubId, $branchId, $metadata);
+        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt);
     }
 
     /**
      * Check out by attendance ID.
      * Type is resolved from the attendance record itself.
      *
-     * @param  int  $attendanceId
+     * @param  int         $attendanceId
+     * @param  string|null $checkOutAt
      * @return Attendance
      * @throws Exception
      */
-    public function checkOut(int $attendanceId): Attendance
+    public function checkOut(int $attendanceId, ?string $checkOutAt = null): Attendance
     {
         $attendance = Attendance::findOrFail($attendanceId);
-        return $this->resolveHandler($attendance->attendable_type)->checkOut($attendanceId);
+        return $this->resolveHandler($attendance->attendable_type)->checkOut($attendanceId, $checkOutAt);
+    }
+
+    /**
+     * Bulk check out open attendances for a specific branch and subscription plan.
+     *
+     * @param  int  $branchId
+     * @param  int  $subscriptionPlanId
+     * @return array
+     */
+    public function bulkCheckOut(int $branchId, int $subscriptionPlanId): array
+    {
+        $targetIds = Attendance::where('branch_id', $branchId)
+            ->whereNull('check_out_at')
+            ->whereHas('consumptions', function ($q) use ($subscriptionPlanId) {
+                $q->where('subscription_plan_id', $subscriptionPlanId);
+            })
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($targetIds)) {
+            throw new Exception(__('No active check-ins found for this subscription plan in the selected branch.'));
+        }
+
+        $successful = [];
+        $failed = [];
+
+        foreach ($targetIds as $id) {
+            try {
+                $attendance = $this->checkOut((int) $id);
+                $successful[] = $attendance;
+            } catch (Exception $e) {
+                $failed[] = [
+                    'attendance_id' => $id,
+                    'error'         => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'total_processed' => count($targetIds),
+            'success_count'   => count($successful),
+            'failed_count'    => count($failed),
+            'successful'      => $successful,
+            'failed'          => $failed,
+        ];
     }
 
     /**
@@ -73,16 +118,34 @@ class UnifiedAttendanceService
     }
 
     /**
-     * Get history query builder for an entity.
+     * Get history query builder for an entity or all entities.
      *
-     * @param  string       $type
-     * @param  int          $entityId
+     * @param  string|null  $type
+     * @param  int|null     $entityId
      * @param  string|null  $from
      * @param  string|null  $to
      * @return Builder
      */
-    public function getHistory(string $type, int $entityId, ?string $from = null, ?string $to = null): Builder
+    public function getHistory(?string $type = null, ?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
+        if (!$type || $type === 'all') {
+            $query = Attendance::query()->orderByDesc('check_in_at');
+
+            if ($entityId) {
+                $query->where('attendable_id', $entityId);
+            }
+
+            if ($from) {
+                $query->whereDate('check_in_at', '>=', $from);
+            }
+
+            if ($to) {
+                $query->whereDate('check_in_at', '<=', $to);
+            }
+
+            return $query;
+        }
+
         return $this->resolveHandler($type)->getHistory($entityId, $from, $to);
     }
 
