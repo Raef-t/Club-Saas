@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useState } from "react";
 import { useGetUsersQuery } from "@/lib/api/usersApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";

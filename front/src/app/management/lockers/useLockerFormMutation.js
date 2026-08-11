@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useCreateLockerMutation, useUpdateLockerMutation } from "@/lib/api/lockersApi";
 import { useToast } from "@/components/ui/Toast";

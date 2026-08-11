@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo } from "react";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { getApiErrorMessage } from "@/lib/apiError";
