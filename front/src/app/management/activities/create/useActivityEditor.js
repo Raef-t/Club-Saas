@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useCreateActivityMutation, useUpdateActivityMutation } from "@/lib/api/activitiesApi";

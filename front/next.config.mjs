@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactCompiler: true,
   async headers() {
     if (process.env.NODE_ENV !== "production") return [];
 

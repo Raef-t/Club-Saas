@@ -82,13 +82,13 @@ describe("management dashboard utilities", () => {
     const reportResponse = {
       data: {
         records: [
-          { shift_name: "الوردية الأولى", attended_players_count: 5 },
-          { shift_name: "الوردية الثانية", attended_players_count: 12 },
+          { day_name: "الأحد", shift_name: "الوردية الأولى", attended_players_count: 5 },
+          { day_name: "الاثنين", shift_name: "الوردية الثانية", attended_players_count: 12 },
         ],
       },
     };
     const chartData = createShiftAttendanceChart(reportResponse);
-    expect(chartData[0]).toEqual({ label: "الوردية الثانية", value: 12 });
+    expect(chartData[0]).toEqual({ label: "الاثنين - الوردية الثانية", value: 12 });
   });
 
   it("maps the coaches subscriptions report into distinct chart items", () => {

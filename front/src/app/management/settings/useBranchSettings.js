@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useGetBranchSettingsQuery, useUpdateBranchSettingsMutation } from "@/lib/api/branchesApi";
