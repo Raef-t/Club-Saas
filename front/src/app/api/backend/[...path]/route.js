@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { AUTH_SESSION_COOKIE, getAuthCookieOptions } from "@/lib/authSession";
 
 export const dynamic = "force-dynamic";
-
-const API_BASE_URL = process.env.API_BASE_URL || "http://issgroup-001-site1.anytempurl.com";
+//test
+const API_BASE_URL = process.env.API_BASE_URL || "http://31.70.108.63";
 
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const PUBLIC_API_PATHS = new Set(["auth/login", "auth/forgot-password"]);
@@ -61,8 +61,7 @@ function hasTrustedOrigin(request) {
   const publicHost =
     getFirstHeaderValue(request, "x-forwarded-host") || getFirstHeaderValue(request, "host");
   const publicProtocol =
-    getFirstHeaderValue(request, "x-forwarded-proto") ||
-    request.nextUrl.protocol.replace(/:$/, "");
+    getFirstHeaderValue(request, "x-forwarded-proto") || request.nextUrl.protocol.replace(/:$/, "");
   const allowedOrigins = new Set([request.nextUrl.origin]);
 
   if (publicHost && publicProtocol) {
@@ -109,7 +108,20 @@ async function proxyBackendRequest(request, context) {
   });
 
   const headers = new Headers();
-  headers.set("Accept", "application/json");
+  const accept = request.headers.get("accept") || "application/json";
+  const acceptsEventStream = accept.toLowerCase().includes("text/event-stream");
+  headers.set("Accept", accept);
+
+  if (acceptsEventStream) {
+    headers.set("Accept-Encoding", "identity");
+    headers.set("Cache-Control", "no-cache");
+
+    const lastEventId = request.headers.get("last-event-id");
+    if (lastEventId) {
+      headers.set("Last-Event-ID", lastEventId);
+    }
+  }
+
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
@@ -118,6 +130,7 @@ async function proxyBackendRequest(request, context) {
     method: request.method,
     headers,
     cache: "no-store",
+    signal: request.signal,
   };
 
   if (METHODS_WITH_BODY.has(request.method)) {
@@ -132,8 +145,26 @@ async function proxyBackendRequest(request, context) {
   try {
     const response = await fetch(upstreamUrl, init);
     const responseContentType = response.headers.get("content-type") || "application/json";
-    const isBinary = responseContentType.includes("zip") || responseContentType.includes("octet-stream") || responseContentType.includes("pdf");
-    let body = isBinary ? await response.arrayBuffer() : await response.text();
+    const normalizedResponseContentType = responseContentType.toLowerCase();
+
+    if (normalizedResponseContentType.includes("text/event-stream") && response.body) {
+      return new Response(response.body, {
+        status: response.status,
+        headers: {
+          "Content-Type": responseContentType,
+          "Cache-Control": "no-cache, no-store, no-transform, must-revalidate",
+          Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
+    const isBinaryResponse =
+      normalizedResponseContentType.includes("zip") ||
+      normalizedResponseContentType.includes("octet-stream") ||
+      normalizedResponseContentType.includes("pdf");
+    let body = isBinaryResponse ? await response.arrayBuffer() : await response.text();
     let sessionToken = null;
 
     if (pathName === "auth/login" && response.ok) {
@@ -160,18 +191,12 @@ async function proxyBackendRequest(request, context) {
       }
     }
 
-    const responseHeaders = {
-      "Content-Type": responseContentType,
-      "Cache-Control": "no-store",
-    };
-    const contentDisposition = response.headers.get("content-disposition");
-    if (contentDisposition) {
-      responseHeaders["Content-Disposition"] = contentDisposition;
-    }
-
     const nextResponse = new NextResponse(body, {
       status: response.status,
-      headers: responseHeaders,
+      headers: {
+        "Content-Type": responseContentType,
+        "Cache-Control": "no-store",
+      },
     });
 
     if (sessionToken) {

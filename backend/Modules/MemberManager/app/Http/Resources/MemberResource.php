@@ -28,9 +28,14 @@ class MemberResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $todayQrCode = $this->person_id 
+            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getTodayCodeForPerson($this->person_id) 
+            : null;
+
         return [
             'id' => $this->id,
             'member_number' => $this->member_number,
+            'qr_code' => $todayQrCode,
             'branch_id' => $this->branch_id,
             'membership_status' => $this->membership_status,
             'join_date' => $this->join_date,

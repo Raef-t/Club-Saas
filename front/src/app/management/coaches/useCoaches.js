@@ -2,17 +2,19 @@ import { useMemo, useState } from "react";
 import {
   useGetCoachesQuery,
   useGetCoachQuery,
-  useGetCoachShiftsQuery,
   useCreateCoachMutation,
   useUpdateCoachMutation,
+  useUpdateCoachPhotoMutation,
   useDeleteCoachMutation,
-  useAddCoachActivitiesMutation,
-  useDeleteCoachActivityMutation,
 } from "@/lib/api/coachesApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
+import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { resolveWorkStatus } from "@/lib/workStatus";
+import { createCoachActivityPlansMap } from "./coachDetailsUtils";
+import { createCoachEditInitialValues } from "./coachFormUtils";
 
 function getCoachesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -36,19 +38,20 @@ export function useCoaches(params = {}) {
   const [search, setSearch] = useState("");
   const [employmentFilter, setEmploymentFilter] = useState("all");
   const [activityFilter, setActivityFilter] = useState("all");
+  const [workStatusFilter, setWorkStatusFilter] = useState("all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [selectedActivityId, setSelectedActivityId] = useState("");
 
   const queryParams = useMemo(() => {
     const params = {};
     if (branchFilter !== "all") params.branch_id = Number(branchFilter);
     if (activityFilter !== "all") params.activity_id = Number(activityFilter);
+    if (workStatusFilter !== "all") params.work_status = workStatusFilter;
     return params;
-  }, [branchFilter, activityFilter]);
+  }, [activityFilter, branchFilter, workStatusFilter]);
 
   const { data, error, isLoading, refetch } = useGetCoachesQuery(queryParams);
   const { data: branchesData } = useGetBranchesQuery();
@@ -64,18 +67,10 @@ export function useCoaches(params = {}) {
     skip: !selectedCoachId || (!fetchDetails && drawerMode !== "details"),
   });
 
-  const { data: shiftsData, isFetching: isFetchingShifts } = useGetCoachShiftsQuery(
-    selectedCoachId,
-    {
-      skip: !selectedCoachId || (!fetchDetails && drawerMode !== "details"),
-    },
-  );
-
   const [createCoach, { isLoading: isCreating }] = useCreateCoachMutation();
   const [updateCoach, { isLoading: isUpdating }] = useUpdateCoachMutation();
+  const [updateCoachPhoto] = useUpdateCoachPhotoMutation();
   const [deleteCoach, { isLoading: isDeleting }] = useDeleteCoachMutation();
-  const [addCoachActivity, { isLoading: isAddingActivity }] = useAddCoachActivitiesMutation();
-  const [deleteCoachActivity, { isLoading: isDeletingActivity }] = useDeleteCoachActivityMutation();
 
   const coaches = useMemo(
     () => getCoachesArray(data || initialData?.coaches),
@@ -94,6 +89,15 @@ export function useCoaches(params = {}) {
     [allActivities, branchFilter],
   );
 
+  const { data: plansData } = useGetSubscriptionPlansQuery(
+    branchFilter === "all" ? {} : { branch_id: branchFilter },
+  );
+
+  const coachActivityPlansMap = useMemo(() => {
+    const plans = Array.isArray(plansData?.data) ? plansData.data : [];
+    return createCoachActivityPlansMap(plans);
+  }, [plansData]);
+
   const selectedCoach = useMemo(
     () => detailsData?.data || coaches.find((c) => c.id === selectedCoachId) || null,
     [coaches, selectedCoachId, detailsData],
@@ -110,7 +114,9 @@ export function useCoaches(params = {}) {
 
     return branchCoaches.filter((coach) => {
       const nameVal = coach.person?.full_name || "";
-      const specVal = coach.details?.specialization || "";
+      const activitiesVal = Array.isArray(coach.activities)
+        ? coach.activities.map((a) => a.name || "").join(" ")
+        : "";
       const phoneVal =
         coach.person?.phone_number ||
         coach.person?.phone ||
@@ -124,19 +130,23 @@ export function useCoaches(params = {}) {
 
       const matchesEmployment =
         employmentFilter === "all" || coach.employment_type === employmentFilter;
+      const matchesWorkStatus =
+        workStatusFilter === "all" || resolveWorkStatus(coach) === workStatusFilter;
 
       const matchesSearch =
         !normalizedSearch ||
-        [nameVal, specVal, phoneVal]
+        [nameVal, activitiesVal, phoneVal, coach.qr_code, coach.username]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(normalizedSearch));
 
-      return matchesActivity && matchesEmployment && matchesSearch;
+      return matchesActivity && matchesEmployment && matchesWorkStatus && matchesSearch;
     });
-  }, [activityFilter, branchCoaches, employmentFilter, search]);
+  }, [activityFilter, branchCoaches, employmentFilter, search, workStatusFilter]);
 
   const stats = useMemo(() => {
-    const activeCount = branchCoaches.filter((c) => c.is_active).length;
+    const activeCount = branchCoaches.filter(
+      (coach) => resolveWorkStatus(coach) === "active",
+    ).length;
     const fixedCount = branchCoaches.filter((c) => c.employment_type === "fixed_salary").length;
     const commCount = branchCoaches.filter(
       (c) => c.employment_type === "commission" || c.employment_type === "hybrid",
@@ -178,7 +188,6 @@ export function useCoaches(params = {}) {
     setDrawerMode(null);
     setSelectedCoachId(null);
     setFormError("");
-    setSelectedActivityId("");
   }
 
   async function handleCreate(values) {
@@ -191,7 +200,6 @@ export function useCoaches(params = {}) {
       formData.append("dob", values.dob);
       if (values.phone_number) formData.append("phone_number", values.phone_number);
       formData.append("country_code", values.country_code || "+963");
-      if (values.national_id) formData.append("national_id", values.national_id);
       if (values.address) formData.append("address", values.address);
 
       if (Array.isArray(values.branch_ids)) {
@@ -199,7 +207,8 @@ export function useCoaches(params = {}) {
       }
       formData.append("experience_years", String(Number(values.experience_years) || 0));
       if (values.start_date) formData.append("start_date", values.start_date);
-      formData.append("is_active", values.is_active ? "1" : "0");
+      formData.append("work_status", values.work_status);
+      formData.append("is_active", values.work_status === "active" ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
       formData.append(
@@ -220,9 +229,9 @@ export function useCoaches(params = {}) {
         formData.append("photo", values.photo);
       }
 
-      await createCoach(formData).unwrap();
+      const response = await createCoach(formData).unwrap();
       closeDrawer();
-      return true;
+      return response;
     } catch (submitError) {
       console.error("Create coach validation/API error:", submitError);
       setFormError(
@@ -237,14 +246,12 @@ export function useCoaches(params = {}) {
     setFormError("");
     try {
       const formData = new FormData();
-      formData.append("_method", "PATCH"); // Laravel POST method spoofing
       formData.append("first_name", values.first_name);
       formData.append("last_name", values.last_name);
       formData.append("gender", values.gender || "male");
       formData.append("dob", values.dob);
       formData.append("phone_number", values.phone_number || "");
       formData.append("country_code", values.country_code || "+963");
-      formData.append("national_id", values.national_id || "");
       formData.append("address", values.address || "");
 
       if (Array.isArray(values.branch_ids)) {
@@ -252,7 +259,8 @@ export function useCoaches(params = {}) {
       }
       formData.append("experience_years", String(Number(values.experience_years) || 0));
       formData.append("start_date", values.start_date || "");
-      formData.append("is_active", values.is_active ? "1" : "0");
+      formData.append("work_status", values.work_status);
+      formData.append("is_active", values.work_status === "active" ? "1" : "0");
       formData.append("employment_type", values.employment_type || "fixed_salary");
       formData.append("base_salary", String(Number(values.base_salary) || 0));
       formData.append(
@@ -270,14 +278,16 @@ export function useCoaches(params = {}) {
         values.shifts.forEach((shift) => formData.append("shifts[]", String(shift)));
       }
 
-      if (values.photo instanceof File) {
-        formData.append("photo", values.photo);
-      }
-
       await updateCoach({
         id: selectedCoachId,
         body: formData,
       }).unwrap();
+
+      if (values.photo instanceof File) {
+        const photoFormData = new FormData();
+        photoFormData.append("photo", values.photo);
+        await updateCoachPhoto({ id: selectedCoachId, body: photoFormData }).unwrap();
+      }
 
       closeDrawer();
       return true;
@@ -291,67 +301,8 @@ export function useCoaches(params = {}) {
   }
 
   function getEditInitialValues() {
-    if (!selectedCoach || (fetchDetails && (!detailsData || isFetchingShifts))) return null;
-
-    const branchIds = Array.isArray(selectedCoach.branch_ids)
-      ? selectedCoach.branch_ids.map(Number)
-      : Array.isArray(selectedCoach.branches)
-        ? selectedCoach.branches.map((b) => Number(b.id))
-        : [];
-    const activityIds = Array.isArray(selectedCoach.activities)
-      ? selectedCoach.activities.map((a) => Number(a.id))
-      : [];
-
-    const fetchedShifts = Array.isArray(shiftsData?.data)
-      ? shiftsData.data
-      : Array.isArray(shiftsData)
-        ? shiftsData
-        : [];
-    const shiftIdsFromApi = fetchedShifts
-      .map((s) => Number(s.branch_shift_id || s.branch_shift?.id || s.id))
-      .filter((id) => !isNaN(id) && id > 0);
-
-    const shiftIds =
-      shiftIdsFromApi.length > 0
-        ? shiftIdsFromApi
-        : Array.isArray(selectedCoach.shifts)
-          ? selectedCoach.shifts
-              .map((s) => Number(s.branch_shift_id || s.branch_shift?.id || s.id))
-              .filter((id) => !isNaN(id) && id > 0)
-          : [];
-    const workTypes = selectedCoach.work_types || selectedCoach.details?.work_types || [];
-    const [firstName, ...remainingNameParts] = (selectedCoach.person?.full_name || "").split(/\s+/);
-    const primaryContact = selectedCoach.person?.contacts?.[0] || null;
-
-    return {
-      first_name: selectedCoach.person?.first_name || firstName || "",
-      last_name:
-        selectedCoach.person?.last_name || remainingNameParts.join(" ") || "",
-      gender: selectedCoach.person?.gender || "male",
-      dob: selectedCoach.person?.dob ? selectedCoach.person.dob.split("T")[0] : "",
-      phone_number:
-        selectedCoach.person?.phone_number ||
-        selectedCoach.person?.phone ||
-        primaryContact?.phone_number ||
-        "",
-      country_code:
-        selectedCoach.person?.country_code || primaryContact?.country_code || "+963",
-      national_id: selectedCoach.person?.national_id || "",
-      address: selectedCoach.person?.address || "",
-      branch_ids: branchIds,
-      experience_years: String(
-        selectedCoach.experience_years || selectedCoach.details?.experience_years || 0,
-      ),
-      start_date: selectedCoach.start_date ? selectedCoach.start_date.split("T")[0] : "",
-      is_active: selectedCoach.is_active ?? true,
-      employment_type: selectedCoach.employment_type || "fixed_salary",
-      base_salary: String(Number(selectedCoach.base_salary) || 0),
-      default_commission_rate: String(Number(selectedCoach.details?.default_commission_rate) || 0),
-      work_types: Array.isArray(workTypes) ? workTypes : [],
-      activity_ids: activityIds,
-      shift_ids: shiftIds,
-      photo: selectedCoach.person?.photo_url || selectedCoach.person?.photo || null,
-    };
+    if (!selectedCoach || (fetchDetails && !detailsData)) return null;
+    return createCoachEditInitialValues(selectedCoach);
   }
 
   function handleDelete(coach) {
@@ -375,31 +326,6 @@ export function useCoaches(params = {}) {
     }
   }
 
-  async function handleAddActivity() {
-    if (!selectedCoachId || !selectedActivityId) return;
-    try {
-      await addCoachActivity({
-        id: selectedCoachId,
-        activity_ids: [Number(selectedActivityId)],
-      }).unwrap();
-      setSelectedActivityId("");
-    } catch {
-      window.alert("تعذر إسناد النشاط للمدرب.");
-    }
-  }
-
-  async function handleRemoveActivity(activityId) {
-    if (!selectedCoachId) return;
-    try {
-      await deleteCoachActivity({
-        id: selectedCoachId,
-        activityId,
-      }).unwrap();
-    } catch {
-      window.alert("تعذر إزالة النشاط من المدرب.");
-    }
-  }
-
   return {
     search,
     setSearch,
@@ -409,6 +335,8 @@ export function useCoaches(params = {}) {
     setEmploymentFilter,
     activityFilter,
     setActivityFilter,
+    workStatusFilter,
+    setWorkStatusFilter,
     drawerMode,
     setDrawerMode,
     selectedCoachId,
@@ -427,8 +355,6 @@ export function useCoaches(params = {}) {
     isCreating,
     isUpdating,
     isDeleting,
-    isAddingActivity,
-    isDeletingActivity,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -436,13 +362,10 @@ export function useCoaches(params = {}) {
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
-    handleAddActivity,
-    handleRemoveActivity,
-    selectedActivityId,
-    setSelectedActivityId,
     getEditInitialValues,
     branches,
     activities,
+    coachActivityPlansMap,
     closeDrawer,
   };
 }

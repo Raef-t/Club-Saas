@@ -19,6 +19,7 @@ class ActivityType extends Model
         'is_session_based',
         'has_unlimited_subscribers',
         'has_shifts',
+        'is_daily_entry',
     ];
 
     /**

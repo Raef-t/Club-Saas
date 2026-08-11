@@ -13,8 +13,19 @@ import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { coachFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
-import { EMPLOYMENT_TYPES as employmentTypes, SHIFT_GENDER_LABELS as shiftGenderLabels } from "./coachConstants";
-import { createCoachFormInitialValues, getEmploymentTypeForWorkTypes } from "./coachFormUtils";
+import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
+import {
+  EMPLOYMENT_TYPES as employmentTypes,
+  SHIFT_GENDER_LABELS as shiftGenderLabels,
+} from "./coachConstants";
+import {
+  COACH_ACTIVITY_KINDS,
+  calculateAge,
+  createCoachFormInitialValues,
+  getCoachActivityKind,
+  getCoachRulesForActivities,
+} from "./coachFormUtils";
+
 export function CoachCreateForm({
   formId,
   branches = [],
@@ -35,6 +46,56 @@ export function CoachCreateForm({
     }
     return values;
   });
+
+  const calculatedAge = calculateAge(form.dob);
+  const selectedActivities = useMemo(
+    () =>
+      activities.filter((activity) =>
+        form.activity_ids.some((id) => Number(id) === Number(activity.id)),
+      ),
+    [activities, form.activity_ids],
+  );
+  const activityRules = useMemo(
+    () => getCoachRulesForActivities(selectedActivities),
+    [selectedActivities],
+  );
+  const employmentTypeOptions = useMemo(
+    () =>
+      activityRules.hasPrivateTraining &&
+      !activityRules.hasGeneralTraining &&
+      !activityRules.hasGroupClass
+        ? [{ value: "commission_based", label: "بدون راتب (تدريب خاص)" }]
+        : employmentTypes,
+    [
+      activityRules.hasGeneralTraining,
+      activityRules.hasGroupClass,
+      activityRules.hasPrivateTraining,
+    ],
+  );
+  const selectableActivities = useMemo(
+    () =>
+      activities.filter((activity) => {
+        if (form.activity_ids.includes(Number(activity.id))) return false;
+
+        const kind = getCoachActivityKind(activity);
+        if (kind === COACH_ACTIVITY_KINDS.DAILY_ENTRY) return false;
+        if (
+          activityRules.hasGroupClass &&
+          (kind === COACH_ACTIVITY_KINDS.GENERAL_TRAINING ||
+            kind === COACH_ACTIVITY_KINDS.PRIVATE_TRAINING)
+        ) {
+          return false;
+        }
+        if (
+          (activityRules.hasGeneralTraining || activityRules.hasPrivateTraining) &&
+          kind === COACH_ACTIVITY_KINDS.GROUP_CLASS
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [activities, activityRules, form.activity_ids],
+  );
 
   const branchId1 = form.branch_ids?.[0];
   const branchId2 = form.branch_ids?.[1];
@@ -67,18 +128,27 @@ export function CoachCreateForm({
   const branchSettings = branchSettingsRes?.data;
 
   useEffect(() => {
-    if (branchSettings && !initialValues) {
-      setForm((prev) => ({
-        ...prev,
-        base_salary: branchSettings.default_employee_salary
+    if (!activityRules.hasRecognizedActivity) return;
+
+    setForm((current) => ({
+      ...current,
+      work_types: activityRules.workTypes,
+      employment_type: activityRules.employmentType,
+      base_salary: activityRules.allowsSalary
+        ? !initialValues && !Number(current.base_salary) && branchSettings?.default_employee_salary
           ? String(Number(branchSettings.default_employee_salary))
-          : prev.base_salary,
-        default_commission_rate: branchSettings.default_coach_commission_percentage
+          : current.base_salary
+        : "0",
+      default_commission_rate: activityRules.allowsCommission
+        ? !initialValues &&
+          !Number(current.default_commission_rate) &&
+          branchSettings?.default_coach_commission_percentage
           ? String(Number(branchSettings.default_coach_commission_percentage))
-          : prev.default_commission_rate,
-      }));
-    }
-  }, [branchSettings, initialValues]);
+          : current.default_commission_rate
+        : "0",
+      shifts: activityRules.allowsShifts ? current.shifts : [],
+    }));
+  }, [activityRules, branchSettings, initialValues]);
 
   const branchShifts = useMemo(() => {
     const all = [];
@@ -96,32 +166,13 @@ export function CoachCreateForm({
     return all;
   }, [shiftsResponse1, shiftsResponse2, shiftsResponse3]);
 
-  const hasEquipmentActivity = useMemo(() => {
-    if (Array.isArray(form.shift_ids) && form.shift_ids.length > 0) return true;
-    if (Array.isArray(form.work_types) && form.work_types.includes("equipment")) return true;
-    return activities.some((act) => {
-      const isSelected = form.activity_ids.includes(Number(act.id));
-      if (!isSelected) return false;
-      const nameStr =
-        typeof act.name === "object" ? act.name?.ar || act.name?.en || "" : act.name || "";
-      return (
-        nameStr.includes("أجهزة") ||
-        nameStr.includes("عام") ||
-        nameStr.toLowerCase().includes("equipment")
-      );
-    });
-  }, [activities, form.activity_ids, form.work_types, form.shift_ids]);
-
   const [errors, setErrors] = useState({});
 
   function updateField(field, value) {
     setForm((current) => {
       const updated = { ...current, [field]: value };
       if (field === "branch_ids") {
-        updated.shift_ids = [];
-      }
-      if (field === "work_types") {
-        updated.employment_type = getEmploymentTypeForWorkTypes(value);
+        updated.shifts = [];
       }
       return updated;
     });
@@ -133,7 +184,30 @@ export function CoachCreateForm({
   function handleSubmit(event) {
     event.preventDefault();
 
-    const result = coachFormSchema.safeParse(form);
+    if (activityRules.hasDailyEntry) {
+      setErrors({ activity_ids: "نشاط الدخول اليومي لا يُسند إلى مدرب." });
+      return;
+    }
+    if (activityRules.hasIncompatibleActivities) {
+      setErrors({
+        activity_ids: "لا يمكن جمع الحصة الجماعية مع التدريب العام أو الخاص لنفس المدرب.",
+      });
+      return;
+    }
+
+    const normalizedForm = activityRules.hasRecognizedActivity
+      ? {
+          ...form,
+          work_types: activityRules.workTypes,
+          employment_type: activityRules.employmentType,
+          base_salary: activityRules.allowsSalary ? form.base_salary : "0",
+          default_commission_rate: activityRules.allowsCommission
+            ? form.default_commission_rate
+            : "0",
+          shifts: activityRules.allowsShifts ? form.shifts : [],
+        }
+      : form;
+    const result = coachFormSchema.safeParse(normalizedForm);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
@@ -147,26 +221,28 @@ export function CoachCreateForm({
     }
 
     setErrors({});
-    const shiftsPayload = hasEquipmentActivity ? (form.shift_ids || []).map(Number) : [];
+    const shiftsPayload = activityRules.allowsShifts
+      ? (normalizedForm.shifts || []).map(Number)
+      : [];
 
     onSubmit({
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      gender: form.gender,
-      dob: form.dob,
-      phone_number: form.phone_number.trim() || null,
-      country_code: form.country_code.trim() || "+963",
-      national_id: form.national_id.trim() || null,
-      address: form.address.trim() || null,
-      branch_ids: form.branch_ids,
-      experience_years: Number(form.experience_years) || 0,
-      start_date: form.start_date || null,
-      is_active: form.is_active,
-      employment_type: form.employment_type,
-      base_salary: Number(form.base_salary) || 0,
-      default_commission_rate: Number(form.default_commission_rate) || 0,
-      work_types: form.work_types,
-      activity_ids: form.activity_ids,
+      first_name: normalizedForm.first_name.trim(),
+      last_name: normalizedForm.last_name.trim(),
+      gender: normalizedForm.gender,
+      dob: normalizedForm.dob,
+      phone_number: normalizedForm.phone_number.trim() || null,
+      country_code: normalizedForm.country_code.trim() || "+963",
+      address: normalizedForm.address.trim() || null,
+      branch_ids: normalizedForm.branch_ids,
+      experience_years: Number(normalizedForm.experience_years) || 0,
+      start_date: normalizedForm.start_date || null,
+      work_status: normalizedForm.work_status,
+      is_active: normalizedForm.work_status === "active",
+      employment_type: normalizedForm.employment_type,
+      base_salary: Number(normalizedForm.base_salary) || 0,
+      default_commission_rate: Number(normalizedForm.default_commission_rate) || 0,
+      work_types: normalizedForm.work_types,
+      activity_ids: normalizedForm.activity_ids,
       shifts: shiftsPayload,
     });
   }
@@ -190,7 +266,7 @@ export function CoachCreateForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label className="block text-right text-sm text-app-muted-light">
           الجنس *
           <Dropdown
@@ -206,14 +282,29 @@ export function CoachCreateForm({
           />
         </label>
 
-        <DatePickerSmart
-          label="تاريخ الميلاد *"
-          value={form.dob}
-          onChange={(value) => updateField("dob", value)}
-          placeholder="DD/MM/YYYY"
-          error={errors.dob}
-          required
-        />
+        <label className="block text-right text-sm text-app-muted-light">
+          تاريخ الميلاد
+          <div className="mt-2">
+            <DatePickerSmart
+              value={form.dob}
+              onChange={(value) => updateField("dob", value)}
+              placeholder="DD/MM/YYYY"
+              error={errors.dob}
+            />
+          </div>
+        </label>
+
+        <label className="block text-right text-sm text-app-muted-light">
+          العمر
+          <input
+            type="text"
+            readOnly
+            disabled
+            value={calculatedAge !== null ? `${calculatedAge} سنة` : "يُحسب تلقائياً"}
+            className="app-input mt-2 h-11 w-full bg-app-card-soft/60 px-3 text-right text-white font-medium outline-none border border-app-line/60 cursor-not-allowed"
+            placeholder="يُحسب تلقائياً"
+          />
+        </label>
       </div>
 
       <div>
@@ -228,14 +319,6 @@ export function CoachCreateForm({
           error={errors && (errors.phone_number || errors.country_code)}
         />
       </div>
-
-      <CoachTextField
-        label="الرقم الوطني"
-        value={form.national_id}
-        onChange={(value) => updateField("national_id", value)}
-        error={errors.national_id}
-        placeholder="أدخل الرقم الوطني"
-      />
 
       <div className="block text-right text-sm text-app-muted-light">
         الفروع التابع لها *
@@ -274,12 +357,10 @@ export function CoachCreateForm({
         الأنشطة والرياضات المنسوبة للمدرب (اختياري)
         <div className="mt-2">
           <Dropdown
-            options={activities
-              .filter((act) => !form.activity_ids.includes(Number(act.id)))
-              .map((act) => ({
-                value: act.id,
-                label: typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name,
-              }))}
+            options={selectableActivities.map((act) => ({
+              value: act.id,
+              label: typeof act.name === "object" ? act.name?.ar || act.name?.en : act.name,
+            }))}
             value={null}
             onChange={(val) => {
               const id = Number(val);
@@ -289,6 +370,7 @@ export function CoachCreateForm({
             }}
             placeholder="اختر نشاطاً لإضافته..."
             buttonClassName="h-11 border border-app-line bg-black/35 hover:border-app-yellow/50"
+            error={errors.activity_ids}
           />
 
           {form.activity_ids.length > 0 && (
@@ -322,10 +404,14 @@ export function CoachCreateForm({
               })}
             </div>
           )}
+          <p className="mt-2 text-xs text-app-muted-light">
+            نوع العمل والتعويض والشفتات تُحدد تلقائياً حسب نوع النشاط. أنشطة الدخول اليومي لا تُسند
+            إلى مدرب.
+          </p>
         </div>
       </div>
 
-      {hasEquipmentActivity && (
+      {activityRules.allowsShifts && (
         <div className="block text-right text-sm text-app-muted-light">
           الورديات / الشفتات المتاحة
           <div className="mt-2 grid grid-cols-2 gap-3 p-3 bg-app-card-soft rounded-lg border border-app-line max-h-48 overflow-y-auto">
@@ -339,7 +425,7 @@ export function CoachCreateForm({
               </p>
             ) : (
               branchShifts.map((shift) => {
-                const isChecked = form.shift_ids?.some((id) => Number(id) === Number(shift.id));
+                const isChecked = form.shifts?.some((id) => Number(id) === Number(shift.id));
                 const shiftNameStr = shift.name || "وردية بدون اسم";
                 const startTime = shift.start_time ? formatTime(shift.start_time) : "";
                 const endTime = shift.end_time ? formatTime(shift.end_time) : "";
@@ -355,9 +441,9 @@ export function CoachCreateForm({
                     onChange={() => {
                       const idNum = Number(shift.id);
                       const newShifts = isChecked
-                        ? (form.shift_ids || []).filter((x) => Number(x) !== idNum)
-                        : [...(form.shift_ids || []), idNum];
-                      updateField("shift_ids", newShifts);
+                        ? (form.shifts || []).filter((x) => Number(x) !== idNum)
+                        : [...(form.shifts || []), idNum];
+                      updateField("shifts", newShifts);
                     }}
                   />
                 );
@@ -369,33 +455,25 @@ export function CoachCreateForm({
 
       <div className="block text-right text-sm text-app-muted-light">
         أنواع عمل المدرب
-        <div className="mt-2 flex items-center gap-6 p-3 bg-app-card-soft rounded-lg border border-app-line">
-          <Checkbox
-            label="أجهزة (equipment)"
-            checked={form.work_types.includes("equipment")}
-            onChange={() => {
-              const checked = form.work_types.includes("equipment");
-              const newTypes = checked
-                ? form.work_types.filter((x) => x !== "equipment")
-                : [...form.work_types, "equipment"];
-              updateField("work_types", newTypes);
-            }}
-          />
-          <Checkbox
-            label="فعاليات/حصص (activities)"
-            checked={form.work_types.includes("activities")}
-            onChange={() => {
-              const checked = form.work_types.includes("activities");
-              const newTypes = checked
-                ? form.work_types.filter((x) => x !== "activities")
-                : [...form.work_types, "activities"];
-              updateField("work_types", newTypes);
-            }}
-          />
+        <div className="mt-2 flex min-h-11 items-center gap-2 rounded-lg border border-app-line bg-app-card-soft p-3">
+          {form.work_types.length > 0 ? (
+            form.work_types.map((workType) => (
+              <span
+                key={workType}
+                className="rounded-full bg-app-yellow/10 px-3 py-1 text-xs font-medium text-app-yellow"
+              >
+                {workType === "equipment" ? "أجهزة (equipment)" : "فعاليات/حصص (activities)"}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-app-muted-light">
+              اختر نشاطاً لتحديد نوع عمل المدرب تلقائياً
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block text-right text-sm text-app-muted-light">
           سنوات الخبرة
           <input
@@ -417,23 +495,30 @@ export function CoachCreateForm({
           )}
         </label>
 
-        <DatePickerSmart
-          label="تاريخ المباشرة"
-          value={form.start_date}
-          onChange={(value) => updateField("start_date", value)}
-          placeholder="DD/MM/YYYY"
-          error={errors.start_date}
-          required={false}
-        />
+        <label className="block text-right text-sm text-app-muted-light">
+          تاريخ المباشرة
+          <div className="mt-2">
+            <DatePickerSmart
+              value={form.start_date}
+              onChange={(value) => updateField("start_date", value)}
+              placeholder="DD/MM/YYYY"
+              error={errors.start_date}
+            />
+          </div>
+        </label>
       </div>
 
-      <div className="rounded-lg border border-app-line bg-app-card-soft p-3">
-        <Checkbox
-          label="المدرب نشط"
-          checked={form.is_active}
-          onChange={(event) => updateField("is_active", event.target.checked)}
+      <label className="block text-right text-sm text-app-muted-light">
+        حالة العمل *
+        <Dropdown
+          className="mt-2 text-white"
+          buttonClassName="h-11 bg-app-card-soft"
+          value={form.work_status}
+          onChange={(value) => updateField("work_status", value)}
+          options={WORK_STATUS_OPTIONS}
+          error={errors.work_status}
         />
-      </div>
+      </label>
 
       <label className="block text-right text-sm text-app-muted-light">
         نوع التوظيف
@@ -442,13 +527,15 @@ export function CoachCreateForm({
           buttonClassName="bg-app-card-soft h-11"
           value={form.employment_type}
           onChange={(val) => updateField("employment_type", val)}
-          options={employmentTypes}
+          options={employmentTypeOptions}
           disabled={true}
           error={errors && errors.employment_type}
         />
       </label>
 
-      {form.employment_type !== "commission_based" && form.employment_type !== "commission" && (
+      {(activityRules.hasRecognizedActivity
+        ? activityRules.allowsSalary
+        : form.employment_type !== "commission_based" && form.employment_type !== "commission") && (
         <label className="block text-right text-sm text-app-muted-light">
           الراتب الأساسي ({CURRENCY_SYMBOL}) *
           <input
@@ -472,9 +559,11 @@ export function CoachCreateForm({
         </label>
       )}
 
-      {(form.employment_type === "commission_based" ||
-        form.employment_type === "commission" ||
-        form.employment_type === "hybrid") && (
+      {(activityRules.hasRecognizedActivity
+        ? activityRules.allowsCommission
+        : form.employment_type === "commission_based" ||
+          form.employment_type === "commission" ||
+          form.employment_type === "hybrid") && (
         <label className="block text-right text-sm text-app-muted-light">
           نسبة العمولة الافتراضية للمدرب (%) *
           <input
@@ -547,9 +636,7 @@ function CoachTextField({ label, value, onChange, error, placeholder }) {
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={Boolean(error)}
         className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
-          error
-            ? "border border-app-red focus:border-app-red"
-            : "focus:border-app-yellow/70"
+          error ? "border border-app-red focus:border-app-red" : "focus:border-app-yellow/70"
         }`}
         placeholder={placeholder}
       />

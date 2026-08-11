@@ -24,6 +24,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "payroll_start_day", type: "integer", nullable: true, example: 1),
         new OA\Property(property: "payroll_end_day", type: "integer", nullable: true, example: 30),
         new OA\Property(property: "include_terminated_subscriptions", type: "boolean", nullable: true, example: false),
+        new OA\Property(property: "allow_installments", type: "boolean", nullable: true, example: false),
         new OA\Property(property: "updated_at", type: "string", format: "date-time")
     ]
 )]
@@ -46,6 +47,7 @@ class BranchSettingResource extends JsonResource
             'payroll_start_day' => $this->payroll_start_day,
             'payroll_end_day' => $this->payroll_end_day,
             'include_terminated_subscriptions' => (bool)$this->include_terminated_subscriptions,
+            'allow_installments' => (bool)$this->allow_installments,
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

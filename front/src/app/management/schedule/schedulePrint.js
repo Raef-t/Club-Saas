@@ -11,9 +11,10 @@ function formatPrintableCell(value) {
 /**
  * Builds one printable period table.
  */
-function buildPeriodTableHtml(title, slots, periodKey, scheduleData, formatTime) {
+function buildPeriodTableHtml(title, slots, periodKey, scheduleData, holidayDayKeys, formatTime) {
   if (!slots.length) return "";
   const fmt = typeof formatTime === "function" ? formatTime : (v) => v;
+  const holidaySet = new Set(holidayDayKeys);
 
   const headerCells = slots
     .map(
@@ -28,8 +29,13 @@ function buildPeriodTableHtml(title, slots, periodKey, scheduleData, formatTime)
         return `<td>${formatPrintableCell(value)}</td>`;
       })
       .join("");
+    const isHoliday = holidaySet.has(day.key);
+    const rowClasses = [index % 2 ? "even-row" : "", isHoliday ? "holiday-row" : ""]
+      .filter(Boolean)
+      .join(" ");
+    const holidayBadge = isHoliday ? '<span class="holiday-badge">عطلة</span>' : "";
 
-    return `<tr class="${index % 2 ? "even-row" : ""}"><td class="day-cell">${escapeScheduleHtml(day.label)}</td>${cells}</tr>`;
+    return `<tr class="${rowClasses}"><td class="day-cell">${escapeScheduleHtml(day.label)}${holidayBadge}</td>${cells}</tr>`;
   }).join("");
 
   return `
@@ -50,6 +56,7 @@ export function buildSchedulePrintHtml({
   morningSlots,
   eveningSlots,
   scheduleData,
+  holidayDayKeys = [],
   formatTime,
   printedAt = new Date(),
 }) {
@@ -58,6 +65,7 @@ export function buildSchedulePrintHtml({
     morningSlots,
     "morning",
     scheduleData,
+    holidayDayKeys,
     formatTime,
   );
   const eveningHtml = buildPeriodTableHtml(
@@ -65,6 +73,7 @@ export function buildSchedulePrintHtml({
     eveningSlots,
     "evening",
     scheduleData,
+    holidayDayKeys,
     formatTime,
   );
   const printDate = escapeScheduleHtml(printedAt.toLocaleDateString("ar-SY"));
@@ -172,6 +181,25 @@ export function buildSchedulePrintHtml({
           }
           .even-row td { background: #fef9e7; }
           .even-row .day-cell { background: #fdf3d3; }
+          .holiday-row td {
+            background: #fff1f1;
+            border-color: #efb3b3;
+          }
+          .holiday-row .day-cell {
+            background: #ffe1e1;
+            color: #b91c1c;
+          }
+          .holiday-badge {
+            display: inline-block;
+            margin-right: 6px;
+            border: 1px solid #efb3b3;
+            border-radius: 999px;
+            padding: 1px 5px;
+            background: #fff5f5;
+            color: #b91c1c;
+            font-size: 8px;
+          }
+
           .footer {
             margin-top: 40px;
             padding-top: 14px;

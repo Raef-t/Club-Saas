@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 import { GridIcon } from "@/components/icons/Icons";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 
@@ -73,6 +74,162 @@ export function SubscriptionDonut({ items }) {
 }
 
 /**
+ * Renders coach subscriptions as an interactive, scrollable donut.
+ */
+export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasError = false }) {
+  const [activeCoachId, setActiveCoachId] = useState(null);
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const activeItem = items.find((item) => item.id === activeCoachId) || null;
+  const radius = 43;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  if (isLoading) {
+    return (
+      <div
+        className="grid min-h-44 place-items-center px-5 pb-5 text-sm text-app-muted"
+        role="status"
+      >
+        جاري تحميل إحصائيات الكوتشات...
+      </div>
+    );
+  }
+
+  if (!items.length) {
+    return (
+      <p
+        className="grid min-h-56 place-items-center px-5 pb-5 text-center text-sm text-app-muted"
+        role={hasError ? "alert" : undefined}
+      >
+        {hasError
+          ? "تعذر تحميل إحصائيات اشتراكات الكوتشات."
+          : "لا توجد اشتراكات نشطة للكوتشات في الفرع المختار."}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex min-h-64 flex-col items-center px-5 pb-5 pt-1">
+      <div className="flex min-h-14 w-full items-center justify-center pb-2">
+        {activeItem && (
+          <div
+            className="max-w-full rounded-xl border border-app-yellow/30 bg-app-panel px-4 py-2 text-center shadow-xl"
+            role="tooltip"
+          >
+            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-app-text">
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: activeItem.color }}
+              />
+              <span className="truncate">{activeItem.label}</span>
+              <span className="text-app-yellow">{activeItem.value.toLocaleString("ar")} لاعب</span>
+            </div>
+            {activeItem.activities.length > 0 && (
+              <p className="mt-1 truncate text-[11px] text-app-muted-light">
+                {activeItem.activities.join("، ")}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="relative size-52 shrink-0">
+        <svg
+          className="size-full"
+          viewBox="0 0 120 120"
+          role="img"
+          aria-label="توزيع اللاعبين النشطين حسب الكوتش"
+        >
+          <g transform="rotate(-90 60 60)">
+            <circle cx="60" cy="60" r={radius} fill="none" stroke="#222" strokeWidth="12" />
+            {items.map((item) => {
+              const length = total > 0 ? (item.value / total) * circumference : 0;
+              const segmentOffset = offset;
+              offset += length;
+
+              return (
+                <circle
+                  key={item.id}
+                  cx="60"
+                  cy="60"
+                  r={radius}
+                  fill="none"
+                  stroke={item.color}
+                  strokeWidth="12"
+                  strokeDasharray={`${length} ${circumference - length}`}
+                  strokeDashoffset={-segmentOffset}
+                  tabIndex={0}
+                  className={`cursor-pointer outline-none transition-all duration-200 ${
+                    activeItem && activeItem.id !== item.id
+                      ? "opacity-25"
+                      : "opacity-100 focus-visible:brightness-125"
+                  }`}
+                  onMouseEnter={() => setActiveCoachId(item.id)}
+                  onMouseLeave={() => setActiveCoachId(null)}
+                  onFocus={() => setActiveCoachId(item.id)}
+                  onBlur={() => setActiveCoachId(null)}
+                  aria-label={`${item.label}: ${item.value.toLocaleString("ar")} لاعب`}
+                />
+              );
+            })}
+          </g>
+        </svg>
+
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-5 text-center"
+          aria-live="polite"
+        >
+          <strong className="text-2xl text-app-text">
+            {(activeItem?.value ?? total).toLocaleString("ar")}
+          </strong>
+          <span className="mt-0.5 max-w-24 truncate text-[11px] text-app-muted">
+            {activeItem?.label || "إجمالي اللاعبين"}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-4 w-full max-h-48 overflow-y-auto px-0.5">
+        <ul className="grid grid-cols-3 gap-2 text-sm text-app-text">
+          {items.map((item) => {
+            const activities = item.activities.join("، ");
+            const details = activities ? `${item.label} — ${activities}` : item.label;
+
+            return (
+              <li key={item.id} className="min-w-0">
+                <button
+                  type="button"
+                  className={`flex w-full items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs text-start transition ${
+                    activeItem && activeItem.id !== item.id
+                      ? "border-transparent opacity-35"
+                      : "border-app-line bg-black/20 hover:border-app-yellow/40 hover:bg-white/5 focus-visible:border-app-yellow/50"
+                  }`}
+                  title={`${details}: ${item.value.toLocaleString("ar")} لاعب`}
+                  onMouseEnter={() => setActiveCoachId(item.id)}
+                  onMouseLeave={() => setActiveCoachId(null)}
+                  onFocus={() => setActiveCoachId(item.id)}
+                  onBlur={() => setActiveCoachId(null)}
+                >
+                  <span className="flex items-center gap-1.5 min-w-0 truncate">
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="truncate text-app-text">{item.label}</span>
+                  </span>
+                  <span className="text-xs font-semibold text-app-yellow shrink-0">
+                    {item.value.toLocaleString("ar")}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Renders today's schedule as a responsive data table.
  */
 export function DailyScheduleTable({ sessions }) {
@@ -88,31 +245,56 @@ export function DailyScheduleTable({ sessions }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[700px] border-separate border-spacing-y-2 text-right text-sm">
+      <table className="w-full min-w-[820px] border-separate border-spacing-y-2 text-right text-sm">
         <thead className="text-xs text-app-muted-light">
           <tr>
             <th className="px-4 pb-1 font-medium">الوقت</th>
             <th className="px-4 pb-1 font-medium">الحصة أو الفعالية</th>
             <th className="px-4 pb-1 font-medium">المدرب</th>
             <th className="px-4 pb-1 font-medium">الفرع</th>
+            <th className="px-4 pb-1 font-medium">اللاعبون الحاضرون</th>
             <th className="px-4 pb-1 font-medium">الحالة</th>
           </tr>
         </thead>
         <tbody>
           {sessions.map((session) => (
-            <tr key={session.id} className="bg-app-card-soft">
+            <tr
+              key={session.id}
+              className={`bg-app-card-soft transition-opacity duration-300 ${
+                session.status.tone === "yellow" ? "opacity-45 hover:opacity-100" : ""
+              }`}
+            >
               <td className="rounded-s-xl px-4 py-3 font-medium text-app-yellow" dir="ltr">
                 {formatTime(session.startTime)} - {formatTime(session.endTime)}
               </td>
               <td className="px-4 py-3 text-app-text">{session.title}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.coach}</td>
               <td className="px-4 py-3 text-app-muted-light">{session.branch}</td>
+              <td className="px-4 py-3">
+                {session.presentPlayersCount === null ? (
+                  <span
+                    className="inline-block h-6 w-20 animate-pulse rounded-lg bg-app-line-soft"
+                    role="status"
+                    aria-label="جاري تحميل عدد اللاعبين الحاضرين"
+                  />
+                ) : (
+                  <span className="inline-flex min-w-20 items-center justify-center rounded-lg border border-app-line bg-black/30 px-3 py-1 text-xs font-medium text-app-yellow">
+                    {session.presentPlayersCount.toLocaleString("ar")} لاعب
+                  </span>
+                )}
+              </td>
               <td className="rounded-e-xl px-4 py-3">
                 <span
-                  className={`inline-flex min-w-16 justify-center rounded-lg px-3 py-1 text-xs ${
+                  className={`inline-flex min-w-16 items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-xs ${
                     statusClasses[session.status.tone] || statusClasses.neutral
                   }`}
                 >
+                  {session.status.tone === "green" && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-app-green opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-app-green"></span>
+                    </span>
+                  )}
                   {session.status.label}
                 </span>
               </td>
@@ -197,9 +379,7 @@ export function CurrentActiveSessionsTable({ sessions = [] }) {
                 key={session.plan_id || session.session_template_id || index}
                 className="bg-app-card-soft"
               >
-                <td className="rounded-s-xl px-4 py-3 font-medium text-app-text">
-                  {planName}
-                </td>
+                <td className="rounded-s-xl px-4 py-3 font-medium text-app-text">{planName}</td>
                 <td className="px-4 py-3 text-app-yellow font-medium" dir="ltr">
                   {startTime} - {endTime}
                 </td>

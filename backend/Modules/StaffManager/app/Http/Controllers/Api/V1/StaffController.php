@@ -35,7 +35,7 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Parameter(name: 'role', in: 'query', required: false, description: 'تصفية حسب الدور', schema: new OA\Schema(type: 'string', enum: ['admin', 'management_admin', 'manager', 'coach', 'receptionist', 'cleaner']))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
-    #[OA\Parameter(name: 'is_active', in: 'query', required: false, description: 'تصفية حسب الحالة النشطة', schema: new OA\Schema(type: 'boolean'))]
+    #[OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave']))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الموظفين بنجاح',
@@ -88,9 +88,10 @@ class StaffController extends BaseController
                     new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
                     new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                     new OA\Property(property: 'base_salary', type: 'number', example: 5000),
-                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
                     new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
-                    new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
+                    new OA\Property(property: 'start_time', type: 'string', example: '08:00', description: 'وقت بداية الدوام (HH:MM)'),
+                    new OA\Property(property: 'end_time', type: 'string', example: '16:00', description: 'وقت نهاية الدوام (HH:MM)'),
                     new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف', nullable: true),
                     new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
@@ -201,25 +202,23 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
-        content: new OA\MediaType(
-            mediaType: 'multipart/form-data',
-            schema: new OA\Schema(
-                required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
-                properties: [
-                    new OA\Property(property: 'first_name', type: 'string', example: 'John'),
-                    new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
-                    new OA\Property(property: 'country_code', type: 'string', example: '+1'),
-                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
-                    new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
-                    new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
-                    new OA\Property(property: 'base_salary', type: 'number', example: 5000),
-                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                    new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
-                    new OA\Property(property: 'shifts[]', type: 'array', items: new OA\Items(type: 'integer', example: 1), description: 'مصفوفة معرفات الشفتات'),
-                    new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
-                    new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
-                ]
-            )
+        content: new OA\JsonContent(
+            required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
+            properties: [
+                new OA\Property(property: 'first_name', type: 'string', example: 'John'),
+                new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
+                new OA\Property(property: 'country_code', type: 'string', example: '+1'),
+                new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                new OA\Property(property: 'role', type: 'string', enum: ['admin', 'management_admin', 'receptionist', 'coach', 'cleaner', 'manager', 'staff'], example: 'receptionist'),
+                new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
+                new OA\Property(property: 'base_salary', type: 'number', example: 5000),
+                new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16'),
+                new OA\Property(property: 'start_time', type: 'string', example: '08:00', description: 'وقت بداية الدوام (HH:MM)'),
+                new OA\Property(property: 'end_time', type: 'string', example: '16:00', description: 'وقت نهاية الدوام (HH:MM)'),
+                new OA\Property(property: 'address', type: 'string', description: 'العنوان', example: 'شارع الملك فهد، الرياض', nullable: true),
+                new OA\Property(property: 'branch_ids', type: 'array', items: new OA\Items(type: 'integer', example: 1))
+            ]
         )
     )]
     #[OA\Response(

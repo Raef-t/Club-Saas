@@ -13,6 +13,7 @@ export default function SchedulePeriod({
   slots,
   scheduleData,
   periodKey,
+  holidayDayKeys,
 }) {
   const { formatTime } = useTimeFormat();
   const formattedStart = formatTime(startTime);
@@ -38,6 +39,7 @@ export default function SchedulePeriod({
           slots={slots}
           scheduleData={scheduleData}
           periodKey={periodKey}
+          holidayDayKeys={holidayDayKeys}
         />
       ) : (
         <div className="py-12 text-center text-sm text-app-muted">لا توجد حصص ضمن هذه الفترة.</div>

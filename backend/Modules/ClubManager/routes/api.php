@@ -40,6 +40,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::delete('branches/{branch}/shifts/{shift}', [\Modules\ClubManager\Http\Controllers\Api\V1\BranchShiftController::class, 'destroy']);
 
     Route::get('lockers/holder/active', [LockerController::class, 'getByHolder']);
+    Route::post('lockers/{id}/restore', [LockerController::class, 'restore']);
     Route::apiResource('lockers', LockerController::class);
     Route::post('lockers/{locker}/reservations', [LockerController::class, 'reserve']);
     Route::delete('lockers/{locker}/reservations/current', [LockerController::class, 'releaseCurrentReservation']);

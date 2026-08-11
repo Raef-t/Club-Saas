@@ -154,17 +154,6 @@ class Staff extends Model
         return $this->belongsToMany(\Modules\ClubManager\Models\Branch::class, 'staff_branches', 'staff_id', 'branch_id');
     }
 
-    public function unavailabilities()
-    {
-        return $this->hasMany(StaffUnavailability::class);
-    }
-
-
-    public function leaves()
-    {
-        return $this->hasMany(StaffLeave::class);
-    }
-
 
 
     // ── Helpers ─────────────────────────────────────────────────
@@ -205,5 +194,20 @@ class Staff extends Model
     public function isCoach(): bool
     {
         return $this->role === 'coach';
+    }
+
+    public function commissionRules()
+    {
+        return $this->hasMany(\Modules\Sports\Models\StaffCommissionRule::class, 'staff_id');
+    }
+
+    public function payslips()
+    {
+        return $this->hasMany(Payslip::class, 'staff_id');
+    }
+
+    public function attendances()
+    {
+        return $this->morphMany(\Modules\AttendanceManager\Models\Attendance::class, 'attendable');
     }
 }

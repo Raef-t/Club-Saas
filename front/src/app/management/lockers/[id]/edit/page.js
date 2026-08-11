@@ -15,11 +15,15 @@ export default async function EditLockerPage({ params }) {
   const { token } = await verifySession();
   let locker;
   let members;
+  let coaches;
+  let staff;
 
   try {
-    [locker, members] = await Promise.all([
+    [locker, members, coaches, staff] = await Promise.all([
       requestBackend(`lockers/${id}`, { token }),
       requestBackend("members", { token }),
+      requestBackend("coaches", { token }),
+      requestBackend("staff", { token }),
     ]);
   } catch (error) {
     if (error?.status === 404) notFound();
@@ -29,5 +33,13 @@ export default async function EditLockerPage({ params }) {
   const lockerRecord = getLockerRecord(locker);
   if (!lockerRecord?.id) notFound();
 
-  return <LockersEditClient lockerId={id} initialLocker={lockerRecord} initialMembers={members} />;
+  return (
+    <LockersEditClient
+      lockerId={id}
+      initialLocker={lockerRecord}
+      initialMembers={members}
+      initialCoaches={coaches}
+      initialStaff={staff}
+    />
+  );
 }

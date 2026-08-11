@@ -25,7 +25,7 @@ class LockerService
 
     public function getAllLockers(array $filters = [])
     {
-        // Instead of just relying on the repository's all(), we want to fetch the active reservation details
+        // Fetch active reservation details along with holder name from people table
         $columns = [
             'lockers.id',
             'lockers.locker_number',
@@ -37,6 +37,8 @@ class LockerService
             'locker_reservations.start_date',
             'locker_reservations.end_date',
             'locker_reservations.price',
+            DB::raw('COALESCE(m_person.full_name, s_person.full_name) as holder_name'),
+            DB::raw('COALESCE(m_person.id, s_person.id) as holder_person_id'),
         ];
         if (Schema::hasColumn('lockers', 'key_number')) {
             $columns[] = 'lockers.key_number';
@@ -47,6 +49,10 @@ class LockerService
                 $join->on('lockers.id', '=', 'locker_reservations.locker_id')
                      ->where('locker_reservations.status', '=', 'active');
             })
+            ->leftJoin('members', 'locker_reservations.member_id', '=', 'members.id')
+            ->leftJoin('people as m_person', 'members.person_id', '=', 'm_person.id')
+            ->leftJoin('staff', 'locker_reservations.staff_id', '=', 'staff.id')
+            ->leftJoin('people as s_person', 'staff.person_id', '=', 's_person.id')
             ->select($columns)
             ->orderBy('lockers.locker_number');
 
@@ -62,7 +68,35 @@ class LockerService
             }
         }
 
-        return $query->get();
+        $lockers = $query->get();
+
+        // Batch fetch person_contacts for all holder person IDs
+        $personIds = $lockers->pluck('holder_person_id')->filter()->unique()->values()->all();
+
+        $contactsByPerson = [];
+        if (!empty($personIds)) {
+            $contacts = DB::table('person_contacts')
+                ->whereIn('person_id', $personIds)
+                ->whereNull('deleted_at')
+                ->select('id', 'person_id', 'name', 'country_code', 'phone_number', 'relation')
+                ->get();
+
+            foreach ($contacts as $contact) {
+                $contactsByPerson[$contact->person_id][] = [
+                    'id'           => $contact->id,
+                    'name'         => $contact->name,
+                    'country_code' => $contact->country_code,
+                    'phone_number' => $contact->phone_number,
+                    'relation'     => $contact->relation,
+                ];
+            }
+        }
+
+        foreach ($lockers as $locker) {
+            $locker->person_contacts = $contactsByPerson[$locker->holder_person_id] ?? [];
+        }
+
+        return $lockers;
     }
 
     public function createLocker(array $data)
@@ -133,6 +167,7 @@ class LockerService
             $reservationType = $data['reservation_type']; // 'rental' or 'assign'
             
             $price = 0;
+            $paidAmount = 0;
             $startDate = now();
             $endDate = null;
             $invoiceId = null;
@@ -144,15 +179,23 @@ class LockerService
                 }
 
                 $price = $data['price'];
+                $paidAmount = isset($data['paid_amount']) ? floatval($data['paid_amount']) : floatval($price);
                 $startDate = $data['start_date'];
                 $endDate = $data['end_date'];
+
+                $invoiceStatus = 'unpaid';
+                if ($paidAmount >= $price && $price > 0) {
+                    $invoiceStatus = 'paid';
+                } elseif ($paidAmount > 0) {
+                    $invoiceStatus = 'partially_paid';
+                }
 
                 // Create Invoice
                 $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
                     'member_id' => $data['holder_id'],
                     'branch_id' => $locker->branch_id,
                     'total' => $price,
-                    'status' => 'unpaid',
+                    'status' => $invoiceStatus,
                 ]);
                 $invoiceId = $invoice->id;
             }
@@ -171,15 +214,48 @@ class LockerService
                 'updated_at' => now(),
             ]);
 
+            // Link reservation to invoice & record payment
+            if ($invoiceId) {
+                DB::table('invoices')->where('id', $invoiceId)->update([
+                    'locker_reservation_id' => $reservationId,
+                ]);
+
+                if ($paidAmount > 0) {
+                    $safeId = $data['safe_id'] ?? null;
+                    if (!$safeId) {
+                        $safeId = DB::table('acc_branch_settings')
+                            ->where('branch_id', $locker->branch_id)
+                            ->value('default_safe_id');
+                        if (!$safeId) {
+                            $safeId = DB::table('acc_safes')
+                                ->where('branch_id', $locker->branch_id)
+                                ->value('id');
+                        }
+                    }
+
+                    \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoiceId,
+                        'safe_id' => $safeId,
+                        'amount' => $paidAmount,
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+                }
+            }
+
             // Update locker status
             $statusMap = [
                 'member' => 'with_member',
                 'staff' => 'with_staff',
-                'guest' => 'with_guest',
+                'coach' => 'with_coach',
             ];
             $newStatus = $statusMap[$data['holder_type'] ?? 'member'] ?? 'with_member';
 
             $this->repository->update($lockerId, ['status' => $newStatus]);
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
+            }
 
             return DB::table('locker_reservations')->where('id', $reservationId)->first();
         });
@@ -207,6 +283,10 @@ class LockerService
                 ]);
 
             $this->repository->update($lockerId, ['status' => 'available']);
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
+            }
 
             return true;
         });
@@ -236,11 +316,16 @@ class LockerService
             $statusMap = [
                 'member' => 'with_member',
                 'staff' => 'with_staff',
-                'guest' => 'with_guest',
+                'coach' => 'with_coach',
             ];
             $newStatus = $statusMap[$holderType] ?? 'with_member';
 
             $this->repository->update($reservation->locker_id, ['status' => $newStatus]);
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                $locker = \Modules\ClubManager\Models\Locker::find($reservation->locker_id);
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker?->branch_id);
+            }
 
             return DB::table('locker_reservations')->where('id', $reservationId)->first();
         });
@@ -289,7 +374,8 @@ class LockerService
 
         $rentedQuery = DB::table('locker_reservations as lr')
             ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
-            ->where('lr.status', 'active');
+            ->where('lr.status', 'active')
+            ->where('lr.price', '>', 0);
         if ($branchId) {
             $rentedQuery->where('l.branch_id', $branchId);
         }

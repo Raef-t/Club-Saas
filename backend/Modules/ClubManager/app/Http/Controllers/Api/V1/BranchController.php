@@ -174,28 +174,45 @@ class BranchController extends BaseController
     #[OA\Delete(
         path: '/v1/branches/{id}',
         summary: '🗑️ حذف الفرع (Soft Delete)',
+<<<<<<< HEAD
         description: 'حذف الفرع بالكامل من النظام مع كافة المشتركين والمدربين والأنشطة والاشتراكات المتعلقة به. يتطلب إرسال كلمة التأكيد "delete".',
+=======
+        description: 'إزالة الفرع المحدد ناعماً من النظام مع كافّة السجلات والمرافق والأعضاء التابعة له متتابعاً.',
+>>>>>>> server
         tags: ['Branch Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+<<<<<<< HEAD
     #[OA\RequestBody(
         required: false,
+=======
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الفرع وسجلاته التابعة ناعماً بنجاح',
+>>>>>>> server
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'confirmation', type: 'string', description: 'تأكيد الحذف (delete)', example: '')
             ]
         )
     )]
+<<<<<<< HEAD
     #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح')]
     #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     public function destroy(Request $request, $id)
+=======
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function destroy($id)
+>>>>>>> server
     {
         $confirmation = $request->input('confirmation', '');
         $this->branchService->deleteBranch((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Branch deleted successfully'));
     }
 
+<<<<<<< HEAD
     #[OA\Get(
         path: '/v1/branches/trashed',
         summary: '🗑️ عرض الفروع المحذوفة (سلة المهملات)',
@@ -214,15 +231,40 @@ class BranchController extends BaseController
         path: '/v1/branches/{id}/restore',
         summary: '♻️ استرجاع فرع محذوف',
         description: 'استرجاع الفرع وكافة العلاقات التابعة له من سلة المهملات.',
+=======
+    #[OA\Post(
+        path: '/v1/branches/{id}/restore',
+        summary: '♻️ استرجاع الفرع المحذوف',
+        description: 'استرجاع الفرع المحذوف ناعماً وكافّة السجلات التابعة له تلقائياً.',
+>>>>>>> server
         tags: ['Branch Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+<<<<<<< HEAD
     #[OA\Response(response: 200, description: '✅ تم استرجاع الفرع بنجاح')]
     public function restore($id)
     {
         $branch = $this->branchService->restoreBranch($id);
         return $this->successResponse(new BranchResource($branch), __('Branch restored successfully'));
+=======
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الفرع وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Branch restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الفرع المحذوف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Branch not found.')]))]
+    public function restore($id)
+    {
+        $this->branchService->restoreBranch($id);
+        return $this->successResponse(null, __('Branch restored successfully'));
+>>>>>>> server
     }
 
     #[OA\Patch(

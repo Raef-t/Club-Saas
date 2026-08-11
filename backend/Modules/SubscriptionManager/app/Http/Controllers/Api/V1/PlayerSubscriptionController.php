@@ -6,6 +6,7 @@ use Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterfa
 use Modules\SubscriptionManager\Http\Resources\PlayerSubscriptionResource;
 use Modules\SubscriptionManager\Services\SubscriptionService;
 use Modules\SubscriptionManager\Http\Requests\SubscribeMemberRequest;
+use Modules\SubscriptionManager\Http\Requests\UpdatePlayerSubscriptionRequest;
 use Modules\SubscriptionManager\Http\Requests\FreezeSubscriptionRequest;
 use Modules\SubscriptionManager\Http\Requests\RenewSubscriptionRequest;
 use Modules\SubscriptionManager\Http\Requests\CancelSubscriptionRequest;
@@ -31,7 +32,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions',
         summary: '👥 عرض اشتراكات الأعضاء',
         description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -69,7 +70,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions',
         summary: '➕ تسجيل اشتراك جديد لعضو',
         description: 'إنشاء اشتراك جديد لعضو محدد في خطة معينة.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
@@ -120,7 +121,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan', 'items.activity', 'items.coach.person'])),
+                new PlayerSubscriptionResource($subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items'])),
                 __('Member subscribed successfully'),
                 201
             );
@@ -133,7 +134,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{player_subscription}',
         summary: '🔍 تفاصيل الاشتراك',
         description: 'استرجاع تفاصيل اشتراك عضو محدد مع تجميداته.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'player_subscription', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -160,10 +161,69 @@ class PlayerSubscriptionController extends BaseController
     {
         try {
             $subscription = $this->subscriptionService->getSubscriptionById($id);
-            $subscription->load(['plan', 'items.activity', 'items.coach.person', 'freezes']);
+            $subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),
                 __('Subscription retrieved successfully')
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    #[OA\Put(
+        path: '/v1/player-subscriptions/{id}',
+        summary: '✏️ تعديل بيانات اشتراك عضو',
+        description: 'تعديل بيانات اشتراك عضو محدد كالتاريخ، الخطة، الملاحظات، الحالة أو المبالغ المالية.',
+        tags: ['Player Subscriptions'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'member_id', type: 'integer', example: 1, description: 'معرف العضو (اختياري)'),
+                new OA\Property(property: 'plan_id', type: 'integer', example: 1, description: 'معرف الخطة (اختياري)'),
+                new OA\Property(property: 'offer_id', type: 'integer', example: 1, description: 'معرف العرض (اختياري)'),
+                new OA\Property(property: 'months_count', type: 'integer', example: 1, description: 'عدد الأشهر (اختياري)'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-08-01', description: 'تاريخ بداية الاشتراك (اختياري)'),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-09-01', description: 'تاريخ نهاية الاشتراك (اختياري)'),
+                new OA\Property(property: 'status', type: 'string', example: 'active', description: 'حالة الاشتراك (اختياري)'),
+                new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 100.00, description: 'المبلغ المدفوع (اختياري)'),
+                new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات معدلة', description: 'ملاحظات (اختياري)')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تعديل الاشتراك بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Subscription updated successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1)
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ خطأ في عملية التعديل', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Subscription update failed.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function update(UpdatePlayerSubscriptionRequest $request, $id)
+    {
+        try {
+            $data = array_filter($request->validated(), fn ($val) => !is_null($val));
+            $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
+
+            return $this->successResponse(
+                new PlayerSubscriptionResource($subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items'])),
+                __('Subscription updated successfully')
             );
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -174,7 +234,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/freeze',
         summary: '❄️ تجميد الاشتراك',
         description: 'إيقاف الاشتراك مؤقتاً لعضو.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -231,7 +291,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/unfreeze',
         summary: '🔓 إلغاء تجميد الاشتراك',
         description: 'إعادة تفعيل الاشتراك بعد تجميده.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -272,7 +332,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/renew',
         summary: '🔄 تجديد الاشتراك',
         description: 'تجديد اشتراك العضو في نفس الخطة أو خطة جديدة.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك الحالي', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -324,7 +384,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/cancel',
         summary: '❌ إلغاء الاشتراك',
         description: 'إنهاء اشتراك عضو قبل موعد انتهائه.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -375,7 +435,7 @@ class PlayerSubscriptionController extends BaseController
         path: '/v1/player-subscriptions/{id}/payment',
         summary: '💳 تسجيل دفعة مالية',
         description: 'تسجيل دفعة مالية جديدة على اشتراك العضو.',
-        tags: ['Subscription Management'],
+        tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -421,5 +481,39 @@ class PlayerSubscriptionController extends BaseController
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
+    }
+
+    #[OA\Delete(
+        path: '/v1/player-subscriptions/{id}',
+        summary: '🗑️ حذف اشتراك متدرب (Soft Delete)',
+        description: 'حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.',
+        tags: ['Player Subscriptions'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود')]
+    public function destroy(int $id)
+    {
+        $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::findOrFail($id);
+        $subscription->delete();
+        return $this->successResponse(null, __('Player subscription deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/player-subscriptions/{id}/restore',
+        summary: '♻️ استرجاع اشتراك محذوف',
+        description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.',
+        tags: ['Player Subscriptions'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع الاشتراك وكافة سجلاته المالية المرفقة بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود في سلة المحذوفات')]
+    public function restore(int $id)
+    {
+        $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->findOrFail($id);
+        $subscription->restore();
+        return $this->successResponse(null, __('Player subscription restored successfully'));
     }
 }

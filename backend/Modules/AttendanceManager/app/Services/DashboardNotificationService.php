@@ -14,18 +14,13 @@ class DashboardNotificationService
      */
     public static function notifyBranchStatsChanged(?int $branchId = null): void
     {
-        $branchKey = $branchId ? (string) $branchId : 'all';
+        $newVersion = (int) (microtime(true) * 1000);
 
-        // Increment version counter in cache
-        Cache::increment("dashboard_version_branch_{$branchKey}");
-        
-        // Forget global/all-branches version as well if branch-specific
         if ($branchId !== null) {
-            Cache::increment("dashboard_version_branch_all");
-            Cache::forget("dashboard_stats_cache_{$branchId}");
+            Cache::forever("dashboard_version_branch_{$branchId}", $newVersion);
         }
-        
-        Cache::forget("dashboard_stats_cache_all");
+
+        Cache::forever("dashboard_version_branch_all", $newVersion);
     }
 
     /**
@@ -37,6 +32,10 @@ class DashboardNotificationService
     public static function getBranchStatsVersion(?int $branchId = null): int
     {
         $branchKey = $branchId ? (string) $branchId : 'all';
-        return (int) Cache::get("dashboard_version_branch_{$branchKey}", 1);
+
+        $branchVersion = (int) Cache::get("dashboard_version_branch_{$branchKey}", 1);
+        $globalVersion = (int) Cache::get("dashboard_version_branch_all", 1);
+
+        return max($branchVersion, $globalVersion);
     }
 }

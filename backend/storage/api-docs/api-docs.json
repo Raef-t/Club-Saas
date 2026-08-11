@@ -3492,7 +3492,7 @@
                     "Reception"
                 ],
                 "summary": "↩️ إلغاء الحضور وإرجاع الجلسة (كلي أو جزئي)",
-                "description": "يتيح هذا المسار لموظف الاستقبال التراجع عن خصم جلسة واحدة أو أكثر لاشتراكات محددة ضمن نفس سجل الحضور، أو إلغاء الحضور بالكامل.\n\n**السلوك:**\n- **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.\n- **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.\n  - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.\n  - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.",
+                "description": "يتيح هذا المسار لموظف الاستقبال التراجع عن تسجيل حضور عضو أو موظف.\n\n**السلوك:**\n- **حضور الموظف (Staff):**\n  - يتم حذف سجل حضور الموظف بالكامل (عند عدم إرسال `player_subscription_ids`).\n- **حضور العضو (Member):**\n  - **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.\n  - **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.\n    - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.\n    - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.",
                 "operationId": "51fdf23443c8a41da1becdec63e72a25",
                 "parameters": [
                     {
@@ -3594,6 +3594,12 @@
                                         "description": "معرف المنشأة (اختياري)",
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "check_in_at": {
+                                        "description": "تاريخ ووقت تسجيل الدخول اليدوي (اختياري)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-08-08 14:30:00"
                                     }
                                 },
                                 "type": "object"
@@ -3635,6 +3641,24 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "check_out_at": {
+                                        "description": "تاريخ ووقت تسجيل الانصراف اليدوي (اختياري، إذا لم يرسل يأخذ الوقت الحالي بالسيرفر)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-08-08 16:30:00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم الانصراف",
@@ -3691,7 +3715,72 @@
                         "description": "✅ تم تنفيذ الانصراف الجماعي بنجاح",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bulk check-out process completed"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_processed": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "success_count": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "failed_count": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                },
+                                                "successful": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "failed": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ: لا يوجد أي شخص مسجل حضور حالياً لهذه الخطة في هذا الفرع",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No active check-ins found for this subscription plan in the selected branch."
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "example": null
+                                        }
+                                    },
+                                    "type": "object"
+                                }
                             }
                         }
                     }
@@ -3776,13 +3865,83 @@
                 ]
             }
         },
+        "/v1/attendances/{id}": {
+            "delete": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "🗑️ حذف سجل حضور (Soft Delete)",
+                "description": "حذف سجل حضور ناعماً من النظام مع كافّة استهلاكات الجلسات المترابطة به ناعماً ومتتابعاً.",
+                "operationId": "28b42c39fc047d08e1698f46d1d6a0e7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل الحضور",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف سجل الحضور ناعماً بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 سجل الحضور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/attendances/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "♻️ استرجاع سجل حضور محذوف",
+                "description": "استرجاع سجل الحضور المحذوف ناعماً وكافّة استهلاكات الجلسات المترابطة به تلقائياً.",
+                "operationId": "3ef0016683fa2ae1659c79e7fb22639c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل الحضور",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع سجل الحضور بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 سجل الحضور غير موجود في سلة المحذوفات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/auth/login": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "🔐 تسجيل الدخول",
-                "description": "تسجيل دخول المستخدم وإنشاء رمز مرور (Bearer Token).",
+                "description": "تسجيل دخول المستخدم عبر ٣ طرق (رقم الهاتف / معرف النظام tec-* / اسم المستخدم المخصص).",
                 "operationId": "9d2e018daa68436007e395ec397ef681",
                 "requestBody": {
                     "description": "بيانات تسجيل الدخول",
@@ -3796,14 +3955,14 @@
                                 ],
                                 "properties": {
                                     "username": {
-                                        "description": "اسم المستخدم الفريد (للموظف أو المدير)",
+                                        "description": "اسم المستخدم الفريد أو رقم الموبايل أو المعرف المولد",
                                         "type": "string",
-                                        "example": "technogym"
+                                        "example": "tec-adm-75054"
                                     },
                                     "password": {
                                         "description": "كلمة المرور",
                                         "type": "string",
-                                        "example": "password123"
+                                        "example": "12345678"
                                     },
                                     "fcm_token": {
                                         "description": "رمز الجهاز لإشعارات Firebase",
@@ -3883,7 +4042,16 @@
                                                         },
                                                         "username": {
                                                             "type": "string",
-                                                            "example": "admin"
+                                                            "example": "tec-ply-75054"
+                                                        },
+                                                        "custom_username": {
+                                                            "type": "string",
+                                                            "example": "ahmed_player",
+                                                            "nullable": true
+                                                        },
+                                                        "must_change_password": {
+                                                            "type": "boolean",
+                                                            "example": true
                                                         },
                                                         "full_name": {
                                                             "type": "string",
@@ -4280,40 +4448,123 @@
                 ]
             }
         },
-        "/v1/auth/change-password": {
+        "/v1/auth/reset-password": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "🔑 تغيير كلمة المرور",
-                "description": "تغيير كلمة المرور الخاصة بالمستخدم المصادق عليه حالياً.",
-                "operationId": "adee7bb230546c3fae464b3ec1f457b6",
+                "summary": "🔄 تصفير كلمة المرور لمستخدم إلى 12345678",
+                "description": "يقوم بتصفير كلمة السر لأي مستخدم (عضو / موظف / مدرب) بتمرير user_id لتصبح تلقائياً 12345678.",
+                "operationId": "c55fcd0a9ada2fa093ece4662b6e9823",
                 "requestBody": {
-                    "description": "بيانات تغيير كلمة المرور",
+                    "description": "معرف المستخدم (user_id)",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "current_password",
+                                    "user_id"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "description": "معرف المستخدم من جدول authentication_users",
+                                        "type": "integer",
+                                        "example": 15
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تصفير كلمة المرور بنجاح إلى 12345678",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إعادة تعيين كلمة المرور بنجاح إلى 12345678"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "coach_15"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/change-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "🔑 تغيير كلمة المرور وتعيين اسم المستخدِم المخصص (اختياري)",
+                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.",
+                "operationId": "adee7bb230546c3fae464b3ec1f457b6",
+                "requestBody": {
+                    "description": "بيانات تغيير كلمة المرور وتحديث اسم المستخدم المخصص",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
                                     "new_password",
                                     "new_password_confirmation"
                                 ],
                                 "properties": {
+                                    "user_id": {
+                                        "description": "معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)",
+                                        "type": "integer",
+                                        "example": 15,
+                                        "nullable": true
+                                    },
                                     "current_password": {
-                                        "description": "كلمة المرور الحالية",
+                                        "description": "كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)",
                                         "type": "string",
-                                        "example": "oldPassword123"
+                                        "example": "oldPassword123",
+                                        "nullable": true
                                     },
                                     "new_password": {
                                         "description": "كلمة المرور الجديدة",
                                         "type": "string",
-                                        "example": "newPassword123"
+                                        "example": "12345678"
                                     },
                                     "new_password_confirmation": {
                                         "description": "تأكيد كلمة المرور الجديدة",
                                         "type": "string",
-                                        "example": "newPassword123"
+                                        "example": "12345678"
+                                    },
+                                    "custom_username": {
+                                        "description": "اسم المستخدم المخصص الفريد (اختياري)",
+                                        "type": "string",
+                                        "example": "ahmed_player99",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -4334,12 +4585,21 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "تم تغيير كلمة المرور بنجاح"
+                                            "example": "تم تغيير كلمة المرور والتأكيدات بنجاح"
                                         },
                                         "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "tec-ply-75054"
+                                                },
+                                                "custom_username": {
+                                                    "type": "string",
+                                                    "example": "ahmed_player99",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -4364,7 +4624,7 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات أو كلمة المرور الحالية غير صحيحة",
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4386,7 +4646,14 @@
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف."
+                                                        "example": "كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف."
+                                                    }
+                                                },
+                                                "custom_username": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "اسم المستخدم المخصص مُستخدَم بالفعل."
                                                     }
                                                 }
                                             },
@@ -4538,6 +4805,93 @@
                                         "message": {
                                             "type": "string",
                                             "example": "تم حذف الصورة الشخصية بنجاح"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/set-custom-username": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "✏️ تعيين أو تحديث اسم المستخدم المخصص",
+                "description": "يسمح للمستخدم المصادق عليه (مثلاً اللاعب) بتحديد اسم مستخدم فريد خاص به ليتسنى له الدخول به لاحقاً.",
+                "operationId": "494a585f146e42b25fac0323a789a019",
+                "requestBody": {
+                    "description": "اسم المستخدم المخصص الجديد",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "custom_username"
+                                ],
+                                "properties": {
+                                    "custom_username": {
+                                        "description": "اسم المستخدم المخصص الفريد",
+                                        "type": "string",
+                                        "example": "ahmed_player99"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث اسم المستخدم المخصص بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث اسم المستخدم المخصص بنجاح"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "tec-ply-75054"
+                                                },
+                                                "custom_username": {
+                                                    "type": "string",
+                                                    "example": "ahmed_player99"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "اسم المستخدم المخصص مستخدم بالفعل."
                                         }
                                     },
                                     "type": "object"
@@ -4706,6 +5060,417 @@
                     },
                     "404": {
                         "description": "Contact not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/permissions": {
+            "get": {
+                "tags": [
+                    "Permissions"
+                ],
+                "summary": "📋 جلب قائمة الصلاحيات",
+                "description": "يجلب جميع الصلاحيات المتاحة في النظام، مع إمكانية الفلترة حسب الموديول.",
+                "operationId": "getPermissionsList",
+                "parameters": [
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "description": "فلترة حسب اسم الموديول (مثال: member, staff, subscription)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "member"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الصلاحيات بنجاح"
+                    },
+                    "401": {
+                        "description": "🔒 غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/roles": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "📋 جلب قائمة الأدوار",
+                "description": "يجلب جميع الأدوار المتاحة في النظام مع صلاحياتها.",
+                "operationId": "getRolesList",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب الأدوار بنجاح"
+                    },
+                    "401": {
+                        "description": "🔒 غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "➕ إنشاء دور جديد",
+                "description": "ينشئ دوراً جديداً في النظام.",
+                "operationId": "createRole",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "اسم الدور (حروف صغيرة وشرطة سفلية فقط)",
+                                        "type": "string",
+                                        "example": "member_manager"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "✅ تم إنشاء الدور بنجاح"
+                    },
+                    "422": {
+                        "description": "❌ خطأ في البيانات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/roles/{id}": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "🔍 عرض تفاصيل دور محدد",
+                "description": "GET /v1/roles/{id}\nShow role details with all its permissions.",
+                "operationId": "getRoleDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "🗑️ حذف دور",
+                "description": "يحذف دوراً من النظام. لا يمكن حذف الأدوار المحمية (super_admin, admin).",
+                "operationId": "deleteRole",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الدور بنجاح"
+                    },
+                    "403": {
+                        "description": "🚫 لا يمكن حذف دور محمي"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/roles/{id}/permissions": {
+            "put": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "🔄 تعيين صلاحيات لدور (Sync)",
+                "description": "يستبدل جميع صلاحيات الدور بالقائمة الجديدة المرسلة (sync).",
+                "operationId": "syncRolePermissions",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "permissions"
+                                ],
+                                "properties": {
+                                    "permissions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "member.view-any",
+                                            "member.create",
+                                            "member.update"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث صلاحيات الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    },
+                    "422": {
+                        "description": "❌ صلاحية غير موجودة في النظام"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "👥 جلب قائمة المستخدمين مع الفلترة حسب الدور",
+                "description": "يعيد قائمة جميع المستخدمين ويتضمن الاسم، اسم المستخدم، الدور، وحالة تغيير كلمة السر.",
+                "operationId": "getUsersList",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "اسم الدور للفلترة (مثال: admin, coach, staff, player)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "معرف الفرع للفلترة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة المستخدمين بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{userId}/roles": {
+            "get": {
+                "tags": [
+                    "User Roles"
+                ],
+                "summary": "👤 جلب أدوار وصلاحيات مستخدم محدد",
+                "description": "يجلب الأدوار والصلاحيات المعينة لمستخدم معين.",
+                "operationId": "getUserRoles",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب بيانات المستخدم بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ المستخدم غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "User Roles"
+                ],
+                "summary": "➕ تعيين دور لمستخدم",
+                "description": "يعين دوراً لمستخدم معين.",
+                "operationId": "assignRoleToUser",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "role"
+                                ],
+                                "properties": {
+                                    "role": {
+                                        "description": "اسم الدور المراد تعيينه للمستخدم",
+                                        "type": "string",
+                                        "example": "member_manager"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعيين الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ المستخدم أو الدور غير موجود"
+                    },
+                    "422": {
+                        "description": "❌ خطأ في البيانات"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "User Roles"
+                ],
+                "summary": "➖ إزالة دور من مستخدم",
+                "description": "يزيل دوراً من مستخدم معين.",
+                "operationId": "revokeRoleFromUser",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "role"
+                                ],
+                                "properties": {
+                                    "role": {
+                                        "type": "string",
+                                        "example": "member_manager"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إزالة الدور بنجاح"
+                    },
+                    "404": {
+                        "description": "❌ المستخدم غير موجود"
                     }
                 },
                 "security": [
@@ -5920,6 +6685,11 @@
                                     },
                                     "include_terminated_subscriptions": {
                                         "description": "تضمين الاشتراكات المنتهية",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "allow_installments": {
+                                        "description": "السماح بالتقسيط في دفع الأموال للفرع",
                                         "type": "boolean",
                                         "example": false
                                     }
@@ -7266,6 +8036,49 @@
                 ]
             }
         },
+        "/v1/system/backup/download": {
+            "get": {
+                "tags": [
+                    "Database Backup"
+                ],
+                "summary": "📦 تحميل نسخة احتياطية من قاعدة البيانات",
+                "description": "توليد ملف مضغوط ZIP يحتوي على نسخة احتياطية من قاعدة البيانات وتحميله.",
+                "operationId": "7da7818fa90dc6be14205627b8ca2192",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إنشاء الملف وتنزيله بنجاح",
+                        "content": {
+                            "application/zip": {}
+                        }
+                    },
+                    "500": {
+                        "description": "❌ حدث خطأ أثناء التصدير",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to generate backup."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/facilities": {
             "get": {
                 "tags": [
@@ -8424,8 +9237,8 @@
                 "tags": [
                     "Locker Management"
                 ],
-                "summary": "🗑️ حذف خزانة",
-                "description": "إزالة خزانة محددة من النظام. لا يمكن حذف خزانة وهي مشغولة.",
+                "summary": "🗑️ حذف خزانة (Soft Delete)",
+                "description": "إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.",
                 "operationId": "849979252fdb3ee314725226a799e838",
                 "parameters": [
                     {
@@ -8441,7 +9254,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف الخزانة بنجاح",
+                        "description": "✅ تم حذف الخزانة بنجاح ناعماً",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8470,26 +9283,41 @@
                     },
                     "401": {
                         "description": "❌ غير مصرح"
-                    },
-                    "409": {
-                        "description": "⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن حذف الخزانة لوجود 1 حجوزات مرتبطة بها. يُنصح بإلغاء الحجز أو تعطيل الخزانة بدلاً من حذفها."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "♻️ استرجاع خزانة محذوفة",
+                "description": "استرجاع الخزانة المحذوفة ناعماً وكافّة حجوزاتها التابعة تلقائياً.",
+                "operationId": "8691c12e83c4546dcd85a1083b98cc8d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الخزانة",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الخزانة بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الخزانة غير موجودة في سلة المحذوفات"
                     }
                 },
                 "security": [
@@ -8505,7 +9333,7 @@
                     "Locker Management"
                 ],
                 "summary": "📥 حجز خزانة / إسناد مجاني",
-                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `guest`).",
+                "description": "استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `coach`).",
                 "operationId": "65e120e9e683833ce3738608a90b4ab7",
                 "parameters": [
                     {
@@ -8639,11 +9467,11 @@
                                 "properties": {
                                     "holder_type": {
                                         "type": "string",
-                                        "example": "guest",
+                                        "example": "coach",
                                         "enum": [
                                             "member",
                                             "staff",
-                                            "guest"
+                                            "coach"
                                         ]
                                     },
                                     "holder_id": {
@@ -8902,63 +9730,155 @@
                 ]
             }
         },
-        "/v1/me/preferences": {
+        "/v1/audits": {
             "get": {
                 "tags": [
-                    "Member Management"
+                    "Audit Logs"
                 ],
-                "summary": "⚙️ عرض التفضيلات الشخصية",
-                "description": "استرجاع التفضيلات الحالية للمستخدم (مثل: لغة العرض، والإشعارات).",
-                "operationId": "c522a59c7b3dde934b851ff26f00d364",
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع التفضيلات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Preferences retrieved successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "language": {
-                                                    "type": "string",
-                                                    "example": "ar"
-                                                },
-                                                "notifications_enabled": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                "summary": "📋 جلب قائمة سجلات التدقيق مع الفلاتر المتقدمة",
+                "description": "يتيح لك البحث والفلترة الدقيقة في كافة عمليات النظام (إنشاء، تعديل، حذف) مع معرفة المستخدم والفرع والتغييرات",
+                "operationId": "getAuditLogsList",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف المستخدم الذي قام بالعملية",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
                         }
+                    },
+                    {
+                        "name": "event",
+                        "in": "query",
+                        "description": "نوع الإجراء (created, updated, deleted)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "updated",
+                            "enum": [
+                                "created",
+                                "updated",
+                                "deleted"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "description": "اسم الموديول المتأثر (member, subscription, invoice, staff, branch, user)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "member"
+                        }
+                    },
+                    {
+                        "name": "subject_id",
+                        "in": "query",
+                        "description": "معرف العنصر المتأثر (مثلاً رقم المشترك أو رقم الفاتورة)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 204
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "تاريخ بداية الفترة (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-08-01"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "تاريخ نهاية الفترة (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-08-04"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث نصي في الوصف أو التغييرات",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "0501112233"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "حقل الترتيب (created_at, id, event)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "اتجاه الترتيب (asc, desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد النتائج في الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15,
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1,
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب السجلات بنجاح"
+                    },
+                    "401": {
+                        "description": "🔒 غير مصرح (Unauthenticated)"
                     }
                 },
                 "security": [
@@ -8966,114 +9886,52 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "put": {
+            }
+        },
+        "/v1/audits/meta": {
+            "get": {
                 "tags": [
-                    "Member Management"
+                    "Audit Logs"
                 ],
-                "summary": "✏️ تحديث التفضيلات",
-                "description": "تعديل تفضيلات المستخدم الخاصة بالتطبيق.",
-                "operationId": "1452ba3afa7515ff00dfd45be1685106",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "language": {
-                                        "type": "string",
-                                        "example": "en"
-                                    },
-                                    "notifications_enabled": {
-                                        "type": "boolean",
-                                        "example": false
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
+                "summary": "⚙️ جلب قائمة الموديولات والأحداث المتاحة لفلترة الواجهة",
+                "operationId": "getAuditLogMetadata",
                 "responses": {
                     "200": {
-                        "description": "✅ تم التحديث بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Preferences updated successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                        "description": "✅ تم جلب الفلاتر المتاحة بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/audits/{id}": {
+            "get": {
+                "tags": [
+                    "Audit Logs"
+                ],
+                "summary": "🔍 عرض تفاصيل سجل تدقيق محدد",
+                "operationId": "getAuditLogDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف سجل التدقيق",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1042
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب تفاصيل السجل بنجاح"
                     },
-                    "403": {
-                        "description": "🚫 الملف الشخصي غير موجود",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member profile not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                    "404": {
+                        "description": "❌ السجل غير موجود"
                     }
                 },
                 "security": [
@@ -10138,7 +10996,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "properties": {
                                     "first_name": {
@@ -10725,242 +11583,27 @@
                 "tags": [
                     "Member Management"
                 ],
-                "summary": "➕ إضافة وقت عدم تفرغ جديد",
-                "description": "إضافة فترة زمنية يكون فيها العضو غير متفرغ أو غائبًا.",
-                "operationId": "fd53d3433a6875902ddd2ec89d17cf80",
+                "summary": "♻️ استرجاع عضو محذوف",
+                "description": "استرجاع العضو المحذوف ناعماً وكافّة اشتراكاته ودفعاته وسجلاته التابعة تلقائياً.",
+                "operationId": "72942e95c604859e105deafdfdf9d919",
                 "parameters": [
                     {
-                        "name": "member",
+                        "name": "id",
                         "in": "path",
                         "description": "معرف العضو",
                         "required": true,
                         "schema": {
                             "type": "integer",
                             "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "start_date",
-                                    "end_date",
-                                    "reason"
-                                ],
-                                "properties": {
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-10-10"
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2023-10-15"
-                                    },
-                                    "reason": {
-                                        "type": "string",
-                                        "example": "إجازة مرضية"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم الإضافة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Player unavailability created successfully"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "🚫 لم يتم العثور على العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Member not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/members/{member}/unavailabilities/{unavailability}": {
-            "delete": {
-                "tags": [
-                    "Member Management"
-                ],
-                "summary": "🗑️ حذف وقت عدم التفرغ",
-                "description": "حذف فترة عدم تفرغ سابقة خاصة بالعضو.",
-                "operationId": "f089f6f0ba944c6135f87aa1a6ce7f33",
-                "parameters": [
-                    {
-                        "name": "member",
-                        "in": "path",
-                        "description": "معرف العضو",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "unavailability",
-                        "in": "path",
-                        "description": "معرف فترة عدم التفرغ",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 5
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Player unavailability deleted successfully"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "example": null,
-                                            "nullable": true
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "🚫 الفترة لا تنتمي لهذا العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unavailability does not belong to this member"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "✅ تم استرجاع العضو وكافة سجلاته التابعة بنجاح"
                     },
                     "404": {
-                        "description": "🚫 لم يتم العثور على الفترة أو العضو",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "🚫 العضو غير موجود في سلة المحذوفات"
                     }
                 },
                 "security": [
@@ -12880,7 +13523,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم الحذف بنجاح",
+                        "description": "✅ تم حذف النشاط بنجاح ناعماً",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -12924,8 +13567,78 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/activities/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Sports & Activities"
+                ],
+                "summary": "♻️ استرجاع نشاط رياضي محذوف",
+                "description": "استرجاع النشاط الرياضي المحذوف ناعماً وكافّة قوالبه وحجوزاته التابعة تلقائياً.",
+                "operationId": "b33d751bc9fdc245e27efa7a5f4a6cf8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف النشاط",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع النشاط وسجلاته التابعة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Activity restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "description": "🚫 النشاط غير موجود",
+                        "description": "🚫 النشاط غير موجود في الأرشيف",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -12937,22 +13650,6 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
                                         }
                                     },
                                     "type": "object"
@@ -14324,6 +15021,20 @@
                                 "mixed"
                             ]
                         }
+                    },
+                    {
+                        "name": "work_status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "suspended",
+                                "on_leave"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -14467,12 +15178,6 @@
                                         "type": "string",
                                         "example": "+966"
                                     },
-                                    "national_id": {
-                                        "description": "الرقم الوطني",
-                                        "type": "string",
-                                        "example": "1234567890",
-                                        "nullable": true
-                                    },
                                     "address": {
                                         "description": "العنوان",
                                         "type": "string",
@@ -14533,9 +15238,15 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "activity_ids[]": {
                                         "description": "مصفوفة معرفات الأنشطة (اختياري)",
@@ -14984,16 +15695,6 @@
                                         "type": "string",
                                         "example": "500000000"
                                     },
-                                    "country_code": {
-                                        "type": "string",
-                                        "example": "+966"
-                                    },
-                                    "national_id": {
-                                        "description": "الرقم الوطني",
-                                        "type": "string",
-                                        "example": "1234567890",
-                                        "nullable": true
-                                    },
                                     "address": {
                                         "description": "العنوان",
                                         "type": "string",
@@ -15048,9 +15749,15 @@
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "activity_ids[]": {
                                         "description": "مصفوفة معرفات الأنشطة (اختياري)",
@@ -15354,418 +16061,14 @@
                 ]
             }
         },
-        "/v1/coaches/{id}/activities": {
-            "get": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Get Coach Activities",
-                "description": "Returns all activities associated with a specific coach, including full activity details.",
-                "operationId": "e43054398edeea2bb040154003140015",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of activities retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "error": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
+        "/v1/coaches/{id}/restore": {
             "post": {
                 "tags": [
                     "Coach Management"
                 ],
-                "summary": "Assign Activities to Coach",
-                "description": "Assign multiple activities to a coach.",
-                "operationId": "094ae0ced17fb5ec66d2f5a34949c6cb",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "activity_ids"
-                                ],
-                                "properties": {
-                                    "activity_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Activities assigned successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/CoachResource"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activities assigned successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Conflict occurred."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "❌ خطأ في التحقق - لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية."
-                                        },
-                                        "errors": {
-                                            "type": "object",
-                                            "example": {
-                                                "activity_ids": [
-                                                    "لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية."
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while assigning activities."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/activities/{activityId}": {
-            "delete": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Remove Activity from Coach",
-                "operationId": "8ad2d7116180bd50fd3abc927d83c118",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "activityId",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Activity removed successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Activity removed successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach or Activity not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while removing the activity."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/coaches/{id}/certifications": {
-            "get": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Get Coach Certifications",
-                "operationId": "b49d26ba19914a7e3cbe997294853f59",
+                "summary": "Restore Soft Deleted Coach",
+                "description": "Restores a soft-deleted coach and all associated details, contracts, certifications, and shifts automatically.",
+                "operationId": "7ddfcd17a76da920ebf7799303bbfe7d",
                 "parameters": [
                     {
                         "name": "id",
@@ -15778,68 +16081,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of certifications",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Certifications retrieved successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                        "description": "Coach restored successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
+                                            "example": "Coach restored successfully"
                                         }
                                     },
                                     "type": "object"
@@ -15848,7 +16097,7 @@
                         }
                     },
                     "404": {
-                        "description": "Coach not found",
+                        "description": "Coach not found in trashed",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -15871,190 +16120,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "An error occurred while retrieving certifications."
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Error message details"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Upload Coach Certification",
-                "description": "Upload a certification or provide a document URL for a coach.",
-                "operationId": "0ff0a7adbef39ae67a27400df2b422b6",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "name"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "issuer": {
-                                        "type": "string"
-                                    },
-                                    "issue_date": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "expiry_date": {
-                                        "type": "string",
-                                        "format": "date"
-                                    },
-                                    "file": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "document_url": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Certification uploaded successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Certification uploaded successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Please provide either a file or a document_url"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "This action is unauthorized."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Coach not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation errors",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "An error occurred while uploading certification."
+                                            "example": "An error occurred while restoring the coach."
                                         },
                                         "error": {
                                             "type": "string",
@@ -17239,12 +17305,17 @@
                         }
                     },
                     {
-                        "name": "is_active",
+                        "name": "work_status",
                         "in": "query",
-                        "description": "تصفية حسب الحالة النشطة",
+                        "description": "تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
                         "required": false,
                         "schema": {
-                            "type": "boolean"
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "suspended",
+                                "on_leave"
+                            ]
                         }
                     }
                 ],
@@ -17371,22 +17442,30 @@
                                         "type": "number",
                                         "example": 5000
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "start_date": {
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "shifts[]": {
-                                        "description": "مصفوفة معرفات الشفتات",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
+                                    "start_time": {
+                                        "description": "وقت بداية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "08:00"
+                                    },
+                                    "end_time": {
+                                        "description": "وقت نهاية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "16:00"
                                     },
                                     "address": {
                                         "description": "العنوان",
@@ -17730,7 +17809,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "required": [
                                     "first_name",
@@ -17783,22 +17862,30 @@
                                         "type": "number",
                                         "example": 5000
                                     },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                    "work_status": {
+                                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "suspended",
+                                            "on_leave"
+                                        ]
                                     },
                                     "start_date": {
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-07-16"
                                     },
-                                    "shifts[]": {
-                                        "description": "مصفوفة معرفات الشفتات",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
+                                    "start_time": {
+                                        "description": "وقت بداية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "08:00"
+                                    },
+                                    "end_time": {
+                                        "description": "وقت نهاية الدوام (HH:MM)",
+                                        "type": "string",
+                                        "example": "16:00"
                                     },
                                     "address": {
                                         "description": "العنوان",
@@ -18810,240 +18897,6 @@
                 ]
             }
         },
-        "/v1/staff/{staff}/unavailabilities": {
-            "get": {
-                "tags": [
-                    "Staff Unavailability"
-                ],
-                "summary": "📅 عرض أوقات عدم توفر الموظف",
-                "description": "استرجاع جميع فترات غياب وعدم توفر الموظف للعمل.",
-                "operationId": "86e99faf45524bc5411cd502b3a18087",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "✅ تم استرجاع الفترات بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Staff Unavailability"
-                ],
-                "summary": "➕ إضافة فترة عدم توفر",
-                "description": "تسجيل فترة زمنية يكون فيها الموظف غير متاح للعمل.",
-                "operationId": "ef68a8e9d2dca107bd8abe748c398fc5",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "start_datetime",
-                                    "end_datetime"
-                                ],
-                                "properties": {
-                                    "start_datetime": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-11-01 09:00:00"
-                                    },
-                                    "end_datetime": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2023-11-01 17:00:00"
-                                    },
-                                    "reason": {
-                                        "type": "string",
-                                        "example": "إجازة مرضية"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "✅ تم إضافة الفترة بنجاح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "البيانات المدخلة غير صالحة."
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/staff/{staff}/unavailabilities/{unavailability}": {
-            "delete": {
-                "tags": [
-                    "Staff Unavailability"
-                ],
-                "summary": "🗑️ حذف فترة عدم التوفر",
-                "description": "إزالة فترة مسجلة لعدم توفر الموظف.",
-                "operationId": "e964ddb18a1db499142b96a6c6d5e09c",
-                "parameters": [
-                    {
-                        "name": "staff",
-                        "in": "path",
-                        "description": "معرف الموظف",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "unavailability",
-                        "in": "path",
-                        "description": "معرف الفترة",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "✅ تم الحذف بنجاح"
-                    },
-                    "404": {
-                        "description": "🚫 الفترة غير موجودة",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Record not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "❌ غير مصرح",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthenticated."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/my-invoices": {
             "get": {
                 "tags": [
@@ -19145,7 +18998,7 @@
         "/v1/offers": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "👥 عرض الباقات/العروض",
                 "description": "استرجاع قائمة بجميع العروض المتاحة. يمكن التصفية حسب الفرع.",
@@ -19247,7 +19100,7 @@
             },
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "➕ إضافة عرض جديد",
                 "description": "إنشاء عرض جديد وربطه بعدة خطط.",
@@ -19363,7 +19216,7 @@
         "/v1/offers/{id}": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "🔍 تفاصيل العرض",
                 "description": "استرجاع تفاصيل العرض المحددة.",
@@ -19465,7 +19318,7 @@
             },
             "put": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "✏️ تحديث العرض",
                 "description": "تحديث بيانات العرض والخطط المرتبطة به.",
@@ -19578,7 +19431,7 @@
         "/v1/offers/{offer}": {
             "delete": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "🗑️ حذف العرض (Soft Delete)",
                 "description": "حذف العرض من النظام مع كافة الاشتراكات التابعة له. يتطلب إرسال كلمة التأكيد \"delete\" اختيارياً.",
@@ -19682,7 +19535,7 @@
         "/v1/offers/{id}/subscribe": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Offers"
                 ],
                 "summary": "📝 اشتراك في عرض",
                 "description": "اشتراك لاعب في عرض معين (سيتم تسجيله في جميع الخطط التابعة للعرض).",
@@ -19995,7 +19848,7 @@
         "/v1/player-subscriptions": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "👥 عرض اشتراكات الأعضاء",
                 "description": "استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.",
@@ -20070,7 +19923,7 @@
             },
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "➕ تسجيل اشتراك جديد لعضو",
                 "description": "إنشاء اشتراك جديد لعضو محدد في خطة معينة.",
@@ -20233,7 +20086,7 @@
         "/v1/player-subscriptions/{player_subscription}": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🔍 تفاصيل الاشتراك",
                 "description": "استرجاع تفاصيل اشتراك عضو محدد مع تجميداته.",
@@ -20324,10 +20177,216 @@
                 ]
             }
         },
+        "/v1/player-subscriptions/{id}": {
+            "put": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "✏️ تعديل بيانات اشتراك عضو",
+                "description": "تعديل بيانات اشتراك عضو محدد كالتاريخ، الخطة، الملاحظات، الحالة أو المبالغ المالية.",
+                "operationId": "b01ae471a9f597465f359fe7e9471f83",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "member_id": {
+                                        "description": "معرف العضو (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "plan_id": {
+                                        "description": "معرف الخطة (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "offer_id": {
+                                        "description": "معرف العرض (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "months_count": {
+                                        "description": "عدد الأشهر (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "start_date": {
+                                        "description": "تاريخ بداية الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01"
+                                    },
+                                    "end_date": {
+                                        "description": "تاريخ نهاية الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-09-01"
+                                    },
+                                    "status": {
+                                        "description": "حالة الاشتراك (اختياري)",
+                                        "type": "string",
+                                        "example": "active"
+                                    },
+                                    "paid_amount": {
+                                        "description": "المبلغ المدفوع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات (اختياري)",
+                                        "type": "string",
+                                        "example": "ملاحظات معدلة"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعديل الاشتراك بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription updated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في عملية التعديل",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription update failed."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "🗑️ حذف اشتراك متدرب (Soft Delete)",
+                "description": "حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.",
+                "operationId": "397414f0216c095ed8c6a7b15c216061",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الاشتراك غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/player-subscriptions/{id}/freeze": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "❄️ تجميد الاشتراك",
                 "description": "إيقاف الاشتراك مؤقتاً لعضو.",
@@ -20468,7 +20527,7 @@
         "/v1/player-subscriptions/{id}/unfreeze": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🔓 إلغاء تجميد الاشتراك",
                 "description": "إعادة تفعيل الاشتراك بعد تجميده.",
@@ -20586,7 +20645,7 @@
         "/v1/player-subscriptions/{id}/renew": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "🔄 تجديد الاشتراك",
                 "description": "تجديد اشتراك العضو في نفس الخطة أو خطة جديدة.",
@@ -20720,7 +20779,7 @@
         "/v1/player-subscriptions/{id}/cancel": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "❌ إلغاء الاشتراك",
                 "description": "إنهاء اشتراك عضو قبل موعد انتهائه.",
@@ -20854,7 +20913,7 @@
         "/v1/player-subscriptions/{id}/payment": {
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Player Subscriptions"
                 ],
                 "summary": "💳 تسجيل دفعة مالية",
                 "description": "تسجيل دفعة مالية جديدة على اشتراك العضو.",
@@ -20979,6 +21038,41 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/player-subscriptions/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "♻️ استرجاع اشتراك محذوف",
+                "description": "استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.",
+                "operationId": "3705194785ed48deca2ca7dc82401a37",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الاشتراك",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الاشتراك وكافة سجلاته المالية المرفقة بنجاح"
+                    },
+                    "404": {
+                        "description": "🚫 الاشتراك غير موجود في سلة المحذوفات"
                     }
                 },
                 "security": [
@@ -21518,7 +21612,7 @@
         "/v1/subscription-plans": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "📋 عرض جميع خطط الاشتراك",
                 "description": "استرجاع قائمة بجميع خطط الاشتراك المتوفرة في النادي.",
@@ -21656,7 +21750,7 @@
             },
             "post": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "➕ إنشاء خطة اشتراك جديدة",
                 "description": "إنشاء خطة اشتراك جديدة يمكن للأعضاء الاشتراك بها.",
@@ -21882,7 +21976,7 @@
         "/v1/subscription-plans/registration": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "📋 عرض خطط الاشتراك المتاحة للتسجيل",
                 "description": "استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.",
@@ -21950,7 +22044,7 @@
         "/v1/subscription-plans/{subscription_plan}": {
             "get": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "🔍 تفاصيل خطة الاشتراك",
                 "description": "استرجاع تفاصيل خطة اشتراك محددة.",
@@ -22078,7 +22172,7 @@
             },
             "put": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "📝 تعديل خطة الاشتراك",
                 "description": "تحديث بيانات ومميزات خطة اشتراك.",
@@ -22324,7 +22418,7 @@
             },
             "delete": {
                 "tags": [
-                    "Subscription Management"
+                    "Subscription Plans"
                 ],
                 "summary": "🗑️ حذف خطة الاشتراك (Soft Delete)",
                 "description": "إزالة خطة اشتراك من النظام مع كافة الاشتراكات التابعة لها. يتطلب إرسال كلمة التأكيد \"delete\" اختيارياً.",
@@ -23662,6 +23756,125 @@
                 ]
             }
         },
+        "/v1/reports/coaches/subscriptions": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "🏃‍♂️ تقرير كوتشات الحصص الجماعية والأجهزة العامة (Group Session Coaches & General Equipment Report)",
+                "description": "استرجاع تقرير تفصيلي يُظهر كوتشات الحصص الجماعية والأنشطة التي يدربونها مع عدد اللاعبين النشطين المسجلين في كافة خططهم، بالإضافة إلى قسم خاص بأجهزة تدريب عام وإجمالي لاعبيها النشطين.",
+                "operationId": "72e02da48a9ced91f6dd014c197a1ce0",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع التقرير بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coach group sessions & general equipment report retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_group_coaches": {
+                                                            "type": "integer",
+                                                            "example": 3
+                                                        },
+                                                        "total_group_active_players": {
+                                                            "type": "integer",
+                                                            "example": 65
+                                                        },
+                                                        "general_equipment_active_players": {
+                                                            "type": "integer",
+                                                            "example": 140
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "group_session_coaches": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "coach_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "coach_name": {
+                                                                "type": "string",
+                                                                "example": "الكابتن أحمد علي"
+                                                            },
+                                                            "activities": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string",
+                                                                    "example": "كرة القدم"
+                                                                }
+                                                            },
+                                                            "active_players_count": {
+                                                                "type": "integer",
+                                                                "example": 35
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "general_equipment": {
+                                                    "properties": {
+                                                        "title": {
+                                                            "type": "string",
+                                                            "example": "أجهزة عام"
+                                                        },
+                                                        "activity_type_name": {
+                                                            "type": "string",
+                                                            "example": "تدريب عام"
+                                                        },
+                                                        "active_players_count": {
+                                                            "type": "integer",
+                                                            "example": 140
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/people/{person_id}/wallet": {
             "get": {
                 "tags": [
@@ -24604,7 +24817,7 @@
                             "available",
                             "with_member",
                             "with_staff",
-                            "with_guest"
+                            "with_coach"
                         ]
                     }
                 },
@@ -24690,7 +24903,7 @@
                             "available",
                             "with_member",
                             "with_staff",
-                            "with_guest"
+                            "with_coach"
                         ]
                     },
                     "holder_id": {
@@ -24705,7 +24918,7 @@
                         "enum": [
                             "member",
                             "staff",
-                            "guest"
+                            "coach"
                         ]
                     },
                     "holder_name": {
@@ -24842,6 +25055,11 @@
                         "example": false,
                         "nullable": true
                     },
+                    "allow_installments": {
+                        "type": "boolean",
+                        "example": false,
+                        "nullable": true
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
@@ -24881,32 +25099,6 @@
                         "type": "string",
                         "format": "date",
                         "example": "2026-05-11"
-                    }
-                },
-                "type": "object"
-            },
-            "StorePlayerUnavailabilityRequest": {
-                "title": "StorePlayerUnavailabilityRequest",
-                "required": [
-                    "day_of_week",
-                    "start_time",
-                    "end_time"
-                ],
-                "properties": {
-                    "day_of_week": {
-                        "description": "0 for Sunday, 6 for Saturday",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "start_time": {
-                        "type": "string",
-                        "format": "time",
-                        "example": "09:00:00"
-                    },
-                    "end_time": {
-                        "type": "string",
-                        "format": "time",
-                        "example": "12:00:00"
                     }
                 },
                 "type": "object"
@@ -25053,6 +25245,10 @@
                     "has_shifts": {
                         "type": "boolean",
                         "example": false
+                    },
+                    "is_daily_entry": {
+                        "type": "boolean",
+                        "example": false
                     }
                 },
                 "type": "object"
@@ -25087,10 +25283,6 @@
                     "base_salary": {
                         "type": "number",
                         "example": 5000
-                    },
-                    "is_active": {
-                        "type": "boolean",
-                        "example": true
                     },
                     "start_date": {
                         "type": "string",
@@ -25128,8 +25320,14 @@
                         }
                     },
                     "work_status": {
+                        "description": "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)",
                         "type": "string",
-                        "example": "active"
+                        "example": "active",
+                        "enum": [
+                            "active",
+                            "suspended",
+                            "on_leave"
+                        ]
                     },
                     "created_at": {
                         "type": "string",
@@ -25215,6 +25413,26 @@
     },
     "tags": [
         {
+            "name": "Permissions",
+            "description": "عرض وإدارة صلاحيات النظام"
+        },
+        {
+            "name": "Roles",
+            "description": "إدارة الأدوار (Roles) وتعيين الصلاحيات لها"
+        },
+        {
+            "name": "Users",
+            "description": "إدارة واستعلام بيانات المستخدمين"
+        },
+        {
+            "name": "User Roles",
+            "description": "تعيين وإدارة أدوار المستخدمين"
+        },
+        {
+            "name": "Audit Logs",
+            "description": "إدارة وسجلات التدقيق والأحداث في النظام والعمليات التي تمت على البيانات"
+        },
+        {
             "name": "Coach Management",
             "description": "API Endpoints for managing coaches"
         },
@@ -25299,6 +25517,10 @@
             "description": "Database Backup"
         },
         {
+            "name": "Database Backup",
+            "description": "Database Backup"
+        },
+        {
             "name": "Facility Management",
             "description": "Facility Management"
         },
@@ -25359,20 +25581,24 @@
             "description": "Staff Shifts"
         },
         {
-            "name": "Staff Unavailability",
-            "description": "Staff Unavailability"
-        },
-        {
             "name": "Invoices & Payments",
             "description": "Invoices & Payments"
         },
         {
-            "name": "Subscription Management",
-            "description": "Subscription Management"
+            "name": "Offers",
+            "description": "Offers"
+        },
+        {
+            "name": "Player Subscriptions",
+            "description": "Player Subscriptions"
         },
         {
             "name": "Subscription Plan Activities",
             "description": "Subscription Plan Activities"
+        },
+        {
+            "name": "Subscription Plans",
+            "description": "Subscription Plans"
         },
         {
             "name": "WalletManager",

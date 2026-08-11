@@ -1,0 +1,147 @@
+import { formatLocalizedName } from "@/lib/utils";
+import { resolveWorkStatus, WORK_STATUSES } from "@/lib/workStatus";
+
+const MANAGER_STAFF_ROLES = new Set(["admin", "management_admin", "manager"]);
+
+export function isManagerStaffRole(role) {
+  return MANAGER_STAFF_ROLES.has(String(role || ""));
+}
+
+export function getStaffCollection(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+}
+
+export function getStaffRecord(response) {
+  const candidate = response?.data?.staff || response?.data?.data || response?.data || response;
+  return candidate && typeof candidate === "object" && !Array.isArray(candidate) ? candidate : null;
+}
+
+export function buildStaffQueryParams({ branchId, role, gender, workStatus }) {
+  const params = {};
+
+  if (branchId && branchId !== "all") params.branch_id = Number(branchId);
+  if (role && role !== "all") params.role = role;
+  if (gender && gender !== "all") params.gender = gender;
+  if (WORK_STATUSES.includes(workStatus)) params.work_status = workStatus;
+
+  return params;
+}
+
+export function splitStaffName(person = {}) {
+  const fullName = String(person.full_name || "").trim();
+  const [firstPart = "", ...remainingParts] = fullName.split(/\s+/).filter(Boolean);
+
+  return {
+    firstName: person.first_name || firstPart,
+    lastName: person.last_name || remainingParts.join(" "),
+  };
+}
+
+export function getStaffBranchNames(staff, branches = []) {
+  if (Array.isArray(staff?.branch_name) && staff.branch_name.length) {
+    return staff.branch_name.map(formatLocalizedName).filter(Boolean);
+  }
+
+  if (typeof staff?.branch_name === "string" && staff.branch_name.trim()) {
+    return [staff.branch_name.trim()];
+  }
+
+  if (Array.isArray(staff?.branches) && staff.branches.length) {
+    return staff.branches
+      .map((branch) => formatLocalizedName(branch?.name || branch))
+      .filter(Boolean);
+  }
+
+  const branchIds = Array.isArray(staff?.branch_ids) ? staff.branch_ids.map(String) : [];
+  return branchIds.map((id) => {
+    const branch = branches.find((item) => String(item.id) === id);
+    return branch ? formatLocalizedName(branch.name) : `فرع #${id}`;
+  });
+}
+
+export function getStaffBranchIds(staff, branches = []) {
+  const explicitIds = Array.isArray(staff?.branch_ids) ? staff.branch_ids : [];
+  const relatedIds = Array.isArray(staff?.branches)
+    ? staff.branches.map((branch) => (typeof branch === "object" ? branch.id : branch))
+    : [];
+  const shiftIds = Array.isArray(staff?.shifts)
+    ? staff.shifts.map((shift) => shift?.branch_shift?.branch_id)
+    : [];
+  const namedIds = getStaffBranchNames(staff, branches).map((name) => {
+    const branch = branches.find((item) => formatLocalizedName(item.name) === name);
+    return branch?.id;
+  });
+
+  return [...new Set([...explicitIds, ...relatedIds, ...shiftIds, ...namedIds])]
+    .map(Number)
+    .filter((id) => Number.isFinite(id) && id > 0);
+}
+
+export function getStaffShiftIds(staff) {
+  if (!Array.isArray(staff?.shifts)) return [];
+
+  return staff.shifts
+    .map((shift) =>
+      Number(
+        typeof shift === "object"
+          ? shift.branch_shift_id || shift.branch_shift?.id || shift.id
+          : shift,
+      ),
+    )
+    .filter((id) => Number.isFinite(id) && id > 0);
+}
+
+export function createStaffInitialValues({ staff, branches = [], selectedBranchId = "all" } = {}) {
+  const defaultBranchId =
+    selectedBranchId !== "all" &&
+    branches.some((branch) => String(branch.id) === String(selectedBranchId))
+      ? Number(selectedBranchId)
+      : branches[0]?.id
+        ? Number(branches[0].id)
+        : null;
+
+  if (!staff) {
+    return {
+      first_name: "",
+      last_name: "",
+      country_code: "+963",
+      phone_number: "",
+      role: "receptionist",
+      employment_type: "fixed_salary",
+      base_salary: "0",
+      work_status: "active",
+      is_active: true,
+      start_date: "",
+      shifts: [],
+      address: "",
+      branch_ids: defaultBranchId ? [defaultBranchId] : [],
+    };
+  }
+
+  const { firstName, lastName } = splitStaffName(staff.person);
+
+  return {
+    first_name: firstName,
+    last_name: lastName,
+    country_code: staff.person?.country_code || "+963",
+    phone_number: staff.person?.phone_number || "",
+    role: staff.role || "staff",
+    employment_type: staff.employment_type || "fixed_salary",
+    base_salary: String(Number(staff.base_salary) || 0),
+    work_status: resolveWorkStatus(staff),
+    is_active: resolveWorkStatus(staff) === "active",
+    start_date: String(staff.start_date || "").split("T")[0],
+    shifts: getStaffShiftIds(staff),
+    address: staff.person?.address || "",
+    branch_ids: getStaffBranchIds(staff, branches),
+  };
+}
+
+export function resolveStaffPhotoUrl(value) {
+  if (!value || typeof value !== "string") return "";
+  if (value.startsWith("http") || value.startsWith("blob:")) return value;
+  return `http://31.70.108.63/${value.replace(/^\//, "")}`;
+}

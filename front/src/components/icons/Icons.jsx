@@ -585,6 +585,46 @@ export function SettingsIcon({ className = "size-5" }) {
   );
 }
 
+export function SortIcon({ direction, className = "size-3.5" }) {
+  if (direction === "asc") {
+    return (
+      <svg
+        className={`${className} text-app-yellow`}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d="M12 5l-5 5h10l-5-5z" fill="currentColor" />
+        <path d="M12 19V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (direction === "desc") {
+    return (
+      <svg
+        className={`${className} text-app-yellow`}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d="M12 19l5-5H7l5 5z" fill="currentColor" />
+        <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      className={`${className} text-app-muted-light/40 group-hover:text-app-muted-light transition-colors`}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="M8 9l4-4 4 4H8z" fill="currentColor" />
+      <path d="M8 15l4 4 4-4H8z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function DatabaseIcon({ className = "size-5" }) {
   return (
     <svg
@@ -600,6 +640,41 @@ export function DatabaseIcon({ className = "size-5" }) {
       <ellipse cx="12" cy="5" rx="9" ry="3" />
       <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+    </svg>
+  );
+}
+
+export function CopyIcon({ className = "size-4" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ className = "size-4" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }

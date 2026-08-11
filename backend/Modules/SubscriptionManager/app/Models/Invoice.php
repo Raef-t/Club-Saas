@@ -18,6 +18,7 @@ class Invoice extends Model
         'member_name',
         'branch_id',
         'player_subscription_id',
+        'locker_reservation_id',
         'offer_id',
         'total',
         'status',

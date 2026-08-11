@@ -53,7 +53,8 @@ export function useSubscriptions({ initialData } = {}) {
   const [freezeSubscription, { isLoading: isFreezing }] = useFreezeSubscriptionMutation();
   const [unfreezeSubscription, { isLoading: isUnfreezing }] = useUnfreezeSubscriptionMutation();
   const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
-  const [deletePlayerSubscription, { isLoading: isDeleting }] = useDeletePlayerSubscriptionMutation();
+  const [deletePlayerSubscription, { isLoading: isDeleting }] =
+    useDeletePlayerSubscriptionMutation();
 
   const subscriptions = useMemo(
     () => getSubscriptionRows(data || initialData?.subscriptions),
@@ -79,11 +80,12 @@ export function useSubscriptions({ initialData } = {}) {
       const member = subscription.member || {};
       const person = member.person || {};
       const plan = subscription.plan || {};
-      const planName = plan.name?.ar || plan.name?.en || "";
+      const planName =
+        typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "";
       const matchesStatus = status === "all" || subscription.status === status;
       const matchesSearch =
         !normalizedSearch ||
-        [person.full_name, person.email, person.phone, member.member_number, planName]
+        [person.full_name, person.phone, member.member_number, planName]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(normalizedSearch));
 

@@ -6,10 +6,9 @@ import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import BarChart from "@/components/charts/BarChart";
 import {
-  CurrentActiveSessionsTable,
+  CoachSubscriptionsDonut,
   DailyScheduleTable,
   DashboardSectionLink,
-  SubscriptionDonut,
 } from "./ManagementDashboardWidgets";
 import { useManagementDashboard } from "./useManagementDashboard";
 
@@ -25,7 +24,7 @@ export default function ManagementDashboard({ initialData }) {
         blocks={[
           { type: "stats", count: 5 },
           { type: "cards", count: 2 },
-          { type: "table", rows: 4, columns: 5 },
+          { type: "table", rows: 4, columns: 6 },
         ]}
       />
     );
@@ -51,52 +50,52 @@ export default function ManagementDashboard({ initialData }) {
         </div>
       )}
 
-      <StatsGrid items={dashboard.stats} variant="compact" />
+      {dashboard.isStatsLoading ? (
+        <SkeletonPage blocks={[{ type: "stats", count: 5 }]} className="space-y-0" />
+      ) : (
+        <StatsGrid items={dashboard.stats} variant="compact" />
+      )}
 
-      {/* الفعاليات الجارية حالياً */}
-      <SectionCard
-        title="الفعاليات الجارية حالياً (مباشر)"
-        subtitle="الأنشطة والخطط التي تُجرى الآن وعدد اللاعبين الحاضرين بها"
-        action={<DashboardSectionLink href="/management/schedule">جدول الدوام</DashboardSectionLink>}
-        className="min-h-[180px]"
-        contentClassName="px-5 pb-5"
-      >
-        <CurrentActiveSessionsTable sessions={dashboard.currentActiveSessions} />
-      </SectionCard>
-
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <SectionCard
-          title="أكثر الورديات ازدحاماً"
-          subtitle="أعلى 7 ورديات نشاطاً حسب نسبة الحضور الفعلي"
-          action={<DashboardSectionLink href="/reports">عرض التقارير</DashboardSectionLink>}
-          className="min-h-[208px]"
-        >
-          <BarChart data={dashboard.shiftChart} />
-        </SectionCard>
-
-        <SectionCard
-          title="توزيع الاشتراكات"
-          subtitle="حسب خطط الاشتراكات الفعالة"
-          action={<DashboardSectionLink href="/management/subscriptions" />}
-          className="min-h-[206px]"
-        >
-          <SubscriptionDonut items={dashboard.subscriptionMix} />
-        </SectionCard>
-      </section>
-
+      {/* جدول الدوام اليومي بدل الفعاليات الجارية */}
       <SectionCard
         title="جدول الدوام اليومي"
-        subtitle="حصص اليوم مرتبة حسب وقت البداية"
+        subtitle="حصص اليوم مع الوقت وعدد اللاعبين الحاضرين"
         action={
           <DashboardSectionLink href="/management/schedule">
             فتح الجدول الأسبوعي
           </DashboardSectionLink>
         }
-        className="min-h-[260px]"
+        className="min-h-[180px]"
         contentClassName="px-5 pb-5"
       >
         <DailyScheduleTable sessions={dashboard.todaySessions} />
       </SectionCard>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(440px,0.85fr)]">
+        <SectionCard
+          title="أكثر الورديات ازدحاماً"
+          subtitle="أعلى 7 ورديات نشاطاً حسب نسبة الحضور الفعلي"
+          action={<DashboardSectionLink href="/reports">عرض التقارير</DashboardSectionLink>}
+          className="min-h-[340px] flex flex-col justify-between"
+        >
+          <BarChart data={dashboard.shiftChart} height={210} />
+        </SectionCard>
+
+        <SectionCard
+          title="اشتراكات الكوتشات"
+          subtitle="عدد اللاعبين النشطين المسجلين مع كل كوتش"
+          action={
+            <DashboardSectionLink href="/management/coaches">عرض الكوتشات</DashboardSectionLink>
+          }
+          className="min-h-[340px]"
+        >
+          <CoachSubscriptionsDonut
+            items={dashboard.coachSubscriptionMix}
+            isLoading={dashboard.isCoachSubscriptionsLoading}
+            hasError={dashboard.hasCoachSubscriptionsError}
+          />
+        </SectionCard>
+      </section>
     </div>
   );
 }

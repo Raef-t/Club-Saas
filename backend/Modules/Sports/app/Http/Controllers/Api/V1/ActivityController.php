@@ -229,7 +229,7 @@ class ActivityController extends BaseController
     #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (يجب أن تكون "delete")', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم الحذف بنجاح',
+        description: '✅ تم حذف النشاط بنجاح ناعماً',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),

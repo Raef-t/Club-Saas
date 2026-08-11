@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 /**
- * Loads one dashboard resource without blocking the remaining statistics.
+ * Loads the daily schedule without preventing the live statistics from connecting.
  */
 async function loadDashboardResource(path, token) {
   try {
@@ -22,19 +22,11 @@ async function loadDashboardResource(path, token) {
  */
 export default async function ManagementPage() {
   const { token } = await verifySession();
-  const [members, coaches, subscriptions, schedule] = await Promise.all([
-    loadDashboardResource("members", token),
-    loadDashboardResource("coaches", token),
-    loadDashboardResource("player-subscriptions", token),
-    loadDashboardResource("session-templates/schedule", token),
-  ]);
+  const schedule = await loadDashboardResource("session-templates/schedule", token);
 
   return (
     <ManagementDashboard
       initialData={{
-        members,
-        coaches,
-        subscriptions,
         schedule,
       }}
     />

@@ -25,19 +25,26 @@ class MemberObserver
         $year = date('Y');
         $prefix = "MEM-{$year}-";
         
-        $lastMember = Member::withoutGlobalScopes()
+        $lastMember = Member::withTrashed()
             ->where('member_number', 'like', "{$prefix}%")
             ->orderBy('member_number', 'desc')
             ->first();
 
+        $sequence = 1;
         if ($lastMember) {
             $lastNumber = (int) \Illuminate\Support\Str::afterLast($lastMember->member_number, '-');
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
+            $sequence = $lastNumber + 1;
         }
 
-        return $prefix . $newNumber;
+        do {
+            $candidateNumber = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $exists = Member::withTrashed()->where('member_number', $candidateNumber)->exists();
+            if ($exists) {
+                $sequence++;
+            }
+        } while ($exists);
+
+        return $candidateNumber;
     }
 }
 

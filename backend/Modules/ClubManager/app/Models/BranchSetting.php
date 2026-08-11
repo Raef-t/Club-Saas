@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BranchSetting extends Model
 {
@@ -25,6 +26,7 @@ class BranchSetting extends Model
         'payroll_start_day',
         'payroll_end_day',
         'include_terminated_subscriptions',
+        'allow_installments',
     ];
 
     protected $casts = [
@@ -40,6 +42,7 @@ class BranchSetting extends Model
         'payroll_start_day' => 'integer',
         'payroll_end_day' => 'integer',
         'include_terminated_subscriptions' => 'boolean',
+        'allow_installments' => 'boolean',
     ];
 
     public function branch(): BelongsTo

@@ -8,6 +8,7 @@ use Modules\SubscriptionManager\Services\Reports\PeakHoursReportService;
 use Modules\SubscriptionManager\Services\Reports\FrozenAndTerminatedReportService;
 use Modules\SubscriptionManager\Services\Reports\AllSubscriptionsReportService;
 use Modules\SubscriptionManager\Services\Reports\ShiftAttendanceReportService;
+use Modules\SubscriptionManager\Services\Reports\CoachSubscriptionReportService;
 
 class SubscriptionReportService
 {
@@ -17,6 +18,7 @@ class SubscriptionReportService
     protected FrozenAndTerminatedReportService $frozenAndTerminatedReportService;
     protected AllSubscriptionsReportService $allSubscriptionsReportService;
     protected ShiftAttendanceReportService $shiftAttendanceReportService;
+    protected CoachSubscriptionReportService $coachSubscriptionReportService;
 
     public function __construct(
         RenewalReportService $renewalReportService,
@@ -24,7 +26,8 @@ class SubscriptionReportService
         PeakHoursReportService $peakHoursReportService,
         FrozenAndTerminatedReportService $frozenAndTerminatedReportService,
         AllSubscriptionsReportService $allSubscriptionsReportService,
-        ShiftAttendanceReportService $shiftAttendanceReportService
+        ShiftAttendanceReportService $shiftAttendanceReportService,
+        CoachSubscriptionReportService $coachSubscriptionReportService
     ) {
         $this->renewalReportService = $renewalReportService;
         $this->timeSlotCapacityReportService = $timeSlotCapacityReportService;
@@ -32,6 +35,7 @@ class SubscriptionReportService
         $this->frozenAndTerminatedReportService = $frozenAndTerminatedReportService;
         $this->allSubscriptionsReportService = $allSubscriptionsReportService;
         $this->shiftAttendanceReportService = $shiftAttendanceReportService;
+        $this->coachSubscriptionReportService = $coachSubscriptionReportService;
     }
 
     /**
@@ -80,5 +84,13 @@ class SubscriptionReportService
     public function getShiftAttendanceReport(array $filters = []): array
     {
         return $this->shiftAttendanceReportService->getReport($filters);
+    }
+
+    /**
+     * Get report for coaches, their activities, subscription plans, and active subscriber counts.
+     */
+    public function getCoachSubscriptionReport(array $filters = []): array
+    {
+        return $this->coachSubscriptionReportService->getReport($filters);
     }
 }

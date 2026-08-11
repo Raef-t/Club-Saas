@@ -98,8 +98,8 @@ class PlayerRegistrationService
             ]);
 
             // 6. Create User Account automatically
-            $username = 'Mem-' . $person->id . '-' . strtolower(\Illuminate\Support\Str::random(6));
-            $password = 'password123';
+            $username = \Modules\Authentication\Services\UsernameGeneratorService::generateForRole('player');
+            $password = '12345678';
             $user = User::create([
                 'person_id' => $person->id,
                 'username' => $username,
@@ -212,8 +212,29 @@ class PlayerRegistrationService
 
     private function generateMemberNumber(): string
     {
-        $lastMember = Member::lockForUpdate()->latest('id')->first();
-        $nextId = $lastMember ? $lastMember->id + 1 : 1;
-        return 'MEM-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        $year = date('Y');
+        $prefix = "MEM-{$year}-";
+
+        $lastMember = Member::withTrashed()
+            ->where('member_number', 'like', "{$prefix}%")
+            ->orderBy('member_number', 'desc')
+            ->lockForUpdate()
+            ->first();
+
+        $sequence = 1;
+        if ($lastMember) {
+            $lastSeq = (int) \Illuminate\Support\Str::afterLast($lastMember->member_number, '-');
+            $sequence = $lastSeq + 1;
+        }
+
+        do {
+            $candidateNumber = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $exists = Member::withTrashed()->where('member_number', $candidateNumber)->exists();
+            if ($exists) {
+                $sequence++;
+            }
+        } while ($exists);
+
+        return $candidateNumber;
     }
 }

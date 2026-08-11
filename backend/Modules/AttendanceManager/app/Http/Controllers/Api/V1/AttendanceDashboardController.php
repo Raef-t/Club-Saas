@@ -49,58 +49,87 @@ class AttendanceDashboardController extends BaseController
     #[OA\Response(response: 200, description: '✅ stream مفتوح لتقنية SSE (text/event-stream)')]
     public function statsStream(Request $request): StreamedResponse
     {
-        $branchId = $request->query('branch_id') ? (int) $request->query('branch_id') : null;
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
 
-        return response()->stream(function () use ($branchId) {
-            set_time_limit(0);
-            ignore_user_abort(true);
+        if ($request->hasSession()) {
+            $request->session()->save();
+        }
 
-            // Clean active output buffers to ensure immediate stream flushing
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
+        $branchId = $request->query('branch_id');
 
-            $lastVersion = null;
+        $branchId = $branchId !== null
+            ? (int) $branchId
+            : null;
 
-            while (true) {
-                if (connection_aborted()) {
-                    break;
+        return response()->stream(
+            function () use ($branchId) {
+                set_time_limit(0);
+                ignore_user_abort(false);
+
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
                 }
 
-                $currentVersion = DashboardNotificationService::getBranchStatsVersion($branchId) . '_' . now()->format('YmdHi');
-
-                if ($lastVersion === null || $currentVersion !== $lastVersion) {
-                    $lastVersion = $currentVersion;
-
-                    $stats = $this->dashboardService->getCachedDashboardStats($branchId);
-
-                    $payload = json_encode([
-                        'status'    => 'success',
-                        'event'     => 'dashboard_updated',
-                        'version'   => $currentVersion,
-                        'data'      => $stats,
-                        'timestamp' => now()->toIso8601String(),
-                    ]);
-
-                    echo "data: {$payload}\n\n";
-                } else {
-                    // Heartbeat ping to keep connection alive
-                    echo ": heartbeat\n\n";
-                }
-
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
+                echo ": connected\n\n";
                 flush();
 
-                sleep(2);
-            }
-        }, 200, [
-            'Content-Type'      => 'text/event-stream',
-            'Cache-Control'     => 'no-cache, no-store, must-revalidate',
-            'Connection'        => 'keep-alive',
-            'X-Accel-Buffering' => 'no',
-            'Content-Encoding'  => 'none',
-        ]);
+                $lastVersion = null;
+                $pollInterval = 1;
+
+                while (true) {
+                    if (connection_aborted()) {
+                        break;
+                    }
+
+                    $currentVersion =
+                        DashboardNotificationService::getBranchStatsVersion(
+                            $branchId
+                        );
+
+                    if (
+                        $lastVersion === null ||
+                        $currentVersion !== $lastVersion
+                    ) {
+                        $lastVersion = $currentVersion;
+
+                        $stats = $this->dashboardService
+                            ->getCachedDashboardStats($branchId);
+
+                        $payload = json_encode(
+                            [
+                                'status' => 'success',
+                                'event' => 'dashboard_updated',
+                                'version' => $currentVersion,
+                                'data' => $stats,
+                                'timestamp' => now()->toIso8601String(),
+                            ],
+                            JSON_UNESCAPED_UNICODE |
+                                JSON_UNESCAPED_SLASHES |
+                                JSON_THROW_ON_ERROR
+                        );
+
+                        echo "data: {$payload}\n\n";
+                    } else {
+                        echo ": heartbeat\n\n";
+                    }
+
+                    flush();
+
+                    sleep($pollInterval);
+                }
+            },
+            200,
+            [
+                'Content-Type' => 'text/event-stream',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Connection' => 'keep-alive',
+                'X-Accel-Buffering' => 'no',
+                'Content-Encoding' => 'none',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]
+        );
     }
 }

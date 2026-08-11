@@ -43,10 +43,11 @@ class SportSessionTemplate extends Model
         return $this->hasMany(SessionException::class, 'sport_session_template_id');
     }
 
+
     /**
      * Scopes
      */
-    public function scopeActive($query)
+    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query)
     {
         return $query->where('is_active', true);
     }

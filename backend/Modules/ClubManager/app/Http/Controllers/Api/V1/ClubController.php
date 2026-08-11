@@ -145,11 +145,16 @@ class ClubController extends BaseController
     #[OA\Delete(
         path: '/v1/clubs/{id}',
         summary: '🗑️ حذف النادي (Soft Delete)',
+<<<<<<< HEAD
         description: 'حذف النادي بالكامل من النظام مع كافة الفروع والمشتركين والمدربين التابعين له. يتطلب إرسال كلمة التأكيد "delete".',
+=======
+        description: 'حذف النادي ناعماً من النظام مع كافّة فروعه ومرافقه وأعضائه واشتراكاته متتابعاً.',
+>>>>>>> server
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+<<<<<<< HEAD
     #[OA\RequestBody(
         required: false,
         content: new OA\JsonContent(
@@ -179,20 +184,63 @@ class ClubController extends BaseController
     {
         $clubs = $this->service->getTrashed();
         return $this->successResponse(ClubResource::collection($clubs), __('Trashed clubs retrieved successfully'));
+=======
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف النادي وسجلاته التابعة ناعماً بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Club deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على النادي', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function destroy($id)
+    {
+        $this->service->delete($id);
+        return $this->successResponse(null, __('Club deleted successfully'));
+>>>>>>> server
     }
 
     #[OA\Post(
         path: '/v1/clubs/{id}/restore',
+<<<<<<< HEAD
         summary: '♻️ استرجاع نادي محذوف',
         description: 'استرجاع النادي وكافة الفروع والمشتركين التابعين له من سلة المهملات.',
+=======
+        summary: '♻️ استرجاع النادي المحذوف',
+        description: 'استرجاع النادي المحذوف ناعماً وكافّة فروعه ومرافقه وسجلاته التابعة تلقائياً.',
+>>>>>>> server
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+<<<<<<< HEAD
     #[OA\Response(response: 200, description: '✅ تم استرجاع النادي بنجاح')]
     public function restore($id)
     {
         $club = $this->service->restoreClub($id);
         return $this->successResponse(new ClubResource($club), __('Club restored successfully'));
+=======
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع النادي وسجلاته التابعة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Club restored successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على النادي المحذوف', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    public function restore($id)
+    {
+        $this->service->restore($id);
+        return $this->successResponse(null, __('Club restored successfully'));
+>>>>>>> server
     }
 }

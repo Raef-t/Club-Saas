@@ -5,11 +5,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Translatable\HasTranslations;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
+
 class Branch extends Model {
     use HasFactory, SoftDeletes;
     protected $fillable = ['club_id', 'name', 'gender_restriction', 'type', 'address', 'country_code', 'phone', 'is_active'];
     protected $casts = ['is_active' => 'boolean'];
+
     public function club(): BelongsTo { return $this->belongsTo(Club::class); }
     public function facilities(): HasMany { return $this->hasMany(Facility::class); }
     public function lockers(): HasMany { return $this->hasMany(Locker::class); }

@@ -79,6 +79,7 @@ describe("locker utilities", () => {
       }),
     ).toEqual({
       locker_number: "L-010",
+      key_number: null,
       status: "available",
     });
   });
@@ -98,6 +99,24 @@ describe("locker utilities", () => {
       holder_type: "member",
       holder_id: 9,
       start_date: "2026-01-01",
+    });
+  });
+
+  it("keeps coach identifiers in reservation payloads", () => {
+    expect(
+      createLockerReservationPayload({
+        reservation_type: "assign",
+        holder_type: "coach",
+        holder_id: "41",
+        price: "",
+        start_date: "2026-08-08",
+        end_date: "",
+      }),
+    ).toEqual({
+      reservation_type: "assign",
+      holder_type: "coach",
+      holder_id: 41,
+      start_date: "2026-08-08",
     });
   });
 });

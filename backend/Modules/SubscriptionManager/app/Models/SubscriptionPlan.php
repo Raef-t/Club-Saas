@@ -113,4 +113,9 @@ class SubscriptionPlan extends Model
     {
         return $this->belongsToMany(Offer::class, 'offer_subscription_plan');
     }
+
+    public function playerSubscriptions()
+    {
+        return $this->hasMany(PlayerSubscription::class, 'plan_id');
+    }
 }

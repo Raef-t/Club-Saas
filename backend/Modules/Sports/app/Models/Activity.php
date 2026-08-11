@@ -90,4 +90,11 @@ class Activity extends Model
     {
         return $this->belongsTo(\Modules\ClubManager\Models\Branch::class);
     }
+
+    public function commissionRules()
+    {
+        return $this->hasMany(StaffCommissionRule::class, 'activity_id');
+    }
+
 }
+

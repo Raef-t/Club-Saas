@@ -22,12 +22,16 @@ export const dashboardApi = createApi({
 
           const eventSource = new EventSource(url, { withCredentials: true });
 
-          eventSource.onmessage = (event) => {
+          const handleDashboardUpdate = (event) => {
             try {
               const response = JSON.parse(event.data);
-              
+
               if ((response.success || response.status === "success") && response.data) {
                 updateCachedData((draft) => {
+                  if (!draft) {
+                    return { ...response.data };
+                  }
+
                   Object.assign(draft, response.data);
                 });
               }
@@ -36,12 +40,15 @@ export const dashboardApi = createApi({
             }
           };
 
+          eventSource.onmessage = handleDashboardUpdate;
+          eventSource.addEventListener("dashboard_updated", handleDashboardUpdate);
+
           eventSource.onerror = (error) => {
             console.error("SSE Error:", error);
-            eventSource.close();
           };
 
           await cacheEntryRemoved;
+          eventSource.removeEventListener("dashboard_updated", handleDashboardUpdate);
           eventSource.close();
         } catch (error) {
           // no-op

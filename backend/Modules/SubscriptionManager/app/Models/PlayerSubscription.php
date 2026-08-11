@@ -40,6 +40,7 @@ class PlayerSubscription extends Model
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
     }
 
     public function offer()
@@ -57,6 +58,16 @@ class PlayerSubscription extends Model
         return $this->hasMany(PlayerSubscriptionItem::class);
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'player_subscription_id');
+    }
+
+    public function attendanceConsumptions()
+    {
+        return $this->hasMany(\Modules\AttendanceManager\Models\AttendanceConsumption::class, 'player_subscription_id');
+    }
+
 
     public function getIsFullyPaidAttribute()
     {
@@ -70,15 +81,24 @@ class PlayerSubscription extends Model
      */
     protected static function booted(): void
     {
-        static::saved(function () {
+        static::saved(function ($subscription) {
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
+                $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
             }
         });
 
-        static::deleted(function () {
+        static::deleted(function ($subscription) {
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged();
+                $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
+            }
+        });
+
+        static::restored(function ($subscription) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
             }
         });
     }

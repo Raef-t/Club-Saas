@@ -1,20 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { useGetCoachesQuery } from "@/lib/api/coachesApi";
-import { useGetMembersQuery } from "@/lib/api/membersApi";
-import { useGetPlayerSubscriptionsQuery } from "@/lib/api/playerSubscriptionsApi";
 import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
 import { useGetDashboardStatsStreamQuery } from "@/lib/api/dashboardApi";
-import { useGetShiftAttendanceReportQuery } from "@/lib/api/reportsApi";
-import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import {
+  useGetCoachSubscriptionsReportQuery,
+  useGetShiftAttendanceReportQuery,
+} from "@/lib/api/reportsApi";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import {
+  createCoachSubscriptionMix,
   createDashboardStats,
-  createSubscriptionMix,
   createTodaySchedule,
   createShiftAttendanceChart,
-  getDashboardCollection,
 } from "./dashboardUtils";
 
 /**
@@ -26,64 +24,34 @@ export function useManagementDashboard({ initialData = {} } = {}) {
     () => (selectedBranchId === "all" ? {} : { branch_id: selectedBranchId }),
     [selectedBranchId],
   );
-  const membersQuery = useGetMembersQuery(queryParams);
-  const coachesQuery = useGetCoachesQuery(queryParams);
-  const subscriptionsQuery = useGetPlayerSubscriptionsQuery(queryParams);
   const scheduleQuery = useGetScheduleQuery(selectedBranchId);
   const sseStatsQuery = useGetDashboardStatsStreamQuery(queryParams);
   const shiftAttendanceQuery = useGetShiftAttendanceReportQuery(queryParams);
+  const coachSubscriptionsQuery = useGetCoachSubscriptionsReportQuery(queryParams);
 
-  const members = useMemo(
-    () =>
-      filterEntitiesByBranch(
-        getDashboardCollection(membersQuery.currentData || initialData.members),
-        selectedBranchId,
-      ),
-    [initialData.members, membersQuery.currentData, selectedBranchId],
-  );
-  const coaches = useMemo(
-    () =>
-      filterEntitiesByBranch(
-        getDashboardCollection(coachesQuery.currentData || initialData.coaches),
-        selectedBranchId,
-      ),
-    [coachesQuery.currentData, initialData.coaches, selectedBranchId],
-  );
-  const subscriptions = useMemo(
-    () =>
-      filterEntitiesByBranch(
-        getDashboardCollection(subscriptionsQuery.currentData || initialData.subscriptions),
-        selectedBranchId,
-      ),
-    [initialData.subscriptions, selectedBranchId, subscriptionsQuery.currentData],
-  );
   const scheduleResponse = scheduleQuery.currentData || initialData.schedule;
+  const currentActiveSessions = useMemo(() => {
+    if (!sseStatsQuery.currentData) return null;
+    return sseStatsQuery.currentData.current_active_session_plans || [];
+  }, [sseStatsQuery.currentData]);
   const todaySessions = useMemo(
-    () => createTodaySchedule(scheduleResponse, selectedBranchId),
-    [scheduleResponse, selectedBranchId],
+    () =>
+      createTodaySchedule(scheduleResponse, selectedBranchId, new Date(), currentActiveSessions),
+    [currentActiveSessions, scheduleResponse, selectedBranchId],
   );
   const stats = useMemo(
-    () =>
-      createDashboardStats({
-        members,
-        coaches,
-        subscriptions,
-        todaySessions,
-        sseStats: sseStatsQuery.data,
-      }),
-    [coaches, members, subscriptions, todaySessions, sseStatsQuery.data],
+    () => createDashboardStats({ sseStats: sseStatsQuery.currentData }),
+    [sseStatsQuery.currentData],
   );
   const shiftChart = useMemo(
     () => createShiftAttendanceChart(shiftAttendanceQuery.currentData),
     [shiftAttendanceQuery.currentData],
   );
-  const subscriptionMix = useMemo(() => createSubscriptionMix(subscriptions), [subscriptions]);
-  const currentActiveSessions = useMemo(
-    () => sseStatsQuery.data?.current_active_session_plans || [],
-    [sseStatsQuery.data?.current_active_session_plans],
+  const coachSubscriptionMix = useMemo(
+    () => createCoachSubscriptionMix(coachSubscriptionsQuery.currentData),
+    [coachSubscriptionsQuery.currentData],
   );
-
-  const queries = [membersQuery, coachesQuery, subscriptionsQuery, scheduleQuery, shiftAttendanceQuery];
+  const queries = [scheduleQuery, shiftAttendanceQuery, coachSubscriptionsQuery];
   const hasInitialData = Object.values(initialData).some(Boolean);
 
   /**
@@ -96,12 +64,17 @@ export function useManagementDashboard({ initialData = {} } = {}) {
   return {
     stats,
     shiftChart,
-    subscriptionMix,
+    coachSubscriptionMix,
     todaySessions,
-    currentActiveSessions,
+    currentActiveSessions: currentActiveSessions || [],
+    isStatsLoading: !sseStatsQuery.currentData,
     isLoading: !hasInitialData && queries.some((query) => query.isLoading),
     isRefreshing: queries.some((query) => query.isFetching),
     hasError: queries.some((query) => Boolean(query.error)),
+    isCoachSubscriptionsLoading:
+      coachSubscriptionsQuery.isLoading ||
+      (coachSubscriptionsQuery.isFetching && !coachSubscriptionsQuery.currentData),
+    hasCoachSubscriptionsError: Boolean(coachSubscriptionsQuery.error),
     refresh,
   };
 }

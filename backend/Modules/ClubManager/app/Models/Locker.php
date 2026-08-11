@@ -3,10 +3,11 @@
 namespace Modules\ClubManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
 
 class Locker extends Model
 {
@@ -48,9 +49,9 @@ class Locker extends Model
         return $this->status === 'with_staff';
     }
 
-    public function isWithGuest(): bool
+    public function isWithCoach(): bool
     {
-        return $this->status === 'with_guest';
+        return $this->status === 'with_coach';
     }
 
     public function isOccupied(): bool
@@ -82,8 +83,8 @@ class Locker extends Model
         return $query->where('status', 'with_staff');
     }
 
-    public function scopeWithGuest($query)
+    public function scopeWithCoach($query)
     {
-        return $query->where('status', 'with_guest');
+        return $query->where('status', 'with_coach');
     }
 }

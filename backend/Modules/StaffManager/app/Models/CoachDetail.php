@@ -32,12 +32,4 @@ class CoachDetail extends Model
     {
         return $this->belongsTo(Staff::class);
     }
-
-    /**
-     * Coach's certifications.
-     */
-    public function certifications()
-    {
-        return $this->hasMany(CoachCertification::class);
-    }
 }

@@ -14,14 +14,26 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import {
+  useGetLockersQuery,
+  useLazyGetLockersQuery,
+  useReserveLockerMutation,
+  useReleaseLockerReservationMutation,
+} from "@/lib/api/lockersApi";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
-import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+import { useGetStaffQuery } from "@/lib/api/staffApi";
 import { ATTENDANCE_SCAN_MODES } from "./attendanceConstants";
 import {
+  attachAttendanceLockers,
+  createAttendanceDeductionBody,
+  createAttendanceLockerReservation,
   createAttendanceBranchOptions,
   createAttendanceMember,
   createAttendanceRows,
   createAttendanceSubscriptions,
+  createAvailableLockerOptions,
+  createManualCheckInTimestamp,
+  findAttendanceLockerId,
   getInitialAttendanceSelection,
   toggleRequiredSubscription,
 } from "./attendanceUtils";
@@ -46,6 +58,7 @@ export function useAttendance({ initialBranches } = {}) {
   );
   const branchId = isAllBranches ? "" : selectedBranchId;
   const [lastAttendanceId, setLastAttendanceId] = useState(null);
+  const [pendingAttendanceIds, setPendingAttendanceIds] = useState([]);
   const [scanMode, setScanMode] = useState(ATTENDANCE_SCAN_MODES.CHECK_IN);
   const [scannedMemberId, setScannedMemberId] = useState(null);
   const [alwaysOn, setAlwaysOn] = useState(false);
@@ -60,15 +73,34 @@ export function useAttendance({ initialBranches } = {}) {
 
   const [qrCheckIn, { isLoading: isCheckingIn }] = useQrCheckInMutation();
   const [qrCheckOut, { isLoading: isCheckingOut }] = useQrCheckOutMutation();
-  const [deductAttendance, { isLoading: isRegistering }] = useDeductAttendanceMutation();
+  const [deductAttendance, { isLoading: isDeductingAttendance }] = useDeductAttendanceMutation();
   const [manualCheckIn, { isLoading: isManualCheckingIn }] = useManualCheckInMutation();
   const [manualCheckOut, { isLoading: isManualCheckingOut }] = useManualCheckOutMutation();
   const [bulkCheckOut, { isLoading: isBulkCheckingOut }] = useBulkCheckOutMutation();
-  const [rollbackAttendance, { isLoading: isRollingBack }] =
-    useRollbackAttendanceMutation();
+  const [rollbackAttendance, { isLoading: isRollingBack }] = useRollbackAttendanceMutation();
+  const [loadBranchLockers] = useLazyGetLockersQuery();
+  const [reserveLocker, { isLoading: isAssigningLocker }] = useReserveLockerMutation();
+  const [releaseLockerReservation, { isLoading: isReleasingLocker }] =
+    useReleaseLockerReservationMutation();
   const peopleQueryParams = branchId ? { branch_id: branchId } : {};
   const { currentData: attendanceMembersResponse } = useGetMembersQuery(peopleQueryParams);
-  const { currentData: attendanceStaffResponse } = useGetCoachesQuery(peopleQueryParams);
+  const { currentData: attendanceStaffResponse } = useGetStaffQuery(peopleQueryParams);
+  const availableLockersParams = useMemo(
+    () => ({ branch_id: branchId, status: "available" }),
+    [branchId],
+  );
+  const {
+    currentData: availableLockersResponse,
+    error: availableLockersError,
+    isLoading: isAvailableLockersLoading,
+    isFetching: isAvailableLockersFetching,
+    refetch: refetchAvailableLockers,
+  } = useGetLockersQuery(availableLockersParams, {
+    skip: !branchId || !scannedMemberId,
+  });
+  const { currentData: branchLockersResponse, refetch: refetchBranchLockers } = useGetLockersQuery(
+    branchId ? { branch_id: branchId } : {},
+  );
   const attendanceHistoryParams = useMemo(
     () => ({
       attendable_type: attendanceTypeFilter,
@@ -107,22 +139,46 @@ export function useAttendance({ initialBranches } = {}) {
     () => createAttendanceMember(memberResponse, scannedMemberId),
     [memberResponse, scannedMemberId],
   );
-  const attendanceRows = useMemo(
-    () =>
+  const attendanceRows = useMemo(() => {
+    const rows = attachAttendanceLockers(
       createAttendanceRows(attendanceHistoryResponse, activeMember, {
         members: attendanceMembersResponse,
         staff: attendanceStaffResponse,
       }),
-    [
-      activeMember,
-      attendanceHistoryResponse,
-      attendanceMembersResponse,
-      attendanceStaffResponse,
-    ],
-  );
+      branchLockersResponse,
+    );
+
+    return pendingAttendanceIds.length
+      ? rows.filter(
+          (row) => !pendingAttendanceIds.some((pendingId) => String(row.id) === String(pendingId)),
+        )
+      : rows;
+  }, [
+    activeMember,
+    attendanceHistoryResponse,
+    attendanceMembersResponse,
+    attendanceStaffResponse,
+    branchLockersResponse,
+    pendingAttendanceIds,
+  ]);
   const playerSubscriptions = useMemo(
     () => createAttendanceSubscriptions(memberSubscriptionsResponse),
     [memberSubscriptionsResponse],
+  );
+  const availableLockerOptions = useMemo(
+    () => createAvailableLockerOptions(availableLockersResponse),
+    [availableLockersResponse],
+  );
+  const selectedLockerNumber = useMemo(
+    () =>
+      availableLockerOptions.some((option) => option.value === String(lockerNumber))
+        ? String(lockerNumber)
+        : "",
+    [availableLockerOptions, lockerNumber],
+  );
+  const selectedLockerId = useMemo(
+    () => findAttendanceLockerId(availableLockersResponse, selectedLockerNumber),
+    [availableLockersResponse, selectedLockerNumber],
   );
 
   useEffect(() => {
@@ -166,6 +222,9 @@ export function useAttendance({ initialBranches } = {}) {
   const attendancesErrorMessage = attendanceHistoryError
     ? getApiErrorMessage(attendanceHistoryError, "تعذر تحميل سجل الحضور.")
     : "";
+  const availableLockersErrorMessage = availableLockersError
+    ? getApiErrorMessage(availableLockersError, "تعذر تحميل الخزائن المتاحة.")
+    : "";
   const isProcessingScan = isCheckingIn || isCheckingOut;
 
   /**
@@ -198,6 +257,13 @@ export function useAttendance({ initialBranches } = {}) {
     resetMemberSelection();
     setScannedMemberId(memberId);
     setLastAttendanceId(attendanceId);
+    if (attendanceId) {
+      setPendingAttendanceIds((current) =>
+        current.some((id) => String(id) === String(attendanceId))
+          ? current
+          : [...current, attendanceId],
+      );
+    }
   }
 
   /**
@@ -280,12 +346,67 @@ export function useAttendance({ initialBranches } = {}) {
   }
 
   /**
+   * Releases the locker attached to an attendance record after checkout or rollback.
+   */
+  async function releaseAttendanceLocker(attendanceRecord) {
+    const lockerNumber = attendanceRecord?.lockerNumber;
+    let lockerId = attendanceRecord?.lockerId;
+
+    if (!lockerId && lockerNumber) {
+      try {
+        const lockersResponse = await loadBranchLockers({
+          branch_id: attendanceRecord?.branchId || branchId,
+        }).unwrap();
+        lockerId = findAttendanceLockerId(lockersResponse, lockerNumber);
+      } catch (error) {
+        toast.warning(getApiErrorMessage(error, `تعذر تحديد الخزانة ${lockerNumber} لفك حجزها.`));
+        return false;
+      }
+    }
+
+    if (!lockerId) {
+      if (lockerNumber) {
+        toast.warning(`اكتمل الإجراء، لكن تعذر تحديد الخزانة ${lockerNumber} لفك حجزها.`);
+        return false;
+      }
+      return true;
+    }
+
+    try {
+      await releaseLockerReservation(lockerId).unwrap();
+      toast.success(`تم فك حجز الخزانة ${lockerNumber || `#${lockerId}`}.`);
+      return true;
+    } catch (error) {
+      const status = error?.status || error?.originalStatus;
+      if (status === 404) return true;
+
+      toast.warning(
+        getApiErrorMessage(
+          error,
+          `اكتمل الإجراء، لكن تعذر فك حجز الخزانة ${lockerNumber || `#${lockerId}`}.`,
+        ),
+      );
+      return false;
+    }
+  }
+
+  /**
    * Registers a backend check-out and refreshes the scanned member history.
    */
   async function handleCheckOut(decodedText) {
     try {
       const response = await qrCheckOut({ qr_code: decodedText }).unwrap();
       const memberId = response?.data?.member_id;
+      const openAttendance = attendanceRows.find(
+        (row) =>
+          row.isOpen &&
+          row.attendableType === "member" &&
+          String(row.attendableId) === String(memberId),
+      );
+
+      if (openAttendance) {
+        await releaseAttendanceLocker(openAttendance);
+      }
 
       if (memberId) {
         selectScannedMember(memberId);
@@ -299,19 +420,31 @@ export function useAttendance({ initialBranches } = {}) {
 
   /**
    * Registers a manual check-in for a member or staff record.
+   * When successful, activates the scanned-member card (same as QR flow).
    */
-  async function handleManualCheckIn({ attendableType, attendableId }) {
+  async function handleManualCheckIn({ attendableType, attendableId, checkInTime = "" }) {
     if (!branchId) {
       toast.warning("اختر الفرع قبل تسجيل الدخول اليدوي.");
       return false;
     }
 
     try {
+      const checkInAt = createManualCheckInTimestamp(checkInTime);
       const response = await manualCheckIn({
         attendable_type: attendableType,
         attendable_id: Number(attendableId),
         branch_id: Number(branchId),
+        ...(checkInAt ? { check_in_at: checkInAt } : {}),
       }).unwrap();
+
+      const memberId =
+        response?.data?.member_id || (attendableType === "member" ? Number(attendableId) : null);
+      const attendanceId = response?.data?.attendance_id || response?.data?.id || null;
+
+      if (memberId) {
+        selectScannedMember(memberId, attendanceId);
+      }
+
       toast.success(response?.message || "تم تسجيل الدخول بنجاح.");
       return true;
     } catch (error) {
@@ -323,9 +456,17 @@ export function useAttendance({ initialBranches } = {}) {
   /**
    * Checks out an open attendance record by its attendance id.
    */
-  async function handleManualCheckOut(attendanceId) {
+  async function handleManualCheckOut(attendanceRecordOrId) {
+    const attendanceRecord =
+      typeof attendanceRecordOrId === "object"
+        ? attendanceRecordOrId
+        : attendanceRows.find((row) => String(row.id) === String(attendanceRecordOrId));
+    const attendanceId = attendanceRecord?.id || attendanceRecordOrId;
+
     try {
       const response = await manualCheckOut(Number(attendanceId)).unwrap();
+      await releaseAttendanceLocker(attendanceRecord);
+      await refetchAttendanceHistory();
       toast.success(response?.message || "تم تسجيل الانصراف بنجاح.");
       return true;
     } catch (error) {
@@ -360,12 +501,20 @@ export function useAttendance({ initialBranches } = {}) {
   /**
    * Returns deducted sessions and optionally removes the complete attendance record.
    */
-  async function handleRollbackAttendance(attendanceId, playerSubscriptionIds) {
+  async function handleRollbackAttendance(attendanceRecordOrId, playerSubscriptionIds = []) {
+    const attendanceRecord =
+      typeof attendanceRecordOrId === "object"
+        ? attendanceRecordOrId
+        : attendanceRows.find((row) => String(row.id) === String(attendanceRecordOrId));
+    const attendanceId = attendanceRecord?.id || attendanceRecordOrId;
+
     try {
       const response = await rollbackAttendance({
         attendanceId: Number(attendanceId),
         playerSubscriptionIds,
       }).unwrap();
+      await releaseAttendanceLocker(attendanceRecord);
+      await refetchAttendanceHistory();
       toast.success(response?.message || "تم التراجع عن الحضور وإرجاع الجلسة بنجاح.");
       return true;
     } catch (error) {
@@ -423,25 +572,60 @@ export function useAttendance({ initialBranches } = {}) {
       return;
     }
 
-    const subscriptionIds = selectedSubscriptionIds.map(Number).filter(Number.isFinite);
-    if (!subscriptionIds.length) {
+    const deductionBody = createAttendanceDeductionBody(selectedSubscriptionIds);
+    if (!deductionBody.player_subscription_ids.length) {
       toast.warning("اختر اشتراكًا واحدًا على الأقل.");
       return;
+    }
+
+    if (selectedLockerNumber && !selectedLockerId) {
+      toast.error("تعذر تحديد الخزانة المختارة. أعد اختيارها ثم حاول مرة أخرى.");
+      return;
+    }
+
+    let assignedLockerId = null;
+
+    if (selectedLockerId) {
+      try {
+        await reserveLocker({
+          id: selectedLockerId,
+          ...createAttendanceLockerReservation(activeMember.id),
+        }).unwrap();
+        assignedLockerId = selectedLockerId;
+      } catch (error) {
+        toast.error(
+          getApiErrorMessage(
+            error,
+            `تعذر إسناد الخزانة ${selectedLockerNumber}. لم يتم تأكيد الحضور.`,
+          ),
+        );
+        return;
+      }
     }
 
     try {
       const response = await deductAttendance({
         attendanceId: lastAttendanceId,
-        body: {
-          player_subscription_ids: subscriptionIds,
-        },
+        body: deductionBody,
       }).unwrap();
 
       setRegisteredMemberId(activeMember.id);
+      setPendingAttendanceIds((current) =>
+        current.filter((attendanceId) => String(attendanceId) !== String(lastAttendanceId)),
+      );
       setLastAttendanceId(null);
       toast.success(response?.message || "تم خصم الجلسة وتأكيد الحضور بنجاح.");
       await refetchAttendanceHistory();
+      await refetchAvailableLockers();
+      await refetchBranchLockers();
     } catch (error) {
+      if (assignedLockerId) {
+        try {
+          await releaseLockerReservation(assignedLockerId).unwrap();
+        } catch {
+          toast.warning(`تعذر خصم الجلسة وتعذر إلغاء إسناد الخزانة ${selectedLockerNumber}.`);
+        }
+      }
       toast.error(getApiErrorMessage(error, "فشل خصم الجلسة."));
     }
   }
@@ -455,7 +639,8 @@ export function useAttendance({ initialBranches } = {}) {
     activityOptions,
     selectedSubscriptionIds,
     selectedActivityId,
-    lockerNumber,
+    lockerNumber: selectedLockerNumber,
+    availableLockerOptions,
     branchId,
     branchOptions,
     scanMode,
@@ -465,15 +650,19 @@ export function useAttendance({ initialBranches } = {}) {
     memberErrorMessage,
     subscriptionsErrorMessage,
     attendancesErrorMessage,
+    availableLockersErrorMessage,
     isMemberLoading: isMemberLoading || isMemberFetching,
     isSubscriptionsLoading: isSubscriptionsLoading || isSubscriptionsFetching,
     isAttendancesLoading: isAttendanceHistoryLoading || isAttendanceHistoryFetching,
+    isAvailableLockersLoading:
+      isAvailableLockersLoading ||
+      (isAvailableLockersFetching && availableLockerOptions.length === 0),
     isProcessingScan,
-    isRegistering,
+    isRegistering: isDeductingAttendance || isAssigningLocker,
     isManualCheckingIn,
-    isManualCheckingOut,
+    isManualCheckingOut: isManualCheckingOut || isReleasingLocker,
     isBulkCheckingOut,
-    isRollingBack,
+    isRollingBack: isRollingBack || isReleasingLocker,
     isRegistered: Boolean(activeMember) && registeredMemberId === activeMember?.id,
     isPendingDeduction: Boolean(lastAttendanceId),
     attendanceTypeFilter,
@@ -504,5 +693,6 @@ export function useAttendance({ initialBranches } = {}) {
     retryMember: () => scannedMemberId && refetchMember(),
     retrySubscriptions: () => scannedMemberId && refetchSubscriptions(),
     retryAttendances: refetchAttendanceHistory,
+    retryAvailableLockers: refetchAvailableLockers,
   };
 }

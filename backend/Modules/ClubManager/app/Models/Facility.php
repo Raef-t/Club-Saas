@@ -4,6 +4,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Traits\CascadeSoftDeletes;
+
 class Facility extends Model {
     use HasFactory, SoftDeletes;
     protected $fillable = ['branch_id', 'name', 'capacity', 'gender_restriction'];

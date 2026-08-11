@@ -12,6 +12,8 @@ import { attendanceApi } from "@/lib/api/attendanceApi";
 import { scheduleApi } from "@/lib/api/scheduleApi";
 import { dashboardApi } from "@/lib/api/dashboardApi";
 import { reportsApi } from "@/lib/api/reportsApi";
+import { staffApi } from "@/lib/api/staffApi";
+import { usersApi } from "@/lib/api/usersApi";
 import { clearAuthStorage } from "@/lib/authStorage";
 
 const authErrorMiddleware = () => (next) => (action) => {
@@ -50,6 +52,8 @@ export const store = configureStore({
     [scheduleApi.reducerPath]: scheduleApi.reducer,
     [dashboardApi.reducerPath]: dashboardApi.reducer,
     [reportsApi.reducerPath]: reportsApi.reducer,
+    [staffApi.reducerPath]: staffApi.reducer,
+    [usersApi.reducerPath]: usersApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -67,5 +71,7 @@ export const store = configureStore({
       scheduleApi.middleware,
       dashboardApi.middleware,
       reportsApi.middleware,
+      staffApi.middleware,
+      usersApi.middleware,
     ),
 });

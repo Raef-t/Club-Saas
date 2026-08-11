@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Schema;
  * for Sports module.
  *
  * PRODUCTION SAFE: Only FK definitions are changed.
+ *
+ * NOTE: The player_subscription_items block was removed because
+ * activity_id was dropped from that table in migration
+ * 2026_08_03_120000_remove_activity_coach_from_player_subscription_items.
  */
 return new class extends Migration
 {
@@ -21,15 +25,6 @@ return new class extends Migration
             $table->dropForeign(['staff_activity_id']);
             $table->foreign('staff_activity_id')
                   ->references('id')->on('staff_activities')
-                  ->onUpdate('cascade')
-                  ->onDelete('restrict');
-        });
-
-        // ─── 2. activities → player_subscription_items ───────────────────────
-        Schema::table('player_subscription_items', function (Blueprint $table) {
-            $table->dropForeign(['activity_id']);
-            $table->foreign('activity_id')
-                  ->references('id')->on('activities')
                   ->onUpdate('cascade')
                   ->onDelete('restrict');
         });
@@ -49,11 +44,6 @@ return new class extends Migration
         Schema::table('plan_activities', function (Blueprint $table) {
             $table->dropForeign(['staff_activity_id']);
             $table->foreign('staff_activity_id')->references('id')->on('staff_activities')->onDelete('cascade');
-        });
-
-        Schema::table('player_subscription_items', function (Blueprint $table) {
-            $table->dropForeign(['activity_id']);
-            $table->foreign('activity_id')->references('id')->on('activities')->onDelete('cascade');
         });
 
         Schema::table('sports_session_bookings', function (Blueprint $table) {

@@ -30,7 +30,17 @@ class StaffService
      */
     public function getAllStaff(array $filters = [])
     {
-        $query = \Modules\StaffManager\Models\Staff::query();
+        $query = \Modules\StaffManager\Models\Staff::query()
+            ->where(function ($q) {
+                $q->where('role', '!=', 'coach')
+                  ->orWhere(function ($coachQuery) {
+                      $coachQuery->where('role', 'coach')
+                          ->whereHas('activities.activityType', function ($actTypeQuery) {
+                              $actTypeQuery->where('name', 'like', '%تدريب عام%')
+                                           ->orWhere('id', 4);
+                          });
+                  });
+            });
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -42,7 +52,9 @@ class StaffService
             $query->where('role', $filters['role']);
         }
 
-        if (isset($filters['is_active'])) {
+        if (!empty($filters['work_status'])) {
+            $query->where('work_status', $filters['work_status']);
+        } elseif (isset($filters['is_active'])) {
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
@@ -113,6 +125,9 @@ class StaffService
             );
             $person = $this->personService->createPerson($personDto);
 
+            // Generate single permanent QR code for staff
+            app(\Modules\Authentication\Services\PersonQrCodeService::class)->generateSingleForPerson($person->id);
+
             // 2. Create the staff record
             $staff = $this->staffRepository->create(array_merge($data, [
                 'person_id' => $person->id,
@@ -133,12 +148,6 @@ class StaffService
 
             if (!empty($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
-            }
-
-            if (isset($data['shifts']) && is_array($data['shifts'])) {
-                foreach ($data['shifts'] as $shiftId) {
-                    $staff->shifts()->create(['branch_shift_id' => $shiftId]);
-                }
             }
 
             // 3. If coach, create coach_details record
@@ -165,11 +174,11 @@ class StaffService
                 }
             }
 
-            // 4. Create active User Account so they can login to the Employee/Trainer App
             $roleName = $data['role'] ?? 'staff';
-            $prefix = ucfirst(substr(str_replace('_', '', $roleName), 0, 3)) . '-';
-            $username = $data['username'] ?? ($prefix . $person->id . '-' . strtolower(\Illuminate\Support\Str::random(6)));
-            $password = $data['password'] ?? 'password123';
+            $username = !empty($data['username']) 
+                ? $data['username'] 
+                : \Modules\Authentication\Services\UsernameGeneratorService::generateForRole($roleName);
+            $password = $data['password'] ?? '12345678';
 
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,
@@ -309,13 +318,6 @@ class StaffService
 
             if (isset($data['branch_ids'])) {
                 $staff->branches()->sync($data['branch_ids']);
-            }
-
-            if (isset($data['shifts']) && is_array($data['shifts'])) {
-                $staff->shifts()->delete();
-                foreach ($data['shifts'] as $shiftId) {
-                    $staff->shifts()->create(['branch_shift_id' => $shiftId]);
-                }
             }
 
             // Update coach_details if this is a coach

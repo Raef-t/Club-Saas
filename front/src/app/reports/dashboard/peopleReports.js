@@ -1,4 +1,5 @@
 import { getBranchName, getDisplayName, getPersonName } from "./reportSharedUtils";
+import { getWorkStatusMeta } from "@/lib/workStatus";
 
 /**
  * Creates a printable member registry report.
@@ -53,7 +54,7 @@ export function createCoachesReport(coaches) {
       coach?.details?.specialization || getDisplayName(coach?.activities?.[0]?.name, "غير محدد"),
     employment: employmentLabels[coach?.employment_type] || coach?.employment_type || "غير محدد",
     phone: coach?.person?.phone || "-",
-    status: coach?.is_active === false ? "غير نشط" : "نشط",
+    status: getWorkStatusMeta(coach).label,
     branch: getBranchName(coach),
   }));
 
@@ -64,7 +65,8 @@ export function createCoachesReport(coaches) {
     metrics: [
       { label: "إجمالي المدربين", value: rows.length },
       { label: "المدربون النشطون", value: rows.filter((row) => row.status === "نشط").length },
-      { label: "غير النشطين", value: rows.filter((row) => row.status === "غير نشط").length },
+      { label: "الموقوفون", value: rows.filter((row) => row.status === "موقوف").length },
+      { label: "في إجازة", value: rows.filter((row) => row.status === "إجازة").length },
     ],
     columns: [
       { key: "coach", label: "المدرب" },

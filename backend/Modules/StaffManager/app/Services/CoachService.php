@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Modules\StaffManager\Models\Staff;
 use Modules\StaffManager\Models\CoachDetail;
-use Modules\StaffManager\Models\CoachCertification;
 use Modules\Authentication\Models\Person;
 use Modules\Authentication\Models\PersonContact;
 use Modules\Authentication\Models\User;
@@ -49,7 +48,6 @@ class CoachService
                 'gender'    => $data['gender'] ?? null,
                 'age'       => $data['age'] ?? null,
                 'dob'       => $data['dob'] ?? null,
-                'national_id'=> $data['national_id'] ?? null,
                 'address'   => $data['address'] ?? null,
                 'photo_url' => $photoUrl,
             ]);
@@ -66,14 +64,14 @@ class CoachService
             }
 
             // 2. Generate unique username
-            $username = 'Coa-' . $person->id . '-' . strtolower(Str::random(6));
+            $username = \Modules\Authentication\Services\UsernameGeneratorService::generateForRole('coach');
 
 
             // 4. Create User
             $user = User::create([
                 'person_id' => $person->id,
                 'username'  => $username,
-                'password'  => Hash::make('password123'), // Default password
+                'password'  => Hash::make('12345678'), // Default password
                 'is_active' => true,
                 'role'      => 'coach',
             ]);
@@ -86,8 +84,7 @@ class CoachService
             $staff = Staff::create([
                 'person_id'       => $person->id,
                 'role'            => 'coach',
-                'is_active'       => $data['is_active'] ?? true,
-                'start_date'      => $data['start_date'] ?? null,
+                'start_date'      => $data['start_date'] ?? now()->toDateString(),
                 'end_date'        => $data['end_date'] ?? null,
                 'work_status'     => $data['work_status'] ?? 'active',
             ]);
@@ -107,8 +104,8 @@ class CoachService
 
             $staff->branches()->sync($data['branch_ids']);
 
-            // 6. Generate 7 QR codes for this coach
-            $this->qrCodeService->generateForPerson($person->id);
+            // 6. Generate single permanent QR code for this coach
+            $this->qrCodeService->generateSingleForPerson($person->id);
 
             CoachDetail::create([
                 'staff_id'               => $staff->id,
@@ -138,7 +135,7 @@ class CoachService
      */
     public function getAllCoaches(array $filters = [])
     {
-        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract'])->where('role', 'coach');
+        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract', 'shifts.branchShift'])->where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -150,6 +147,12 @@ class CoachService
             $query->whereHas('person', function ($q) use ($filters) {
                 $q->where('gender', $filters['gender']);
             });
+        }
+
+        if (!empty($filters['work_status'])) {
+            $query->where('work_status', $filters['work_status']);
+        } elseif (isset($filters['is_active'])) {
+            $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
         if (!empty($filters['activity_id'])) {
@@ -190,7 +193,7 @@ class CoachService
      */
     public function getSingleCoach($id)
     {
-        return Staff::with(['coachDetail.certifications', 'activities', 'person.contacts', 'user', 'branches', 'activeContract'])
+        return Staff::with(['coachDetail', 'activities', 'person.contacts', 'user', 'branches', 'activeContract', 'shifts.branchShift'])
             ->where('role', 'coach')
             ->findOrFail($id);
     }
@@ -206,7 +209,7 @@ class CoachService
             // Update Person Info
             $person = $staff->person;
             if ($person) {
-                $personFillable = ['gender', 'age', 'dob', 'national_id', 'address'];
+                $personFillable = ['gender', 'age', 'dob', 'address'];
                 $personData = array_intersect_key($data, array_flip($personFillable));
 
                 if (isset($data['first_name']) || isset($data['last_name'])) {
@@ -220,14 +223,14 @@ class CoachService
                 }
 
                 // Update Person Contact
-                if (isset($data['phone_number'])) {
+                if (isset($data['phone_number']) || isset($data['country_code'])) {
                     $contact = $person->contacts()->where('name', 'Personal')->first();
                     if ($contact) {
-                        $contact->update([
-                            'phone_number' => $data['phone_number'],
-                            'country_code' => $data['country_code'] ?? $contact->country_code,
-                        ]);
-                    } else {
+                        $contactData = [];
+                        if (isset($data['phone_number'])) $contactData['phone_number'] = $data['phone_number'];
+                        if (isset($data['country_code'])) $contactData['country_code'] = $data['country_code'];
+                        $contact->update($contactData);
+                    } elseif (!empty($data['phone_number'])) {
                         PersonContact::create([
                             'person_id'    => $person->id,
                             'name'         => 'Personal',
@@ -239,7 +242,7 @@ class CoachService
                 }
             }
 
-            $basicFillable = ['work_status', 'is_active', 'start_date', 'end_date'];
+            $basicFillable = ['work_status', 'start_date', 'end_date'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);
@@ -309,82 +312,6 @@ class CoachService
 
             return $this->getSingleCoach($staff->id);
         });
-    }
-
-    public function assignActivities($id, array $activityIds)
-    {
-        $staff = Staff::where('role', 'coach')->with('activeContract')->findOrFail($id);
-        $employmentType = $staff->activeContract?->employment_type ?? 'fixed_salary';
-
-        $activities = \Modules\Sports\Models\Activity::with('activityType')->whereIn('id', $activityIds)->get();
-
-        foreach ($activities as $activity) {
-            $isSessionBased = (bool) ($activity->activityType?->is_session_based ?? false);
-
-            if ($employmentType === 'fixed_salary' && $isSessionBased) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'activity_ids' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
-                ]);
-            }
-
-            if ($employmentType === 'commission_based' && !$isSessionBased) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'activity_ids' => [__('لا يمكن الربط بسبب عدم توافق طبيعة عمل المدرب مع نوع الفعالية.')],
-                ]);
-            }
-        }
-
-        // syncWithoutDetaching avoids duplicates and keeps existing associations
-        $staff->activities()->syncWithoutDetaching($activityIds);
-
-        return $staff->fresh(['activities']);
-    }
-
-    /**
-     * Remove an activity from a coach.
-     */
-    public function removeActivity($id, $activityId)
-    {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        $staff->activities()->detach($activityId);
-
-        return true;
-    }
-
-    /**
-     * Upload and save a certification for a coach.
-     */
-    public function uploadCertification($id, array $data)
-    {
-        $staff = Staff::where('role', 'coach')->findOrFail($id);
-        $coachDetail = $staff->coachDetail;
-
-        if (!$coachDetail) {
-            throw new \Exception("Coach details not found.");
-        }
-
-        $documentUrl = null;
-        if (isset($data['file']) && $data['file'] instanceof \Illuminate\Http\UploadedFile) {
-            $path = $data['file']->store('coach_certifications', 'public');
-            $documentUrl = $path;
-        } elseif (isset($data['document_url'])) {
-            $documentUrl = $data['document_url'];
-        }
-
-        if (!$documentUrl) {
-            throw new \Exception("A document file or URL is required.");
-        }
-
-        $certification = CoachCertification::create([
-            'coach_detail_id' => $coachDetail->id,
-            'name'            => $data['name'],
-            'issuer'          => $data['issuer'] ?? null,
-            'issue_date'      => $data['issue_date'] ?? null,
-            'expiry_date'     => $data['expiry_date'] ?? null,
-            'document_url'    => $documentUrl,
-        ]);
-
-        return $certification;
     }
 
     /**

@@ -108,9 +108,54 @@ export function createLockerMemberOptions(response) {
 }
 
 /**
+ * Builds coach dropdown options while keeping the backend coach identifier as the value.
+ */
+export function createLockerCoachOptions(response) {
+  return getLockerCollection(response).map((coach) => {
+    const person = coach.person || {};
+    const fullName =
+      person.full_name ||
+      `${person.first_name || coach.first_name || ""} ${
+        person.last_name || coach.last_name || ""
+      }`.trim() ||
+      `كوتش #${coach.id}`;
+
+    return {
+      value: String(coach.id),
+      label: fullName,
+    };
+  });
+}
+
+/**
+ * Builds staff dropdown options while keeping the backend identifier as the value.
+ */
+export function createLockerStaffOptions(response) {
+  return getLockerCollection(response).map((staff) => {
+    const person = staff.person || {};
+    const fullName =
+      person.full_name ||
+      `${person.first_name || staff.first_name || ""} ${
+        person.last_name || staff.last_name || ""
+      }`.trim() ||
+      `موظف #${staff.id}`;
+
+    return {
+      value: String(staff.id),
+      label: fullName,
+    };
+  });
+}
+
+/**
  * Resolves the current locker holder label without replacing its status label.
  */
-export function getLockerHolderLabel(locker, memberOptions) {
+export function getLockerHolderLabel(
+  locker,
+  memberOptions = [],
+  coachOptions = [],
+  staffOptions = [],
+) {
   if (!isLockerOccupied(locker)) return "";
   if (locker.holder_name) return locker.holder_name;
 
@@ -122,7 +167,17 @@ export function getLockerHolderLabel(locker, memberOptions) {
   }
 
   if (locker.holder_type === "staff" && locker.holder_id) {
-    return `موظف #${locker.holder_id}`;
+    return (
+      staffOptions.find((staff) => staff.value === String(locker.holder_id))?.label ||
+      `موظف #${locker.holder_id}`
+    );
+  }
+
+  if (locker.holder_type === "coach" && locker.holder_id) {
+    return (
+      coachOptions.find((coach) => coach.value === String(locker.holder_id))?.label ||
+      `كوتش #${locker.holder_id}`
+    );
   }
 
   if (locker.holder_type === "guest" && locker.holder_id) {

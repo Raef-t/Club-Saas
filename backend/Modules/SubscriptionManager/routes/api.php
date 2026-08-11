@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('reports/sessions/time-capacity', [SubscriptionReportController::class, 'timeCapacityReport']);
     Route::get('reports/attendance/peak-hours', [SubscriptionReportController::class, 'peakHoursReport']);
     Route::get('reports/shifts/attendance', [SubscriptionReportController::class, 'shiftAttendanceReport']);
+    Route::get('reports/coaches/subscriptions', [SubscriptionReportController::class, 'coachSubscriptionReport']);
 
     // Authenticated Member's Invoices
     Route::get('my-invoices', [InvoiceController::class, 'myInvoices']);
@@ -30,6 +31,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('subscription-plans/trashed', [SubscriptionPlanController::class, 'trashed']);
     Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
+    Route::get('subscription-plans/{id}/players', [SubscriptionPlanController::class, 'players']);
+    Route::get('subscription-plans/{id}/delete-check', [SubscriptionPlanController::class, 'deleteCheck']);
+    Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
 
     // Offers CRUD & Actions
@@ -44,9 +48,10 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::post('player-subscriptions/{id}/renew', [PlayerSubscriptionController::class, 'renew']);
     Route::post('player-subscriptions/{id}/cancel', [PlayerSubscriptionController::class, 'cancel']);
     Route::post('player-subscriptions/{id}/payment', [PlayerSubscriptionController::class, 'recordPayment']);
+    Route::post('player-subscriptions/{id}/restore', [PlayerSubscriptionController::class, 'restore']);
 
     // Player Subscriptions CRUD
-    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class)->except(['update', 'destroy']);
+    Route::apiResource('player-subscriptions', PlayerSubscriptionController::class);
 
     // Payments CRUD & Actions
     Route::get('payments/trashed', [PaymentController::class, 'trashed']);

@@ -57,6 +57,18 @@ class Person extends Model
     }
 
     /**
+     * Get dynamic age calculated from dob if present, otherwise return age column.
+     */
+    public function getAgeAttribute($value)
+    {
+        if (!empty($this->attributes['dob'])) {
+            return \Carbon\Carbon::parse($this->attributes['dob'])->age;
+        }
+
+        return $value;
+    }
+
+    /**
      * Get the person's full name using camelCase property (fullName).
      */
     public function getFullNameAttribute()
@@ -79,5 +91,15 @@ class Person extends Model
     public function wallet()
     {
         return $this->hasOne(\Modules\WalletManager\Models\Wallet::class, 'person_id');
+    }
+
+    public function member()
+    {
+        return $this->hasOne(\Modules\MemberManager\Models\Member::class, 'person_id');
+    }
+
+    public function staff()
+    {
+        return $this->hasOne(\Modules\StaffManager\Models\Staff::class, 'person_id');
     }
 }

@@ -17,7 +17,6 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "role", type: "string", example: "coach"),
         new OA\Property(property: "employment_type", type: "string", example: "fixed_salary"),
         new OA\Property(property: "base_salary", type: "number", example: 5000),
-        new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "start_date", type: "string", format: "date", example: "2023-01-01"),
         new OA\Property(property: "end_date", type: "string", format: "date", nullable: true),
         new OA\Property(property: "start_time", type: "string", format: "time", example: "09:00", nullable: true),
@@ -25,7 +24,13 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "experience_years", type: "integer"),
         new OA\Property(property: "payment_type", type: "string", nullable: true),
         new OA\Property(property: "work_types", type: "array", items: new OA\Items(type: "string")),
-        new OA\Property(property: "work_status", type: "string", example: "active"),
+        new OA\Property(
+            property: "work_status",
+            type: "string",
+            enum: ["active", "suspended", "on_leave"],
+            example: "active",
+            description: "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)"
+        ),
         new OA\Property(property: "created_at", type: "string", format: "date-time"),
         new OA\Property(property: "updated_at", type: "string", format: "date-time"),
         new OA\Property(property: "person", type: "object", description: "Person details"),
@@ -42,17 +47,20 @@ class CoachResource extends JsonResource
     {
         $contract = $this->activeContract;
         $detail = $this->coachDetail;
+        $qrCode = $this->person_id 
+            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getSingleCodeForPerson($this->person_id) 
+            : null;
 
         return [
             'id'              => $this->id,
             'person_id'       => $this->person_id,
+            'qr_code'         => $qrCode,
             'branch_ids'      => $this->branches->pluck('id'),
             'role'            => $this->role,
             'employment_type' => $contract ? $contract->employment_type : null,
             'base_salary'     => $contract ? $contract->base_salary : 0,
-            'is_active'       => $this->is_active,
-            'start_date'      => $this->start_date,
-            'end_date'        => $this->end_date,
+            'start_date'      => $this->start_date?->toDateString() ?? $contract?->start_date?->toDateString() ?? $this->created_at?->toDateString(),
+            'end_date'        => $this->end_date?->toDateString() ?? $contract?->end_date?->toDateString(),
             'start_time'      => $this->start_time,
             'end_time'        => $this->end_time,
             'work_status'     => $this->work_status,
@@ -60,7 +68,18 @@ class CoachResource extends JsonResource
             'updated_at'      => $this->updated_at,
             
             // Relations
-            'person'         => $this->person,
+            'person'         => $this->person ? [
+                'id'           => $this->person->id,
+                'full_name'    => $this->person->full_name,
+                'gender'       => $this->person->gender,
+                'age'          => $this->person->age,
+                'dob'          => $this->person->dob,
+                'address'      => $this->person->address,
+                'photo_url'    => $this->person->photo_url,
+                'email'        => $this->person->email,
+                'phone_number' => $this->person->contacts->where('name', 'Personal')->first()?->phone_number,
+                'country_code' => $this->person->contacts->where('name', 'Personal')->first()?->country_code,
+            ] : null,
             'username'       => $this->user ? $this->user->username : null,
             'details'        => $detail ? [
                 'id' => $detail->id,
@@ -79,6 +98,13 @@ class CoachResource extends JsonResource
             'activities'     => ActivityResource::collection($this->activities),
             'experience_years'       => $detail?->experience_years,
             'work_types'     => $detail?->work_types,
+            'shifts'         => $this->shifts->map(fn($shift) => [
+                'id'              => $shift->id,
+                'branch_shift_id' => $shift->branch_shift_id,
+                'name'            => $shift->branchShift?->name,
+                'start_time'      => $shift->branchShift?->start_time,
+                'end_time'        => $shift->branchShift?->end_time,
+            ]),
         ];
     }
 }

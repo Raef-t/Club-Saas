@@ -1,9 +1,9 @@
 "use client";
 
-import MemberDetails from "./MemberDetails";
 import { MemberForm } from "./MemberForm";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -94,7 +94,17 @@ function DetailItem({ label, value, tone = "default" }) {
   );
 }
 
+function getMemberDisplayName(member) {
+  if (!member) return "";
+  return (
+    member.person?.full_name ||
+    `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
+    `العضو #${member.id}`
+  );
+}
+
 export default function MembersClient({ initialData }) {
+  const router = useRouter();
   const {
     search,
     setSearch,
@@ -294,8 +304,7 @@ export default function MembersClient({ initialData }) {
         headerClassName="gap-2 px-3"
         totalPages={0}
         onRowClick={(member) => {
-          setSelectedMemberId(member.id);
-          setDrawerMode("details");
+          router.push(`/management/members/${member.id}`);
         }}
         getRowKey={(member) => member.id}
         toolbarActions={
@@ -342,7 +351,7 @@ export default function MembersClient({ initialData }) {
         open={drawerMode === "edit"}
         onClose={closeDrawer}
         title="تعديل بيانات اللاعب"
-        subtitle={selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ""}
+        subtitle={getMemberDisplayName(selectedMember)}
       >
         {editInitialValues && (
           <MemberForm
@@ -356,15 +365,6 @@ export default function MembersClient({ initialData }) {
             errorMessage={formError}
           />
         )}
-      </Drawer>
-
-      <Drawer
-        open={drawerMode === "details"}
-        onClose={closeDrawer}
-        title="تفاصيل اللاعب العضو"
-        subtitle={selectedMember ? `${selectedMember.first_name} ${selectedMember.last_name}` : ""}
-      >
-        <MemberDetails member={selectedMember} branches={branches} />
       </Drawer>
 
       <ConfirmDialog

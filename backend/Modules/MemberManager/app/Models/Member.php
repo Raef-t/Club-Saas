@@ -131,9 +131,61 @@ class Member extends Model
         return $this->hasMany(MemberMeasurement::class);
     }
 
+    public function evaluations()
+    {
+        return $this->hasMany(MemberEvaluation::class);
+    }
+
     public function subscriptions()
     {
         return $this->hasMany(\Modules\SubscriptionManager\Models\PlayerSubscription::class, 'member_id');
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\Invoice::class, 'member_id');
+    }
+
+    public function attendances()
+    {
+        return $this->morphMany(\Modules\AttendanceManager\Models\Attendance::class, 'attendable');
+    }
+
+    public function lockerReservations()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\LockerReservation::class, 'member_id');
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($member) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+
+        static::deleted(function ($member) {
+            if (method_exists($member, 'isForceDeleting') && $member->isForceDeleting()) {
+                $member->person()->withTrashed()->first()?->forceDelete();
+            } else {
+                $member->person?->delete();
+            }
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+
+        static::restored(function ($member) {
+            $member->person()->onlyTrashed()->first()?->restore();
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
     }
 
     /**
@@ -155,11 +207,6 @@ class Member extends Model
     public function getIsActiveAttribute(): bool
     {
         return $this->membership_status === 'active';
-    }
-
-    public function unavailabilities()
-    {
-        return $this->hasMany(PlayerUnavailability::class);
     }
 
     public function getTotalSubscriptionsAmountAttribute()

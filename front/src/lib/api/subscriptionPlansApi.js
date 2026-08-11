@@ -1,6 +1,51 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { backendBaseQuery } from "@/lib/api/baseQuery";
 
+function getPlanList(response) {
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response)) return response;
+  return null;
+}
+
+function getPlanRecord(response) {
+  const record = response?.data?.data || response?.data || response;
+  return record && typeof record === "object" && !Array.isArray(record) ? record : null;
+}
+
+export function normalizeSubscriptionPlanPlayersResponse(response) {
+  const payload = response?.data?.data || response?.data || response;
+  const players = Array.isArray(payload?.players) ? payload.players : [];
+  const total = Number(payload?.total_active_subscribers);
+
+  return {
+    plan_id: payload?.plan_id ?? null,
+    plan_name: payload?.plan_name ?? "",
+    total_active_subscribers: Number.isFinite(total) ? total : players.length,
+    players,
+  };
+}
+
+/**
+ * Keeps an updated plan in an already loaded list even when the backend's list
+ * endpoint temporarily omits inactive records.
+ */
+export function mergeSubscriptionPlanIntoResponse(response, plan) {
+  const plans = getPlanList(response);
+  if (!plans || !plan?.id) return;
+
+  const index = plans.findIndex((item) => String(item.id) === String(plan.id));
+  if (index === -1) {
+    plans.unshift(plan);
+    return;
+  }
+
+  plans[index] = {
+    ...plans[index],
+    ...plan,
+  };
+}
+
 export const subscriptionPlansApi = createApi({
   reducerPath: "subscriptionPlansApi",
   baseQuery: backendBaseQuery,
@@ -17,6 +62,11 @@ export const subscriptionPlansApi = createApi({
       query: (id) => `subscription-plans/${id}`,
       providesTags: (result, error, id) => [{ type: "SubscriptionPlans", id }],
     }),
+    getSubscriptionPlanPlayers: builder.query({
+      query: (id) => `subscription-plans/${id}/players`,
+      transformResponse: normalizeSubscriptionPlanPlayersResponse,
+      providesTags: (result, error, id) => [{ type: "SubscriptionPlans", id }],
+    }),
     createSubscriptionPlan: builder.mutation({
       query: (body) => ({
         url: "subscription-plans",
@@ -31,10 +81,42 @@ export const subscriptionPlansApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        "SubscriptionPlans",
-        { type: "SubscriptionPlans", id },
-      ],
+      async onQueryStarted({ id, body }, { dispatch, queryFulfilled }) {
+        const optimisticPlan = { id, ...body };
+        const queryArgs = [{}];
+
+        if (body.branch_id !== null && body.branch_id !== undefined && body.branch_id !== "") {
+          queryArgs.push({ branch_id: String(body.branch_id) });
+        }
+
+        const patches = queryArgs.map((queryArg) =>
+          dispatch(
+            subscriptionPlansApi.util.updateQueryData("getSubscriptionPlans", queryArg, (draft) =>
+              mergeSubscriptionPlanIntoResponse(draft, optimisticPlan),
+            ),
+          ),
+        );
+
+        try {
+          const { data } = await queryFulfilled;
+          const updatedPlan = getPlanRecord(data);
+
+          if (updatedPlan) {
+            queryArgs.forEach((queryArg) => {
+              dispatch(
+                subscriptionPlansApi.util.updateQueryData(
+                  "getSubscriptionPlans",
+                  queryArg,
+                  (draft) => mergeSubscriptionPlanIntoResponse(draft, updatedPlan),
+                ),
+              );
+            });
+          }
+        } catch {
+          patches.forEach((patchResult) => patchResult.undo());
+        }
+      },
+      invalidatesTags: (result, error, { id }) => [{ type: "SubscriptionPlans", id }],
     }),
     deleteSubscriptionPlan: builder.mutation({
       query: (id) => ({
@@ -50,6 +132,7 @@ export const {
   useCreateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
   useGetSubscriptionPlanQuery,
+  useGetSubscriptionPlanPlayersQuery,
   useGetSubscriptionPlansQuery,
   useUpdateSubscriptionPlanMutation,
 } = subscriptionPlansApi;

@@ -228,7 +228,16 @@ class SessionDeductionService
     public function rollbackDeduction(int $attendanceId, array $subscriptionIds = []): void
     {
         DB::transaction(function () use ($attendanceId, $subscriptionIds) {
-            $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
+            $attendance = Attendance::findOrFail($attendanceId);
+
+            if ($attendance->attendable_type === 'staff') {
+                if (!empty($subscriptionIds)) {
+                    throw new Exception(__('Staff attendances do not have subscription sessions to rollback.'));
+                }
+                $attendance->delete();
+                return;
+            }
+
             $member     = Member::with('person.user')->find($attendance->attendable_id);
             $userId     = $member?->person?->user?->id;
             $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';

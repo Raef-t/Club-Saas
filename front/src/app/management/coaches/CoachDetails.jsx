@@ -2,28 +2,21 @@
 
 import Button from "@/components/ui/Button";
 import DetailItem from "@/components/ui/DetailItem";
-import Dropdown from "@/components/ui/Dropdown";
+import ProfileIdentityCard from "@/components/ui/ProfileIdentityCard";
 import SkeletonPage from "@/components/ui/Skeleton";
-import { TrashIcon } from "@/components/icons/Icons";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { getWorkStatusMeta } from "@/lib/workStatus";
 import {
   COACH_GENDER_LABELS as genderLabels,
   EMPLOYMENT_LABELS as employmentLabels,
 } from "./coachConstants";
-import { getCoachBranchNames, getUnassignedActivities } from "./coachDetailsUtils";
-export default function CoachDetails({
-  coach,
-  branches = [],
-  allActivities = [],
-  isLoading,
-  error,
-  selectedActivityId,
-  setSelectedActivityId,
-  onAddActivity,
-  onRemoveActivity,
-  isAddingActivity,
-  isRemovingActivity,
-}) {
+import {
+  formatCoachCommission,
+  getCoachAge,
+  getCoachBranchNames,
+  getCoachCompensationVisibility,
+} from "./coachDetailsUtils";
+export default function CoachDetails({ coach, branches = [], isLoading, error }) {
   if (isLoading) {
     return <SkeletonPage blocks={[{ type: "details", sections: 2, itemsPerSection: 3 }]} />;
   }
@@ -46,26 +39,23 @@ export default function CoachDetails({
 
   const branchNames = getCoachBranchNames(coach, branches);
   const coachActivities = coach.activities || [];
-  const unassignedActivities = getUnassignedActivities(coachActivities, allActivities);
+  const compensation = getCoachCompensationVisibility(coach);
+  const commissionRate = coach.details?.default_commission_rate ?? coach.default_commission_rate;
+  const startDate = coach.start_date || coach.details?.start_date;
+  const coachAge = getCoachAge(coach);
+  const workStatus = getWorkStatusMeta(coach);
+  const employmentLabel = compensation.isPrivateEquipment
+    ? "تدريب خاص (بدون راتب أو نسبة)"
+    : employmentLabels[compensation.paymentType] || compensation.paymentType || "-";
 
   return (
     <div className="space-y-6">
-      {/* Basic Profile */}
-      <div className="rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-medium text-white">{coach.person?.full_name || "-"}</h3>
-          <p className="mt-1 text-xs text-app-muted-light">
-            كود الموظف: #{coach.id} | دور: {coach.role}
-          </p>
-        </div>
-        <span
-          className={`rounded px-2.5 py-1 text-xs font-semibold ${
-            coach.is_active ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-          }`}
-        >
-          {coach.is_active ? "نشط" : "غير نشط"}
-        </span>
-      </div>
+      <ProfileIdentityCard
+        name={coach.person?.full_name}
+        username={coach.username || coach.generated_username}
+        qrCode={coach.qr_code}
+        status={workStatus}
+      />
 
       {/* Info Grid */}
       <section className="grid gap-3 sm:grid-cols-2">
@@ -82,16 +72,22 @@ export default function CoachDetails({
           label="الجنس"
           value={genderLabels[coach.person?.gender] || coach.person?.gender}
         />
-        <DetailItem label="تاريخ الميلاد" value={formatDate(coach.person?.dob)} />
-        <DetailItem
-          label="نوع التوظيف"
-          value={employmentLabels[coach.employment_type] || coach.employment_type}
-        />
-        <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
+        <DetailItem label="العمر" value={coachAge !== null ? `${coachAge} سنة` : "-"} />
+        <DetailItem label="نوع التوظيف" value={employmentLabel} />
+        {compensation.showSalary && (
+          <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
+        )}
+        {compensation.showCommission && (
+          <DetailItem
+            label="نسبة المدرب"
+            value={formatCoachCommission(commissionRate)}
+            tone="green"
+          />
+        )}
         <DetailItem label="العنوان" value={coach.person?.address} />
         {/* <DetailItem label="البريد الإلكتروني" value={coach.person?.email} /> */}
-        <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} />
-        <DetailItem label="تاريخ المباشرة" value={formatDate(coach.start_date)} />
+        {/* <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} /> */}
+        <DetailItem label="تاريخ المباشرة" value={startDate ? formatDate(startDate) : "غير مسجل"} />
       </section>
 
       {/* Activities Section */}
@@ -107,17 +103,8 @@ export default function CoachDetails({
             {coachActivities.map((act) => (
               <div
                 key={act.id}
-                className="flex items-center justify-between p-2 rounded-lg bg-black/35 border border-app-line text-sm"
+                className="flex items-center justify-end rounded-lg border border-app-line bg-black/35 p-2 text-sm"
               >
-                <button
-                  type="button"
-                  onClick={() => onRemoveActivity(act.id)}
-                  disabled={isRemovingActivity}
-                  className="text-app-red hover:bg-app-red/10 p-1.5 rounded transition disabled:opacity-50"
-                  title="إلغاء إسناد النشاط"
-                >
-                  <TrashIcon className="size-4" />
-                </button>
                 <span className="font-medium text-app-text">
                   {typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "-"}
                 </span>
@@ -126,35 +113,11 @@ export default function CoachDetails({
           </div>
         )}
 
-        {/* Add Activity Controls */}
-        {unassignedActivities.length > 0 && (
-          <div className="pt-2 border-t border-app-line flex items-end gap-3">
-            <div className="flex-1">
-              <label className="block text-xs text-app-muted-light mb-1.5">إسناد نشاط جديد</label>
-              <Dropdown
-                className="text-white bg-black/40 rounded-lg text-sm"
-                buttonClassName="h-10 border-app-line"
-                value={selectedActivityId}
-                onChange={setSelectedActivityId}
-                options={unassignedActivities.map((act) => ({
-                  value: act.id,
-                  label:
-                    typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "",
-                }))}
-                placeholder="اختر نشاطاً رياضياً..."
-              />
-            </div>
-            <Button
-              type="button"
-              className="h-10 px-4 text-sm font-medium"
-              disabled={!selectedActivityId || isAddingActivity}
-              loading={isAddingActivity}
-              onClick={onAddActivity}
-            >
-              إسناد
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-start border-t border-app-line pt-3">
+          <Button href={`/management/coaches/create?mode=edit&id=${coach.id}`} tone="outline">
+            تعديل الأنشطة والشفتات
+          </Button>
+        </div>
       </div>
     </div>
   );

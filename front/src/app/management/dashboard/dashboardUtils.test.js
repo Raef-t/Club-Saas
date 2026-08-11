@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  createCoachSubscriptionMix,
   createDashboardStats,
   createShiftAttendanceChart,
-  createSubscriptionMix,
   createTodaySchedule,
-  getDashboardCollection,
 } from "./dashboardUtils";
 
 const scheduleResponse = {
@@ -27,15 +26,11 @@ const scheduleResponse = {
       },
     ],
     Monday: [{ id: 3, branch_id: 3, start_time: "09:00:00", end_time: "10:00:00" }],
+    Tuesday: [{ id: 4, branch_id: 3, start_time: "14:00:00", end_time: "15:00:00" }],
   },
 };
 
 describe("management dashboard utilities", () => {
-  it("extracts supported backend collection shapes", () => {
-    expect(getDashboardCollection({ data: { data: [{ id: 1 }] } })).toEqual([{ id: 1 }]);
-    expect(getDashboardCollection({ data: [{ id: 2 }] })).toEqual([{ id: 2 }]);
-  });
-
   it("creates today's branch-filtered schedule rows", () => {
     const sundayMorning = new Date(2026, 6, 26, 9, 30);
     const sessions = createTodaySchedule(scheduleResponse, "3", sundayMorning);
@@ -50,30 +45,86 @@ describe("management dashboard utilities", () => {
     });
   });
 
+  it("adds the live API attendance count to its scheduled session", () => {
+    const sundayMorning = new Date(2026, 6, 26, 10, 30);
+    const sessions = createTodaySchedule(scheduleResponse, "3", sundayMorning, [
+      {
+        session_template_id: 1,
+        present_players_count: 6,
+      },
+    ]);
+
+    expect(sessions[0]).toMatchObject({
+      id: 1,
+      startTime: "10:00",
+      endTime: "11:00",
+      presentPlayersCount: 6,
+    });
+  });
+
+  it("keeps attendance pending until the live API responds", () => {
+    const sundayMorning = new Date(2026, 6, 26, 10, 30);
+
+    expect(createTodaySchedule(scheduleResponse, "3", sundayMorning)[0]).toMatchObject({
+      presentPlayersCount: null,
+    });
+  });
+
+  it("selects Tuesday by calendar day instead of the displayed array position", () => {
+    const tuesdayAfternoon = new Date(2026, 6, 28, 13, 30);
+
+    expect(createTodaySchedule(scheduleResponse, "3", tuesdayAfternoon)).toMatchObject([
+      { id: 4, startTime: "14:00" },
+    ]);
+  });
+
   it("creates shift attendance chart data sorted by attendance", () => {
     const reportResponse = {
       data: {
         records: [
-          { day_name: "الأحد", shift_name: "الوردية الأولى", attended_players_count: 5 },
-          { day_name: "الاثنين", shift_name: "الوردية الثانية", attended_players_count: 12 },
+          { shift_name: "الوردية الأولى", attended_players_count: 5 },
+          { shift_name: "الوردية الثانية", attended_players_count: 12 },
         ],
       },
     };
     const chartData = createShiftAttendanceChart(reportResponse);
-    expect(chartData[0]).toEqual({ label: "الاثنين - الوردية الثانية", value: 12 });
+    expect(chartData[0]).toEqual({ label: "الوردية الثانية", value: 12 });
   });
 
-  it("groups subscriptions by plan name", () => {
-    expect(
-      createSubscriptionMix([
-        { status: "active", plan: { name: { ar: "شهري" } } },
-        { status: "active", plan: { name: { ar: "شهري" } } },
-        { status: "active", plan_name: "سنوي" },
-      ]).map(({ label, value }) => ({ label, value })),
-    ).toEqual([
-      { label: "شهري", value: 2 },
-      { label: "سنوي", value: 1 },
-    ]);
+  it("maps the coaches subscriptions report into distinct chart items", () => {
+    const items = createCoachSubscriptionMix({
+      status: "success",
+      data: {
+        group_session_coaches: [
+          {
+            coach_id: 44,
+            coach_name: "Coach One",
+            activities: ["Mix"],
+            active_players_count: 13,
+          },
+          {
+            coach_id: 42,
+            coach_name: "Coach Two",
+            activities: ["Aerobics"],
+            active_players_count: 0,
+          },
+        ],
+      },
+    });
+
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({
+      id: "coach-44",
+      label: "Coach One",
+      value: 13,
+      activities: ["Mix"],
+    });
+    expect(items[1]).toMatchObject({
+      id: "coach-42",
+      label: "Coach Two",
+      value: 0,
+    });
+    expect(items[0].color).not.toBe(items[1].color);
   });
 
   it("creates linked live statistics from SSE stream data", () => {
@@ -102,5 +153,35 @@ describe("management dashboard utilities", () => {
       "schedule",
     ]);
     expect(stats.every((stat) => stat.href.startsWith("/management/"))).toBe(true);
+  });
+
+  it("does not calculate statistics before the API stream responds", () => {
+    expect(
+      createDashboardStats({
+        members: [{ id: 1 }],
+        coaches: [{ id: 2 }],
+        subscriptions: [{ id: 3, status: "active" }],
+        todaySessions: [{ id: 4 }],
+        sseStats: null,
+      }),
+    ).toEqual([]);
+  });
+
+  it("keeps zero values returned by the API stream", () => {
+    const stats = createDashboardStats({
+      members: [{ id: 1 }],
+      coaches: Array.from({ length: 9 }, (_, id) => ({ id })),
+      subscriptions: Array.from({ length: 12 }, (_, id) => ({ id, status: "active" })),
+      todaySessions: Array.from({ length: 5 }, (_, id) => ({ id })),
+      sseStats: {
+        total_active_subscribed_members: 10,
+        realtime_training_players_count: 0,
+        expiring_subscriptions_count: 0,
+        free_assigned_player_lockers_count: 0,
+        current_active_session_plans: [],
+      },
+    });
+
+    expect(stats.map((stat) => stat.value)).toEqual(["10", "0", "0", "0", "0"]);
   });
 });

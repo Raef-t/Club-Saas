@@ -35,16 +35,6 @@ class ShiftAttendanceReportService
         $activityId = !empty($filters['activity_id']) ? (int) $filters['activity_id'] : null;
         $shiftId    = !empty($filters['shift_id']) ? (int) $filters['shift_id'] : null;
 
-        $daysMap = [
-            0 => 'الأحد',
-            1 => 'الاثنين',
-            2 => 'الثلاثاء',
-            3 => 'الأربعاء',
-            4 => 'الخميس',
-            5 => 'الجمعة',
-            6 => 'السبت'
-        ];
-
         // 2. Build shifts query
         $shiftsQuery = DB::table('branch_shifts as bs')
             ->join('branches as b', 'bs.branch_id', '=', 'b.id')
@@ -53,7 +43,6 @@ class ShiftAttendanceReportService
                 'bs.name as shift_name',
                 'bs.start_time',
                 'bs.end_time',
-                'bs.day_of_week',
                 'bs.branch_id',
                 'b.name as branch_name'
             );
@@ -93,11 +82,6 @@ class ShiftAttendanceReportService
                 ->whereRaw('TIME(a.check_in_at) >= ?', [$shift->start_time])
                 ->whereRaw('TIME(a.check_in_at) <= ?', [$shift->end_time]);
 
-            if ($shift->day_of_week !== null) {
-                // In MySQL DAYOFWEEK: 1 = Sunday, 2 = Monday ... 7 = Saturday
-                $attendanceQuery->whereRaw('(DAYOFWEEK(a.check_in_at) - 1) = ?', [$shift->day_of_week]);
-            }
-
             if ($matchingPlanIds !== null) {
                 $attendanceQuery->whereIn('a.id', function ($sub) use ($matchingPlanIds) {
                     $sub->select('attendance_id')
@@ -116,8 +100,6 @@ class ShiftAttendanceReportService
                 'shift_name'             => $shift->shift_name,
                 'branch_id'              => $shift->branch_id,
                 'branch_name'            => $shift->branch_name,
-                'day_of_week'            => $shift->day_of_week,
-                'day_name'               => $shift->day_of_week !== null ? ($daysMap[$shift->day_of_week] ?? 'كل الأيام') : 'كل الأيام',
                 'start_time'             => $shift->start_time,
                 'end_time'               => $shift->end_time,
                 'attended_players_count' => $totalAttended,

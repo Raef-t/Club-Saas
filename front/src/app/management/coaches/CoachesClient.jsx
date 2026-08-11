@@ -3,7 +3,8 @@
 import CoachDetails from "./CoachDetails";
 import { CoachCreateForm } from "./CoachForm";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -32,14 +33,93 @@ import {
   SHIFT_GENDER_LABELS as shiftGenderLabels,
 } from "@/app/management/coaches/coachConstants";
 import { CURRENCY_SYMBOL, formatDate, formatMoney } from "@/lib/utils";
+import { getWorkStatusMeta, WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   createCoachFormInitialValues,
   getEmploymentTypeForWorkTypes,
 } from "@/app/management/coaches/coachFormUtils";
 import {
+  formatCoachCommission,
   getCoachBranchNames,
+  getCoachCompensationVisibility,
+  getCoachActivityPlanKey,
   getUnassignedActivities,
 } from "@/app/management/coaches/coachDetailsUtils";
+
+/**
+ * Activity badge with hover tooltip showing related subscription plans.
+ */
+function ActivityBadgeWithTooltip({ activity, plans = [] }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const badgeRef = useRef(null);
+
+  function handleEnter() {
+    if (!plans.length) return;
+    const rect = badgeRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({
+      top: rect.bottom + 6,
+      left: rect.left + rect.width / 2,
+    });
+    setShow(true);
+  }
+
+  return (
+    <>
+      <span
+        ref={badgeRef}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setShow(false)}
+        className={[
+          "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors",
+          plans.length
+            ? "bg-app-yellow/15 text-app-yellow cursor-pointer hover:bg-app-yellow/25"
+            : "bg-app-yellow/15 text-app-yellow",
+        ].join(" ")}
+      >
+        {activity.name}
+        {plans.length > 0 && <span className="mr-1 text-[9px] opacity-60">({plans.length})</span>}
+      </span>
+
+      {show &&
+        plans.length > 0 &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              transform: "translateX(-50%)",
+              zIndex: 10000,
+            }}
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+            className="w-56 rounded-xl border border-app-line bg-app-card p-3 shadow-2xl"
+            dir="rtl"
+          >
+            <p className="mb-2 text-[11px] font-semibold text-app-yellow">الفعاليات المرتبطة</p>
+            <div className="space-y-1.5">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-app-card-soft/80 px-2.5 py-1.5"
+                >
+                  <span className="truncate text-[11px] font-medium text-app-text">
+                    {plan.name}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-app-muted-light">
+                    {plan.sessions ? `${plan.sessions} جلسة` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 export default function CoachesClient({ initialData }) {
   const {
@@ -51,6 +131,8 @@ export default function CoachesClient({ initialData }) {
     setEmploymentFilter,
     activityFilter,
     setActivityFilter,
+    workStatusFilter,
+    setWorkStatusFilter,
     drawerMode,
     setDrawerMode,
     setSelectedCoachId,
@@ -69,8 +151,6 @@ export default function CoachesClient({ initialData }) {
     isCreating,
     isUpdating,
     isDeleting,
-    isAddingActivity,
-    isDeletingActivity,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -78,13 +158,10 @@ export default function CoachesClient({ initialData }) {
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
-    handleAddActivity,
-    handleRemoveActivity,
-    selectedActivityId,
-    setSelectedActivityId,
     getEditInitialValues,
     branches,
     activities,
+    coachActivityPlansMap,
     closeDrawer,
   } = useCoaches({ initialData });
 
@@ -121,45 +198,74 @@ export default function CoachesClient({ initialData }) {
           );
         },
       },
-      // {
-      //   key: "specialization",
-      //   label: "التخصص",
-      //   align: "center",
-      //   render: (_, coach) => (
-      //     <span className="text-xs text-app-muted-light">
-      //       {coach.details?.specialization || "غير محدد"}
-      //     </span>
-      //   ),
-      // },
+      {
+        key: "specialization",
+        label: "التخصص",
+        align: "center",
+        sortValue: (coach) => {
+          const acts = Array.isArray(coach.activities) ? coach.activities : [];
+          return acts.map((a) => a.name || "").join(", ");
+        },
+        render: (_, coach) => {
+          const acts = Array.isArray(coach.activities) ? coach.activities : [];
+          if (!acts.length) {
+            return <span className="text-xs text-app-muted-light">غير محدد</span>;
+          }
+          return (
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {acts.map((act) => (
+                <ActivityBadgeWithTooltip
+                  key={act.id}
+                  activity={act}
+                  plans={coachActivityPlansMap.get(getCoachActivityPlanKey(coach.id, act.id)) || []}
+                />
+              ))}
+            </div>
+          );
+        },
+      },
       {
         key: "employment_type",
         label: "التوظيف",
         align: "center",
-        render: (value) => (
-          <span className="text-xs text-app-muted-light">{employmentLabels[value] || value}</span>
-        ),
+        render: (value, coach) => {
+          const compensation = getCoachCompensationVisibility(coach);
+          const label = compensation.isPrivateEquipment
+            ? "تدريب خاص"
+            : employmentLabels[compensation.paymentType] || value;
+
+          return <span className="text-xs text-app-muted-light">{label}</span>;
+        },
       },
       {
         key: "base_salary",
         label: "الراتب / النسبة",
         align: "center",
         render: (_, coach) => {
-          const type = coach.employment_type;
+          const compensation = getCoachCompensationVisibility(coach);
           const salary = formatMoney(coach.base_salary);
-          const commission = Number(coach.details?.default_commission_rate || 0);
+          const commission = formatCoachCommission(
+            coach.details?.default_commission_rate ?? coach.default_commission_rate,
+          );
 
-          if (type === "commission_based" || type === "commission") {
+          if (compensation.isPrivateEquipment) {
+            return <span className="text-xs text-app-muted-light">-</span>;
+          }
+
+          if (compensation.showCommission && !compensation.showSalary) {
             return (
               <span className="text-xs font-semibold text-app-green" dir="ltr">
-                {commission}%
+                {commission}
               </span>
             );
-          } else if (type === "hybrid") {
+          }
+
+          if (compensation.showSalary && compensation.showCommission) {
             return (
               <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-app-green">
                 <span>{salary}</span>
                 <span className="text-app-muted-light">+</span>
-                <span dir="ltr">{commission}%</span>
+                <span dir="ltr">{commission}</span>
               </div>
             );
           }
@@ -168,18 +274,30 @@ export default function CoachesClient({ initialData }) {
         },
       },
       {
-        key: "is_active",
+        key: "start_date",
+        label: "تاريخ المباشرة",
+        align: "center",
+        sortValue: (coach) => coach.start_date || coach.details?.start_date || "",
+        render: (_, coach) => {
+          const startDate = coach.start_date || coach.details?.start_date;
+          return <span className="text-xs text-app-muted-light">{formatDate(startDate)}</span>;
+        },
+      },
+      {
+        key: "work_status",
         label: "الحالة",
         align: "center",
-        render: (value) => (
-          <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-              value ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-            }`}
-          >
-            {value ? "نشط" : "غير نشط"}
-          </span>
-        ),
+        sortValue: (coach) => getWorkStatusMeta(coach).label,
+        render: (_, coach) => {
+          const status = getWorkStatusMeta(coach);
+          return (
+            <span
+              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.className}`}
+            >
+              {status.label}
+            </span>
+          );
+        },
       },
       {
         key: "actions",
@@ -308,6 +426,14 @@ export default function CoachesClient({ initialData }) {
               options={employmentOptions}
               onChange={setEmploymentFilter}
             />
+
+            <Dropdown
+              className="min-w-48 bg-app-card-soft border-app-line text-white"
+              icon={FilterIcon}
+              value={workStatusFilter}
+              options={[{ value: "all", label: "كل الحالات" }, ...WORK_STATUS_OPTIONS]}
+              onChange={setWorkStatusFilter}
+            />
           </div>
         }
         toolbarMeta={
@@ -329,15 +455,8 @@ export default function CoachesClient({ initialData }) {
         <CoachDetails
           coach={detailsCoach || selectedCoach}
           branches={branches}
-          allActivities={activities}
           isLoading={isFetchingDetails}
           error={detailsError}
-          selectedActivityId={selectedActivityId}
-          setSelectedActivityId={setSelectedActivityId}
-          onAddActivity={handleAddActivity}
-          onRemoveActivity={handleRemoveActivity}
-          isAddingActivity={isAddingActivity}
-          isRemovingActivity={isDeletingActivity}
         />
       </Drawer>
 

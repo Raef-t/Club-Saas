@@ -30,7 +30,8 @@ class UnifiedAttendanceController extends BaseController
                 new OA\Property(property: 'attendable_type', type: 'string', enum: ['member', 'staff'], example: 'member'),
                 new OA\Property(property: 'attendable_id', type: 'integer', example: 1),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)')
+                new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'),
+                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-08-08 14:30:00', description: 'تاريخ ووقت تسجيل الدخول اليدوي (اختياري)')
             ]
         )
     )]
@@ -66,11 +67,20 @@ class UnifiedAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'check_out_at', type: 'string', format: 'date-time', example: '2026-08-08 16:30:00', description: 'تاريخ ووقت تسجيل الانصراف اليدوي (اختياري، إذا لم يرسل يأخذ الوقت الحالي بالسيرفر)')
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم الانصراف', content: new OA\JsonContent())]
-    public function checkOut($attendanceId)
+    public function checkOut(Request $request, $attendanceId)
     {
         try {
-            $attendance = $this->attendanceService->checkOut((int) $attendanceId);
+            $checkOutAt = $request->input('check_out_at');
+            $attendance = $this->attendanceService->checkOut((int) $attendanceId, $checkOutAt);
             return $this->successResponse(new AttendanceResource($attendance), __('Checked out successfully'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -97,7 +107,34 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Response(
         response: 200,
         description: '✅ تم تنفيذ الانصراف الجماعي بنجاح',
-        content: new OA\JsonContent()
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Bulk check-out process completed'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'total_processed', type: 'integer', example: 3),
+                        new OA\Property(property: 'success_count', type: 'integer', example: 3),
+                        new OA\Property(property: 'failed_count', type: 'integer', example: 0),
+                        new OA\Property(property: 'successful', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'failed', type: 'array', items: new OA\Items(type: 'object'))
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: '❌ خطأ: لا يوجد أي شخص مسجل حضور حالياً لهذه الخطة في هذا الفرع',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: false),
+                new OA\Property(property: 'message', type: 'string', example: 'No active check-ins found for this subscription plan in the selected branch.'),
+                new OA\Property(property: 'data', type: 'null', example: null)
+            ]
+        )
     )]
     public function bulkCheckOut(BulkCheckOutRequest $request)
     {
@@ -150,5 +187,39 @@ class UnifiedAttendanceController extends BaseController
         $history = $query->get();
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
+    }
+
+    #[OA\Delete(
+        path: '/v1/attendances/{id}',
+        summary: '🗑️ حذف سجل حضور (Soft Delete)',
+        description: 'حذف سجل حضور ناعماً من النظام مع كافّة استهلاكات الجلسات المترابطة به ناعماً ومتتابعاً.',
+        tags: ['Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل الحضور', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم حذف سجل الحضور ناعماً بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 سجل الحضور غير موجود')]
+    public function destroy(int $id)
+    {
+        $attendance = \Modules\AttendanceManager\Models\Attendance::findOrFail($id);
+        $attendance->delete();
+        return $this->successResponse(null, __('Attendance deleted successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/attendances/{id}/restore',
+        summary: '♻️ استرجاع سجل حضور محذوف',
+        description: 'استرجاع سجل الحضور المحذوف ناعماً وكافّة استهلاكات الجلسات المترابطة به تلقائياً.',
+        tags: ['Attendance'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل الحضور', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع سجل الحضور بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 سجل الحضور غير موجود في سلة المحذوفات')]
+    public function restore(int $id)
+    {
+        $attendance = \Modules\AttendanceManager\Models\Attendance::onlyTrashed()->findOrFail($id);
+        $attendance->restore();
+        return $this->successResponse(null, __('Attendance restored successfully'));
     }
 }

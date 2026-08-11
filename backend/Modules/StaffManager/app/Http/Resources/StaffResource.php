@@ -8,8 +8,14 @@ class StaffResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $qrCode = $this->person_id 
+            ? app(\Modules\Authentication\Services\PersonQrCodeService::class)->getSingleCodeForPerson($this->person_id) 
+            : null;
+
         return [
             'id' => $this->id,
+            'person_id' => $this->person_id,
+            'qr_code' => $qrCode,
             'role' => $this->role,
             'employment_type' => $this->activeContract ? $this->activeContract->employment_type : null,
             'base_salary' => $this->activeContract ? $this->activeContract->base_salary : 0,
@@ -18,7 +24,6 @@ class StaffResource extends JsonResource
             'end_date' => $this->end_date?->toDateString(),
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
-            'is_active' => $this->is_active,
 
             // Coach-specific details (only present when role = coach)
             'coach_details' => $this->when($this->isCoach() && $this->relationLoaded('coachDetail'), function () {

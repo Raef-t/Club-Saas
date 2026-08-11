@@ -33,6 +33,17 @@ export const playerSubscriptionsApi = createApi({
       }),
       invalidatesTags: ["PlayerSubscriptions"],
     }),
+    updatePlayerSubscription: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `player-subscriptions/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "PlayerSubscriptions", id },
+        "PlayerSubscriptions",
+      ],
+    }),
     freezeSubscription: builder.mutation({
       query: ({ id, body }) => ({
         url: `player-subscriptions/${id}/freeze`,
@@ -81,6 +92,7 @@ export const {
   useGetPlayerSubscriptionQuery,
   useGetPlayerSubscriptionsQuery,
   useCreatePlayerSubscriptionMutation,
+  useUpdatePlayerSubscriptionMutation,
   useFreezeSubscriptionMutation,
   useUnfreezeSubscriptionMutation,
   useCancelSubscriptionMutation,

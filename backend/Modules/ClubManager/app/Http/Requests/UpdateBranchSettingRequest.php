@@ -26,6 +26,7 @@ class UpdateBranchSettingRequest extends FormRequest
             'payroll_start_day' => 'nullable|integer|between:1,31',
             'payroll_end_day' => 'nullable|integer|between:1,31',
             'include_terminated_subscriptions' => 'nullable|boolean',
+            'allow_installments' => 'nullable|boolean',
         ];
     }
 }

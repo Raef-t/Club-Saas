@@ -31,7 +31,7 @@ class SubscriptionService
      */
     public function getAllSubscriptions(array $filters = [])
     {
-        $query = PlayerSubscription::query()->with(['plan', 'items.activity', 'items.coach.person']);
+        $query = PlayerSubscription::query()->with(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items']);
 
         if (!empty($filters['member_id'])) {
             $query->where('member_id', $filters['member_id']);
@@ -51,9 +51,7 @@ class SubscriptionService
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['coach_id'])) {
-            $query->where('coach_id', $filters['coach_id']);
-        }
+        // Note: coach_id filter removed — coach info is now derived from subscription_plan → plan_activities
 
         if (!empty($filters['start_date'])) {
             $query->where('start_date', '>=', $filters['start_date']);
@@ -140,7 +138,6 @@ class SubscriptionService
             // 4. Create Subscription
             $subscription = $this->subscriptionRepository->create([
                 'member_id' => $memberId,
-                'coach_id' => null,
                 'plan_id' => $plan->id,
                 'months_count' => $monthsCount,
                 'total_amount' => $totalAmount,
@@ -152,20 +149,14 @@ class SubscriptionService
                 'notes' => $options['notes'] ?? null,
             ]);
 
-            // 5. Create Subscription Items
-            $requestedActivities = collect($options['activities'] ?? []);
-
+            // 5. Create Subscription Items (one item per plan activity)
+            // Activity & coach info is now derived from subscription_plan → plan_activities → staff_activity
             foreach ($plan->planActivities as $planActivity) {
-                $activityId = $planActivity->activity_id;
-                $coachId = $planActivity->coach_id;
-
                 $sessionsAllocated = !is_null($plan->session_count)
                     ? ($plan->session_count * $monthsCount)
                     : null;
 
                 $subscription->items()->create([
-                    'activity_id' => $activityId,
-                    'coach_id' => $coachId,
                     'sessions_allocated' => $sessionsAllocated,
                     'is_unlimited' => is_null($plan->session_count),
                 ]);
@@ -255,6 +246,11 @@ class SubscriptionService
                 throw new Exception(__('Freezing is not allowed in this branch.'));
             }
 
+            $currentStatus = is_object($subscription->status) ? $subscription->status->value : $subscription->status;
+            if ($currentStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
+                throw new Exception(__('Subscription is already frozen.'));
+            }
+
             $subscription->freezes()->create([
                 'freeze_start_date' => $startDate,
                 'freeze_end_date' => null,
@@ -316,7 +312,7 @@ class SubscriptionService
                 ? Carbon::parse($oldSubscription->end_date)
                 : now();
 
-            $options['coach_id'] = $options['coach_id'] ?? $oldSubscription->coach_id;
+            // coach_id is no longer stored per item; it is derived from the plan's planActivities
             $options['start_date'] = $startDate->toDateString();
 
             return $this->subscribeMember($oldSubscription->member_id, $plan->id, $options);
@@ -672,7 +668,6 @@ class SubscriptionService
 
                 $subscription = $this->subscriptionRepository->create([
                     'member_id' => $memberId,
-                    'coach_id' => null,
                     'plan_id' => $plan->id,
                     'months_count' => $monthsCount,
                     'offer_id' => $offer->id,
@@ -685,14 +680,13 @@ class SubscriptionService
                     'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
                 ]);
 
+                // One item per plan activity; activity & coach derived from plan_activities → staff_activity
                 foreach ($plan->planActivities as $planActivity) {
                     $sessionsAllocated = !is_null($plan->session_count)
                         ? ($plan->session_count * $monthsCount)
                         : null;
 
                     $subscription->items()->create([
-                        'activity_id' => $planActivity->activity_id,
-                        'coach_id' => $planActivity->coach_id,
                         'sessions_allocated' => $sessionsAllocated,
                         'is_unlimited' => is_null($plan->session_count),
                     ]);
@@ -780,5 +774,91 @@ class SubscriptionService
                 $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
             }
         }
+    }
+
+    /**
+     * Update an existing player subscription and synchronize invoice & payments.
+     */
+    public function updateSubscription(int $id, array $data)
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $subscription = $this->subscriptionRepository->find($id);
+
+            $oldPaidAmount = (float) $subscription->paid_amount;
+            $oldTotalAmount = (float) $subscription->total_amount;
+
+            // 1. Calculate new total amount if plan_id or offer_id changes
+            if (!empty($data['plan_id']) && $data['plan_id'] != $subscription->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::findOrFail($data['plan_id']);
+                $totalAmount = (float) $plan->base_price;
+                $data['total_amount'] = $totalAmount;
+            } elseif (!empty($data['offer_id']) && $data['offer_id'] != $subscription->offer_id) {
+                $offer = \Modules\SubscriptionManager\Models\Offer::findOrFail($data['offer_id']);
+                $totalAmount = (float) $offer->price;
+                $data['total_amount'] = $totalAmount;
+            } else {
+                $totalAmount = $oldTotalAmount;
+            }
+
+            // 2. Financials Calculation
+            $paidAmount = array_key_exists('paid_amount', $data) ? (float) $data['paid_amount'] : $oldPaidAmount;
+            $remainingAmount = max(0, $totalAmount - $paidAmount);
+            $data['remaining_amount'] = $remainingAmount;
+
+            // 3. Update subscription model
+            $subscription = $this->subscriptionRepository->update($id, $data);
+            $subscription->refresh();
+
+            // 4. Synchronize linked Invoice
+            $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
+            $branchId = $memberDTO->branchId;
+
+            $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
+                ['player_subscription_id' => $subscription->id],
+                [
+                    'member_id' => $subscription->member_id,
+                    'branch_id' => $branchId,
+                    'total' => $totalAmount,
+                    'status' => 'unpaid',
+                ]
+            );
+
+            $invoice->update([
+                'member_id' => $subscription->member_id,
+                'total' => $totalAmount,
+                'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
+            ]);
+
+            // 5. If paid_amount increased, record new Payment for the difference
+            if ($paidAmount > $oldPaidAmount) {
+                $addedAmount = $paidAmount - $oldPaidAmount;
+
+                if ($branchId) {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                        ->where('branch_id', $branchId)
+                        ->value('default_safe_id');
+
+                    if (!$safeId) {
+                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                            ->where('branch_id', $branchId)
+                            ->value('id');
+                    }
+
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'invoice_id' => $invoice->id,
+                        'safe_id' => $safeId,
+                        'amount' => $addedAmount,
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'status' => 'completed',
+                    ]);
+
+                    event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
+                }
+            }
+
+            $subscription->member = $memberDTO;
+
+            return $subscription;
+        });
     }
 }

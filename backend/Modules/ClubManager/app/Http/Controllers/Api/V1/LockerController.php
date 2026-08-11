@@ -170,15 +170,15 @@ class LockerController extends BaseController
 
     #[OA\Delete(
         path: '/v1/lockers/{id}',
-        summary: '🗑️ حذف خزانة',
-        description: 'إزالة خزانة محددة من النظام. لا يمكن حذف خزانة وهي مشغولة.',
+        summary: '🗑️ حذف خزانة (Soft Delete)',
+        description: 'إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخزانة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم حذف الخزانة بنجاح',
+        description: '✅ تم حذف الخزانة بنجاح ناعماً',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -189,27 +189,34 @@ class LockerController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    #[OA\Response(
-        response: 409, 
-        description: '⚠️ تعارض - لا يمكن الحذف لارتباط السجل بسجلات أخرى', 
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف الخزانة لوجود 1 حجوزات مرتبطة بها. يُنصح بإلغاء الحجز أو تعطيل الخزانة بدلاً من حذفها.')
-            ]
-        )
-    )]
     public function destroy($id)
     {
         $this->lockerService->deleteLocker($id);
         return $this->successResponse(null, __('Locker deleted successfully'));
     }
 
+    #[OA\Post(
+        path: '/v1/lockers/{id}/restore',
+        summary: '♻️ استرجاع خزانة محذوفة',
+        description: 'استرجاع الخزانة المحذوفة ناعماً وكافّة حجوزاتها التابعة تلقائياً.',
+        tags: ['Locker Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخزانة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع الخزانة بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 الخزانة غير موجودة في سلة المحذوفات')]
+    public function restore($id)
+    {
+        $locker = \Modules\ClubManager\Models\Locker::onlyTrashed()->findOrFail($id);
+        $locker->restore();
+        return $this->successResponse(null, __('Locker restored successfully'));
+    }
+
 
     #[OA\Post(
         path: '/v1/lockers/{locker}/reservations',
         summary: '📥 حجز خزانة / إسناد مجاني',
-        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `guest`).',
+        description: 'استخدم `reservation_type: rental` للحجز الشهري المدفوع، أو `assign` للتخصيص اليومي أو للموظفين. سيتم تحديد حالة الخزانة بناءً على `holder_type` (والذي يمكن أن يكون `member`، `staff`، أو `coach`).',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -290,7 +297,7 @@ class LockerController extends BaseController
         content: new OA\JsonContent(
             required: ['holder_type'],
             properties: [
-                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'guest'),
+                new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'coach'], example: 'coach'),
                 new OA\Property(property: 'holder_id', type: 'integer', example: 120),
                 new OA\Property(property: 'holder_name', type: 'string', example: 'صديق اللاعب'),
             ]

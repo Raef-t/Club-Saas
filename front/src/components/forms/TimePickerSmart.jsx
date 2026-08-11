@@ -49,11 +49,11 @@ export default function TimePickerSmart({
   });
 
   const inputText = useMemo(() => {
-    if (open) {
+    if (open && timeFormat !== "12") {
       return applyMask(digits);
     }
     return formatTime(value);
-  }, [value, digits, open, formatTime]);
+  }, [value, digits, open, formatTime, timeFormat]);
 
   // internal state for the pickers
   const [viewTime, setViewTime] = useState({ hour: 12, minute: 0 });
@@ -285,7 +285,8 @@ export default function TimePickerSmart({
 
         <input
           value={inputText}
-          onChange={handleInputChange}
+          onChange={timeFormat === "12" ? undefined : handleInputChange}
+          readOnly={timeFormat === "12"}
           onFocus={() => {
             setOpen(true);
             updatePosition();
@@ -438,7 +439,7 @@ export default function TimePickerSmart({
                   <button
                     type="button"
                     onClick={() => pickTime(viewTime.hour, viewTime.minute, period)}
-                    className="w-full bg-app-yellow text-app-bg rounded-lg py-2 text-sm font-medium transition hover:brightness-95"
+                    className="w-full bg-app-yellow text-app-bg rounded-lg py-2 text-sm font-medium transition hover:brightness-95 flex items-center justify-center"
                   >
                     تأكيد الوقت
                   </button>

@@ -113,6 +113,24 @@ describe("operational report utilities", () => {
     );
   });
 
+  it("uses work_status in the coaches report", () => {
+    const bundle = createOperationalReports({
+      coaches: [
+        { id: 1, work_status: "suspended", person: { full_name: "مدرب موقوف" } },
+        { id: 2, work_status: "on_leave", person: { full_name: "مدرب بإجازة" } },
+      ],
+    });
+    const report = bundle.reports.find((item) => item.id === "coaches");
+
+    expect(report.rows.map((row) => row.status)).toEqual(["موقوف", "إجازة"]);
+    expect(report.metrics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "الموقوفون", value: 1 }),
+        expect.objectContaining({ label: "في إجازة", value: 1 }),
+      ]),
+    );
+  });
+
   it("assigns a semantic icon to every summary statistic", () => {
     const { stats } = createOperationalReports({});
 
