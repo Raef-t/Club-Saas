@@ -24,4 +24,14 @@ class Activity extends SpatieActivity
         'branch_id', // Added for branch isolation
         'user_id',   // Added for explicit user tracking
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Branch::class, 'branch_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(\Modules\Authentication\Models\User::class, 'user_id');
+    }
 }

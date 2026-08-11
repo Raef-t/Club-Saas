@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Modules\Sports\Models\Activity;
 use Modules\Sports\Models\ActivityType;
+use Modules\Sports\Models\StaffActivity;
 use Modules\SubscriptionManager\Models\SubscriptionPlan;
 use Modules\SubscriptionManager\Models\SubscriptionPlanActivity;
 use Modules\ClubManager\Models\Branch;
@@ -25,19 +26,16 @@ class RealPlansAndActivitiesSeeder extends Seeder
         // 1. أولاً: نقوم بإنشاء أنواع الأنشطة الرياضية (Activity Types)
         $fitnessType = ActivityType::create([
             'name' => 'اللياقة البدنية والصالة',
-            'branch_id' => $branchId,
             'is_active' => true,
         ]);
 
         $swimmingType = ActivityType::create([
             'name' => 'الألعاب المائية',
-            'branch_id' => $branchId,
             'is_active' => true,
         ]);
 
         $classType = ActivityType::create([
             'name' => 'الحصص الجماعية',
-            'branch_id' => $branchId,
             'is_active' => true,
         ]);
 
@@ -47,9 +45,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
             'description' => 'دخول صالة كمال الأجسام والأجهزة الرياضية العامة',
             'activity_type_id' => $fitnessType->id,
             'branch_id' => $branchId,
-            'default_capacity' => 100,
             'is_private_equipment' => false,
-            'gender_allowed' => 'both',
             'is_active' => true,
         ]);
 
@@ -58,9 +54,7 @@ class RealPlansAndActivitiesSeeder extends Seeder
             'description' => 'استخدام المسبح للسباحة الحرة',
             'activity_type_id' => $swimmingType->id,
             'branch_id' => $branchId,
-            'default_capacity' => 20,
             'is_private_equipment' => false,
-            'gender_allowed' => 'both',
             'is_active' => true,
         ]);
 
@@ -69,11 +63,16 @@ class RealPlansAndActivitiesSeeder extends Seeder
             'description' => 'حصص جماعية مكثفة بإشراف مدرب',
             'activity_type_id' => $classType->id,
             'branch_id' => $branchId,
-            'default_capacity' => 15,
             'is_private_equipment' => false,
-            'gender_allowed' => 'both',
             'is_active' => true,
         ]);
+
+        $staff = \Modules\StaffManager\Models\Staff::first();
+        $staffId = $staff ? $staff->id : 1;
+
+        $ironStaffActivity = StaffActivity::firstOrCreate(['activity_id' => $ironActivity->id, 'staff_id' => $staffId]);
+        $poolStaffActivity = StaffActivity::firstOrCreate(['activity_id' => $poolActivity->id, 'staff_id' => $staffId]);
+        $crossFitStaffActivity = StaffActivity::firstOrCreate(['activity_id' => $crossFitActivity->id, 'staff_id' => $staffId]);
 
 
         // 3. ثالثاً: نقوم بإنشاء خطط الاشتراك (Subscription Plans)
@@ -81,25 +80,19 @@ class RealPlansAndActivitiesSeeder extends Seeder
         // الخطة الأولى: اشتراك شامل (شهر واحد)
         $goldPlan = SubscriptionPlan::create([
             'name' => 'الاشتراك الذهبي الشامل (شهر)',
-            'type' => 'duration', // اشتراك يعتمد على المدة الزمنية
-            'duration_days' => 30, // صالح لمدة 30 يوم
-            'session_count' => null, 
-            'max_freeze_count' => 1, // يسمح بتجميد الاشتراك مرة واحدة
-            'max_freeze_days' => 7,  // التجميد يكون لمدة 7 أيام كحد أقصى
+            'branch_id' => $branchId,
+            'session_count' => null,
             'base_price' => 250.00,
-            'is_active' => true,
+            'status' => 'active',
         ]);
 
         // الخطة الثانية: اشتراك حصص فقط (10 جلسات كروس فيت)
         $sessionsPlan = SubscriptionPlan::create([
             'name' => 'باقة 10 حصص كروس فيت',
-            'type' => 'session', // اشتراك يعتمد على عدد الجلسات
-            'duration_days' => 90, // الجلسات صالحة للاستخدام خلال 90 يوم
-            'session_count' => 10, // 10 جلسات
-            'max_freeze_count' => 0,
-            'max_freeze_days' => 0,
+            'branch_id' => $branchId,
+            'session_count' => 10,
             'base_price' => 150.00,
-            'is_active' => true,
+            'status' => 'active',
         ]);
 
 
@@ -109,26 +102,20 @@ class RealPlansAndActivitiesSeeder extends Seeder
         // - يحق له دخول صالة الحديد بشكل "مفتوح" (غير محدود)
         SubscriptionPlanActivity::create([
             'plan_id' => $goldPlan->id,
-            'activity_id' => $ironActivity->id,
-            'is_unlimited' => true,
-            'sessions_count' => null,
+            'staff_activity_id' => $ironStaffActivity->id,
         ]);
         
         // - يحق له دخول المسبح بشكل "مفتوح"
         SubscriptionPlanActivity::create([
             'plan_id' => $goldPlan->id,
-            'activity_id' => $poolActivity->id,
-            'is_unlimited' => true,
-            'sessions_count' => null,
+            'staff_activity_id' => $poolStaffActivity->id,
         ]);
 
         // بالنسبة لاشتراك الـ 10 حصص:
         // - يحق له دخول الكروس فيت لـ 10 مرات فقط (محدود)
         SubscriptionPlanActivity::create([
             'plan_id' => $sessionsPlan->id,
-            'activity_id' => $crossFitActivity->id,
-            'is_unlimited' => false,
-            'sessions_count' => 10,
+            'staff_activity_id' => $crossFitStaffActivity->id,
         ]);
 
     }

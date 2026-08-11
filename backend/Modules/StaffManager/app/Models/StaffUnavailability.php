@@ -3,9 +3,12 @@
 namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StaffUnavailability extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'staff_unavailabilities';
 
     protected $fillable = [

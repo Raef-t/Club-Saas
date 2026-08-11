@@ -3,6 +3,7 @@ import { Field } from "@/components/forms/FormControls";
 import { Skeleton } from "@/components/ui/Skeleton";
 import BranchSelector from "./BranchSelector";
 import SettingsLoadError from "./SettingsLoadError";
+import DatabaseBackupCard from "./DatabaseBackupCard";
 
 /**
  * Renders and submits the financial and operational settings of one branch.
@@ -25,51 +26,55 @@ export default function GeneralSettingsTab({
   }
 
   return (
-    <form noValidate onSubmit={settings.saveSettings} className="space-y-6">
-      <div>
-        <h3 className="text-right text-lg font-medium text-app-text">إعدادات فروع النادي</h3>
-        <p className="mt-1 text-right text-sm text-app-muted-light">
-          ضبط الإعدادات المالية وأوقات العمل لكل فرع من فروع النادي.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <form noValidate onSubmit={settings.saveSettings} className="space-y-6">
+        <div>
+          <h3 className="text-right text-lg font-medium text-app-text">إعدادات فروع النادي</h3>
+          <p className="mt-1 text-right text-sm text-app-muted-light">
+            ضبط الإعدادات المالية وأوقات العمل لكل فرع من فروع النادي.
+          </p>
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <BranchSelector
-          branches={branches}
-          value={selectedBranchId}
-          onChange={handleBranchChange}
-          isLoading={isLoadingBranches}
-          label="اختر الفرع لتعديل إعداداته"
-          error={errors.selectedBranchId}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <BranchSelector
+            branches={branches}
+            value={selectedBranchId}
+            onChange={handleBranchChange}
+            isLoading={isLoadingBranches}
+            label="اختر الفرع لتعديل إعداداته"
+            error={errors.selectedBranchId}
+          />
+        </div>
+
+        <SettingsLoadError
+          message={settings.errorMessage}
+          onRetry={settings.retry}
+          isRetrying={settings.isLoading}
         />
-      </div>
 
-      <SettingsLoadError
-        message={settings.errorMessage}
-        onRetry={settings.retry}
-        isRetrying={settings.isLoading}
-      />
+        {selectedBranchId &&
+          (settings.isLoading ? (
+            <SettingsFieldsSkeleton />
+          ) : (
+            <BranchSettingsFields form={form} errors={errors} onFieldChange={settings.setField} />
+          ))}
 
-      {selectedBranchId &&
-        (settings.isLoading ? (
-          <SettingsFieldsSkeleton />
-        ) : (
-          <BranchSettingsFields form={form} errors={errors} onFieldChange={settings.setField} />
-        ))}
+        <div className="mt-8 flex items-center justify-end gap-3 border-t border-app-line pt-5">
+          <Button
+            type="submit"
+            tone="primary"
+            loading={settings.isSaving}
+            loadingLabel="جاري الحفظ"
+            disabled={!selectedBranchId || settings.isLoading}
+            className="px-8"
+          >
+            حفظ التغييرات
+          </Button>
+        </div>
+      </form>
 
-      <div className="mt-8 flex items-center justify-end gap-3 border-t border-app-line pt-5">
-        <Button
-          type="submit"
-          tone="primary"
-          loading={settings.isSaving}
-          loadingLabel="جاري الحفظ"
-          disabled={!selectedBranchId || settings.isLoading}
-          className="px-8"
-        >
-          حفظ التغييرات
-        </Button>
-      </div>
-    </form>
+      <DatabaseBackupCard />
+    </div>
   );
 }
 

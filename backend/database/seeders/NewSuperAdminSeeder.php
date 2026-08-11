@@ -53,11 +53,18 @@ class NewSuperAdminSeeder extends Seeder
         ]);
 
         // 3. Create Admin Staff Profile
-        Staff::create([
+        $staff = Staff::create([
             'person_id' => $adminPerson->id,
-            'branch_id' => $branch->id,
             'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $staff->branches()->sync([$branch->id]);
+
+        $staff->contracts()->create([
             'employment_type' => 'fixed_salary',
+            'base_salary' => 0,
+            'start_date' => now()->toDateString(),
             'is_active' => true,
         ]);
 

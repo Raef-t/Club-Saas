@@ -47,10 +47,19 @@ class FacilityService
 
     /**
      * Delete a facility.
+     *
+     * @throws \Modules\Core\Exceptions\CannotDeleteException
      */
-    public function deleteFacility($id)
+    public function deleteFacility(int $id, string $confirmation = ''): void
     {
-        return $this->repository->delete($id);
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف هذا المرفق بالكامل مع كافة الخزائن وقوالب الجلسات التدريبية المعتمدة عليه، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
+        }
+
+        $facility = \Modules\ClubManager\Models\Facility::findOrFail($id);
+        $facility->delete();
     }
 
     /**
@@ -61,5 +70,21 @@ class FacilityService
         $facility = $this->getFacilityById($id);
         $facility->update(['is_active' => !$facility->is_active]);
         return $facility;
+    }
+
+    /**
+     * Get all soft-deleted (trashed) facilities.
+     */
+    public function getTrashed()
+    {
+        return $this->repository->getTrashed();
+    }
+
+    /**
+     * Restore a soft-deleted facility by ID.
+     */
+    public function restoreFacility($id)
+    {
+        return $this->repository->restore($id);
     }
 }

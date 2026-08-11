@@ -4,36 +4,48 @@ namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class PlayerSubscription extends Model
 {
-    use SoftDeletes, \Modules\Core\Traits\HasCreatedBy;
+    use \Modules\Core\Traits\HasCreatedBy, SoftDeletes;
 
     protected $fillable = [
         'member_id',
-        'coach_id',
         'plan_id',
+        'months_count',
         'total_amount',
         'paid_amount',
         'remaining_amount',
         'start_date',
         'end_date',
         'status',
-        'remaining_sessions',
         'notes',
+        'offer_id',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'months_count' => 'integer',
+        'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
         'paid_amount' => 'decimal:2',
+        'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::class,
     ];
 
 
-    public ?\Modules\Core\DTOs\MemberDTO $member = null;
+    public function member()
+    {
+        return $this->belongsTo(\Modules\MemberManager\Models\Member::class, 'member_id')->withTrashed();
+    }
 
     public function plan()
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
+    }
+
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class, 'offer_id')->withTrashed();
     }
 
     public function freezes()
@@ -46,10 +58,16 @@ class PlayerSubscription extends Model
         return $this->hasMany(PlayerSubscriptionItem::class);
     }
 
-    public function services()
+    public function invoices()
     {
-        return $this->hasMany(PlayerSubscriptionService::class);
+        return $this->hasMany(Invoice::class, 'player_subscription_id');
     }
+
+    public function attendanceConsumptions()
+    {
+        return $this->hasMany(\Modules\AttendanceManager\Models\AttendanceConsumption::class, 'player_subscription_id');
+    }
+
 
     public function getIsFullyPaidAttribute()
     {
@@ -57,4 +75,31 @@ class PlayerSubscription extends Model
     }
     
     protected $appends = ['is_fully_paid'];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($subscription) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
+            }
+        });
+
+        static::deleted(function ($subscription) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
+            }
+        });
+
+        static::restored(function ($subscription) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
+            }
+        });
+    }
 }

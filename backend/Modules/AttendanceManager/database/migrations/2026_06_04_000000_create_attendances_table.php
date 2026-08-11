@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('club_id')->index();
             $table->string('attendable_type');
             $table->unsignedBigInteger('attendable_id');
             $table->unsignedBigInteger('branch_id')->index();
@@ -22,14 +21,13 @@ return new class extends Migration
             $table->timestamp('check_out_at')->nullable();
             
             $table->string('status', 50)->default('checked_in');
-            $table->json('metadata')->nullable();
             
             $table->timestamps();
 
-            // Compound index for club-specific attendee queries (e.g., getting staff history or player logs)
-            $table->index(['club_id', 'attendable_type', 'attendable_id'], 'club_attendable_idx');
-            // Index for date-range dashboard reports scoped by club
-            $table->index(['club_id', 'check_in_at'], 'club_check_in_idx');
+            // Compound index for branch-specific attendee queries (e.g., getting staff history or player logs)
+            $table->index(['branch_id', 'attendable_type', 'attendable_id'], 'branch_attendable_idx');
+            // Index for date-range dashboard reports scoped by branch
+            $table->index(['branch_id', 'check_in_at'], 'branch_check_in_idx');
         });
     }
 

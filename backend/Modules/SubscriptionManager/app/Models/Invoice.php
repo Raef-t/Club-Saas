@@ -4,34 +4,34 @@ namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Traits\HasCreatedBy;
 
 class Invoice extends Model
 {
-    use HasFactory, HasCreatedBy;
+    use HasFactory, HasCreatedBy, SoftDeletes;
 
     protected $table = 'invoices';
 
     protected $fillable = [
-        'code',
         'member_id',
+        'member_name',
         'branch_id',
         'player_subscription_id',
+        'locker_reservation_id',
+        'offer_id',
         'total',
         'status',
     ];
 
-    protected static function boot()
+    protected static function booted()
     {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->code)) {
-                $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
-                while (static::where('code', $code)->exists()) {
-                    $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
+        static::creating(function ($invoice) {
+            if (empty($invoice->member_name) && !empty($invoice->member_id)) {
+                $member = \Modules\MemberManager\Models\Member::with('person')->find($invoice->member_id);
+                if ($member && $member->person) {
+                    $invoice->member_name = $member->person->full_name;
                 }
-                $model->code = $code;
             }
         });
     }
@@ -42,13 +42,17 @@ class Invoice extends Model
 
     public function member()
     {
-        // Polymorphic or cross-module mapping: we can reference the member directly
-        return $this->belongsTo(\Modules\MemberManager\Models\Member::class, 'member_id');
+        return $this->belongsTo(\Modules\MemberManager\Models\Member::class, 'member_id')->withTrashed();
     }
 
     public function subscription()
     {
-        return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id');
+        return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id')->withTrashed();
+    }
+
+    public function offer()
+    {
+        return $this->belongsTo(Offer::class, 'offer_id')->withTrashed();
     }
 
     public function payments()

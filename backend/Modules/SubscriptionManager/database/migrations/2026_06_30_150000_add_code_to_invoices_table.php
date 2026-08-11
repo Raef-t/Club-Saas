@@ -14,13 +14,13 @@ return new class extends Migration
         });
 
         // Generate codes for existing invoices
-        Invoice::whereNull('code')->chunk(100, function ($invoices) {
+        \Illuminate\Support\Facades\DB::table('invoices')->whereNull('code')->orderBy('id')->chunkById(100, function ($invoices) {
             foreach ($invoices as $invoice) {
                 $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
-                while (Invoice::where('code', $code)->exists()) {
+                while (\Illuminate\Support\Facades\DB::table('invoices')->where('code', $code)->exists()) {
                     $code = 'INV_' . str_pad(mt_rand(1, 999999999), 9, '0', STR_PAD_LEFT);
                 }
-                $invoice->update(['code' => $code]);
+                \Illuminate\Support\Facades\DB::table('invoices')->where('id', $invoice->id)->update(['code' => $code]);
             }
         });
     }

@@ -20,7 +20,6 @@ class SessionResource extends JsonResource
             'end_time' => $this->end_time?->toIso8601String(),
             'date' => $this->start_time?->toDateString(),
             'day_name' => $this->start_time?->translatedFormat('l'), // returns day name in locale (e.g. Sunday)
-            'max_players' => $this->max_players,
             'status' => $this->status,
             'booked_count' => $this->booked_count,
             'created_at' => $this->created_at?->toIso8601String(),

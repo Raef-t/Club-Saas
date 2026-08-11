@@ -57,13 +57,15 @@ class NotificationService
 
             if (!empty($userIds)) {
                 $userIds = array_unique(array_filter($userIds));
+                $now = now();
+                $recipientsData = array_map(fn($userId) => [
+                    'notification_id' => $notification->id,
+                    'user_id'         => $userId,
+                    'created_at'      => $now,
+                    'updated_at'      => $now,
+                ], $userIds);
 
-                foreach ($userIds as $userId) {
-                    NotificationRecipient::firstOrCreate([
-                        'notification_id' => $notification->id,
-                        'user_id'         => $userId,
-                    ]);
-                }
+                NotificationRecipient::insert($recipientsData);
 
                 Log::info('📦 تم إنشاء مستلمي الإشعار', [
                     'notification_id'  => $notification->id,

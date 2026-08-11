@@ -25,7 +25,7 @@ use Modules\NotificationManager\Http\Controllers\Api\V1\NotificationController;
 // ========================================
 // 🔹 واجهات المستخدم العادي (auth فقط)
 // ========================================
-Route::middleware(['auth:sanctum'])
+Route::middleware(['auth:sanctum', 'check.permission'])
     ->prefix('v1/notifications')
     ->as('api.notifications.')
     ->group(function () {
@@ -50,15 +50,18 @@ Route::middleware(['auth:sanctum'])
     });
 
 // ========================================
-// 🔹 واجهات الإدارة (auth + role أدمن)
+// 🔹 واجهات الإدارة (auth + check.permission)
 // ========================================
-Route::middleware(['auth:sanctum', 'role:admin|manager'])
+Route::middleware(['auth:sanctum', 'check.permission'])
     ->prefix('v1/admin/notifications')
     ->as('api.admin.notifications.')
     ->group(function () {
 
         // POST   /v1/admin/notifications        → إنشاء إشعار جديد
         Route::post('/', [NotificationController::class, 'store'])->name('store');
+
+        // POST   /v1/admin/notifications/send-to-users → إرسال إشعار لمجموعة user_ids مخصصة
+        Route::post('send-to-users', [NotificationController::class, 'sendToUsers'])->name('send-to-users');
 
         // GET    /v1/admin/notifications        → عرض جميع الإشعارات مع فلترة
         Route::get('/', [NotificationController::class, 'adminIndex'])->name('index');

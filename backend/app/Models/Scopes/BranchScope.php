@@ -21,8 +21,9 @@ class BranchScope implements Scope
             if (isset($user->person_id)) {
                 // Fetch branch_id directly from the staff table using DB builder to avoid direct model coupling
                 $branchId = DB::table('staff')
-                    ->where('person_id', $user->person_id)
-                    ->value('branch_id');
+                    ->join('staff_branches', 'staff.id', '=', 'staff_branches.staff_id')
+                    ->where('staff.person_id', $user->person_id)
+                    ->value('staff_branches.branch_id');
 
                 if ($branchId) {
                     $builder->where($model->getTable() . '.branch_id', $branchId);

@@ -21,6 +21,13 @@ class EloquentPlayerSubscriptionRepository implements PlayerSubscriptionReposito
         return PlayerSubscription::create($data);
     }
 
+    public function update(int $id, array $data)
+    {
+        $subscription = PlayerSubscription::findOrFail($id);
+        $subscription->update($data);
+        return $subscription;
+    }
+
     public function findActiveByMember(int $memberId)
     {
         return PlayerSubscription::where('member_id', $memberId)

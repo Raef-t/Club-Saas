@@ -8,7 +8,8 @@ class StoreStaffShiftRequest extends FormRequest
     public function authorize() { return true; }
     public function rules() {
         return [
-            'staff_id' => 'required|integer',
+            'staff_id' => 'required|integer|exists:staff,id',
+            'branch_shift_id' => 'required|integer|exists:branch_shifts,id',
         ];
     }
 }
