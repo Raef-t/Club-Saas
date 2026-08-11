@@ -64,9 +64,7 @@ export default function AttendancePlayerCard({
   selectedSubscription,
   selectedActivity,
   playerSubscriptions,
-  activityOptions,
   selectedSubscriptionIds,
-  selectedActivityId,
   lockerNumber,
   availableLockerOptions,
   isMemberLoading,
@@ -82,7 +80,6 @@ export default function AttendancePlayerCard({
   onRetrySubscriptions,
   onRetryAvailableLockers,
   onSubscriptionToggle,
-  onActivityChange,
   onLockerChange,
   onRegister,
 }) {
@@ -194,19 +191,6 @@ export default function AttendancePlayerCard({
             <p className="mt-2 text-xs text-app-red">لا توجد اشتراكات متاحة لهذا العضو.</p>
           )}
         </div>
-
-        <label className="block text-right text-sm text-app-muted-light">
-          النشاط اليوم
-          <Dropdown
-            className="mt-2 text-white"
-            buttonClassName="h-11 bg-app-card-soft"
-            value={selectedActivityId}
-            onChange={onActivityChange}
-            options={activityOptions}
-            placeholder="اختر النشاط"
-            disabled={!activityOptions.length || isRegistering}
-          />
-        </label>
 
         <div className="block text-right text-sm text-app-muted-light">
           <span>الخزانة (اختياري)</span>

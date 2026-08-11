@@ -171,6 +171,7 @@ export default function CoachesClient({ initialData }) {
         key: "name",
         label: "المدرب",
         align: "start",
+        sortValue: (coach) => coach.person?.full_name || "",
         render: (_, coach) => {
           let photoUrl = coach.person?.photo_url || coach.person?.photo;
           if (photoUrl && !photoUrl.startsWith("http") && !photoUrl.startsWith("blob:")) {
@@ -369,6 +370,7 @@ export default function CoachesClient({ initialData }) {
         showSearch={false}
         showFilter={false}
         showExport={false}
+        defaultSortColumn="name"
         isLoading={isLoading}
         emptyMessage={
           error ? (
@@ -391,8 +393,8 @@ export default function CoachesClient({ initialData }) {
         }}
         getRowKey={(coach) => coach.id}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <label className="relative block w-full sm:w-80 md:w-96">
+          <div className="flex w-full flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center xl:flex-nowrap">
+            <label className="relative block w-full flex-1 xl:min-w-[280px]">
               <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
                 className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
@@ -404,7 +406,7 @@ export default function CoachesClient({ initialData }) {
             </label>
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft border-app-line text-white"
+              className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
               icon={FilterIcon}
               value={branchFilter}
               options={branchOptions}
@@ -412,7 +414,7 @@ export default function CoachesClient({ initialData }) {
             />
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft border-app-line text-white"
+              className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
               icon={FilterIcon}
               value={activityFilter}
               options={activityOptions}
@@ -420,7 +422,7 @@ export default function CoachesClient({ initialData }) {
             />
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft border-app-line text-white"
+              className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
               icon={FilterIcon}
               value={employmentFilter}
               options={employmentOptions}
@@ -428,7 +430,7 @@ export default function CoachesClient({ initialData }) {
             />
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft border-app-line text-white"
+              className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
               icon={FilterIcon}
               value={workStatusFilter}
               options={[{ value: "all", label: "كل الحالات" }, ...WORK_STATUS_OPTIONS]}

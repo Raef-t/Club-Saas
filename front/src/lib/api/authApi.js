@@ -5,16 +5,6 @@ export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: backendBaseQuery,
   endpoints: (builder) => ({
-    login: builder.mutation({
-      query: ({ remember = false, ...credentials }) => ({
-        url: "auth/login",
-        method: "POST",
-        body: credentials,
-        headers: {
-          "X-Remember-Me": remember ? "true" : "false",
-        },
-      }),
-    }),
     logout: builder.mutation({
       query: () => ({
         url: "auth/logout",
@@ -34,9 +24,4 @@ export const authApi = createApi({
   }),
 });
 
-export const {
-  useLoginMutation,
-  useLogoutMutation,
-  useChangePasswordMutation,
-  useGetProfileQuery,
-} = authApi;
+export const { useLogoutMutation, useChangePasswordMutation, useGetProfileQuery } = authApi;

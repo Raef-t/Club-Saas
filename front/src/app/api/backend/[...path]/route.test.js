@@ -1,12 +1,43 @@
 // @vitest-environment node
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { GET } from "./route";
+import { GET, POST } from "./route";
 
 describe("backend proxy streaming", () => {
+  beforeEach(() => {
+    vi.stubEnv("API_BASE_URL", "https://api.example.com");
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("temporarily forwards to a remote HTTP backend outside production", async () => {
+    vi.stubEnv("API_BASE_URL", "http://203.0.113.10");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        status: "success",
+        data: { access_token: "test-access-token" },
+      }),
+    );
+    const request = new NextRequest("http://localhost/api/backend/auth/login", {
+      method: "POST",
+      headers: {
+        Origin: "http://localhost",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username: "test-user", password: "test-password" }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ path: ["auth", "login"] }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it("forwards SSE responses without buffering them", async () => {

@@ -107,12 +107,41 @@ describe("coach form utilities", () => {
     expect(rules.allowsShifts).toBe(false);
   });
 
-  it("removes compensation and shifts from private training", () => {
+  it("removes salary, commission, and shifts from private-only equipment training", () => {
     const rules = getCoachRulesForActivities([{ activity_type: { name: { ar: "تدريب خاص" } } }]);
 
+    expect(rules.employmentType).toBe("commission_based");
     expect(rules.allowsSalary).toBe(false);
     expect(rules.allowsCommission).toBe(false);
     expect(rules.allowsShifts).toBe(false);
+  });
+
+  it("uses a fixed salary when private and general equipment training are combined", () => {
+    const rules = getCoachRulesForActivities([
+      { activity_type: { code: "private_training" } },
+      { activity_type: { code: "general_training" } },
+    ]);
+
+    expect(rules.workTypes).toEqual(["equipment"]);
+    expect(rules.employmentType).toBe("fixed_salary");
+    expect(rules.allowsSalary).toBe(true);
+    expect(rules.allowsCommission).toBe(false);
+    expect(rules.allowsShifts).toBe(true);
+    expect(rules.hasIncompatibleActivities).toBe(false);
+  });
+
+  it("uses a fixed salary when private equipment training is combined with an activity", () => {
+    const rules = getCoachRulesForActivities([
+      { activity_type: { code: "private_training" } },
+      { activity_type: { code: "group_class" } },
+    ]);
+
+    expect(rules.workTypes).toEqual(["equipment", "activities"]);
+    expect(rules.employmentType).toBe("fixed_salary");
+    expect(rules.allowsSalary).toBe(true);
+    expect(rules.allowsCommission).toBe(false);
+    expect(rules.allowsShifts).toBe(false);
+    expect(rules.hasIncompatibleActivities).toBe(false);
   });
 
   it("marks group classes mixed with equipment training as incompatible", () => {

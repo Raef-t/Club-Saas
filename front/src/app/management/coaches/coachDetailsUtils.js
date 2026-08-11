@@ -62,9 +62,7 @@ export function getCoachBranchNames(coach, branches = []) {
   );
 }
 
-/**
- * Identifies private-equipment coaches, who do not receive a salary or commission.
- */
+/** Identifies coaches assigned to private equipment training. */
 export function isPrivateEquipmentCoach(coach) {
   const activities = Array.isArray(coach?.activities) ? coach.activities : [];
   const hasPrivateEquipmentActivity = activities.some(
@@ -72,7 +70,13 @@ export function isPrivateEquipmentCoach(coach) {
       Boolean(Number(activity?.is_private_equipment)) ||
       getCoachActivityKind(activity) === COACH_ACTIVITY_KINDS.PRIVATE_TRAINING,
   );
-  if (hasPrivateEquipmentActivity) return true;
+  const hasCompensatedActivity = activities.some((activity) => {
+    const kind = getCoachActivityKind(activity);
+    return (
+      kind === COACH_ACTIVITY_KINDS.GENERAL_TRAINING || kind === COACH_ACTIVITY_KINDS.GROUP_CLASS
+    );
+  });
+  if (hasPrivateEquipmentActivity) return !hasCompensatedActivity;
 
   const workTypes = Array.isArray(coach?.work_types)
     ? coach.work_types

@@ -79,7 +79,7 @@ export default function CoachesCreateClient() {
     <>
       <ManagementCreatePage
         title={isEdit ? "تعديل مدرب" : "إضافة مدرب"}
-        subtitle={isEdit ? "إدارة الأعضاء > تعديل مدرب" : "إدارة الأعضاء > إضافة مدرب"}
+        subtitle={isEdit ? "إدارة المدربين > تعديل مدرب" : "إدارة المدربين > إضافة مدرب"}
         formId={FORM_ID}
         backHref="/management/coaches"
         isSubmitting={isEdit ? isUpdating : isCreating}

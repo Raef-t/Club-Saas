@@ -179,7 +179,6 @@ describe("attendance utilities", () => {
 
     expect(selection).toEqual({
       subscriptionIds: ["2"],
-      activityId: "20",
       lockerNumber: "",
     });
   });

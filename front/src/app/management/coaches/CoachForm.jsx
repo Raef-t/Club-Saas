@@ -64,7 +64,7 @@ export function CoachCreateForm({
       activityRules.hasPrivateTraining &&
       !activityRules.hasGeneralTraining &&
       !activityRules.hasGroupClass
-        ? [{ value: "commission_based", label: "بدون راتب (تدريب خاص)" }]
+        ? [{ value: "commission_based", label: "بدون راتب أو نسبة (أجهزة خاص)" }]
         : employmentTypes,
     [
       activityRules.hasGeneralTraining,
@@ -79,17 +79,10 @@ export function CoachCreateForm({
 
         const kind = getCoachActivityKind(activity);
         if (kind === COACH_ACTIVITY_KINDS.DAILY_ENTRY) return false;
-        if (
-          activityRules.hasGroupClass &&
-          (kind === COACH_ACTIVITY_KINDS.GENERAL_TRAINING ||
-            kind === COACH_ACTIVITY_KINDS.PRIVATE_TRAINING)
-        ) {
+        if (activityRules.hasGroupClass && kind === COACH_ACTIVITY_KINDS.GENERAL_TRAINING) {
           return false;
         }
-        if (
-          (activityRules.hasGeneralTraining || activityRules.hasPrivateTraining) &&
-          kind === COACH_ACTIVITY_KINDS.GROUP_CLASS
-        ) {
+        if (activityRules.hasGeneralTraining && kind === COACH_ACTIVITY_KINDS.GROUP_CLASS) {
           return false;
         }
         return true;
@@ -190,7 +183,7 @@ export function CoachCreateForm({
     }
     if (activityRules.hasIncompatibleActivities) {
       setErrors({
-        activity_ids: "لا يمكن جمع الحصة الجماعية مع التدريب العام أو الخاص لنفس المدرب.",
+        activity_ids: "لا يمكن جمع الفعالية مع التدريب العام لنفس المدرب.",
       });
       return;
     }

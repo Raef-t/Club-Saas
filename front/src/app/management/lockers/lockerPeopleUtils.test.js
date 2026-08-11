@@ -21,6 +21,28 @@ describe("locker staff selectors", () => {
     ).toBe("أحمد المدرب");
   });
 
+  it("shows a coach name returned inside the current reservation", () => {
+    expect(
+      getLockerHolderLabel({
+        status: "with_coach",
+        current_reservation: {
+          holder_type: "coach",
+          holder_id: 41,
+          holder: { person: { full_name: "أحمد المدرب" } },
+        },
+      }),
+    ).toBe("أحمد المدرب");
+  });
+
+  it("resolves a coach relation when the response only exposes the locker status", () => {
+    expect(
+      getLockerHolderLabel({
+        status: "with_coach",
+        coach: { id: 41, person: { first_name: "أحمد", last_name: "المدرب" } },
+      }),
+    ).toBe("أحمد المدرب");
+  });
+
   it("builds staff choices using names while preserving staff ids", () => {
     expect(
       createLockerStaffOptions({

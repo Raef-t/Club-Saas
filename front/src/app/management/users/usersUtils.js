@@ -2,12 +2,34 @@ export const USER_ROLE_LABELS = {
   super_admin: "مدير النظام",
   admin: "مشرف",
   management_admin: "مدير إداري",
+  general_manager: "مدير عام",
   manager: "مدير",
+  accountant: "محاسب",
+  cashier: "أمين صندوق",
   coach: "مدرب",
   staff: "موظف",
   reception: "استقبال",
+  receptionist: "موظف استقبال",
   cleaner: "نظافة",
+  gym_staff: "موظف نادي",
   player: "لاعب",
+};
+
+const USER_ROLE_TAB_LABELS = {
+  super_admin: "مديرو النظام",
+  admin: "المشرفون",
+  management_admin: "المدراء الإداريون",
+  general_manager: "المدراء العامون",
+  manager: "المدراء",
+  accountant: "المحاسبون",
+  cashier: "أمناء الصندوق",
+  coach: "المدربون",
+  staff: "الموظفون",
+  reception: "موظفو الاستقبال",
+  receptionist: "موظفو الاستقبال",
+  cleaner: "موظفو النظافة",
+  gym_staff: "موظفو النادي",
+  player: "اللاعبون",
 };
 
 export function getUsersCollection(response) {
@@ -76,6 +98,18 @@ export function createUserRoleOptions(users) {
   return [...roles]
     .sort((a, b) => getUserRoleLabel(a).localeCompare(getUserRoleLabel(b), "ar"))
     .map((role) => ({ value: role, label: getUserRoleLabel(role) }));
+}
+
+export function createUserRoleTabs(users) {
+  const roleOptions = createUserRoleOptions(users);
+
+  return [
+    { value: "all", label: "الكل" },
+    ...roleOptions.map((option) => ({
+      ...option,
+      label: USER_ROLE_TAB_LABELS[option.value] || option.label,
+    })),
+  ];
 }
 
 export function createUserStats(users) {

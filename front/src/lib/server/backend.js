@@ -1,6 +1,5 @@
 import "server-only";
-
-const API_BASE_URL = process.env.API_BASE_URL || "http://issgroup-001-site1.anytempurl.com";
+import { getBackendBaseUrl } from "@/lib/server/backendUrl";
 
 /**
  * Sends an authenticated request directly to the backend from the Next.js server.
@@ -13,7 +12,7 @@ const API_BASE_URL = process.env.API_BASE_URL || "http://issgroup-001-site1.anyt
  */
 export async function requestBackend(path, { token, init = {} }) {
   const normalizedPath = String(path).split("/").filter(Boolean).map(encodeURIComponent).join("/");
-  const url = new URL(`/api/v1/${normalizedPath}`, API_BASE_URL);
+  const url = new URL(`/api/v1/${normalizedPath}`, getBackendBaseUrl());
   const headers = new Headers(init.headers);
 
   headers.set("Accept", "application/json");

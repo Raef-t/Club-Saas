@@ -5,10 +5,10 @@ import CopyableUsername from "@/components/ui/CopyableUsername";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
-import Dropdown from "@/components/ui/Dropdown";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { FilterIcon, SearchIcon } from "@/components/icons/Icons";
+import { SearchIcon } from "@/components/icons/Icons";
 import { useUsers } from "./useUsers";
+import UserRoleTabs from "./UserRoleTabs";
 import { getPasswordStatus, getUserRoleLabel, getUserRoles } from "./usersUtils";
 
 const USER_TABLE_GRID =
@@ -133,68 +133,78 @@ export default function UsersClient({ initialUsers }) {
 
       <StatsGrid items={stats} variant="compact" />
 
-      <DataTable
-        title="قائمة حسابات المستخدمين"
-        subtitle="يمكنك البحث بالاسم أو اسم المستخدم، وتصفية النتائج بحسب الدور."
-        columns={columns}
-        rows={users}
-        tableColumns={USER_TABLE_GRID}
-        minWidth="930px"
-        defaultSortColumn="name"
-        showAdd={false}
-        showSearch={false}
-        showFilter={false}
-        showExport={false}
-        isLoading={isLoading}
-        pageSize={10}
-        pageSizeOptions={[10, 20, 50]}
-        getRowKey={(user) => user.id}
-        rowClassName="gap-2 px-3 py-3"
-        headerClassName="gap-2 px-3"
-        emptyMessage={
-          errorMessage ? (
-            <div className="space-y-3 text-center">
-              <p className="text-app-red">{errorMessage}</p>
-              <Button tone="outline" className="h-9 px-3 text-xs" onClick={retry}>
-                إعادة المحاولة
-              </Button>
-            </div>
-          ) : (
-            "لا توجد حسابات مطابقة للبحث أو الدور المحدد."
-          )
-        }
-        toolbarActions={
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-            <label className="relative block w-full sm:w-72">
-              <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
-              <input
-                className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-app-text outline-none transition focus:border-app-yellow/70"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="الاسم أو اسم المستخدم..."
-                type="search"
-                aria-label="البحث في حسابات المستخدمين"
-              />
-            </label>
-            <Dropdown
-              className="min-w-44 text-app-text"
-              icon={FilterIcon}
-              value={roleFilter}
-              options={roleOptions}
-              onChange={setRoleFilter}
-            />
-          </div>
-        }
-        toolbarMeta={
-          <div className="text-sm text-app-muted-light">
-            <span>النتائج: </span>
-            <span className="font-medium text-app-text">{totalResults.toLocaleString("ar")}</span>
-            {isRefreshing && !isLoading && (
-              <span className="mt-1 block text-[11px] text-app-yellow">جارٍ تحديث القائمة...</span>
-            )}
-          </div>
-        }
-      />
+      <div className="space-y-3">
+        <UserRoleTabs
+          items={roleOptions}
+          value={roleFilter}
+          onChange={setRoleFilter}
+          isRefreshing={isRefreshing}
+        />
+
+        <div
+          id="user-accounts-panel"
+          role="tabpanel"
+          aria-labelledby={`user-role-tab-${roleFilter}`}
+        >
+          <DataTable
+            title="قائمة حسابات المستخدمين"
+            subtitle="اختر فئة من التبويبات، ثم ابحث بالاسم أو اسم المستخدم."
+            columns={columns}
+            rows={users}
+            tableColumns={USER_TABLE_GRID}
+            minWidth="930px"
+            defaultSortColumn="name"
+            showAdd={false}
+            showSearch={false}
+            showFilter={false}
+            showExport={false}
+            isLoading={isLoading}
+            pageSize={10}
+            pageSizeOptions={[10, 20, 50]}
+            getRowKey={(user) => user.id}
+            rowClassName="gap-2 px-3 py-3"
+            headerClassName="gap-2 px-3"
+            emptyMessage={
+              errorMessage ? (
+                <div className="space-y-3 text-center">
+                  <p className="text-app-red">{errorMessage}</p>
+                  <Button tone="outline" className="h-9 px-3 text-xs" onClick={retry}>
+                    إعادة المحاولة
+                  </Button>
+                </div>
+              ) : (
+                "لا توجد حسابات مطابقة للبحث أو الدور المحدد."
+              )
+            }
+            toolbarActions={
+              <label className="relative block w-full sm:w-80">
+                <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
+                <input
+                  className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-app-text outline-none transition focus:border-app-yellow/70"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="الاسم أو اسم المستخدم..."
+                  type="search"
+                  aria-label="البحث في حسابات المستخدمين"
+                />
+              </label>
+            }
+            toolbarMeta={
+              <div className="text-sm text-app-muted-light">
+                <span>النتائج: </span>
+                <span className="font-medium text-app-text">
+                  {totalResults.toLocaleString("ar")}
+                </span>
+                {isRefreshing && !isLoading && (
+                  <span className="mt-1 block text-[11px] text-app-yellow">
+                    جارٍ تحديث القائمة...
+                  </span>
+                )}
+              </div>
+            }
+          />
+        </div>
+      </div>
     </div>
   );
 }

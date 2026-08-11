@@ -54,7 +54,17 @@ export function SubscriptionCreateForm({
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(selectedPlanObj);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const nextState = { ...current, [field]: value };
+      if (field === "start_date" && value && !isDailyEntryPlan) {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) {
+          d.setMonth(d.getMonth() + 1);
+          nextState.end_date = d.toISOString().split("T")[0];
+        }
+      }
+      return nextState;
+    });
     if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
@@ -291,7 +301,18 @@ export function SubscriptionEditForm({
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(selectedPlan || subscription?.plan);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const nextState = { ...current, [field]: value };
+      if (field === "start_date" && value && !isDailyEntryPlan) {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) {
+          const months = parseInt(current.months_count) || 1;
+          d.setMonth(d.getMonth() + months);
+          nextState.end_date = d.toISOString().split("T")[0];
+        }
+      }
+      return nextState;
+    });
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 

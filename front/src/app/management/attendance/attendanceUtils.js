@@ -275,7 +275,6 @@ export function getInitialAttendanceSelection(subscriptions) {
   if (!subscriptions.length) {
     return {
       subscriptionIds: [],
-      activityId: "",
       lockerNumber: "",
     };
   }
@@ -286,11 +285,8 @@ export function getInitialAttendanceSelection(subscriptions) {
   const selectedSubscriptions = usableSubscriptions.length
     ? usableSubscriptions
     : [subscriptions[0]];
-  const firstSubscription = selectedSubscriptions[0];
-
   return {
     subscriptionIds: selectedSubscriptions.map((subscription) => String(subscription.id)),
-    activityId: String(firstSubscription.activities?.[0]?.id || ""),
     lockerNumber: "",
   };
 }

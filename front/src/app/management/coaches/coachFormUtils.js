@@ -191,7 +191,7 @@ export function getCoachRulesForActivities(selectedActivities = []) {
   const hasGroupClass = kinds.has(COACH_ACTIVITY_KINDS.GROUP_CLASS);
   const hasDailyEntry = kinds.has(COACH_ACTIVITY_KINDS.DAILY_ENTRY);
   const hasRecognizedActivity = hasGeneralTraining || hasPrivateTraining || hasGroupClass;
-  const hasIncompatibleActivities = hasGroupClass && (hasGeneralTraining || hasPrivateTraining);
+  const hasIncompatibleActivities = hasGroupClass && hasGeneralTraining;
 
   const common = {
     hasRecognizedActivity,
@@ -202,17 +202,6 @@ export function getCoachRulesForActivities(selectedActivities = []) {
     hasIncompatibleActivities,
   };
 
-  if (hasGroupClass) {
-    return {
-      ...common,
-      workTypes: ["activities"],
-      employmentType: "commission_based",
-      allowsSalary: false,
-      allowsCommission: true,
-      allowsShifts: false,
-    };
-  }
-
   if (hasGeneralTraining) {
     return {
       ...common,
@@ -221,6 +210,28 @@ export function getCoachRulesForActivities(selectedActivities = []) {
       allowsSalary: true,
       allowsCommission: false,
       allowsShifts: true,
+    };
+  }
+
+  if (hasPrivateTraining && hasGroupClass) {
+    return {
+      ...common,
+      workTypes: ["equipment", "activities"],
+      employmentType: "fixed_salary",
+      allowsSalary: true,
+      allowsCommission: false,
+      allowsShifts: false,
+    };
+  }
+
+  if (hasGroupClass) {
+    return {
+      ...common,
+      workTypes: ["activities"],
+      employmentType: "commission_based",
+      allowsSalary: false,
+      allowsCommission: true,
+      allowsShifts: false,
     };
   }
 
