@@ -14,8 +14,8 @@ class DatabaseSeeder extends Seeder
         // 1. Seed Roles and Permissions
         $this->call(RolesAndPermissionsSeeder::class);
 
-        // 2. Seed MemberManager Permissions
-        $this->call(MemberPermissionsSeeder::class);
+        // 2. Seed All System Permissions (188 permissions)
+        $this->call(AllSystemPermissionsSeeder::class);
 
         // 3. Seed Club and Branch
         $this->call(TechnogymSeeder::class);

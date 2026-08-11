@@ -6,7 +6,7 @@ use Modules\StaffManager\Http\Controllers\Api\V1\PayrollController;
 use Modules\StaffManager\Http\Controllers\Api\V1\PayslipController;
 use Modules\StaffManager\Http\Controllers\Api\V1\StaffShiftController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
     // Staff Trash & Restoration Actions
     Route::get('staff/trashed', [StaffController::class, 'trashed']);
     Route::post('staff/{id}/restore', [StaffController::class, 'restore']);
