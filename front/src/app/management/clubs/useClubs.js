@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useDeleteClubMutation, useGetClubQuery, useGetClubsQuery } from "@/lib/api/clubsApi";
