@@ -61,7 +61,6 @@ class NotificationService
                 $recipientsData = array_map(fn($userId) => [
                     'notification_id' => $notification->id,
                     'user_id'         => $userId,
-                    'is_read'         => false,
                     'created_at'      => $now,
                     'updated_at'      => $now,
                 ], $userIds);
