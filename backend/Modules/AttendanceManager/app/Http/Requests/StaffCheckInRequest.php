@@ -14,7 +14,6 @@ class StaffCheckInRequest extends FormRequest
     public function rules()
     {
         return [
-            'club_id' => 'required|integer',
             'branch_id' => 'required|integer',
             'facility_id' => 'nullable|integer'
         ];

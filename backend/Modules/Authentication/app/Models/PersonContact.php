@@ -3,9 +3,11 @@
 namespace Modules\Authentication\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PersonContact extends Model
 {
+    use SoftDeletes;
     protected $table = 'person_contacts';
 
     protected $fillable = [

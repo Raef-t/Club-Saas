@@ -21,18 +21,21 @@ class ReportService
     {
         $period = AccPeriod::findOrFail($periodId);
 
+        $totalsByAccount = AccJournalEntry::whereHas('journal', fn($q) => $q->where('status', 'posted')->where('period_id', $periodId))
+            ->selectRaw('account_id, SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
         $accounts = AccAccount::active()->orderBy('code')->get();
 
-        $rows = $accounts->map(function ($account) use ($periodId) {
-            $entries = AccJournalEntry::where('account_id', $account->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('period_id', $periodId))
-                ->selectRaw('SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
-                ->first();
+        $rows = $accounts->map(function ($account) use ($totalsByAccount) {
+            $entries = $totalsByAccount->get($account->id);
 
-            $debitUsd  = (float) ($entries->debit_usd  ?? 0);
-            $creditUsd = (float) ($entries->credit_usd ?? 0);
-            $debitSyp  = (float) ($entries->debit_syp  ?? 0);
-            $creditSyp = (float) ($entries->credit_syp ?? 0);
+            $debitUsd  = (float) ($entries?->debit_usd  ?? 0);
+            $creditUsd = (float) ($entries?->credit_usd ?? 0);
+            $debitSyp  = (float) ($entries?->debit_syp  ?? 0);
+            $creditSyp = (float) ($entries?->credit_syp ?? 0);
 
             // تخطي الحسابات ذات الرصيد الصفري
             if ($debitUsd == 0 && $creditUsd == 0 && $debitSyp == 0 && $creditSyp == 0) {
@@ -165,13 +168,21 @@ class ReportService
             $totalInUsd  += $debit;
             $totalOutUsd += $credit;
 
+            $sourceType = $entry->journal ? $entry->journal->source_type : null;
+            $sourceId   = $entry->journal ? $entry->journal->source_id : null;
+
             return [
-                'date'             => $entry->journal->date ? $entry->journal->date->toDateString() : '',
-                'reference_number' => $entry->journal->reference_number,
-                'type'             => $entry->journal->type,
-                'description'      => $entry->journal->description,
-                'debit_usd'        => $debit,   // وارد للصندوق
-                'credit_usd'       => $credit,  // صادر من الصندوق
+                'date'                => $entry->journal && $entry->journal->date ? $entry->journal->date->toDateString() : '',
+                'reference_number'    => $entry->journal ? $entry->journal->reference_number : '',
+                'type'                => $entry->journal ? $entry->journal->type : '',
+                'description'         => $entry->journal ? $entry->journal->description : '',
+                'debit_usd'           => $debit,   // وارد للصندوق
+                'credit_usd'          => $credit,  // صادر من الصندوق
+                'source_type'         => $sourceType,
+                'source_id'           => $sourceId,
+                'journal_id'          => $entry->journal ? $entry->journal->id : null,
+                'reversed_journal_id' => $entry->journal ? $entry->journal->reversed_journal_id : null,
+                'is_reversal'         => $entry->journal ? (bool) $entry->journal->reversed_journal_id : false,
             ];
         })->values();
 
@@ -195,20 +206,55 @@ class ReportService
         $partner = AccPartner::with(['capitalAccount', 'drawingsAccount'])->findOrFail($partnerId);
         $period  = AccPeriod::findOrFail($periodId);
 
-        $capitalBalance  = $this->ledger->getAccountBalance($partner->capital_account_id);
+        $capitalBalance  = $this->ledger->getAccountBalance(
+            $partner->capital_account_id,
+            $period->end_date ? $period->end_date->toDateString() : null
+        );
         
-        $drawingsBalance = $partner->drawings_account_id
-            ? $this->ledger->getAccountBalance($partner->drawings_account_id)
-            : null;
+        $drawingsUsd = 0;
+        $cumulativeDrawingsUsd = 0;
+        if ($partner->drawings_account_id) {
+            // Period Drawings
+            $drawingsEntries = AccJournalEntry::where('account_id', $partner->drawings_account_id)
+                ->whereHas('journal', function ($q) use ($periodId) {
+                    $q->where('status', 'posted')->where('period_id', $periodId);
+                })
+                ->selectRaw('SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd')
+                ->first();
 
-        // حساب المسحوبات بطبيعتها المدينة (Normal Debit): مدين - دائن
-        $drawingsUsd = $drawingsBalance
-            ? ($drawingsBalance['debit_usd'] - $drawingsBalance['credit_usd'])
-            : 0;
+            $debit = (float) ($drawingsEntries->debit_usd ?? 0);
+            $credit = (float) ($drawingsEntries->credit_usd ?? 0);
+            $drawingsUsd = $debit - $credit;
 
+            // Cumulative Drawings
+            $drawingsEntriesAll = AccJournalEntry::where('account_id', $partner->drawings_account_id)
+                ->whereHas('journal', function ($q) use ($period) {
+                    $q->where('status', 'posted');
+                    if ($period->end_date) {
+                        $q->where('date', '<=', $period->end_date->toDateString());
+                    }
+                })
+                ->selectRaw('SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd')
+                ->first();
+
+            $debitAll = (float) ($drawingsEntriesAll->debit_usd ?? 0);
+            $creditAll = (float) ($drawingsEntriesAll->credit_usd ?? 0);
+            $cumulativeDrawingsUsd = $debitAll - $creditAll;
+        }
+
+        $branchId = $partner->branch_id ?? null;
         $incomeStatement = $this->getIncomeStatement($periodId);
         $netIncome       = $incomeStatement['summary']['net_income_usd'];
         $partnerShare    = round($netIncome * ($partner->profit_share_pct / 100), 4);
+
+        // Cumulative Net Income & Share (all periods up to $periodId)
+        $periods = AccPeriod::where('id', '<=', $periodId)->get();
+        $cumulativeNetIncome = 0.0;
+        foreach ($periods as $p) {
+            $incomeStmt = $this->getIncomeStatement($p->id);
+            $cumulativeNetIncome += $incomeStmt['summary']['net_income_usd'];
+        }
+        $cumulativePartnerShare = round($cumulativeNetIncome * ($partner->profit_share_pct / 100), 4);
 
         return [
             'partner'           => [
@@ -217,12 +263,15 @@ class ReportService
                 'profit_share_pct' => $partner->profit_share_pct,
                 'joined_at'        => $partner->joined_at,
             ],
-            'period'            => ['id' => $period->id, 'name' => $period->name],
-            'capital_balance_usd'   => $capitalBalance['balance_usd'],
-            'drawings_usd'          => $drawingsUsd,
-            'net_income_usd'        => $netIncome,
-            'partner_share_usd'     => $partnerShare,
-            'net_equity_usd'        => $capitalBalance['balance_usd'] + $partnerShare - $drawingsUsd,
+            'period'                        => ['id' => $period->id, 'name' => $period->name],
+            'capital_balance_usd'          => $capitalBalance['balance_usd'],
+            'drawings_usd'                 => $drawingsUsd,
+            'cumulative_drawings_usd'      => $cumulativeDrawingsUsd,
+            'net_income_usd'               => $netIncome,
+            'partner_share_usd'            => $partnerShare,
+            'cumulative_partner_share_usd' => $cumulativePartnerShare,
+            'net_equity_usd'               => $capitalBalance['balance_usd'] + $cumulativePartnerShare - $cumulativeDrawingsUsd,
+            'period_net_equity_usd'        => $partnerShare - $drawingsUsd,
         ];
     }
 }

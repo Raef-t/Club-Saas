@@ -30,7 +30,7 @@ class MemberEvaluationService
     public function createEvaluation(int $memberId, string $type, int $evaluatableId, int $rating, ?string $comment): MemberEvaluation
     {
         $evaluatableType = $type === 'session' 
-            ? \Modules\Sports\Models\SportSession::class 
+            ? \Modules\Sports\Models\SportSessionTemplate::class 
             : \Modules\StaffManager\Models\Staff::class;
 
         if ($type === 'coach') {

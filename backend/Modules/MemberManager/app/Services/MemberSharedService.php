@@ -12,8 +12,8 @@ use Modules\Authentication\Models\PersonQrCode;
 
 class MemberSharedService implements MemberSharedServiceInterface
 {
-    protected $repository;
-    protected $personSharedService;
+    protected MemberRepositoryInterface $repository;
+    protected PersonSharedServiceInterface $personSharedService;
 
     public function __construct(
         MemberRepositoryInterface $repository,
@@ -36,6 +36,24 @@ class MemberSharedService implements MemberSharedServiceInterface
         }
     }
 
+    public function getMembersByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        try {
+            $members = \Modules\MemberManager\Models\Member::whereIn('id', $ids)->get();
+            $dtos = [];
+            foreach ($members as $member) {
+                $dtos[] = $this->mapToDTO($member);
+            }
+            return $dtos;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
     public function getMemberByBarcode(string $barcode): ?MemberDTO
     {
         // Look up which person owns this QR code
@@ -52,7 +70,7 @@ class MemberSharedService implements MemberSharedServiceInterface
         return $this->mapToDTO($member);
     }
 
-    protected function mapToDTO($member): MemberDTO
+    protected function mapToDTO(\Modules\MemberManager\Models\Member $member): MemberDTO
     {
         $personDTO = null;
         if ($member->person_id) {

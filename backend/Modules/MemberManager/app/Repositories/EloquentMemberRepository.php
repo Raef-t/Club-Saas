@@ -41,7 +41,7 @@ class EloquentMemberRepository implements MemberRepositoryInterface
 
     public function findByPersonId(int $personId): ?Member
     {
-        return Member::where('person_id', $personId)->whereNull('deleted_at')->first();
+        return Member::where('person_id', $personId)->first();
     }
 
     /**
@@ -51,5 +51,23 @@ class EloquentMemberRepository implements MemberRepositoryInterface
     public function findByBarcode($barcode)
     {
         return null; // Legacy - no longer supported
+    }
+
+    public function getTrashed(array $filters = [])
+    {
+        $query = Member::onlyTrashed()->with(['person.contacts', 'branch', 'healthProfile']);
+
+        if (!empty($filters['branch_id'])) {
+            $query->where('branch_id', $filters['branch_id']);
+        }
+
+        return $query->latest()->get();
+    }
+
+    public function restore(int $id)
+    {
+        $member = Member::onlyTrashed()->findOrFail($id);
+        $member->restore();
+        return $member;
     }
 }

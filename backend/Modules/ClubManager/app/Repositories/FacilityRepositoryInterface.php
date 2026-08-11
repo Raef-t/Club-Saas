@@ -9,4 +9,6 @@ interface FacilityRepositoryInterface
     public function create(array $data);
     public function update($id, array $data);
     public function delete($id);
+    public function getTrashed();
+    public function restore($id);
 }

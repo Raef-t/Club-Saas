@@ -11,6 +11,11 @@ class EloquentWalletRepository implements WalletRepositoryInterface
         return Wallet::where('person_id', $personId)->first();
     }
 
+    public function findByPersonIdForUpdate(int $personId): ?Wallet
+    {
+        return Wallet::where('person_id', $personId)->lockForUpdate()->first();
+    }
+
     public function findOrCreateForPerson(int $personId): Wallet
     {
         return Wallet::firstOrCreate(
@@ -21,10 +26,12 @@ class EloquentWalletRepository implements WalletRepositoryInterface
 
     public function updateBalance(int $walletId, float $amount): Wallet
     {
-        $wallet = Wallet::findOrFail($walletId);
-        $wallet->balance += $amount;
-        $wallet->save();
-        
-        return $wallet;
+        if ($amount > 0) {
+            Wallet::where('id', $walletId)->increment('balance', $amount);
+        } elseif ($amount < 0) {
+            Wallet::where('id', $walletId)->decrement('balance', abs($amount));
+        }
+
+        return Wallet::findOrFail($walletId);
     }
 }

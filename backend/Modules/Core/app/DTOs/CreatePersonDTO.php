@@ -8,7 +8,7 @@ readonly class CreatePersonDTO
 {
     public function __construct(
         public string $fullName,
-        public string $mobile1,
+        public ?string $mobile1 = null,
         public ?string $mobile1CountryCode = null,
         public ?Gender $gender = null,
         public ?int $age = null,

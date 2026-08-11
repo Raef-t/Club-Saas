@@ -38,7 +38,7 @@ class MemberService
 
     public function getAllMembers(array $filters = [])
     {
-        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan']);
+        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
 
         // 1. Filtering by Branch
         if (!empty($filters['branch_id'])) {
@@ -50,37 +50,20 @@ class MemberService
             $query->where('membership_status', $filters['status']);
         }
 
-        // 3. Filtering by Gender or Search (Full name, phone, email, national_id)
-        if (!empty($filters['gender']) || !empty($filters['search'])) {
-            $peopleQuery = \Modules\Authentication\Models\Person::query();
-            
-            if (!empty($filters['gender'])) {
-                $peopleQuery->where('gender', $filters['gender']);
-            }
-            
-            if (!empty($filters['search'])) {
-                $search = $filters['search'];
-                $peopleQuery->where(function($sq) use ($search) {
-                    $sq->where('full_name', 'like', "%{$search}%")
-                       ->orWhereHas('contacts', function($cq) use ($search) {
-                           $cq->where('phone_number', 'like', "%{$search}%");
-                       })
-                       ->orWhere('email', 'like', "%{$search}%")
-                       ->orWhere('national_id', 'like', "%{$search}%");
-                });
-            }
-
-            $personIds = $peopleQuery->pluck('id')->toArray();
-
-            $query->where(function($q) use ($personIds, $filters) {
-                $q->whereIn('person_id', $personIds);
-                if (!empty($filters['search'])) {
-                    $q->orWhere('member_number', 'like', "%{$filters['search']}%");
-                }
+        // 3. Filtering by Gender
+        if (!empty($filters['gender'])) {
+            $query->whereHas('person', function ($q) use ($filters) {
+                $q->where('gender', $filters['gender']);
             });
         }
 
-        return $query->latest()->get();
+        return $query->with([
+            'person.contacts',
+            'person.user',
+            'branch',
+            'healthProfile',
+            'measurements',
+        ])->latest()->get();
     }
 
     /**
@@ -125,12 +108,15 @@ class MemberService
 
             // Fetch Branch and Club Settings
             $branch = Branch::find($data['branch_id']);
-            $clubSettings = ClubSetting::where('club_id', $branch->club_id ?? 1)->first();
+            if (!$branch) {
+                throw new \Exception(__('Member branch not found.'));
+            }
+            $clubSettings = ClubSetting::where('club_id', $branch->club_id)->first();
             $enabledFeatures = $clubSettings ? ($clubSettings->enabled_features ?? []) : [];
-            
-            $autoGenerate = isset($enabledFeatures['auto_generate_credentials']) 
-                            ? filter_var($enabledFeatures['auto_generate_credentials'], FILTER_VALIDATE_BOOLEAN) 
-                            : true; // Default to true if not specified
+
+            $autoGenerate = isset($enabledFeatures['auto_generate_credentials'])
+                ? filter_var($enabledFeatures['auto_generate_credentials'], FILTER_VALIDATE_BOOLEAN)
+                : true; // Default to true if not specified
 
             $username = null;
             $password = null;
@@ -138,9 +124,9 @@ class MemberService
 
             if ($autoGenerate) {
                 // Generate User Account for Mobile App
-                $username = 'player_' . $personId . '_' . Str::random(4);
-                $password = 'password123'; // Default password
-                
+                $username = \Modules\Authentication\Services\UsernameGeneratorService::generateForRole('member');
+                $password = '12345678'; // Default password
+
                 $user = User::create([
                     'username'  => $username,
                     'password'  => Hash::make($password),
@@ -242,9 +228,27 @@ class MemberService
         });
     }
 
-    public function deleteMember(int $id)
+    public function deleteMember(int $id, string $confirmation = ''): bool
     {
-        return $this->repository->delete($id);
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف جميع الاشتراكات والحضور المتعلقين باللاعب، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
+        }
+
+        $member = \Modules\MemberManager\Models\Member::findOrFail($id);
+        return (bool) $member->delete();
+    }
+
+    public function getTrashedMembers(array $filters = [])
+    {
+        return $this->repository->getTrashed($filters);
+    }
+
+    public function restoreMember(int $id)
+    {
+        $member = $this->repository->restore($id);
+        return $this->attachSharedDTOs($member);
     }
 
     public function getMeasurements(int $memberId)
@@ -271,7 +275,7 @@ class MemberService
     protected function attachSharedDTOs(?\Modules\MemberManager\Models\Member $member)
     {
         if ($member) {
-            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.items.activity', 'subscriptions.plan']);
+            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
         }
         return $member;
     }
@@ -287,15 +291,38 @@ class MemberService
             $query->where('branch_id', $filters['branch_id']);
         }
 
-        $baseQuery = clone $query;
+        $baseQuery    = clone $query;
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth   = now()->endOfMonth();
 
         return [
-            'total_members' => (clone $baseQuery)->count(),
-            'active_members' => (clone $baseQuery)->where('membership_status', 'active')->count(),
-            'male_members' => (clone $baseQuery)->whereHas('person', function ($q) {
+            'total_members'               => (clone $baseQuery)->count(),
+            'active_members'              => (clone $baseQuery)->where('membership_status', 'active')->count(),
+            'total_subscribed_members'    => (clone $baseQuery)->whereHas('subscriptions', function ($q) {
+                $q->where('status', 'active')->whereDate('end_date', '>=', now());
+            })->count(),
+            'new_members_this_month'      => (clone $baseQuery)->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('join_date', [$startOfMonth, $endOfMonth])
+                    ->orWhereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
+                        $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+                    });
+            })->whereDoesntHave('subscriptions', function ($sq) use ($startOfMonth) {
+                $sq->where('start_date', '<', $startOfMonth);
+            })->count(),
+            'renewed_members_this_month'  => (clone $baseQuery)->whereHas('subscriptions', function ($sq) use ($startOfMonth, $endOfMonth) {
+                $sq->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+            })->whereHas('subscriptions', function ($sq) use ($startOfMonth) {
+                $sq->where('start_date', '<', $startOfMonth);
+            })->count(),
+            'expired_not_renewed_members' => (clone $baseQuery)->whereHas('subscriptions', function ($sq) {
+                $sq->whereDate('end_date', '<', now());
+            })->whereDoesntHave('subscriptions', function ($sq) {
+                $sq->where('status', 'active')->whereDate('end_date', '>=', now());
+            })->count(),
+            'male_members'                => (clone $baseQuery)->whereHas('person', function ($q) {
                 $q->where('gender', 'male');
             })->count(),
-            'female_members' => (clone $baseQuery)->whereHas('person', function ($q) {
+            'female_members'              => (clone $baseQuery)->whereHas('person', function ($q) {
                 $q->where('gender', 'female');
             })->count(),
         ];

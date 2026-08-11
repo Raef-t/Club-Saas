@@ -82,7 +82,7 @@ class MemberDashboardService
      */
     public function getSubscriptions(int $memberId): array
     {
-        $subscriptions = PlayerSubscription::with(['plan', 'items.activity', 'items.coach.person'])
+        $subscriptions = PlayerSubscription::with(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items'])
             ->where('member_id', $memberId)
             ->latest()
             ->get();
@@ -94,15 +94,22 @@ class MemberDashboardService
         $member = DB::table('members')->where('id', $memberId)->first();
 
         return $subscriptions->map(function ($subscription) use ($member) {
-            $activities = $subscription->items->map(function ($item) {
+            $planActivities = $subscription->plan ? $subscription->plan->planActivities : collect();
+
+            $activities = $subscription->items->values()->map(function ($item, $index) use ($planActivities) {
+                $planActivity = $planActivities->get($index);
+                $staffActivity = $planActivity?->staffActivity;
+                $activity = $staffActivity?->activity;
+                $coach = $staffActivity?->staff;
+
                 // Determine activity name
-                $activityName = $item->activity->name ?? null;
+                $activityName = $activity->name ?? null;
                 if (is_string($activityName) && json_decode($activityName)) {
                     $decoded = json_decode($activityName, true);
                     $activityName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $activityName;
                 }
 
-                $coachName = $item->coach?->person?->full_name ?? null;
+                $coachName = $coach?->person?->full_name ?? null;
 
                 return [
                     'id' => $item->id,
@@ -125,7 +132,7 @@ class MemberDashboardService
                 'membership_number' => $member->member_number ?? null,
                 'price' => (float) ($subscription->total_amount ?? $subscription->plan->base_price ?? 0),
                 'formatted_price' => ($subscription->total_amount ?? $subscription->plan->base_price ?? 0) . '$',
-                'remaining_sessions' => $subscription->remaining_sessions,
+                'remaining_sessions' => $activities->where('is_unlimited', false)->sum('remaining_sessions'),
                 'activities' => $activities->toArray(),
             ];
         })->toArray();
@@ -137,9 +144,12 @@ class MemberDashboardService
     protected function getStats(int $memberId): array
     {
         // Remaining sessions from active subscription
-        $remainingSessions = PlayerSubscription::where('member_id', $memberId)
-            ->where('status', 'active')
-            ->sum('remaining_sessions');
+        $remainingSessions = \Illuminate\Support\Facades\DB::table('player_subscription_items')
+            ->join('player_subscriptions', 'player_subscription_items.player_subscription_id', '=', 'player_subscriptions.id')
+            ->where('player_subscriptions.member_id', $memberId)
+            ->where('player_subscriptions.status', 'active')
+            ->where('player_subscription_items.is_unlimited', false)
+            ->sum(\Illuminate\Support\Facades\DB::raw('player_subscription_items.sessions_allocated - player_subscription_items.sessions_consumed'));
 
         // Total attendance count
         $totalAttendance = Attendance::where('attendable_type', 'player_subscription')
@@ -165,10 +175,10 @@ class MemberDashboardService
 
         // Last payment
         $lastPayment = Payment::whereIn('invoice_id', function ($query) use ($memberId) {
-            $query->select('id')
-                ->from('invoices')
-                ->where('member_id', $memberId);
-        })
+                $query->select('id')
+                    ->from('invoices')
+                    ->where('member_id', $memberId);
+            })
             ->where('status', 'completed')
             ->latest()
             ->first();
@@ -208,7 +218,7 @@ class MemberDashboardService
 
             return [
                 'id' => $record->id,
-                'title' => $record->metadata['activity_name'] ?? __('Training Session'),
+                'title' => __('Training Session'),
                 'description' => $record->check_in_at
                     ? Carbon::parse($record->check_in_at)->format('H:i')
                     : null,
@@ -224,43 +234,85 @@ class MemberDashboardService
      */
     protected function getUpcomingEvents(int $memberId): array
     {
-        // Get upcoming sessions from sports_sessions with their activities
-        $sessions = DB::table('sports_sessions')
-            ->join('activities', 'sports_sessions.activity_id', '=', 'activities.id')
-            ->where('sports_sessions.start_time', '>', now())
-            ->where('sports_sessions.status', 'scheduled')
-            ->orderBy('sports_sessions.start_time')
-            ->limit(5)
+        // Get active templates with their plans
+        $templates = DB::table('sport_session_templates')
+            ->join('subscription_plans', 'sport_session_templates.plan_id', '=', 'subscription_plans.id')
+            ->where('sport_session_templates.is_active', true)
             ->select([
-                'sports_sessions.id',
-                'activities.name as activity_name',
-                'activities.exercises_count',
-                'activities.estimated_calories',
-                'sports_sessions.start_time',
-                'sports_sessions.end_time',
-                'sports_sessions.max_players',
-                'sports_sessions.booked_count',
+                'sport_session_templates.id',
+                'subscription_plans.name as plan_name',
+                'sport_session_templates.day_of_week',
+                'sport_session_templates.start_time',
+                'sport_session_templates.end_time',
+                'subscription_plans.max_subscribers as max_players',
             ])
             ->get();
+
+        // Get future canceled exceptions
+        $exceptions = DB::table('session_exceptions')
+            ->where('date', '>=', now()->toDateString())
+            ->where('status', 'canceled')
+            ->get()
+            ->groupBy('sport_session_template_id');
+
+        $upcoming = collect();
+        $startDate = now();
+
+        // Generate sessions for the next 14 days based on templates
+        foreach ($templates as $template) {
+            for ($i = 0; $i < 14; $i++) {
+                $date = $startDate->copy()->addDays($i);
+                if ($date->dayOfWeek === (int)$template->day_of_week) {
+                    $dateString = $date->toDateString();
+                    
+                    $hasException = false;
+                    if ($exceptions->has($template->id)) {
+                        foreach ($exceptions->get($template->id) as $exc) {
+                            if ($exc->date === $dateString) {
+                                $hasException = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!$hasException) {
+                        $startDateTime = Carbon::parse($dateString . ' ' . $template->start_time);
+                        if ($startDateTime > now()) {
+                            $upcoming->push((object)[
+                                'id' => $template->id,
+                                'plan_name' => $template->plan_name,
+                                'start_time' => $startDateTime->toDateTimeString(),
+                                'end_time' => Carbon::parse($dateString . ' ' . $template->end_time)->toDateTimeString(),
+                                'max_players' => $template->max_players,
+                                'booked_count' => 0,
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort by start_time and take top 5
+        $sessions = $upcoming->sortBy('start_time')->take(5);
 
         return $sessions->map(function ($session) {
             $durationMinutes = Carbon::parse($session->start_time)
                 ->diffInMinutes(Carbon::parse($session->end_time));
 
-            $activityName = $session->activity_name;
-            if (is_string($activityName) && json_decode($activityName)) {
-                $decoded = json_decode($activityName, true);
-                $activityName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $activityName;
+            $planName = $session->plan_name;
+            if (is_string($planName) && json_decode($planName)) {
+                $decoded = json_decode($planName, true);
+                $planName = $decoded[app()->getLocale()] ?? $decoded['ar'] ?? $decoded['en'] ?? $planName;
             }
 
             return [
                 'id' => $session->id,
-                'title' => $activityName,
-                'exercises_count' => $session->exercises_count ?? 0,
+                'title' => $planName,
+                'exercises_count' => 0,
                 'duration_minutes' => $durationMinutes,
-                'calories' => $session->estimated_calories ?? 0,
+                'calories' => 0,
                 'available_spots' => max(0, ($session->max_players ?? 0) - ($session->booked_count ?? 0)),
             ];
-        })->toArray();
+        })->values()->toArray();
     }
 }

@@ -20,6 +20,7 @@ return new class extends Migration
                 $table->decimal('total', 12, 2)->default(0);
                 $table->string('status', 50)->default('unpaid');
                 $table->timestamps();
+                $table->softDeletes();
 
                 $table->foreign('member_id')->references('id')->on('members')->onDelete('cascade');
                 $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
@@ -36,6 +37,7 @@ return new class extends Migration
                 $table->string('payment_method', 50);
                 $table->string('status', 50)->default('completed');
                 $table->timestamps();
+                $table->softDeletes();
 
                 $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade');
             });

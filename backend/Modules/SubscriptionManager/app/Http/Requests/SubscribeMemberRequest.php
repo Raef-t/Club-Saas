@@ -25,12 +25,12 @@ class SubscribeMemberRequest extends FormRequest
                 new NoActiveSubscriptionRule($subscriptionRepo, $this->member_id, $this->plan_id)
             ],
             'plan_id' => 'required|exists:subscription_plans,id',
-            'coach_id' => 'nullable|exists:staff,id',
-            'start_date' => 'nullable|date',
+            'months_count' => 'nullable|integer|min:1',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'paid_amount' => 'required|numeric|min:0',
-            'activities' => 'nullable|array',
-            'activities.*.activity_id' => 'required_with:activities|exists:activities,id',
-            'activities.*.coach_id' => 'nullable|exists:staff,id',
+            'payment_method' => 'nullable|string',
+            'notes' => 'nullable|string',
         ];
     }
 }

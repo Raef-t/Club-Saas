@@ -16,9 +16,7 @@ class UpdateCoachBasicInfoRequest extends FormRequest
         return [
             'base_salary'     => ['nullable', 'numeric', 'min:0'],
             'employment_type' => ['nullable', 'string', 'in:fixed_salary,commission_based,hybrid'],
-            'shift_type'      => ['nullable', 'string'],
-            'work_status'     => ['nullable', 'string'],
-            'is_active'       => ['nullable', 'boolean'],
+            'work_status'     => ['nullable', 'string', 'in:active,suspended,on_leave'],
             'branch_ids'      => ['nullable', 'array'],
             'branch_ids.*'    => ['exists:branches,id'],
         ];

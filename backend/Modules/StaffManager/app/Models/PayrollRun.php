@@ -3,9 +3,11 @@
 namespace Modules\StaffManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayrollRun extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'period_start',
         'period_end',

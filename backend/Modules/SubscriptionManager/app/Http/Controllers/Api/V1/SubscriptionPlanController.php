@@ -2,6 +2,7 @@
 
 namespace Modules\SubscriptionManager\Http\Controllers\Api\V1;
 
+use Illuminate\Http\Request;
 use Modules\SubscriptionManager\Repositories\SubscriptionPlanRepositoryInterface;
 use Modules\SubscriptionManager\Http\Resources\SubscriptionPlanResource;
 use Modules\Core\Http\Controllers\Api\BaseController;
@@ -22,10 +23,12 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans',
         summary: '📋 عرض جميع خطط الاشتراك',
         description: 'استرجاع قائمة بجميع خطط الاشتراك المتوفرة في النادي.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك',
@@ -41,11 +44,11 @@ class SubscriptionPlanController extends BaseController
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
                             new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                            new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                            new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                             new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                             new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                             new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                            new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                            new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active'),
                             new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
@@ -56,17 +59,27 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()->with('planActivities');
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities', 'sessionTemplates']);
         
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
 
-        if ($request->boolean('available', true)) {
-            $query->available();
+        if ($request->has('gender')) {
+            $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
+        }
+
+        if ($request->has('available')) {
+            if ($request->boolean('available')) {
+                $query->available();
+            }
         }
         
-        $plans = $query->get();
+        $plans = $query->orderBy('id', 'desc')->get();
         return $this->successResponse(
             SubscriptionPlanResource::collection($plans),
             __('Subscription plans retrieved successfully')
@@ -77,10 +90,11 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/registration',
         summary: '📋 عرض خطط الاشتراك المتاحة للتسجيل',
         description: 'استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك المتاحة',
@@ -97,10 +111,14 @@ class SubscriptionPlanController extends BaseController
         // Get active plans that have available capacity, and eager load their activities
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
             ->available()
-            ->with('planActivities');
+            ->with(['planActivities', 'sessionTemplates']);
             
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->has('gender')) {
+            $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
         }
 
         $plans = $query->get();
@@ -116,30 +134,47 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans',
         summary: '➕ إنشاء خطة اشتراك جديدة',
         description: 'إنشاء خطة اشتراك جديدة يمكن للأعضاء الاشتراك بها.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['branch_id', 'name', 'type', 'base_price'],
+            required: ['branch_id', 'name', 'base_price'],
             properties: [
                 new OA\Property(property: 'branch_id', type: 'integer', description: '(مطلوب) معرف الفرع', example: 1),
-                new OA\Property(property: 'name', type: 'object', properties: [
-                    new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الذهبي'),
-                    new OA\Property(property: 'en', type: 'string', example: 'Gold Subscription')
-                ]),
-                new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
-                new OA\Property(property: 'duration_days', type: 'integer', example: 30),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الذهبي'),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
+                new OA\Property(property: 'sessions_per_week', type: 'integer', nullable: true, example: 3),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
-                new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 2),
-                new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 14),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+                new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
+                new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: '(اختياري) حالة الخطة: active, inactive, completed', example: 'active'),
+                new OA\Property(
+                    property: 'activities', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'activity_id', type: 'integer', nullable: false, example: 1),
+                            new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 2)
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: 'session_templates',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
+                            new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                            new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -156,11 +191,11 @@ class SubscriptionPlanController extends BaseController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false)
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active')
                     ]
                 )
             ]
@@ -182,7 +217,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{subscription_plan}',
         summary: '🔍 تفاصيل خطة الاشتراك',
         description: 'استرجاع تفاصيل خطة اشتراك محددة.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -199,11 +234,11 @@ class SubscriptionPlanController extends BaseController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                         new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active'),
                         new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
@@ -215,7 +250,7 @@ class SubscriptionPlanController extends BaseController
     public function show($id)
     {
         $plan = $this->planRepository->find($id);
-        $plan->loadMissing('planActivities');
+        $plan->loadMissing(['planActivities', 'sessionTemplates']);
         return $this->successResponse(
             new SubscriptionPlanResource($plan),
             __('Subscription plan retrieved successfully')
@@ -226,7 +261,7 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{subscription_plan}',
         summary: '📝 تعديل خطة الاشتراك',
         description: 'تحديث بيانات ومميزات خطة اشتراك.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
@@ -234,21 +269,38 @@ class SubscriptionPlanController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'name', type: 'object', properties: [
-                    new OA\Property(property: 'ar', type: 'string', example: 'الاشتراك الماسي'),
-                    new OA\Property(property: 'en', type: 'string', example: 'Diamond Subscription')
-                ]),
-                new OA\Property(property: 'type', type: 'string', enum: ['fixed_period', 'session_based'], example: 'fixed_period'),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
-                new OA\Property(property: 'duration_days', type: 'integer', example: 30),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الماسي'),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
+                new OA\Property(property: 'sessions_per_week', type: 'integer', nullable: true, example: 3),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 400.00),
-                new OA\Property(property: 'max_freeze_count', type: 'integer', nullable: true, example: 3),
-                new OA\Property(property: 'max_freeze_days', type: 'integer', nullable: true, example: 20),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+                new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
+                new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: '(اختياري) حالة الخطة: active, inactive, completed', example: 'active'),
+                new OA\Property(
+                    property: 'activities', 
+                    type: 'array', 
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'activity_id', type: 'integer', nullable: false, example: 1),
+                            new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 2)
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: 'session_templates',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
+                            new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                            new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -265,11 +317,11 @@ class SubscriptionPlanController extends BaseController
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-08-01'),
-                        new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-12-31'),
                         new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                         new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false)
+                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
+                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active')
                     ]
                 )
             ]
@@ -287,17 +339,78 @@ class SubscriptionPlanController extends BaseController
         );
     }
 
-    #[OA\Delete(
-        path: '/v1/subscription-plans/{subscription_plan}',
-        summary: '🗑️ حذف خطة الاشتراك',
-        description: 'إزالة خطة اشتراك من النظام.',
-        tags: ['Subscription Management'],
+    #[OA\Get(
+        path: '/v1/subscription-plans/{subscription_plan}/delete-check',
+        summary: '🔍 فحص معلومات ومخاطر حذف خطة الاشتراك',
+        description: 'استرجاع التقرير والاشتراكات والمدربين المرتبطين بالخطة لتنبيه وتخيير المستخدم قبل تنفيذ الحذف.',
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
-        description: '✅ تم حذف الخطة بنجاح',
+        description: '✅ تقرير الفحص المسبق قبل الحذف',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Delete check report retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_name', type: 'string', example: 'الاشتراك الذهبي'),
+                        new OA\Property(property: 'has_active_subscriptions', type: 'boolean', example: true),
+                        new OA\Property(property: 'active_subscriptions_count', type: 'integer', example: 3),
+                        new OA\Property(property: 'inactive_subscriptions_count', type: 'integer', example: 5),
+                        new OA\Property(
+                            property: 'associated_coaches',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'staff_id', type: 'integer', example: 2),
+                                    new OA\Property(property: 'name', type: 'string', example: 'كابتن أحمد'),
+                                    new OA\Property(property: 'role', type: 'string', example: 'coach')
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    public function deleteCheck($id)
+    {
+        $info = $this->planRepository->getDeleteCheckInfo($id);
+        return $this->successResponse($info, __('Delete check report retrieved successfully'));
+    }
+
+    #[OA\Delete(
+        path: '/v1/subscription-plans/{subscription_plan}',
+        summary: '🗑️ حذف خطة الاشتراك (Soft Delete)',
+        description: 'حذف خطة الاشتراك ناعماً من النظام مع خيارات حسم الاشتراكات النشطة وفك إرتباط وحذف المدربين المحددين.',
+        tags: ['Subscription Plans'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'subscription_plan', in: 'path', required: true, description: 'معرف الخطة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'force_delete_active_subscriptions', type: 'boolean', description: 'حذف الاشتراكات النشطة للاعبين ناعماً أيضاً', example: false),
+                new OA\Property(
+                    property: 'detach_and_delete_staff_ids',
+                    type: 'array',
+                    description: 'مصفوفة معرفات المدربين المراد فك ارتباطهم بالفعالية وحذفهم ناعماً',
+                    items: new OA\Items(type: 'integer', example: 2)
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الخطة وسجلاتها التابعة ناعماً بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -308,9 +421,175 @@ class SubscriptionPlanController extends BaseController
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function destroy($id)
+    public function destroy(\Illuminate\Http\Request $request, $id)
     {
-        $this->planRepository->delete($id);
+        $options = [
+            'force_delete_active_subscriptions' => $request->boolean('force_delete_active_subscriptions', false),
+            'detach_and_delete_staff_ids' => $request->input('detach_and_delete_staff_ids', []),
+        ];
+
+        $this->planRepository->delete($id, $options);
         return $this->successResponse(null, __('Subscription plan deleted successfully'));
     }
+
+
+    #[OA\Get(
+        path: '/v1/subscription-plans/{id}/players',
+        summary: '👥 جلب اللاعبين النشطين المسجلين في خطة اشتراك محددة',
+        description: 'استرجاع قائمة بكافة اللاعبين المشتركين باشتراك نشط (active) في هذه الخطة مع اسم المستخدم، الـ QR اليومي، وتاريخ الميلاد dob.',
+        tags: ['Subscription Plans'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف خطة الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث اختياري بالاسم أو اسم المستخدم أو رقم العضوية', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ قائمة اللاعبين النشطين في الخطة',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Plan active players retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_name', type: 'string', example: 'الاشتراك الذهبي'),
+                        new OA\Property(property: 'total_active_subscribers', type: 'integer', example: 5),
+                        new OA\Property(
+                            property: 'players',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'subscription_id', type: 'integer', example: 105),
+                                    new OA\Property(property: 'subscription_status', type: 'string', example: 'active'),
+                                    new OA\Property(property: 'start_date', type: 'string', example: '2026-08-01'),
+                                    new OA\Property(property: 'end_date', type: 'string', example: '2026-09-01'),
+                                    new OA\Property(property: 'total_amount', type: 'number', example: 350.00),
+                                    new OA\Property(property: 'paid_amount', type: 'number', example: 350.00),
+                                    new OA\Property(property: 'remaining_amount', type: 'number', example: 0.00),
+                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: true),
+                                    new OA\Property(property: 'member_id', type: 'integer', example: 12),
+                                    new OA\Property(property: 'member_number', type: 'string', example: 'MEM-2026-0012'),
+                                    new OA\Property(property: 'membership_status', type: 'string', example: 'active'),
+                                    new OA\Property(property: 'person_id', type: 'integer', example: 45),
+                                    new OA\Property(property: 'full_name', type: 'string', example: 'أحمد علي'),
+                                    new OA\Property(property: 'username', type: 'string', example: 'ahmed_ali99'),
+                                    new OA\Property(property: 'email', type: 'string', example: 'ahmed@example.com'),
+                                    new OA\Property(property: 'phone', type: 'string', example: '0599123456'),
+                                    new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                                    new OA\Property(property: 'age', type: 'integer', example: 25),
+                                    new OA\Property(property: 'dob', type: 'string', example: '2001-05-15', description: 'تاريخ الميلاد'),
+                                    new OA\Property(property: 'photo_url', type: 'string', example: 'storage/photos/ahmed.jpg'),
+                                    new OA\Property(property: 'today_qr_code', type: 'string', example: 'QR-A1B2C3D4E5F678901234567890ABCDEF')
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    public function players(\Illuminate\Http\Request $request, $id)
+    {
+        $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::findOrFail($id);
+
+        $query = \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $id)
+            ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE)
+            ->with([
+                'member.person.user',
+                'member.person.contacts',
+            ]);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('member', function ($q) use ($search) {
+                $q->where('member_number', 'like', "%{$search}%")
+                  ->orWhereHas('person', function ($pq) use ($search) {
+                      $pq->where('full_name', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($uq) use ($search) {
+                            $uq->where('username', 'like', "%{$search}%");
+                        });
+                  });
+            });
+        }
+
+        $subscriptions = $query->get();
+        $qrCodeService = app(\Modules\Authentication\Services\PersonQrCodeService::class);
+
+        $playersData = $subscriptions->map(function ($sub) use ($qrCodeService) {
+            $member = $sub->member;
+            $person = $member?->person;
+            $user   = $person?->user;
+            $primaryPhone = $person?->contacts?->first()?->phone_number;
+
+            return [
+                'subscription_id'     => $sub->id,
+                'subscription_status' => $sub->status?->value ?? $sub->status,
+                'start_date'          => $sub->start_date?->format('Y-m-d'),
+                'end_date'            => $sub->end_date?->format('Y-m-d'),
+                'total_amount'        => (float) $sub->total_amount,
+                'paid_amount'         => (float) $sub->paid_amount,
+                'remaining_amount'    => (float) $sub->remaining_amount,
+                'is_fully_paid'       => $sub->is_fully_paid,
+
+                'member_id'          => $member?->id,
+                'member_number'      => $member?->member_number,
+                'membership_status'  => $member?->membership_status,
+
+                'person_id'          => $person?->id,
+                'full_name'          => $person?->full_name,
+                'gender'             => $person?->gender,
+                'age'                => $person?->age,
+                'dob'                => $person?->dob ? \Carbon\Carbon::parse($person->dob)->format('Y-m-d') : null,
+                'email'              => $person?->email,
+                'phone'              => $primaryPhone,
+                'photo_url'          => $person?->photo_url,
+
+                'user_id'            => $user?->id,
+                'username'           => $user?->username,
+                'is_active'          => $user?->is_active ?? true,
+
+                'today_qr_code'      => $person ? $qrCodeService->getTodayCodeForPerson($person->id) : null,
+            ];
+        });
+
+        return $this->successResponse([
+            'plan_id'                  => $plan->id,
+            'plan_name'                => $plan->name,
+            'total_active_subscribers' => $playersData->count(),
+            'players'                  => $playersData,
+        ], __('Plan active players retrieved successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/subscription-plans/trashed',
+        summary: '🗑️ عرض باقات الاشتراك المحذوفة (سلة المهملات)',
+        description: 'جلب قائمة بباقات الاشتراك المحذوفة.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Response(response: 200, description: '✅ تم جلب الباقات المحذوفة بنجاح')]
+    public function trashed(Request $request)
+    {
+        $plans = $this->planRepository->getTrashed();
+        return $this->successResponse(SubscriptionPlanResource::collection($plans), __('Trashed subscription plans retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/subscription-plans/{id}/restore',
+        summary: '♻️ استرجاع باقة اشتراك محذوفة',
+        description: 'استرجاع باقة الاشتراك وكافة الاشتراكات التابعة لها من سلة المهملات.',
+        tags: ['Subscription Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الباقة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع الباقة بنجاح')]
+    public function restore($id)
+    {
+        $plan = $this->planRepository->restore((int) $id);
+        return $this->successResponse(new SubscriptionPlanResource($plan), __('Subscription plan restored successfully'));
+    }
 }
+

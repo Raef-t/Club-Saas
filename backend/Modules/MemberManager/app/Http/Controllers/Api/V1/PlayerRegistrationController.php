@@ -37,8 +37,8 @@ class PlayerRegistrationController extends BaseController
                     new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
                     new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
                     new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
-                    new OA\Property(property: 'age', type: 'integer', description: '(مطلوب في حال لم يتم إدخال تاريخ الميلاد) العمر بالسنوات', example: 25),
-                    new OA\Property(property: 'dob', type: 'string', format: 'date', description: '(مطلوب في حال لم يتم إدخال العمر) تاريخ الميلاد', example: '1995-10-25'),
+                    new OA\Property(property: 'age', type: 'integer', description: 'العمر بالسنوات (اختياري)', example: 25),
+                    new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'تاريخ الميلاد (اختياري)', example: '1995-10-25'),
                     new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
                     new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة اللاعب', nullable: true),
                     new OA\Property(property: 'branch_id', type: 'integer', example: 1),
@@ -67,7 +67,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Player registered successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
             ]
         )
     )]
@@ -87,7 +87,7 @@ class PlayerRegistrationController extends BaseController
         $result = $this->registrationService->registerPlayer($request->validated());
 
         return $this->successResponse(
-            $result,
+            new \Modules\MemberManager\Http\Resources\MemberResource($result['member']),
             __('Player registered successfully'),
             201
         );
@@ -96,7 +96,7 @@ class PlayerRegistrationController extends BaseController
     #[OA\Put(
         path: '/v1/members/{id}',
         summary: '📝 تعديل بيانات لاعب (متدرب)',
-        description: 'تعديل البيانات الأساسية للاعب مثل الاسم ورقم الجوال والفرع وجهات الاتصال.',
+        description: 'تعديل البيانات الأساسية للاعب مثل الاسم ورقم الجوال والفرع وجهات الاتصال. لتحديث الصورة استخدم endpoint منفصل: POST /v1/members/{id}/photo',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -110,6 +110,7 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),
                 new OA\Property(property: 'mobile', type: 'string', example: '0501234567'),
                 new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
+                new OA\Property(property: 'age', type: 'integer', description: 'العمر بالسنوات (اختياري)', example: 25),
                 new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
                 new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
@@ -137,7 +138,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Player updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
             ]
         )
     )]
@@ -149,8 +150,43 @@ class PlayerRegistrationController extends BaseController
         $result = $this->registrationService->updatePlayer($id, $request->validated());
 
         return $this->successResponse(
-            $result,
+            new \Modules\MemberManager\Http\Resources\MemberResource($result),
             __('Player updated successfully'),
+            200
+        );
+    }
+
+    #[OA\Post(
+        path: '/v1/members/{id}/photo',
+        summary: '🖼️ تحديث صورة العضو',
+        description: 'رفع أو تحديث صورة الملف الشخصي للعضو (اللاعب). يجب استخدام هذا الـ endpoint المخصص بدلاً من إرسال الصورة ضمن طلب التعديل العام.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['photo'],
+                properties: [
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة العضو')
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم تحديث الصورة بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Member photo updated successfully'), new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')]))]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function updatePhoto(\Modules\MemberManager\Http\Requests\UpdateMemberPhotoRequest $request, $id)
+    {
+        $result = $this->registrationService->updateMemberPhoto($id, $request->file('photo'));
+
+        return $this->successResponse(
+            new \Modules\MemberManager\Http\Resources\MemberResource($result),
+            __('Member photo updated successfully'),
             200
         );
     }
@@ -163,6 +199,8 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female']))]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة العضوية', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'frozen']))]
     #[OA\Response(
         response: 200,
         description: '✅ تم جلب الأعضاء بنجاح',
@@ -173,27 +211,7 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(
                     property: 'data',
                     type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
-                            new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
-                            new OA\Property(
-                                property: 'subscriptions',
-                                type: 'array',
-                                items: new OA\Items(
-                                    type: 'object',
-                                    properties: [
-                                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                                        new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
-                                        new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
-                                        new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false)
-                                    ]
-                                )
-                            )
-                        ]
-                    )
+                    items: new OA\Items(ref: '#/components/schemas/MemberResource')
                 )
             ]
         )
@@ -202,7 +220,7 @@ class PlayerRegistrationController extends BaseController
     {
         $filters = $request->all();
         $members = $this->memberService->getAllMembers($filters);
-        return $this->successResponse($members, __('Members retrieved successfully'));
+        return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Members retrieved successfully'));
     }
 
     #[OA\Get(
@@ -223,6 +241,10 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'data', type: 'object', properties: [
                     new OA\Property(property: 'total_members', type: 'integer'),
                     new OA\Property(property: 'active_members', type: 'integer'),
+                    new OA\Property(property: 'total_subscribed_members', type: 'integer'),
+                    new OA\Property(property: 'new_members_this_month', type: 'integer'),
+                    new OA\Property(property: 'renewed_members_this_month', type: 'integer'),
+                    new OA\Property(property: 'expired_not_renewed_members', type: 'integer'),
                     new OA\Property(property: 'male_members', type: 'integer'),
                     new OA\Property(property: 'female_members', type: 'integer'),
                 ])
@@ -252,42 +274,7 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member retrieved successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'total_subscriptions_amount', type: 'number', format: 'float', example: 1500.00),
-                        new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 1000.00),
-                        new OA\Property(
-                            property: 'subscriptions',
-                            type: 'array',
-                            items: new OA\Items(
-                                type: 'object',
-                                properties: [
-                                    new OA\Property(property: 'id', type: 'integer', example: 1),
-                                    new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
-                                    new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 1000.00),
-                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: false),
-                                    new OA\Property(
-                                        property: 'items',
-                                        type: 'array',
-                                        items: new OA\Items(
-                                            type: 'object',
-                                            properties: [
-                                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                                new OA\Property(property: 'activity', type: 'object', properties: [
-                                                    new OA\Property(property: 'id', type: 'integer', example: 1),
-                                                    new OA\Property(property: 'name', type: 'string', example: 'سباحة')
-                                                ])
-                                            ]
-                                        )
-                                    )
-                                ]
-                            )
-                        )
-                    ]
-                )
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
             ]
         )
     )]
@@ -298,25 +285,57 @@ class PlayerRegistrationController extends BaseController
         if (!$member) {
             return response()->json(['message' => __('Member not found')], 404);
         }
-        return $this->successResponse($member, __('Member retrieved successfully'));
+        return $this->successResponse(new \Modules\MemberManager\Http\Resources\MemberResource($member), __('Member retrieved successfully'));
     }
 
     #[OA\Delete(
         path: '/v1/members/{id}',
-        summary: '🗑️ حذف عضو',
-        description: 'حذف عضو محدد من النظام.',
+        summary: '🗑️ حذف عضو (Soft Delete)',
+        description: 'حذف عضو محدد من النظام. يتطلب إرسال كلمة التأكيد "delete" ضمن جسم الطلب أو البارامتر.',
         tags: ['Member Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
     #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
-    public function destroy($id)
+    public function destroy(\Illuminate\Http\Request $request, $id)
     {
-        $deleted = $this->memberService->deleteMember($id);
-        if (!$deleted) {
-            return response()->json(['message' => __('Member not found or could not be deleted')], 404);
-        }
+        $confirmation = $request->input('confirmation', '');
+        $this->memberService->deleteMember((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Member deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/members/trashed',
+        summary: '🗑️ عرض الأعضاء المحذوفين (سلة المهملات)',
+        description: 'جلب قائمة بالأعضاء الذين تم حذفهم لاسترجاعهم أو المعاينة.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء المحذوفين بنجاح')]
+    public function trashed(\Illuminate\Http\Request $request)
+    {
+        $filters = $request->all();
+        $members = $this->memberService->getTrashedMembers($filters);
+        return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Trashed members retrieved successfully'));
+    }
+
+    #[OA\Post(
+        path: '/v1/members/{id}/restore',
+        summary: '♻️ استرجاع عضو محذوف',
+        description: 'استرجاع عضو من سلة المهملات وإعادة تفعيل حسابه وملفه الشخصي.',
+        tags: ['Member Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو المحذوف', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم استرجاع العضو بنجاح')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود بالسلة')]
+    public function restore($id)
+    {
+        $member = $this->memberService->restoreMember((int) $id);
+        return $this->successResponse(new \Modules\MemberManager\Http\Resources\MemberResource($member), __('Member restored successfully'));
     }
 }

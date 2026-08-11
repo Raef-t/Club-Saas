@@ -33,4 +33,16 @@ class EloquentFacilityRepository implements FacilityRepositoryInterface
         $facility = $this->find($id);
         return $facility->delete();
     }
+
+    public function getTrashed()
+    {
+        return Facility::onlyTrashed()->get();
+    }
+
+    public function restore($id)
+    {
+        $facility = Facility::onlyTrashed()->findOrFail($id);
+        $facility->restore();
+        return $facility;
+    }
 }

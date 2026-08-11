@@ -2,7 +2,9 @@
 
 namespace Modules\ClubManager\Services;
 
+use Modules\ClubManager\Models\Branch;
 use Modules\ClubManager\Repositories\BranchRepositoryInterface;
+use Modules\Core\Exceptions\CannotDeleteException;
 
 class BranchService
 {
@@ -45,12 +47,16 @@ class BranchService
         return $this->repository->update($id, $data);
     }
 
-    /**
-     * Delete a branch.
-     */
-    public function deleteBranch($id)
+    public function deleteBranch(int $id, string $confirmation = ''): void
     {
-        return $this->repository->delete($id);
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف هذا الفرع بالكامل مع كافة المشتركين والمدربين والأنشطة والاشتراكات المتعلقة به، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
+        }
+
+        $branch = Branch::findOrFail($id);
+        $branch->delete();
     }
 
     /**
@@ -64,6 +70,22 @@ class BranchService
     }
 
     /**
+     * Get all soft-deleted (trashed) branches.
+     */
+    public function getTrashed()
+    {
+        return $this->repository->getTrashed();
+    }
+
+    /**
+     * Restore a soft-deleted branch by ID.
+     */
+    public function restoreBranch($id)
+    {
+        return $this->repository->restore($id);
+    }
+
+    /**
      * Get statistics for branches.
      */
     public function getStats()
@@ -71,11 +93,11 @@ class BranchService
         $query = \Modules\ClubManager\Models\Branch::query();
 
         return [
-            'total_branches' => (clone $query)->count(),
+            'total_branches'  => (clone $query)->count(),
             'active_branches' => (clone $query)->where('is_active', true)->count(),
-            'male_branches' => (clone $query)->where('gender_restriction', 'male')->count(),
+            'male_branches'   => (clone $query)->where('gender_restriction', 'male')->count(),
             'female_branches' => (clone $query)->where('gender_restriction', 'female')->count(),
-            'mixed_branches' => (clone $query)->where('gender_restriction', 'mixed')->count(),
+            'mixed_branches'  => (clone $query)->where('gender_restriction', 'mixed')->count(),
         ];
     }
 }

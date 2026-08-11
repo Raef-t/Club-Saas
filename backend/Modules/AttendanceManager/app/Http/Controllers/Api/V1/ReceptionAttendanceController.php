@@ -5,6 +5,7 @@ namespace Modules\AttendanceManager\Http\Controllers\Api\V1;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\AttendanceManager\Models\Attendance;
 use Modules\AttendanceManager\Http\Resources\AttendanceResource;
@@ -37,20 +38,39 @@ class ReceptionAttendanceController extends BaseController
     public function memberSubscriptions(int $memberId)
     {
         try {
+            // 1. Fetch member's active lockers
+            $lockerSelectColumns = [
+                'lr.id as reservation_id',
+                'lr.locker_id',
+                'l.locker_number',
+                'l.branch_id',
+                'lr.start_date',
+                'lr.end_date',
+                'lr.price',
+            ];
+            if (Schema::hasColumn('lockers', 'key_number')) {
+                $lockerSelectColumns[] = 'l.key_number';
+            }
+
+            $activeLockers = DB::table('locker_reservations as lr')
+                ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
+                ->where('lr.member_id', $memberId)
+                ->where('lr.status', 'active')
+                ->select($lockerSelectColumns)
+                ->get();
+
             $subscriptions = DB::table('player_subscriptions as ps')
                 ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
                 ->where('ps.member_id', $memberId)
                 ->where('ps.status', 'active')
                 ->select(
-                    'ps.id',
+                    'ps.id as player_subscription_id',
                     'ps.member_id',
                     'ps.plan_id',
                     'sp.name as plan_name',
-                    'sp.type as plan_type',
                     'ps.start_date',
                     'ps.end_date',
                     'ps.status',
-                    'ps.remaining_sessions',
                     'ps.total_amount',
                     'ps.paid_amount',
                     'ps.remaining_amount',
@@ -64,27 +84,68 @@ class ReceptionAttendanceController extends BaseController
             }
 
             // Attach items (session breakdown per activity) for each subscription
-            $subscriptions->transform(function ($sub) {
+            $subscriptions->transform(function ($sub) use ($activeLockers) {
                 $sub->plan_name = json_decode($sub->plan_name, true) ?? $sub->plan_name;
 
-                $sub->items = DB::table('player_subscription_items as psi')
-                    ->leftJoin('activities as a', 'a.id', '=', 'psi.activity_id')
-                    ->where('psi.player_subscription_id', $sub->id)
+                // Fetch raw subscription items (no longer carry activity_id / coach_id)
+                $rawItems = DB::table('player_subscription_items as psi')
+                    ->where('psi.player_subscription_id', $sub->player_subscription_id)
+                    ->whereNull('psi.deleted_at')
                     ->select(
                         'psi.id',
-                        'psi.activity_id',
-                        'a.name as activity_name',
-                        'psi.coach_id',
                         'psi.sessions_allocated',
                         'psi.sessions_consumed',
                         'psi.is_unlimited',
                         DB::raw('(psi.sessions_allocated - psi.sessions_consumed) as sessions_remaining')
                     )
-                    ->get()
-                    ->map(function ($item) {
-                        $item->activity_name = json_decode($item->activity_name, true) ?? $item->activity_name;
-                        return $item;
-                    });
+                    ->get();
+
+                // Fetch activity & coach info from the subscription plan
+                $planActivities = DB::table('plan_activities as pa')
+                    ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
+                    ->join('activities as act', 'act.id', '=', 'sa.activity_id')
+                    ->leftJoin('staff as s', 's.id', '=', 'sa.staff_id')
+                    ->leftJoin('people as p', 'p.id', '=', 's.person_id')
+                    ->where('pa.plan_id', $sub->plan_id)
+                    ->whereNull('pa.deleted_at')
+                    ->select(
+                        'act.id as activity_id',
+                        'act.name as activity_name',
+                        's.id as coach_id',
+                        'p.full_name as coach_name',
+                        's.role as coach_role'
+                    )
+                    ->get();
+
+                // Merge items with activity/coach data from the plan
+                $sub->items = $rawItems->map(function ($item, $index) use ($planActivities) {
+                    $planActivity = $planActivities->get($index);
+
+                    $item->activity_id   = $planActivity->activity_id   ?? null;
+                    $item->activity_name = isset($planActivity->activity_name)
+                        ? (json_decode($planActivity->activity_name, true) ?? $planActivity->activity_name)
+                        : null;
+
+                    if (!empty($planActivity->coach_id)) {
+                        $item->coach = [
+                            'id'   => $planActivity->coach_id,
+                            'name' => $planActivity->coach_name,
+                            'role' => $planActivity->coach_role,
+                        ];
+                    } else {
+                        $item->coach = null;
+                    }
+
+                    return $item;
+                });
+
+                // 3. Calculate total sessions for the subscription
+                $sub->total_sessions_allocated = $sub->items->sum('sessions_allocated');
+                $sub->total_sessions_consumed = $sub->items->sum('sessions_consumed');
+                $sub->total_sessions_remaining = $sub->items->sum('sessions_remaining');
+
+                // Attach general active lockers
+                $sub->active_lockers = $activeLockers;
 
                 return $sub;
             });
@@ -96,283 +157,114 @@ class ReceptionAttendanceController extends BaseController
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  1.5 Assign Subscription and Deduct Session
+    //  1.5 Assign Subscriptions and Deduct Sessions
     // ──────────────────────────────────────────────────────────────────────────
 
     #[OA\Post(
         path: '/v1/reception/attendances/{attendanceId}/deduct',
-        summary: '💰 خصم جلسة من اشتراك محدد',
-        description: 'بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار الاشتراك وتأكيد الخصم عبر هذا المسار.',
+        summary: '💰 خصم جلسات من اشتراكات محددة',
+        description: 'بعد تسجيل حضور اللاعب (الذي يكون معلق الخصم)، يقوم موظف الاستقبال باختيار اشتراك واحد أو أكثر وتأكيد الخصم عبر هذا المسار. يتم خصم جلسة من كل اشتراك في المصفوفة بنفس المنطق.',
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
     #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['subscription_id'],
+        required: ['player_subscription_ids'],
         properties: [
-            new OA\Property(property: 'subscription_id', type: 'integer', example: 5, description: 'معرف الاشتراك المراد الخصم منه'),
+            new OA\Property(
+                property: 'player_subscription_ids',
+                type: 'array',
+                items: new OA\Items(type: 'integer'),
+                example: [5, 7],
+                description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم منها (يمكن إرسال اشتراك واحد أو أكثر)'
+            ),
         ]
     ))]
-    #[OA\Response(response: 200, description: '✅ تم خصم الجلسة بنجاح', content: new OA\JsonContent())]
+    #[OA\Response(response: 200, description: '✅ تم خصم الجلسات بنجاح', content: new OA\JsonContent())]
     #[OA\Response(response: 400, description: '❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)')]
-    public function deductSession(int $attendanceId, Request $request)
+    public function deductSession(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
         $request->validate([
-            'subscription_id' => 'required|integer'
+            'player_subscription_ids'   => 'required|array|min:1',
+            'player_subscription_ids.*' => 'required|integer',
         ]);
 
         try {
-            return DB::transaction(function () use ($attendanceId, $request) {
-                $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
+            $subscriptionIds = $request->input('player_subscription_ids');
+            $attendance = $sessionDeductionService->deductMultipleSessions($attendanceId, $subscriptionIds);
 
-                $metadata = $attendance->metadata ?? [];
-
-                if (isset($metadata['deduction_status']) && $metadata['deduction_status'] === 'completed') {
-                    return $this->errorResponse(__('Session already deducted for this attendance.'), 400);
-                }
-
-                $subscriptionId = $request->input('subscription_id');
-
-                $subscription = DB::table('player_subscriptions')
-                    ->where('id', $subscriptionId)
-                    ->where('member_id', $attendance->attendable_id)
-                    ->where('status', 'active')
-                    ->first();
-
-                if (!$subscription) {
-                    return $this->errorResponse(__('The selected subscription is not active or does not belong to this member.'), 400);
-                }
-
-                // Validate debt
-                if ($subscription->remaining_amount > 0) {
-                    $settings = DB::table('club_settings')->where('club_id', $attendance->club_id)->first();
-                    $allowedDebt = $settings->allowed_debt_limit ?? 0;
-                    $gracePeriod = $settings->grace_period_days  ?? 0;
-
-                    if ($subscription->remaining_amount > $allowedDebt) {
-                        return $this->errorResponse(__('Access denied: Outstanding debt exceeds the allowed limit.'), 400);
-                    }
-
-                    $startDate = \Carbon\Carbon::parse($subscription->start_date);
-                    if (now()->diffInDays($startDate) > $gracePeriod) {
-                        return $this->errorResponse(__('Access denied: Grace period for payment has expired.'), 400);
-                    }
-                }
-
-                // Validate remaining sessions in items
-                $items = DB::table('player_subscription_items')
-                    ->where('player_subscription_id', $subscription->id)
-                    ->where('is_unlimited', false)
-                    ->get();
-
-                if ($items->isNotEmpty()) {
-                    $hasAvailable = $items->contains(
-                        fn($item) => $item->sessions_consumed < $item->sessions_allocated
-                    );
-
-                    if (!$hasAvailable) {
-                        return $this->errorResponse(__('No remaining sessions in the selected subscription.'), 400);
-                    }
-                }
-
-                // Decrement sessions_consumed in player_subscription_items ONLY
-                foreach ($items as $item) {
-                    if ($item->sessions_consumed < $item->sessions_allocated) {
-                        DB::table('player_subscription_items')
-                            ->where('id', $item->id)
-                            ->increment('sessions_consumed');
-                        break;
-                    }
-                }
-
-                // Update Attendance Record
-                $metadata['subscription_id'] = $subscription->id;
-                $metadata['deduction_status'] = 'completed';
-                $metadata['sessions_before_checkin'] = $subscription->remaining_sessions;
-                $metadata['deducted_by_staff_id'] = \Illuminate\Support\Facades\Auth::id();
-
-                $attendance->update([
-                    'metadata' => $metadata
-                ]);
-
-                return $this->successResponse(new AttendanceResource($attendance), __('Session deducted successfully.'));
-            });
-        } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
-    }
-
-
-    // ──────────────────────────────────────────────────────────────────────────
-    //  2. Lockers in Branch (with full holder state)
-    // ──────────────────────────────────────────────────────────────────────────
-
-    #[OA\Get(
-        path: '/v1/reception/lockers',
-        summary: '🔑 خزائن الفرع مع حالة كل مفتاح',
-        description: "يعرض جميع خزائن الفرع مع حالتها الكاملة:\n- **available**: المفتاح في الاستقبال\n- **with_member**: عضو مسجّل يحمله\n- **with_staff**: موظف/كوتش يحمله\n- **with_guest**: ضيف غير مسجّل يحمله\n\nيُعرض أيضاً اسم الحامل ووقت التخصيص.",
-        tags: ['Reception'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(name: 'branch_id', in: 'query', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Parameter(name: 'available_only', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['true', 'false', 'all'], default: 'false'))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الخزائن', content: new OA\JsonContent())]
-    public function availableLockers(Request $request)
-    {
-        $request->validate([
-            'branch_id'      => ['required', 'integer'],
-            'available_only' => ['nullable', 'string', 'in:true,false,all,1,0'],
-        ]);
-
-        try {
-            $query = DB::table('lockers')
-                ->where('branch_id', $request->input('branch_id'))
-                ->whereNull('deleted_at')
-                ->select(
-                    'id',
-                    'locker_number',
-                    'status',
-                    'holder_id',
-                    'holder_type',
-                    'holder_name',
-                    'assigned_at'
-                )
-                ->orderBy('locker_number');
-
-            $availableOnly = $request->input('available_only');
-            if ($availableOnly === 'true' || $availableOnly === '1' || $availableOnly === true || $availableOnly === 1) {
-                $query->where('status', 'available');
-            }
-
-            $lockers = $query->get();
-
-            return $this->successResponse($lockers, __('Lockers retrieved successfully'));
-        } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
-    }
-
-
-
-    // ──────────────────────────────────────────────────────────────────────────
-    //  5. Update Locker Holder (change who holds the key at any time)
-    // ──────────────────────────────────────────────────────────────────────────
-
-    #[OA\Patch(
-        path: '/v1/lockers/{lockerId}/holder',
-        summary: '🔄 تغيير حامل المفتاح',
-        description: "يتيح تغيير مَن يحمل المفتاح في أي وقت بدون الحاجة لعمل check-out.\n\nالاستخدامات:\n- تحويل المفتاح من عضو لآخر\n- منح كوتش خزانة ثابتة\n- تسجيل ضيف حمل المفتاح يدوياً",
-        tags: ['Reception'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Parameter(name: 'lockerId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['holder_type', 'holder_name'],
-        properties: [
-            new OA\Property(property: 'holder_type', type: 'string', enum: ['member', 'staff', 'guest'], example: 'staff'),
-            new OA\Property(property: 'holder_id', type: 'integer', nullable: true, example: 7, description: 'ID العضو أو الموظف – مطلوب إذا holder_type ≠ guest'),
-            new OA\Property(property: 'holder_name', type: 'string', example: 'المدرب خالد'),
-        ]
-    ))]
-    #[OA\Response(response: 200, description: '✅ تم تحديث حامل المفتاح', content: new OA\JsonContent())]
-    #[OA\Response(response: 404, description: '❌ الخزانة غير موجودة')]
-    #[OA\Response(response: 422, description: '⚠️ بيانات غير صالحة')]
-    public function updateLockerHolder(int $lockerId, UpdateLockerHolderRequest $request)
-    {
-        try {
-            return DB::transaction(function () use ($lockerId, $request) {
-
-                $locker = DB::table('lockers')
-                    ->where('id', $lockerId)
-                    ->whereNull('deleted_at')
-                    ->first();
-
-                if (!$locker) {
-                    return $this->errorResponse(__('Locker not found.'), 404);
-                }
-
-                $holderType = $request->input('holder_type');
-                $holderId   = $request->input('holder_id');
-                $holderName = $request->input('holder_name');
-
-                // Map holder_type to status
-                $statusMap = [
-                    'member' => 'with_member',
-                    'staff'  => 'with_staff',
-                    'guest'  => 'with_guest',
-                ];
-
-                $newStatus = $statusMap[$holderType];
-
-                DB::table('lockers')->where('id', $lockerId)->update([
-                    'status'      => $newStatus,
-                    'holder_id'   => $holderType !== 'guest' ? $holderId : null,
-                    'holder_type' => $holderType,
-                    'holder_name' => $holderName,
-                    'assigned_at' => $locker->assigned_at ?? now(), // keep original if already assigned
-                    'updated_at'  => now(),
-                ]);
-
-                $updatedLocker = DB::table('lockers')->where('id', $lockerId)->first();
-
-                return $this->successResponse(
-                    $updatedLocker,
-                    __('Locker holder updated successfully.')
-                );
-            });
+            return $this->successResponse(new AttendanceResource($attendance), __('Sessions deducted successfully.'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  6. Free Locker (direct release – no attendance record needed)
+    //  2. Rollback Attendance (Full or Partial)
     // ──────────────────────────────────────────────────────────────────────────
 
     #[OA\Delete(
-        path: '/v1/lockers/{lockerId}/holder',
-        summary: '🔓 إلغاء تخصيص الخزانة مباشرة',
-        description: "يُحرِّر الخزانة ويجعلها متاحة فوراً بغض النظر عن سجل الحضور.\n\nمفيد في حالات:\n- إلغاء خزانة مخصصة لكوتش/موظف بشكل دائم\n- تحرير خزانة يدوياً من لوحة الاستقبال\n- تصحيح تخصيص خاطئ",
+        path: '/v1/reception/attendances/{attendanceId}/rollback',
+        summary: '↩️ إلغاء الحضور وإرجاع الجلسة (كلي أو جزئي)',
+        description: <<<'DESC'
+يتيح هذا المسار لموظف الاستقبال التراجع عن تسجيل حضور عضو أو موظف.
+
+**السلوك:**
+- **حضور الموظف (Staff):**
+  - يتم حذف سجل حضور الموظف بالكامل (عند عدم إرسال `player_subscription_ids`).
+- **حضور العضو (Member):**
+  - **بدون body (أو مصفوفة فارغة):** يتم إرجاع **جميع** الخصومات المسجّلة وحذف سجل الحضور بالكامل.
+  - **مع `player_subscription_ids`:** يتم إرجاع الخصم **فقط** للاشتراكات المحددة.
+    - إذا بقي خصم آخر في سجل الحضور → يُبقى سجل الحضور ويُحدَّث.
+    - إذا لم يبقَ أي خصم → يُحذف سجل الحضور تلقائياً.
+DESC,
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'lockerId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Response(response: 200, description: '✅ تم تحرير الخزانة', content: new OA\JsonContent())]
-    #[OA\Response(response: 404, description: '❌ الخزانة غير موجودة')]
-    #[OA\Response(response: 409, description: '⚠️ الخزانة متاحة بالفعل')]
-    public function freeLocker(int $lockerId)
+    #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(
+                    property: 'player_subscription_ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer'),
+                    nullable: true,
+                    example: [7],
+                    description: <<<'DESC'
+(اختياري) مصفوفة معرّفات اشتراكات اللاعب المراد إرجاع خصمها فقط.
+- إذا أُرسلت → Partial Rollback: يُرجع فقط الخصومات المحددة.
+- إذا لم تُرسل → Full Rollback: يُرجع كل الخصومات ويحذف سجل الحضور.
+DESC
+                ),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم إرجاع الخصم بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Attendance rolled back and session returned successfully.'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ خطأ: الاشتراك غير موجود في سجل الخصومات أو لا يمكن إلغاء الحضور')]
+    public function rollbackAttendance(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
+        $request->validate([
+            'player_subscription_ids'   => 'sometimes|nullable|array|min:1',
+            'player_subscription_ids.*' => 'integer',
+        ]);
+
         try {
-            $locker = DB::table('lockers')
-                ->where('id', $lockerId)
-                ->whereNull('deleted_at')
-                ->first();
-
-            if (!$locker) {
-                return $this->errorResponse(__('Locker not found.'), 404);
-            }
-
-            if ($locker->status === 'available') {
-                return $this->errorResponse(__('Locker is already available.'), 409);
-            }
-
-            DB::table('lockers')->where('id', $lockerId)->update([
-                'status'      => 'available',
-                'holder_id'   => null,
-                'holder_type' => null,
-                'holder_name' => null,
-                'assigned_at' => null,
-                'updated_at'  => now(),
-            ]);
-
-            $freed = DB::table('lockers')->where('id', $lockerId)->first();
-
-            return $this->successResponse(
-                $freed,
-                __('Locker :number is now available.', ['number' => $locker->locker_number])
-            );
+            $subscriptionIds = $request->input('player_subscription_ids', []);
+            $sessionDeductionService->rollbackDeduction($attendanceId, $subscriptionIds);
+            return $this->successResponse(null, __('Attendance rolled back and session returned successfully.'));
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
     }
+
 }

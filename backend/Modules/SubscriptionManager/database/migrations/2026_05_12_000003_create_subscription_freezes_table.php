@@ -13,7 +13,7 @@ return new class extends Migration
 
             $table->unsignedBigInteger('player_subscription_id');
             $table->date('freeze_start_date');
-            $table->date('freeze_end_date');
+            $table->date('freeze_end_date')->nullable();
             $table->text('reason')->nullable();
             $table->timestamps();
 

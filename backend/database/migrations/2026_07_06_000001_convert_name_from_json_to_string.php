@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $tables = [
             'subscription_plans' => 150,
             'activities'         => 150,
@@ -65,6 +69,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // التراجع: إعادة العمود إلى JSON (البيانات ستبقى نصاً عادياً)
         DB::statement('ALTER TABLE `subscription_plans` MODIFY COLUMN `name` JSON NOT NULL');
         DB::statement('ALTER TABLE `activities` MODIFY COLUMN `name` JSON NOT NULL');

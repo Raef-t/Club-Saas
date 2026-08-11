@@ -4,10 +4,11 @@ namespace Modules\Authentication\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Person extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'people';
 
@@ -56,6 +57,26 @@ class Person extends Model
     }
 
     /**
+     * Get dynamic age calculated from dob if present, otherwise return age column.
+     */
+    public function getAgeAttribute($value)
+    {
+        if (!empty($this->attributes['dob'])) {
+            return \Carbon\Carbon::parse($this->attributes['dob'])->age;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the person's full name using camelCase property (fullName).
+     */
+    public function getFullNameAttribute()
+    {
+        return $this->attributes['full_name'] ?? null;
+    }
+
+    /**
      * Prepare photo_url for frontend by prepending storage/
      */
     public function getPhotoUrlAttribute($value)
@@ -70,5 +91,15 @@ class Person extends Model
     public function wallet()
     {
         return $this->hasOne(\Modules\WalletManager\Models\Wallet::class, 'person_id');
+    }
+
+    public function member()
+    {
+        return $this->hasOne(\Modules\MemberManager\Models\Member::class, 'person_id');
+    }
+
+    public function staff()
+    {
+        return $this->hasOne(\Modules\StaffManager\Models\Staff::class, 'person_id');
     }
 }

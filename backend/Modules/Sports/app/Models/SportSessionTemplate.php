@@ -9,18 +9,15 @@ class SportSessionTemplate extends Model
 {
     use SoftDeletes;
 
+
     protected $table = 'sport_session_templates';
 
     protected $fillable = [
-        'branch_id',
-        'activity_id',
-        'staff_id',
+        'plan_id',
         'facility_id',
         'day_of_week',
         'start_time',
         'end_time',
-        'max_players',
-        'gender_allowed',
         'is_active',
     ];
 
@@ -28,32 +25,40 @@ class SportSessionTemplate extends Model
         'day_of_week' => 'integer',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
-        'max_players' => 'integer',
         'is_active' => 'boolean',
     ];
 
-    // --- Same-module relationships ---
-
-    public function activity()
+    protected static function booted()
     {
-        return $this->belongsTo(Activity::class);
+        static::deleted(function ($template) {
+            $template->exceptions()->delete();
+        });
     }
 
     // --- Cross-module data resolved via DTOs in Service layer ---
+    public ?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan = null;
 
-    public ?\Modules\Core\DTOs\BranchDTO $branch = null;
-    public ?\Modules\Core\DTOs\StaffDTO $staff = null;
+    public function exceptions()
+    {
+        return $this->hasMany(SessionException::class, 'sport_session_template_id');
+    }
+
 
     /**
      * Scopes
      */
-    public function scopeActive($query)
+    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query)
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeForBranch($query, int $branchId)
+    public function subscriptionPlan()
     {
-        return $query->where('branch_id', $branchId);
+        return $this->belongsTo(\Modules\SubscriptionManager\Models\SubscriptionPlan::class, 'plan_id');
+    }
+
+    public function facility()
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Facility::class, 'facility_id');
     }
 }

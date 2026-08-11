@@ -33,6 +33,7 @@ class AddPlayerMeasurementRequest extends FormRequest
             'left_bicep' => 'nullable|numeric|min:5|max:100',
             'arm_circumference' => 'nullable|numeric|min:5|max:100',
             'activity_level' => 'nullable|string|max:100',
+            'physical_activity_level' => 'nullable|in:sedentary,light,medium,high,extreme',
         ];
     }
 }

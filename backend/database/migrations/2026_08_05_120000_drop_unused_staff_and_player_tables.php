@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::dropIfExists('coach_certifications');
+        Schema::dropIfExists('player_unavailabilities');
+        Schema::dropIfExists('staff_leaves');
+        Schema::dropIfExists('staff_unavailabilities');
+        Schema::dropIfExists('staff_working_hours');
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // Drop-only cleanup migration
+    }
+};

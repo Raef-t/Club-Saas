@@ -15,7 +15,6 @@ class FreezeSubscriptionRequest extends FormRequest
     {
         return [
             'freeze_start_date' => 'required|date',
-            'freeze_end_date' => 'required|date|after:freeze_start_date',
             'reason' => 'nullable|string|max:500',
         ];
     }

@@ -3,9 +3,11 @@
 namespace Modules\Sports\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StaffCommissionRule extends Model
 {
+    use SoftDeletes;
     protected $table = 'staff_commission_rules';
 
     protected $fillable = [
