@@ -26,39 +26,49 @@ class Member extends Model
 
     protected static function booted(): void
     {
+        static::saved(function ($member) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
+            }
+        });
+
         static::deleted(function ($member) {
-            if ($member->isForceDeleting()) {
-                return;
-            }
-
-            // Soft-delete linked Person & User
-            if ($member->person) {
-                if ($member->person->user) {
-                    $member->person->user->delete();
+            if (method_exists($member, 'isForceDeleting') && $member->isForceDeleting()) {
+                $member->person()->withTrashed()->first()?->forceDelete();
+            } else {
+                // Soft-delete linked Person & User
+                if ($member->person) {
+                    if ($member->person->user) {
+                        $member->person->user->delete();
+                    }
+                    $member->person->delete();
                 }
-                $member->person->delete();
+
+                // Soft-delete active Subscriptions & Locker Reservations
+                $member->subscriptions()->get()->each(function ($sub) {
+                    $sub->freezes()->delete();
+                    $sub->items()->delete();
+                    $sub->delete();
+                });
+
+                \Modules\SubscriptionManager\Models\LockerReservation::where('member_id', $member->id)->delete();
+
+                // Soft-delete Health Profile & Measurements
+                if ($member->healthProfile) {
+                    $member->healthProfile->delete();
+                }
+                $member->measurements()->delete();
+
+                // Soft-delete Attendance logs
+                if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                    \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
+                        ->where('attendable_id', $member->id)
+                        ->delete();
+                }
             }
 
-            // Soft-delete active Subscriptions & Locker Reservations
-            $member->subscriptions()->get()->each(function ($sub) {
-                $sub->freezes()->delete();
-                $sub->items()->delete();
-                $sub->delete();
-            });
-
-            \Modules\SubscriptionManager\Models\LockerReservation::where('member_id', $member->id)->delete();
-
-            // Soft-delete Health Profile & Measurements
-            if ($member->healthProfile) {
-                $member->healthProfile->delete();
-            }
-            $member->measurements()->delete();
-
-            // Soft-delete Attendance logs
-            if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
-                \Modules\AttendanceManager\Models\Attendance::where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
-                    ->where('attendable_id', $member->id)
-                    ->delete();
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
             }
         });
 
@@ -105,6 +115,10 @@ class Member extends Model
                     ->where('attendable_type', 'Modules\\MemberManager\\Models\\Member')
                     ->where('attendable_id', $member->id)
                     ->restore();
+            }
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
             }
         });
     }
@@ -154,38 +168,6 @@ class Member extends Model
     public function lockerReservations()
     {
         return $this->hasMany(\Modules\SubscriptionManager\Models\LockerReservation::class, 'member_id');
-    }
-
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted(): void
-    {
-        static::saved(function ($member) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
-            }
-        });
-
-        static::deleted(function ($member) {
-            if (method_exists($member, 'isForceDeleting') && $member->isForceDeleting()) {
-                $member->person()->withTrashed()->first()?->forceDelete();
-            } else {
-                $member->person?->delete();
-            }
-
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
-            }
-        });
-
-        static::restored(function ($member) {
-            $member->person()->onlyTrashed()->first()?->restore();
-
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($member->branch_id);
-            }
-        });
     }
 
     /**
