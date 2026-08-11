@@ -15,7 +15,7 @@ export const USER_ROLE_LABELS = {
   player: "لاعب",
 };
 
-export const USER_ROLE_TAB_LABELS = {
+const USER_ROLE_TAB_LABELS = {
   super_admin: "مديرو النظام",
   admin: "المشرفون",
   management_admin: "المدراء الإداريون",
