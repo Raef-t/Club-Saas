@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import {

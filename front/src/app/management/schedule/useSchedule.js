@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo } from "react";
 import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
 import { useGetBranchHolidaysQuery, useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
