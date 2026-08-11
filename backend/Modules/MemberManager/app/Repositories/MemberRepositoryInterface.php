@@ -13,4 +13,5 @@ interface MemberRepositoryInterface
     public function findByBarcode($barcode);
     public function getTrashed(array $filters = []);
     public function restore(int $id);
+    public function findByPersonId(int $personId);
 }

@@ -94,6 +94,13 @@ class RenewalReportService
         $totalLostRevenue = 0.0;
         $totalRenewedRevenue = 0.0;
 
+        $memberIds = $allSubscriptions->pluck('member_id')->filter()->unique();
+        $nextSubscriptionsGrouped = PlayerSubscription::whereIn('member_id', $memberIds)
+            ->with(['plan'])
+            ->orderBy('start_date', 'asc')
+            ->get()
+            ->groupBy('member_id');
+
         foreach ($allSubscriptions as $sub) {
             $member = $sub->member;
             if (!$member) {
@@ -102,17 +109,19 @@ class RenewalReportService
 
             $endDateCopy = $sub->end_date ? $sub->end_date->copy()->subDays(7) : null;
 
-            $nextSubscription = PlayerSubscription::where('member_id', $sub->member_id)
-                ->where('id', '!=', $sub->id)
-                ->where(function ($q) use ($sub, $endDateCopy) {
-                    $q->where('id', '>', $sub->id);
-                    if ($endDateCopy) {
-                        $q->orWhere('start_date', '>=', $endDateCopy);
-                    }
-                })
-                ->with(['plan'])
-                ->orderBy('start_date', 'asc')
-                ->first();
+            $memberSubs = $nextSubscriptionsGrouped->get($sub->member_id, collect());
+            $nextSubscription = $memberSubs->first(function ($item) use ($sub, $endDateCopy) {
+                if ($item->id === $sub->id) {
+                    return false;
+                }
+                if ($item->id > $sub->id) {
+                    return true;
+                }
+                if ($endDateCopy && $item->start_date && $item->start_date >= $endDateCopy) {
+                    return true;
+                }
+                return false;
+            });
 
             $isRenewed = !is_null($nextSubscription);
 

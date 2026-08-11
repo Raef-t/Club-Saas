@@ -116,6 +116,8 @@ class SessionDeductionService
     {
         return DB::transaction(function () use ($attendanceId, $subscriptionIds) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
+            $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
+            $clubId = $branch ? $branch->club_id : 1;
 
             foreach ($subscriptionIds as $subscriptionId) {
                 $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
@@ -136,8 +138,7 @@ class SessionDeductionService
                     throw new Exception(__('The selected subscription (ID: :id) is not active or does not belong to this member.', ['id' => $subscriptionId]));
                 }
 
-                $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
-                $this->validateDebt($subscription, $branch ? $branch->club_id : 1);
+                $this->validateDebt($subscription, $clubId);
 
                 $items = DB::table('player_subscription_items')
                     ->where('player_subscription_id', $subscription->id)
