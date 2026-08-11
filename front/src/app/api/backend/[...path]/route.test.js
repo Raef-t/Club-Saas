@@ -14,8 +14,9 @@ describe("backend proxy streaming", () => {
     vi.unstubAllEnvs();
   });
 
-  it("temporarily forwards to a remote HTTP backend outside production", async () => {
+  it("temporarily forwards login to a remote HTTP backend in production", async () => {
     vi.stubEnv("API_BASE_URL", "http://203.0.113.10");
+    vi.stubEnv("NODE_ENV", "production");
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       Response.json({
         status: "success",

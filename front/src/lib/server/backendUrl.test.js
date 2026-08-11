@@ -5,27 +5,15 @@ import { resolveBackendBaseUrl } from "./backendUrl";
 
 describe("backend URL transport policy", () => {
   it("accepts HTTPS backends", () => {
-    expect(resolveBackendBaseUrl("https://api.example.com", { nodeEnv: "production" }).origin).toBe(
-      "https://api.example.com",
-    );
+    expect(resolveBackendBaseUrl("https://api.example.com").origin).toBe("https://api.example.com");
   });
 
-  it("temporarily accepts remote HTTP backends in development only", () => {
-    expect(resolveBackendBaseUrl("http://203.0.113.10", { nodeEnv: "development" }).origin).toBe(
-      "http://203.0.113.10",
-    );
-    expect(() =>
-      resolveBackendBaseUrl("http://api.example.com", { nodeEnv: "production" }),
-    ).toThrow("must use HTTPS");
+  it("temporarily accepts remote HTTP backends", () => {
+    expect(resolveBackendBaseUrl("http://203.0.113.10").origin).toBe("http://203.0.113.10");
   });
 
-  it("allows loopback HTTP only outside production", () => {
-    expect(resolveBackendBaseUrl("http://localhost:8000", { nodeEnv: "development" }).port).toBe(
-      "8000",
-    );
-    expect(() => resolveBackendBaseUrl("http://localhost:8000", { nodeEnv: "production" })).toThrow(
-      "must use HTTPS",
-    );
+  it("rejects non-HTTP protocols", () => {
+    expect(() => resolveBackendBaseUrl("ftp://api.example.com")).toThrow("must use HTTP or HTTPS");
   });
 
   it("rejects URLs containing credentials", () => {
