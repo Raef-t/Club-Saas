@@ -15,7 +15,7 @@ class OfferService
     public function getAllOffers(array $filters = [])
     {
         $query = Offer::with(['plans' => function($q) {
-            $q->where('is_active', true);
+            $q->active();
         }]);
 
         if (isset($filters['branch_id'])) {

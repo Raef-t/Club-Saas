@@ -156,11 +156,18 @@ class SubscriptionService
 
             // 5. Create Subscription Items (one item per plan activity)
             // Activity & coach info is now derived from subscription_plan → plan_activities → staff_activity
-            foreach ($plan->planActivities as $planActivity) {
-                $sessionsAllocated = !is_null($plan->session_count)
-                    ? ($plan->session_count * $monthsCount)
-                    : null;
+            $sessionsAllocated = !is_null($plan->session_count)
+                ? ($plan->session_count * $monthsCount)
+                : null;
 
+            if ($plan->planActivities->isNotEmpty()) {
+                foreach ($plan->planActivities as $planActivity) {
+                    $subscription->items()->create([
+                        'sessions_allocated' => $sessionsAllocated,
+                        'is_unlimited' => is_null($plan->session_count),
+                    ]);
+                }
+            } else {
                 $subscription->items()->create([
                     'sessions_allocated' => $sessionsAllocated,
                     'is_unlimited' => is_null($plan->session_count),
@@ -686,11 +693,18 @@ class SubscriptionService
                 ]);
 
                 // One item per plan activity; activity & coach derived from plan_activities → staff_activity
-                foreach ($plan->planActivities as $planActivity) {
-                    $sessionsAllocated = !is_null($plan->session_count)
-                        ? ($plan->session_count * $monthsCount)
-                        : null;
+                $sessionsAllocated = !is_null($plan->session_count)
+                    ? ($plan->session_count * $monthsCount)
+                    : null;
 
+                if ($plan->planActivities->isNotEmpty()) {
+                    foreach ($plan->planActivities as $planActivity) {
+                        $subscription->items()->create([
+                            'sessions_allocated' => $sessionsAllocated,
+                            'is_unlimited' => is_null($plan->session_count),
+                        ]);
+                    }
+                } else {
                     $subscription->items()->create([
                         'sessions_allocated' => $sessionsAllocated,
                         'is_unlimited' => is_null($plan->session_count),
@@ -741,6 +755,16 @@ class SubscriptionService
 
                 event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
+
+            $createdSubscriptions->each(function ($subscription) {
+                $subscription->load([
+                    'plan.planActivities.staffActivity.activity',
+                    'plan.planActivities.staffActivity.staff.person',
+                    'items'
+                ]);
+            });
+
+            $invoice->load('payments');
 
             return [
                 'invoice' => $invoice,

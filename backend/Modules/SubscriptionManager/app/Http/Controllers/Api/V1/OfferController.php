@@ -9,6 +9,8 @@ use Modules\SubscriptionManager\Http\Requests\StoreOfferRequest;
 use Modules\SubscriptionManager\Http\Requests\UpdateOfferRequest;
 use Modules\SubscriptionManager\Http\Requests\SubscribeOfferRequest;
 use Modules\SubscriptionManager\Http\Resources\OfferResource;
+use Modules\SubscriptionManager\Http\Resources\InvoiceResource;
+use Modules\SubscriptionManager\Http\Resources\PlayerSubscriptionResource;
 use Modules\SubscriptionManager\Services\SubscriptionService;
 use Modules\SubscriptionManager\Services\OfferService;
 use Exception;
@@ -388,7 +390,10 @@ class OfferController extends BaseController
             );
 
             return $this->successResponse(
-                $invoicesAndSubscriptions, // Can format with resource if needed
+                [
+                    'invoice' => new InvoiceResource($invoicesAndSubscriptions['invoice']),
+                    'subscriptions' => PlayerSubscriptionResource::collection($invoicesAndSubscriptions['subscriptions']),
+                ],
                 __('Member subscribed to offer successfully'),
                 201
             );
