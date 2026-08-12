@@ -37,8 +37,9 @@ class LockerService
             'locker_reservations.start_date',
             'locker_reservations.end_date',
             'locker_reservations.price',
-            DB::raw('COALESCE(m_person.full_name, s_person.full_name) as holder_name'),
-            DB::raw('COALESCE(m_person.id, s_person.id) as holder_person_id'),
+            DB::raw('COALESCE(m_person.full_name, s_person.full_name, direct_person.full_name) as holder_name'),
+            DB::raw('COALESCE(m_person.id, s_person.id, direct_person.id) as holder_person_id'),
+            DB::raw('COALESCE(staff.id, staff_by_person.id, locker_reservations.staff_id) as resolved_staff_id'),
         ];
         if (Schema::hasColumn('lockers', 'key_number')) {
             $columns[] = 'lockers.key_number';
@@ -52,7 +53,12 @@ class LockerService
             ->leftJoin('members', 'locker_reservations.member_id', '=', 'members.id')
             ->leftJoin('people as m_person', 'members.person_id', '=', 'm_person.id')
             ->leftJoin('staff', 'locker_reservations.staff_id', '=', 'staff.id')
-            ->leftJoin('people as s_person', 'staff.person_id', '=', 's_person.id')
+            ->leftJoin('staff as staff_by_person', 'locker_reservations.staff_id', '=', 'staff_by_person.person_id')
+            ->leftJoin('people as s_person', function($join) {
+                $join->on('staff.person_id', '=', 's_person.id')
+                     ->orOn('staff_by_person.person_id', '=', 's_person.id');
+            })
+            ->leftJoin('people as direct_person', 'locker_reservations.staff_id', '=', 'direct_person.id')
             ->select($columns)
             ->orderBy('lockers.locker_number');
 
@@ -200,11 +206,20 @@ class LockerService
                 $invoiceId = $invoice->id;
             }
 
+            $staffId = null;
+            if (in_array($data['holder_type'] ?? '', ['staff', 'coach']) && !empty($data['holder_id'])) {
+                $staffRecord = DB::table('staff')->where('id', $data['holder_id'])->first();
+                if (!$staffRecord) {
+                    $staffRecord = DB::table('staff')->where('person_id', $data['holder_id'])->first();
+                }
+                $staffId = $staffRecord?->id ?? $data['holder_id'];
+            }
+
             // Create reservation
             $reservationId = DB::table('locker_reservations')->insertGetId([
                 'locker_id' => $lockerId,
                 'member_id' => ($data['holder_type'] ?? '') === 'member' ? $data['holder_id'] : null,
-                'staff_id' => ($data['holder_type'] ?? '') === 'staff' ? $data['holder_id'] : null,
+                'staff_id' => $staffId,
                 'invoice_id' => $invoiceId,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
@@ -305,10 +320,18 @@ class LockerService
             }
 
             $holderType = $data['holder_type'];
+            $staffId = null;
+            if (in_array($holderType, ['staff', 'coach']) && !empty($data['holder_id'])) {
+                $staffRecord = DB::table('staff')->where('id', $data['holder_id'])->first();
+                if (!$staffRecord) {
+                    $staffRecord = DB::table('staff')->where('person_id', $data['holder_id'])->first();
+                }
+                $staffId = $staffRecord?->id ?? $data['holder_id'];
+            }
             
             DB::table('locker_reservations')->where('id', $reservationId)->update([
                 'member_id' => $holderType === 'member' ? $data['holder_id'] : null,
-                'staff_id' => $holderType === 'staff' ? $data['holder_id'] : null,
+                'staff_id' => $staffId,
                 'updated_at' => now(),
             ]);
 
@@ -339,7 +362,7 @@ class LockerService
             ->where(function($query) use ($holderType, $holderId) {
                 if ($holderType === 'member') {
                     $query->where('locker_reservations.member_id', $holderId);
-                } elseif ($holderType === 'staff') {
+                } elseif ($holderType === 'staff' || $holderType === 'coach') {
                     $query->where('locker_reservations.staff_id', $holderId);
                 }
             })
@@ -384,7 +407,8 @@ class LockerService
             'available_lockers_count'   => (clone $baseQuery)->where('status', 'available')->count(),
             'unavailable_lockers_count' => (clone $baseQuery)->where('status', '!=', 'available')->count(),
             'assigned_to_member_count'  => (clone $baseQuery)->where('status', 'with_member')->count(),
-            'assigned_to_coach_count'   => (clone $baseQuery)->where('status', 'with_staff')->count(),
+            'assigned_to_staff_count'   => (clone $baseQuery)->where('status', 'with_staff')->count(),
+            'assigned_to_coach_count'   => (clone $baseQuery)->where('status', 'with_coach')->count(),
             'rented_lockers_count'      => $rentedQuery->distinct('lr.locker_id')->count('lr.locker_id'),
         ];
     }
