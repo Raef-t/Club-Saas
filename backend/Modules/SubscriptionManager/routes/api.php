@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanController;
+use Modules\SubscriptionManager\Http\Controllers\Api\V1\SubscriptionPlanSuspensionController;
 
 
 use Modules\SubscriptionManager\Http\Controllers\Api\V1\PlayerSubscriptionController;
@@ -33,7 +34,13 @@ Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(fun
     Route::get('subscription-plans/registration', [SubscriptionPlanController::class, 'registrationPlans']);
     Route::get('subscription-plans/{id}/players', [SubscriptionPlanController::class, 'players']);
     Route::get('subscription-plans/{id}/delete-check', [SubscriptionPlanController::class, 'deleteCheck']);
-    Route::post('subscription-plans/{id}/restore', [SubscriptionPlanController::class, 'restore']);
+
+    // Subscription Plan Suspensions (Coach apology / temporary suspension)
+    Route::post('subscription-plans/{id}/suspensions/preview', [SubscriptionPlanSuspensionController::class, 'preview']);
+    Route::post('subscription-plans/{id}/suspend', [SubscriptionPlanSuspensionController::class, 'suspend']);
+    Route::get('subscription-plans/{id}/suspensions', [SubscriptionPlanSuspensionController::class, 'index']);
+    Route::delete('subscription-plans/{id}/suspensions/{suspensionId}', [SubscriptionPlanSuspensionController::class, 'destroy']);
+
     Route::apiResource('subscription-plans', SubscriptionPlanController::class);
 
     // Offers CRUD & Actions

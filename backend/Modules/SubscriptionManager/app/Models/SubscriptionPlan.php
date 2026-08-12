@@ -118,4 +118,9 @@ class SubscriptionPlan extends Model
     {
         return $this->hasMany(PlayerSubscription::class, 'plan_id');
     }
+
+    public function suspensions()
+    {
+        return $this->hasMany(SubscriptionPlanSuspension::class, 'plan_id');
+    }
 }

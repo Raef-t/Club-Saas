@@ -22609,6 +22609,288 @@
                 ]
             }
         },
+        "/v1/subscription-plans/{id}/suspensions/preview": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Suspensions"
+                ],
+                "summary": "🔍 معاينة المتأثرين وتمديد الأيام قبل إيقاف الفعالية",
+                "description": "استرجاع تقرير تفصيلي باللاعبين المتأثرين، أيام التمديد المحسوبة لكل لاعب، والجلسات التي سيتم إلغاؤها.",
+                "operationId": "be89fb5593f1e1d24f37aa20d3f3a232",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفعالية (Subscription Plan ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "suspend_start_date",
+                                    "suspend_end_date"
+                                ],
+                                "properties": {
+                                    "suspend_start_date": {
+                                        "description": "تاريخ بداية الإيقاف",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-15"
+                                    },
+                                    "suspend_end_date": {
+                                        "description": "تاريخ نهاية الإيقاف",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-22"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تقرير المعاينة التفصيلي",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Suspension preview generated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans/{id}/suspend": {
+            "post": {
+                "tags": [
+                    "Subscription Plan Suspensions"
+                ],
+                "summary": "⏸️ إيقاف الفعالية مؤقتاً واعتذار الكوتش",
+                "description": "إيقاف الفعالية بين تاريخين محددين، تجميد وتمديد اشتراكات اللاعبين المتأثرين، إلغاء الحصص المجدولة، وإرسال الإشعارات.",
+                "operationId": "5ae1f032d40f7f4a72d67935e63ef002",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفعالية (Subscription Plan ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "suspend_start_date",
+                                    "suspend_end_date"
+                                ],
+                                "properties": {
+                                    "suspend_start_date": {
+                                        "description": "تاريخ بداية الإيقاف",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-15"
+                                    },
+                                    "suspend_end_date": {
+                                        "description": "تاريخ نهاية الإيقاف",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-22"
+                                    },
+                                    "reason": {
+                                        "description": "سبب الإيقاف أو الاعتذار",
+                                        "type": "string",
+                                        "example": "ظرف صحي طارئ للكوتش"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إيقاف الفعالية وتجميد وتمديد الاشتراكات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription plan suspended successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans/{id}/suspensions": {
+            "get": {
+                "tags": [
+                    "Subscription Plan Suspensions"
+                ],
+                "summary": "📋 عرض سجل إيقافات الفعالية",
+                "description": "جلب قائمة بكافة الإيقافات السابقة والحالية والمجدولة لهذه الفعالية.",
+                "operationId": "ee252947cf932ee2fcae219fe83d6014",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفعالية",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب سجل الإيقافات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Plan suspensions retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/subscription-plans/{id}/suspensions/{suspensionId}": {
+            "delete": {
+                "tags": [
+                    "Subscription Plan Suspensions"
+                ],
+                "summary": "▶️ استئناف الفعالية / إلغاء الإيقاف مبكراً",
+                "description": "رفع الإيقاف عن الفعالية مبكراً، فك تجميد اشتراكات اللاعبين، خصم الأيام غير المستخدمة والاحتفاظ بالأيام المستفادة فقط، واستعادة الجلسات المتبقية.",
+                "operationId": "147a4b8fe2b31421a5094d64ebba72b8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الفعالية",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "suspensionId",
+                        "in": "path",
+                        "description": "معرف سجل الإيقاف",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استئناف الفعالية وإلغاء الإيقاف بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Subscription plan suspension lifted successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/reports/subscriptions": {
             "get": {
                 "tags": [
@@ -25689,6 +25971,10 @@
         {
             "name": "Subscription Plans",
             "description": "Subscription Plans"
+        },
+        {
+            "name": "Subscription Plan Suspensions",
+            "description": "Subscription Plan Suspensions"
         },
         {
             "name": "WalletManager",
