@@ -24,11 +24,12 @@ class ShiftAttendanceReportService
             $endDate   = date('Y-m-t 23:59:59', strtotime($startDate));
             $periodLabel = 'شهر ' . $filters['month'];
         } else {
-            $startDateStr = !empty($filters['start_date']) ? $filters['start_date'] : now()->startOfMonth()->format('Y-m-d');
-            $endDateStr   = !empty($filters['end_date']) ? $filters['end_date'] : now()->endOfMonth()->format('Y-m-d');
+            $today = now()->format('Y-m-d');
+            $startDateStr = !empty($filters['start_date']) ? $filters['start_date'] : (!empty($filters['end_date']) ? $filters['end_date'] : $today);
+            $endDateStr   = !empty($filters['end_date']) ? $filters['end_date'] : (!empty($filters['start_date']) ? $filters['start_date'] : $today);
             $startDate = $startDateStr . ' 00:00:00';
             $endDate   = $endDateStr . ' 23:59:59';
-            $periodLabel = 'من ' . $startDateStr . ' إلى ' . $endDateStr;
+            $periodLabel = ($startDateStr === $endDateStr) ? ('يوم ' . $startDateStr) : ('من ' . $startDateStr . ' إلى ' . $endDateStr);
         }
 
         $branchId   = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
