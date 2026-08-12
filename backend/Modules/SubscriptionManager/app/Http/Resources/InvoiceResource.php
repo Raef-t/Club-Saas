@@ -8,9 +8,9 @@ class InvoiceResource extends JsonResource
 {
     public function toArray($request): array
     {
-        $latestPayment = $this->whenLoaded('payments', function () {
-            return $this->payments->sortByDesc('created_at')->first();
-        });
+        $latestPayment = $this->relationLoaded('payments')
+            ? $this->payments->sortByDesc('created_at')->first()
+            : null;
 
         return [
             'invoice_id' => $this->id,
