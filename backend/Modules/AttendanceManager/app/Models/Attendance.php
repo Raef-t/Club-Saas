@@ -58,4 +58,28 @@ class Attendance extends Model
     {
         return $this->hasMany(AttendanceConsumption::class, 'attendance_id');
     }
+
+    /**
+     * Get the formatted duration in hours and minutes.
+     */
+    public function getFormattedDurationAttribute(): ?string
+    {
+        if ($this->duration_minutes === null) {
+            return null;
+        }
+
+        $minutes = (int) $this->duration_minutes;
+        $hours = intdiv($minutes, 60);
+        $remainingMinutes = $minutes % 60;
+
+        $parts = [];
+        if ($hours > 0) {
+            $parts[] = "{$hours} ساعة";
+        }
+        if ($remainingMinutes > 0 || $hours === 0) {
+            $parts[] = "{$remainingMinutes} دقيقة";
+        }
+
+        return implode(' و ', $parts);
+    }
 }
