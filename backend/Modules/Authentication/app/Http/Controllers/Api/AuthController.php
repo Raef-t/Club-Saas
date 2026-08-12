@@ -585,7 +585,7 @@ class AuthController extends BaseController
             ->join('subscription_plans', 'player_subscriptions.plan_id', '=', 'subscription_plans.id')
             ->where('player_subscriptions.member_id', $memberId)
             ->where('player_subscriptions.status', 'active')
-            ->where('subscription_plans.type', 'like', '%vip%')
+            ->where('subscription_plans.name', 'like', '%vip%')
             ->exists();
     }
 
