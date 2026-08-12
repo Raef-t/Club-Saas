@@ -9477,13 +9477,14 @@
                     {
                         "name": "holder_type",
                         "in": "query",
-                        "description": "نوع الشخص (member أو staff)",
+                        "description": "نوع الشخص (member أو staff أو coach)",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "member",
-                                "staff"
+                                "staff",
+                                "coach"
                             ]
                         }
                     },

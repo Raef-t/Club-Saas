@@ -322,7 +322,7 @@ class LockerController extends BaseController
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'holder_type', in: 'query', required: true, description: 'نوع الشخص (member أو staff)', schema: new OA\Schema(type: 'string', enum: ['member', 'staff']))]
+    #[OA\Parameter(name: 'holder_type', in: 'query', required: true, description: 'نوع الشخص (member أو staff أو coach)', schema: new OA\Schema(type: 'string', enum: ['member', 'staff', 'coach']))]
     #[OA\Parameter(name: 'holder_id', in: 'query', required: true, description: 'معرف الشخص', schema: new OA\Schema(type: 'integer'))]
     #[OA\Response(
         response: 200,
@@ -338,7 +338,7 @@ class LockerController extends BaseController
     public function getByHolder(Request $request)
     {
         $request->validate([
-            'holder_type' => 'required|in:member,staff',
+            'holder_type' => 'required|in:member,staff,coach',
             'holder_id' => 'required|integer',
         ]);
 

@@ -24,9 +24,10 @@ class LockerResource extends JsonResource
                 $holderId = $this->holder_member_id ?? null;
             } elseif ($this->status === 'with_staff') {
                 $holderType = 'staff';
-                $holderId = $this->holder_staff_id ?? null;
+                $holderId = $this->resolved_staff_id ?? $this->holder_staff_id ?? null;
             } elseif ($this->status === 'with_coach') {
                 $holderType = 'coach';
+                $holderId = $this->resolved_staff_id ?? $this->holder_staff_id ?? null;
             }
             $holderName = $this->holder_name ?? null;
             $assignedAt = $this->start_date ?? null;
@@ -47,13 +48,14 @@ class LockerResource extends JsonResource
                     $holderId = $activeRes->member_id;
                     $member = DB::table('members')->where('id', $holderId)->first();
                     $personId = $member?->person_id;
-                } elseif ($this->status === 'with_staff' && $activeRes->staff_id) {
-                    $holderType = 'staff';
-                    $holderId = $activeRes->staff_id;
-                    $staff = DB::table('staff')->where('id', $holderId)->first();
-                    $personId = $staff?->person_id;
-                } elseif ($this->status === 'with_coach') {
-                    $holderType = 'coach';
+                } elseif (($this->status === 'with_staff' || $this->status === 'with_coach') && $activeRes->staff_id) {
+                    $holderType = $this->status === 'with_coach' ? 'coach' : 'staff';
+                    $staff = DB::table('staff')->where('id', $activeRes->staff_id)->first();
+                    if (!$staff) {
+                        $staff = DB::table('staff')->where('person_id', $activeRes->staff_id)->first();
+                    }
+                    $holderId = $staff?->id ?? $activeRes->staff_id;
+                    $personId = $staff?->person_id ?? (DB::table('people')->where('id', $activeRes->staff_id)->exists() ? $activeRes->staff_id : null);
                 }
 
                 if ($personId) {
