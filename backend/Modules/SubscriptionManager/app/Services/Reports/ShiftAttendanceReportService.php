@@ -74,6 +74,7 @@ class ShiftAttendanceReportService
 
         foreach ($shifts as $shift) {
             $attendanceQuery = DB::table('attendances as a')
+                ->whereNull('a.deleted_at')
                 ->where(function ($q) {
                     $q->where('a.attendable_type', 'like', '%Member%')
                       ->orWhere('a.attendable_type', 'member');
@@ -116,8 +117,13 @@ class ShiftAttendanceReportService
         }
 
         $sortedByAttendance = collect($records)->sortByDesc('attended_players_count')->values();
-        $busiestShift  = $sortedByAttendance->first();
-        $quietestShift = $sortedByAttendance->where('attended_players_count', '>', 0)->last() ?? $sortedByAttendance->last();
+        $busiestShift  = ($totalAllAttendances > 0 && ($sortedByAttendance->first()['attended_players_count'] ?? 0) > 0)
+            ? $sortedByAttendance->first()
+            : null;
+
+        $quietestShift = ($totalAllAttendances > 0 && $busiestShift !== null)
+            ? ($sortedByAttendance->where('attended_players_count', '>', 0)->last() ?? $sortedByAttendance->last())
+            : null;
 
         return [
             'summary' => [
