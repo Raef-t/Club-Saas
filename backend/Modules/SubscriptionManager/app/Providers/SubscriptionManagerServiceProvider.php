@@ -24,6 +24,7 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
      */
     protected array $commands = [
         \Modules\SubscriptionManager\Console\CheckSubscriptionStatus::class,
+        \Modules\SubscriptionManager\Console\ProcessPlanSuspensions::class,
     ];
 
     /**
@@ -42,6 +43,7 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
     protected function configureSchedules(Schedule $schedule): void
     {
         $schedule->command('subscriptions:check-status')->daily();
+        $schedule->command('subscriptions:process-plan-suspensions')->daily();
     }
 
     public function register(): void

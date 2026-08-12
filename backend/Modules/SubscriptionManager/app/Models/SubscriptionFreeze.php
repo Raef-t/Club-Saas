@@ -10,6 +10,7 @@ class SubscriptionFreeze extends Model
     use SoftDeletes;
     protected $fillable = [
         'player_subscription_id',
+        'subscription_plan_suspension_id',
         'freeze_start_date',
         'freeze_end_date',
         'actual_end_date',
@@ -25,5 +26,10 @@ class SubscriptionFreeze extends Model
     public function subscription()
     {
         return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id');
+    }
+
+    public function suspension()
+    {
+        return $this->belongsTo(SubscriptionPlanSuspension::class, 'subscription_plan_suspension_id');
     }
 }
