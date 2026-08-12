@@ -163,19 +163,23 @@ class SubscriptionPlanSuspensionService
 
                 // Prepare notification data
                 $person = $sub->member?->person;
-                if ($person) {
+                $userId = $person?->user?->id;
+                if ($person && $userId) {
                     $newRemainingDays = max(0, (int) $today->diffInDays($newEndDate, false));
                     $coachName = $coach?->person?->full_name ?? __('الكوتش');
                     $reasonText = !empty($data['reason']) ? " بسبب: {$data['reason']}" : "";
 
                     $notificationsToSend[] = [
-                        'person_id'     => $person->id,
-                        'branch_id'     => $sub->member?->branch_id ?? $plan->branch_id,
-                        'title'         => "⚠️ تعليق فعالية {$plan->name}",
-                        'message'       => "عزيزي {$person->full_name}، نعتذر عن تعليق فعالية \"{$plan->name}\" مع الكوتش {$coachName} من {$start->toDateString()} حتى {$end->toDateString()}{$reasonText}. تم تمديد اشتراكك تلقائياً ليصبح تاريخ النهاية: {$newEndDate->toDateString()} (أيامك المتبقية: {$newRemainingDays} يوم).",
-                        'target_role'   => 'player',
-                        'related_id'    => $plan->id,
-                        'related_type'  => 'subscription_plan_suspension',
+                        'title'           => "⚠️ تعليق فعالية {$plan->name}",
+                        'body'            => "عزيزي {$person->full_name}، نعتذر عن تعليق فعالية \"{$plan->name}\" مع الكوتش {$coachName} من {$start->toDateString()} حتى {$end->toDateString()}{$reasonText}. تم تمديد اشتراكك تلقائياً ليصبح تاريخ النهاية: {$newEndDate->toDateString()} (أيامك المتبقية: {$newRemainingDays} يوم).",
+                        'user_ids'        => [$userId],
+                        'sender_type'     => 'system',
+                        'target_snapshot' => [
+                            'plan_id'       => $plan->id,
+                            'plan_name'     => $plan->name,
+                            'suspension_id' => $suspension->id,
+                            'type'          => 'subscription_plan_suspension',
+                        ],
                     ];
                 }
             }
@@ -188,7 +192,7 @@ class SubscriptionPlanSuspensionService
                 try {
                     $this->notificationService->createNotification($notif);
                 } catch (\Throwable $e) {
-                    // Fail silently for notification errors to keep the transaction robust
+                    \Illuminate\Support\Facades\Log::error("خطأ أثناء إرسال إشعار تعليق الفعالية: " . $e->getMessage());
                 }
             }
 
@@ -382,19 +386,23 @@ class SubscriptionPlanSuspensionService
         foreach ($suspension->freezes as $freeze) {
             $sub = $freeze->subscription;
             $person = $sub?->member?->person;
-            if ($person) {
+            $userId = $person?->user?->id;
+            if ($person && $userId) {
                 try {
                     $this->notificationService->createNotification([
-                        'person_id'    => $person->id,
-                        'branch_id'    => $sub->member?->branch_id ?? $plan?->branch_id,
-                        'title'        => "🟢 استئناف فعالية {$plan?->name}",
-                        'message'      => $message,
-                        'target_role'  => 'player',
-                        'related_id'   => $plan?->id,
-                        'related_type' => 'subscription_plan_suspension',
+                        'title'           => "🟢 استئناف فعالية {$plan?->name}",
+                        'body'            => $message,
+                        'user_ids'        => [$userId],
+                        'sender_type'     => 'system',
+                        'target_snapshot' => [
+                            'plan_id'       => $plan?->id,
+                            'plan_name'     => $plan?->name,
+                            'suspension_id' => $suspension->id,
+                            'type'          => 'subscription_plan_resumption',
+                        ],
                     ]);
                 } catch (\Throwable $e) {
-                    // Ignore notification exceptions during bulk processing
+                    \Illuminate\Support\Facades\Log::error("خطأ أثناء إرسال إشعار استئناف الفعالية: " . $e->getMessage());
                 }
             }
         }
