@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
 use Modules\Authentication\Http\Requests\LoginRequest;
 use Modules\Authentication\Services\PersonQrCodeService;
+use Modules\Authentication\Services\UsernameSuggestionService;
 
 class AuthController extends BaseController
 {
@@ -548,16 +549,24 @@ class AuthController extends BaseController
         if (!empty($validated['custom_username'])) {
             $customUsername = trim($validated['custom_username']);
 
-            $existsInCustom = User::where('custom_username', $customUsername)
-                ->where('id', '!=', $user->id)
-                ->exists();
+            if (!UsernameSuggestionService::isValidFormat($customUsername) || !UsernameSuggestionService::isAvailable($customUsername, $user->id)) {
+                $suggestions = UsernameSuggestionService::generateSuggestions(
+                    $customUsername,
+                    $user->person?->full_name,
+                    $user->id
+                );
 
-            $existsInSystem = User::where('username', $customUsername)
-                ->where('id', '!=', $user->id)
-                ->exists();
-
-            if ($existsInCustom || $existsInSystem) {
-                return $this->errorResponse(__('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'), 422);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => __('اسم المستخدم المخصص مُستخدَم بالفعل أو غير صالح، اختر اسماً آخر.'),
+                    'data' => [
+                        'is_available' => false,
+                        'suggestions'  => $suggestions,
+                    ],
+                    'errors' => [
+                        'custom_username' => [__('اسم المستخدم المخصص مُستخدَم بالفعل أو غير صالح، إليك بعض الاقتراحات المتاحة.')]
+                    ]
+                ], 422);
             }
 
             $user->custom_username = $customUsername;
@@ -758,10 +767,23 @@ class AuthController extends BaseController
     )]
     #[OA\Response(
         response: 422,
-        description: '⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل',
+        description: '⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل مع اقتراحات بديلة',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'اسم المستخدم المخصص مستخدم بالفعل.')
+                new OA\Property(property: 'status', type: 'string', example: 'error'),
+                new OA\Property(property: 'message', type: 'string', example: 'اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'is_available', type: 'boolean', example: false),
+                        new OA\Property(
+                            property: 'suggestions',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', example: 'ahmed_player_2026')
+                        )
+                    ]
+                )
             ]
         )
     )]
@@ -769,36 +791,158 @@ class AuthController extends BaseController
     {
         $user = $request->user();
 
-        $validated = $request->validate([
-            'custom_username' => [
-                'required',
-                'string',
-                'min:3',
-                'max:30',
-                'regex:/^[a-zA-Z0-9_.-]+$/',
-                function ($attribute, $value, $fail) use ($user) {
-                    $existsInCustom = User::where('custom_username', $value)
-                        ->where('id', '!=', $user->id)
-                        ->exists();
+        $rawUsername = trim((string) $request->input('custom_username', ''));
 
-                    $existsInSystem = User::where('username', $value)
-                        ->where('id', '!=', $user->id)
-                        ->exists();
+        if (empty($rawUsername)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('حقل اسم المستخدم المخصص مطلوب.'),
+                'errors' => [
+                    'custom_username' => [__('حقل اسم المستخدم المخصص مطلوب.')]
+                ]
+            ], 422);
+        }
 
-                    if ($existsInCustom || $existsInSystem) {
-                        $fail(__('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'));
-                    }
-                },
-            ],
-        ]);
+        if (!UsernameSuggestionService::isValidFormat($rawUsername)) {
+            $suggestions = UsernameSuggestionService::generateSuggestions(
+                $rawUsername,
+                $user->person?->full_name,
+                $user->id
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'message' => __('صيغة اسم المستخدم غير صالحة. يجب أن يتكون من 3-30 حرفاً (حروف إنجليزية، أرقام، _ . -).'),
+                'data' => [
+                    'is_available' => false,
+                    'suggestions'  => $suggestions,
+                ],
+                'errors' => [
+                    'custom_username' => [__('صيغة اسم المستخدم غير صالحة. إليك بعض الاقتراحات المتاحة.')]
+                ]
+            ], 422);
+        }
+
+        if (!UsernameSuggestionService::isAvailable($rawUsername, $user->id)) {
+            $suggestions = UsernameSuggestionService::generateSuggestions(
+                $rawUsername,
+                $user->person?->full_name,
+                $user->id
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'message' => __('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'),
+                'data' => [
+                    'is_available' => false,
+                    'suggestions'  => $suggestions,
+                ],
+                'errors' => [
+                    'custom_username' => [__('اسم المستخدم المخصص مُستخدَم بالفعل، إليك بعض الاقتراحات المتاحة.')]
+                ]
+            ], 422);
+        }
 
         $user->update([
-            'custom_username' => $validated['custom_username'],
+            'custom_username' => $rawUsername,
         ]);
 
         return $this->successResponse([
             'username'        => $user->username,
             'custom_username' => $user->custom_username,
         ], __('Custom username set successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/auth/check-username',
+        summary: '🔍 فحص توفر اسم المستخدم وتوليد اقتراحات عند التعارض',
+        description: 'يتحقق مما إذا كان اسم المستخدم متاحاً أو محجوزاً مسبقاً، وفي حال عدم التوفر يعيد قائمة باقتراحات صالحة ومتاحة.',
+        tags: ['Authentication']
+    )]
+    #[OA\Parameter(
+        name: 'username',
+        in: 'query',
+        required: true,
+        description: 'اسم المستخدم المراد فحصه',
+        schema: new OA\Schema(type: 'string', example: 'ahmed_player')
+    )]
+    #[OA\Parameter(
+        name: 'user_id',
+        in: 'query',
+        required: false,
+        description: 'معرف المستخدم لتجاهله أثناء الفحص (اختياري)',
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ نتيجة فحص اسم المستخدم مع الاقتراحات إن وجدت',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'اسم المستخدم متاح للاستخدام.'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'username', type: 'string', example: 'ahmed_player'),
+                        new OA\Property(property: 'is_available', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'suggestions',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', example: 'ahmed_player99')
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ لم يتم إرسال اسم المستخدم',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'),
+                new OA\Property(property: 'message', type: 'string', example: 'يرجى إدخال اسم المستخدم المراد فحصه.')
+            ]
+        )
+    )]
+    public function checkUsername(Request $request)
+    {
+        $input = trim((string) $request->query('username', $request->input('username', '')));
+        $ignoreUserId = $request->query('user_id', $request->input('user_id', $request->user('sanctum')?->id));
+
+        if (empty($input)) {
+            return $this->errorResponse(__('يرجى إدخال اسم المستخدم المراد فحصه.'), 422);
+        }
+
+        $isValidFormat = UsernameSuggestionService::isValidFormat($input);
+        $isAvailable = $isValidFormat && UsernameSuggestionService::isAvailable($input, $ignoreUserId ? (int)$ignoreUserId : null);
+
+        if ($isAvailable) {
+            return $this->successResponse([
+                'username'     => $input,
+                'is_available' => true,
+                'suggestions'  => [],
+            ], __('اسم المستخدم متاح للاستخدام.'));
+        }
+
+        $fullName = null;
+        if ($ignoreUserId) {
+            $user = User::find($ignoreUserId);
+            $fullName = $user?->person?->full_name;
+        }
+
+        $suggestions = UsernameSuggestionService::generateSuggestions(
+            $input,
+            $fullName,
+            $ignoreUserId ? (int)$ignoreUserId : null,
+            5
+        );
+
+        return $this->successResponse([
+            'username'     => $input,
+            'is_available' => false,
+            'suggestions'  => $suggestions,
+        ], __('اسم المستخدم مُستخدَم بالفعل أو غير صالح، إليك بعض الاقتراحات المتاحة.'));
     }
 }

@@ -10,6 +10,7 @@ use Modules\Authentication\Http\Controllers\Api\V1\UserRoleController;
 
 Route::prefix('v1/auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
+    Route::get('check-username', [AuthController::class, 'checkUsername']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);

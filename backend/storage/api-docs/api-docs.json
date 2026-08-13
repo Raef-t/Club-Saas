@@ -4884,14 +4884,34 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل",
+                        "description": "⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل مع اقتراحات بديلة",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "اسم المستخدم المخصص مستخدم بالفعل."
+                                            "example": "اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "is_available": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "suggestions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "ahmed_player_2026"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -4905,6 +4925,100 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/v1/auth/check-username": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "🔍 فحص توفر اسم المستخدم وتوليد اقتراحات عند التعارض",
+                "description": "يتحقق مما إذا كان اسم المستخدم متاحاً أو محجوزاً مسبقاً، وفي حال عدم التوفر يعيد قائمة باقتراحات صالحة ومتاحة.",
+                "operationId": "0a82bed7b8f114325366fab244462148",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "اسم المستخدم المراد فحصه",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "ahmed_player"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "معرف المستخدم لتجاهله أثناء الفحص (اختياري)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ نتيجة فحص اسم المستخدم مع الاقتراحات إن وجدت",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "اسم المستخدم متاح للاستخدام."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "ahmed_player"
+                                                },
+                                                "is_available": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "suggestions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "ahmed_player99"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ لم يتم إرسال اسم المستخدم",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "يرجى إدخال اسم المستخدم المراد فحصه."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/v1/contacts": {
