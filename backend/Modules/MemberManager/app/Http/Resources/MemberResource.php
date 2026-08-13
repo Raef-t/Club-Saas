@@ -21,6 +21,10 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "branch", type: "object", nullable: true),
         new OA\Property(property: "health_profile", type: "object", nullable: true),
         new OA\Property(property: "measurements", type: "array", items: new OA\Items(type: "object"), nullable: true),
+        new OA\Property(property: "created_by", type: "object", properties: [
+            new OA\Property(property: "id", type: "integer", example: 1),
+            new OA\Property(property: "name", type: "string", example: "أحمد علي")
+        ], nullable: true),
         new OA\Property(property: "created_at", type: "string", format: "date-time")
     ]
 )]
@@ -73,6 +77,10 @@ class MemberResource extends JsonResource
             ] : null,
             'health_profile' => $this->healthProfile,
             'measurements' => $this->measurements,
+            'created_by' => $this->created_by ? [
+                'id' => $this->created_by,
+                'name' => $this->creator?->person?->full_name ?? $this->creator?->username ?? null,
+            ] : null,
             'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
         ];
     }

@@ -58,6 +58,7 @@ class MemberService
         }
 
         return $query->with([
+            'creator.person',
             'person.contacts',
             'person.user',
             'branch',
@@ -275,7 +276,7 @@ class MemberService
     protected function attachSharedDTOs(?\Modules\MemberManager\Models\Member $member)
     {
         if ($member) {
-            $member->loadMissing(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
+            $member->loadMissing(['creator.person', 'person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
         }
         return $member;
     }
