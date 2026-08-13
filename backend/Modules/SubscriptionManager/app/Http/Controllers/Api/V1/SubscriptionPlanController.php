@@ -59,7 +59,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities', 'sessionTemplates']);
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities', 'sessionTemplates', 'activeSuspension.coach.person']);
         
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -250,7 +250,7 @@ class SubscriptionPlanController extends BaseController
     public function show($id)
     {
         $plan = $this->planRepository->find($id);
-        $plan->loadMissing(['planActivities', 'sessionTemplates']);
+        $plan->loadMissing(['planActivities', 'sessionTemplates', 'activeSuspension.coach.person']);
         return $this->successResponse(
             new SubscriptionPlanResource($plan),
             __('Subscription plan retrieved successfully')

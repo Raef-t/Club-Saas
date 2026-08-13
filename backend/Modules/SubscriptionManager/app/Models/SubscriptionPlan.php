@@ -123,4 +123,11 @@ class SubscriptionPlan extends Model
     {
         return $this->hasMany(SubscriptionPlanSuspension::class, 'plan_id');
     }
+
+    public function activeSuspension()
+    {
+        return $this->hasOne(SubscriptionPlanSuspension::class, 'plan_id')
+                    ->whereIn('status', ['active', 'scheduled'])
+                    ->latestOfMany();
+    }
 }
