@@ -2,10 +2,10 @@ export const CURRENCY_SYMBOL = "ل.س";
 
 export function formatMoney(value, currency = CURRENCY_SYMBOL) {
   const num = Number(value) || 0;
-  if (currency === "$") {
-    return `$${num.toLocaleString("en-US")}`;
-  }
-  return `${num.toLocaleString("en-US")} ${currency}`;
+  return `${num.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })} ${currency}`;
 }
 
 export function formatDate(value) {

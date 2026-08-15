@@ -32,6 +32,49 @@ export function isGeneralEquipmentActivity(activity) {
   return normalizedName.includes("اجهزة عام");
 }
 
+/** General and private equipment plans do not use scheduled session times. */
+export function isEquipmentActivity(activity) {
+  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
+  return normalizedName.includes("اجهزة عام") || normalizedName.includes("اجهزة خاص");
+}
+
+/** Private equipment plans use the branch's private-training club commission. */
+export function isPrivateEquipmentActivity(activity) {
+  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
+  return normalizedName.includes("اجهزة خاص");
+}
+
+/** Returns the coach share that completes the club share to 100%. */
+export function getCoachCommissionPercentage(clubCommissionPercentage) {
+  if (String(clubCommissionPercentage ?? "").trim() === "") return "";
+
+  const clubPercentage = Number(clubCommissionPercentage);
+  if (!Number.isFinite(clubPercentage)) return "";
+
+  return String(Number((100 - clubPercentage).toFixed(2)));
+}
+
+/** Calculates a commission amount for the UI without adding it to the API payload. */
+export function calculateCommissionAmount(price, commissionPercentage) {
+  if (String(price ?? "").trim() === "" || String(commissionPercentage ?? "").trim() === "") {
+    return null;
+  }
+
+  const numericPrice = Number(price);
+  const numericPercentage = Number(commissionPercentage);
+  if (
+    !Number.isFinite(numericPrice) ||
+    !Number.isFinite(numericPercentage) ||
+    numericPrice < 0 ||
+    numericPercentage < 0 ||
+    numericPercentage > 100
+  ) {
+    return null;
+  }
+
+  return Number(((numericPrice * numericPercentage) / 100).toFixed(2));
+}
+
 export function createSuggestedSubscriptionPlanName(planActivities, activities, coaches) {
   const selectedItem = (planActivities || []).find((item) => item?.activity_id);
   if (!selectedItem) return "";

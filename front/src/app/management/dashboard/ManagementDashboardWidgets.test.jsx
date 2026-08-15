@@ -28,10 +28,15 @@ describe("coach subscriptions donut", () => {
     expect(screen.getByText("Active Coach")).toBeInTheDocument();
     expect(screen.getByText("Empty Coach")).toBeInTheDocument();
 
+    const tooltipSlot = screen.getByTestId("coach-tooltip-slot");
+    expect(tooltipSlot).toHaveClass("h-14");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
     fireEvent.mouseEnter(screen.getByTitle(/Empty Coach/));
 
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent("Empty Coach");
+    expect(tooltipSlot).toHaveClass("h-14");
   });
 
   it("renders a valid empty ring when every coach has zero players", () => {

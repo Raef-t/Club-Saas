@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -17,11 +17,13 @@ import { Field, TextAreaField } from "@/components/forms/FormControls";
 import { CheckboxField } from "@/components/forms/CheckboxField";
 import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
-import { formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
+import { CURRENCY_SYMBOL, formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
 import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
+import { getSettingsRecord } from "@/app/management/settings/settingsUtils";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
 import { getSubscriptionPlanStatusMeta, SUBSCRIPTION_PLAN_STATUS } from "./subscriptionPlanStatus";
 import {
@@ -32,9 +34,13 @@ import { subscriptionPlanSuspensionSchema } from "@/lib/validations/subscription
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { toIsoDate } from "@/components/forms/datePickerUtils";
 import {
+  calculateCommissionAmount,
   createSuggestedSubscriptionPlanName,
+  getCoachCommissionPercentage,
   getSubscriptionPlanActivityName,
+  isEquipmentActivity,
   isGeneralEquipmentActivity,
+  isPrivateEquipmentActivity,
 } from "./subscriptionPlanFormUtils";
 
 function CoachDropdown({ branchId, activityId, value, onChange, error, optional = false }) {
@@ -185,10 +191,12 @@ const initialForm = {
   activities: [{ activity_id: "", coach_id: "" }],
   session_templates: [],
   is_unlimited_subscribers: false,
+  club_commission_percentage: "",
+  coach_commission_percentage: "",
 };
 
 function formatMoney(value) {
-  return baseFormatMoney(value, "$");
+  return baseFormatMoney(value, CURRENCY_SYMBOL);
 }
 
 const planName = (plan) => formatLocalizedName(plan?.name);
@@ -537,6 +545,60 @@ export function PlanForm({
     () => createSuggestedSubscriptionPlanName(form.activities, activities, coaches),
     [activities, coaches, form.activities],
   );
+  const selectedActivityRecords = useMemo(
+    () =>
+      (form.activities || [])
+        .map((item) =>
+          activities.find((activity) => String(activity.id) === String(item.activity_id)),
+        )
+        .filter(Boolean),
+    [activities, form.activities],
+  );
+  const isEquipmentOnlyPlan =
+    selectedActivityRecords.length > 0 && selectedActivityRecords.every(isEquipmentActivity);
+  const isPrivateEquipmentPlan = selectedActivityRecords.some(isPrivateEquipmentActivity);
+  const {
+    currentData: branchSettingsResponse,
+    isFetching: isFetchingBranchSettings,
+    error: branchSettingsError,
+  } = useGetBranchSettingsQuery(form.branch_id, {
+    skip: !form.branch_id || !isPrivateEquipmentPlan,
+  });
+  const branchSettings = getSettingsRecord(branchSettingsResponse);
+  const privateSubscriptionCommission = branchSettings?.private_subscription_commission ?? "0.00";
+  const initializedCommissionBranchRef = useRef("");
+  const clubCommissionAmount = calculateCommissionAmount(
+    form.price,
+    form.club_commission_percentage,
+  );
+  const coachCommissionAmount = calculateCommissionAmount(
+    form.price,
+    form.coach_commission_percentage,
+  );
+
+  useEffect(() => {
+    if (!isPrivateEquipmentPlan || !branchSettings || !form.branch_id) return;
+
+    const branchKey = String(form.branch_id);
+    if (initializedCommissionBranchRef.current === branchKey) return;
+    initializedCommissionBranchRef.current = branchKey;
+
+    setForm((current) => {
+      if (String(current.club_commission_percentage ?? "").trim() !== "") return current;
+
+      const clubCommission = String(privateSubscriptionCommission);
+      return {
+        ...current,
+        club_commission_percentage: clubCommission,
+        coach_commission_percentage: getCoachCommissionPercentage(clubCommission),
+      };
+    });
+  }, [branchSettings, form.branch_id, isPrivateEquipmentPlan, privateSubscriptionCommission]);
+
+  useEffect(() => {
+    if (!isEquipmentOnlyPlan || !form.session_templates?.length) return;
+    setForm((current) => ({ ...current, session_templates: [] }));
+  }, [form.session_templates?.length, isEquipmentOnlyPlan]);
 
   useEffect(() => {
     if (isNameManuallyEdited || form.name === suggestedName) return;
@@ -583,6 +645,30 @@ export function PlanForm({
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
+  function updateClubCommission(value) {
+    setForm((current) => ({
+      ...current,
+      club_commission_percentage: value,
+      coach_commission_percentage: getCoachCommissionPercentage(value),
+    }));
+    setErrors((current) => ({
+      ...current,
+      club_commission_percentage: null,
+      coach_commission_percentage: null,
+    }));
+  }
+
+  function updateBranch(branchId) {
+    initializedCommissionBranchRef.current = "";
+    setForm((current) => ({
+      ...current,
+      branch_id: branchId,
+      club_commission_percentage: "",
+      coach_commission_percentage: "",
+    }));
+    setErrors((current) => ({ ...current, branch_id: null }));
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
     const rawData = {
@@ -601,6 +687,13 @@ export function PlanForm({
             ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
             : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
       is_unlimited_subscribers: !!form.is_unlimited_subscribers,
+      ...(isPrivateEquipmentPlan
+        ? {
+            club_commission_percentage: form.club_commission_percentage,
+            coach_commission_percentage: form.coach_commission_percentage,
+            private_commission_required: true,
+          }
+        : {}),
       activities:
         form.activities?.map((item) => {
           const activity = activities.find(
@@ -613,12 +706,13 @@ export function PlanForm({
             coach_optional: isGeneralEquipmentActivity(activity),
           };
         }) || [],
-      session_templates:
-        form.session_templates?.map((s) => ({
-          day_of_week: Number(s.day_of_week),
-          start_time: s.start_time,
-          end_time: s.end_time,
-        })) || [],
+      session_templates: isEquipmentOnlyPlan
+        ? []
+        : form.session_templates?.map((s) => ({
+            day_of_week: Number(s.day_of_week),
+            start_time: s.start_time,
+            end_time: s.end_time,
+          })) || [],
     };
 
     const result = subscriptionPlanSchema.safeParse(rawData);
@@ -643,7 +737,7 @@ export function PlanForm({
           className="mt-2 text-white"
           buttonClassName="bg-app-card-soft h-11"
           value={form.branch_id}
-          onChange={(val) => updateField("branch_id", val)}
+          onChange={updateBranch}
           options={branches.map((b) => ({
             value: String(b.id),
             label: formatLocalizedName(b.name),
@@ -673,6 +767,53 @@ export function PlanForm({
         type="text"
         error={errors.name}
       />
+
+      {isPrivateEquipmentPlan && (
+        <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/5 p-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="نسبة النادي (%)"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={form.club_commission_percentage}
+              onChange={(event) => updateClubCommission(event.target.value)}
+              placeholder={isFetchingBranchSettings ? "جاري تحميل النسبة..." : "0"}
+              disabled={isFetchingBranchSettings}
+              error={errors.club_commission_percentage}
+            />
+            <Field
+              label="نسبة المدرب (%)"
+              type="number"
+              value={form.coach_commission_percentage}
+              disabled
+              required={false}
+              error={errors.coach_commission_percentage}
+            />
+          </div>
+          <p className="mt-3 text-right text-xs text-app-muted-light">
+            تبدأ نسبة النادي من إعدادات الفرع، وتُحسب نسبة المدرب تلقائياً ليكون المجموع 100%.
+          </p>
+          <div className="mt-4 grid gap-3 border-t border-app-yellow/20 pt-4 sm:grid-cols-2">
+            <CommissionAmountCard
+              label="المبلغ الذي يحصل عليه النادي"
+              amount={clubCommissionAmount}
+              percentage={form.club_commission_percentage}
+            />
+            <CommissionAmountCard
+              label="المبلغ الذي يحصل عليه المدرب"
+              amount={coachCommissionAmount}
+              percentage={form.coach_commission_percentage}
+            />
+          </div>
+          {branchSettingsError && (
+            <p className="mt-2 text-right text-xs text-app-red">
+              تعذر تحميل النسبة الافتراضية، يمكنك إدخال نسبة النادي يدوياً.
+            </p>
+          )}
+        </div>
+      )}
 
       <label className="block text-right text-sm text-app-muted-light">
         تخصيص الجنس *
@@ -752,139 +893,141 @@ export function PlanForm({
         );
       })()}
 
-      <div className="border-t border-app-line pt-4 mt-2">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-white">جدول أوقات الفعالية</h4>
-          <Button
-            type="button"
-            tone="outline"
-            className="h-8 px-3 text-xs"
-            onClick={() => {
-              let nextDay = "0";
-              let defaultStartTime = "";
-              let defaultEndTime = "";
+      {!isEquipmentOnlyPlan && (
+        <div className="border-t border-app-line pt-4 mt-2">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-white">جدول أوقات الفعالية</h4>
+            <Button
+              type="button"
+              tone="outline"
+              className="h-8 px-3 text-xs"
+              onClick={() => {
+                let nextDay = "0";
+                let defaultStartTime = "";
+                let defaultEndTime = "";
 
-              if (form.session_templates && form.session_templates.length > 0) {
-                const lastTemplate = form.session_templates[form.session_templates.length - 1];
+                if (form.session_templates && form.session_templates.length > 0) {
+                  const lastTemplate = form.session_templates[form.session_templates.length - 1];
 
-                const hasAutoSequenceActivity =
-                  form.activities?.length > 0 &&
-                  form.activities.some((item) => {
-                    const act = activities.find((a) => String(a.id) === String(item.activity_id));
-                    if (act) {
-                      const actName =
-                        typeof act.name === "string"
-                          ? act.name
-                          : act.name?.ar || act.name?.en || "";
-                      const isGeneralOrPrivate =
-                        actName.includes("أجهزة عام") ||
-                        actName.includes("أجهزة خاص") ||
-                        actName.includes("تدريب عام") ||
-                        actName.includes("تدريب خاص");
-                      return !isGeneralOrPrivate;
-                    }
-                    return false;
-                  });
+                  const hasAutoSequenceActivity =
+                    form.activities?.length > 0 &&
+                    form.activities.some((item) => {
+                      const act = activities.find((a) => String(a.id) === String(item.activity_id));
+                      if (act) {
+                        const actName =
+                          typeof act.name === "string"
+                            ? act.name
+                            : act.name?.ar || act.name?.en || "";
+                        const isGeneralOrPrivate =
+                          actName.includes("أجهزة عام") ||
+                          actName.includes("أجهزة خاص") ||
+                          actName.includes("تدريب عام") ||
+                          actName.includes("تدريب خاص");
+                        return !isGeneralOrPrivate;
+                      }
+                      return false;
+                    });
 
-                if (hasAutoSequenceActivity) {
-                  nextDay = String((parseInt(lastTemplate.day_of_week) + 2) % 7);
-                  defaultStartTime = lastTemplate.start_time || "";
-                  defaultEndTime = lastTemplate.end_time || "";
+                  if (hasAutoSequenceActivity) {
+                    nextDay = String((parseInt(lastTemplate.day_of_week) + 2) % 7);
+                    defaultStartTime = lastTemplate.start_time || "";
+                    defaultEndTime = lastTemplate.end_time || "";
+                  }
                 }
-              }
 
-              updateField("session_templates", [
-                ...(form.session_templates || []),
-                { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime },
-              ]);
-            }}
-          >
-            <PlusIcon className="me-1 size-3" />
-            إضافة وقت
-          </Button>
-        </div>
+                updateField("session_templates", [
+                  ...(form.session_templates || []),
+                  { day_of_week: nextDay, start_time: defaultStartTime, end_time: defaultEndTime },
+                ]);
+              }}
+            >
+              <PlusIcon className="me-1 size-3" />
+              إضافة وقت
+            </Button>
+          </div>
 
-        {!form.session_templates || form.session_templates.length === 0 ? (
-          <p className="text-xs text-app-muted-light">لم يتم إضافة أي أوقات للفعالية بعد.</p>
-        ) : (
-          <div className="space-y-3">
-            {form.session_templates.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newTemplates = [...form.session_templates];
-                    newTemplates.splice(idx, 1);
-                    updateField("session_templates", newTemplates);
-                  }}
-                  className="absolute end-3 top-2 text-xs text-app-muted hover:text-app-red"
+          {!form.session_templates || form.session_templates.length === 0 ? (
+            <p className="text-xs text-app-muted-light">لم يتم إضافة أي أوقات للفعالية بعد.</p>
+          ) : (
+            <div className="space-y-3">
+              {form.session_templates.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative"
                 >
-                  إزالة
-                </button>
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <label className="block text-right text-xs text-app-muted-light col-span-2">
-                    اليوم
-                    <Dropdown
-                      className="mt-1 text-white"
-                      buttonClassName="bg-black/35 h-9"
-                      value={String(item.day_of_week)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newTemplates = [...form.session_templates];
+                      newTemplates.splice(idx, 1);
+                      updateField("session_templates", newTemplates);
+                    }}
+                    className="absolute end-3 top-2 text-xs text-app-muted hover:text-app-red"
+                  >
+                    إزالة
+                  </button>
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <label className="block text-right text-xs text-app-muted-light col-span-2">
+                      اليوم
+                      <Dropdown
+                        className="mt-1 text-white"
+                        buttonClassName="bg-black/35 h-9"
+                        value={String(item.day_of_week)}
+                        onChange={(val) => {
+                          const newTemplates = [...form.session_templates];
+                          newTemplates[idx].day_of_week = val;
+                          updateField("session_templates", newTemplates);
+                        }}
+                        options={[
+                          { value: "0", label: "الأحد" },
+                          { value: "1", label: "الإثنين" },
+                          { value: "2", label: "الثلاثاء" },
+                          { value: "3", label: "الأربعاء" },
+                          { value: "4", label: "الخميس" },
+                          { value: "5", label: "الجمعة" },
+                          { value: "6", label: "السبت" },
+                        ]}
+                        placeholder="اختر اليوم"
+                      />
+                    </label>
+                    <Field
+                      label="وقت البدء"
+                      type="time"
+                      value={item.start_time}
                       onChange={(val) => {
                         const newTemplates = [...form.session_templates];
-                        newTemplates[idx].day_of_week = val;
+                        const startTime = val && val.target ? val.target.value : val;
+                        newTemplates[idx] = {
+                          ...newTemplates[idx],
+                          start_time: startTime,
+                          end_time: addMinutesToTime(startTime),
+                        };
                         updateField("session_templates", newTemplates);
                       }}
-                      options={[
-                        { value: "0", label: "الأحد" },
-                        { value: "1", label: "الإثنين" },
-                        { value: "2", label: "الثلاثاء" },
-                        { value: "3", label: "الأربعاء" },
-                        { value: "4", label: "الخميس" },
-                        { value: "5", label: "الجمعة" },
-                        { value: "6", label: "السبت" },
-                      ]}
-                      placeholder="اختر اليوم"
+                      required
+                      className="h-9"
+                      labelClassName="text-xs text-app-muted-light"
                     />
-                  </label>
-                  <Field
-                    label="وقت البدء"
-                    type="time"
-                    value={item.start_time}
-                    onChange={(val) => {
-                      const newTemplates = [...form.session_templates];
-                      const startTime = val && val.target ? val.target.value : val;
-                      newTemplates[idx] = {
-                        ...newTemplates[idx],
-                        start_time: startTime,
-                        end_time: addMinutesToTime(startTime),
-                      };
-                      updateField("session_templates", newTemplates);
-                    }}
-                    required
-                    className="h-9"
-                    labelClassName="text-xs text-app-muted-light"
-                  />
-                  <Field
-                    label="وقت الانتهاء"
-                    type="time"
-                    value={item.end_time}
-                    onChange={(val) => {
-                      const newTemplates = [...form.session_templates];
-                      newTemplates[idx].end_time = val && val.target ? val.target.value : val;
-                      updateField("session_templates", newTemplates);
-                    }}
-                    required
-                    className="h-9"
-                    labelClassName="text-xs text-app-muted-light"
-                  />
+                    <Field
+                      label="وقت الانتهاء"
+                      type="time"
+                      value={item.end_time}
+                      onChange={(val) => {
+                        const newTemplates = [...form.session_templates];
+                        newTemplates[idx].end_time = val && val.target ? val.target.value : val;
+                        updateField("session_templates", newTemplates);
+                      }}
+                      required
+                      className="h-9"
+                      labelClassName="text-xs text-app-muted-light"
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <CheckboxField
         label="الفعالية فعالة ونشطة حالياً"
@@ -919,6 +1062,24 @@ export function PlanForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function CommissionAmountCard({ label, amount, percentage }) {
+  const hasAmount = amount !== null;
+
+  return (
+    <div className="rounded-xl border border-app-line bg-black/20 p-3 text-right">
+      <p className="text-xs text-app-muted-light">{label}</p>
+      <div className="mt-2 flex items-end justify-between gap-3">
+        <span dir="ltr" className="text-lg font-semibold text-app-yellow">
+          {hasAmount ? formatMoney(amount) : "—"}
+        </span>
+        <span className="text-xs text-app-muted-light">
+          {String(percentage ?? "").trim() === "" ? "—" : `${percentage}%`}
+        </span>
+      </div>
+    </div>
   );
 }
 

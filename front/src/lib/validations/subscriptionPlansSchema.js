@@ -18,6 +18,16 @@ const subscriptionPlanActivitySchema = z
   })
   .transform(({ coach_optional, ...activity }) => activity);
 
+const optionalCommissionPercentage = (label) =>
+  z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : Number(value)),
+    z
+      .number({ invalid_type_error: `${label} مطلوبة` })
+      .min(0, `${label} يجب ألا تقل عن 0`)
+      .max(100, `${label} يجب ألا تزيد عن 100`)
+      .optional(),
+  );
+
 export const subscriptionPlanSchema = z
   .object({
     branch_id: z
@@ -59,6 +69,10 @@ export const subscriptionPlanSchema = z
 
     activities: z.array(subscriptionPlanActivitySchema).min(1, "يرجى إضافة نشاط واحد على الأقل"),
 
+    club_commission_percentage: optionalCommissionPercentage("نسبة النادي"),
+    coach_commission_percentage: optionalCommissionPercentage("نسبة المدرب"),
+    private_commission_required: z.boolean().optional().default(false),
+
     session_templates: z
       .array(
         z.object({
@@ -73,6 +87,36 @@ export const subscriptionPlanSchema = z
     status: z.enum(["active", "inactive", "completed"]).optional(),
   })
   .superRefine((data, ctx) => {
+    if (data.private_commission_required) {
+      if (data.club_commission_percentage === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "نسبة النادي مطلوبة لأجهزة خاص",
+          path: ["club_commission_percentage"],
+        });
+      }
+
+      if (data.coach_commission_percentage === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "نسبة المدرب مطلوبة لأجهزة خاص",
+          path: ["coach_commission_percentage"],
+        });
+      }
+
+      if (
+        data.club_commission_percentage !== undefined &&
+        data.coach_commission_percentage !== undefined &&
+        Math.abs(data.club_commission_percentage + data.coach_commission_percentage - 100) > 0.001
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "مجموع نسبة النادي والمدرب يجب أن يساوي 100%",
+          path: ["club_commission_percentage"],
+        });
+      }
+    }
+
     // if (data.type === "fixed_period") {
     //   if (data.duration_in_days === undefined || data.duration_in_days === null || Number.isNaN(data.duration_in_days)) {
     //     ctx.addIssue({
@@ -103,4 +147,5 @@ export const subscriptionPlanSchema = z
     //     });
     //   }
     // }
-  });
+  })
+  .transform(({ private_commission_required, ...plan }) => plan);

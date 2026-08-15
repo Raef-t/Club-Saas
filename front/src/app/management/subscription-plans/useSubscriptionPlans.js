@@ -17,7 +17,7 @@ import { getBranchesArray } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 
-import { formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
+import { CURRENCY_SYMBOL, formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
 import {
   getSubscriptionPlanStatus,
   isSubscriptionPlanActive,
@@ -32,7 +32,7 @@ function parseAmount(value) {
 }
 
 function formatMoney(value) {
-  return baseFormatMoney(value, "$");
+  return baseFormatMoney(value, CURRENCY_SYMBOL);
 }
 
 function getPlans(response) {
@@ -356,6 +356,14 @@ export function useSubscriptionPlans({
       status,
       gender_restriction: plan.gender_restriction || "mixed",
       is_unlimited_subscribers: !!plan.is_unlimited_subscribers,
+      club_commission_percentage:
+        plan.club_commission_percentage === null || plan.club_commission_percentage === undefined
+          ? ""
+          : String(plan.club_commission_percentage),
+      coach_commission_percentage:
+        plan.coach_commission_percentage === null || plan.coach_commission_percentage === undefined
+          ? ""
+          : String(plan.coach_commission_percentage),
       activities:
         plan.activities?.map((a) => ({
           activity_id: String(a.activity_id),

@@ -1,4 +1,4 @@
-const CURRENCY_SYMBOL = "$";
+import { formatMoney } from "@/lib/utils";
 
 const DAILY_ENTRY_TYPE_VALUES = new Set([
   "daily",
@@ -34,6 +34,40 @@ export function getLocalDateValue(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * Calculates an inclusive subscription period. The end date is the calendar
+ * anniversary after the requested number of months, minus one day.
+ */
+export function getSubscriptionEndDate(startDate, months = 1) {
+  const match = String(startDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const start = new Date(year, monthIndex, day);
+
+  if (start.getFullYear() !== year || start.getMonth() !== monthIndex || start.getDate() !== day) {
+    return "";
+  }
+
+  const normalizedMonths = Math.max(1, Number.parseInt(months, 10) || 1);
+  const targetMonthStart = new Date(year, monthIndex + normalizedMonths, 1);
+  const lastTargetDay = new Date(
+    targetMonthStart.getFullYear(),
+    targetMonthStart.getMonth() + 1,
+    0,
+  ).getDate();
+  const anniversary = new Date(
+    targetMonthStart.getFullYear(),
+    targetMonthStart.getMonth(),
+    Math.min(day, lastTargetDay),
+  );
+
+  anniversary.setDate(anniversary.getDate() - 1);
+  return getLocalDateValue(anniversary);
 }
 
 /**
@@ -74,10 +108,7 @@ export function parseSubscriptionAmount(value) {
  * Formats subscription amounts using the currency shown by the dashboard.
  */
 export function formatSubscriptionMoney(value) {
-  return `${CURRENCY_SYMBOL}${parseSubscriptionAmount(value).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })}`;
+  return formatMoney(parseSubscriptionAmount(value));
 }
 
 /**

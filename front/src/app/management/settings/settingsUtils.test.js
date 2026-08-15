@@ -48,15 +48,18 @@ describe("settings utilities", () => {
   it("creates branch settings forms and payloads without losing zero values", () => {
     const form = createBranchSettingsForm({
       default_club_commission_percentage: 0,
+      private_subscription_commission: 15.5,
       working_hours_start: "08:30:00",
       allow_freeze: 1,
     });
 
     expect(form.defaultClubCommission).toBe("0");
+    expect(form.privateSubscriptionCommission).toBe("15.5");
     expect(form.workingHoursStart).toBe("08:30");
     expect(form.allowFreeze).toBe(true);
     expect(createBranchSettingsPayload(form)).toMatchObject({
       default_club_commission_percentage: 0,
+      private_subscription_commission: 15.5,
       working_hours_start: "08:30",
       allow_freeze: true,
     });

@@ -135,7 +135,7 @@ export function useSubscriptions({ initialData } = {}) {
       },
       {
         title: "المتبقي للتحصيل",
-        value: totalRemaining ? formatSubscriptionMoney(totalRemaining) : "$٠",
+        value: formatSubscriptionMoney(totalRemaining),
         helper: `${soon.toLocaleString("ar")} اشتراك ينتهي خلال ٧ أيام`,
         tone: "purple",
         compact: true,
