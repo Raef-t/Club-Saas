@@ -174,7 +174,7 @@ class LockerService
             
             $price = 0;
             $paidAmount = 0;
-            $startDate = now();
+            $startDate = null;
             $endDate = null;
             $invoiceId = null;
 
@@ -204,6 +204,12 @@ class LockerService
                     'status' => $invoiceStatus,
                 ]);
                 $invoiceId = $invoice->id;
+            } else {
+                // For coach, startDate and endDate strictly remain null
+                if (($data['holder_type'] ?? '') !== 'coach') {
+                    $startDate = $data['start_date'] ?? now();
+                    $endDate = $data['end_date'] ?? null;
+                }
             }
 
             $staffId = null;
