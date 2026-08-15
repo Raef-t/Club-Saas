@@ -19,8 +19,27 @@ class ReserveLockerRequest extends FormRequest
             'holder_id' => 'nullable|integer',
             'holder_name' => 'nullable|string|max:255',
             'price' => 'required_if:reservation_type,rental|numeric|min:0',
-            'start_date' => 'required_if:reservation_type,rental|date',
-            'end_date' => 'required_if:reservation_type,rental|date|after_or_equal:start_date',
+            'start_date' => [
+                'required_if:reservation_type,rental',
+                'prohibited_if:holder_type,coach',
+                'nullable',
+                'date',
+            ],
+            'end_date' => [
+                'required_if:reservation_type,rental',
+                'prohibited_if:holder_type,coach',
+                'nullable',
+                'date',
+                'after_or_equal:start_date',
+            ],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'start_date.prohibited_if' => __('Start date is prohibited when assigned to a coach.'),
+            'end_date.prohibited_if' => __('End date is prohibited when assigned to a coach.'),
         ];
     }
 }

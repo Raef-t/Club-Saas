@@ -25641,6 +25641,20 @@
                         },
                         "nullable": true
                     },
+                    "created_by": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "أحمد علي"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
