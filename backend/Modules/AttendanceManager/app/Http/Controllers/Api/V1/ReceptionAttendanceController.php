@@ -118,26 +118,26 @@ class ReceptionAttendanceController extends BaseController
                     ->get();
 
                 // Merge items with activity/coach data from the plan
-                $sub->items = $rawItems->map(function ($item, $index) use ($planActivities) {
-                    $planActivity = $planActivities->get($index);
-
-                    $item->activity_id   = $planActivity->activity_id   ?? null;
-                    $item->activity_name = isset($planActivity->activity_name)
-                        ? (json_decode($planActivity->activity_name, true) ?? $planActivity->activity_name)
-                        : null;
-
-                    if (!empty($planActivity->coach_id)) {
-                        $item->coach = [
-                            'id'   => $planActivity->coach_id,
-                            'name' => $planActivity->coach_name,
-                            'role' => $planActivity->coach_role,
-                        ];
-                    } else {
-                        $item->coach = null;
-                    }
-
-                    return $item;
-                });
+                if ($planActivities->isNotEmpty()) {
+                    $sub->items = $rawItems->map(function ($item, $index) use ($planActivities) {
+                        $planActivity = $planActivities->get($index);
+                        $item->activity_id   = $planActivity->activity_id ?? null;
+                        $item->activity_name = $planActivity->activity_name ?? 'عام';
+                        if (!empty($planActivity->coach_id)) {
+                            $item->coach = [
+                                'id'   => $planActivity->coach_id,
+                                'name' => $planActivity->coach_name,
+                                'role' => $planActivity->coach_role,
+                            ];
+                        } else {
+                            $item->coach = null;
+                        }
+                        return $item;
+                    });
+                } else {
+                    // No activity mapping; keep raw items unchanged
+                    $sub->items = $rawItems;
+                }
 
                 // 3. Calculate total sessions for the subscription
                 $sub->total_sessions_allocated = $sub->items->sum('sessions_allocated');
