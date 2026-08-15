@@ -150,6 +150,8 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
                 new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
+                new OA\Property(property: 'club_commission_percentage', type: 'number', format: 'float', nullable: true, description: '(اختياري) نسبة النادي (%)', example: 20.00),
+                new OA\Property(property: 'coach_commission_percentage', type: 'number', format: 'float', nullable: true, description: '(اختياري) نسبة الكوتش (%)', example: 80.00),
                 new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: '(اختياري) حالة الخطة: active, inactive, completed', example: 'active'),
                 new OA\Property(
                     property: 'activities', 
@@ -276,6 +278,8 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),
                 new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', nullable: true, example: false),
                 new OA\Property(property: 'gender_restriction', type: 'string', enum: ['male', 'female', 'mixed'], description: '(اختياري) الجنس المسموح: male, female, mixed', example: 'mixed'),
+                new OA\Property(property: 'club_commission_percentage', type: 'number', format: 'float', nullable: true, description: '(اختياري) نسبة النادي (%)', example: 20.00),
+                new OA\Property(property: 'coach_commission_percentage', type: 'number', format: 'float', nullable: true, description: '(اختياري) نسبة الكوتش (%)', example: 80.00),
                 new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: '(اختياري) حالة الخطة: active, inactive, completed', example: 'active'),
                 new OA\Property(
                     property: 'activities', 

@@ -22,6 +22,8 @@ class SubscriptionPlan extends Model
         'max_subscribers',
         'current_subscribers',
         'gender_restriction',
+        'club_commission_percentage',
+        'coach_commission_percentage',
     ];
 
     protected static function booted()
@@ -29,6 +31,16 @@ class SubscriptionPlan extends Model
         static::creating(function ($plan) {
             if (empty($plan->subscription_number)) {
                 $plan->subscription_number = self::generateUniqueSubscriptionNumber();
+            }
+
+            if ($plan->club_commission_percentage === null && $plan->branch_id) {
+                $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $plan->branch_id)->first();
+                $plan->club_commission_percentage = $branchSetting ? (float) ($branchSetting->private_subscription_commission ?? 0) : 0.00;
+            }
+
+            if ($plan->coach_commission_percentage === null) {
+                $clubCommission = (float) ($plan->club_commission_percentage ?? 0);
+                $plan->coach_commission_percentage = max(0, 100.00 - $clubCommission);
             }
         });
 
@@ -69,6 +81,8 @@ class SubscriptionPlan extends Model
     protected $casts = [
         'status' => SubscriptionPlanStatus::class,
         'base_price' => 'decimal:2',
+        'club_commission_percentage' => 'decimal:2',
+        'coach_commission_percentage' => 'decimal:2',
         'max_subscribers' => 'integer',
         'current_subscribers' => 'integer',
         'sessions_per_week' => 'integer',

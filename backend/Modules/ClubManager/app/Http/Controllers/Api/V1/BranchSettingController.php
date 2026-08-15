@@ -58,6 +58,7 @@ class BranchSettingController extends BaseController
             properties: [
                 new OA\Property(property: 'default_club_commission_percentage', type: 'number', format: 'float', example: 40.00),
                 new OA\Property(property: 'default_coach_commission_percentage', type: 'number', format: 'float', example: 60.00),
+                new OA\Property(property: 'private_subscription_commission', type: 'number', format: 'float', example: 0.00, description: 'نسبة عمولة النادي من الاشتراك الخاص (%) - الافتراضي 0%'),
                 new OA\Property(property: 'default_employee_salary', type: 'number', format: 'float', example: 30000.00),
                 new OA\Property(property: 'daily_entry_price', type: 'number', format: 'float', example: 50.00),
                 new OA\Property(property: 'locker_price', type: 'number', format: 'float', example: 100.00),
