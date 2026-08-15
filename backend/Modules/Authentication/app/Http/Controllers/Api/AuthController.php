@@ -11,14 +11,18 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
 use Modules\Authentication\Http\Requests\LoginRequest;
+use Modules\Authentication\Http\Requests\UpdateProfileRequest;
 use Modules\Authentication\Services\PersonQrCodeService;
+use Modules\Authentication\Services\PersonServiceInterface;
 use Modules\Authentication\Services\UsernameSuggestionService;
 
 class AuthController extends BaseController
 {
     public function __construct(
-        protected PersonQrCodeService $qrCodeService
+        protected PersonQrCodeService $qrCodeService,
+        protected PersonServiceInterface $personService
     ) {}
+
     #[OA\Post(
         path: '/v1/auth/login',
         summary: '🔐 تسجيل الدخول',
@@ -945,4 +949,83 @@ class AuthController extends BaseController
             'suggestions'  => $suggestions,
         ], __('اسم المستخدم مُستخدَم بالفعل أو غير صالح، إليك بعض الاقتراحات المتاحة.'));
     }
+
+    #[OA\Put(
+        path: '/v1/auth/profile',
+        summary: '✏️ تعديل الملف الشخصي (للمستخدم الحالي أو لمستخدم محدد عبر user_id)',
+        description: 'تعديل البيانات الشخصية الأساسية (الاسم الأول، الاسم الأخير، رقم الهاتف، تاريخ الميلاد، الجنس، العنوان، كيف سمعت بالنادي). في حال عدم تمرير user_id يتم تعديل ملف المستخدم الحالي (صاحب الـ Token). في حال تمرير user_id يتم تعديل ملف المستخدم المحدد ويتطلب ذلك صلاحية user.update-profile.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: 'بيانات الملف الشخصي المراد تعديلها',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم لتعديل ملفه (اختياري للمسؤولين)', example: 5, nullable: true),
+                new OA\Property(property: 'first_name', type: 'string', description: 'الاسم الأول', example: 'أحمد', nullable: true),
+                new OA\Property(property: 'last_name', type: 'string', description: 'الاسم الأخير', example: 'محمد', nullable: true),
+                new OA\Property(property: 'phone_number', type: 'string', description: 'رقم الموبايل', example: '0991234567', nullable: true),
+                new OA\Property(property: 'dob', type: 'string', format: 'date', description: 'تاريخ الميلاد (Y-m-d)', example: '1998-05-15', nullable: true),
+                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], description: 'الجنس (male / female)', example: 'male', nullable: true),
+                new OA\Property(property: 'address', type: 'string', description: 'العنوان السكني', example: 'دمشق - المزة', nullable: true),
+                new OA\Property(property: 'how_did_you_hear', type: 'string', description: 'كيف سمعت بالنادي', example: 'عن طريق صديق', nullable: true),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الملف الشخصي بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'تم تحديث الملف الشخصي بنجاح'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
+                        new OA\Property(property: 'custom_username', type: 'string', nullable: true, example: 'ahmed99'),
+                        new OA\Property(property: 'person_id', type: 'integer', example: 5),
+                        new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
+                        new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
+                        new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
+                        new OA\Property(property: 'phone_number', type: 'string', nullable: true, example: '0991234567'),
+                        new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1998-05-15'),
+                        new OA\Property(property: 'age', type: 'integer', example: 28),
+                        new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                        new OA\Property(property: 'address', type: 'string', example: 'دمشق - المزة'),
+                        new OA\Property(property: 'how_did_you_hear', type: 'string', example: 'عن طريق صديق'),
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    #[OA\Response(response: 403, description: '🚫 ممنوع (صلاحية غير كافية لتعديل ملف مستخدم آخر)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'عذراً، ليس لديك الصلاحية لتعديل الملف الشخصي لمستخدم آخر.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $currentUser = $request->user();
+        $targetUser = $currentUser;
+
+        if ($request->filled('user_id') && (int) $request->input('user_id') !== (int) $currentUser->id) {
+            if (!$currentUser->can('user.update-profile') && !$currentUser->hasRole('super_admin')) {
+                return response()->json([
+                    'status'     => 'error',
+                    'message'    => 'عذراً، ليس لديك الصلاحية لتعديل الملف الشخصي لمستخدم آخر.',
+                    'permission' => 'user.update-profile',
+                ], 403);
+            }
+
+            $targetUser = User::findOrFail((int) $request->input('user_id'));
+        }
+
+        $data = $this->personService->updateUserProfile($targetUser, $request->validated());
+
+        return $this->successResponse($data, __('Profile updated successfully'));
+    }
 }
+
+

@@ -5021,6 +5021,224 @@
                 }
             }
         },
+        "/v1/auth/profile": {
+            "put": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "✏️ تعديل الملف الشخصي (للمستخدم الحالي أو لمستخدم محدد عبر user_id)",
+                "description": "تعديل البيانات الشخصية الأساسية (الاسم الأول، الاسم الأخير، رقم الهاتف، تاريخ الميلاد، الجنس، العنوان، كيف سمعت بالنادي). في حال عدم تمرير user_id يتم تعديل ملف المستخدم الحالي (صاحب الـ Token). في حال تمرير user_id يتم تعديل ملف المستخدم المحدد ويتطلب ذلك صلاحية user.update-profile.",
+                "operationId": "5a5a6ce00a450dbf630f69c35f089420",
+                "requestBody": {
+                    "description": "بيانات الملف الشخصي المراد تعديلها",
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "description": "معرف المستخدم لتعديل ملفه (اختياري للمسؤولين)",
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "first_name": {
+                                        "description": "الاسم الأول",
+                                        "type": "string",
+                                        "example": "أحمد",
+                                        "nullable": true
+                                    },
+                                    "last_name": {
+                                        "description": "الاسم الأخير",
+                                        "type": "string",
+                                        "example": "محمد",
+                                        "nullable": true
+                                    },
+                                    "phone_number": {
+                                        "description": "رقم الموبايل",
+                                        "type": "string",
+                                        "example": "0991234567",
+                                        "nullable": true
+                                    },
+                                    "dob": {
+                                        "description": "تاريخ الميلاد (Y-m-d)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1998-05-15",
+                                        "nullable": true
+                                    },
+                                    "gender": {
+                                        "description": "الجنس (male / female)",
+                                        "type": "string",
+                                        "example": "male",
+                                        "nullable": true,
+                                        "enum": [
+                                            "male",
+                                            "female"
+                                        ]
+                                    },
+                                    "address": {
+                                        "description": "العنوان السكني",
+                                        "type": "string",
+                                        "example": "دمشق - المزة",
+                                        "nullable": true
+                                    },
+                                    "how_did_you_hear": {
+                                        "description": "كيف سمعت بالنادي",
+                                        "type": "string",
+                                        "example": "عن طريق صديق",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث الملف الشخصي بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم تحديث الملف الشخصي بنجاح"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "username": {
+                                                    "type": "string",
+                                                    "example": "tec-ply-75054"
+                                                },
+                                                "custom_username": {
+                                                    "type": "string",
+                                                    "example": "ahmed99",
+                                                    "nullable": true
+                                                },
+                                                "person_id": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "أحمد"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "محمد"
+                                                },
+                                                "full_name": {
+                                                    "type": "string",
+                                                    "example": "أحمد محمد"
+                                                },
+                                                "phone_number": {
+                                                    "type": "string",
+                                                    "example": "0991234567",
+                                                    "nullable": true
+                                                },
+                                                "dob": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "1998-05-15"
+                                                },
+                                                "age": {
+                                                    "type": "integer",
+                                                    "example": 28
+                                                },
+                                                "gender": {
+                                                    "type": "string",
+                                                    "example": "male"
+                                                },
+                                                "address": {
+                                                    "type": "string",
+                                                    "example": "دمشق - المزة"
+                                                },
+                                                "how_did_you_hear": {
+                                                    "type": "string",
+                                                    "example": "عن طريق صديق"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🚫 ممنوع (صلاحية غير كافية لتعديل ملف مستخدم آخر)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "عذراً، ليس لديك الصلاحية لتعديل الملف الشخصي لمستخدم آخر."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "البيانات المدخلة غير صالحة."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/contacts": {
             "get": {
                 "tags": [

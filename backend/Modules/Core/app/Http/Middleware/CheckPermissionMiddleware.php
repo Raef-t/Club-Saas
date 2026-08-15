@@ -14,7 +14,9 @@ class CheckPermissionMiddleware
     protected array $routePermissionMap = [
         // ─── Auth & Users ─────────────────────────────────────────────────────
         'GET:v1/users'                                                  => 'user.view-any',
+        'PUT:v1/auth/profile'                                           => 'profile.update',
         'GET:v1/permissions'                                            => 'permission.view-any',
+
         'GET:v1/roles'                                                  => 'role.view-any',
         'POST:v1/roles'                                                 => 'role.create',
         'GET:v1/roles/{id}'                                             => 'role.view',
@@ -23,6 +25,7 @@ class CheckPermissionMiddleware
         'GET:v1/users/{userId}/roles'                                   => 'user-role.view',
         'POST:v1/users/{userId}/roles'                                  => 'user-role.assign',
         'DELETE:v1/users/{userId}/roles'                                => 'user-role.revoke',
+
 
         // ─── Contacts ─────────────────────────────────────────────────────────
         'GET:v1/contacts'                                               => 'contact.view-any',

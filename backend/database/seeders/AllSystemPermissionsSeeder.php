@@ -16,8 +16,10 @@ class AllSystemPermissionsSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
-            // ─── Auth & Users (10) ──────────────────────────────────────────
+            // ─── Auth & Users ──────────────────────────────────────────────
             'user.view-any',
+            'user.update-profile',
+            'profile.update',
             'permission.view-any',
             'role.view-any',
             'role.create',
@@ -27,6 +29,7 @@ class AllSystemPermissionsSeeder extends Seeder
             'user-role.view',
             'user-role.assign',
             'user-role.revoke',
+
 
             // ─── Contacts (5) ───────────────────────────────────────────────
             'contact.view-any',
