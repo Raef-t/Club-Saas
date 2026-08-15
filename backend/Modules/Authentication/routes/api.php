@@ -20,6 +20,7 @@ Route::prefix('v1/auth')->group(function () {
         Route::post('set-custom-username', [AuthController::class, 'setCustomUsername']);
         Route::post('change-photo', [AuthController::class, 'updatePhoto']);
         Route::delete('delete-photo', [AuthController::class, 'deletePhoto']);
+        Route::put('profile', [AuthController::class, 'updateProfile']);
     });
 });
 
@@ -47,6 +48,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'check.permission'])->group(fun
     // ─── Users ──────────────────────────────────────────────────────────────────
     // GET    /v1/users                → list users (with optional ?role= filter)
     Route::get('users', [UserController::class, 'index']);
+
+
 
     // ─── User Roles ─────────────────────────────────────────────────────────────
     // GET    /v1/users/{userId}/roles → get user's roles & permissions
