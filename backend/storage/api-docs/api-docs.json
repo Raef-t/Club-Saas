@@ -6968,6 +6968,12 @@
                                         "format": "float",
                                         "example": 60
                                     },
+                                    "private_subscription_commission": {
+                                        "description": "نسبة عمولة النادي من الاشتراك الخاص (%) - الافتراضي 0%",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0
+                                    },
                                     "default_employee_salary": {
                                         "type": "number",
                                         "format": "float",
@@ -21909,6 +21915,20 @@
                                             "mixed"
                                         ]
                                     },
+                                    "club_commission_percentage": {
+                                        "description": "(اختياري) نسبة النادي (%)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "coach_commission_percentage": {
+                                        "description": "(اختياري) نسبة الكوتش (%)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 80,
+                                        "nullable": true
+                                    },
                                     "status": {
                                         "description": "(اختياري) حالة الخطة: active, inactive, completed",
                                         "type": "string",
@@ -22332,6 +22352,20 @@
                                             "female",
                                             "mixed"
                                         ]
+                                    },
+                                    "club_commission_percentage": {
+                                        "description": "(اختياري) نسبة النادي (%)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "coach_commission_percentage": {
+                                        "description": "(اختياري) نسبة الكوتش (%)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 80,
+                                        "nullable": true
                                     },
                                     "status": {
                                         "description": "(اختياري) حالة الخطة: active, inactive, completed",
@@ -25715,6 +25749,13 @@
                         "type": "number",
                         "format": "float",
                         "example": 60,
+                        "nullable": true
+                    },
+                    "private_subscription_commission": {
+                        "description": "نسبة عمولة النادي من الاشتراك الخاص (%) - الافتراضي 0%",
+                        "type": "number",
+                        "format": "float",
+                        "example": 0,
                         "nullable": true
                     },
                     "default_employee_salary": {

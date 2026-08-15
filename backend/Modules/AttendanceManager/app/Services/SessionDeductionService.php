@@ -29,18 +29,21 @@ class SessionDeductionService
      */
     public function autoDeductSessionForGate(int $attendanceId, int $memberId): Attendance
     {
-        $subscription = DB::table('player_subscriptions')
+        // Retrieve all active subscriptions for the member
+        $subscriptionIds = DB::table('player_subscriptions')
             ->where('member_id', $memberId)
             ->where('status', 'active')
             ->whereDate('end_date', '>=', now())
-            ->orderBy('id', 'asc') // You can sort by closest expiry date later if needed
-            ->first();
+            ->orderBy('id', 'asc')
+            ->pluck('id')
+            ->toArray();
 
-        if (!$subscription) {
+        if (empty($subscriptionIds)) {
             throw new Exception(__('No active subscription found. Access denied (Subscription might be frozen or expired).'));
         }
 
-        return $this->deductSession($attendanceId, $subscription->id);
+        // Deduct a session from each active subscription in a single transaction
+        return $this->deductMultipleSessions($attendanceId, $subscriptionIds);
     }
 
     /**
@@ -118,6 +121,9 @@ class SessionDeductionService
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
             $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
             $clubId = $branch ? $branch->club_id : 1;
+
+            // Auto-add the general (عام) subscription when deducting from a private (خاص) subscription
+            $subscriptionIds = $this->enrichWithGeneralSubscription($attendance->attendable_id, $subscriptionIds);
 
             foreach ($subscriptionIds as $subscriptionId) {
                 $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
@@ -211,6 +217,56 @@ class SessionDeductionService
     }
 
 
+    /**
+     * When the supplied subscription list contains a "private training" (تدريب خاص, activity_type_id=5)
+     * subscription, this helper finds the member's active "general training" (تدريب عام, activity_type_id=4)
+     * subscription and appends it to the list so both are deducted together.
+     *
+     * @param int   $memberId
+     * @param int[] $subscriptionIds
+     * @return int[]
+     */
+    private function enrichWithGeneralSubscription(int $memberId, array $subscriptionIds): array
+    {
+        // PRIVATE activity type id
+        $privateTypeId = 5;
+        // GENERAL activity type id
+        $generalTypeId = 4;
+
+        // Determine which activity types are represented in the requested subscriptions
+        $typesInRequest = DB::table('player_subscriptions as ps')
+            ->join('plan_activities as pa', 'pa.plan_id', '=', 'ps.plan_id')
+            ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
+            ->join('activities as act', 'act.id', '=', 'sa.activity_id')
+            ->whereIn('ps.id', $subscriptionIds)
+            ->whereNull('pa.deleted_at')
+            ->pluck('act.activity_type_id')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Only enrich if private type is being deducted and general type is NOT already in the list
+        if (in_array($privateTypeId, $typesInRequest) && !in_array($generalTypeId, $typesInRequest)) {
+            // Find the member's active general subscription that is NOT already included
+            $generalSubId = DB::table('player_subscriptions as ps')
+                ->join('plan_activities as pa', 'pa.plan_id', '=', 'ps.plan_id')
+                ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
+                ->join('activities as act', 'act.id', '=', 'sa.activity_id')
+                ->where('ps.member_id', $memberId)
+                ->where('ps.status', 'active')
+                ->whereDate('ps.end_date', '>=', now())
+                ->where('act.activity_type_id', $generalTypeId)
+                ->whereNull('pa.deleted_at')
+                ->whereNotIn('ps.id', $subscriptionIds)
+                ->value('ps.id');
+
+            if ($generalSubId) {
+                $subscriptionIds[] = $generalSubId;
+            }
+        }
+
+        return array_unique($subscriptionIds);
+    }
 
     /**
      * Rollbacks session deductions for a given attendance.

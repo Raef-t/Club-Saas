@@ -18,6 +18,7 @@ class UpdateBranchSettingRequest extends FormRequest
             'working_hours_end' => 'nullable|date_format:H:i|after:working_hours_start',
             'default_club_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'default_coach_commission_percentage' => 'nullable|numeric|min:0|max:100',
+            'private_subscription_commission' => 'nullable|numeric|min:0|max:100',
             'default_employee_salary' => 'nullable|numeric|min:0',
             'daily_entry_price' => 'nullable|numeric|min:0',
             'locker_price' => 'nullable|numeric|min:0',

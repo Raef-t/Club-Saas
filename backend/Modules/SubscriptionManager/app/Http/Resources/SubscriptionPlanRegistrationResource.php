@@ -14,6 +14,8 @@ class SubscriptionPlanRegistrationResource extends JsonResource
             'session_count' => $this->session_count,
             'sessions_per_week' => $this->sessions_per_week,
             'base_price' => $this->base_price,
+            'club_commission_percentage' => $this->club_commission_percentage,
+            'coach_commission_percentage' => $this->coach_commission_percentage,
             'max_subscribers' => $this->max_subscribers,
             'current_subscribers' => $this->current_subscribers,
             'is_unlimited_subscribers' => $this->max_subscribers == 0,

@@ -22,7 +22,7 @@ class SubscribeMemberRequest extends FormRequest
             'member_id' => [
                 'required',
                 'exists:members,id',
-                new NoActiveSubscriptionRule($subscriptionRepo, $this->member_id, $this->plan_id)
+                new NoActiveSubscriptionRule($subscriptionRepo, $this->member_id, $this->plan_id, $this->input('start_date'))
             ],
             'plan_id' => 'required|exists:subscription_plans,id',
             'months_count' => 'nullable|integer|min:1',
