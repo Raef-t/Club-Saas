@@ -109,31 +109,41 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
   }
 
   return (
-    <div className="flex min-h-64 flex-col items-center px-5 pb-5 pt-1">
-      <div className="flex min-h-14 w-full items-center justify-center pb-2">
-        {activeItem && (
-          <div
-            className="max-w-full rounded-xl border border-app-yellow/30 bg-app-panel px-4 py-2 text-center shadow-xl"
-            role="tooltip"
-          >
-            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-app-text">
-              <span
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: activeItem.color }}
-              />
-              <span className="truncate">{activeItem.label}</span>
-              <span className="text-app-yellow">{activeItem.value.toLocaleString("ar")} لاعب</span>
-            </div>
-            {activeItem.activities.length > 0 && (
-              <p className="mt-1 truncate text-[11px] text-app-muted-light">
-                {activeItem.activities.join("، ")}
-              </p>
-            )}
+    <div className="flex min-h-64 flex-col items-center px-4 pb-4 pt-3 sm:px-5">
+      <div
+        className="flex h-14 w-full shrink-0 items-center justify-center overflow-hidden pb-1"
+        data-testid="coach-tooltip-slot"
+      >
+        <div
+          className={`max-w-full rounded-xl border bg-app-panel px-4 py-2 text-center transition-[opacity,transform,border-color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
+            activeItem
+              ? "translate-y-0 border-app-yellow/30 opacity-100 shadow-xl"
+              : "pointer-events-none translate-y-1 border-transparent opacity-0 shadow-none"
+          }`}
+          role="tooltip"
+          aria-hidden={!activeItem}
+        >
+          <div className="flex items-center justify-center gap-2 text-sm font-semibold text-app-text">
+            <span
+              className="size-2.5 shrink-0 rounded-full transition-colors duration-200"
+              style={{ backgroundColor: activeItem?.color || "transparent" }}
+            />
+            <span className="truncate">{activeItem?.label || "الكوتش"}</span>
+            <span className="shrink-0 text-app-yellow">
+              {(activeItem?.value || 0).toLocaleString("ar")} لاعب
+            </span>
           </div>
-        )}
+          <p
+            className={`mt-1 truncate text-[11px] text-app-muted-light ${
+              activeItem?.activities?.length ? "visible" : "invisible"
+            }`}
+          >
+            {activeItem?.activities?.join("، ") || "لا توجد فعاليات"}
+          </p>
+        </div>
       </div>
 
-      <div className="relative size-52 shrink-0">
+      <div className="relative size-50 shrink-0 sm:size-52">
         <svg
           className="size-full"
           viewBox="0 0 120 120"
@@ -159,11 +169,15 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
                   strokeDasharray={`${length} ${circumference - length}`}
                   strokeDashoffset={-segmentOffset}
                   tabIndex={0}
-                  className={`cursor-pointer outline-none transition-all duration-200 ${
+                  className={`cursor-pointer outline-none transition-[opacity,filter] duration-200 ease-out motion-reduce:transition-none hover:brightness-125 ${
                     activeItem && activeItem.id !== item.id
                       ? "opacity-25"
                       : "opacity-100 focus-visible:brightness-125"
                   }`}
+                  style={{
+                    filter:
+                      activeItem?.id === item.id ? `drop-shadow(0 0 3px ${item.color})` : "none",
+                  }}
                   onMouseEnter={() => setActiveCoachId(item.id)}
                   onMouseLeave={() => setActiveCoachId(null)}
                   onFocus={() => setActiveCoachId(item.id)}
@@ -188,8 +202,8 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
         </div>
       </div>
 
-      <div className="mt-4 w-full max-h-48 overflow-y-auto px-0.5">
-        <ul className="grid grid-cols-3 gap-2 text-sm text-app-text">
+      <div className="mt-2 w-full max-h-44 overflow-y-auto px-0.5 pt-1">
+        <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-sm text-app-text sm:grid-cols-3">
           {items.map((item) => {
             const activities = item.activities.join("، ");
             const details = activities ? `${item.label} — ${activities}` : item.label;
@@ -198,10 +212,10 @@ export function CoachSubscriptionsDonut({ items = [], isLoading = false, hasErro
               <li key={item.id} className="min-w-0">
                 <button
                   type="button"
-                  className={`flex w-full items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs text-start transition ${
+                  className={`flex h-10 w-full items-center justify-between gap-1.5 rounded-lg border px-3 text-xs text-start transition-[opacity,transform,background-color,border-color,box-shadow] duration-200 ease-out motion-safe:hover:-translate-y-0.5 motion-reduce:transition-none ${
                     activeItem && activeItem.id !== item.id
-                      ? "border-transparent opacity-35"
-                      : "border-app-line bg-black/20 hover:border-app-yellow/40 hover:bg-white/5 focus-visible:border-app-yellow/50"
+                      ? "border-app-line/50 bg-black/10 opacity-40"
+                      : "border-app-line bg-black/20 hover:border-app-yellow/40 hover:bg-white/5 hover:shadow-[0_6px_18px_-10px_rgba(242,220,46,0.55)] focus-visible:border-app-yellow/50"
                   }`}
                   title={`${details}: ${item.value.toLocaleString("ar")} لاعب`}
                   onMouseEnter={() => setActiveCoachId(item.id)}

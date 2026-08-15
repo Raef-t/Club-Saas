@@ -3,6 +3,7 @@ import {
   formatSubscriptionMoney,
   getCurrentMemberSubscription,
   getLocalDateValue,
+  getSubscriptionEndDate,
   getSubscriptionDetail,
   getSubscriptionRows,
   isDailyEntrySubscriptionPlan,
@@ -16,7 +17,7 @@ describe("subscription utilities", () => {
   });
 
   it("formats subscription money consistently", () => {
-    expect(formatSubscriptionMoney("1200.5")).toBe("$1,200.5");
+    expect(formatSubscriptionMoney("1200.5")).toBe("1,200.5 ل.س");
   });
 
   it("supports nested and direct collection responses", () => {
@@ -35,6 +36,21 @@ describe("subscription utilities", () => {
   it("formats a local date for subscription fields", () => {
     expect(getLocalDateValue(new Date(2026, 7, 8, 12))).toBe("2026-08-08");
     expect(getLocalDateValue(new Date("invalid"))).toBe("");
+  });
+
+  it("calculates a full calendar month minus one day", () => {
+    expect(getSubscriptionEndDate("2026-08-08")).toBe("2026-09-07");
+    expect(getSubscriptionEndDate("2026-12-15")).toBe("2027-01-14");
+  });
+
+  it("clamps calendar anniversaries at shorter month endings", () => {
+    expect(getSubscriptionEndDate("2026-01-31")).toBe("2026-02-27");
+    expect(getSubscriptionEndDate("2028-01-31")).toBe("2028-02-28");
+  });
+
+  it("supports multiple subscription months", () => {
+    expect(getSubscriptionEndDate("2026-08-08", 3)).toBe("2026-11-07");
+    expect(getSubscriptionEndDate("invalid", 1)).toBe("");
   });
 
   it("detects daily-entry plans from API type fields", () => {

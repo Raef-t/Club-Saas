@@ -4,12 +4,14 @@ import { useState } from "react";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
-import { formatLocalizedName } from "@/lib/utils";
+import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { subscriptionEditSchema, subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
-import { getLocalDateValue, isDailyEntrySubscriptionPlan } from "./subscriptionUtils";
+import {
+  getLocalDateValue,
+  getSubscriptionEndDate,
+  isDailyEntrySubscriptionPlan,
+} from "./subscriptionUtils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
-
-const CURRENCY_SYMBOL = "$";
 
 /**
  * Collects and validates the values required to create a member subscription.
@@ -57,11 +59,7 @@ export function SubscriptionCreateForm({
     setForm((current) => {
       const nextState = { ...current, [field]: value };
       if (field === "start_date" && value && !isDailyEntryPlan) {
-        const d = new Date(value);
-        if (!isNaN(d.getTime())) {
-          d.setMonth(d.getMonth() + 1);
-          nextState.end_date = d.toISOString().split("T")[0];
-        }
+        nextState.end_date = getSubscriptionEndDate(value);
       }
       return nextState;
     });
@@ -303,13 +301,10 @@ export function SubscriptionEditForm({
   function updateField(field, value) {
     setForm((current) => {
       const nextState = { ...current, [field]: value };
-      if (field === "start_date" && value && !isDailyEntryPlan) {
-        const d = new Date(value);
-        if (!isNaN(d.getTime())) {
-          const months = parseInt(current.months_count) || 1;
-          d.setMonth(d.getMonth() + months);
-          nextState.end_date = d.toISOString().split("T")[0];
-        }
+      if (!isDailyEntryPlan && (field === "start_date" || field === "months_count")) {
+        const startDate = field === "start_date" ? value : current.start_date;
+        const months = field === "months_count" ? value : current.months_count;
+        if (startDate) nextState.end_date = getSubscriptionEndDate(startDate, months);
       }
       return nextState;
     });

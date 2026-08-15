@@ -5,18 +5,14 @@ const requiredNumber = (label, { min = 0, max } = {}) => {
   let schema = z
     .union([z.string(), z.number()])
     .refine(
-      (value) =>
-        String(value).trim() !== "" && Number.isFinite(Number(value)),
+      (value) => String(value).trim() !== "" && Number.isFinite(Number(value)),
       `${label} مطلوب ويجب أن يكون رقماً صالحاً`,
     )
     .transform(Number)
     .refine((value) => value >= min, `${label} يجب ألا يقل عن ${min}`);
 
   if (max !== undefined) {
-    schema = schema.refine(
-      (value) => value <= max,
-      `${label} يجب ألا يزيد عن ${max}`,
-    );
+    schema = schema.refine((value) => value <= max, `${label} يجب ألا يزيد عن ${max}`);
   }
 
   return schema;
@@ -24,14 +20,14 @@ const requiredNumber = (label, { min = 0, max } = {}) => {
 
 export const branchSettingsSchema = z
   .object({
-    selectedBranchId: z
-      .string()
-      .trim()
-      .min(1, "يرجى اختيار الفرع"),
+    selectedBranchId: z.string().trim().min(1, "يرجى اختيار الفرع"),
     defaultClubCommission: requiredNumber("نسبة عمولة النادي", {
       max: 100,
     }),
     defaultCoachCommission: requiredNumber("نسبة عمولة المدرب", {
+      max: 100,
+    }),
+    privateSubscriptionCommission: requiredNumber("نسبة النادي من التدريب الخاص", {
       max: 100,
     }),
     defaultEmployeeSalary: requiredNumber("راتب الموظف الافتراضي"),
@@ -72,10 +68,7 @@ export const branchSettingsSchema = z
 
 export const shiftSchema = z
   .object({
-    shiftName: z
-      .string()
-      .trim()
-      .max(100, "اسم الوردية يجب ألا يتجاوز 100 حرف"),
+    shiftName: z.string().trim().max(100, "اسم الوردية يجب ألا يتجاوز 100 حرف"),
     shiftStartTime: z.string().min(1, "وقت البدء مطلوب"),
     shiftEndTime: z.string().min(1, "وقت الانتهاء مطلوب"),
     shiftGender: z.enum(["mixed", "male", "female"], {
@@ -83,11 +76,7 @@ export const shiftSchema = z
     }),
   })
   .superRefine((data, context) => {
-    if (
-      data.shiftStartTime &&
-      data.shiftEndTime &&
-      data.shiftEndTime <= data.shiftStartTime
-    ) {
+    if (data.shiftStartTime && data.shiftEndTime && data.shiftEndTime <= data.shiftStartTime) {
       context.addIssue({
         code: "custom",
         path: ["shiftEndTime"],

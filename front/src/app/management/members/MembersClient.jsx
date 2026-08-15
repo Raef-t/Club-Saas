@@ -21,7 +21,6 @@ import { getMemberDisplayName } from "./memberDisplayName";
 import { useMembers } from "./useMembers";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
-const CURRENCY_SYMBOL = "ل.س";
 
 const genderLabels = {
   male: "ذكر",

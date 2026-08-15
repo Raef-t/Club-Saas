@@ -79,7 +79,7 @@ export default function GeneralSettingsTab({
 function SettingsFieldsSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {Array.from({ length: 8 }, (_, index) => (
+      {Array.from({ length: 9 }, (_, index) => (
         <Skeleton key={index} className="h-[70px] w-full" />
       ))}
     </div>
@@ -116,6 +116,18 @@ function BranchSettingsFields({ form, errors, onFieldChange }) {
           onChange={(event) => onFieldChange("defaultCoachCommission", event.target.value)}
           placeholder="60"
           error={errors.defaultCoachCommission}
+        />
+        <Field
+          label="نسبة النادي من التدريب الخاص (%)"
+          type="number"
+          required
+          min="0"
+          max="100"
+          step="0.01"
+          value={form.privateSubscriptionCommission}
+          onChange={(event) => onFieldChange("privateSubscriptionCommission", event.target.value)}
+          placeholder="0"
+          error={errors.privateSubscriptionCommission}
         />
       </div>
 

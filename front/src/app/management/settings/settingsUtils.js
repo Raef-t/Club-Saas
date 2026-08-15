@@ -65,6 +65,7 @@ export function createBranchSettingsForm(settings) {
   return {
     defaultClubCommission: String(settings?.default_club_commission_percentage ?? "40"),
     defaultCoachCommission: String(settings?.default_coach_commission_percentage ?? "60"),
+    privateSubscriptionCommission: String(settings?.private_subscription_commission ?? "0"),
     defaultEmployeeSalary: String(settings?.default_employee_salary ?? "3500"),
     workingHoursStart: formatTimeForApi(settings?.working_hours_start) || "",
     workingHoursEnd: formatTimeForApi(settings?.working_hours_end) || "",
@@ -82,6 +83,7 @@ export function createBranchSettingsPayload(form) {
   return {
     default_club_commission_percentage: Number(form.defaultClubCommission) || 0,
     default_coach_commission_percentage: Number(form.defaultCoachCommission) || 0,
+    private_subscription_commission: Number(form.privateSubscriptionCommission) || 0,
     default_employee_salary: Number(form.defaultEmployeeSalary) || 0,
     working_hours_start: formatTimeForApi(form.workingHoursStart),
     working_hours_end: formatTimeForApi(form.workingHoursEnd),
