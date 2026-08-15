@@ -4,7 +4,11 @@ import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field } from "@/components/forms/FormControls";
-import { initialReserveLockerForm, reserveLockerSchema } from "@/lib/validations/lockersSchema";
+import {
+  createInitialReserveLockerForm,
+  reserveLockerSchema,
+} from "@/lib/validations/lockersSchema";
+import { toIsoDate } from "@/components/forms/datePickerUtils";
 import {
   LOCKER_HOLDER_TYPE_OPTIONS,
   LOCKER_RESERVATION_HOLDER_TYPES,
@@ -36,7 +40,7 @@ export default function LockerReserveForm({
   isLoading,
   errorMessage,
 }) {
-  const [form, setForm] = useState(initialReserveLockerForm);
+  const [form, setForm] = useState(() => createInitialReserveLockerForm());
   const [errors, setErrors] = useState({});
   const memberOptions = useMemo(() => createLockerMemberOptions(members), [members]);
   const coachOptions = useMemo(() => createLockerCoachOptions(coaches), [coaches]);
@@ -46,14 +50,61 @@ export default function LockerReserveForm({
    * Updates one reservation field and clears dependent holder state.
    */
   function updateField(field, value) {
-    setForm((current) =>
-      field === "holder_type"
-        ? { ...current, holder_type: value, holder_id: "" }
-        : { ...current, [field]: value },
-    );
+    setForm((current) => {
+      if (field === "holder_type") {
+        if (value === "coach") {
+          return {
+            ...current,
+            holder_type: value,
+            holder_id: "",
+            start_date: "",
+            end_date: "",
+          };
+        }
+        if (value === "member" && current.reservation_type === "assign") {
+          const today = toIsoDate(new Date());
+          return {
+            ...current,
+            holder_type: value,
+            holder_id: "",
+            start_date: today,
+            end_date: today,
+          };
+        }
+        return {
+          ...current,
+          holder_type: value,
+          holder_id: "",
+          start_date: current.start_date || toIsoDate(new Date()),
+        };
+      }
+
+      if (field === "reservation_type") {
+        if (value === "assign" && current.holder_type === "member") {
+          const today = toIsoDate(new Date());
+          return {
+            ...current,
+            reservation_type: value,
+            price: "",
+            start_date: today,
+            end_date: today,
+          };
+        }
+        return {
+          ...current,
+          reservation_type: value,
+          price: value === "assign" ? "" : current.price,
+        };
+      }
+
+      return { ...current, [field]: value };
+    });
 
     if (errors[field]) {
       setErrors((current) => ({ ...current, [field]: null }));
+    }
+    if (field === "holder_type" && value === "coach") {
+      setErrors((current) => ({ ...current, start_date: null, end_date: null }));
     }
   }
 
@@ -132,23 +183,27 @@ export default function LockerReserveForm({
           />
         )}
 
-        <Field
-          label="تاريخ البداية"
-          type="date"
-          required
-          value={form.start_date}
-          onChange={(value) => updateField("start_date", value)}
-          error={errors.start_date}
-        />
+        {form.holder_type !== "coach" && (
+          <>
+            <Field
+              label="تاريخ البداية"
+              type="date"
+              required
+              value={form.start_date}
+              onChange={(value) => updateField("start_date", value)}
+              error={errors.start_date}
+            />
 
-        <Field
-          label="تاريخ النهاية (اختياري)"
-          type="date"
-          required={false}
-          value={form.end_date}
-          onChange={(value) => updateField("end_date", value)}
-          error={errors.end_date}
-        />
+            <Field
+              label="تاريخ النهاية (اختياري)"
+              type="date"
+              required={false}
+              value={form.end_date}
+              onChange={(value) => updateField("end_date", value)}
+              error={errors.end_date}
+            />
+          </>
+        )}
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-3 border-t border-app-line pt-4">

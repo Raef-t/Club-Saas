@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Button from "@/components/ui/Button";
-import { TrashIcon, XIcon } from "@/components/icons/Icons";
+import { CheckIcon, TrashIcon, XIcon } from "@/components/icons/Icons";
 
 export default function ConfirmDialog({
   open,
@@ -14,7 +14,13 @@ export default function ConfirmDialog({
   cancelLabel = "إلغاء",
   isLoading = false,
   tone = "danger",
+  requiredConfirmation,
+  confirmationValue = "",
+  onConfirmationChange,
+  confirmationLabel,
 }) {
+  const confirmationMatches = !requiredConfirmation || confirmationValue === requiredConfirmation;
+
   useEffect(() => {
     if (!open) return;
 
@@ -68,16 +74,44 @@ export default function ConfirmDialog({
 
         {/* Content */}
         <div className="mt-2 text-right">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-app-red/10 text-app-red">
-            <TrashIcon className="size-6" />
+          <div
+            className={`mx-auto mb-4 flex size-12 items-center justify-center rounded-full ${
+              tone === "danger" ? "bg-app-red/10 text-app-red" : "bg-app-yellow/10 text-app-yellow"
+            }`}
+          >
+            {tone === "danger" ? (
+              <TrashIcon className="size-6" />
+            ) : (
+              <CheckIcon className="size-6" />
+            )}
           </div>
 
-          <h3 className="text-center text-lg font-medium text-app-text">
-            {title}
-          </h3>
-          <p className="mt-3 text-center text-sm leading-relaxed text-app-muted-light">
-            {message}
-          </p>
+          <h3 className="text-center text-lg font-medium text-app-text">{title}</h3>
+          <p className="mt-3 text-center text-sm leading-relaxed text-app-muted-light">{message}</p>
+
+          {requiredConfirmation && (
+            <label className="mt-5 block text-right">
+              <span className="mb-2 block text-xs font-medium text-app-muted-light">
+                {confirmationLabel || (
+                  <>
+                    اكتب <bdi className="font-semibold text-app-text">{requiredConfirmation}</bdi>{" "}
+                    للتأكيد
+                  </>
+                )}
+              </span>
+              <input
+                type="text"
+                dir="ltr"
+                autoComplete="off"
+                spellCheck={false}
+                className="app-input h-11 w-full px-3 text-left text-sm text-app-text outline-none transition focus:border-app-red/70"
+                value={confirmationValue}
+                onChange={(event) => onConfirmationChange?.(event.target.value)}
+                disabled={isLoading}
+                placeholder={requiredConfirmation}
+              />
+            </label>
+          )}
         </div>
 
         {/* Actions */}
@@ -87,6 +121,7 @@ export default function ConfirmDialog({
             tone={tone === "danger" ? "danger" : "primary"}
             className="h-11 flex-1 font-medium"
             loading={isLoading}
+            disabled={isLoading || !confirmationMatches}
             onClick={onConfirm}
           >
             {confirmLabel}

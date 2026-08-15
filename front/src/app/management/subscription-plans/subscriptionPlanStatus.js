@@ -1,7 +1,10 @@
+import { isSubscriptionPlanSuspended } from "./subscriptionPlanSuspension";
+
 export const SUBSCRIPTION_PLAN_STATUS = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   COMPLETED: "completed",
+  SUSPENDED: "suspended",
 };
 
 const STATUS_META = {
@@ -17,6 +20,10 @@ const STATUS_META = {
     label: "مكتملة",
     className: "bg-app-yellow/15 text-app-yellow",
   },
+  [SUBSCRIPTION_PLAN_STATUS.SUSPENDED]: {
+    label: "موقوفة مؤقتاً",
+    className: "bg-app-yellow/15 text-app-yellow",
+  },
 };
 
 /**
@@ -26,7 +33,13 @@ const STATUS_META = {
 export function getSubscriptionPlanStatus(plan) {
   const status = String(plan?.status || "").toLowerCase();
 
-  if (Object.hasOwn(STATUS_META, status)) {
+  if (
+    [
+      SUBSCRIPTION_PLAN_STATUS.ACTIVE,
+      SUBSCRIPTION_PLAN_STATUS.INACTIVE,
+      SUBSCRIPTION_PLAN_STATUS.COMPLETED,
+    ].includes(status)
+  ) {
     return status;
   }
 
@@ -36,6 +49,13 @@ export function getSubscriptionPlanStatus(plan) {
 }
 
 export function getSubscriptionPlanStatusMeta(planOrStatus) {
+  if (typeof planOrStatus === "object" && isSubscriptionPlanSuspended(planOrStatus)) {
+    return {
+      status: SUBSCRIPTION_PLAN_STATUS.SUSPENDED,
+      ...STATUS_META[SUBSCRIPTION_PLAN_STATUS.SUSPENDED],
+    };
+  }
+
   const status =
     typeof planOrStatus === "string"
       ? getSubscriptionPlanStatus({ status: planOrStatus })
@@ -48,5 +68,8 @@ export function getSubscriptionPlanStatusMeta(planOrStatus) {
 }
 
 export function isSubscriptionPlanActive(plan) {
-  return getSubscriptionPlanStatus(plan) === SUBSCRIPTION_PLAN_STATUS.ACTIVE;
+  return (
+    getSubscriptionPlanStatus(plan) === SUBSCRIPTION_PLAN_STATUS.ACTIVE &&
+    !isSubscriptionPlanSuspended(plan)
+  );
 }

@@ -41,6 +41,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const queryParams = useMemo(() => {
     return branchFilter !== "all" ? { branch_id: branchFilter } : {};
@@ -204,18 +205,20 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
 
   function handleDelete(member) {
     setItemToDelete(member);
+    setDeleteConfirmation("");
     setDeleteConfirmOpen(true);
   }
 
   function closeDeleteConfirm() {
     setDeleteConfirmOpen(false);
     setItemToDelete(null);
+    setDeleteConfirmation("");
   }
 
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
-      await deleteMember(itemToDelete.id).unwrap();
+      await deleteMember({ id: itemToDelete.id, confirmation: deleteConfirmation }).unwrap();
       toast.success("تم حذف اللاعب العضو بنجاح!");
     } catch {
       toast.error("تعذر حذف اللاعب العضو. حاول مرة أخرى.");
@@ -287,6 +290,8 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     confirmDelete,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     getEditInitialValues,
     branches,
     plans,

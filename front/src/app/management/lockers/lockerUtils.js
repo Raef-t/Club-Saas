@@ -300,13 +300,15 @@ export function createLockerReservationPayload(form) {
     reservation_type: form.reservation_type,
     holder_type: form.holder_type,
     holder_id: Number(form.holder_id),
-    start_date: form.start_date,
   };
 
   if (form.reservation_type === "rental" && form.price !== "") {
     payload.price = Number(form.price);
   }
-  if (form.end_date) payload.end_date = form.end_date;
+  if (form.holder_type !== "coach") {
+    if (form.start_date) payload.start_date = form.start_date;
+    if (form.end_date) payload.end_date = form.end_date;
+  }
 
   return payload;
 }

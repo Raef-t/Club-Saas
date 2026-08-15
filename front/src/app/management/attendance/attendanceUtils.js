@@ -135,6 +135,28 @@ export function formatAttendanceTime(value) {
 }
 
 /**
+ * Formats a check-in timestamp with both its calendar date and time.
+ */
+export function formatAttendanceDateTime(value) {
+  if (!value) return "-";
+
+  const normalizedValue =
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)
+      ? value.replace(" ", "T")
+      : value;
+  const date = new Date(normalizedValue);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  const datePart = date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  return `${datePart} - ${formatAttendanceTime(value)}`;
+}
+
+/**
  * Combines an optional manual time with the local attendance date.
  * An empty or invalid time returns null so the backend can use server time.
  */
@@ -183,7 +205,7 @@ export function createAttendanceRows(response, activeMember, people = {}) {
       isOpen: record.status === "checked_in" && !(record.check_out_at || record.check_out),
       number: record.id ? `#${record.id}` : "-",
       type: record.attendable_type === "staff" ? "موظف" : "عضو",
-      checkIn: formatAttendanceTime(record.check_in_at || record.check_in),
+      checkIn: formatAttendanceDateTime(record.check_in || record.check_in_at),
       checkOut: formatAttendanceTime(record.check_out_at || record.check_out),
       member:
         (activeMember &&
@@ -204,7 +226,11 @@ export function createAttendanceRows(response, activeMember, people = {}) {
       lockerId: locker.id || record.locker_id || record.active_locker_id || null,
       lockerNumber,
       locker: lockerNumber || "-",
-      duration: record.duration_minutes ?? null,
+      duration:
+        record.duration_formatted ||
+        (record.duration_minutes !== null && record.duration_minutes !== undefined
+          ? `${record.duration_minutes} دقيقة`
+          : null),
       status: getAttendanceStatusLabel(record.status),
     };
   });

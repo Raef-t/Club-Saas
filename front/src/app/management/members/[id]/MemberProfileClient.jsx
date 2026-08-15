@@ -32,7 +32,7 @@ function getMemberDisplayName(member) {
 }
 
 export default function MemberProfileClient({ memberId, initialMember, initialBranches = [] }) {
-  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
 
   const {
     data: subscriptionsResponse,
@@ -60,6 +60,24 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
   const currentSubscription = useMemo(
     () => getSubscriptionDetail(subscriptionDetailResponse) || subscriptionSummary,
     [subscriptionDetailResponse, subscriptionSummary],
+  );
+  const selectedSubscriptionSummary = useMemo(
+    () =>
+      subscriptions.find(
+        (subscription) => String(subscription.id) === String(selectedSubscriptionId),
+      ) || null,
+    [selectedSubscriptionId, subscriptions],
+  );
+  const {
+    data: selectedSubscriptionResponse,
+    error: selectedSubscriptionError,
+    isLoading: selectedSubscriptionLoading,
+    isFetching: selectedSubscriptionFetching,
+    refetch: refetchSelectedSubscription,
+  } = useGetPlayerSubscriptionQuery(selectedSubscriptionId, { skip: !selectedSubscriptionId });
+  const selectedSubscription = useMemo(
+    () => getSubscriptionDetail(selectedSubscriptionResponse) || selectedSubscriptionSummary,
+    [selectedSubscriptionResponse, selectedSubscriptionSummary],
   );
 
   const {
@@ -104,6 +122,10 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
     refetchSubscriptionDetail();
   }
 
+  function showSubscription(subscription) {
+    setSelectedSubscriptionId(subscription?.id || null);
+  }
+
   const subscriptionsListLoading = subscriptionsLoading || subscriptionsFetching;
   const currentSubscriptionLoading =
     subscriptionsListLoading ||
@@ -139,7 +161,7 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
         attendances={attendances}
         lockers={lockers}
         summary={summary}
-        onShowSubscription={() => setSubscriptionModalOpen(true)}
+        onShowSubscription={showSubscription}
         currentSubscriptionLoading={currentSubscriptionLoading}
         subscriptionsLoading={subscriptionsListLoading}
         attendancesLoading={attendancesLoading || attendancesFetching}
@@ -154,16 +176,16 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
       />
 
       <Modal
-        open={subscriptionModalOpen}
-        onClose={() => setSubscriptionModalOpen(false)}
-        title="تفاصيل اشتراك اللاعب"
+        open={Boolean(selectedSubscriptionId)}
+        onClose={() => setSelectedSubscriptionId(null)}
+        title="تفاصيل الاشتراك"
         subtitle={playerName}
       >
         <SubscriptionDetails
-          subscription={currentSubscription}
-          error={subscriptionsError || subscriptionDetailError}
-          isLoading={currentSubscriptionLoading}
-          onRetry={retrySubscription}
+          subscription={selectedSubscription}
+          error={selectedSubscriptionError}
+          isLoading={selectedSubscriptionLoading || selectedSubscriptionFetching}
+          onRetry={refetchSelectedSubscription}
           showActions={false}
         />
       </Modal>

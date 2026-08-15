@@ -102,7 +102,7 @@ describe("locker utilities", () => {
     });
   });
 
-  it("keeps coach identifiers in reservation payloads", () => {
+  it("keeps coach identifiers and omits start_date and end_date in coach reservation payloads", () => {
     expect(
       createLockerReservationPayload({
         reservation_type: "assign",
@@ -110,13 +110,31 @@ describe("locker utilities", () => {
         holder_id: "41",
         price: "",
         start_date: "2026-08-08",
-        end_date: "",
+        end_date: "2026-08-09",
       }),
     ).toEqual({
       reservation_type: "assign",
       holder_type: "coach",
       holder_id: 41,
-      start_date: "2026-08-08",
+    });
+  });
+
+  it("includes start_date and end_date for member free assignments", () => {
+    expect(
+      createLockerReservationPayload({
+        reservation_type: "assign",
+        holder_type: "member",
+        holder_id: "9",
+        price: "",
+        start_date: "2026-08-15",
+        end_date: "2026-08-15",
+      }),
+    ).toEqual({
+      reservation_type: "assign",
+      holder_type: "member",
+      holder_id: 9,
+      start_date: "2026-08-15",
+      end_date: "2026-08-15",
     });
   });
 });

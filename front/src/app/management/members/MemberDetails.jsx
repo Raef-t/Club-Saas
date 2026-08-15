@@ -105,7 +105,68 @@ function getAttendanceCheckIn(attendance) {
   return attendance?.check_in_at || attendance?.check_in || attendance?.created_at;
 }
 
-function CurrentSubscription({ subscription, isLoading, error, onRetry, onShowSubscription }) {
+function PreviousSubscriptionCard({ subscription, onShowSubscription }) {
+  const planName = getPlanName(subscription);
+  const remainingAmount = parseSubscriptionAmount(subscription.remaining_amount);
+
+  return (
+    <button
+      type="button"
+      className="group rounded-xl border border-app-line bg-black/20 p-4 text-right transition hover:border-app-yellow/40 hover:bg-app-card-hover/60"
+      aria-label={`عرض تفاصيل اشتراك ${planName}`}
+      onClick={() => onShowSubscription(subscription)}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-app-text transition group-hover:text-app-yellow">
+            {planName}
+          </p>
+          <p className="mt-1 text-[11px] text-app-muted-light">
+            {formatDate(subscription.start_date)} — {formatDate(subscription.end_date)}
+          </p>
+        </div>
+        <SubscriptionStatusBadge status={subscription.status} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-app-line pt-3">
+        <div>
+          <p className="text-[10px] text-app-muted">المدفوع</p>
+          <p className="mt-1 text-xs font-semibold text-app-green">
+            {formatSubscriptionMoney(subscription.paid_amount)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-app-muted">المتبقي</p>
+          <p
+            className={`mt-1 text-xs font-semibold ${remainingAmount > 0 ? "text-app-red" : "text-app-green"}`}
+          >
+            {formatSubscriptionMoney(subscription.remaining_amount)}
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-3 text-[11px] font-medium text-app-yellow opacity-80 transition group-hover:opacity-100">
+        عرض التفاصيل
+      </p>
+    </button>
+  );
+}
+
+function MemberSubscriptions({
+  subscription,
+  subscriptions,
+  isLoading,
+  error,
+  onRetry,
+  onShowSubscription,
+}) {
+  const allSubscriptions =
+    subscription && !subscriptions.some((item) => String(item.id) === String(subscription.id))
+      ? [subscription, ...subscriptions]
+      : subscriptions;
+  const previousSubscriptions = allSubscriptions.filter(
+    (item) => String(item.id) !== String(subscription?.id),
+  );
   const items = subscription?.items || [];
   const totalAllocated = items.reduce((sum, item) => sum + Number(item.sessions_allocated || 0), 0);
   const totalConsumed = items.reduce((sum, item) => sum + Number(item.sessions_consumed || 0), 0);
@@ -119,9 +180,13 @@ function CurrentSubscription({ subscription, isLoading, error, onRetry, onShowSu
 
   return (
     <Section
-      title="الاشتراك الحالي"
-      description="الخطة الفعالة والجلسات والوضع المالي"
-      action={subscription ? <SubscriptionStatusBadge status={subscription.status} /> : null}
+      title="اشتراكات اللاعب"
+      description="الاشتراك الحالي وجميع الاشتراكات السابقة في مكان واحد"
+      action={
+        <span className="whitespace-nowrap rounded-full border border-app-line bg-black/20 px-3 py-1 text-[11px] text-app-muted-light">
+          {allSubscriptions.length.toLocaleString("ar")} اشتراك
+        </span>
+      }
     >
       <SectionState
         isLoading={isLoading}
@@ -130,57 +195,100 @@ function CurrentSubscription({ subscription, isLoading, error, onRetry, onShowSu
         onRetry={onRetry}
       >
         {subscription ? (
-          <div className="space-y-4">
-            <div className="flex flex-col gap-3 rounded-xl border border-app-line bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-app-text">
-                  {getPlanName(subscription)}
-                </p>
-                <p className="mt-1 text-xs text-app-muted-light">
-                  {activities.length ? activities.join("، ") : "لم تُحدد الأنشطة"}
-                </p>
+          <div className="space-y-5">
+            <div className="overflow-hidden rounded-2xl border border-app-yellow/30 bg-app-yellow/5">
+              <div className="flex flex-col gap-4 border-b border-app-line p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold text-app-yellow">
+                      الاشتراك الحالي
+                    </span>
+                    <SubscriptionStatusBadge status={subscription.status} />
+                  </div>
+                  <p className="truncate text-lg font-semibold text-app-text">
+                    {getPlanName(subscription)}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-app-muted-light">
+                    {activities.length ? activities.join("، ") : "لم تُحدد الأنشطة"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-app-line bg-black/20 px-4 py-3 sm:min-w-40">
+                  <p className="text-[11px] text-app-muted-light">الفترة</p>
+                  <p className="mt-1 text-xs font-medium text-app-text">
+                    {formatDate(subscription.start_date)} — {formatDate(subscription.end_date)}
+                  </p>
+                </div>
               </div>
-              <div className="text-right sm:text-left">
-                <p className="text-xs text-app-muted-light">المتبقي</p>
-                <p
-                  className={`mt-1 font-semibold ${
-                    parseSubscriptionAmount(subscription.remaining_amount) > 0
-                      ? "text-app-red"
-                      : "text-app-green"
-                  }`}
+
+              <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                <DetailItem
+                  label="الجلسات المتبقية"
+                  value={
+                    totalAllocated > 0
+                      ? `${Math.max(0, totalAllocated - totalConsumed)} / ${totalAllocated}`
+                      : "-"
+                  }
+                  tone="yellow"
+                />
+                <DetailItem
+                  label="المدفوع"
+                  value={formatSubscriptionMoney(subscription.paid_amount)}
+                  tone="green"
+                />
+                <DetailItem
+                  label="المتبقي"
+                  value={formatSubscriptionMoney(subscription.remaining_amount)}
+                  tone={
+                    parseSubscriptionAmount(subscription.remaining_amount) > 0 ? "red" : "green"
+                  }
+                />
+                <DetailItem
+                  label="إجمالي الاشتراك"
+                  value={formatSubscriptionMoney(
+                    subscription.total_amount ??
+                      parseSubscriptionAmount(subscription.paid_amount) +
+                        parseSubscriptionAmount(subscription.remaining_amount),
+                  )}
+                />
+              </div>
+
+              <div className="border-t border-app-line p-4">
+                <Button
+                  type="button"
+                  tone="outline"
+                  className="h-10 w-full"
+                  onClick={() => onShowSubscription(subscription)}
                 >
-                  {formatSubscriptionMoney(subscription.remaining_amount)}
-                </p>
+                  عرض كل تفاصيل الاشتراك الحالي
+                </Button>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <DetailItem label="تاريخ البداية" value={formatDate(subscription.start_date)} />
-              <DetailItem label="تاريخ النهاية" value={formatDate(subscription.end_date)} />
-              <DetailItem
-                label="الجلسات المتبقية"
-                value={
-                  totalAllocated > 0
-                    ? `${Math.max(0, totalAllocated - totalConsumed)} / ${totalAllocated}`
-                    : "-"
-                }
-                tone="yellow"
-              />
-              <DetailItem
-                label="المدفوع"
-                value={formatSubscriptionMoney(subscription.paid_amount)}
-                tone="green"
-              />
-            </div>
+            {previousSubscriptions.length > 0 && (
+              <div className="border-t border-app-line pt-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-app-text">الاشتراكات السابقة</h4>
+                    <p className="mt-1 text-[11px] text-app-muted-light">
+                      اضغط على أي اشتراك لعرض تفاصيله الكاملة
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-app-muted-light">
+                    {previousSubscriptions.length.toLocaleString("ar")}
+                  </span>
+                </div>
 
-            <Button
-              type="button"
-              tone="outline"
-              className="h-10 w-full"
-              onClick={onShowSubscription}
-            >
-              عرض كل تفاصيل الاشتراك
-            </Button>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {previousSubscriptions.map((previousSubscription) => (
+                    <PreviousSubscriptionCard
+                      key={previousSubscription.id}
+                      subscription={previousSubscription}
+                      onShowSubscription={onShowSubscription}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </SectionState>
@@ -233,54 +341,6 @@ function AttendanceHistory({ attendances, isLoading, error, onRetry }) {
                 </div>
               );
             })}
-          </div>
-        ) : null}
-      </SectionState>
-    </Section>
-  );
-}
-
-function SubscriptionHistory({ subscriptions, isLoading, error, onRetry }) {
-  return (
-    <Section title="سجل الاشتراكات" description="جميع الاشتراكات المرتبطة باللاعب">
-      <SectionState
-        isLoading={isLoading}
-        error={error ? "تعذر تحميل سجل الاشتراكات." : ""}
-        emptyMessage="لا يوجد سجل اشتراكات لهذا اللاعب."
-        onRetry={onRetry}
-      >
-        {subscriptions.length ? (
-          <div className="grid gap-3 md:grid-cols-2">
-            {subscriptions.map((subscription) => (
-              <div
-                key={subscription.id}
-                className="rounded-xl border border-app-line bg-black/20 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-app-text">
-                      {getPlanName(subscription)}
-                    </p>
-                    <p className="mt-1 text-[11px] text-app-muted-light">
-                      {formatDate(subscription.start_date)} — {formatDate(subscription.end_date)}
-                    </p>
-                  </div>
-                  <SubscriptionStatusBadge status={subscription.status} />
-                </div>
-                <div className="mt-3 flex items-center justify-between border-t border-app-line pt-3 text-xs">
-                  <span className="text-app-muted-light">المتبقي</span>
-                  <span
-                    className={
-                      parseSubscriptionAmount(subscription.remaining_amount) > 0
-                        ? "font-semibold text-app-red"
-                        : "font-semibold text-app-green"
-                    }
-                  >
-                    {formatSubscriptionMoney(subscription.remaining_amount)}
-                  </span>
-                </div>
-              </div>
-            ))}
           </div>
         ) : null}
       </SectionState>
@@ -354,7 +414,7 @@ export default function MemberDetails({
           icon={<TagIcon className="size-4" />}
           label="الاشتراك الحالي"
           value={subscription ? getPlanName(subscription) : "لا يوجد"}
-          helper={`${summary?.subscriptionsCount || 0} اشتراك في السجل`}
+          helper={`${summary?.subscriptionsCount || 0} اشتراك إجمالًا`}
           tone={subscription ? "green" : "default"}
         />
         <MetricCard
@@ -387,10 +447,11 @@ export default function MemberDetails({
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
         <div className="space-y-5">
-          <CurrentSubscription
+          <MemberSubscriptions
             subscription={subscription}
-            isLoading={currentSubscriptionLoading}
-            error={currentSubscriptionError}
+            subscriptions={subscriptions}
+            isLoading={currentSubscriptionLoading || subscriptionsLoading}
+            error={currentSubscriptionError || subscriptionsError}
             onRetry={onRetrySubscriptions}
             onShowSubscription={onShowSubscription}
           />
@@ -411,7 +472,10 @@ export default function MemberDetails({
               <DetailItem label="تاريخ الميلاد" value={formatDate(dob)} />
               <DetailItem label="العمر" value={age !== "" && age != null ? `${age} سنة` : "-"} />
               <DetailItem label="تاريخ تسجيل الاستمارة" value={formatDate(member.created_at)} />
-              <DetailItem label="الموظف المسجل" value={member.registered_by?.full_name || "اسم الموظف"} />
+              <DetailItem
+                label="الموظف المسجل"
+                value={member.created_by?.name || member.registered_by?.full_name || "-"}
+              />
             </div>
           </Section>
 
@@ -461,13 +525,6 @@ export default function MemberDetails({
           )}
         </div>
       </div>
-
-      <SubscriptionHistory
-        subscriptions={subscriptions}
-        isLoading={subscriptionsLoading}
-        error={subscriptionsError}
-        onRetry={onRetrySubscriptions}
-      />
     </div>
   );
 }

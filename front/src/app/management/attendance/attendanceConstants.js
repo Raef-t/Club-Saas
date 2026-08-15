@@ -17,4 +17,5 @@ export const ATTENDANCE_STATUS_CLASSES = {
   ملغي: "bg-app-red/15 text-app-red",
 };
 
-export const ATTENDANCE_TABLE_COLUMNS = "48px 64px minmax(120px,1fr) 88px 88px 78px 70px 88px 74px";
+export const ATTENDANCE_TABLE_COLUMNS =
+  "48px 64px minmax(120px,1fr) 150px 88px 120px 70px 88px 74px";

@@ -140,6 +140,35 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
   };
 }
 
+/**
+ * Keeps the required employment fields when the signed-in staff member edits
+ * only the personal fields exposed by the profile drawer.
+ */
+export function createStaffProfileUpdateBody(staff, values) {
+  const person = staff?.person || {};
+  const body = {
+    first_name: values.first_name.trim(),
+    last_name: values.last_name.trim(),
+    phone_number: values.phone_number.trim(),
+    role: staff?.role,
+    employment_type: staff?.employment_type,
+    base_salary: String(Number(staff?.base_salary) || 0),
+    work_status: resolveWorkStatus(staff),
+  };
+
+  if (values.country_code) body.country_code = values.country_code.trim();
+  if (values.gender) body.gender = values.gender;
+  if (staff?.start_date) body.start_date = String(staff.start_date).split("T")[0];
+  if (staff?.start_time) body.start_time = staff.start_time;
+  if (staff?.end_time) body.end_time = staff.end_time;
+  if (person.address) body.address = person.address;
+
+  const branchIds = getStaffBranchIds(staff);
+  if (branchIds.length) body.branch_ids = branchIds;
+
+  return body;
+}
+
 export function resolveStaffPhotoUrl(value) {
   if (!value || typeof value !== "string") return "";
   if (value.startsWith("http") || value.startsWith("blob:")) return value;
