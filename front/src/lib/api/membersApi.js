@@ -36,9 +36,10 @@ export const membersApi = createApi({
       invalidatesTags: ["Members"],
     }),
     deleteMember: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `members/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["Members"],
     }),

@@ -4,6 +4,7 @@ import { backendBaseQuery } from "@/lib/api/baseQuery";
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: backendBaseQuery,
+  tagTypes: ["Profile"],
   endpoints: (builder) => ({
     logout: builder.mutation({
       query: () => ({
@@ -20,6 +21,7 @@ export const authApi = createApi({
     }),
     getProfile: builder.query({
       query: () => "auth/me",
+      providesTags: ["Profile"],
     }),
   }),
 });

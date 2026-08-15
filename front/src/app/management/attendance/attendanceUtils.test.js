@@ -9,6 +9,7 @@ import {
   createAttendanceSubscriptions,
   createAvailableLockerOptions,
   createManualCheckInTimestamp,
+  formatAttendanceDateTime,
   formatAttendanceTime,
   findAttendanceLockerId,
   getInitialAttendanceSelection,
@@ -39,6 +40,8 @@ describe("attendance utilities", () => {
   it("formats valid times and rejects invalid values", () => {
     expect(formatAttendanceTime("invalid")).toBe("-");
     expect(formatAttendanceTime(null)).toBe("-");
+    expect(formatAttendanceDateTime("invalid")).toBe("-");
+    expect(formatAttendanceDateTime(null)).toBe("-");
   });
 
   it("builds an optional manual check-in timestamp using the local date", () => {
@@ -63,6 +66,27 @@ describe("attendance utilities", () => {
     });
 
     expect(row.checkIn).not.toBe("-");
+  });
+
+  it("maps the formatted duration and full check-in timestamp from attendance history", () => {
+    const [row] = createAttendanceRows({
+      status: "success",
+      data: [
+        {
+          id: 51,
+          attendable_type: "member",
+          attendable_id: 32,
+          check_in: "2026-08-11T17:00:00+03:00",
+          check_out: "2026-08-11T19:30:00+03:00",
+          duration_minutes: 150,
+          duration_formatted: "2 ساعة و 30 دقيقة",
+          status: "completed",
+        },
+      ],
+    });
+
+    expect(row.duration).toBe("2 ساعة و 30 دقيقة");
+    expect(row.checkIn).toMatch(/^\d{2}\/\d{2}\/\d{4} - /);
   });
 
   it("maps attendance history with localized status values", () => {
@@ -142,7 +166,7 @@ describe("attendance utilities", () => {
       },
     );
 
-    expect(rows[0]).toMatchObject({ member: "محمد علي", duration: 0 });
+    expect(rows[0]).toMatchObject({ member: "محمد علي", duration: "0 دقيقة" });
     expect(rows[1]).toMatchObject({ member: "سامر حسن" });
   });
 

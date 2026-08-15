@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildStaffQueryParams,
   createStaffInitialValues,
+  createStaffProfileUpdateBody,
   getStaffCollection,
   isManagerStaffRole,
 } from "./staffUtils";
@@ -64,6 +65,43 @@ describe("staff utilities", () => {
       shifts: [12],
       base_salary: "4500",
       work_status: "suspended",
+    });
+  });
+
+  it("keeps required employment fields in personal profile updates", () => {
+    expect(
+      createStaffProfileUpdateBody(
+        {
+          id: 74,
+          role: "admin",
+          employment_type: "fixed_salary",
+          base_salary: "1000.00",
+          work_status: "active",
+          start_date: "2025-09-08",
+          start_time: null,
+          end_time: null,
+          person: { address: "شارع النيل خلف جامع الرحمن" },
+        },
+        {
+          first_name: "عبيدة",
+          last_name: "أيوبي",
+          country_code: "+963",
+          phone_number: "999999999",
+          gender: "male",
+        },
+      ),
+    ).toEqual({
+      first_name: "عبيدة",
+      last_name: "أيوبي",
+      country_code: "+963",
+      phone_number: "999999999",
+      gender: "male",
+      role: "admin",
+      employment_type: "fixed_salary",
+      base_salary: "1000",
+      work_status: "active",
+      start_date: "2025-09-08",
+      address: "شارع النيل خلف جامع الرحمن",
     });
   });
 });

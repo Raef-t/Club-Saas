@@ -44,6 +44,17 @@ export const staffApi = createApi({
         { type: "Staff", id: "LIST" },
       ],
     }),
+    updateStaffPhoto: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `staff/${id}/photo`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Staff", id },
+        { type: "Staff", id: "LIST" },
+      ],
+    }),
     deleteStaffMember: builder.mutation({
       query: (id) => ({
         url: `staff/${id}`,
@@ -62,5 +73,6 @@ export const {
   useGetStaffMemberQuery,
   useCreateStaffMemberMutation,
   useUpdateStaffMemberMutation,
+  useUpdateStaffPhotoMutation,
   useDeleteStaffMemberMutation,
 } = staffApi;

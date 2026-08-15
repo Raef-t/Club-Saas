@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  clearSubscriptionPlanSuspensionFromResponse,
   mergeSubscriptionPlanIntoResponse,
+  mergeSubscriptionPlanSuspensionIntoResponse,
   normalizeSubscriptionPlanPlayersResponse,
 } from "./subscriptionPlansApi";
 
@@ -22,6 +24,46 @@ describe("subscription plans API cache", () => {
     mergeSubscriptionPlanIntoResponse(response, { id: 8, status: "completed" });
 
     expect(response.data).toEqual([{ id: 8, status: "completed" }]);
+  });
+});
+
+describe("subscription plan suspension cache", () => {
+  it("stores the returned suspension on the matching list item", () => {
+    const response = { data: [{ id: 5, status: "active" }] };
+    const suspension = { id: 11, status: "active", actual_end_date: null };
+
+    mergeSubscriptionPlanSuspensionIntoResponse(response, 5, suspension);
+
+    expect(response.data[0]).toMatchObject({
+      is_suspended: true,
+      active_suspension_id: 11,
+      active_suspension: suspension,
+      suspensions: [suspension],
+    });
+  });
+
+  it("clears the active suspension after an early resume", () => {
+    const response = {
+      data: {
+        id: 5,
+        is_suspended: true,
+        active_suspension_id: 11,
+        active_suspension: { id: 11, status: "active" },
+        suspensions: [{ id: 11, status: "active", actual_end_date: null }],
+      },
+    };
+
+    clearSubscriptionPlanSuspensionFromResponse(response, 5, 11);
+
+    expect(response.data).toMatchObject({
+      is_suspended: false,
+      active_suspension_id: null,
+      active_suspension: null,
+    });
+    expect(response.data.suspensions[0]).toMatchObject({
+      status: "completed",
+    });
+    expect(response.data.suspensions[0].actual_end_date).toBeTruthy();
   });
 });
 

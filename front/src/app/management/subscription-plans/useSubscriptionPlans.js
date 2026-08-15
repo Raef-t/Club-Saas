@@ -5,6 +5,8 @@ import {
   useGetSubscriptionPlanPlayersQuery,
   useGetSubscriptionPlanQuery,
   useGetSubscriptionPlansQuery,
+  useResumeSubscriptionPlanMutation,
+  useSuspendSubscriptionPlanMutation,
   useUpdateSubscriptionPlanMutation,
 } from "@/lib/api/subscriptionPlansApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
@@ -21,6 +23,7 @@ import {
   isSubscriptionPlanActive,
   SUBSCRIPTION_PLAN_STATUS,
 } from "./subscriptionPlanStatus";
+import { getSubscriptionPlanSuspensionId } from "./subscriptionPlanSuspension";
 //test
 //testtest
 function parseAmount(value) {
@@ -124,6 +127,8 @@ export function useSubscriptionPlans({
   const [createPlan, { isLoading: isCreating }] = useCreateSubscriptionPlanMutation();
   const [updatePlan, { isLoading: isUpdating }] = useUpdateSubscriptionPlanMutation();
   const [deletePlan, { isLoading: isDeleting }] = useDeleteSubscriptionPlanMutation();
+  const [suspendPlan, { isLoading: isSuspending }] = useSuspendSubscriptionPlanMutation();
+  const [resumePlan, { isLoading: isResuming }] = useResumeSubscriptionPlanMutation();
 
   const allPlans = useMemo(() => getPlans(data || initialData?.plans), [data, initialData?.plans]);
   const plans = useMemo(
@@ -269,6 +274,71 @@ export function useSubscriptionPlans({
     }
   }
 
+  const [suspensionModalOpen, setSuspensionModalOpen] = useState(false);
+  const [itemToSuspend, setItemToSuspend] = useState(null);
+  const [resumeConfirmOpen, setResumeConfirmOpen] = useState(false);
+  const [itemToResume, setItemToResume] = useState(null);
+
+  function handleSuspend(plan) {
+    setItemToSuspend(plan);
+    setSuspensionModalOpen(true);
+  }
+
+  function closeSuspensionModal() {
+    if (isSuspending) return;
+    setSuspensionModalOpen(false);
+    setItemToSuspend(null);
+  }
+
+  async function confirmSuspend(body) {
+    if (!itemToSuspend) return false;
+
+    try {
+      await suspendPlan({ id: itemToSuspend.id, body }).unwrap();
+      toast.success("تم إيقاف الفعالية مؤقتاً بنجاح!");
+      setSuspensionModalOpen(false);
+      setItemToSuspend(null);
+      return true;
+    } catch (submitError) {
+      toast.error(submitError?.data?.message || "تعذر إيقاف الفعالية مؤقتاً. حاول مرة أخرى.");
+      return false;
+    }
+  }
+
+  function handleResume(plan) {
+    const suspensionId = getSubscriptionPlanSuspensionId(plan);
+    if (!suspensionId) {
+      toast.error("تعذر العثور على معرّف سجل الإيقاف لهذه الفعالية.");
+      return;
+    }
+
+    setItemToResume({ ...plan, suspensionId });
+    setResumeConfirmOpen(true);
+  }
+
+  function closeResumeConfirm() {
+    if (isResuming) return;
+    setResumeConfirmOpen(false);
+    setItemToResume(null);
+  }
+
+  async function confirmResume() {
+    if (!itemToResume) return;
+
+    try {
+      await resumePlan({
+        id: itemToResume.id,
+        suspensionId: itemToResume.suspensionId,
+      }).unwrap();
+      toast.success("تم استئناف الفعالية وإنهاء الإيقاف بنجاح!");
+    } catch (submitError) {
+      toast.error(submitError?.data?.message || "تعذر استئناف الفعالية. حاول مرة أخرى.");
+    } finally {
+      setResumeConfirmOpen(false);
+      setItemToResume(null);
+    }
+  }
+
   function getEditInitialValues() {
     const plan = detailsPlan || selectedPlan;
     if (!plan) return null;
@@ -289,7 +359,7 @@ export function useSubscriptionPlans({
       activities:
         plan.activities?.map((a) => ({
           activity_id: String(a.activity_id),
-          coach_id: String(a.coach_id),
+          coach_id: a.coach_id ? String(a.coach_id) : "",
         })) || [],
       session_templates:
         plan.session_templates?.map((s) => ({
@@ -327,6 +397,8 @@ export function useSubscriptionPlans({
     isCreating,
     isUpdating,
     isDeleting,
+    isSuspending,
+    isResuming,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -336,6 +408,16 @@ export function useSubscriptionPlans({
     itemToDelete,
     closeDeleteConfirm,
     confirmDelete,
+    suspensionModalOpen,
+    itemToSuspend,
+    handleSuspend,
+    closeSuspensionModal,
+    confirmSuspend,
+    resumeConfirmOpen,
+    itemToResume,
+    handleResume,
+    closeResumeConfirm,
+    confirmResume,
     branches,
     activities,
     coaches,

@@ -22,7 +22,26 @@ describe("subscription plan statuses", () => {
 
   it("only treats the active status as active", () => {
     expect(isSubscriptionPlanActive({ status: "active" })).toBe(true);
+    expect(
+      isSubscriptionPlanActive({
+        status: "active",
+        active_suspension: { id: 5, status: "active", actual_end_date: null },
+      }),
+    ).toBe(false);
     expect(isSubscriptionPlanActive({ status: "inactive" })).toBe(false);
     expect(isSubscriptionPlanActive({ status: "completed" })).toBe(false);
+  });
+
+  it("shows a temporary suspension without changing the permanent plan status", () => {
+    const plan = {
+      status: "active",
+      active_suspension: { id: 5, status: "active", actual_end_date: null },
+    };
+
+    expect(getSubscriptionPlanStatus(plan)).toBe("active");
+    expect(getSubscriptionPlanStatusMeta(plan)).toMatchObject({
+      status: "suspended",
+      label: "موقوفة مؤقتاً",
+    });
   });
 });

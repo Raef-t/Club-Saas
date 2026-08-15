@@ -10,9 +10,10 @@ import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { PlusIcon, UsersIcon } from "@/components/icons/Icons";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import Modal from "@/components/ui/Modal";
 import DetailItem from "@/components/ui/DetailItem";
 import SearchInput from "@/components/ui/SearchInput";
-import { Field } from "@/components/forms/FormControls";
+import { Field, TextAreaField } from "@/components/forms/FormControls";
 import { CheckboxField } from "@/components/forms/CheckboxField";
 import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
@@ -23,8 +24,20 @@ import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBran
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
 import { getSubscriptionPlanStatusMeta, SUBSCRIPTION_PLAN_STATUS } from "./subscriptionPlanStatus";
+import {
+  getActiveSubscriptionPlanSuspension,
+  isSubscriptionPlanSuspended,
+} from "./subscriptionPlanSuspension";
+import { subscriptionPlanSuspensionSchema } from "@/lib/validations/subscriptionPlanSuspensionSchema";
+import { getFieldErrors } from "@/lib/validations/formErrors";
+import { toIsoDate } from "@/components/forms/datePickerUtils";
+import {
+  createSuggestedSubscriptionPlanName,
+  getSubscriptionPlanActivityName,
+  isGeneralEquipmentActivity,
+} from "./subscriptionPlanFormUtils";
 
-function CoachDropdown({ branchId, activityId, value, onChange }) {
+function CoachDropdown({ branchId, activityId, value, onChange, error, optional = false }) {
   const { data, isLoading } = useGetCoachesQuery(
     {
       branch_id: branchId || undefined,
@@ -43,16 +56,121 @@ function CoachDropdown({ branchId, activityId, value, onChange }) {
       buttonClassName="bg-black/35 h-9"
       value={String(value || "")}
       onChange={onChange}
-      options={coaches.map((c) => ({
-        value: String(c.id),
-        label: c.person?.full_name || String(c.id),
-      }))}
-      placeholder={isLoading ? "جاري التحميل..." : "اختر المدرب"}
+      options={[
+        ...(optional ? [{ value: "", label: "بدون مدرب" }] : []),
+        ...coaches.map((c) => ({
+          value: String(c.id),
+          label: c.person?.full_name || String(c.id),
+        })),
+      ]}
+      placeholder={isLoading ? "جاري التحميل..." : optional ? "اختياري - بدون مدرب" : "اختر المدرب"}
+      error={error}
     />
   );
 }
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 88px";
+function PlanActivitiesFields({ items, activities, branchId, errors, onChange }) {
+  return (
+    <div className="border-t border-app-line pt-4 mt-2">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h4 className="text-sm font-semibold text-white">الأنشطة والمدربين</h4>
+          <p className="mt-1 text-xs text-app-muted-light">
+            اختر النشاط والمدرب أولاً ليتم اقتراح اسم الفعالية تلقائياً.
+          </p>
+        </div>
+        <Button
+          type="button"
+          tone="outline"
+          className="h-8 px-3 text-xs"
+          onClick={() => onChange([...(items || []), { activity_id: "", coach_id: "" }])}
+        >
+          <PlusIcon className="me-1 size-3" />
+          إضافة نشاط
+        </Button>
+      </div>
+
+      {!items || items.length === 0 ? (
+        <p className={`text-xs ${errors.activities ? "text-app-red" : "text-app-muted-light"}`}>
+          {errors.activities || "لم يتم إضافة أي نشاط بعد."}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item, idx) => {
+            const selectedActivity = activities.find(
+              (activity) => String(activity.id) === String(item.activity_id),
+            );
+            const coachOptional = isGeneralEquipmentActivity(selectedActivity);
+
+            return (
+              <div
+                key={idx}
+                className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative"
+              >
+                <button
+                  type="button"
+                  onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== idx))}
+                  className="absolute end-3 top-2 text-xs text-app-muted hover:text-app-red"
+                >
+                  إزالة
+                </button>
+                <div className="grid gap-3 mt-4 sm:grid-cols-2">
+                  <label className="block text-right text-xs text-app-muted-light">
+                    النشاط الرياضي
+                    <Dropdown
+                      className="mt-1 text-white"
+                      buttonClassName="bg-black/35 h-9"
+                      value={String(item.activity_id)}
+                      onChange={(value) =>
+                        onChange(
+                          items.map((activityItem, itemIndex) =>
+                            itemIndex === idx
+                              ? { ...activityItem, activity_id: value, coach_id: "" }
+                              : activityItem,
+                          ),
+                        )
+                      }
+                      options={activities.map((activity) => ({
+                        value: String(activity.id),
+                        label: getSubscriptionPlanActivityName(activity),
+                      }))}
+                      placeholder="اختر النشاط"
+                      error={errors[`activities_${idx}_activity_id`]}
+                    />
+                  </label>
+                  <label className="block text-right text-xs text-app-muted-light">
+                    <span>
+                      المدرب
+                      {coachOptional && (
+                        <span className="ms-1 text-app-green">(اختياري لأجهزة عام)</span>
+                      )}
+                    </span>
+                    <CoachDropdown
+                      branchId={branchId}
+                      activityId={item.activity_id}
+                      value={item.coach_id}
+                      optional={coachOptional}
+                      error={errors[`activities_${idx}_coach_id`]}
+                      onChange={(value) =>
+                        onChange(
+                          items.map((activityItem, itemIndex) =>
+                            itemIndex === idx ? { ...activityItem, coach_id: value } : activityItem,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 128px";
 
 const initialForm = {
   branch_id: "",
@@ -64,7 +182,7 @@ const initialForm = {
   is_active: true,
   status: SUBSCRIPTION_PLAN_STATUS.ACTIVE,
   gender_restriction: "mixed",
-  activities: [],
+  activities: [{ activity_id: "", coach_id: "" }],
   session_templates: [],
   is_unlimited_subscribers: false,
 };
@@ -84,6 +202,164 @@ function StatusBadge({ plan }) {
     >
       {status.label}
     </span>
+  );
+}
+
+function PauseIcon({ className = "size-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M9 6.75v10.5M15 6.75v10.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function PlayIcon({ className = "size-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M8.75 6.75v10.5L17 12 8.75 6.75Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PlanSuspensionAction({ plan, disabled, onSuspend, onResume }) {
+  const suspended = isSubscriptionPlanSuspended(plan);
+  const planStatus = getSubscriptionPlanStatusMeta(plan).status;
+  const actionDisabled = disabled || (!suspended && planStatus !== SUBSCRIPTION_PLAN_STATUS.ACTIVE);
+  const title = suspended
+    ? "استئناف الفعالية"
+    : actionDisabled
+      ? "يمكن إيقاف الفعاليات النشطة فقط"
+      : "إيقاف الفعالية مؤقتاً";
+
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      disabled={actionDisabled}
+      onClick={(event) => {
+        event.stopPropagation();
+        if (suspended) onResume(plan);
+        else onSuspend(plan);
+      }}
+      className={`grid size-8 place-items-center rounded-lg border bg-app-card-soft transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        suspended
+          ? "border-app-green/40 text-app-green hover:bg-app-green/10"
+          : "border-app-yellow/40 text-app-yellow hover:bg-app-yellow-soft"
+      }`}
+    >
+      {suspended ? <PlayIcon /> : <PauseIcon />}
+    </button>
+  );
+}
+
+function SuspensionDialog({ open, plan, isLoading, onClose, onConfirm }) {
+  const [form, setForm] = useState({
+    suspend_start_date: "",
+    suspend_end_date: "",
+    reason: "",
+  });
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!open) return;
+    setForm({
+      suspend_start_date: toIsoDate(new Date()),
+      suspend_end_date: "",
+      reason: "",
+    });
+    setErrors({});
+  }, [open, plan?.id]);
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const nextErrors = { ...current };
+      delete nextErrors[field];
+      return nextErrors;
+    });
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const validation = subscriptionPlanSuspensionSchema.safeParse(form);
+
+    if (!validation.success) {
+      setErrors(getFieldErrors(validation.error));
+      return;
+    }
+
+    setErrors({});
+    onConfirm(validation.data);
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="إيقاف الفعالية مؤقتاً"
+      subtitle={planName(plan)}
+      className="max-w-xl"
+    >
+      <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+        <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/10 p-4 text-sm leading-7 text-app-yellow">
+          سيؤدي الإيقاف إلى تجميد اشتراكات اللاعبين المتأثرين وإلغاء الحصص المجدولة خلال المدة
+          المحددة.
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="تاريخ بداية الإيقاف"
+            type="date"
+            value={form.suspend_start_date}
+            onChange={(value) => updateField("suspend_start_date", value)}
+            error={errors.suspend_start_date}
+          />
+          <Field
+            label="تاريخ نهاية الإيقاف"
+            type="date"
+            value={form.suspend_end_date}
+            onChange={(value) => updateField("suspend_end_date", value)}
+            error={errors.suspend_end_date}
+          />
+        </div>
+
+        <TextAreaField
+          label="سبب الإيقاف"
+          value={form.reason}
+          onChange={(event) => updateField("reason", event.target.value)}
+          placeholder="مثال: ظرف صحي طارئ للمدرب"
+          error={errors.reason}
+          maxLength={500}
+        />
+
+        <div className="flex gap-3 pt-1">
+          <Button type="submit" className="h-11 flex-1" loading={isLoading}>
+            تأكيد الإيقاف
+          </Button>
+          <Button
+            type="button"
+            tone="outline"
+            className="h-11 flex-1"
+            disabled={isLoading}
+            onClick={onClose}
+          >
+            إلغاء
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -182,6 +458,8 @@ function PlanDetails({
     );
   }
 
+  const activeSuspension = getActiveSubscriptionPlanSuspension(plan);
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right">
@@ -201,6 +479,22 @@ function PlanDetails({
         <DetailItem label="الجلسات أسبوعياً" value={plan.sessions_per_week || "-"} />
         <DetailItem label="عدد الجلسات الإجمالي" value={plan.session_count || "-"} />
       </section>
+
+      {activeSuspension && (
+        <section className="space-y-3 rounded-xl border border-app-yellow/30 bg-app-yellow/10 p-4">
+          <h4 className="text-sm font-semibold text-app-yellow">بيانات الإيقاف المؤقت</h4>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailItem label="من تاريخ" value={activeSuspension.suspend_start_date || "-"} />
+            <DetailItem label="إلى تاريخ" value={activeSuspension.suspend_end_date || "-"} />
+          </div>
+          {activeSuspension.reason && (
+            <p className="text-sm leading-7 text-app-muted-light">
+              <span className="font-medium text-app-text">السبب: </span>
+              {activeSuspension.reason}
+            </p>
+          )}
+        </section>
+      )}
 
       <PlanPlayers
         data={playersData}
@@ -236,6 +530,25 @@ export function PlanForm({
     }),
   }));
   const [errors, setErrors] = useState({});
+  const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(
+    () => mode === "edit" || Boolean(initialValues.name?.trim()),
+  );
+  const suggestedName = useMemo(
+    () => createSuggestedSubscriptionPlanName(form.activities, activities, coaches),
+    [activities, coaches, form.activities],
+  );
+
+  useEffect(() => {
+    if (isNameManuallyEdited || form.name === suggestedName) return;
+    setForm((current) => ({ ...current, name: suggestedName }));
+    setErrors((current) => {
+      if (!current.name) return current;
+      const nextErrors = { ...current };
+      delete nextErrors.name;
+      return nextErrors;
+    });
+  }, [form.name, isNameManuallyEdited, suggestedName]);
+
   useEffect(() => {
     setForm((current) => ({
       ...current,
@@ -289,10 +602,17 @@ export function PlanForm({
             : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
       is_unlimited_subscribers: !!form.is_unlimited_subscribers,
       activities:
-        form.activities?.map((a) => ({
-          activity_id: Number(a.activity_id),
-          coach_id: Number(a.coach_id),
-        })) || [],
+        form.activities?.map((item) => {
+          const activity = activities.find(
+            (activityItem) => String(activityItem.id) === String(item.activity_id),
+          );
+
+          return {
+            activity_id: Number(item.activity_id),
+            coach_id: item.coach_id ? Number(item.coach_id) : null,
+            coach_optional: isGeneralEquipmentActivity(activity),
+          };
+        }) || [],
       session_templates:
         form.session_templates?.map((s) => ({
           day_of_week: Number(s.day_of_week),
@@ -333,11 +653,22 @@ export function PlanForm({
         />
       </label>
 
+      <PlanActivitiesFields
+        items={form.activities}
+        activities={activities}
+        branchId={form.branch_id}
+        errors={errors}
+        onChange={(items) => updateField("activities", items)}
+      />
+
       <Field
         label="اسم الفعالية"
         value={form.name}
-        onChange={(event) => updateField("name", event.target.value)}
-        placeholder="الاشتراك الفضي"
+        onChange={(event) => {
+          setIsNameManuallyEdited(true);
+          updateField("name", event.target.value);
+        }}
+        placeholder={suggestedName || "اسم النشاط - اسم الكوتش"}
         required
         type="text"
         error={errors.name}
@@ -390,85 +721,6 @@ export function PlanForm({
         required
         error={errors.price}
       />
-
-      <div className="border-t border-app-line pt-4 mt-2">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-white">الأنشطة والمدربين</h4>
-          <Button
-            type="button"
-            tone="outline"
-            className="h-8 px-3 text-xs"
-            onClick={() =>
-              updateField("activities", [
-                ...(form.activities || []),
-                { activity_id: "", coach_id: "" },
-              ])
-            }
-          >
-            <PlusIcon className="me-1 size-3" />
-            إضافة نشاط
-          </Button>
-        </div>
-
-        {!form.activities || form.activities.length === 0 ? (
-          <p className="text-xs text-app-muted-light">لم يتم إضافة أي نشاط بعد.</p>
-        ) : (
-          <div className="space-y-3">
-            {form.activities.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-2 p-3 bg-app-card-soft rounded-lg border border-app-line relative"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newActs = [...form.activities];
-                    newActs.splice(idx, 1);
-                    updateField("activities", newActs);
-                  }}
-                  className="absolute end-3 top-2 text-xs text-app-muted hover:text-app-red"
-                >
-                  إزالة
-                </button>
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <label className="block text-right text-xs text-app-muted-light">
-                    النشاط الرياضي
-                    <Dropdown
-                      className="mt-1 text-white"
-                      buttonClassName="bg-black/35 h-9"
-                      value={String(item.activity_id)}
-                      onChange={(val) => {
-                        const newActs = [...form.activities];
-                        newActs[idx].activity_id = val;
-                        newActs[idx].coach_id = "";
-                        updateField("activities", newActs);
-                      }}
-                      options={activities.map((a) => ({
-                        value: String(a.id),
-                        label: typeof a.name === "string" ? a.name : a.name?.ar || a.name?.en || "",
-                      }))}
-                      placeholder="اختر النشاط"
-                    />
-                  </label>
-                  <label className="block text-right text-xs text-app-muted-light">
-                    المدرب
-                    <CoachDropdown
-                      branchId={form.branch_id}
-                      activityId={item.activity_id}
-                      value={item.coach_id}
-                      onChange={(val) => {
-                        const newActs = [...form.activities];
-                        newActs[idx].coach_id = val;
-                        updateField("activities", newActs);
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {(() => {
         const shouldShowMaxSubscribers = form.activities?.some((item) => {
@@ -698,6 +950,8 @@ export default function SubscriptionPlansClient({ initialData }) {
     isCreating,
     isUpdating,
     isDeleting,
+    isSuspending,
+    isResuming,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -707,6 +961,16 @@ export default function SubscriptionPlansClient({ initialData }) {
     itemToDelete,
     closeDeleteConfirm,
     confirmDelete,
+    suspensionModalOpen,
+    itemToSuspend,
+    handleSuspend,
+    closeSuspensionModal,
+    confirmSuspend,
+    resumeConfirmOpen,
+    itemToResume,
+    handleResume,
+    closeResumeConfirm,
+    confirmResume,
     branches,
   } = useSubscriptionPlans({ initialData });
 
@@ -763,15 +1027,24 @@ export default function SubscriptionPlansClient({ initialData }) {
         label: "الإجراءات",
         align: "center",
         render: (_, plan) => (
-          <RowActions
-            disabled={isDeleting}
-            editHref={`/management/subscription-plans/create?mode=edit&id=${plan.id}`}
-            onDelete={() => handleDelete(plan)}
-          />
+          <div className="flex items-center justify-center gap-2">
+            <PlanSuspensionAction
+              plan={plan}
+              disabled={isDeleting || isSuspending || isResuming}
+              onSuspend={handleSuspend}
+              onResume={handleResume}
+            />
+            <RowActions
+              disabled={isDeleting || isSuspending || isResuming}
+              editHref={`/management/subscription-plans/create?mode=edit&id=${plan.id}`}
+              onDelete={() => handleDelete(plan)}
+              className="gap-2"
+            />
+          </div>
         ),
       },
     ],
-    [isDeleting, handleDelete],
+    [isDeleting, isResuming, isSuspending, handleDelete, handleResume, handleSuspend],
   );
 
   return (
@@ -797,7 +1070,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         title="قائمة الفعاليات"
         columns={columns}
         rows={filteredPlans}
-        minWidth="850px"
+        minWidth="900px"
         tableColumns={TABLE_GRID_COLUMNS}
         showAdd={false}
         showSearch={false}
@@ -884,6 +1157,25 @@ export default function SubscriptionPlansClient({ initialData }) {
         title="تأكيد حذف الفعالية"
         message={`هل أنت متأكد من رغبتك في حذف فعالية "${itemToDelete ? planName(itemToDelete) : ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
         isLoading={isDeleting}
+      />
+
+      <SuspensionDialog
+        open={suspensionModalOpen}
+        plan={itemToSuspend}
+        isLoading={isSuspending}
+        onClose={closeSuspensionModal}
+        onConfirm={confirmSuspend}
+      />
+
+      <ConfirmDialog
+        open={resumeConfirmOpen}
+        onClose={closeResumeConfirm}
+        onConfirm={confirmResume}
+        title="تأكيد استئناف الفعالية"
+        message={`هل تريد استئناف فعالية "${itemToResume ? planName(itemToResume) : ""}" قبل موعد انتهاء الإيقاف؟ سيتم احتساب الأيام المستخدمة فقط واستعادة الجلسات المتبقية.`}
+        confirmLabel="استئناف الفعالية"
+        isLoading={isResuming}
+        tone="primary"
       />
     </div>
   );

@@ -17,6 +17,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { memberSchema } from "@/lib/validations/membersSchema";
 import PhoneField from "@/components/forms/PhoneField";
 import { formatLocalizedName } from "@/lib/utils";
+import { getMemberDisplayName } from "./memberDisplayName";
 import { useMembers } from "./useMembers";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
@@ -94,15 +95,6 @@ function DetailItem({ label, value, tone = "default" }) {
   );
 }
 
-function getMemberDisplayName(member) {
-  if (!member) return "";
-  return (
-    member.person?.full_name ||
-    `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-    `العضو #${member.id}`
-  );
-}
-
 export default function MembersClient({ initialData }) {
   const router = useRouter();
   const {
@@ -134,6 +126,8 @@ export default function MembersClient({ initialData }) {
     confirmDelete,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     getEditInitialValues,
     branches,
     plans,
@@ -146,12 +140,11 @@ export default function MembersClient({ initialData }) {
         key: "name",
         label: "الاسم",
         align: "center",
-        render: (_, member) => {
-          const person = member.person || {};
-          const fullName =
-            person.full_name || `${member.first_name || ""} ${member.last_name || ""}`.trim();
-          return <span className="text-sm font-medium text-white">{fullName || "-"}</span>;
-        },
+        render: (_, member) => (
+          <span className="text-sm font-medium text-white">
+            {getMemberDisplayName(member) || "-"}
+          </span>
+        ),
       },
       {
         key: "mobile",
@@ -372,7 +365,11 @@ export default function MembersClient({ initialData }) {
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف العضو"
-        message={`هل أنت متأكد من رغبتك في حذف العضو "${itemToDelete ? `${itemToDelete.first_name} ${itemToDelete.last_name}` : ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        message={`هل أنت متأكد من رغبتك في حذف العضو "${getMemberDisplayName(itemToDelete)}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={isDeleting}
       />
     </div>

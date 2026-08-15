@@ -57,14 +57,19 @@ export default function AttendanceTable({
         align: "center",
         width: "minmax(120px,1fr)",
       },
-      { key: "checkIn", label: "وقت الدخول", align: "center", width: "88px" },
+      {
+        key: "checkIn",
+        label: "تاريخ ووقت الدخول",
+        align: "center",
+        width: "150px",
+      },
       { key: "checkOut", label: "وقت الانصراف", align: "center", width: "88px" },
       {
         key: "duration",
         label: "المدة",
         align: "center",
         width: "78px",
-        render: (value) => (value !== null && value !== undefined ? `${value} دقيقة` : "-"),
+        render: (value) => value || "-",
       },
       { key: "locker", label: "الخزانة", align: "center", width: "70px" },
       {

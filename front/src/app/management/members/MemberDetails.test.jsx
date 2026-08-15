@@ -24,6 +24,16 @@ describe("member comprehensive profile", () => {
         },
       ],
     };
+    const previousSubscription = {
+      id: 9,
+      member_id: 7,
+      status: "expired",
+      plan: { name: { ar: "لياقة سابقة" } },
+      start_date: "2026-06-01",
+      end_date: "2026-07-01",
+      paid_amount: 200,
+      remaining_amount: 0,
+    };
 
     render(
       <MemberDetails
@@ -33,6 +43,7 @@ describe("member comprehensive profile", () => {
           branch_id: 2,
           username: "player-7",
           membership_status: "active",
+          created_by: { id: 1, name: "John Doe" },
           person: {
             full_name: "دانية مولوي",
             gender: "female",
@@ -50,7 +61,7 @@ describe("member comprehensive profile", () => {
         }}
         branches={[{ id: 2, name: { ar: "الفرع الرئيسي" } }]}
         subscription={subscription}
-        subscriptions={[subscription]}
+        subscriptions={[subscription, previousSubscription]}
         attendances={[
           {
             id: 1,
@@ -62,7 +73,7 @@ describe("member comprehensive profile", () => {
         ]}
         lockers={[{ id: 3, locker_number: "L-12", key_number: "K-12" }]}
         summary={{
-          subscriptionsCount: 1,
+          subscriptionsCount: 2,
           attendanceCount: 1,
           paidAmount: 250,
           remainingAmount: 50,
@@ -78,9 +89,16 @@ describe("member comprehensive profile", () => {
     expect(screen.getByText("أيروبيك")).toBeInTheDocument();
     expect(screen.getByText("خزانة L-12")).toBeInTheDocument();
     expect(screen.getByText("والدة دانية")).toBeInTheDocument();
-    expect(screen.getByText("سجل الاشتراكات")).toBeInTheDocument();
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByText("اشتراكات اللاعب")).toBeInTheDocument();
+    expect(screen.getByText("الاشتراكات السابقة")).toBeInTheDocument();
+    expect(screen.queryByText("سجل الاشتراكات")).not.toBeInTheDocument();
+    expect(screen.getByText("لياقة سابقة")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "عرض كل تفاصيل الاشتراك" }));
-    expect(onShowSubscription).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "عرض كل تفاصيل الاشتراك الحالي" }));
+    expect(onShowSubscription).toHaveBeenNthCalledWith(1, subscription);
+
+    fireEvent.click(screen.getByRole("button", { name: "عرض تفاصيل اشتراك لياقة سابقة" }));
+    expect(onShowSubscription).toHaveBeenNthCalledWith(2, previousSubscription);
   });
 });
