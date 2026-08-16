@@ -35,7 +35,8 @@ class AttendanceDashboardService
     {
         $branchKey = $branchId ? (string) $branchId : 'all';
         $version   = DashboardNotificationService::getBranchStatsVersion($branchId);
-        $cacheKey  = "dashboard_stats_cache_{$branchKey}_v{$version}";
+        $minuteKey = now()->format('YmdHi');
+        $cacheKey  = "dashboard_stats_cache_{$branchKey}_v{$version}_{$minuteKey}";
 
         return Cache::remember($cacheKey, $ttlSeconds, function () use ($branchId) {
             return $this->getDashboardStats($branchId);
