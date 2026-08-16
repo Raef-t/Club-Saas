@@ -76,6 +76,7 @@ class AttendanceDashboardController extends BaseController
                 flush();
 
                 $lastVersion = null;
+                $lastMinute = null;
                 $pollInterval = 1;
 
                 while (true) {
@@ -87,12 +88,15 @@ class AttendanceDashboardController extends BaseController
                         DashboardNotificationService::getBranchStatsVersion(
                             $branchId
                         );
+                    $currentMinute = now()->format('Y-m-d H:i');
 
                     if (
                         $lastVersion === null ||
-                        $currentVersion !== $lastVersion
+                        $currentVersion !== $lastVersion ||
+                        $currentMinute !== $lastMinute
                     ) {
                         $lastVersion = $currentVersion;
+                        $lastMinute = $currentMinute;
 
                         $stats = $this->dashboardService
                             ->getCachedDashboardStats($branchId);
