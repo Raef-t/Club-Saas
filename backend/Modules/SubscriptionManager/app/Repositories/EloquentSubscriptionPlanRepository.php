@@ -19,6 +19,19 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
     public function create(array $data)
     {
         return \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            $activityIds = [];
+            if (isset($data['activities']) && is_array($data['activities'])) {
+                foreach ($data['activities'] as $act) {
+                    if (isset($act['activity_id'])) {
+                        $activityIds[] = (int) $act['activity_id'];
+                    }
+                }
+            }
+
+            if (!empty($activityIds) && \Modules\Sports\Models\Activity::hasAnyEquipmentActivity($activityIds)) {
+                $data['max_subscribers'] = 0;
+            }
+
             $plan = SubscriptionPlan::create($data);
             if (isset($data['activities']) && is_array($data['activities'])) {
                 $activities = $this->prepareActivities($data['activities']);
@@ -27,6 +40,12 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
             if (isset($data['session_templates']) && is_array($data['session_templates'])) {
                 $plan->sessionTemplates()->createMany($data['session_templates']);
             }
+
+            // Post-creation check
+            if ($plan->load('planActivities.staffActivity.activity.activityType')->hasEquipmentActivity() && $plan->max_subscribers !== 0) {
+                $plan->update(['max_subscribers' => 0]);
+            }
+
             return $plan;
         });
     }
@@ -35,6 +54,20 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
     {
         return \Illuminate\Support\Facades\DB::transaction(function () use ($id, $data) {
             $plan = $this->find($id);
+
+            $activityIds = [];
+            if (isset($data['activities']) && is_array($data['activities'])) {
+                foreach ($data['activities'] as $act) {
+                    if (isset($act['activity_id'])) {
+                        $activityIds[] = (int) $act['activity_id'];
+                    }
+                }
+            }
+
+            if (!empty($activityIds) && \Modules\Sports\Models\Activity::hasAnyEquipmentActivity($activityIds)) {
+                $data['max_subscribers'] = 0;
+            }
+
             $plan->update($data);
             if (isset($data['activities']) && is_array($data['activities'])) {
                 $activities = $this->prepareActivities($data['activities']);
@@ -45,6 +78,12 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
                 $plan->sessionTemplates()->delete();
                 $plan->sessionTemplates()->createMany($data['session_templates']);
             }
+
+            // Post-update check
+            if ($plan->load('planActivities.staffActivity.activity.activityType')->hasEquipmentActivity() && $plan->max_subscribers !== 0) {
+                $plan->update(['max_subscribers' => 0]);
+            }
+
             return $plan;
         });
     }

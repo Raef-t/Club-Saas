@@ -30,7 +30,24 @@ class ActivitiesSeeder extends Seeder
             ['name' => 'دفاع عن النفس', 'gender_allowed' => 'mixed', 'is_private_equipment' => false],
         ];
 
+        $generalType = \Modules\Sports\Models\ActivityType::where('name', 'تدريب عام')->first();
+        $privateType = \Modules\Sports\Models\ActivityType::where('name', 'تدريب خاص')->first();
+        $groupType = \Modules\Sports\Models\ActivityType::where('name', 'حصة جماعية')->first();
+
         foreach ($activities as $activity) {
+            $typeId = null;
+            if ($activity['name'] === 'أجهزة عام' && $generalType) {
+                $typeId = $generalType->id;
+            } elseif ($activity['name'] === 'أجهزة خاص' && $privateType) {
+                $typeId = $privateType->id;
+            } elseif ($groupType) {
+                $typeId = $groupType->id;
+            }
+
+            if ($typeId) {
+                $activity['activity_type_id'] = $typeId;
+            }
+
             Activity::updateOrCreate(
                 ['name' => $activity['name']],
                 $activity

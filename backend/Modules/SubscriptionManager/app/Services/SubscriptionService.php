@@ -778,9 +778,9 @@ class SubscriptionService
      */
     public function incrementPlanSubscribers(?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan)
     {
-        if ($plan && $plan->max_subscribers > 0) {
+        if ($plan) {
             $plan->increment('current_subscribers');
-            if ($plan->current_subscribers >= $plan->max_subscribers) {
+            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
                 $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
             }
         }
@@ -791,16 +791,18 @@ class SubscriptionService
      */
     public function decrementPlanSubscribers(?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan)
     {
-        if ($plan && $plan->max_subscribers > 0) {
+        if ($plan) {
             if ($plan->current_subscribers > 0) {
                 $plan->decrement('current_subscribers');
             }
-            $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
-                ? $plan->status->value
-                : $plan->status;
+            if ($plan->max_subscribers > 0) {
+                $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
+                    ? $plan->status->value
+                    : $plan->status;
 
-            if ($statusValue === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value && $plan->current_subscribers < $plan->max_subscribers) {
-                $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
+                if ($statusValue === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value && $plan->current_subscribers < $plan->max_subscribers) {
+                    $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
+                }
             }
         }
     }
