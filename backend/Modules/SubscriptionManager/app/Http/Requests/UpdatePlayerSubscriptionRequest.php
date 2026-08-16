@@ -14,6 +14,7 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'reason' => ['required', 'string', 'max:500'],
             'member_id' => 'nullable|exists:members,id',
             'plan_id' => 'nullable|exists:subscription_plans,id',
             'offer_id' => 'nullable|exists:offers,id',

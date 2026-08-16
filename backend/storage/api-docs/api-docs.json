@@ -9699,7 +9699,7 @@
                     "Locker Management"
                 ],
                 "summary": "🔓 فك الحجز وإخلاء الخزانة",
-                "description": "ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available).",
+                "description": "ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available). إذا كان للحجز تاريخ نهاية مستقبلي ولم ينتهِ بعد، يكون حقل reason إجبارياً لتوضيح سبب الفك المبكر.",
                 "operationId": "258d59fb8490e29cee2eb5e3b1761fc2",
                 "parameters": [
                     {
@@ -9712,6 +9712,23 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "reason": {
+                                        "description": "سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)",
+                                        "type": "string",
+                                        "example": "طلب المشترك إنهاء الحجز واستعادة الأمانة"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم تحرير الخزانة",
@@ -9723,6 +9740,9 @@
                     },
                     "400": {
                         "description": "❌ الخزانة متاحة بالفعل أو حدث خطأ"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ عدم إرسال سبب فك الحجز المبكر"
                     }
                 },
                 "security": [
@@ -11294,7 +11314,15 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "reason"
+                                ],
                                 "properties": {
+                                    "reason": {
+                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "type": "string",
+                                        "example": "تحديث رقم الجوال والعنوان"
+                                    },
                                     "first_name": {
                                         "type": "string",
                                         "example": "أحمد"
@@ -15767,11 +15795,19 @@
                     }
                 ],
                 "requestBody": {
-                    "required": false,
+                    "required": true,
                     "content": {
                         "multipart/form-data": {
                             "schema": {
+                                "required": [
+                                    "reason"
+                                ],
                                 "properties": {
+                                    "reason": {
+                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "type": "string",
+                                        "example": "تحديث الراتب ونوع التوظيف"
+                                    },
                                     "first_name": {
                                         "type": "string",
                                         "example": "Ahmed"
@@ -17916,6 +17952,7 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "reason",
                                     "first_name",
                                     "last_name",
                                     "phone_number",
@@ -17924,6 +17961,11 @@
                                     "branch_ids"
                                 ],
                                 "properties": {
+                                    "reason": {
+                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "type": "string",
+                                        "example": "تعديل المسمى الوظيفي والراتب"
+                                    },
                                     "first_name": {
                                         "type": "string",
                                         "example": "John"
@@ -19821,7 +19863,15 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "reason"
+                                ],
                                 "properties": {
+                                    "reason": {
+                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "type": "string",
+                                        "example": "تصحيح المبلغ المدفوع وتعديل طريقة الدفع"
+                                    },
                                     "amount": {
                                         "type": "number",
                                         "format": "float",
@@ -20302,11 +20352,19 @@
                     }
                 ],
                 "requestBody": {
-                    "required": false,
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "reason"
+                                ],
                                 "properties": {
+                                    "reason": {
+                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "type": "string",
+                                        "example": "تعديل تاريخ بداية ونهاية الاشتراك"
+                                    },
                                     "member_id": {
                                         "description": "معرف العضو (اختياري)",
                                         "type": "integer",
@@ -22312,7 +22370,15 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "reason"
+                                ],
                                 "properties": {
+                                    "reason": {
+                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "type": "string",
+                                        "example": "تحديث السعر وعدد المشتركين"
+                                    },
                                     "name": {
                                         "description": "اسم الخطة",
                                         "type": "string",
@@ -25626,6 +25692,12 @@
             "UpdateLockerRequest": {
                 "title": "UpdateLockerRequest",
                 "properties": {
+                    "reason": {
+                        "description": "سبب التعديل (اختياري)",
+                        "type": "string",
+                        "example": "تغيير المفتاح التالف وتحديث الحالة",
+                        "nullable": true
+                    },
                     "locker_number": {
                         "type": "string",
                         "example": "L-101"
@@ -25869,6 +25941,12 @@
                         "type": "string",
                         "example": "active"
                     },
+                    "reason": {
+                        "description": "آخر سبب للتعديل",
+                        "type": "string",
+                        "example": "تحديث رقم الجوال والعنوان",
+                        "nullable": true
+                    },
                     "join_date": {
                         "type": "string",
                         "format": "date",
@@ -26088,6 +26166,12 @@
                             "suspended",
                             "on_leave"
                         ]
+                    },
+                    "reason": {
+                        "description": "آخر سبب للتعديل",
+                        "type": "string",
+                        "example": "تحديث الراتب والفرع",
+                        "nullable": true
                     },
                     "created_at": {
                         "type": "string",

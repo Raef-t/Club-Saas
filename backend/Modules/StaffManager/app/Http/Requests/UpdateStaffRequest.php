@@ -33,6 +33,8 @@ class UpdateStaffRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'reason' => 'required|string|max:500',
+
             // ── Personal Details (people table) ──────────────────
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',

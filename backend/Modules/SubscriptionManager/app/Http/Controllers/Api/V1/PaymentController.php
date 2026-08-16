@@ -51,7 +51,9 @@ class PaymentController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
+            required: ['reason'],
             properties: [
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تصحيح المبلغ المدفوع وتعديل طريقة الدفع'),
                 new OA\Property(property: 'amount', type: 'number', format: 'float', example: 100.00),
                 new OA\Property(property: 'payment_method', type: 'string', example: 'cash')
             ]
@@ -63,6 +65,7 @@ class PaymentController extends BaseController
         $payment = Payment::findOrFail($id);
         
         $data = $request->validate([
+            'reason' => 'required|string|max:500',
             'amount' => 'sometimes|numeric|min:0.01',
             'payment_method' => 'sometimes|string',
         ]);

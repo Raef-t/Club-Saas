@@ -14,6 +14,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "member_number", type: "string", example: "MEM-2023-0001"),
         new OA\Property(property: "branch_id", type: "integer", example: 1),
         new OA\Property(property: "membership_status", type: "string", example: "active"),
+        new OA\Property(property: "reason", type: "string", nullable: true, description: "آخر سبب للتعديل", example: "تحديث رقم الجوال والعنوان"),
         new OA\Property(property: "join_date", type: "string", format: "date", example: "2023-01-01"),
         new OA\Property(property: "person", type: "object"),
         new OA\Property(property: "generated_username", type: "string", nullable: true),
@@ -42,6 +43,7 @@ class MemberResource extends JsonResource
             'qr_code' => $todayQrCode,
             'branch_id' => $this->branch_id,
             'membership_status' => $this->membership_status,
+            'reason' => $this->reason,
             'join_date' => $this->join_date,
             'person' => $this->person ? [
                 'full_name' => $this->person->full_name,

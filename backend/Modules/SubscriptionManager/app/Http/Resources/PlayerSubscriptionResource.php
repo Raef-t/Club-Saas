@@ -31,6 +31,7 @@ class PlayerSubscriptionResource extends JsonResource
             'paid_amount' => $this->paid_amount,
             'remaining_amount' => $this->remaining_amount,
             'notes' => $this->notes,
+            'reason' => $this->reason,
             'items' => $this->whenLoaded('items', function () {
                 $planActivities = $this->plan && $this->plan->relationLoaded('planActivities')
                     ? $this->plan->planActivities

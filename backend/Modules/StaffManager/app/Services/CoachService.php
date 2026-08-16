@@ -242,7 +242,7 @@ class CoachService
                 }
             }
 
-            $basicFillable = ['work_status', 'start_date', 'end_date'];
+            $basicFillable = ['work_status', 'start_date', 'end_date', 'reason'];
             $basicData = array_intersect_key($data, array_flip($basicFillable));
             if (!empty($basicData)) {
                 $staff->update($basicData);

@@ -355,11 +355,13 @@ class CoachController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         requestBody: new OA\RequestBody(
-            required: false,
+            required: true,
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
+                    required: ['reason'],
                     properties: [
+                        new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تحديث الراتب ونوع التوظيف'),
                         new OA\Property(property: 'first_name', type: 'string', example: 'Ahmed'),
                         new OA\Property(property: 'last_name', type: 'string', example: 'Ali'),
                         new OA\Property(property: 'gender', type: 'string', example: 'male'),

@@ -21,6 +21,7 @@ class PlayerSubscription extends Model
         'status',
         'notes',
         'offer_id',
+        'reason',
     ];
 
     protected $casts = [

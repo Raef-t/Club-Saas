@@ -22,6 +22,7 @@ class Staff extends Model
         'start_time',
         'end_time',
         'work_status',
+        'reason',
     ];
 
     protected $casts = [

@@ -203,8 +203,9 @@ class StaffController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
+            required: ['reason', 'first_name', 'last_name', 'phone_number', 'role', 'employment_type', 'branch_ids'],
             properties: [
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تعديل المسمى الوظيفي والراتب'),
                 new OA\Property(property: 'first_name', type: 'string', example: 'John'),
                 new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
                 new OA\Property(property: 'country_code', type: 'string', example: '+1'),

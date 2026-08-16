@@ -14,6 +14,7 @@ class UpdatePlayerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'reason' => ['required', 'string', 'max:500'],
             'first_name' => 'nullable|string|max:100',
             'last_name' => 'nullable|string|max:100',
             'mobile_country_code' => 'nullable|string|max:5',

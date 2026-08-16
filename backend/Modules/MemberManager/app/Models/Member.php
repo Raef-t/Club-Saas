@@ -18,6 +18,7 @@ class Member extends Model
         'membership_status',
         'join_date',
         'how_heard_about_us',
+        'reason',
     ];
 
     protected $casts = [

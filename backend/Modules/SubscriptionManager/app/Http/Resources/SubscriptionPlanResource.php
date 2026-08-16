@@ -23,6 +23,7 @@ class SubscriptionPlanResource extends JsonResource
             'is_unlimited_subscribers' => $this->max_subscribers == 0,
             'gender_restriction' => $this->gender_restriction,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,
+            'reason' => $this->reason,
             'is_suspended' => $this->relationLoaded('activeSuspension') 
                 ? $this->activeSuspension !== null 
                 : $this->suspensions()->whereIn('status', ['active', 'scheduled'])->exists(),

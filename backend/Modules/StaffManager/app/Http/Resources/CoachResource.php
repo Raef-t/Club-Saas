@@ -31,6 +31,7 @@ use OpenApi\Attributes as OA;
             example: "active",
             description: "حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)"
         ),
+        new OA\Property(property: "reason", type: "string", nullable: true, description: "آخر سبب للتعديل", example: "تحديث الراتب والفرع"),
         new OA\Property(property: "created_at", type: "string", format: "date-time"),
         new OA\Property(property: "updated_at", type: "string", format: "date-time"),
         new OA\Property(property: "person", type: "object", description: "Person details"),
@@ -64,6 +65,7 @@ class CoachResource extends JsonResource
             'start_time'      => $this->start_time,
             'end_time'        => $this->end_time,
             'work_status'     => $this->work_status,
+            'reason'          => $this->reason,
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,
             

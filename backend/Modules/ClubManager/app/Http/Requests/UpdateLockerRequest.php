@@ -8,6 +8,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     title: "UpdateLockerRequest",
     properties: [
+        new OA\Property(property: "reason", type: "string", nullable: true, description: "سبب التعديل (اختياري)", example: "تغيير المفتاح التالف وتحديث الحالة"),
         new OA\Property(property: "locker_number", type: "string", example: "L-101"),
         new OA\Property(property: "key_number", type: "string", nullable: true, example: "K-101"),
         new OA\Property(property: "status", type: "string", enum: ["available", "with_member", "with_staff", "with_coach"], example: "available"),
@@ -26,6 +27,7 @@ class UpdateLockerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'reason'        => ['nullable', 'string', 'max:500'],
             'locker_number' => 'sometimes|string|max:50',
             'key_number'    => 'nullable|string|max:50',
             'status'        => 'sometimes|in:available,with_member,with_staff,with_coach',

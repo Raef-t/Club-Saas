@@ -267,18 +267,33 @@ class LockerController extends BaseController
     #[OA\Delete(
         path: '/v1/lockers/{locker}/reservations/current',
         summary: '🔓 فك الحجز وإخلاء الخزانة',
-        description: 'ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available).',
+        description: 'ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available). إذا كان للحجز تاريخ نهاية مستقبلي ولم ينتهِ بعد، يكون حقل reason إجبارياً لتوضيح سبب الفك المبكر.',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'locker', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)', example: 'طلب المشترك إنهاء الحجز واستعادة الأمانة')
+            ]
+        )
+    )]
     #[OA\Response(response: 200, description: '✅ تم تحرير الخزانة', content: new OA\JsonContent())]
     #[OA\Response(response: 400, description: '❌ الخزانة متاحة بالفعل أو حدث خطأ')]
-    public function releaseCurrentReservation(int $locker)
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال سبب فك الحجز المبكر')]
+    public function releaseCurrentReservation(int $locker, Request $request)
     {
         try {
-            $this->lockerService->releaseLocker($locker);
+            $this->lockerService->releaseLocker($locker, $request->input('reason'));
             return $this->successResponse(null, __('Locker released successfully.'));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }

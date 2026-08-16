@@ -177,8 +177,15 @@ class PlayerRegistrationService
             }
 
             // Update Member
+            $memberUpdateData = [];
             if (isset($data['branch_id'])) {
-                $member->update(['branch_id' => $data['branch_id']]);
+                $memberUpdateData['branch_id'] = $data['branch_id'];
+            }
+            if (isset($data['reason'])) {
+                $memberUpdateData['reason'] = $data['reason'];
+            }
+            if (!empty($memberUpdateData)) {
+                $member->update($memberUpdateData);
             }
 
             $member->load('person.contacts', 'measurements', 'healthProfile');
