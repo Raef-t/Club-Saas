@@ -44,6 +44,9 @@ class LockerService
         if (Schema::hasColumn('lockers', 'key_number')) {
             $columns[] = 'lockers.key_number';
         }
+        if (Schema::hasColumn('lockers', 'reason')) {
+            $columns[] = 'lockers.reason';
+        }
 
         $query = DB::table('lockers')
             ->leftJoin('locker_reservations', function($join) {
@@ -393,6 +396,7 @@ class LockerService
                 'lockers.locker_number',
                 'lockers.key_number',
                 'lockers.status',
+                'lockers.reason',
                 'lockers.branch_id',
                 'locker_reservations.id as active_reservation_id',
                 'locker_reservations.start_date',
