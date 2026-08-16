@@ -282,9 +282,9 @@ class LockerService
         });
     }
 
-    public function releaseLocker(int $lockerId)
+    public function releaseLocker(int $lockerId, ?string $reason = null)
     {
-        return DB::transaction(function () use ($lockerId) {
+        return DB::transaction(function () use ($lockerId, $reason) {
             $locker = \Modules\ClubManager\Models\Locker::where('id', $lockerId)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -293,15 +293,31 @@ class LockerService
                 throw new Exception(__('Locker is already available.'));
             }
 
-            // End active reservation
-            DB::table('locker_reservations')
+            // Find active reservation
+            $activeReservation = DB::table('locker_reservations')
                 ->where('locker_id', $lockerId)
                 ->where('status', 'active')
-                ->update([
-                    'status' => 'expired',
-                    'end_date' => DB::raw('COALESCE(end_date, NOW())'),
-                    'updated_at' => now(),
-                ]);
+                ->first();
+
+            if ($activeReservation) {
+                $today = now()->toDateString();
+                $isEarlyRelease = !empty($activeReservation->end_date) && $activeReservation->end_date > $today;
+
+                if ($isEarlyRelease && empty(trim((string) $reason))) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'reason' => ['حقل سبب فك الحجز إجباري لأن فترة الحجز لم تنتهِ بعد وتاريخ النهاية مستقبلي.']
+                    ]);
+                }
+
+                DB::table('locker_reservations')
+                    ->where('id', $activeReservation->id)
+                    ->update([
+                        'status' => 'expired',
+                        'reason' => $reason,
+                        'end_date' => DB::raw('COALESCE(end_date, NOW())'),
+                        'updated_at' => now(),
+                    ]);
+            }
 
             $this->repository->update($lockerId, ['status' => 'available']);
 

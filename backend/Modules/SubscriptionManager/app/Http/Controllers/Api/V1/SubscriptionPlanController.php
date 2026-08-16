@@ -9,6 +9,7 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use OpenApi\Attributes as OA;
 
 use Modules\SubscriptionManager\Http\Requests\StoreSubscriptionPlanRequest;
+use Modules\SubscriptionManager\Http\Requests\UpdateSubscriptionPlanRequest;
 
 class SubscriptionPlanController extends BaseController
 {
@@ -270,7 +271,9 @@ class SubscriptionPlanController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
+            required: ['reason'],
             properties: [
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تحديث السعر وعدد المشتركين'),
                 new OA\Property(property: 'name', type: 'string', description: 'اسم الخطة', example: 'الاشتراك الماسي'),
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'sessions_per_week', type: 'integer', nullable: true, example: 3),
@@ -334,7 +337,7 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function update(StoreSubscriptionPlanRequest $request, $id)
+    public function update(UpdateSubscriptionPlanRequest $request, $id)
     {
         $plan = $this->planRepository->update($id, $request->validated());
         return $this->successResponse(

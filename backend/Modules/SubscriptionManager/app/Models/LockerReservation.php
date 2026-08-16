@@ -18,6 +18,7 @@ class LockerReservation extends Model
         'end_date',
         'price',
         'status',
+        'reason',
     ];
 
     protected $casts = [

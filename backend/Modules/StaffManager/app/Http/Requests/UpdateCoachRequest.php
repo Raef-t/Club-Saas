@@ -57,6 +57,8 @@ class UpdateCoachRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'reason'                  => ['required', 'string', 'max:500'],
+
             // Person Fields
             'first_name'              => ['nullable', 'string', 'max:255'],
             'last_name'               => ['nullable', 'string', 'max:255'],

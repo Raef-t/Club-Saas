@@ -21,6 +21,7 @@ class PaymentResource extends JsonResource
             'amount' => (float) $this->amount,
             'payment_method' => $this->payment_method,
             'status' => $this->status,
+            'reason' => $this->reason,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
             'deleted_at' => $this->deleted_at?->toDateTimeString(),

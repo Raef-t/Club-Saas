@@ -16,6 +16,7 @@ class Locker extends Model
         'locker_number',
         'key_number',
         'status',
+        'reason',
     ];
 
 

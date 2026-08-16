@@ -180,9 +180,11 @@ class PlayerSubscriptionController extends BaseController
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
-        required: false,
+        required: true,
         content: new OA\JsonContent(
+            required: ['reason'],
             properties: [
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تعديل تاريخ بداية ونهاية الاشتراك'),
                 new OA\Property(property: 'member_id', type: 'integer', example: 1, description: 'معرف العضو (اختياري)'),
                 new OA\Property(property: 'plan_id', type: 'integer', example: 1, description: 'معرف الخطة (اختياري)'),
                 new OA\Property(property: 'offer_id', type: 'integer', example: 1, description: 'معرف العرض (اختياري)'),

@@ -81,6 +81,7 @@ class LockerResource extends JsonResource
 
             // ── Current state ──────────────────────────────────────────────
             'status'          => $this->status,
+            'reason'          => $this->reason,
 
             // ── Holder (polymorphic) ───────────────────────────────────────
             'holder_id'       => $holderId,

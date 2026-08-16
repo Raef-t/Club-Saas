@@ -104,7 +104,9 @@ class PlayerRegistrationController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
+            required: ['reason'],
             properties: [
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تحديث رقم الجوال والعنوان'),
                 new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
                 new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
                 new OA\Property(property: 'mobile_country_code', type: 'string', example: '+963'),

@@ -24,6 +24,7 @@ class SubscriptionPlan extends Model
         'gender_restriction',
         'club_commission_percentage',
         'coach_commission_percentage',
+        'reason',
     ];
 
     protected static function booted()
