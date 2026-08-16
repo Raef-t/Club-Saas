@@ -14,18 +14,41 @@ class ActivityTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            'تدريب عام',
-            'تدريب خاص',
-            'حصة جماعية',
-            'دخول يومي',
+            [
+                'name' => 'تدريب عام',
+                'is_active' => true,
+                'is_session_based' => false,
+                'has_unlimited_subscribers' => true,
+                'has_shifts' => true,
+            ],
+            [
+                'name' => 'تدريب خاص',
+                'is_active' => true,
+                'is_session_based' => false,
+                'has_unlimited_subscribers' => true,
+                'has_shifts' => false,
+            ],
+            [
+                'name' => 'حصة جماعية',
+                'is_active' => true,
+                'is_session_based' => true,
+                'has_unlimited_subscribers' => false,
+                'has_shifts' => false,
+            ],
+            [
+                'name' => 'دخول يومي',
+                'is_active' => true,
+                'is_session_based' => false,
+                'has_unlimited_subscribers' => true,
+                'has_shifts' => false,
+            ],
         ];
 
-        foreach ($types as $type) {
-            ActivityType::firstOrCreate([
-                'name' => $type
-            ], [
-                'is_active' => true
-            ]);
+        foreach ($types as $typeData) {
+            ActivityType::updateOrCreate(
+                ['name' => $typeData['name']],
+                $typeData
+            );
         }
     }
 }

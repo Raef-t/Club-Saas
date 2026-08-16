@@ -18,7 +18,7 @@ class SubscriptionPlanRegistrationResource extends JsonResource
             'coach_commission_percentage' => $this->coach_commission_percentage,
             'max_subscribers' => $this->max_subscribers,
             'current_subscribers' => $this->current_subscribers,
-            'is_unlimited_subscribers' => $this->max_subscribers == 0,
+            'is_unlimited_subscribers' => (bool) ($this->is_unlimited_subscribers ?? ($this->max_subscribers == 0)),
             'gender_restriction' => $this->gender_restriction,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,
             'activities' => SubscriptionPlanActivityResource::collection($this->whenLoaded('planActivities')),

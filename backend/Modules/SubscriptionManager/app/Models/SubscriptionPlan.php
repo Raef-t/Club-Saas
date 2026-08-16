@@ -45,6 +45,12 @@ class SubscriptionPlan extends Model
             }
         });
 
+        static::saving(function ($plan) {
+            if ($plan->relationLoaded('planActivities') && $plan->hasEquipmentActivity()) {
+                $plan->max_subscribers = 0;
+            }
+        });
+
         static::deleted(function ($plan) {
             if ($plan->isForceDeleting()) {
                 return;
@@ -104,6 +110,33 @@ class SubscriptionPlan extends Model
               ->orWhere('max_subscribers', 0)
               ->orWhereColumn('current_subscribers', '<', 'max_subscribers');
         });
+    }
+
+    /**
+     * Determine if this subscription plan includes an equipment or unlimited activity (e.g. أجهزة عام / أجهزة خاص).
+     */
+    public function hasEquipmentActivity(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.activity.activityType')->get();
+
+        foreach ($activities as $planActivity) {
+            $activity = $planActivity->activity ?? ($planActivity->staffActivity ? $planActivity->staffActivity->activity : null);
+            if ($activity && method_exists($activity, 'isEquipmentOrUnlimited') && $activity->isEquipmentOrUnlimited()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if plan allows unlimited subscribers.
+     */
+    public function getIsUnlimitedSubscribersAttribute(): bool
+    {
+        return $this->max_subscribers === 0 || $this->max_subscribers === null || $this->hasEquipmentActivity();
     }
 
     public function planActivities()

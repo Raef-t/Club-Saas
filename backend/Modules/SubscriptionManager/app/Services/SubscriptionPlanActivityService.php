@@ -39,12 +39,25 @@ class SubscriptionPlanActivityService
 
         if ($planId && ($coachId || $activityId)) {
             $updateData = [];
-            if ($coachId) $updateData['coach_id'] = $coachId;
-            if ($activityId) $updateData['activity_id'] = $activityId;
+            if ($coachId && \Illuminate\Support\Facades\Schema::hasColumn('player_subscription_items', 'coach_id')) {
+                $updateData['coach_id'] = $coachId;
+            }
+            if ($activityId && \Illuminate\Support\Facades\Schema::hasColumn('player_subscription_items', 'activity_id')) {
+                $updateData['activity_id'] = $activityId;
+            }
 
-            \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('subscription', function($q) use ($planId) {
-                $q->where('plan_id', $planId);
-            })->update($updateData);
+            if (!empty($updateData)) {
+                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('subscription', function($q) use ($planId) {
+                    $q->where('plan_id', $planId);
+                })->update($updateData);
+            }
+        }
+
+        if ($planId) {
+            $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($planId);
+            if ($plan && $plan->load('planActivities.staffActivity.activity.activityType')->hasEquipmentActivity() && $plan->max_subscribers !== 0) {
+                $plan->update(['max_subscribers' => 0]);
+            }
         }
 
         return $result;
@@ -75,13 +88,22 @@ class SubscriptionPlanActivityService
 
         if ($planId) {
             $updateData = [];
-            if ($coachId !== null) $updateData['coach_id'] = $coachId;
-            if ($activityId !== null) $updateData['activity_id'] = $activityId;
+            if ($coachId !== null && \Illuminate\Support\Facades\Schema::hasColumn('player_subscription_items', 'coach_id')) {
+                $updateData['coach_id'] = $coachId;
+            }
+            if ($activityId !== null && \Illuminate\Support\Facades\Schema::hasColumn('player_subscription_items', 'activity_id')) {
+                $updateData['activity_id'] = $activityId;
+            }
 
             if (!empty($updateData)) {
                 \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('subscription', function($q) use ($planId) {
                     $q->where('plan_id', $planId);
                 })->update($updateData);
+            }
+
+            $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($planId);
+            if ($plan && $plan->load('planActivities.staffActivity.activity.activityType')->hasEquipmentActivity() && $plan->max_subscribers !== 0) {
+                $plan->update(['max_subscribers' => 0]);
             }
         }
 

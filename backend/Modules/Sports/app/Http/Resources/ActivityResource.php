@@ -19,6 +19,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "activity_type", type: "object", description: "Activity type details"),
         new OA\Property(property: "description", type: "string", nullable: true),
         new OA\Property(property: "is_private_equipment", type: "boolean", example: false),
+        new OA\Property(property: "is_unlimited_subscribers", type: "boolean", example: true),
         new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "created_at", type: "string", format: "date-time")
     ]
@@ -32,6 +33,7 @@ class ActivityResource extends JsonResource
             'name' => $this->name,
             'branch_id' => $this->branch_id,
             'activity_type' => new ActivityTypeResource($this->activityType),
+            'is_unlimited_subscribers' => (bool) ($this->activityType?->has_unlimited_subscribers ?? $this->hasUnlimitedSubscribers()),
             'description' => $this->description,
             'is_private_equipment' => $this->is_private_equipment,
             'is_active' => $this->is_active,

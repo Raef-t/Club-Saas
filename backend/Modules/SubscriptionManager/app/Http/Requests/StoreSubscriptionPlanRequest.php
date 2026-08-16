@@ -14,8 +14,29 @@ class StoreSubscriptionPlanRequest extends FormRequest
     protected function prepareForValidation()
     {
         $merge = [];
-        if ($this->has('is_unlimited_subscribers') && filter_var($this->is_unlimited_subscribers, FILTER_VALIDATE_BOOLEAN)) {
+        
+        $activityIds = [];
+        if ($this->has('activities') && is_array($this->activities)) {
+            foreach ($this->activities as $act) {
+                if (isset($act['activity_id']) && is_numeric($act['activity_id'])) {
+                    $activityIds[] = (int) $act['activity_id'];
+                }
+            }
+        } elseif ($this->route('subscription_plan') || $this->route('id')) {
+            $planId = $this->route('subscription_plan') ?? $this->route('id');
+            if (is_numeric($planId)) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($planId);
+                if ($plan) {
+                    $activityIds = $plan->planActivities()->get()->pluck('activity_id')->filter()->toArray();
+                }
+            }
+        }
+
+        $isEquipmentPlan = !empty($activityIds) && \Modules\Sports\Models\Activity::hasAnyEquipmentActivity($activityIds);
+
+        if ($isEquipmentPlan || ($this->has('is_unlimited_subscribers') && filter_var($this->is_unlimited_subscribers, FILTER_VALIDATE_BOOLEAN))) {
             $merge['max_subscribers'] = 0;
+            $merge['is_unlimited_subscribers'] = true;
         }
 
         if (!empty($merge)) {
@@ -25,12 +46,14 @@ class StoreSubscriptionPlanRequest extends FormRequest
 
     public function rules(): array
     {
+        $isUpdate = $this->isMethod('put') || $this->isMethod('patch');
+
         return [
-            'branch_id' => 'required|exists:branches,id',
-            'name' => 'required|string|max:150',
+            'branch_id' => $isUpdate ? 'nullable|exists:branches,id' : 'required|exists:branches,id',
+            'name' => ($isUpdate ? 'sometimes|' : '') . 'required|string|max:150',
             'session_count' => 'nullable|integer|min:1',
             'sessions_per_week' => 'nullable|integer|min:1',
-            'base_price' => 'required|numeric|min:0',
+            'base_price' => ($isUpdate ? 'sometimes|' : '') . 'required|numeric|min:0',
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',
             'gender_restriction' => 'nullable|in:male,female,mixed',

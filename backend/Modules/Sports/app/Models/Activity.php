@@ -30,6 +30,7 @@ class Activity extends Model
      */
     protected $casts = [
         'is_active' => 'boolean',
+        'is_private_equipment' => 'boolean',
     ];
 
     protected static function booted(): void
@@ -94,6 +95,73 @@ class Activity extends Model
     public function commissionRules()
     {
         return $this->hasMany(StaffCommissionRule::class, 'activity_id');
+    }
+
+    /**
+     * Check if this activity has unlimited subscribers (derived primarily from its Activity Type).
+     */
+    public function hasUnlimitedSubscribers(): bool
+    {
+        // 1. Direct Activity Type configuration (Primary source of truth)
+        if ($this->relationLoaded('activityType') && $this->activityType) {
+            if ($this->activityType->has_unlimited_subscribers) {
+                return true;
+            }
+        } elseif ($this->activity_type_id) {
+            $type = $this->activityType;
+            if ($type && $type->has_unlimited_subscribers) {
+                return true;
+            }
+        }
+
+        // 2. Private equipment flag (أجهزة خاص)
+        if ($this->is_private_equipment) {
+            return true;
+        }
+
+        // 3. Fallback name check for general equipment
+        $name = trim((string) $this->name);
+        if (in_array($name, ['أجهزة عام', 'أجهزة خاص', 'صالة الحديد والأجهزة'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Backward-compatible alias for hasUnlimitedSubscribers
+     */
+    public function isEquipmentOrUnlimited(): bool
+    {
+        return $this->hasUnlimitedSubscribers();
+    }
+
+    /**
+     * Check if any given activity ID represents an unlimited activity.
+     *
+     * @param int|array $activityIds
+     * @return bool
+     */
+    public static function hasAnyEquipmentActivity(int|array $activityIds): bool
+    {
+        $ids = is_array($activityIds) ? array_filter($activityIds) : [$activityIds];
+        if (empty($ids)) {
+            return false;
+        }
+
+        $activities = static::with('activityType')->whereIn('id', $ids)->get();
+        foreach ($activities as $activity) {
+            if ($activity->hasUnlimitedSubscribers()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function hasAnyUnlimitedActivity(int|array $activityIds): bool
+    {
+        return static::hasAnyEquipmentActivity($activityIds);
     }
 
 }
