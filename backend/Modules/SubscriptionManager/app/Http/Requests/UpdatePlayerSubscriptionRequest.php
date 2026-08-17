@@ -23,6 +23,8 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'nullable|string|in:active,finished,frozen,terminated,expired,cancelled',
             'paid_amount' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|string',
+            'receipt_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ];
     }

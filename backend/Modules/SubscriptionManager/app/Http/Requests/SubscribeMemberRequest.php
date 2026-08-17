@@ -30,6 +30,7 @@ class SubscribeMemberRequest extends FormRequest
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'paid_amount' => 'required|numeric|min:0',
             'payment_method' => 'nullable|string',
+            'receipt_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ];
     }

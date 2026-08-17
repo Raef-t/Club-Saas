@@ -32,6 +32,11 @@ class PlayerSubscriptionResource extends JsonResource
             'remaining_amount' => $this->remaining_amount,
             'notes' => $this->notes,
             'reason' => $this->reason,
+            'receipt_number' => $this->relationLoaded('payments')
+                ? $this->payments->sortByDesc('id')->first()?->receipt_number
+                : null,
+            'payments' => PaymentResource::collection($this->whenLoaded('payments')),
+            'invoices' => InvoiceResource::collection($this->whenLoaded('invoices')),
             'items' => $this->whenLoaded('items', function () {
                 $planActivities = $this->plan && $this->plan->relationLoaded('planActivities')
                     ? $this->plan->planActivities
