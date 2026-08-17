@@ -32,6 +32,10 @@ class PlayerSubscriptionResource extends JsonResource
             'remaining_amount' => $this->remaining_amount,
             'notes' => $this->notes,
             'reason' => $this->reason,
+            'created_by' => $this->created_by ? [
+                'id' => $this->created_by,
+                'name' => $this->creator?->person?->full_name ?? $this->creator?->username ?? null,
+            ] : null,
             'receipt_number' => $this->relationLoaded('payments')
                 ? $this->payments->sortByDesc('id')->first()?->receipt_number
                 : null,
