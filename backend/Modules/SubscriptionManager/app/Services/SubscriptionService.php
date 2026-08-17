@@ -32,6 +32,7 @@ class SubscriptionService
     public function getAllSubscriptions(array $filters = [])
     {
         $query = PlayerSubscription::query()->with([
+            'creator.person',
             'plan.planActivities.staffActivity.activity',
             'plan.planActivities.staffActivity.staff.person',
             'items',
