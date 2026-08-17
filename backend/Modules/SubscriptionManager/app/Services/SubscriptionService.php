@@ -104,7 +104,7 @@ class SubscriptionService
             $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planId)
                 ->lockForUpdate()
                 ->firstOrFail();
-            $plan->load('planActivities');
+            $plan->load('planActivities.staffActivity');
 
             if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
                 throw new Exception(__('This subscription plan has reached its maximum capacity.'));
@@ -181,19 +181,50 @@ class SubscriptionService
                 ]);
             }
 
-            // 6. Create Invoice
+            // 5b. Create Revenue Split snapshot (for private subscriptions — أجهزة خاص)
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branchId;
+            $branchId  = $memberDTO->branchId ?? $plan->branch_id;
             if (!$branchId) {
                 throw new Exception(__('Member does not belong to any branch.'));
             }
 
+            $firstActivity = $plan->planActivities->first();
+            $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
+
+            // Check if plan has coach OR has private commission configured
+            if ($coachId || $plan->club_commission_percentage !== null) {
+                $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
+
+                $clubPct = $plan->club_commission_percentage !== null
+                    ? (float) $plan->club_commission_percentage
+                    : (float) ($branchSetting?->private_subscription_commission ?? 0.00);
+
+                $coachPct = $plan->coach_commission_percentage !== null
+                    ? (float) $plan->coach_commission_percentage
+                    : max(0.00, 100.00 - $clubPct);
+
+                $clubAmount  = round((float) $totalAmount * ($clubPct / 100), 2);
+                $coachAmount = round((float) $totalAmount - $clubAmount, 2); // باقي المبلغ للكوتش بدون كسور
+
+                \Modules\SubscriptionManager\Models\SubscriptionRevenueSplit::create([
+                    'player_subscription_id' => $subscription->id,
+                    'coach_id'               => $coachId,
+                    'branch_id'              => $branchId,
+                    'total_amount'           => $totalAmount,
+                    'club_percentage'        => $clubPct,
+                    'coach_percentage'       => $coachPct,
+                    'club_amount'            => $clubAmount,
+                    'coach_amount'           => $coachAmount,
+                ]);
+            }
+
+            // 6. Create Invoice
             $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
-                'member_id' => $memberId,
-                'branch_id' => $branchId,
+                'member_id'              => $memberId,
+                'branch_id'              => $branchId,
                 'player_subscription_id' => $subscription->id,
-                'total' => $totalAmount,
-                'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
+                'total'                  => $totalAmount,
+                'status'                 => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
             ]);
 
             // 7. Create Payment if paid_amount > 0

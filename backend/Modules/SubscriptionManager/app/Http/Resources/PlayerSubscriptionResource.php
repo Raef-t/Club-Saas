@@ -71,6 +71,15 @@ class PlayerSubscriptionResource extends JsonResource
                 });
             }),
             'freezes' => $this->whenLoaded('freezes'),
+            'revenue_split' => $this->relationLoaded('revenueSplit') && $this->revenueSplit ? [
+                'id' => $this->revenueSplit->id,
+                'coach_id' => $this->revenueSplit->coach_id,
+                'total_amount' => $this->revenueSplit->total_amount,
+                'club_percentage' => $this->revenueSplit->club_percentage,
+                'coach_percentage' => $this->revenueSplit->coach_percentage,
+                'club_amount' => $this->revenueSplit->club_amount,
+                'coach_amount' => $this->revenueSplit->coach_amount,
+            ] : null,
         ];
     }
 }

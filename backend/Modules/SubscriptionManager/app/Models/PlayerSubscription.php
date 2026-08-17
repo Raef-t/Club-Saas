@@ -74,6 +74,11 @@ class PlayerSubscription extends Model
         return $this->hasMany(\Modules\AttendanceManager\Models\AttendanceConsumption::class, 'player_subscription_id');
     }
 
+    public function revenueSplit()
+    {
+        return $this->hasOne(SubscriptionRevenueSplit::class, 'player_subscription_id');
+    }
+
 
     public function getIsFullyPaidAttribute()
     {
