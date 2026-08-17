@@ -15,6 +15,8 @@ class RecordPaymentRequest extends FormRequest
     {
         return [
             'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'nullable|string',
+            'receipt_number' => 'nullable|string|max:100',
         ];
     }
 }

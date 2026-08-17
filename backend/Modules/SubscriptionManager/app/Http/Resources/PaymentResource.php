@@ -16,6 +16,7 @@ class PaymentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'receipt_number' => $this->receipt_number,
             'invoice_id' => $this->invoice_id,
             'safe_id' => $this->safe_id,
             'amount' => (float) $this->amount,

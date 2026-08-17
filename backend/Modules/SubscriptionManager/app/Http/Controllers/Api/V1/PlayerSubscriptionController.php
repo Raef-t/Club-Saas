@@ -85,7 +85,8 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01', description: 'تاريخ بداية الاشتراك (مطلوب)'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-08-01', description: 'تاريخ نهاية الاشتراك (اختياري، في حال عدم تمريره يتم حسابه تلقائياً من عدد الأشهر)'),
                 new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات إضافية', description: 'ملاحظات (اختياري)'),
-                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)')
+                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
+                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-001', description: 'رقم إيصال الدفع (اختياري)')
             ]
         )
     )]
@@ -121,7 +122,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items'])),
+                new PlayerSubscriptionResource($subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments'])),
                 __('Member subscribed successfully'),
                 201
             );
@@ -161,7 +162,7 @@ class PlayerSubscriptionController extends BaseController
     {
         try {
             $subscription = $this->subscriptionService->getSubscriptionById($id);
-            $subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes']);
+            $subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),
                 __('Subscription retrieved successfully')
@@ -193,6 +194,8 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-09-01', description: 'تاريخ نهاية الاشتراك (اختياري)'),
                 new OA\Property(property: 'status', type: 'string', example: 'active', description: 'حالة الاشتراك (اختياري)'),
                 new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 100.00, description: 'المبلغ المدفوع (اختياري)'),
+                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
+                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-001', description: 'رقم إيصال الدفع (اختياري)'),
                 new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات معدلة', description: 'ملاحظات (اختياري)')
             ]
         )
@@ -224,7 +227,7 @@ class PlayerSubscriptionController extends BaseController
             $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items'])),
+                new PlayerSubscriptionResource($subscription->load(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments'])),
                 __('Subscription updated successfully')
             );
         } catch (\Exception $e) {
@@ -342,7 +345,12 @@ class PlayerSubscriptionController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'plan_id', type: 'integer', example: 1, description: 'معرف الخطة المراد التجديد عليها (اختياري)')
+                new OA\Property(property: 'plan_id', type: 'integer', example: 1, description: 'معرف الخطة المراد التجديد عليها (اختياري)'),
+                new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 50.00, description: 'المبلغ المدفوع (اختياري)'),
+                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
+                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-002', description: 'رقم إيصال الدفع (اختياري)'),
+                new OA\Property(property: 'coach_id', type: 'integer', example: 1, description: 'معرف المدرب (اختياري)'),
+                new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات التجديد', description: 'ملاحظات (اختياري)')
             ]
         )
     )]
@@ -373,7 +381,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->renewSubscription($id, $options);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments'])),
                 __('Subscription renewed successfully'),
                 201
             );
@@ -446,7 +454,9 @@ class PlayerSubscriptionController extends BaseController
         content: new OA\JsonContent(
             required: ['amount'],
             properties: [
-                new OA\Property(property: 'amount', type: 'number', format: 'float', example: 150.00)
+                new OA\Property(property: 'amount', type: 'number', format: 'float', example: 150.00, description: 'قيمة الدفعة المالية'),
+                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
+                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-003', description: 'رقم إيصال الدفع (اختياري)')
             ]
         )
     )]
@@ -475,9 +485,9 @@ class PlayerSubscriptionController extends BaseController
         try {
             $data = $request->validated();
 
-            $subscription = $this->subscriptionService->recordPayment($id, $data['amount']);
+            $subscription = $this->subscriptionService->recordPayment($id, (float) $data['amount'], $data);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments'])),
                 __('Payment recorded successfully')
             );
         } catch (\Exception $e) {

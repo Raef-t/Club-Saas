@@ -64,6 +64,11 @@ class PlayerSubscription extends Model
         return $this->hasMany(Invoice::class, 'player_subscription_id');
     }
 
+    public function payments()
+    {
+        return $this->hasManyThrough(Payment::class, Invoice::class, 'player_subscription_id', 'invoice_id');
+    }
+
     public function attendanceConsumptions()
     {
         return $this->hasMany(\Modules\AttendanceManager\Models\AttendanceConsumption::class, 'player_subscription_id');

@@ -19728,6 +19728,11 @@
                                             "bank_transfer"
                                         ]
                                     },
+                                    "receipt_number": {
+                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-2026-003"
+                                    },
                                     "notes": {
                                         "description": "ملاحظات",
                                         "type": "string",
@@ -19880,6 +19885,11 @@
                                     "payment_method": {
                                         "type": "string",
                                         "example": "cash"
+                                    },
+                                    "receipt_number": {
+                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-2026-001"
                                     }
                                 },
                                 "type": "object"
@@ -20133,6 +20143,11 @@
                                         "description": "طريقة الدفع (اختياري)",
                                         "type": "string",
                                         "example": "cash"
+                                    },
+                                    "receipt_number": {
+                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-2026-001"
                                     }
                                 },
                                 "type": "object"
@@ -20407,6 +20422,16 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
+                                    },
+                                    "payment_method": {
+                                        "description": "طريقة الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "cash"
+                                    },
+                                    "receipt_number": {
+                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-2026-001"
                                     },
                                     "notes": {
                                         "description": "ملاحظات (اختياري)",
@@ -20834,6 +20859,32 @@
                                         "description": "معرف الخطة المراد التجديد عليها (اختياري)",
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "paid_amount": {
+                                        "description": "المبلغ المدفوع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "payment_method": {
+                                        "description": "طريقة الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "cash"
+                                    },
+                                    "receipt_number": {
+                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-2026-002"
+                                    },
+                                    "coach_id": {
+                                        "description": "معرف المدرب (اختياري)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات (اختياري)",
+                                        "type": "string",
+                                        "example": "ملاحظات التجديد"
                                     }
                                 },
                                 "type": "object"
@@ -21102,9 +21153,20 @@
                                 ],
                                 "properties": {
                                     "amount": {
+                                        "description": "قيمة الدفعة المالية",
                                         "type": "number",
                                         "format": "float",
                                         "example": 150
+                                    },
+                                    "payment_method": {
+                                        "description": "طريقة الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "cash"
+                                    },
+                                    "receipt_number": {
+                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-2026-003"
                                     }
                                 },
                                 "type": "object"
@@ -26035,6 +26097,10 @@
                     "is_private_equipment": {
                         "type": "boolean",
                         "example": false
+                    },
+                    "is_unlimited_subscribers": {
+                        "type": "boolean",
+                        "example": true
                     },
                     "is_active": {
                         "type": "boolean",

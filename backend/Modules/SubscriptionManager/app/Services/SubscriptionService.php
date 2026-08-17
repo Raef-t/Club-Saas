@@ -31,7 +31,13 @@ class SubscriptionService
      */
     public function getAllSubscriptions(array $filters = [])
     {
-        $query = PlayerSubscription::query()->with(['plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items']);
+        $query = PlayerSubscription::query()->with([
+            'plan.planActivities.staffActivity.activity',
+            'plan.planActivities.staffActivity.staff.person',
+            'items',
+            'payments',
+            'invoices.payments',
+        ]);
 
         if (!empty($filters['member_id'])) {
             $query->where('member_id', $filters['member_id']);
@@ -203,6 +209,7 @@ class SubscriptionService
                     );
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => null, // No safe involved since money is taken from wallet
                         'amount' => $paidAmount,
@@ -221,6 +228,7 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
@@ -385,6 +393,7 @@ class SubscriptionService
                     );
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => null,
                         'amount' => $amount,
@@ -403,10 +412,11 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $amount,
-                        'payment_method' => 'cash',
+                        'payment_method' => $options['payment_method'] ?? 'cash',
                         'status' => 'completed',
                     ]);
                 }
@@ -727,6 +737,7 @@ class SubscriptionService
                     );
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => null,
                         'amount' => $paidAmount,
@@ -745,6 +756,7 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
@@ -876,6 +888,7 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $data['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $addedAmount,
