@@ -27,9 +27,9 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
      *  5. Decrement sessions_consumed ONLY in player_subscription_items (per user's spec).
      *  6. Fire MemberCheckedIn event.
      */
-    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null): Attendance
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null): Attendance
     {
-        return DB::transaction(function () use ($entityId, $branchId, $checkInAt) {
+        return DB::transaction(function () use ($entityId, $branchId, $checkInAt, $subscriptionIds) {
 
             // ── 0. Lock member row to prevent concurrent check-in ───────────────────
             DB::table('members')->where('id', $entityId)->lockForUpdate()->first();
@@ -40,7 +40,7 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 throw new Exception(__('Member is already checked in.'));
             }
 
-            // ── 2. Create Attendance record (Pending Deduction) ─────────────────────
+            // ── 2. Create Attendance record ─────────────────────
             $checkInTimestamp = $checkInAt ? Carbon::parse($checkInAt) : now();
 
             $attendance = Attendance::create([
@@ -53,6 +53,13 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
             ]);
 
             event(new MemberCheckedIn($attendance));
+
+            // ── 3. Deduct sessions if subscriptions were selected ────────────────────
+            if (!empty($subscriptionIds)) {
+                app(\Modules\AttendanceManager\Services\SessionDeductionService::class)
+                    ->deductMultipleSessions($attendance->id, $subscriptionIds);
+                $attendance = $attendance->fresh();
+            }
 
             return $attendance;
         });

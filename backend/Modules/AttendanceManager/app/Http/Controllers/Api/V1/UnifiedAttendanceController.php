@@ -18,7 +18,7 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Post(
         path: '/v1/attendances/check-in',
         summary: '✅ تسجيل الدخول الموحد (لكافة أنواع المستخدمين)',
-        description: 'تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type.',
+        description: 'تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type مع إمكانية تمرير اشتراكات اللاعب للخصم المباشر.',
         tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
@@ -31,7 +31,14 @@ class UnifiedAttendanceController extends BaseController
                 new OA\Property(property: 'attendable_id', type: 'integer', example: 1),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
                 new OA\Property(property: 'facility_id', type: 'integer', example: 1, description: 'معرف المنشأة (اختياري)'),
-                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-08-08 14:30:00', description: 'تاريخ ووقت تسجيل الدخول اليدوي (اختياري)')
+                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-08-08 14:30:00', description: 'تاريخ ووقت تسجيل الدخول اليدوي (اختياري)'),
+                new OA\Property(
+                    property: 'player_subscription_ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer'),
+                    example: [5, 7],
+                    description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم المباشر منها عند تسجيل الحضور (اختياري)'
+                )
             ]
         )
     )]
@@ -42,6 +49,7 @@ class UnifiedAttendanceController extends BaseController
             $type = $request->input('attendable_type');
             $id   = (int) $request->input('attendable_id');
             $checkInAt = $request->input('check_in_at');
+            $subscriptionIds = $request->input('player_subscription_ids');
             $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();
             if (!$branch) {
                 return $this->errorResponse('Branch not found.', 404);
@@ -51,7 +59,8 @@ class UnifiedAttendanceController extends BaseController
                 type: $type,
                 entityId: $id,
                 branchId: (int) $branch->id,
-                checkInAt: $checkInAt
+                checkInAt: $checkInAt,
+                subscriptionIds: $subscriptionIds
             );
 
             return $this->successResponse(new AttendanceResource($attendance), __('Checked in successfully'));

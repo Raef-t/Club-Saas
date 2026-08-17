@@ -24,7 +24,7 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
      *  3. Create Attendance record (attendable_type='staff', attendable_id=staff_id).
      *  4. Fire StaffCheckedIn event.
      */
-    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null): Attendance
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null): Attendance
     {
         return DB::transaction(function () use ($entityId, $branchId, $checkInAt) {
 
