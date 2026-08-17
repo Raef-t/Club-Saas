@@ -8,6 +8,7 @@ use Modules\StaffManager\Models\PayrollRun;
 use Modules\StaffManager\Models\StaffContract;
 use Modules\ClubManager\Models\BranchSetting;
 use Modules\ClubManager\Models\BranchHoliday;
+use Modules\SubscriptionManager\Models\PlayerSubscription;
 use Modules\SubscriptionManager\Models\PlayerSubscriptionItem;
 use Modules\NotificationManager\Models\NotificationTemplate;
 use Modules\NotificationManager\Services\NotificationService;
@@ -72,15 +73,15 @@ class PayrollService
 
         $commissionPay = 0;
 
-        $items = PlayerSubscriptionItem::with('subscription')
-            ->where('coach_id', $staffId)
-            ->where('sessions_consumed', '>', 0)
+        $subscriptions = PlayerSubscription::whereHas('plan.planActivities.staffActivity', function ($q) use ($staffId) {
+                $q->where('staff_id', $staffId);
+            })
+            ->whereHas('items', function ($q) {
+                $q->where('sessions_consumed', '>', 0);
+            })
             ->get();
 
-        foreach ($items as $item) {
-            $sub = $item->subscription;
-            if (!$sub) continue;
-
+        foreach ($subscriptions as $sub) {
             $subStartDate = Carbon::parse($sub->start_date);
             
             if ($subStartDate->between($periodStart, $periodEnd)) {

@@ -41,12 +41,9 @@ class Staff extends Model
                 return;
             }
 
-            // Nullify coach_id on active sessions and subscription items to mark them as Pending Assignment (قيد التعيين)
+            // Nullify coach_id on active sessions to mark them as Pending Assignment (قيد التعيين)
             if (class_exists(\Modules\Sports\Models\SessionException::class)) {
                 \Modules\Sports\Models\SessionException::where('coach_id', $staff->id)->update(['coach_id' => null]);
-            }
-            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
-                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('coach_id', $staff->id)->update(['coach_id' => null]);
             }
 
             // Soft-delete linked staff details

@@ -49,10 +49,6 @@ class Activity extends Model
                 \Modules\Sports\Models\StaffCommissionRule::where('activity_id', $activity->id)->delete();
             }
 
-            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
-                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $activity->id)->delete();
-            }
-
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($activity->branch_id);
             }
@@ -64,10 +60,6 @@ class Activity extends Model
 
             if (class_exists(\Modules\Sports\Models\StaffCommissionRule::class)) {
                 \Modules\Sports\Models\StaffCommissionRule::onlyTrashed()->where('activity_id', $activity->id)->restore();
-            }
-
-            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
-                \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::onlyTrashed()->where('activity_id', $activity->id)->restore();
             }
 
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
