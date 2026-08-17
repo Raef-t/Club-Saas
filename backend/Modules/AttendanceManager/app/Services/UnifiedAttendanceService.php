@@ -37,12 +37,13 @@ class UnifiedAttendanceService
      * @param  int         $entityId  The primary entity id
      * @param  int         $branchId
      * @param  string|null $checkInAt
+     * @param  array|null  $subscriptionIds
      * @return Attendance
      * @throws Exception
      */
-    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null): Attendance
+    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null): Attendance
     {
-        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt);
+        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt, $subscriptionIds);
     }
 
     /**
