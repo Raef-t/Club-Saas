@@ -6,12 +6,13 @@ import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { TrashIcon } from "@/components/icons/Icons";
 import { useGetBranchSettingsQuery, useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { getGenderForBranchId } from "@/lib/managementBranchUtils";
-import { coachFormSchema } from "@/lib/validations/coachesSchema";
+import { coachFormSchema, coachUpdateFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
 import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
@@ -200,7 +201,8 @@ export function CoachCreateForm({
           shifts: activityRules.allowsShifts ? form.shifts : [],
         }
       : form;
-    const result = coachFormSchema.safeParse(normalizedForm);
+    const schema = initialValues ? coachUpdateFormSchema : coachFormSchema;
+    const result = schema.safeParse(normalizedForm);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
@@ -237,6 +239,7 @@ export function CoachCreateForm({
       work_types: normalizedForm.work_types,
       activity_ids: normalizedForm.activity_ids,
       shifts: shiftsPayload,
+      ...(initialValues ? { reason: result.data.reason } : {}),
     });
   }
 
@@ -601,6 +604,14 @@ export function CoachCreateForm({
           </span>
         )}
       </label>
+
+      {initialValues && (
+        <ModificationReasonField
+          value={form.reason}
+          onChange={(value) => updateField("reason", value)}
+          error={errors.reason}
+        />
+      )}
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">

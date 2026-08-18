@@ -1,5 +1,6 @@
 import { z } from "zod";
 import "./zodErrorMap";
+import { modificationReasonSchema } from "./modificationReasonSchema";
 
 export const subscriptionSchema = z.object({
   member_id: z
@@ -39,6 +40,7 @@ export const subscriptionEditSchema = z
     }),
     paid_amount: z.coerce.number().nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
     notes: z.string().max(1000, "الملاحظات يجب ألا تتجاوز 1000 حرف").optional(),
+    reason: modificationReasonSchema,
   })
   .refine((data) => data.end_date >= data.start_date, {
     message: "تاريخ النهاية يجب ألا يسبق تاريخ البداية",

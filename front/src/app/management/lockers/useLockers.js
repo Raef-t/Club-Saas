@@ -8,7 +8,13 @@ import {
 } from "@/lib/api/lockersApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { createLockerQueryParams, filterLockers, getLockerCollection, getLockerSummary } from "./lockerUtils";
+import {
+  createLockerQueryParams,
+  filterLockers,
+  getLockerCollection,
+  getLockerSummary,
+  isLockerEarlyRelease,
+} from "./lockerUtils";
 
 /**
  * Coordinates locker list filters and reservation lifecycle actions.
@@ -94,11 +100,14 @@ export function useLockers({ initialLockers } = {}) {
   /**
    * Releases the active reservation after confirmation.
    */
-  async function confirmRelease() {
+  async function confirmRelease(reason) {
     if (!releaseTarget) return;
 
     try {
-      await releaseReservation(releaseTarget.id).unwrap();
+      const body = isLockerEarlyRelease(releaseTarget)
+        ? { reason: String(reason || "").trim() }
+        : undefined;
+      await releaseReservation({ id: releaseTarget.id, body }).unwrap();
       toast.success("تم فك حجز الخزانة بنجاح!");
       setReleaseTarget(null);
     } catch (error) {

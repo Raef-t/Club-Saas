@@ -88,6 +88,7 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
         {/* <DetailItem label="البريد الإلكتروني" value={coach.person?.email} /> */}
         {/* <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} /> */}
         <DetailItem label="تاريخ المباشرة" value={startDate ? formatDate(startDate) : "غير مسجل"} />
+        <DetailItem label="سبب آخر تعديل" value={coach.reason || "-"} />
       </section>
 
       {/* Activities Section */}

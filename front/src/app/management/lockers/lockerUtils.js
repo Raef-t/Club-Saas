@@ -58,13 +58,34 @@ function getLockerPersonName(record) {
  * Normalizes the current holder whether it is returned on the locker itself or
  * nested inside the active reservation relation.
  */
-function getLockerHolder(locker) {
-  const reservation =
+export function getLockerCurrentReservation(locker) {
+  return (
     locker?.current_reservation ||
     locker?.active_reservation ||
     locker?.reservation ||
     locker?.locker_reservation ||
-    {};
+    null
+  );
+}
+
+export function getLockerReservationEndDate(locker) {
+  const reservation = getLockerCurrentReservation(locker);
+  return reservation?.end_date || locker?.end_date || locker?.reservation_end_date || "";
+}
+
+export function isLockerEarlyRelease(locker, now = new Date()) {
+  const endDate = new Date(getLockerReservationEndDate(locker));
+  const comparisonDate = now instanceof Date ? now : new Date(now);
+
+  return (
+    Number.isFinite(endDate.getTime()) &&
+    Number.isFinite(comparisonDate.getTime()) &&
+    endDate.getTime() > comparisonDate.getTime()
+  );
+}
+
+function getLockerHolder(locker) {
+  const reservation = getLockerCurrentReservation(locker) || {};
   const relatedHolder = reservation.holder || locker?.holder || {};
   const rawType = String(
     locker?.holder_type || reservation.holder_type || relatedHolder.holder_type || "",

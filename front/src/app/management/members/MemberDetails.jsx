@@ -472,6 +472,7 @@ export default function MemberDetails({
               <DetailItem label="تاريخ الميلاد" value={formatDate(dob)} />
               <DetailItem label="العمر" value={age !== "" && age != null ? `${age} سنة` : "-"} />
               <DetailItem label="تاريخ تسجيل الاستمارة" value={formatDate(member.created_at)} />
+              <DetailItem label="سبب آخر تعديل" value={member.reason || "-"} />
               <DetailItem
                 label="الموظف المسجل"
                 value={member.created_by?.name || member.registered_by?.full_name || "-"}

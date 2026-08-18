@@ -7,6 +7,8 @@ import {
   filterLockers,
   getLockerHolderLabel,
   getLockerRecord,
+  getLockerReservationEndDate,
+  isLockerEarlyRelease,
   isLockerOccupied,
 } from "./lockerUtils";
 
@@ -31,6 +33,16 @@ describe("locker utilities", () => {
   it("detects occupied lockers", () => {
     expect(isLockerOccupied(lockers[0])).toBe(false);
     expect(isLockerOccupied(lockers[1])).toBe(true);
+  });
+
+  it("detects an early release from the nested current reservation end date", () => {
+    const locker = {
+      current_reservation: { end_date: "2026-08-20T12:00:00.000Z" },
+    };
+
+    expect(getLockerReservationEndDate(locker)).toBe("2026-08-20T12:00:00.000Z");
+    expect(isLockerEarlyRelease(locker, new Date("2026-08-18T12:00:00.000Z"))).toBe(true);
+    expect(isLockerEarlyRelease(locker, new Date("2026-08-21T12:00:00.000Z"))).toBe(false);
   });
 
   it("extracts nested locker detail responses", () => {

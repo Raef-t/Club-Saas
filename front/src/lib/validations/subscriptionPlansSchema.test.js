@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { subscriptionPlanSchema } from "./subscriptionPlansSchema";
+import { subscriptionPlanSchema, subscriptionPlanUpdateSchema } from "./subscriptionPlansSchema";
 
 function createPlan(activities) {
   return {
@@ -70,5 +70,17 @@ describe("subscription plan activity validation", () => {
 
     expect(missing.success).toBe(false);
     expect(invalidTotal.success).toBe(false);
+  });
+
+  it("requires and trims the update reason", () => {
+    const payload = createPlan([{ activity_id: 3, coach_id: null, coach_optional: true }]);
+    const missingReason = subscriptionPlanUpdateSchema.safeParse(payload);
+    const result = subscriptionPlanUpdateSchema.parse({
+      ...payload,
+      reason: "  تصحيح سعر الفعالية  ",
+    });
+
+    expect(missingReason.success).toBe(false);
+    expect(result.reason).toBe("تصحيح سعر الفعالية");
   });
 });

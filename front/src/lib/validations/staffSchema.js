@@ -1,5 +1,6 @@
 import { z } from "zod";
 import "./zodErrorMap";
+import { modificationReasonSchema } from "./modificationReasonSchema";
 
 const staffRoles = [
   "admin",
@@ -50,4 +51,8 @@ export const staffFormSchema = z.object({
     .optional()
     .or(z.literal("")),
   branch_ids: z.array(z.number().positive()).min(1, "يرجى اختيار فرع واحد على الأقل"),
+});
+
+export const staffUpdateFormSchema = staffFormSchema.extend({
+  reason: modificationReasonSchema,
 });

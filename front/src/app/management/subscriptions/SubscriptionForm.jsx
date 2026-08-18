@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
@@ -293,6 +294,7 @@ export function SubscriptionEditForm({
     status: subscription?.status || "active",
     paid_amount: String(subscription?.paid_amount ?? 0),
     notes: subscription?.notes || "",
+    reason: "",
   }));
   const [errors, setErrors] = useState({});
   const selectedPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
@@ -337,6 +339,7 @@ export function SubscriptionEditForm({
       status: form.status,
       paid_amount: form.paid_amount,
       notes: form.notes.trim(),
+      reason: form.reason,
     };
     const result = subscriptionEditSchema.safeParse(validationData);
 
@@ -474,6 +477,12 @@ export function SubscriptionEditForm({
         />
         {errors.notes && <span className="mt-1 block text-xs text-app-red">{errors.notes}</span>}
       </label>
+
+      <ModificationReasonField
+        value={form.reason}
+        onChange={(value) => updateField("reason", value)}
+        error={errors.reason}
+      />
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-sm text-app-red">

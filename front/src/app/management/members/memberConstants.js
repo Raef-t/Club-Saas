@@ -4,7 +4,7 @@ export const MEMBER_GENDER_LABELS = {
   male: "ذكر",
   female: "أنثى",
 };
-//test 
+//test
 export const RELATION_OPTIONS = [
   { value: "Father", label: "الأب" },
   { value: "Mother", label: "الأم" },
@@ -33,4 +33,5 @@ export const MEMBER_INITIAL_FORM = {
   emergency_phone: "",
   plan_id: "",
   paid_amount: "",
+  reason: "",
 };

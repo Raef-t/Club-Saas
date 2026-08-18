@@ -5,13 +5,11 @@ import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
-import { memberSchema } from "@/lib/validations/membersSchema";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
+import { memberSchema, memberUpdateSchema } from "@/lib/validations/membersSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import {
-  getPreferredBranchId,
-  getGenderForBranchId,
-} from "@/lib/managementBranchUtils";
+import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import {
   MEMBER_INITIAL_FORM as initialForm,
   RELATION_OPTIONS as relationOptions,
@@ -102,11 +100,12 @@ export function MemberForm({
       emergency_name: form.emergency_name.trim(),
       emergency_relation: form.emergency_relation,
       emergency_phone: form.emergency_phone.trim(),
-      emergency_phone: form.emergency_phone.trim(),
       emergency_country_code: form.emergency_country_code.trim(),
+      ...(mode === "edit" ? { reason: form.reason } : {}),
     };
 
-    const result = memberSchema.safeParse(validationData);
+    const schema = mode === "edit" ? memberUpdateSchema : memberSchema;
+    const result = schema.safeParse(validationData);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
@@ -141,6 +140,7 @@ export function MemberForm({
         age: computedAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
+        reason: result.data.reason,
       });
     }
   }
@@ -281,6 +281,14 @@ export function MemberForm({
           />
         </div>
       </div>
+
+      {mode === "edit" && (
+        <ModificationReasonField
+          value={form.reason}
+          onChange={(value) => updateField("reason", value)}
+          error={errors.reason}
+        />
+      )}
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">

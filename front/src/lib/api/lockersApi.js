@@ -62,10 +62,15 @@ export const lockersApi = createApi({
       invalidatesTags: ["Lockers"],
     }),
     releaseLockerReservation: builder.mutation({
-      query: (id) => ({
-        url: `lockers/${id}/reservations/current`,
-        method: "DELETE",
-      }),
+      query: (request) => {
+        const { id, body } =
+          request && typeof request === "object" ? request : { id: request, body: undefined };
+        return {
+          url: `lockers/${id}/reservations/current`,
+          method: "DELETE",
+          body,
+        };
+      },
       invalidatesTags: ["Lockers"],
     }),
   }),

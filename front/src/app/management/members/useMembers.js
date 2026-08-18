@@ -258,6 +258,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       emergency_relation: contact?.relation || "Father",
       emergency_country_code: contact?.country_code || "+963",
       emergency_phone: contact?.phone_number || "",
+      reason: "",
     };
   }
 

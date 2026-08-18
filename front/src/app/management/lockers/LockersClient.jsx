@@ -14,6 +14,7 @@ import { useGetStaffQuery } from "@/lib/api/staffApi";
 import LockerFilters from "./LockerFilters";
 import LockerGrid from "./LockerGrid";
 import LockerReserveForm from "./LockerReserveForm";
+import LockerReleaseDialog from "./LockerReleaseDialog";
 import { useLockers } from "./useLockers";
 import {
   createLockerCoachOptions,
@@ -179,14 +180,10 @@ export default function LockersClient({ initialData }) {
         isLoading={lockerState.isDeleting}
       />
 
-      <ConfirmDialog
-        open={Boolean(lockerState.releaseTarget)}
+      <LockerReleaseDialog
+        locker={lockerState.releaseTarget}
         onClose={() => lockerState.setReleaseTarget(null)}
         onConfirm={lockerState.confirmRelease}
-        title="فك الحجز"
-        message={`هل أنت متأكد من فك حجز الخزانة "${lockerState.releaseTarget?.locker_number || ""}"؟`}
-        confirmLabel="فك الحجز"
-        tone="primary"
         isLoading={lockerState.isReleasing}
       />
 

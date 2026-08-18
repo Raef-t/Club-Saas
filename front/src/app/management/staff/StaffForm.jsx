@@ -6,10 +6,11 @@ import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { useGetBranchSettingsQuery, useLazyGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
-import { staffFormSchema } from "@/lib/validations/staffSchema";
+import { staffFormSchema, staffUpdateFormSchema } from "@/lib/validations/staffSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
@@ -157,7 +158,8 @@ export default function StaffForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const result = staffFormSchema.safeParse({
+    const schema = initialValues ? staffUpdateFormSchema : staffFormSchema;
+    const result = schema.safeParse({
       ...form,
       shifts: isManagerRole ? [] : form.shifts,
     });
@@ -373,6 +375,14 @@ export default function StaffForm({
           error={errors.work_status}
         />
       </label>
+
+      {initialValues && (
+        <ModificationReasonField
+          value={form.reason}
+          onChange={(value) => updateField("reason", value)}
+          error={errors.reason}
+        />
+      )}
 
       {errorMessage && (
         <p
