@@ -8,7 +8,9 @@ class StoreClubRequest extends FormRequest
     public function authorize() { return true; }
     public function rules() {
         return [
-            'name' => 'required|string|max:255',
+            'name'      => 'required|string|max:255',
+            'logo'      => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
+            'logo_url'  => 'nullable|string|max:255',
             'subdomain' => 'nullable|string',
         ];
     }

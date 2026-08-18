@@ -115,6 +115,7 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
     public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
         $query = Attendance::where('attendable_type', 'member')
+            ->with(['consumptions.subscriptionPlan'])
             ->orderByDesc('check_in_at');
 
         if ($entityId) {

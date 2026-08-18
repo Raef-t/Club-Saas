@@ -130,7 +130,9 @@ class UnifiedAttendanceService
     public function getHistory(?string $type = null, ?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
         if (!$type || $type === 'all') {
-            $query = Attendance::query()->orderByDesc('check_in_at');
+            $query = Attendance::query()
+                ->with(['consumptions.subscriptionPlan'])
+                ->orderByDesc('check_in_at');
 
             if ($entityId) {
                 $query->where('attendable_id', $entityId);

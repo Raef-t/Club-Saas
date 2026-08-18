@@ -25,6 +25,22 @@ class AttendanceConsumption extends Model
     }
 
     /**
+     * Get the subscription plan associated with this consumption.
+     */
+    public function subscriptionPlan()
+    {
+        return $this->belongsTo(\Modules\SubscriptionManager\Models\SubscriptionPlan::class, 'subscription_plan_id')->withTrashed();
+    }
+
+    /**
+     * Get the player subscription associated with this consumption.
+     */
+    public function playerSubscription()
+    {
+        return $this->belongsTo(\Modules\SubscriptionManager\Models\PlayerSubscription::class, 'player_subscription_id')->withTrashed();
+    }
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void

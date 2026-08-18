@@ -7598,7 +7598,7 @@
                     "Club Management"
                 ],
                 "summary": "🏢 عرض جميع الأندية",
-                "description": "استرجاع قائمة بجميع الأندية المسجلة في النظام.",
+                "description": "استرجاع قائمة بجميع الأندية المسجلة في النظام مع شعاراتها وحالاتها.",
                 "operationId": "366d4361fb952980b2ed09241b6e55ca",
                 "responses": {
                     "200": {
@@ -7625,7 +7625,26 @@
                                                     },
                                                     "name": {
                                                         "type": "string",
-                                                        "example": "نادي الأبطال"
+                                                        "example": "نادي الأبطال الذهبي"
+                                                    },
+                                                    "logo_url": {
+                                                        "type": "string",
+                                                        "example": "storage/clubs/logos/sample.png",
+                                                        "nullable": true
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-08-18T10:00:00.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-08-18T10:00:00.000000Z"
                                                     }
                                                 },
                                                 "type": "object"
@@ -7665,20 +7684,32 @@
                     "Club Management"
                 ],
                 "summary": "➕ إنشاء نادي جديد",
-                "description": "إضافة نادي جديد إلى النظام مع تحديد المعلومات الأساسية مثل الاسم.",
+                "description": "إضافة نادي جديد إلى النظام مع إمكانية رفع صورة الشعار (الحد الأقصى 2MB).",
                 "operationId": "4c193b6be889318b1aef27d19f816386",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "name"
                                 ],
                                 "properties": {
                                     "name": {
+                                        "description": "اسم النادي",
                                         "type": "string",
                                         "example": "نادي الأبطال الذهبي"
+                                    },
+                                    "logo": {
+                                        "description": "صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "logo_url": {
+                                        "description": "رابط مباشر للشعار (اختياري في حال عدم رفع ملف)",
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7702,6 +7733,35 @@
                                             "example": "Created successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "نادي الأبطال الذهبي"
+                                                },
+                                                "logo_url": {
+                                                    "type": "string",
+                                                    "example": "storage/clubs/logos/sample.png",
+                                                    "nullable": true
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -7711,7 +7771,7 @@
                         }
                     },
                     "422": {
-                        "description": "⚠️ خطأ في التحقق من صحة البيانات",
+                        "description": "⚠️ خطأ في التحقق من صحة البيانات (مثل تجاوز حجم الصورة 2MB أو صيغة غير مدعومة)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7759,7 +7819,7 @@
                     "Club Management"
                 ],
                 "summary": "🔍 تفاصيل النادي",
-                "description": "استرجاع جميع تفاصيل نادي محدد عن طريق المعرف.",
+                "description": "استرجاع جميع تفاصيل نادي محدد عن طريق المعرف بما فيها الشعار والحالة.",
                 "operationId": "0f6b1b68bbafefa678b477b77062d5a9",
                 "parameters": [
                     {
@@ -7789,6 +7849,35 @@
                                             "example": "Retrieved successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "نادي الأبطال الذهبي"
+                                                },
+                                                "logo_url": {
+                                                    "type": "string",
+                                                    "example": "storage/clubs/logos/sample.png",
+                                                    "nullable": true
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
@@ -7845,7 +7934,7 @@
                     "Club Management"
                 ],
                 "summary": "📝 تعديل النادي",
-                "description": "تعديل تفاصيل نادي موجود في النظام.",
+                "description": "تعديل تفاصيل نادي موجود في النظام مع إمكانية تحديث صورة الشعار (الحد الأقصى 2MB). (في حال استخدام multipart/form-data يرجى إرسال POST مع _method=PUT أو PUT مباشرة).",
                 "operationId": "6addccb94c28c16e239447ccfed9ab5b",
                 "parameters": [
                     {
@@ -7860,14 +7949,33 @@
                     }
                 ],
                 "requestBody": {
-                    "required": true,
+                    "required": false,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
                                     "name": {
+                                        "description": "اسم النادي",
                                         "type": "string",
-                                        "example": "نادي الأبطال الماسي"
+                                        "example": "نادي الأبطال الماسي",
+                                        "nullable": true
+                                    },
+                                    "logo": {
+                                        "description": "تحديث صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "logo_url": {
+                                        "description": "رابط مباشر للشعار",
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "is_active": {
+                                        "description": "حالة تفعيل النادي",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7891,6 +7999,35 @@
                                             "example": "Updated successfully"
                                         },
                                         "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "نادي الأبطال الماسي"
+                                                },
+                                                "logo_url": {
+                                                    "type": "string",
+                                                    "example": "storage/clubs/logos/sample.png",
+                                                    "nullable": true
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
