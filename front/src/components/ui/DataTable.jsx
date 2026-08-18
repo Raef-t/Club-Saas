@@ -174,6 +174,7 @@ export default function DataTable({
   onSortChange,
   defaultSortColumn = null,
   defaultSortDirection = "asc",
+  desktopScrollable = true,
 }) {
   const [internalPage, setInternalPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(pageSize);
@@ -340,93 +341,97 @@ export default function DataTable({
         />
       )}
 
-      <div className="hidden overflow-x-auto scrollbar-thin px-4 pb-4 xl:block">
-        <div style={{ minWidth }}>
-          <div
-            className={`grid border-b border-app-line px-3 py-3 text-xs text-app-muted-light ${headerClassName}`}
-            style={{ gridTemplateColumns: resolvedTableColumns }}
-          >
-            {columns.map((column) => {
-              const colKey = column.sortKey || column.key;
-              const isColumnSortable =
-                sortable && column.sortable !== false && column.key !== "actions";
-              const isSorted = isColumnSortable && activeSortColumn === colKey;
-              const currentDir = isSorted ? activeSortDirection : null;
-
-              return (
-                <div
-                  key={column.key}
-                  className={`group flex min-w-0 items-center gap-1.5 ${getAlignClass(column.align)} ${
-                    isColumnSortable
-                      ? "cursor-pointer select-none transition-colors hover:text-app-text"
-                      : ""
-                  }`}
-                  onClick={isColumnSortable ? () => handleHeaderClick(column) : undefined}
-                  title={isColumnSortable ? `ترتيب حسب ${column.label}` : undefined}
-                >
-                  <span className="truncate">{column.label}</span>
-                  {isColumnSortable && (
-                    <SortIcon direction={currentDir} className="shrink-0 size-3.5" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {isLoading ? (
-            <SkeletonPage
-              className="space-y-0"
-              blocks={[{ type: "list", count: loadingRows, itemClassName: "h-16" }]}
-            />
-          ) : displayedRows.length === 0 ? (
-            <div className="mt-3 rounded-xl border border-app-line bg-app-card-soft/60 p-8 text-center text-sm text-app-muted-light">
-              {emptyMessage}
-            </div>
-          ) : (
-            <div className="space-y-3 pt-3">
-              {displayedRows.map((row, index) => {
-                const key = getRowKey?.(row, index) ?? `${row.id || index}-${index}`;
+      <div className="hidden px-4 pb-4 xl:block">
+        <div className={desktopScrollable ? "overflow-x-auto scrollbar-thin" : "overflow-x-hidden"}>
+          <div className="w-full max-w-full" style={{ minWidth }}>
+            <div
+              className={`grid border-b border-app-line px-3 py-3 text-xs text-app-muted-light ${headerClassName}`}
+              style={{ gridTemplateColumns: resolvedTableColumns }}
+            >
+              {columns.map((column) => {
+                const colKey = column.sortKey || column.key;
+                const isColumnSortable =
+                  sortable && column.sortable !== false && column.key !== "actions";
+                const isSorted = isColumnSortable && activeSortColumn === colKey;
+                const currentDir = isSorted ? activeSortDirection : null;
 
                 return (
                   <div
-                    key={key}
-                    role={onRowClick ? "button" : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
-                    className={`grid w-full items-center rounded-lg border border-transparent bg-app-card-soft px-3 py-3 text-xs text-app-text transition hover:border-app-line hover:bg-app-card-hover focus:outline-none focus:ring-1 focus:ring-app-yellow/60 ${onRowClick ? "cursor-pointer" : ""} ${rowClassName}`}
-                    style={{ gridTemplateColumns: resolvedTableColumns }}
-                    onClick={onRowClick ? () => onRowClick(row, index) : undefined}
-                    onKeyDown={
-                      onRowClick
-                        ? (event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              onRowClick(row, index);
-                            }
-                          }
-                        : undefined
-                    }
+                    key={column.key}
+                    className={`group flex min-w-0 items-center gap-1.5 ${getAlignClass(column.align)} ${
+                      isColumnSortable
+                        ? "cursor-pointer select-none transition-colors hover:text-app-text"
+                        : ""
+                    }`}
+                    onClick={isColumnSortable ? () => handleHeaderClick(column) : undefined}
+                    title={isColumnSortable ? `ترتيب حسب ${column.label}` : undefined}
                   >
-                    {columns.map((column) => (
-                      <div
-                        key={column.key}
-                        className={`flex min-w-0 items-center ${getAlignClass(column.align)} ${cellClassName} ${column.className || ""}`}
-                        onClick={
-                          column.key === "actions" ? (event) => event.stopPropagation() : undefined
-                        }
-                      >
-                        <CellValue
-                          column={column}
-                          row={row}
-                          value={row[column.key]}
-                          rowNumber={firstVisibleItem + index}
-                        />
-                      </div>
-                    ))}
+                    <span className="truncate">{column.label}</span>
+                    {isColumnSortable && (
+                      <SortIcon direction={currentDir} className="shrink-0 size-3.5" />
+                    )}
                   </div>
                 );
               })}
             </div>
-          )}
+
+            {isLoading ? (
+              <SkeletonPage
+                className="space-y-0"
+                blocks={[{ type: "list", count: loadingRows, itemClassName: "h-16" }]}
+              />
+            ) : displayedRows.length === 0 ? (
+              <div className="mt-3 rounded-xl border border-app-line bg-app-card-soft/60 p-8 text-center text-sm text-app-muted-light">
+                {emptyMessage}
+              </div>
+            ) : (
+              <div className="space-y-3 pt-3">
+                {displayedRows.map((row, index) => {
+                  const key = getRowKey?.(row, index) ?? `${row.id || index}-${index}`;
+
+                  return (
+                    <div
+                      key={key}
+                      role={onRowClick ? "button" : undefined}
+                      tabIndex={onRowClick ? 0 : undefined}
+                      className={`grid w-full items-center rounded-lg border border-transparent bg-app-card-soft px-3 py-3 text-xs text-app-text transition hover:border-app-line hover:bg-app-card-hover focus:outline-none focus:ring-1 focus:ring-app-yellow/60 ${onRowClick ? "cursor-pointer" : ""} ${rowClassName}`}
+                      style={{ gridTemplateColumns: resolvedTableColumns }}
+                      onClick={onRowClick ? () => onRowClick(row, index) : undefined}
+                      onKeyDown={
+                        onRowClick
+                          ? (event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                onRowClick(row, index);
+                              }
+                            }
+                          : undefined
+                      }
+                    >
+                      {columns.map((column) => (
+                        <div
+                          key={column.key}
+                          className={`flex min-w-0 items-center ${getAlignClass(column.align)} ${cellClassName} ${column.className || ""}`}
+                          onClick={
+                            column.key === "actions"
+                              ? (event) => event.stopPropagation()
+                              : undefined
+                          }
+                        >
+                          <CellValue
+                            column={column}
+                            row={row}
+                            value={row[column.key]}
+                            rowNumber={firstVisibleItem + index}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

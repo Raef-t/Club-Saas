@@ -7,6 +7,29 @@ export function isManagerStaffRole(role) {
   return MANAGER_STAFF_ROLES.has(String(role || ""));
 }
 
+/**
+ * Identifies coach records returned by either the staff role or a coach relation.
+ */
+export function isCoachStaff(staff) {
+  const role = staff?.role?.slug || staff?.role?.name || staff?.role;
+  return (
+    String(role || "").toLowerCase() === "coach" ||
+    (staff?.coach_id !== null && staff?.coach_id !== undefined) ||
+    (staff?.coach?.id !== null && staff?.coach?.id !== undefined)
+  );
+}
+
+/**
+ * Routes coaches through the coach form while keeping every other role in the staff form.
+ */
+export function getStaffEditHref(staff) {
+  const isCoach = isCoachStaff(staff);
+  const recordId = isCoach ? (staff?.coach_id ?? staff?.coach?.id ?? staff?.id) : staff?.id;
+  const pathname = isCoach ? "/management/coaches/create" : "/management/staff/create";
+
+  return `${pathname}?mode=edit&id=${encodeURIComponent(recordId ?? "")}`;
+}
+
 export function getStaffCollection(response) {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.data)) return response.data;

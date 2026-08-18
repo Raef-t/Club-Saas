@@ -20,7 +20,7 @@ import {
   STAFF_TABLE_GRID,
 } from "./staffConstants";
 import StaffDetails from "./StaffDetails";
-import { getStaffBranchNames, resolveStaffPhotoUrl } from "./staffUtils";
+import { getStaffBranchNames, getStaffEditHref, resolveStaffPhotoUrl } from "./staffUtils";
 import { useStaff } from "./useStaff";
 
 export default function StaffClient({ initialData }) {
@@ -150,7 +150,7 @@ export default function StaffClient({ initialData }) {
         render: (_, staff) => (
           <RowActions
             disabled={isDeleting}
-            editHref={`/management/staff/create?mode=edit&id=${staff.id}`}
+            editHref={getStaffEditHref(staff)}
             onDelete={() => handleDelete(staff)}
           />
         ),
