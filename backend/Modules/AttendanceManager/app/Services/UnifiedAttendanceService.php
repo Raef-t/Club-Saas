@@ -38,12 +38,13 @@ class UnifiedAttendanceService
      * @param  int         $branchId
      * @param  string|null $checkInAt
      * @param  array|null  $subscriptionIds
+     * @param  int|null    $lockerId
      * @return Attendance
      * @throws Exception
      */
-    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null): Attendance
+    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null, ?int $lockerId = null): Attendance
     {
-        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt, $subscriptionIds);
+        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt, $subscriptionIds, $lockerId);
     }
 
     /**
@@ -131,7 +132,7 @@ class UnifiedAttendanceService
     {
         if (!$type || $type === 'all') {
             $query = Attendance::query()
-                ->with(['consumptions.subscriptionPlan'])
+                ->with(['consumptions.subscriptionPlan', 'locker'])
                 ->orderByDesc('check_in_at');
 
             if ($entityId) {

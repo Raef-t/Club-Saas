@@ -18,6 +18,7 @@ class ReserveLockerRequest extends FormRequest
             'holder_type' => 'required|string|in:member,staff,coach',
             'holder_id' => 'nullable|integer',
             'holder_name' => 'nullable|string|max:255',
+            'attendance_id' => 'nullable|integer',
             'price' => 'required_if:reservation_type,rental|numeric|min:0',
             'start_date' => [
                 'required_if:reservation_type,rental',

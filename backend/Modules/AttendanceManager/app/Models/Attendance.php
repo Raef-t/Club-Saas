@@ -18,6 +18,7 @@ class Attendance extends Model
         'branch_id',
         // Staff member (receptionist) who registered this attendance
         'recorded_by_staff_id',
+        'locker_id',
         'check_in_at',
         'check_out_at',
         'duration_minutes',
@@ -35,6 +36,14 @@ class Attendance extends Model
     public function attendable(): MorphTo
     {
         return $this->morphTo()->withTrashed();
+    }
+
+    /**
+     * Get the assigned locker for this attendance session.
+     */
+    public function locker(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\Modules\ClubManager\Models\Locker::class, 'locker_id');
     }
 
     /**
