@@ -164,16 +164,15 @@ class ClubControllerTest extends TestCase
         $this->assertNotNull($club->logo_url);
         $this->assertStringContainsString('clubs/logos', $club->getRawOriginal('logo_url'));
 
-        // Update logo
+        // Update logo via dedicated endpoint
         $newFile = \Illuminate\Http\UploadedFile::fake()->image('new_logo.jpg', 300, 300);
-        $updateResponse = $this->postJson("/api/v1/clubs/{$club->id}", [
-            'name' => 'Updated Logo Club',
+        $updateResponse = $this->postJson("/api/v1/clubs/{$club->id}/logo", [
             'logo' => $newFile,
         ]);
 
         $updateResponse->assertStatus(200)
                        ->assertJsonPath('status', 'success')
-                       ->assertJsonPath('data.name', 'Updated Logo Club');
+                       ->assertJsonPath('data.id', $club->id);
 
         $club->refresh();
         $this->assertStringContainsString('clubs/logos', $club->getRawOriginal('logo_url'));

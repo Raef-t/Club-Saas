@@ -7,6 +7,7 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\ClubManager\Services\ClubService;
 use Modules\ClubManager\Http\Requests\StoreClubRequest;
 use Modules\ClubManager\Http\Requests\UpdateClubRequest;
+use Modules\ClubManager\Http\Requests\UpdateClubLogoRequest;
 use Modules\ClubManager\Http\Resources\ClubResource;
 use OpenApi\Attributes as OA;
 
@@ -138,30 +139,19 @@ class ClubController extends BaseController
 
     #[OA\Put(
         path: '/v1/clubs/{id}',
-        summary: '📝 تعديل النادي',
-        description: 'تعديل تفاصيل نادي موجود في النظام مع إمكانية تحديث صورة الشعار (الحد الأقصى 2MB). (في حال استخدام multipart/form-data يرجى إرسال POST مع _method=PUT أو PUT مباشرة).',
+        summary: '📝 تعديل بيانات النادي',
+        description: 'تعديل البيانات الأساسية للنادي (الاسم وحالة التفعيل). لتحديث الشعار استخدم المسار المنفصل: POST /v1/clubs/{id}/logo',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: false,
-        content: new OA\MediaType(
-            mediaType: 'multipart/form-data',
-            schema: new OA\Schema(
-                properties: [
-                    new OA\Property(property: 'name', type: 'string', description: 'اسم النادي', example: 'نادي الأبطال الماسي', nullable: true),
-                    new OA\Property(
-                        property: 'logo',
-                        type: 'string',
-                        format: 'binary',
-                        description: 'تحديث صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)',
-                        nullable: true
-                    ),
-                    new OA\Property(property: 'logo_url', type: 'string', description: 'رابط مباشر للشعار', nullable: true),
-                    new OA\Property(property: 'is_active', type: 'boolean', description: 'حالة تفعيل النادي', example: true, nullable: true)
-                ]
-            )
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'name', type: 'string', description: 'اسم النادي', example: 'نادي الأبطال الماسي', nullable: true),
+                new OA\Property(property: 'is_active', type: 'boolean', description: 'حالة تفعيل النادي', example: true, nullable: true)
+            ]
         )
     )]
     #[OA\Response(
@@ -189,6 +179,58 @@ class ClubController extends BaseController
     {
         $record = $this->service->update($id, $request->validated());
         return $this->successResponse(new ClubResource($record), 'Updated successfully');
+    }
+
+    #[OA\Post(
+        path: '/v1/clubs/{id}/logo',
+        summary: '🖼️ تحديث شعار النادي (مسار منفصل)',
+        description: 'مسار مخصص ومستقل لرفع وتحديث شعار النادي بصيغة multipart/form-data. يتم حذف الشعار القديم واستبداله بالشعار الجديد (الحد الأقصى 2MB).',
+        tags: ['Club Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['logo'],
+                properties: [
+                    new OA\Property(
+                        property: 'logo',
+                        type: 'string',
+                        format: 'binary',
+                        description: 'ملف صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)'
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الشعار بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Club logo updated successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الذهبي'),
+                    new OA\Property(property: 'logo_url', type: 'string', nullable: true, example: 'storage/clubs/logos/new_logo.png'),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z'),
+                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z')
+                ])
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على النادي', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صورة الشعار (مثل تجاوز 2MB أو نوع ملف غير صالح)', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The logo field must be an image.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
+    public function updateLogo(UpdateClubLogoRequest $request, $id)
+    {
+        $club = $this->service->updateClubLogo($id, $request->file('logo'));
+        return $this->successResponse(new ClubResource($club), __('Club logo updated successfully'));
     }
 
     #[OA\Delete(

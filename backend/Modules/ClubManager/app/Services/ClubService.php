@@ -28,18 +28,22 @@ class ClubService
 
     public function update($id, array $data)
     {
+        return $this->repository->update($id, $data);
+    }
+
+    public function updateClubLogo($id, \Illuminate\Http\UploadedFile $logo)
+    {
         $club = $this->repository->find($id);
 
-        if (isset($data['logo']) && $data['logo'] instanceof \Illuminate\Http\UploadedFile) {
-            $rawOldLogo = $club->getRawOriginal('logo_url');
-            if ($rawOldLogo && \Illuminate\Support\Facades\Storage::disk('public')->exists($rawOldLogo)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($rawOldLogo);
-            }
-            $data['logo_url'] = $data['logo']->store('clubs/logos', 'public');
-            unset($data['logo']);
+        $rawOldLogo = $club->getRawOriginal('logo_url');
+        if ($rawOldLogo && \Illuminate\Support\Facades\Storage::disk('public')->exists($rawOldLogo)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($rawOldLogo);
         }
 
-        return $this->repository->update($id, $data);
+        $path = $logo->store('clubs/logos', 'public');
+        $club->update(['logo_url' => $path]);
+
+        return $club->fresh();
     }
 
     public function delete(int $id, string $confirmation = ''): void

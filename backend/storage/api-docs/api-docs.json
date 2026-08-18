@@ -7933,8 +7933,8 @@
                 "tags": [
                     "Club Management"
                 ],
-                "summary": "📝 تعديل النادي",
-                "description": "تعديل تفاصيل نادي موجود في النظام مع إمكانية تحديث صورة الشعار (الحد الأقصى 2MB). (في حال استخدام multipart/form-data يرجى إرسال POST مع _method=PUT أو PUT مباشرة).",
+                "summary": "📝 تعديل بيانات النادي",
+                "description": "تعديل البيانات الأساسية للنادي (الاسم وحالة التفعيل). لتحديث الشعار استخدم المسار المنفصل: POST /v1/clubs/{id}/logo",
                 "operationId": "6addccb94c28c16e239447ccfed9ab5b",
                 "parameters": [
                     {
@@ -7951,24 +7951,13 @@
                 "requestBody": {
                     "required": false,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "properties": {
                                     "name": {
                                         "description": "اسم النادي",
                                         "type": "string",
                                         "example": "نادي الأبطال الماسي",
-                                        "nullable": true
-                                    },
-                                    "logo": {
-                                        "description": "تحديث صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)",
-                                        "type": "string",
-                                        "format": "binary",
-                                        "nullable": true
-                                    },
-                                    "logo_url": {
-                                        "description": "رابط مباشر للشعار",
-                                        "type": "string",
                                         "nullable": true
                                     },
                                     "is_active": {
@@ -8140,6 +8129,162 @@
                     },
                     "422": {
                         "description": "⚠️ خطأ عدم إرسال كلمة التأكيد \"delete\""
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/clubs/{id}/logo": {
+            "post": {
+                "tags": [
+                    "Club Management"
+                ],
+                "summary": "🖼️ تحديث شعار النادي (مسار منفصل)",
+                "description": "مسار مخصص ومستقل لرفع وتحديث شعار النادي بصيغة multipart/form-data. يتم حذف الشعار القديم واستبداله بالشعار الجديد (الحد الأقصى 2MB).",
+                "operationId": "42e5baf9580216b80431c1ae893d25e6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف النادي",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "logo"
+                                ],
+                                "properties": {
+                                    "logo": {
+                                        "description": "ملف صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تحديث الشعار بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Club logo updated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "نادي الأبطال الذهبي"
+                                                },
+                                                "logo_url": {
+                                                    "type": "string",
+                                                    "example": "storage/clubs/logos/new_logo.png",
+                                                    "nullable": true
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2026-08-18T10:00:00.000000Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "🚫 لم يتم العثور على النادي",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Record not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ في التحقق من صورة الشعار (مثل تجاوز 2MB أو نوع ملف غير صالح)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The logo field must be an image."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
