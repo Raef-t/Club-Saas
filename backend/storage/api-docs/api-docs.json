@@ -3561,7 +3561,7 @@
                     "Attendance"
                 ],
                 "summary": "✅ تسجيل الدخول الموحد (لكافة أنواع المستخدمين)",
-                "description": "تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type.",
+                "description": "تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type مع إمكانية تمرير اشتراكات اللاعب للخصم المباشر.",
                 "operationId": "f579e67dc0b9e62039a957a8263fb35b",
                 "requestBody": {
                     "required": true,
@@ -3600,6 +3600,17 @@
                                         "type": "string",
                                         "format": "date-time",
                                         "example": "2026-08-08 14:30:00"
+                                    },
+                                    "player_subscription_ids": {
+                                        "description": "مصفوفة معرفات اشتراكات اللاعب المراد الخصم المباشر منها عند تسجيل الحضور (اختياري)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            5,
+                                            7
+                                        ]
                                     }
                                 },
                                 "type": "object"

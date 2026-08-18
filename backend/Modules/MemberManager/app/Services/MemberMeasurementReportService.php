@@ -219,40 +219,145 @@ class MemberMeasurementReportService
     }
 
     /**
-     * Generate comprehensive monthly physical measurement report with carry-forward support.
+     * Generate comprehensive physical measurement report.
+     * If dates are not provided, handles first-time records or compares the last two recorded measurements.
      */
     public function generateMonthlyReport(int $memberId, ?string $fromDate = null, ?string $toDate = null): array
     {
         $member = Member::find($memberId);
         $memberName = $member ? ($member->name ?? $member->full_name ?? "Member #{$memberId}") : "Member #{$memberId}";
 
-        // Smart determination of date range when not explicitly provided
-        if (empty($fromDate) || empty($toDate)) {
+        // في حال عدم إرسال التواريخ: التعامل مع القياس الأول أو المقارنة بين آخر مرتين
+        if (empty($fromDate) && empty($toDate)) {
+            return $this->generateLastTwoMeasurementsReport($memberId, $memberName);
+        }
+
+        // في حال تم إرسال نطاق تواريخ محدد
+        return $this->generateDateRangeReport($memberId, $memberName, $fromDate, $toDate);
+    }
+
+    /**
+     * Generate comparison report between the last two recorded measurements or single initial record.
+     */
+    protected function generateLastTwoMeasurementsReport(int $memberId, string $memberName): array
+    {
+        $metricsDef = $this->getMetricsDefinition();
+
+        // جلب آخر قياسين مسجلين للعضو
+        $latestRecords = MemberMeasurement::where('member_id', $memberId)
+            ->orderBy('measurement_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->take(2)
+            ->get()
+            ->reverse()
+            ->values();
+
+        $count = $latestRecords->count();
+        $timelineKeys = [];
+        $timelineLabels = [];
+        $monthlyDetails = [];
+
+        $metricValuesTimeSeries = [];
+        foreach ($metricsDef as $fieldKey => $def) {
+            $metricValuesTimeSeries[$fieldKey] = [];
+        }
+
+        // حالة 1: لا توجد قياسات نهائياً للعضو
+        if ($count === 0) {
+            $metricsByCategory = $this->buildMetricsByCategory($metricsDef, $metricValuesTimeSeries, 0);
+
+            return [
+                'member' => [
+                    'id' => (int) $memberId,
+                    'name' => $memberName,
+                ],
+                'filter' => [
+                    'mode' => 'no_records',
+                    'from_date' => null,
+                    'to_date' => null,
+                    'records_count' => 0,
+                ],
+                'months' => [],
+                'months_labels' => [],
+                'metrics_by_category' => $metricsByCategory,
+                'monthly_details' => [],
+            ];
+        }
+
+        // حالة 2 و 3: بناء البيانات لكل قياس (سواء قياس أول وحيد أو آخر قياسين)
+        foreach ($latestRecords as $index => $record) {
+            $dateStr = Carbon::parse($record->measurement_date)->toDateString();
+            $carbonDate = Carbon::parse($record->measurement_date);
+
+            if ($count === 1) {
+                // حالة القياس الأول / الوحيد
+                $label = "القياس الأولي الأساسي ({$carbonDate->format('d/m/Y')})";
+            } else {
+                // حالة وجود قياسين (المقارنة بين آخر مرتين)
+                $labelPrefix = ($index === 0) ? 'القياس السابق' : 'القياس الأخير';
+                $label = "{$labelPrefix} ({$carbonDate->format('d/m/Y')})";
+            }
+
+            $timelineKeys[] = $dateStr;
+            $timelineLabels[] = $label;
+
+            $measurementsSnapshot = [];
+            foreach ($metricsDef as $fieldKey => $def) {
+                $val = $record->{$fieldKey};
+                if ($def['is_numeric'] && $val !== null) {
+                    $val = (float) $val;
+                }
+                $measurementsSnapshot[$fieldKey] = $val;
+                $metricValuesTimeSeries[$fieldKey][] = $val;
+            }
+
+            $monthlyDetails[] = [
+                'month' => $dateStr,
+                'month_label' => $label,
+                'has_actual_record' => true,
+                'record_date' => $dateStr,
+                'carried_from_date' => null,
+                'measurements' => $measurementsSnapshot,
+            ];
+        }
+
+        $metricsByCategory = $this->buildMetricsByCategory($metricsDef, $metricValuesTimeSeries, $count);
+
+        return [
+            'member' => [
+                'id' => (int) $memberId,
+                'name' => $memberName,
+            ],
+            'filter' => [
+                'mode' => ($count === 1) ? 'single_record' : 'last_two_records',
+                'from_date' => Carbon::parse($latestRecords->first()->measurement_date)->toDateString(),
+                'to_date' => Carbon::parse($latestRecords->last()->measurement_date)->toDateString(),
+                'records_count' => $count,
+            ],
+            'months' => $timelineKeys,
+            'months_labels' => $timelineLabels,
+            'metrics_by_category' => $metricsByCategory,
+            'monthly_details' => $monthlyDetails,
+        ];
+    }
+
+    /**
+     * Generate date-range monthly report with carry-forward support.
+     */
+    protected function generateDateRangeReport(int $memberId, string $memberName, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        $nowEnd = now()->endOfMonth();
+
+        if (empty($fromDate)) {
             $firstRecord = MemberMeasurement::where('member_id', $memberId)
                 ->orderBy('measurement_date', 'asc')
                 ->first();
-
-            $nowEnd = now()->endOfMonth();
-
-            if ($firstRecord) {
-                $firstMonth = Carbon::parse($firstRecord->measurement_date)->startOfMonth();
-                $totalMonths = (int) $firstMonth->diffInMonths($nowEnd) + 1;
-
-                if ($totalMonths > 6) {
-                    $start = empty($fromDate) ? now()->subMonths(5)->startOfMonth() : Carbon::parse($fromDate)->startOfMonth();
-                    $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
-                } else {
-                    $start = empty($fromDate) ? $firstMonth : Carbon::parse($fromDate)->startOfMonth();
-                    $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
-                }
-            } else {
-                $start = empty($fromDate) ? now()->subMonths(5)->startOfMonth() : Carbon::parse($fromDate)->startOfMonth();
-                $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
-            }
+            $start = $firstRecord ? Carbon::parse($firstRecord->measurement_date)->startOfMonth() : now()->subMonths(5)->startOfMonth();
         } else {
             $start = Carbon::parse($fromDate)->startOfMonth();
-            $end = Carbon::parse($toDate)->endOfMonth();
         }
+
+        $end = empty($toDate) ? $nowEnd : Carbon::parse($toDate)->endOfMonth();
 
         // 1. Build monthly timeline array
         $period = CarbonPeriod::create($start, '1 month', $end);
@@ -281,7 +386,6 @@ class MemberMeasurementReportService
         $measurementsByMonth = [];
         foreach ($allMeasurements as $measurement) {
             $mKey = Carbon::parse($measurement->measurement_date)->format('Y-m');
-            // Store the latest measurement for that month
             $measurementsByMonth[$mKey] = $measurement;
         }
 
@@ -296,7 +400,6 @@ class MemberMeasurementReportService
 
         // 4. Iterate over each month and calculate values (with Carry-Forward)
         foreach ($monthsKeys as $index => $mKey) {
-            $monthDt = Carbon::createFromFormat('Y-m', $mKey)->startOfMonth();
             $monthLabel = $monthsLabels[$index];
 
             $hasActualRecord = false;
@@ -307,7 +410,7 @@ class MemberMeasurementReportService
                 $lastKnownRecord = $measurementsByMonth[$mKey];
                 $hasActualRecord = true;
                 $recordDate = Carbon::parse($lastKnownRecord->measurement_date)->toDateString();
-            } else if ($lastKnownRecord) {
+            } elseif ($lastKnownRecord) {
                 $hasActualRecord = false;
                 $carriedFromDate = Carbon::parse($lastKnownRecord->measurement_date)->toDateString();
             }
@@ -335,7 +438,32 @@ class MemberMeasurementReportService
             ];
         }
 
-        // 5. Organize metrics into categories and compute stats (initial, final, change, percentage, trend)
+        // 5. Organize metrics into categories and compute stats
+        $metricsByCategory = $this->buildMetricsByCategory($metricsDef, $metricValuesTimeSeries, count($monthsKeys));
+
+        return [
+            'member' => [
+                'id' => (int) $memberId,
+                'name' => $memberName,
+            ],
+            'filter' => [
+                'mode' => 'date_range',
+                'from_date' => $start->toDateString(),
+                'to_date' => $end->toDateString(),
+                'records_count' => count($allMeasurements),
+            ],
+            'months' => $monthsKeys,
+            'months_labels' => $monthsLabels,
+            'metrics_by_category' => $metricsByCategory,
+            'monthly_details' => $monthlyDetails,
+        ];
+    }
+
+    /**
+     * Group time-series metrics into categories with calculations.
+     */
+    protected function buildMetricsByCategory(array $metricsDef, array $metricValuesTimeSeries, int $recordsCount = 2): array
+    {
         $metricsByCategory = [];
 
         foreach ($metricsDef as $fieldKey => $def) {
@@ -349,16 +477,18 @@ class MemberMeasurementReportService
                 ];
             }
 
-            $series = $metricValuesTimeSeries[$fieldKey];
-            $numericValues = array_filter($series, fn($v) => $v !== null && is_numeric($v));
-            
+            $series = $metricValuesTimeSeries[$fieldKey] ?? [];
             $initialValue = count($series) > 0 ? $series[0] : null;
             $finalValue = count($series) > 0 ? end($series) : null;
             $change = 0;
             $percentageChange = 0;
             $trend = 'stable';
 
-            if ($def['is_numeric'] && $initialValue !== null && $finalValue !== null) {
+            if ($recordsCount === 0 || count($series) === 0 || ($initialValue === null && $finalValue === null)) {
+                $trend = 'no_data';
+            } elseif ($recordsCount === 1 || count($series) === 1) {
+                $trend = 'baseline'; // القياس المرجعي الأول
+            } elseif ($def['is_numeric'] && $initialValue !== null && $finalValue !== null) {
                 $change = round($finalValue - $initialValue, 2);
                 if ($initialValue != 0) {
                     $percentageChange = round(($change / $initialValue) * 100, 2);
@@ -384,19 +514,6 @@ class MemberMeasurementReportService
             ];
         }
 
-        return [
-            'member' => [
-                'id' => (int) $memberId,
-                'name' => $memberName,
-            ],
-            'filter' => [
-                'from_date' => $start->toDateString(),
-                'to_date' => $end->toDateString(),
-            ],
-            'months' => $monthsKeys,
-            'months_labels' => $monthsLabels,
-            'metrics_by_category' => $metricsByCategory,
-            'monthly_details' => $monthlyDetails,
-        ];
+        return $metricsByCategory;
     }
 }
