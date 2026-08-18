@@ -33,6 +33,8 @@ export function createCoachEditInitialValues(coach) {
   const workTypes = coach.work_types || coach.details?.work_types || [];
   const [firstName, ...remainingNameParts] = (coach.person?.full_name || "").split(/\s+/);
   const primaryContact = coach.person?.contacts?.[0] || null;
+  const commissionRate =
+    coach.default_commission_rate ?? coach.details?.default_commission_rate ?? 0;
 
   return {
     first_name: coach.person?.first_name || firstName || "",
@@ -50,9 +52,8 @@ export function createCoachEditInitialValues(coach) {
     is_active: resolveWorkStatus(coach) === "active",
     employment_type: coach.employment_type || "fixed_salary",
     base_salary: String(Number(coach.base_salary) || 0),
-    default_commission_rate: String(
-      Number(coach.default_commission_rate || coach.details?.default_commission_rate) || 0,
-    ),
+    default_commission_rate: String(Number(commissionRate) || 0),
+    private_club_commission_rate: getComplementaryCommissionPercentage(commissionRate),
     work_types: Array.isArray(workTypes) ? workTypes : [],
     activity_ids: activityIds,
     shifts,
@@ -93,6 +94,7 @@ export function createCoachFormInitialValues(
     employment_type: initialValues?.employment_type || "fixed_salary",
     base_salary: initialValues?.base_salary || "0",
     default_commission_rate: initialValues?.default_commission_rate || "0",
+    private_club_commission_rate: initialValues?.private_club_commission_rate || "",
     work_types: initialValues?.work_types || [],
     activity_ids: initialValues?.activity_ids || [],
     shifts: initialValues?.shifts || [],
@@ -107,6 +109,18 @@ export const COACH_ACTIVITY_KINDS = {
   DAILY_ENTRY: "daily_entry",
   UNKNOWN: "unknown",
 };
+
+/** Returns the complementary share that makes the club and coach total 100%. */
+export function getComplementaryCommissionPercentage(percentage) {
+  if (String(percentage ?? "").trim() === "") return "";
+
+  const numericPercentage = Number(percentage);
+  if (!Number.isFinite(numericPercentage) || numericPercentage < 0 || numericPercentage > 100) {
+    return "";
+  }
+
+  return String(Number((100 - numericPercentage).toFixed(2)));
+}
 
 function getLocalizedValues(value) {
   if (!value) return [];

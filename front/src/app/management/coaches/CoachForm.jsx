@@ -7,11 +7,13 @@ import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
+import { Field } from "@/components/forms/FormControls";
 import { TrashIcon } from "@/components/icons/Icons";
 import { useGetBranchSettingsQuery, useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { getGenderForBranchId } from "@/lib/managementBranchUtils";
+import { getSettingsRecord } from "@/app/management/settings/settingsUtils";
 import { coachFormSchema, coachUpdateFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
 import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
@@ -23,6 +25,7 @@ import {
   COACH_ACTIVITY_KINDS,
   calculateAge,
   createCoachFormInitialValues,
+  getComplementaryCommissionPercentage,
   getCoachActivityKind,
   getCoachRulesForActivities,
 } from "./coachFormUtils";
@@ -60,6 +63,9 @@ export function CoachCreateForm({
     () => getCoachRulesForActivities(selectedActivities),
     [selectedActivities],
   );
+  const privateCoachCommissionRate = activityRules.hasPrivateTraining
+    ? getComplementaryCommissionPercentage(form.private_club_commission_rate)
+    : "";
   const selectableActivities = useMemo(
     () =>
       activities.filter((activity) => {
@@ -97,32 +103,57 @@ export function CoachCreateForm({
 
   const isLoadingShifts = isLoadingShifts1 || isLoadingShifts2 || isLoadingShifts3;
 
-  const { data: branchSettingsRes } = useGetBranchSettingsQuery(branchId1, {
+  const {
+    currentData: branchSettingsRes,
+    isFetching: isFetchingBranchSettings,
+    error: branchSettingsError,
+  } = useGetBranchSettingsQuery(branchId1, {
     skip: !branchId1,
   });
-  const branchSettings = branchSettingsRes?.data;
+  const branchSettings = getSettingsRecord(branchSettingsRes);
 
   useEffect(() => {
     if (!activityRules.hasRecognizedActivity) return;
 
-    setForm((current) => ({
-      ...current,
-      work_types: activityRules.workTypes,
-      employment_type: activityRules.employmentType,
-      base_salary: activityRules.allowsSalary
-        ? !initialValues && !Number(current.base_salary) && branchSettings?.default_employee_salary
-          ? String(Number(branchSettings.default_employee_salary))
-          : current.base_salary
-        : "0",
-      default_commission_rate: activityRules.allowsCommission
-        ? !initialValues &&
-          !Number(current.default_commission_rate) &&
-          branchSettings?.default_coach_commission_percentage
-          ? String(Number(branchSettings.default_coach_commission_percentage))
-          : current.default_commission_rate
-        : "0",
-      shifts: activityRules.allowsShifts ? current.shifts : [],
-    }));
+    setForm((current) => {
+      let clubCommission = current.private_club_commission_rate;
+      let coachCommission = current.default_commission_rate;
+
+      if (activityRules.hasPrivateTraining) {
+        if (
+          String(clubCommission ?? "").trim() === "" &&
+          branchSettings?.private_subscription_commission !== undefined
+        ) {
+          clubCommission = String(branchSettings.private_subscription_commission);
+        }
+
+        const calculatedCoachCommission = getComplementaryCommissionPercentage(clubCommission);
+        if (calculatedCoachCommission !== "") coachCommission = calculatedCoachCommission;
+      } else if (
+        activityRules.allowsCommission &&
+        !initialValues &&
+        !Number(coachCommission) &&
+        branchSettings?.default_coach_commission_percentage !== undefined
+      ) {
+        coachCommission = String(Number(branchSettings.default_coach_commission_percentage));
+      }
+
+      return {
+        ...current,
+        work_types: activityRules.workTypes,
+        employment_type: activityRules.employmentType,
+        base_salary: activityRules.allowsSalary
+          ? !initialValues &&
+            !Number(current.base_salary) &&
+            branchSettings?.default_employee_salary
+            ? String(Number(branchSettings.default_employee_salary))
+            : current.base_salary
+          : "0",
+        default_commission_rate: activityRules.allowsCommission ? coachCommission : "0",
+        private_club_commission_rate: activityRules.hasPrivateTraining ? clubCommission : "",
+        shifts: activityRules.allowsShifts ? current.shifts : [],
+      };
+    });
   }, [activityRules, branchSettings, initialValues]);
 
   const branchShifts = useMemo(() => {
@@ -146,14 +177,29 @@ export function CoachCreateForm({
   function updateField(field, value) {
     setForm((current) => {
       const updated = { ...current, [field]: value };
-      if (field === "branch_ids") {
+      if (field === "branch_ids" || field === "activity_ids") {
         updated.shifts = [];
+        updated.private_club_commission_rate = "";
+        updated.default_commission_rate = "0";
       }
       return updated;
     });
     if (errors && errors[field]) {
       setErrors((current) => ({ ...current, [field]: null }));
     }
+  }
+
+  function updatePrivateClubCommission(value) {
+    setForm((current) => ({
+      ...current,
+      private_club_commission_rate: value,
+      default_commission_rate: getComplementaryCommissionPercentage(value),
+    }));
+    setErrors((current) => ({
+      ...current,
+      private_club_commission_rate: null,
+      default_commission_rate: null,
+    }));
   }
 
   function handleSubmit(event) {
@@ -170,7 +216,12 @@ export function CoachCreateForm({
           employment_type: activityRules.employmentType,
           base_salary: activityRules.allowsSalary ? form.base_salary : "0",
           default_commission_rate: activityRules.allowsCommission
-            ? form.default_commission_rate
+            ? activityRules.hasPrivateTraining
+              ? privateCoachCommissionRate
+              : form.default_commission_rate
+            : "0",
+          private_club_commission_rate: activityRules.hasPrivateTraining
+            ? form.private_club_commission_rate
             : "0",
           shifts: activityRules.allowsShifts ? form.shifts : [],
         }
@@ -375,8 +426,8 @@ export function CoachCreateForm({
             </div>
           )}
           <p className="mt-2 text-xs text-app-muted-light">
-            أجهزة عام = راتب، والفعاليات أو أجهزة خاص = نسبة، والجمع بينهما = راتب ونسبة.
-            أنشطة الدخول اليومي لا تُسند إلى مدرب.
+            أجهزة عام = راتب، والفعاليات أو أجهزة خاص = نسبة، والجمع بينهما = راتب ونسبة. أنشطة
+            الدخول اليومي لا تُسند إلى مدرب.
           </p>
         </div>
       </div>
@@ -529,35 +580,71 @@ export function CoachCreateForm({
         </label>
       )}
 
-      {(activityRules.hasRecognizedActivity
-        ? activityRules.allowsCommission
-        : form.employment_type === "commission_based" ||
-          form.employment_type === "commission" ||
-          form.employment_type === "hybrid") && (
-        <label className="block text-right text-sm text-app-muted-light">
-          نسبة العمولة الافتراضية للمدرب (%) *
-          <input
-            value={form.default_commission_rate}
-            onChange={(event) => updateField("default_commission_rate", event.target.value)}
-            aria-invalid={Boolean(errors && errors.default_commission_rate)}
-            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-              errors && errors.default_commission_rate
-                ? "border border-app-red focus:border-app-red"
-                : "focus:border-app-yellow/70"
-            }`}
-            type="number"
-            min="0"
-            max="100"
-            step="0.1"
-            required
-          />
-          {errors && errors.default_commission_rate && (
-            <span className="mt-1.5 block text-xs text-app-red" role="alert">
-              {errors.default_commission_rate}
-            </span>
+      {activityRules.hasPrivateTraining && (
+        <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/5 p-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="نسبة النادي من التدريب الخاص (%)"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={form.private_club_commission_rate}
+              onChange={(event) => updatePrivateClubCommission(event.target.value)}
+              placeholder={isFetchingBranchSettings ? "جاري تحميل النسبة..." : "0"}
+              disabled={isFetchingBranchSettings}
+              error={errors.private_club_commission_rate}
+            />
+            <Field
+              label="نسبة المدرب (%)"
+              type="number"
+              value={privateCoachCommissionRate}
+              disabled
+              required={false}
+              error={errors.default_commission_rate}
+            />
+          </div>
+          <p className="mt-3 text-right text-xs text-app-muted-light">
+            تبدأ نسبة النادي من إعدادات الفرع، وتُحسب نسبة المدرب تلقائياً ليكون المجموع 100%.
+          </p>
+          {branchSettingsError && (
+            <p className="mt-2 text-right text-xs text-app-red">
+              تعذر تحميل النسبة الافتراضية، يمكنك إدخال نسبة النادي يدوياً.
+            </p>
           )}
-        </label>
+        </div>
       )}
+
+      {!activityRules.hasPrivateTraining &&
+        (activityRules.hasRecognizedActivity
+          ? activityRules.allowsCommission
+          : form.employment_type === "commission_based" ||
+            form.employment_type === "commission" ||
+            form.employment_type === "hybrid") && (
+          <label className="block text-right text-sm text-app-muted-light">
+            نسبة العمولة الافتراضية للمدرب (%) *
+            <input
+              value={form.default_commission_rate}
+              onChange={(event) => updateField("default_commission_rate", event.target.value)}
+              aria-invalid={Boolean(errors && errors.default_commission_rate)}
+              className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+                errors && errors.default_commission_rate
+                  ? "border border-app-red focus:border-app-red"
+                  : "focus:border-app-yellow/70"
+              }`}
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              required
+            />
+            {errors && errors.default_commission_rate && (
+              <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                {errors.default_commission_rate}
+              </span>
+            )}
+          </label>
+        )}
 
       <label className="block text-right text-sm text-app-muted-light">
         العنوان السكني

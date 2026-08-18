@@ -228,7 +228,6 @@ export function useCoaches(params = {}) {
       if (Array.isArray(values.shifts)) {
         values.shifts.forEach((shift) => formData.append("shifts[]", String(shift)));
       }
-      formData.append("reason", values.reason.trim());
       if (values.photo) {
         formData.append("photo", values.photo);
       }

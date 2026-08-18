@@ -3,6 +3,7 @@ import {
   COACH_ACTIVITY_KINDS,
   createCoachEditInitialValues,
   createCoachFormInitialValues,
+  getComplementaryCommissionPercentage,
   getCoachActivityKind,
   getCoachRulesForActivities,
   getEmploymentTypeForWorkTypes,
@@ -38,6 +39,7 @@ describe("coach form utilities", () => {
     expect(values.country_code).toBe("+963");
     expect(values.first_name).toBe("رانية");
     expect(values.last_name).toBe("التنجي");
+    expect(values.private_club_commission_rate).toBe("60");
   });
 
   it("selects the first branch for a new coach", () => {
@@ -72,6 +74,14 @@ describe("coach form utilities", () => {
     expect(getEmploymentTypeForWorkTypes(["equipment", "activities"])).toBe("hybrid");
   });
 
+  it("calculates complementary club and coach percentages", () => {
+    expect(getComplementaryCommissionPercentage("0.00")).toBe("100");
+    expect(getComplementaryCommissionPercentage("15.5")).toBe("84.5");
+    expect(getComplementaryCommissionPercentage("60")).toBe("40");
+    expect(getComplementaryCommissionPercentage("")).toBe("");
+    expect(getComplementaryCommissionPercentage("101")).toBe("");
+  });
+
   it("recognizes localized backend activity types", () => {
     expect(getCoachActivityKind({ activity_type: { name: { ar: "تدريب عام" } } })).toBe(
       COACH_ACTIVITY_KINDS.GENERAL_TRAINING,
@@ -85,12 +95,8 @@ describe("coach form utilities", () => {
     expect(getCoachActivityKind({ activity_type_name: "دخول يومي" })).toBe(
       COACH_ACTIVITY_KINDS.DAILY_ENTRY,
     );
-    expect(getCoachActivityKind({ name: "أجهزة عام" })).toBe(
-      COACH_ACTIVITY_KINDS.GENERAL_TRAINING,
-    );
-    expect(getCoachActivityKind({ name: "اجهزة خاص" })).toBe(
-      COACH_ACTIVITY_KINDS.PRIVATE_TRAINING,
-    );
+    expect(getCoachActivityKind({ name: "أجهزة عام" })).toBe(COACH_ACTIVITY_KINDS.GENERAL_TRAINING);
+    expect(getCoachActivityKind({ name: "اجهزة خاص" })).toBe(COACH_ACTIVITY_KINDS.PRIVATE_TRAINING);
     expect(getCoachActivityKind({ activity_type: { name: "فعالية" } })).toBe(
       COACH_ACTIVITY_KINDS.GROUP_CLASS,
     );

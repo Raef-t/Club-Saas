@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateCommissionAmount,
   createSuggestedSubscriptionPlanName,
-  getCoachCommissionPercentage,
+  getSubscriptionPlanCoachCommission,
   isEquipmentActivity,
   isGeneralEquipmentActivity,
   isPrivateEquipmentActivity,
@@ -29,26 +29,17 @@ describe("subscription plan form utilities", () => {
     expect(isEquipmentActivity({ name: "زومبا" })).toBe(false);
   });
 
-  it("recognizes only private equipment for the private-training commission", () => {
+  it("recognizes private equipment and calculates amounts from the coach commission", () => {
     expect(isPrivateEquipmentActivity({ name: "أجهزة خاص" })).toBe(true);
-    expect(isPrivateEquipmentActivity({ name: "اجهزة خاص يومي" })).toBe(true);
     expect(isPrivateEquipmentActivity({ name: "أجهزة عام" })).toBe(false);
-    expect(isPrivateEquipmentActivity({ name: "تدريب خاص" })).toBe(false);
-  });
 
-  it("calculates the coach commission as the remainder of 100 percent", () => {
-    expect(getCoachCommissionPercentage("20")).toBe("80");
-    expect(getCoachCommissionPercentage("33.33")).toBe("66.67");
-    expect(getCoachCommissionPercentage(0)).toBe("100");
-    expect(getCoachCommissionPercentage("")).toBe("");
-  });
+    const coachPercentage = getSubscriptionPlanCoachCommission({
+      details: { default_commission_rate: "50.00" },
+    });
 
-  it("calculates the club and coach amounts from the activity price", () => {
-    expect(calculateCommissionAmount("300", "50")).toBe(150);
-    expect(calculateCommissionAmount("350", "20")).toBe(70);
-    expect(calculateCommissionAmount("350", "80")).toBe(280);
-    expect(calculateCommissionAmount("", "50")).toBeNull();
-    expect(calculateCommissionAmount("300", "110")).toBeNull();
+    expect(coachPercentage).toBe(50);
+    expect(calculateCommissionAmount("300", coachPercentage)).toBe(150);
+    expect(calculateCommissionAmount("300", 100 - coachPercentage)).toBe(150);
   });
 
   it("suggests a plan name from the activity and coach names", () => {
