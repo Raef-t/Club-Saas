@@ -156,7 +156,7 @@ class AttendanceDashboardService
             ->where('sst.is_active', true)
             ->where('sst.day_of_week', $currentDayOfWeek)
             ->whereTime('sst.start_time', '<=', $currentTime)
-            ->whereTime('sst.end_time', '>=', $currentTime)
+            ->whereTime('sst.end_time', '>', $currentTime)
             ->whereNotExists(function ($subQ) use ($todayDate) {
                 $subQ->select(DB::raw(1))
                      ->from('session_exceptions as se')
