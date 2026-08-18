@@ -1,5 +1,6 @@
 import { z } from "zod";
 import "./zodErrorMap";
+import { modificationReasonSchema } from "./modificationReasonSchema";
 
 export const coachSchema = z.object({
   full_name: z
@@ -106,6 +107,10 @@ export const coachFormSchema = z.object({
     message: "يرجى اختيار حالة عمل صالحة",
   }),
   is_active: z.boolean().optional(),
+});
+
+export const coachUpdateFormSchema = coachFormSchema.extend({
+  reason: modificationReasonSchema,
 });
 
 export const coachEditSchema = z.object({

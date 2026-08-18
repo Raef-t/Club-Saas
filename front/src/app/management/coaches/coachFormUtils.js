@@ -57,6 +57,7 @@ export function createCoachEditInitialValues(coach) {
     activity_ids: activityIds,
     shifts,
     photo: coach.person?.photo_url || coach.person?.photo || null,
+    reason: "",
   };
 }
 
@@ -95,6 +96,7 @@ export function createCoachFormInitialValues(
     work_types: initialValues?.work_types || [],
     activity_ids: initialValues?.activity_ids || [],
     shifts: initialValues?.shifts || [],
+    reason: "",
   };
 }
 

@@ -157,6 +157,10 @@ export default function SubscriptionDetails({
         <DetailItem label="المدرب المسؤول" value={coachNames} />
       </DetailSection>
 
+      <DetailSection title="سجل التعديل">
+        <DetailItem label="سبب آخر تعديل" value={subscription.reason || "-"} />
+      </DetailSection>
+
       {subscription.notes && (
         <section className="space-y-2">
           <h3 className="text-sm font-medium text-app-yellow">الملاحظات</h3>

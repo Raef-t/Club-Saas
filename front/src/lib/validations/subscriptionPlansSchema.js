@@ -1,5 +1,6 @@
 import { z } from "zod";
 import "./zodErrorMap";
+import { modificationReasonObjectSchema } from "./modificationReasonSchema";
 
 const subscriptionPlanActivitySchema = z
   .object({
@@ -149,3 +150,7 @@ export const subscriptionPlanSchema = z
     // }
   })
   .transform(({ private_commission_required, ...plan }) => plan);
+
+export const subscriptionPlanUpdateSchema = subscriptionPlanSchema.and(
+  modificationReasonObjectSchema,
+);

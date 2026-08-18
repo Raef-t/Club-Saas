@@ -14,11 +14,15 @@ import Modal from "@/components/ui/Modal";
 import DetailItem from "@/components/ui/DetailItem";
 import SearchInput from "@/components/ui/SearchInput";
 import { Field, TextAreaField } from "@/components/forms/FormControls";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { CheckboxField } from "@/components/forms/CheckboxField";
 import Dropdown from "@/components/ui/Dropdown";
 import { useSubscriptionPlans } from "./useSubscriptionPlans";
 import { CURRENCY_SYMBOL, formatLocalizedName, formatMoney as baseFormatMoney } from "@/lib/utils";
-import { subscriptionPlanSchema } from "@/lib/validations/subscriptionPlansSchema";
+import {
+  subscriptionPlanSchema,
+  subscriptionPlanUpdateSchema,
+} from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
@@ -193,6 +197,7 @@ const initialForm = {
   is_unlimited_subscribers: false,
   club_commission_percentage: "",
   coach_commission_percentage: "",
+  reason: "",
 };
 
 function formatMoney(value) {
@@ -486,6 +491,7 @@ function PlanDetails({
         <DetailItem label="السعر" value={formatMoney(plan.base_price)} tone="yellow" />
         <DetailItem label="الجلسات أسبوعياً" value={plan.sessions_per_week || "-"} />
         <DetailItem label="عدد الجلسات الإجمالي" value={plan.session_count || "-"} />
+        <DetailItem label="سبب آخر تعديل" value={plan.reason || "-"} />
       </section>
 
       {activeSuspension && (
@@ -713,9 +719,11 @@ export function PlanForm({
             start_time: s.start_time,
             end_time: s.end_time,
           })) || [],
+      ...(mode === "edit" ? { reason: form.reason } : {}),
     };
 
-    const result = subscriptionPlanSchema.safeParse(rawData);
+    const schema = mode === "edit" ? subscriptionPlanUpdateSchema : subscriptionPlanSchema;
+    const result = schema.safeParse(rawData);
     if (!result.success) {
       const formattedErrors = {};
       result.error.issues.forEach((issue) => {
@@ -1041,6 +1049,14 @@ export function PlanForm({
           }));
         }}
       />
+
+      {mode === "edit" && (
+        <ModificationReasonField
+          value={form.reason}
+          onChange={(value) => updateField("reason", value)}
+          error={errors.reason}
+        />
+      )}
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">

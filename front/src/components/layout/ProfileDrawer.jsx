@@ -5,6 +5,7 @@ import Drawer from "@/components/ui/Drawer";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import {
   useGetProfileQuery,
   useChangePasswordMutation,
@@ -99,6 +100,7 @@ export default function ProfileDrawer({ open, onClose }) {
       phone_number: person.phone_number || "",
       gender: person.gender || "male",
       photo: null,
+      reason: "",
     });
     setPhotoPreview(null);
     setEditError("");
@@ -142,6 +144,7 @@ export default function ProfileDrawer({ open, onClose }) {
     if (!editForm.first_name?.trim()) errors.first_name = "الاسم الأول مطلوب";
     if (!editForm.last_name?.trim()) errors.last_name = "اسم العائلة مطلوب";
     if (!editForm.phone_number?.trim()) errors.phone_number = "رقم الهاتف مطلوب";
+    if (!editForm.reason?.trim()) errors.reason = "سبب التعديل مطلوب";
 
     if (Object.keys(errors).length > 0) {
       setEditFieldErrors(errors);
@@ -369,6 +372,12 @@ export default function ProfileDrawer({ open, onClose }) {
                 options={GENDER_OPTIONS}
               />
             </label>
+
+            <ModificationReasonField
+              value={editForm.reason}
+              onChange={(value) => updateEditField("reason", value)}
+              error={editFieldErrors.reason}
+            />
 
             {editError && (
               <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">

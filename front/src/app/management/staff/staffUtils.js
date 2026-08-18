@@ -118,6 +118,7 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
       shifts: [],
       address: "",
       branch_ids: defaultBranchId ? [defaultBranchId] : [],
+      reason: "",
     };
   }
 
@@ -137,6 +138,7 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
     shifts: getStaffShiftIds(staff),
     address: staff.person?.address || "",
     branch_ids: getStaffBranchIds(staff, branches),
+    reason: "",
   };
 }
 
@@ -154,6 +156,7 @@ export function createStaffProfileUpdateBody(staff, values) {
     employment_type: staff?.employment_type,
     base_salary: String(Number(staff?.base_salary) || 0),
     work_status: resolveWorkStatus(staff),
+    reason: values.reason.trim(),
   };
 
   if (values.country_code) body.country_code = values.country_code.trim();

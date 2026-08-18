@@ -375,6 +375,7 @@ export function useSubscriptionPlans({
           start_time: s.start_time || "",
           end_time: s.end_time || "",
         })) || [],
+      reason: "",
     };
   }
 

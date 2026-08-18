@@ -36,6 +36,7 @@ function createStaffFormData(values, { includePhoto = false } = {}) {
   if (values.country_code) formData.append("country_code", values.country_code.trim());
   if (values.start_date) formData.append("start_date", values.start_date);
   if (values.address) formData.append("address", values.address.trim());
+  if (values.reason) formData.append("reason", values.reason.trim());
 
   values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
   if (!isManagerStaffRole(values.role)) {

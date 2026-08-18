@@ -13,6 +13,7 @@ describe("subscription edit validation", () => {
       status: "active",
       paid_amount: "100",
       notes: "ملاحظات معدلة",
+      reason: "  تصحيح مدة الاشتراك  ",
     });
 
     expect(result).toEqual({
@@ -25,6 +26,7 @@ describe("subscription edit validation", () => {
       status: "active",
       paid_amount: 100,
       notes: "ملاحظات معدلة",
+      reason: "تصحيح مدة الاشتراك",
     });
   });
 
@@ -39,9 +41,26 @@ describe("subscription edit validation", () => {
       status: "active",
       paid_amount: 100,
       notes: "",
+      reason: "تصحيح التواريخ",
     });
 
     expect(result.success).toBe(false);
     expect(result.error.issues[0].path).toEqual(["end_date"]);
+  });
+
+  it("requires a non-empty modification reason", () => {
+    const result = subscriptionEditSchema.safeParse({
+      member_id: 1,
+      plan_id: 1,
+      months_count: 1,
+      start_date: "2026-08-01",
+      end_date: "2026-09-01",
+      status: "active",
+      paid_amount: 100,
+      reason: "   ",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.issues.some((issue) => issue.path[0] === "reason")).toBe(true);
   });
 });

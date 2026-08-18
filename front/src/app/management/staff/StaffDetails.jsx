@@ -58,6 +58,7 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
         <DetailItem label="تاريخ المباشرة" value={formatDate(staff.start_date)} />
         <DetailItem label="تاريخ الانتهاء" value={formatDate(staff.end_date)} />
         <DetailItem label="تاريخ الإضافة" value={formatDate(staff.created_at)} />
+        <DetailItem label="سبب آخر تعديل" value={staff.reason || "-"} />
       </div>
 
       <div className="rounded-xl border border-app-line bg-app-card-soft p-4 text-right">

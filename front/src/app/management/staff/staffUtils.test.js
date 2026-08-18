@@ -88,6 +88,7 @@ describe("staff utilities", () => {
           country_code: "+963",
           phone_number: "999999999",
           gender: "male",
+          reason: "تحديث رقم الهاتف",
         },
       ),
     ).toEqual({
@@ -100,6 +101,7 @@ describe("staff utilities", () => {
       employment_type: "fixed_salary",
       base_salary: "1000",
       work_status: "active",
+      reason: "تحديث رقم الهاتف",
       start_date: "2025-09-08",
       address: "شارع النيل خلف جامع الرحمن",
     });
