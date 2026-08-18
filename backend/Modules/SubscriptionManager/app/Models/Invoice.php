@@ -34,6 +34,22 @@ class Invoice extends Model
                 }
             }
         });
+
+        static::deleted(function ($invoice) {
+            if ($invoice->isForceDeleting()) {
+                return;
+            }
+
+            $invoice->payments()->get()->each(function ($payment) {
+                $payment->delete();
+            });
+        });
+
+        static::restored(function ($invoice) {
+            $invoice->payments()->onlyTrashed()->get()->each(function ($payment) {
+                $payment->restore();
+            });
+        });
     }
 
     protected $casts = [

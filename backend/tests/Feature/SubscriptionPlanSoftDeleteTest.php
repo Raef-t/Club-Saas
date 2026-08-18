@@ -25,11 +25,27 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
         parent::setUp();
     }
 
+    protected function createAuthenticatedUser(): User
+    {
+        $person = Person::create(['full_name' => 'Admin User', 'gender' => 'male', 'type' => 'staff']);
+        $user = User::create([
+            'person_id' => $person->id,
+            'username' => 'admin_' . uniqid(),
+            'password' => 'password123',
+            'is_active' => true,
+        ]);
+        $role = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'super_admin',
+            'guard_name' => 'sanctum',
+        ]);
+        $user->assignRole($role);
+        $this->actingAs($user, 'sanctum');
+        return $user;
+    }
+
     public function test_delete_check_endpoint_returns_accurate_summary(): void
     {
-        /** @var User $user */
-        $user = User::factory()->create();
-        $this->actingAs($user, 'sanctum');
+        $this->createAuthenticatedUser();
 
         $club = Club::create(['name' => 'Club A', 'is_active' => true]);
         $branch = Branch::create(['club_id' => $club->id, 'name' => 'Branch A', 'is_active' => true]);
@@ -70,7 +86,7 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
             'paid_amount' => 100.00,
             'start_date' => now()->subMonths(2),
             'end_date' => now()->subMonth(),
-            'status' => 'expired',
+            'status' => 'finished',
         ]);
 
         // Coach and activity
@@ -92,9 +108,7 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
 
     public function test_subscription_plan_soft_delete_preserves_active_subscriptions_if_not_forced(): void
     {
-        /** @var User $user */
-        $user = User::factory()->create();
-        $this->actingAs($user, 'sanctum');
+        $this->createAuthenticatedUser();
 
         $club = Club::create(['name' => 'Club B', 'is_active' => true]);
         $branch = Branch::create(['club_id' => $club->id, 'name' => 'Branch B', 'is_active' => true]);
@@ -134,7 +148,7 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
             'paid_amount' => 50.00,
             'start_date' => now()->subMonths(3),
             'end_date' => now()->subMonths(2),
-            'status' => 'expired',
+            'status' => 'finished',
         ]);
 
         $response = $this->deleteJson("/api/v1/subscription-plans/{$plan->id}", [
@@ -155,9 +169,7 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
 
     public function test_subscription_plan_soft_delete_forces_active_subscriptions_and_staff_deletion(): void
     {
-        /** @var User $user */
-        $user = User::factory()->create();
-        $this->actingAs($user, 'sanctum');
+        $this->createAuthenticatedUser();
 
         $club = Club::create(['name' => 'Club C', 'is_active' => true]);
         $branch = Branch::create(['club_id' => $club->id, 'name' => 'Branch C', 'is_active' => true]);
@@ -171,6 +183,9 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
 
         $personCoach = Person::create(['full_name' => 'Coach Bob', 'gender' => 'male', 'type' => 'staff']);
         $staff = Staff::create(['person_id' => $personCoach->id, 'role' => 'coach', 'is_active' => true]);
+        $activity = Activity::create(['branch_id' => $branch->id, 'name' => 'Boxing', 'is_active' => true]);
+        $staffActivity = StaffActivity::create(['staff_id' => $staff->id, 'activity_id' => $activity->id]);
+        SubscriptionPlanActivity::create(['plan_id' => $plan->id, 'staff_activity_id' => $staffActivity->id]);
 
         $personMember = Person::create(['full_name' => 'Member Three', 'gender' => 'male', 'type' => 'player']);
         $member = Member::create([
@@ -205,9 +220,7 @@ class SubscriptionPlanSoftDeleteTest extends TestCase
 
     public function test_delete_subscription_plan_fails_when_unassociated_staff_id_passed(): void
     {
-        /** @var User $user */
-        $user = User::factory()->create();
-        $this->actingAs($user, 'sanctum');
+        $this->createAuthenticatedUser();
 
         $club = Club::create(['name' => 'Club D', 'is_active' => true]);
         $branch = Branch::create(['club_id' => $club->id, 'name' => 'Branch D', 'is_active' => true]);

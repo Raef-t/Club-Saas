@@ -35,6 +35,14 @@ return new class extends Migration
         // 4. Drop code from invoices
         Schema::table('invoices', function (Blueprint $table) {
             if (Schema::hasColumn('invoices', 'code')) {
+                try {
+                    $table->dropUnique(['code']);
+                } catch (\Throwable $e) {
+                    try {
+                        $table->dropIndex('invoices_code_unique');
+                    } catch (\Throwable $e2) {
+                    }
+                }
                 $table->dropColumn('code');
             }
         });

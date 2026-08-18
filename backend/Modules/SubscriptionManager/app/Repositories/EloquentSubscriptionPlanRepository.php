@@ -141,13 +141,19 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
             // 2. Soft delete inactive player subscriptions (inactive, terminated, expired)
             $plan->playerSubscriptions()
                 ->whereIn('status', ['inactive', 'terminated', 'expired'])
-                ->delete();
+                ->get()
+                ->each(function ($sub) {
+                    $sub->delete();
+                });
 
             // 3. Soft delete active player subscriptions if explicitly confirmed
             if (!empty($options['force_delete_active_subscriptions'])) {
                 $plan->playerSubscriptions()
                     ->where('status', 'active')
-                    ->delete();
+                    ->get()
+                    ->each(function ($sub) {
+                        $sub->delete();
+                    });
             }
 
             // 4. Detach and soft delete requested staff/coaches if associated with the plan
