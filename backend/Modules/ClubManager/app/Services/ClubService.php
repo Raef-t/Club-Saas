@@ -15,8 +15,32 @@ class ClubService
 
     public function getAll() { return $this->repository->all(); }
     public function getById($id) { return $this->repository->find($id); }
-    public function create(array $data) { return $this->repository->create($data); }
-    public function update($id, array $data) { return $this->repository->update($id, $data); }
+
+    public function create(array $data)
+    {
+        if (isset($data['logo']) && $data['logo'] instanceof \Illuminate\Http\UploadedFile) {
+            $data['logo_url'] = $data['logo']->store('clubs/logos', 'public');
+            unset($data['logo']);
+        }
+
+        return $this->repository->create($data);
+    }
+
+    public function update($id, array $data)
+    {
+        $club = $this->repository->find($id);
+
+        if (isset($data['logo']) && $data['logo'] instanceof \Illuminate\Http\UploadedFile) {
+            $rawOldLogo = $club->getRawOriginal('logo_url');
+            if ($rawOldLogo && \Illuminate\Support\Facades\Storage::disk('public')->exists($rawOldLogo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($rawOldLogo);
+            }
+            $data['logo_url'] = $data['logo']->store('clubs/logos', 'public');
+            unset($data['logo']);
+        }
+
+        return $this->repository->update($id, $data);
+    }
 
     public function delete(int $id, string $confirmation = ''): void
     {

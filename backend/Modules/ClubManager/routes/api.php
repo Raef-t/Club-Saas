@@ -13,6 +13,7 @@ use Modules\ClubManager\Http\Controllers\Api\V1\DatabaseBackupController;
 Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
     Route::get('clubs/trashed', [ClubController::class, 'trashed']);
     Route::post('clubs/{id}/restore', [ClubController::class, 'restore']);
+    Route::post('clubs/{id}', [ClubController::class, 'update']);
     Route::apiResource('clubs', ClubController::class);
 
     Route::get('branches/stats', [BranchController::class, 'stats']);

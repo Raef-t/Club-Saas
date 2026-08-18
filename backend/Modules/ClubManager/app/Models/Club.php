@@ -12,6 +12,18 @@ class Club extends Model {
     public function branches(): HasMany { return $this->hasMany(Branch::class); }
     public function settings() { return $this->hasOne(ClubSetting::class); }
 
+    /**
+     * Prepare logo_url for frontend by prepending storage/ if it's a relative path
+     */
+    public function getLogoUrlAttribute($value)
+    {
+        if ($value && !str_starts_with($value, 'http') && !str_starts_with($value, 'storage/')) {
+            return 'storage/' . $value;
+        }
+
+        return $value;
+    }
+
     protected static function booted(): void
     {
         static::deleted(function ($club) {

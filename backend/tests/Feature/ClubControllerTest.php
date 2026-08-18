@@ -16,11 +16,24 @@ class ClubControllerTest extends TestCase
     {
         parent::setUp();
 
+        $person = \Modules\Authentication\Models\Person::create([
+            'full_name' => 'Admin Test',
+            'gender' => 'male',
+            'type' => 'staff',
+        ]);
+
         $user = User::create([
+            'person_id' => $person->id,
             'username' => 'admin_test',
             'password' => bcrypt('password'),
             'is_active' => true,
         ]);
+
+        $role = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'super_admin',
+            'guard_name' => 'sanctum',
+        ]);
+        $user->assignRole($role);
 
         Sanctum::actingAs($user);
     }
@@ -45,7 +58,7 @@ class ClubControllerTest extends TestCase
 
         $response = $this->postJson('/api/v1/clubs', $payload);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
                  ->assertJsonPath('status', 'success')
                  ->assertJsonPath('data.name', 'New Premium Club');
 
@@ -129,5 +142,40 @@ class ClubControllerTest extends TestCase
                  ->assertJsonPath('status', 'success');
 
         $this->assertNotSoftDeleted('clubs', ['id' => $club->id]);
+    }
+
+    public function test_can_create_and_update_club_with_logo(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('club_logo.png', 200, 200);
+
+        $response = $this->postJson('/api/v1/clubs', [
+            'name' => 'Logo Club',
+            'logo' => $file,
+        ]);
+
+        $response->assertStatus(201)
+                 ->assertJsonPath('status', 'success')
+                 ->assertJsonPath('data.name', 'Logo Club');
+
+        $club = Club::where('name', 'Logo Club')->first();
+        $this->assertNotNull($club);
+        $this->assertNotNull($club->logo_url);
+        $this->assertStringContainsString('clubs/logos', $club->getRawOriginal('logo_url'));
+
+        // Update logo
+        $newFile = \Illuminate\Http\UploadedFile::fake()->image('new_logo.jpg', 300, 300);
+        $updateResponse = $this->postJson("/api/v1/clubs/{$club->id}", [
+            'name' => 'Updated Logo Club',
+            'logo' => $newFile,
+        ]);
+
+        $updateResponse->assertStatus(200)
+                       ->assertJsonPath('status', 'success')
+                       ->assertJsonPath('data.name', 'Updated Logo Club');
+
+        $club->refresh();
+        $this->assertStringContainsString('clubs/logos', $club->getRawOriginal('logo_url'));
     }
 }

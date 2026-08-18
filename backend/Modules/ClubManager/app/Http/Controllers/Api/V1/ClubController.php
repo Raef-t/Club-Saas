@@ -22,7 +22,7 @@ class ClubController extends BaseController
     #[OA\Get(
         path: '/v1/clubs',
         summary: '🏢 عرض جميع الأندية',
-        description: 'استرجاع قائمة بجميع الأندية المسجلة في النظام.',
+        description: 'استرجاع قائمة بجميع الأندية المسجلة في النظام مع شعاراتها وحالاتها.',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -35,7 +35,11 @@ class ClubController extends BaseController
                 new OA\Property(property: 'message', type: 'string', example: 'Retrieved successfully'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
                     new OA\Property(property: 'id', type: 'integer', example: 1),
-                    new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال')
+                    new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الذهبي'),
+                    new OA\Property(property: 'logo_url', type: 'string', nullable: true, example: 'storage/clubs/logos/sample.png'),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z'),
+                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z')
                 ]))
             ]
         )
@@ -49,17 +53,28 @@ class ClubController extends BaseController
     #[OA\Post(
         path: '/v1/clubs',
         summary: '➕ إنشاء نادي جديد',
-        description: 'إضافة نادي جديد إلى النظام مع تحديد المعلومات الأساسية مثل الاسم.',
+        description: 'إضافة نادي جديد إلى النظام مع إمكانية رفع صورة الشعار (الحد الأقصى 2MB).',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\RequestBody(
         required: true,
-        content: new OA\JsonContent(
-            required: ['name'],
-            properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الذهبي')
-            ]
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                required: ['name'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', description: 'اسم النادي', example: 'نادي الأبطال الذهبي'),
+                    new OA\Property(
+                        property: 'logo',
+                        type: 'string',
+                        format: 'binary',
+                        description: 'صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)',
+                        nullable: true
+                    ),
+                    new OA\Property(property: 'logo_url', type: 'string', description: 'رابط مباشر للشعار (اختياري في حال عدم رفع ملف)', nullable: true)
+                ]
+            )
         )
     )]
     #[OA\Response(
@@ -69,11 +84,18 @@ class ClubController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Created successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الذهبي'),
+                    new OA\Property(property: 'logo_url', type: 'string', nullable: true, example: 'storage/clubs/logos/sample.png'),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z'),
+                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z')
+                ])
             ]
         )
     )]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات (مثل تجاوز حجم الصورة 2MB أو صيغة غير مدعومة)', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreClubRequest $request)
     {
@@ -84,7 +106,7 @@ class ClubController extends BaseController
     #[OA\Get(
         path: '/v1/clubs/{id}',
         summary: '🔍 تفاصيل النادي',
-        description: 'استرجاع جميع تفاصيل نادي محدد عن طريق المعرف.',
+        description: 'استرجاع جميع تفاصيل نادي محدد عن طريق المعرف بما فيها الشعار والحالة.',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
@@ -96,7 +118,14 @@ class ClubController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الذهبي'),
+                    new OA\Property(property: 'logo_url', type: 'string', nullable: true, example: 'storage/clubs/logos/sample.png'),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z'),
+                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z')
+                ])
             ]
         )
     )]
@@ -110,17 +139,29 @@ class ClubController extends BaseController
     #[OA\Put(
         path: '/v1/clubs/{id}',
         summary: '📝 تعديل النادي',
-        description: 'تعديل تفاصيل نادي موجود في النظام.',
+        description: 'تعديل تفاصيل نادي موجود في النظام مع إمكانية تحديث صورة الشعار (الحد الأقصى 2MB). (في حال استخدام multipart/form-data يرجى إرسال POST مع _method=PUT أو PUT مباشرة).',
         tags: ['Club Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النادي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الماسي')
-            ]
+        required: false,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', description: 'اسم النادي', example: 'نادي الأبطال الماسي', nullable: true),
+                    new OA\Property(
+                        property: 'logo',
+                        type: 'string',
+                        format: 'binary',
+                        description: 'تحديث صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)',
+                        nullable: true
+                    ),
+                    new OA\Property(property: 'logo_url', type: 'string', description: 'رابط مباشر للشعار', nullable: true),
+                    new OA\Property(property: 'is_active', type: 'boolean', description: 'حالة تفعيل النادي', example: true, nullable: true)
+                ]
+            )
         )
     )]
     #[OA\Response(
@@ -130,7 +171,14 @@ class ClubController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'name', type: 'string', example: 'نادي الأبطال الماسي'),
+                    new OA\Property(property: 'logo_url', type: 'string', nullable: true, example: 'storage/clubs/logos/sample.png'),
+                    new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z'),
+                    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', example: '2026-08-18T10:00:00.000000Z')
+                ])
             ]
         )
     )]

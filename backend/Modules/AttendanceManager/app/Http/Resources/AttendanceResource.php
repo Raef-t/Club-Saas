@@ -23,6 +23,13 @@ class AttendanceResource extends JsonResource
             'duration_minutes'   => $this->duration_minutes ?? null,
             'duration_formatted' => $this->formatted_duration,
             'status'           => $this->status,
+            'consumptions'     => $this->consumptions ? $this->consumptions->map(function ($consumption) {
+                return [
+                    'id'                     => $consumption->id,
+                    'subscription_plan_id'   => $consumption->subscription_plan_id,
+                    'subscription_plan_name' => $consumption->subscriptionPlan?->name,
+                ];
+            }) : [],
             'created_at'       => $this->created_at?->toIso8601String(),
             'updated_at'       => $this->updated_at?->toIso8601String(),
         ];
