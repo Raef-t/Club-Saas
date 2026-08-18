@@ -191,20 +191,22 @@ class SubscriptionService
             $firstActivity = $plan->planActivities->first();
             $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
 
-            // Check if plan has coach OR has private commission configured
-            if ($coachId || $plan->club_commission_percentage !== null) {
-                $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
+            if ($coachId) {
+                $coachContract = \Modules\StaffManager\Models\StaffContract::where('staff_id', $coachId)
+                    ->where('is_active', true)
+                    ->first();
 
-                $clubPct = $plan->club_commission_percentage !== null
-                    ? (float) $plan->club_commission_percentage
-                    : (float) ($branchSetting?->private_subscription_commission ?? 0.00);
+                if ($coachContract && $coachContract->commission_rate !== null) {
+                    $coachPct = (float) $coachContract->commission_rate;
+                    $clubPct  = max(0.00, 100.00 - $coachPct);
+                } else {
+                    $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
+                    $clubPct  = (float) ($branchSetting?->private_subscription_commission ?? 0.00);
+                    $coachPct = max(0.00, 100.00 - $clubPct);
+                }
 
-                $coachPct = $plan->coach_commission_percentage !== null
-                    ? (float) $plan->coach_commission_percentage
-                    : max(0.00, 100.00 - $clubPct);
-
-                $clubAmount  = round((float) $totalAmount * ($clubPct / 100), 2);
-                $coachAmount = round((float) $totalAmount - $clubAmount, 2); // باقي المبلغ للكوتش بدون كسور
+                $coachAmount = round((float) $totalAmount * ($coachPct / 100), 2);
+                $clubAmount  = round((float) $totalAmount - $coachAmount, 2); // باقي المبلغ للنادي لتفادي الفواصل
 
                 \Modules\SubscriptionManager\Models\SubscriptionRevenueSplit::create([
                     'player_subscription_id' => $subscription->id,
