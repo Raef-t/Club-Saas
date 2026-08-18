@@ -3,15 +3,13 @@
 namespace Modules\SubscriptionManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SubscriptionRevenueSplit extends Model
 {
-    protected $table = 'subscription_revenue_splits';
+    use SoftDeletes;
 
-    /**
-     * هذا الجدول للبيانات التاريخية المجمدة — لا soft deletes هنا عمداً.
-     * السجل المالي الأبدي لا يُحذف، فقط الاشتراك الأب يمكن soft-delete.
-     */
+    protected $table = 'subscription_revenue_splits';
 
     protected $fillable = [
         'player_subscription_id',

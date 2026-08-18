@@ -50,6 +50,7 @@ return new class extends Migration
                   ->comment('المبلغ الصافي للكوتش (total_amount * coach_percentage / 100)');
 
             $table->timestamps();
+            $table->softDeletes();
 
             // Foreign keys بدون cascade لحماية السجلات المالية التاريخية
             $table->foreign('coach_id')

@@ -267,4 +267,77 @@ class SubscriptionRevenueSplitTest extends TestCase
         $split = SubscriptionRevenueSplit::where('player_subscription_id', $subId)->first();
         $this->assertNull($split, 'General activity plans (Aerobics) must not create a subscription_revenue_splits record.');
     }
+
+    public function test_soft_deleting_subscription_with_refund_deletes_revenue_split(): void
+    {
+        $memberPerson = Person::create(['full_name' => 'Member Refunded', 'gender' => 'male', 'type' => 'player']);
+        $member = Member::create([
+            'person_id' => $memberPerson->id,
+            'branch_id' => $this->branch->id,
+            'member_number' => 'M-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $createRes = $this->postJson("/api/v1/player-subscriptions", [
+            'plan_id' => $this->plan->id,
+            'member_id' => $member->id,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 300.00,
+        ]);
+        $createRes->assertStatus(201);
+        $subId = $createRes->json('data.id');
+
+        $split = SubscriptionRevenueSplit::where('player_subscription_id', $subId)->first();
+        $this->assertNotNull($split);
+
+        // Delete with is_refunded = true
+        $delRes = $this->deleteJson("/api/v1/player-subscriptions/{$subId}?is_refunded=true");
+        $delRes->assertStatus(200);
+
+        // Subscription should be soft deleted
+        $this->assertSoftDeleted('player_subscriptions', ['id' => $subId]);
+
+        // Revenue split should be soft deleted
+        $this->assertSoftDeleted('subscription_revenue_splits', ['id' => $split->id]);
+
+        // Restore subscription
+        $restoreRes = $this->postJson("/api/v1/player-subscriptions/{$subId}/restore");
+        $restoreRes->assertStatus(200);
+
+        // Revenue split should be restored
+        $this->assertDatabaseHas('subscription_revenue_splits', ['id' => $split->id, 'deleted_at' => null]);
+    }
+
+    public function test_soft_deleting_subscription_without_refund_preserves_revenue_split(): void
+    {
+        $memberPerson = Person::create(['full_name' => 'Member No Refund', 'gender' => 'male', 'type' => 'player']);
+        $member = Member::create([
+            'person_id' => $memberPerson->id,
+            'branch_id' => $this->branch->id,
+            'member_number' => 'M-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $createRes = $this->postJson("/api/v1/player-subscriptions", [
+            'plan_id' => $this->plan->id,
+            'member_id' => $member->id,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 300.00,
+        ]);
+        $createRes->assertStatus(201);
+        $subId = $createRes->json('data.id');
+
+        $split = SubscriptionRevenueSplit::where('player_subscription_id', $subId)->first();
+        $this->assertNotNull($split);
+
+        // Delete with is_refunded = false
+        $delRes = $this->deleteJson("/api/v1/player-subscriptions/{$subId}?is_refunded=false");
+        $delRes->assertStatus(200);
+
+        // Subscription should be soft deleted
+        $this->assertSoftDeleted('player_subscriptions', ['id' => $subId]);
+
+        // Revenue split should NOT be deleted (preserved)
+        $this->assertDatabaseHas('subscription_revenue_splits', ['id' => $split->id, 'deleted_at' => null]);
+    }
 }
