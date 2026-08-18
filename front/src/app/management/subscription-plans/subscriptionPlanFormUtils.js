@@ -38,27 +38,25 @@ export function isEquipmentActivity(activity) {
   return normalizedName.includes("اجهزة عام") || normalizedName.includes("اجهزة خاص");
 }
 
-/** Private equipment plans use the branch's private-training club commission. */
+/** Identifies private-equipment activities that use the selected coach's commission. */
 export function isPrivateEquipmentActivity(activity) {
   const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
   return normalizedName.includes("اجهزة خاص");
 }
 
-/** Returns the coach share that completes the club share to 100%. */
-export function getCoachCommissionPercentage(clubCommissionPercentage) {
-  if (String(clubCommissionPercentage ?? "").trim() === "") return "";
+/** Reads and validates the commission percentage stored on a coach record. */
+export function getSubscriptionPlanCoachCommission(coach) {
+  const value = coach?.default_commission_rate ?? coach?.details?.default_commission_rate;
+  if (value === null || value === undefined || String(value).trim() === "") return null;
 
-  const clubPercentage = Number(clubCommissionPercentage);
-  if (!Number.isFinite(clubPercentage)) return "";
-
-  return String(Number((100 - clubPercentage).toFixed(2)));
+  const percentage = Number(value);
+  if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) return null;
+  return percentage;
 }
 
-/** Calculates a commission amount for the UI without adding it to the API payload. */
+/** Calculates one share of the activity price from a percentage. */
 export function calculateCommissionAmount(price, commissionPercentage) {
-  if (String(price ?? "").trim() === "" || String(commissionPercentage ?? "").trim() === "") {
-    return null;
-  }
+  if (String(price ?? "").trim() === "" || commissionPercentage === null) return null;
 
   const numericPrice = Number(price);
   const numericPercentage = Number(commissionPercentage);

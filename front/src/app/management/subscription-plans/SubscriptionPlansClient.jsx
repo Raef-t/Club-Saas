@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
@@ -25,9 +25,7 @@ import {
 } from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
-import { useGetCoachesQuery } from "@/lib/api/coachesApi";
-import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
-import { getSettingsRecord } from "@/app/management/settings/settingsUtils";
+import { useGetCoachesQuery, useGetCoachQuery } from "@/lib/api/coachesApi";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
 import { getSubscriptionPlanStatusMeta, SUBSCRIPTION_PLAN_STATUS } from "./subscriptionPlanStatus";
 import {
@@ -40,7 +38,7 @@ import { toIsoDate } from "@/components/forms/datePickerUtils";
 import {
   calculateCommissionAmount,
   createSuggestedSubscriptionPlanName,
-  getCoachCommissionPercentage,
+  getSubscriptionPlanCoachCommission,
   getSubscriptionPlanActivityName,
   isEquipmentActivity,
   isGeneralEquipmentActivity,
@@ -195,8 +193,6 @@ const initialForm = {
   activities: [{ activity_id: "", coach_id: "" }],
   session_templates: [],
   is_unlimited_subscribers: false,
-  club_commission_percentage: "",
-  coach_commission_percentage: "",
   reason: "",
 };
 
@@ -247,11 +243,14 @@ function PlayIcon({ className = "size-4" }) {
 function PlanSuspensionAction({ plan, disabled, onSuspend, onResume }) {
   const suspended = isSubscriptionPlanSuspended(plan);
   const planStatus = getSubscriptionPlanStatusMeta(plan).status;
-  const actionDisabled = disabled || (!suspended && planStatus !== SUBSCRIPTION_PLAN_STATUS.ACTIVE);
+  const canSuspend =
+    planStatus === SUBSCRIPTION_PLAN_STATUS.ACTIVE ||
+    planStatus === SUBSCRIPTION_PLAN_STATUS.COMPLETED;
+  const actionDisabled = disabled || (!suspended && !canSuspend);
   const title = suspended
     ? "استئناف الفعالية"
     : actionDisabled
-      ? "يمكن إيقاف الفعاليات النشطة فقط"
+      ? "لا يمكن إيقاف الفعاليات غير النشطة"
       : "إيقاف الفعالية مؤقتاً";
 
   return (
@@ -562,44 +561,22 @@ export function PlanForm({
   );
   const isEquipmentOnlyPlan =
     selectedActivityRecords.length > 0 && selectedActivityRecords.every(isEquipmentActivity);
-  const isPrivateEquipmentPlan = selectedActivityRecords.some(isPrivateEquipmentActivity);
-  const {
-    currentData: branchSettingsResponse,
-    isFetching: isFetchingBranchSettings,
-    error: branchSettingsError,
-  } = useGetBranchSettingsQuery(form.branch_id, {
-    skip: !form.branch_id || !isPrivateEquipmentPlan,
+  const privateEquipmentItem = (form.activities || []).find((item) => {
+    const activity = activities.find(
+      (activityRecord) => String(activityRecord.id) === String(item.activity_id),
+    );
+    return isPrivateEquipmentActivity(activity);
   });
-  const branchSettings = getSettingsRecord(branchSettingsResponse);
-  const privateSubscriptionCommission = branchSettings?.private_subscription_commission ?? "0.00";
-  const initializedCommissionBranchRef = useRef("");
-  const clubCommissionAmount = calculateCommissionAmount(
-    form.price,
-    form.club_commission_percentage,
-  );
-  const coachCommissionAmount = calculateCommissionAmount(
-    form.price,
-    form.coach_commission_percentage,
-  );
-
-  useEffect(() => {
-    if (!isPrivateEquipmentPlan || !branchSettings || !form.branch_id) return;
-
-    const branchKey = String(form.branch_id);
-    if (initializedCommissionBranchRef.current === branchKey) return;
-    initializedCommissionBranchRef.current = branchKey;
-
-    setForm((current) => {
-      if (String(current.club_commission_percentage ?? "").trim() !== "") return current;
-
-      const clubCommission = String(privateSubscriptionCommission);
-      return {
-        ...current,
-        club_commission_percentage: clubCommission,
-        coach_commission_percentage: getCoachCommissionPercentage(clubCommission),
-      };
-    });
-  }, [branchSettings, form.branch_id, isPrivateEquipmentPlan, privateSubscriptionCommission]);
+  const privateCoachId = privateEquipmentItem?.coach_id || null;
+  const selectedPrivateCoach = coaches.find((coach) => String(coach.id) === String(privateCoachId));
+  const { currentData: privateCoachResponse, isFetching: isFetchingPrivateCoach } =
+    useGetCoachQuery(privateCoachId, { skip: !privateCoachId });
+  const privateCoach = privateCoachResponse?.data || selectedPrivateCoach;
+  const coachCommissionPercentage = getSubscriptionPlanCoachCommission(privateCoach);
+  const clubCommissionPercentage =
+    coachCommissionPercentage === null ? null : 100 - coachCommissionPercentage;
+  const coachCommissionAmount = calculateCommissionAmount(form.price, coachCommissionPercentage);
+  const clubCommissionAmount = calculateCommissionAmount(form.price, clubCommissionPercentage);
 
   useEffect(() => {
     if (!isEquipmentOnlyPlan || !form.session_templates?.length) return;
@@ -651,27 +628,8 @@ export function PlanForm({
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
-  function updateClubCommission(value) {
-    setForm((current) => ({
-      ...current,
-      club_commission_percentage: value,
-      coach_commission_percentage: getCoachCommissionPercentage(value),
-    }));
-    setErrors((current) => ({
-      ...current,
-      club_commission_percentage: null,
-      coach_commission_percentage: null,
-    }));
-  }
-
   function updateBranch(branchId) {
-    initializedCommissionBranchRef.current = "";
-    setForm((current) => ({
-      ...current,
-      branch_id: branchId,
-      club_commission_percentage: "",
-      coach_commission_percentage: "",
-    }));
+    setForm((current) => ({ ...current, branch_id: branchId }));
     setErrors((current) => ({ ...current, branch_id: null }));
   }
 
@@ -693,13 +651,6 @@ export function PlanForm({
             ? SUBSCRIPTION_PLAN_STATUS.ACTIVE
             : SUBSCRIPTION_PLAN_STATUS.INACTIVE,
       is_unlimited_subscribers: !!form.is_unlimited_subscribers,
-      ...(isPrivateEquipmentPlan
-        ? {
-            club_commission_percentage: form.club_commission_percentage,
-            coach_commission_percentage: form.coach_commission_percentage,
-            private_commission_required: true,
-          }
-        : {}),
       activities:
         form.activities?.map((item) => {
           const activity = activities.find(
@@ -776,53 +727,6 @@ export function PlanForm({
         error={errors.name}
       />
 
-      {isPrivateEquipmentPlan && (
-        <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/5 p-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="نسبة النادي (%)"
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              value={form.club_commission_percentage}
-              onChange={(event) => updateClubCommission(event.target.value)}
-              placeholder={isFetchingBranchSettings ? "جاري تحميل النسبة..." : "0"}
-              disabled={isFetchingBranchSettings}
-              error={errors.club_commission_percentage}
-            />
-            <Field
-              label="نسبة المدرب (%)"
-              type="number"
-              value={form.coach_commission_percentage}
-              disabled
-              required={false}
-              error={errors.coach_commission_percentage}
-            />
-          </div>
-          <p className="mt-3 text-right text-xs text-app-muted-light">
-            تبدأ نسبة النادي من إعدادات الفرع، وتُحسب نسبة المدرب تلقائياً ليكون المجموع 100%.
-          </p>
-          <div className="mt-4 grid gap-3 border-t border-app-yellow/20 pt-4 sm:grid-cols-2">
-            <CommissionAmountCard
-              label="المبلغ الذي يحصل عليه النادي"
-              amount={clubCommissionAmount}
-              percentage={form.club_commission_percentage}
-            />
-            <CommissionAmountCard
-              label="المبلغ الذي يحصل عليه المدرب"
-              amount={coachCommissionAmount}
-              percentage={form.coach_commission_percentage}
-            />
-          </div>
-          {branchSettingsError && (
-            <p className="mt-2 text-right text-xs text-app-red">
-              تعذر تحميل النسبة الافتراضية، يمكنك إدخال نسبة النادي يدوياً.
-            </p>
-          )}
-        </div>
-      )}
-
       <label className="block text-right text-sm text-app-muted-light">
         تخصيص الجنس *
         <Dropdown
@@ -870,6 +774,30 @@ export function PlanForm({
         required
         error={errors.price}
       />
+
+      {privateCoachId && (
+        <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CommissionAmountCard
+              label="المبلغ الذي يحصل عليه المدرب"
+              amount={coachCommissionAmount}
+              percentage={coachCommissionPercentage}
+            />
+            <CommissionAmountCard
+              label="المبلغ الذي يحصل عليه النادي"
+              amount={clubCommissionAmount}
+              percentage={clubCommissionPercentage}
+            />
+          </div>
+          <p className="mt-3 text-xs text-app-muted-light">
+            {isFetchingPrivateCoach
+              ? "جاري تحميل نسبة المدرب..."
+              : coachCommissionPercentage === null
+                ? "لم يتم تحديد نسبة لهذا المدرب. يمكنك إضافتها من صفحة المدربين."
+                : "تم احتساب المبلغين تلقائياً من سعر الفعالية ونسبة المدرب المحددة في صفحة المدربين."}
+          </p>
+        </div>
+      )}
 
       {(() => {
         const shouldShowMaxSubscribers = form.activities?.some((item) => {
@@ -1082,17 +1010,15 @@ export function PlanForm({
 }
 
 function CommissionAmountCard({ label, amount, percentage }) {
-  const hasAmount = amount !== null;
-
   return (
-    <div className="rounded-xl border border-app-line bg-black/20 p-3 text-right">
-      <p className="text-xs text-app-muted-light">{label}</p>
-      <div className="mt-2 flex items-end justify-between gap-3">
-        <span dir="ltr" className="text-lg font-semibold text-app-yellow">
-          {hasAmount ? formatMoney(amount) : "—"}
-        </span>
-        <span className="text-xs text-app-muted-light">
-          {String(percentage ?? "").trim() === "" ? "—" : `${percentage}%`}
+    <div className="rounded-xl border border-app-line bg-black/20 p-4">
+      <p className="text-sm text-app-muted-light">{label}</p>
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <strong className="text-lg text-white">
+          {amount === null ? "—" : formatMoney(amount)}
+        </strong>
+        <span className="text-sm font-medium text-yellow-300">
+          {percentage === null ? "—" : `${Number(percentage.toFixed(2))}%`}
         </span>
       </div>
     </div>

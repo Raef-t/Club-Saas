@@ -45,7 +45,7 @@ export default function BarChart({ data = [], height = 200 }) {
           return (
             <div
               key={`${displayLabel}-${val}-${index}`}
-              className="group relative flex flex-1 flex-col items-center h-full justify-end min-w-0 max-w-[56px]"
+              className="group relative flex flex-1 flex-col items-center h-full justify-end min-w-0 max-w-[85px] sm:max-w-[100px]"
             >
               {/* Floating Tooltip on Hover */}
               <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-30 transform group-hover:-translate-y-1">
@@ -70,18 +70,18 @@ export default function BarChart({ data = [], height = 200 }) {
               </div>
 
               {/* X-axis Label below */}
-              <div className="mt-2 text-center w-full min-h-[32px] flex flex-col justify-start leading-tight">
+              <div className="mt-2 text-center w-full min-h-[34px] flex flex-col items-center justify-start leading-snug px-0.5">
                 {labelParts.length > 1 ? (
                   <>
-                    <span className="text-[11px] font-semibold text-app-text truncate group-hover:text-app-yellow transition-colors">
+                    <span className="text-[11px] font-semibold text-app-text break-words group-hover:text-app-yellow transition-colors">
                       {labelParts[0]}
                     </span>
-                    <span className="text-[9.5px] text-app-muted-light truncate font-normal">
+                    <span className="text-[9.5px] text-app-muted-light break-words font-normal">
                       {labelParts.slice(1).join(" - ")}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[11px] font-medium text-app-text truncate group-hover:text-app-yellow transition-colors">
+                  <span className="text-[10.5px] font-medium text-app-text break-words group-hover:text-app-yellow transition-colors">
                     {displayLabel}
                   </span>
                 )}
