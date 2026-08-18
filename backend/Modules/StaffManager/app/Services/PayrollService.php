@@ -46,7 +46,7 @@ class PayrollService
         }
 
         if ($staffStartDate->greaterThan($periodStart)) {
-            $daysWorked = $staffStartDate->diffInDays($periodEnd) + 1;
+            $daysWorked = (int) $staffStartDate->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1;
             if ($daysWorked < 0) $daysWorked = 0;
             if ($daysWorked > $totalDaysInPeriod) $daysWorked = $totalDaysInPeriod;
             return ($contract->base_salary / $totalDaysInPeriod) * $daysWorked;
@@ -129,7 +129,7 @@ class PayrollService
         
         $periodStart = clone $today;
         $periodStart->setDay($branchSetting->payroll_start_day)->startOfDay();
-        if ($branchSetting->payroll_start_day > $branchSetting->payroll_end_day) {
+        if ($branchSetting->payroll_start_day >= $branchSetting->payroll_end_day) {
             $periodStart->subMonth();
         }
 
@@ -147,7 +147,7 @@ class PayrollService
                 $q->where('branch_id', $branchId);
             })->with(['activeContract', 'person', 'coachDetail'])->get();
 
-        $totalDaysInPeriod = $periodStart->diffInDays($periodEnd) + 1;
+        $totalDaysInPeriod = (int) $periodStart->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1;
         if ($totalDaysInPeriod <= 0) $totalDaysInPeriod = 1;
 
         $payslipsData = [];
