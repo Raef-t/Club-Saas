@@ -18,6 +18,7 @@ class UnifiedCheckInRequest extends FormRequest
             'attendable_id'             => ['required', 'integer'],
             'branch_id'                 => ['required', 'integer'],
             'facility_id'               => ['nullable', 'integer'],
+            'locker_id'                 => ['nullable', 'integer', 'exists:lockers,id'],
             'check_in_at'               => ['nullable', 'date'],
             'player_subscription_ids'   => ['nullable', 'array'],
             'player_subscription_ids.*' => ['integer'],

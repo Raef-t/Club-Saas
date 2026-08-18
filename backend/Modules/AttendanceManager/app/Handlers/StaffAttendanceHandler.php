@@ -24,9 +24,9 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
      *  3. Create Attendance record (attendable_type='staff', attendable_id=staff_id).
      *  4. Fire StaffCheckedIn event.
      */
-    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null): Attendance
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null, ?int $lockerId = null): Attendance
     {
-        return DB::transaction(function () use ($entityId, $branchId, $checkInAt) {
+        return DB::transaction(function () use ($entityId, $branchId, $checkInAt, $lockerId) {
 
             // 0. Lock staff row to prevent concurrent check-in
             DB::table('staff')->where('id', $entityId)->lockForUpdate()->first();
@@ -65,6 +65,7 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
                 'attendable_type' => 'staff',
                 'attendable_id'   => $entityId,
                 'branch_id'       => $branchId,
+                'locker_id'       => $lockerId,
                 'check_in_at'     => $checkInTimestamp,
                 'status'          => 'checked_in',
             ]);
@@ -123,6 +124,7 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
     public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder
     {
         $query = Attendance::where('attendable_type', 'staff')
+            ->with(['locker'])
             ->orderByDesc('check_in_at');
 
         if ($entityId) {

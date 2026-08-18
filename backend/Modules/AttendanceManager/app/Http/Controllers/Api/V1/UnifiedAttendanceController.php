@@ -50,6 +50,7 @@ class UnifiedAttendanceController extends BaseController
             $id   = (int) $request->input('attendable_id');
             $checkInAt = $request->input('check_in_at');
             $subscriptionIds = $request->input('player_subscription_ids');
+            $lockerId = $request->filled('locker_id') ? (int) $request->input('locker_id') : null;
             $branch = \Illuminate\Support\Facades\DB::table('branches')->where('id', $request->input('branch_id'))->first();
             if (!$branch) {
                 return $this->errorResponse('Branch not found.', 404);
@@ -60,7 +61,8 @@ class UnifiedAttendanceController extends BaseController
                 entityId: $id,
                 branchId: (int) $branch->id,
                 checkInAt: $checkInAt,
-                subscriptionIds: $subscriptionIds
+                subscriptionIds: $subscriptionIds,
+                lockerId: $lockerId
             );
 
             return $this->successResponse(new AttendanceResource($attendance), __('Checked in successfully'));

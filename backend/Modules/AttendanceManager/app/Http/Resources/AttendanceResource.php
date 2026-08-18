@@ -18,6 +18,13 @@ class AttendanceResource extends JsonResource
             // The staff member (receptionist) who recorded this check-in
             'recorded_by_staff_id' => $this->recorded_by_staff_id,
             'branch_id'        => $this->branch_id,
+            'locker_id'        => $this->locker_id,
+            'locker_number'    => $this->locker?->locker_number,
+            'locker'           => $this->locker ? [
+                'id'            => $this->locker->id,
+                'locker_number' => $this->locker->locker_number,
+                'key_number'    => $this->locker->key_number ?? null,
+            ] : null,
             'check_in'         => $this->check_in_at?->toIso8601String(),
             'check_out'        => $this->check_out_at?->toIso8601String(),
             'duration_minutes'   => $this->duration_minutes ?? null,

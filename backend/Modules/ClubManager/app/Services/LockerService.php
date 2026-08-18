@@ -277,6 +277,27 @@ class LockerService
 
             $this->repository->update($lockerId, ['status' => $newStatus]);
 
+            // Link locker to active attendance record if present
+            $holderType = $data['holder_type'] ?? 'member';
+            $holderId = $holderType === 'member' ? ($data['holder_id'] ?? null) : $staffId;
+
+            if ($holderId && class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                $attendanceQuery = \Modules\AttendanceManager\Models\Attendance::where('branch_id', $locker->branch_id)
+                    ->where('attendable_type', $holderType === 'member' ? 'member' : 'staff')
+                    ->where('attendable_id', $holderId)
+                    ->where('status', 'checked_in')
+                    ->whereNull('check_out_at');
+
+                if (!empty($data['attendance_id'])) {
+                    $attendanceQuery->where('id', $data['attendance_id']);
+                }
+
+                $openAttendance = $attendanceQuery->latest('check_in_at')->first();
+                if ($openAttendance) {
+                    $openAttendance->update(['locker_id' => $lockerId]);
+                }
+            }
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
             }
