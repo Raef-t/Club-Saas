@@ -102,13 +102,14 @@ class SubscriptionRevenueSplitTest extends TestCase
         ]);
 
         StaffContract::create([
-            'staff_id' => $this->coach->id,
-            'employment_type' => 'commission_based',
-            'base_salary' => 0.00,
-            'commission_type' => 'percentage',
-            'commission_rate' => 70.00,
-            'start_date' => now()->toDateString(),
-            'is_active' => true,
+            'staff_id'                => $this->coach->id,
+            'employment_type'         => 'hybrid',
+            'base_salary'             => 500.00,
+            'commission_type'         => 'percentage',
+            'commission_rate'         => 20.00, // 20% on general activities (Aerobics, etc.)
+            'private_commission_rate' => 70.00, // 70% specifically on Private Equipment subscriptions
+            'start_date'              => now()->toDateString(),
+            'is_active'               => true,
         ]);
 
         // Create Activity & Plan
@@ -179,9 +180,9 @@ class SubscriptionRevenueSplitTest extends TestCase
         $res1->assertStatus(201);
         $sub1Id = $res1->json('data.id');
 
-        // 2. Coach gets a contract update to 85% commission
+        // 2. Coach gets a contract update to 85% private commission
         $contract = StaffContract::where('staff_id', $this->coach->id)->where('is_active', true)->first();
-        $contract->update(['commission_rate' => 85.00]);
+        $contract->update(['private_commission_rate' => 85.00]);
 
         // 3. Second subscription for Member 2 with new 85% rate
         $member2Person = Person::create(['full_name' => 'Member 2', 'gender' => 'male', 'type' => 'player']);

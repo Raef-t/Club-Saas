@@ -196,7 +196,10 @@ class SubscriptionService
                     ->where('is_active', true)
                     ->first();
 
-                if ($coachContract && $coachContract->commission_rate !== null) {
+                if ($coachContract && $coachContract->private_commission_rate !== null && (float)$coachContract->private_commission_rate > 0) {
+                    $coachPct = (float) $coachContract->private_commission_rate;
+                    $clubPct  = max(0.00, 100.00 - $coachPct);
+                } elseif ($coachContract && $coachContract->commission_rate !== null && (float)$coachContract->commission_rate > 0) {
                     $coachPct = (float) $coachContract->commission_rate;
                     $clubPct  = max(0.00, 100.00 - $coachPct);
                 } else {

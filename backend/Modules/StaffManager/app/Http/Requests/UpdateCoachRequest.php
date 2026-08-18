@@ -87,7 +87,8 @@ class UpdateCoachRequest extends FormRequest
             'gym_type'                => ['nullable', 'string', 'in:male,female,mixed'],
             'payment_type'            => ['nullable', 'string'],
             'commission_type'         => ['nullable', 'string'],
-            'default_commission_rate' => ['nullable', 'numeric', 'min:0'],
+            'default_commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'private_commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
 
             // Activities & Shifts
             'activity_ids'            => ['nullable', 'array'],

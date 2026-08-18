@@ -92,14 +92,16 @@ class CoachService
             // Create Staff Contract
             $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? 0);
             $commissionType = $data['commission_type'] ?? ($commissionRate > 0 ? 'percentage' : null);
+            $privateCommissionRate = $data['private_commission_rate'] ?? 0;
 
             $staff->contracts()->create([
-                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
-                'base_salary'     => $data['base_salary'] ?? 0,
-                'commission_type' => $commissionType,
-                'commission_rate' => $commissionRate,
-                'start_date'      => now()->toDateString(),
-                'is_active'       => true,
+                'employment_type'         => $data['employment_type'] ?? 'fixed_salary',
+                'base_salary'             => $data['base_salary'] ?? 0,
+                'commission_type'         => $commissionType,
+                'commission_rate'         => $commissionRate,
+                'private_commission_rate' => $privateCommissionRate,
+                'start_date'              => now()->toDateString(),
+                'is_active'               => true,
             ]);
 
             $staff->branches()->sync($data['branch_ids']);
@@ -253,18 +255,20 @@ class CoachService
             }
 
             // Update Staff Contract
-            if (isset($data['employment_type']) || isset($data['base_salary']) || isset($data['default_commission_rate']) || isset($data['commission_type']) || isset($data['payment_type'])) {
+            if (isset($data['employment_type']) || isset($data['base_salary']) || isset($data['default_commission_rate']) || isset($data['private_commission_rate']) || isset($data['commission_type']) || isset($data['payment_type'])) {
                 $activeContract = $staff->activeContract;
                 
                 $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? ($activeContract ? $activeContract->commission_rate : 0));
+                $privateCommissionRate = $data['private_commission_rate'] ?? ($activeContract ? $activeContract->private_commission_rate : 0);
                 // Use explicitly provided commission_type, otherwise fallback to activeContract's type, otherwise auto-determine
                 $commissionType = $data['commission_type'] ?? ($activeContract ? $activeContract->commission_type : ($commissionRate > 0 ? 'percentage' : null));
 
                 $contractData = [
-                    'employment_type' => $data['employment_type'] ?? ($data['payment_type'] ?? ($activeContract ? $activeContract->employment_type : 'fixed_salary')),
-                    'base_salary'     => $data['base_salary'] ?? ($activeContract ? $activeContract->base_salary : 0),
-                    'commission_type' => $commissionType,
-                    'commission_rate' => $commissionRate,
+                    'employment_type'         => $data['employment_type'] ?? ($data['payment_type'] ?? ($activeContract ? $activeContract->employment_type : 'fixed_salary')),
+                    'base_salary'             => $data['base_salary'] ?? ($activeContract ? $activeContract->base_salary : 0),
+                    'commission_type'         => $commissionType,
+                    'commission_rate'         => $commissionRate,
+                    'private_commission_rate' => $privateCommissionRate,
                 ];
 
                 if ($activeContract) {

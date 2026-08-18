@@ -75,6 +75,7 @@ class StoreStaffRequest extends FormRequest
             'payment_type' => 'nullable|string|max:50',
             'commission_type' => 'nullable|string|max:50',
             'default_commission_rate' => 'nullable|numeric|min:0|max:100',
+            'private_commission_rate' => 'nullable|numeric|min:0|max:100',
             'working_hours_per_week' => 'nullable|numeric|min:0',
             'gym_type' => 'nullable|in:male,female,mixed',
 

@@ -17,17 +17,19 @@ class StaffContract extends Model
         'base_salary',
         'commission_type',
         'commission_rate',
+        'private_commission_rate',
         'start_date',
         'end_date',
         'is_active',
     ];
 
     protected $casts = [
-        'base_salary'     => 'decimal:2',
-        'commission_rate' => 'decimal:2',
-        'start_date'      => 'date',
-        'end_date'        => 'date',
-        'is_active'       => 'boolean',
+        'base_salary'             => 'decimal:2',
+        'commission_rate'         => 'decimal:2',
+        'private_commission_rate' => 'decimal:2',
+        'start_date'              => 'date',
+        'end_date'                => 'date',
+        'is_active'               => 'boolean',
     ];
 
     /**

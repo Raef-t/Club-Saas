@@ -37,7 +37,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "person", type: "object", description: "Person details"),
         new OA\Property(property: "username", type: "string", nullable: true, example: "coach_123"),
         new OA\Property(property: "details", type: "object", description: "Coach specific details", properties: [
-            new OA\Property(property: "default_commission_rate", type: "number", format: "float", example: 15.5, description: "نسبة العمولة الثابتة (مئوية)")
+            new OA\Property(property: "default_commission_rate", type: "number", format: "float", example: 15.5, description: "نسبة العمولة الثابتة (مئوية)"),
+            new OA\Property(property: "private_commission_rate", type: "number", format: "float", example: 70.0, description: "نسبة الكوتش من اشتراكات أجهزة خاص (مئوية)")
         ]),
         new OA\Property(property: "activities", type: "array", items: new OA\Items(type: "object"), description: "Assigned activities"),
     ]
@@ -94,6 +95,7 @@ class CoachResource extends JsonResource
                 'payment_type' => $contract ? $contract->employment_type : null,
                 'commission_type' => $contract ? $contract->commission_type : null,
                 'default_commission_rate' => $contract ? $contract->commission_rate : 0,
+                'private_commission_rate' => $contract ? $contract->private_commission_rate : 0,
                 'created_at' => $detail->created_at,
                 'updated_at' => $detail->updated_at,
             ] : null,

@@ -136,14 +136,16 @@ class StaffService
             // Create Staff Contract
             $commissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? 0);
             $commissionType = $data['commission_type'] ?? ($commissionRate > 0 ? 'percentage' : null);
+            $privateCommissionRate = $data['private_commission_rate'] ?? 0;
 
             $staff->contracts()->create([
-                'employment_type' => $data['employment_type'] ?? 'fixed_salary',
-                'base_salary' => $data['base_salary'] ?? 0,
-                'commission_type' => $commissionType,
-                'commission_rate' => $commissionRate,
-                'start_date' => now()->toDateString(),
-                'is_active' => true,
+                'employment_type'         => $data['employment_type'] ?? 'fixed_salary',
+                'base_salary'             => $data['base_salary'] ?? 0,
+                'commission_type'         => $commissionType,
+                'commission_rate'         => $commissionRate,
+                'private_commission_rate' => $privateCommissionRate,
+                'start_date'              => now()->toDateString(),
+                'is_active'               => true,
             ]);
 
             if (!empty($data['branch_ids'])) {
@@ -287,6 +289,7 @@ class StaffService
             $newBaseSalary = $data['base_salary'] ?? ($activeContract ? $activeContract->base_salary : 0);
             
             $newCommissionRate = $data['default_commission_rate'] ?? ($data['commission_rate'] ?? ($activeContract ? $activeContract->commission_rate : 0));
+            $newPrivateCommissionRate = $data['private_commission_rate'] ?? ($activeContract ? $activeContract->private_commission_rate : 0);
             $newCommissionType = $data['commission_type'] ?? ($activeContract ? $activeContract->commission_type : null);
             if (empty($newCommissionType) && $newCommissionRate > 0) {
                 $newCommissionType = 'percentage';
@@ -297,7 +300,8 @@ class StaffService
                 $activeContract->employment_type !== $newEmploymentType ||
                 (float)$activeContract->base_salary !== (float)$newBaseSalary ||
                 $activeContract->commission_type !== $newCommissionType ||
-                (float)$activeContract->commission_rate !== (float)$newCommissionRate
+                (float)$activeContract->commission_rate !== (float)$newCommissionRate ||
+                (float)$activeContract->private_commission_rate !== (float)$newPrivateCommissionRate
             ) {
                 if ($activeContract) {
                     $activeContract->update([
@@ -311,6 +315,7 @@ class StaffService
                     'base_salary' => $newBaseSalary,
                     'commission_type' => $newCommissionType,
                     'commission_rate' => $newCommissionRate,
+                    'private_commission_rate' => $newPrivateCommissionRate,
                     'start_date' => now()->toDateString(),
                     'is_active' => true,
                 ]);
