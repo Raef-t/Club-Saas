@@ -62,7 +62,9 @@ class SubscriptionPlan extends Model
                 $plan->sessionTemplates()->delete();
             }
 
-            \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $plan->id)->delete();
+            \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $plan->id)->get()->each(function ($subscription) {
+                $subscription->delete();
+            });
         });
 
         static::restored(function ($plan) {
@@ -72,7 +74,9 @@ class SubscriptionPlan extends Model
                 $plan->sessionTemplates()->onlyTrashed()->restore();
             }
 
-            \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->where('plan_id', $plan->id)->restore();
+            \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->where('plan_id', $plan->id)->get()->each(function ($subscription) {
+                $subscription->restore();
+            });
         });
     }
 

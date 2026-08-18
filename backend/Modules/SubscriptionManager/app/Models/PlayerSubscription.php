@@ -41,7 +41,6 @@ class PlayerSubscription extends Model
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
     }
 
     public function offer()
@@ -95,6 +94,21 @@ class PlayerSubscription extends Model
         });
 
         static::deleted(function ($subscription) {
+            if ($subscription->isForceDeleting()) {
+                return;
+            }
+
+            // Soft-delete items
+            $subscription->items()->delete();
+
+            // Soft-delete freezes
+            $subscription->freezes()->delete();
+
+            // Soft-delete invoices (which cascades to payments)
+            $subscription->invoices()->get()->each(function ($invoice) {
+                $invoice->delete();
+            });
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
@@ -102,6 +116,17 @@ class PlayerSubscription extends Model
         });
 
         static::restored(function ($subscription) {
+            // Restore items
+            $subscription->items()->onlyTrashed()->restore();
+
+            // Restore freezes
+            $subscription->freezes()->onlyTrashed()->restore();
+
+            // Restore invoices (which cascades to payments)
+            $subscription->invoices()->onlyTrashed()->get()->each(function ($invoice) {
+                $invoice->restore();
+            });
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
