@@ -118,6 +118,41 @@ class SubscriptionPlan extends Model
     }
 
     /**
+     * Determine if this subscription plan is specifically a private equipment plan (أجهزة خاص).
+     */
+    public function isPrivateEquipmentPlan(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.activity.activityType')->get();
+
+        foreach ($activities as $planActivity) {
+            $activity = $planActivity->activity ?? ($planActivity->staffActivity ? $planActivity->staffActivity->activity : null);
+            if ($activity) {
+                if (!empty($activity->is_private_equipment)) {
+                    return true;
+                }
+                $name = trim((string) $activity->name);
+                $lowerName = strtolower($name);
+                if (in_array($name, ['أجهزة خاص', 'اجهزة خاص', 'تدريب خاص', 'خاص أجهزة', 'خاص اجهزة'])) {
+                    return true;
+                }
+                if (str_contains($name, 'خاص') || str_contains($lowerName, 'private')) {
+                    return true;
+                }
+            }
+        }
+
+        $planName = trim((string) $this->name);
+        $lowerPlanName = strtolower($planName);
+        if (str_contains($planName, 'خاص') || str_contains($lowerPlanName, 'private')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Determine if plan allows unlimited subscribers.
      */
     public function getIsUnlimitedSubscribersAttribute(): bool

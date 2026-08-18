@@ -214,4 +214,57 @@ class SubscriptionRevenueSplitTest extends TestCase
         $this->assertEquals(255.00, (float) $split2->coach_amount);
         $this->assertEquals(45.00, (float) $split2->club_amount);
     }
+
+    public function test_general_activity_plan_like_aerobics_does_not_create_subscription_revenue_split(): void
+    {
+        // Create an Aerobics activity and plan
+        $aerobics = Activity::create([
+            'name' => 'Aerobics Group Class',
+            'branch_id' => $this->branch->id,
+            'is_private_equipment' => false,
+            'is_active' => true,
+        ]);
+
+        $aerobicsStaffActivity = StaffActivity::create([
+            'staff_id' => $this->coach->id,
+            'activity_id' => $aerobics->id,
+        ]);
+
+        $aerobicsPlan = SubscriptionPlan::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'Aerobics Monthly Plan',
+            'session_count' => 12,
+            'sessions_per_week' => 3,
+            'base_price' => 150.00,
+            'status' => 'active',
+            'max_subscribers' => 20,
+            'current_subscribers' => 0,
+        ]);
+
+        SubscriptionPlanActivity::create([
+            'plan_id' => $aerobicsPlan->id,
+            'staff_activity_id' => $aerobicsStaffActivity->id,
+        ]);
+
+        $member3Person = Person::create(['full_name' => 'Member 3', 'gender' => 'male', 'type' => 'player']);
+        $member3 = Member::create([
+            'person_id' => $member3Person->id,
+            'branch_id' => $this->branch->id,
+            'member_number' => 'M-' . uniqid(),
+            'status' => 'active',
+        ]);
+
+        $response = $this->postJson("/api/v1/player-subscriptions", [
+            'plan_id' => $aerobicsPlan->id,
+            'member_id' => $member3->id,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 150.00,
+        ]);
+        $response->assertStatus(201);
+        $subId = $response->json('data.id');
+
+        // Revenue split table should NOT have a record for general activity plans
+        $split = SubscriptionRevenueSplit::where('player_subscription_id', $subId)->first();
+        $this->assertNull($split, 'General activity plans (Aerobics) must not create a subscription_revenue_splits record.');
+    }
 }

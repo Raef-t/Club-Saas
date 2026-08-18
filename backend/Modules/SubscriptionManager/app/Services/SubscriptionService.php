@@ -181,7 +181,7 @@ class SubscriptionService
                 ]);
             }
 
-            // 5b. Create Revenue Split snapshot (for private subscriptions — أجهزة خاص)
+            // 5b. Create Revenue Split snapshot (for private subscriptions — أجهزة خاص حصراً)
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
             $branchId  = $memberDTO->branchId ?? $plan->branch_id;
             if (!$branchId) {
@@ -190,17 +190,17 @@ class SubscriptionService
 
             $firstActivity = $plan->planActivities->first();
             $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
+            $isPrivateEquipment = $plan->isPrivateEquipmentPlan();
 
-            if ($coachId) {
+            // Settle financial snapshot ONLY for private equipment subscriptions
+            if ($isPrivateEquipment && $coachId) {
                 $coachContract = \Modules\StaffManager\Models\StaffContract::where('staff_id', $coachId)
                     ->where('is_active', true)
                     ->first();
 
-                if ($coachContract && $coachContract->private_commission_rate !== null && (float)$coachContract->private_commission_rate > 0) {
+                // For private equipment plans, strictly use private_commission_rate from contract, or fallback to branch setting
+                if ($coachContract && $coachContract->private_commission_rate !== null && (float) $coachContract->private_commission_rate > 0) {
                     $coachPct = (float) $coachContract->private_commission_rate;
-                    $clubPct  = max(0.00, 100.00 - $coachPct);
-                } elseif ($coachContract && $coachContract->commission_rate !== null && (float)$coachContract->commission_rate > 0) {
-                    $coachPct = (float) $coachContract->commission_rate;
                     $clubPct  = max(0.00, 100.00 - $coachPct);
                 } else {
                     $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
