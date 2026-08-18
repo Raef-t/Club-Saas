@@ -173,6 +173,7 @@ export default function AttendanceTable({
         rows={rows}
         minWidth="0"
         tableColumns={ATTENDANCE_TABLE_COLUMNS}
+        desktopScrollable={false}
         showAdd={false}
         showSearch={false}
         showFilter={false}

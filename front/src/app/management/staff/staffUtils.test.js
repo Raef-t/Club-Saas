@@ -4,6 +4,7 @@ import {
   createStaffInitialValues,
   createStaffProfileUpdateBody,
   getStaffCollection,
+  getStaffEditHref,
   isManagerStaffRole,
 } from "./staffUtils";
 
@@ -34,6 +35,18 @@ describe("staff utilities", () => {
     expect(isManagerStaffRole("management_admin")).toBe(true);
     expect(isManagerStaffRole("manager")).toBe(true);
     expect(isManagerStaffRole("receptionist")).toBe(false);
+  });
+
+  it("routes coach edits to the coach form and other roles to the staff form", () => {
+    expect(getStaffEditHref({ id: 41, role: "coach" })).toBe(
+      "/management/coaches/create?mode=edit&id=41",
+    );
+    expect(getStaffEditHref({ id: 41, role: "coach", coach_id: 9 })).toBe(
+      "/management/coaches/create?mode=edit&id=9",
+    );
+    expect(getStaffEditHref({ id: 17, role: "receptionist" })).toBe(
+      "/management/staff/create?mode=edit&id=17",
+    );
   });
 
   it("maps staff names, branches, and shift identifiers into edit values", () => {

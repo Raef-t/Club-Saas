@@ -11,7 +11,7 @@ import {
   STAFF_EMPLOYMENT_LABELS,
   STAFF_GENDER_LABELS,
 } from "./staffConstants";
-import { getStaffBranchNames } from "./staffUtils";
+import { getStaffBranchNames, getStaffEditHref, isCoachStaff } from "./staffUtils";
 
 export default function StaffDetails({ staff, branches = [], isLoading, error }) {
   const { formatTime } = useTimeFormat();
@@ -115,12 +115,8 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
         )}
       </section>
 
-      <Button
-        href={`/management/staff/create?mode=edit&id=${staff.id}`}
-        tone="outline"
-        className="w-full"
-      >
-        تعديل بيانات الموظف
+      <Button href={getStaffEditHref(staff)} tone="outline" className="w-full">
+        {isCoachStaff(staff) ? "تعديل بيانات المدرب" : "تعديل بيانات الموظف"}
       </Button>
     </div>
   );
