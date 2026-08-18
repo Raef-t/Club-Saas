@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { useCreateClubMutation, useUpdateClubMutation } from "@/lib/api/clubsApi";
 import { getApiErrorMessage } from "@/lib/apiError";
-import { hasDuplicateClubName } from "../clubUtils";
+import { createClubFormData, hasDuplicateClubName } from "../clubUtils";
 
 /**
  * Coordinates club validation and mutations for the editor page.
@@ -25,11 +25,13 @@ export function useClubEditor({ mode, clubId, existingClubs = [] }) {
     }
 
     try {
+      const payload = values instanceof FormData ? values : createClubFormData(values);
+
       if (mode === "edit") {
-        await updateClub({ id: clubId, body: values }).unwrap();
+        await updateClub({ id: clubId, body: payload }).unwrap();
         toast.success("تم تعديل بيانات النادي بنجاح");
       } else {
-        await createClub(values).unwrap();
+        await createClub(payload).unwrap();
         toast.success("تم إنشاء النادي بنجاح");
       }
 

@@ -44,9 +44,8 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
   const startDate = coach.start_date || coach.details?.start_date;
   const coachAge = getCoachAge(coach);
   const workStatus = getWorkStatusMeta(coach);
-  const employmentLabel = compensation.isPrivateEquipment
-    ? "أجهزة خاص (بدون راتب أو نسبة)"
-    : employmentLabels[compensation.paymentType] || compensation.paymentType || "-";
+  const employmentLabel =
+    employmentLabels[compensation.paymentType] || compensation.paymentType || "-";
 
   return (
     <div className="space-y-6">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { CheckboxField } from "@/components/forms/CheckboxField";
 import { Field } from "@/components/forms/FormControls";
+import { UploadBox } from "@/components/forms/UploadBox";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { clubSchema } from "@/lib/validations/clubsSchema";
 import { createClubFormValues, createClubPayload } from "./clubUtils";
@@ -45,7 +46,8 @@ export default function ClubForm({
     event.preventDefault();
     const validation = clubSchema.safeParse({
       name: form.name.trim(),
-      logo_url: form.logo_url.trim(),
+      logo: form.logo,
+      logo_url: form.logo_url ? form.logo_url.trim() : "",
       is_active: Boolean(form.is_active),
     });
 
@@ -70,15 +72,14 @@ export default function ClubForm({
         error={errors.name}
       />
 
-      <Field
-        label="رابط الشعار"
-        value={form.logo_url}
-        onChange={(event) => updateField("logo_url", event.target.value)}
-        placeholder="https://example.com/logo.png"
-        required={false}
-        type="url"
-        dir="ltr"
-        error={errors.logo_url}
+      <UploadBox
+        label="صورة الشعار"
+        subtitle="jpeg, png, jpg, webp, svg (الحد الأقصى 2 ميجابايت)"
+        accept=".jpeg,.png,.jpg,.webp,.svg"
+        maxSizeMB={2}
+        multiple={false}
+        value={form.logo ? [form.logo] : []}
+        onChange={(files) => updateField("logo", files[0] || null)}
       />
 
       <CheckboxField
@@ -97,7 +98,11 @@ export default function ClubForm({
         <Button type="button" tone="outline" className="h-11 flex-1" onClick={onCancel}>
           إلغاء
         </Button>
-        <Button type="submit" className="h-11 flex-1" loading={isLoading}>
+        <Button
+          type="submit"
+          className="h-11 flex-1 !text-black font-semibold"
+          loading={isLoading}
+        >
           {mode === "edit" ? "حفظ التعديل" : "إنشاء النادي"}
         </Button>
       </div>

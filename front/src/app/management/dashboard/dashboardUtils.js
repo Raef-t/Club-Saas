@@ -160,13 +160,17 @@ export function createTodaySchedule(
  * Sorts by attendance and returns the top 7 busiest shifts.
  */
 export function createShiftAttendanceChart(response) {
-  const data = response?.data?.records || [];
+  const payload = response?.data?.records || response?.data || response || [];
+  const records = Array.isArray(payload) ? payload : [];
 
   // Aggregate data by day + shift to combine branches
   const grouped = new Map();
-  data.forEach((record) => {
-    const key = `${record.day_name} - ${record.shift_name}`;
-    const count = record.attended_players_count || 0;
+  records.forEach((record) => {
+    if (!record) return;
+    const day = record.day_name || record.day;
+    const shift = record.shift_name || record.shift || record.name;
+    const key = day && shift ? `${day} - ${shift}` : shift || day || "غير محدد";
+    const count = Number(record.attended_players_count ?? record.count ?? 0) || 0;
     grouped.set(key, (grouped.get(key) || 0) + count);
   });
 

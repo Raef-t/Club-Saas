@@ -1,5 +1,38 @@
 const DEFAULT_ERROR_MESSAGE = "تعذر إكمال العملية. حاول مرة أخرى.";
 
+const ERROR_TRANSLATIONS = [
+  {
+    pattern: /subscription\s*plan\s*has\s*reached\s*its\s*maximum\s*capacity/i,
+    translation: "هذه الفعالية مسددة (وصلت خطة الاشتراك إلى الحد الأقصى من المشتركين).",
+  },
+  {
+    pattern: /maximum\s*capacity/i,
+    translation: "هذه الفعالية مسددة (تم الوصول إلى الحد الأقصى للمشتركين).",
+  },
+  {
+    pattern: /already\s*subscribed/i,
+    translation: "هذا المشترك مسجل بالفعل في هذه الخطة.",
+  },
+  {
+    pattern: /unauthorized|unauthenticated/i,
+    translation: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول مجدداً.",
+  },
+];
+
+/**
+ * Translates known English backend error messages to user-friendly Arabic text.
+ */
+function translateErrorMessage(message) {
+  if (typeof message !== "string") return null;
+  const trimmed = message.replace(/^[.\s]+|[.\s]+$/g, "");
+  for (const item of ERROR_TRANSLATIONS) {
+    if (item.pattern.test(trimmed)) {
+      return item.translation;
+    }
+  }
+  return trimmed || null;
+}
+
 /**
  * Extracts a user-facing message from RTK Query, fetch, and validation errors.
  *
@@ -12,9 +45,21 @@ export function getApiErrorMessage(error, fallback = DEFAULT_ERROR_MESSAGE) {
     return fallback;
   }
 
-  const candidates = [error.data?.message, error.error, error.message];
+  const rawCandidates = [
+    error.data?.message,
+    error.data?.error,
+    error.error,
+    error.message,
+  ];
 
-  return candidates.find((message) => typeof message === "string" && message.trim()) || fallback;
+  for (const candidate of rawCandidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      const translated = translateErrorMessage(candidate);
+      if (translated) return translated;
+    }
+  }
+
+  return fallback;
 }
 
 /**

@@ -38,7 +38,7 @@ export default function ClubDetails({ club, isLoading, error }) {
             <h3 className="text-lg font-medium text-app-text">{name}</h3>
             <p className="mt-1 text-xs text-app-muted-light">معرف النادي: #{club.id}</p>
           </div>
-          <ClubLogo src={club.logo_url} name={name} className="size-16" />
+          <ClubLogo src={club.logo || club.logo_url} name={name} className="size-16" />
         </div>
       </div>
 

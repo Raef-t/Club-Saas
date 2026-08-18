@@ -99,18 +99,9 @@ export function getCoachCompensationVisibility(coach) {
   const paymentType = coach?.details?.payment_type || coach?.employment_type || "";
   const isPrivateEquipment = isPrivateEquipmentCoach(coach);
 
-  if (isPrivateEquipment) {
-    return {
-      paymentType,
-      isPrivateEquipment: true,
-      showSalary: false,
-      showCommission: false,
-    };
-  }
-
   return {
     paymentType,
-    isPrivateEquipment: false,
+    isPrivateEquipment,
     showSalary: paymentType === "hybrid" || !COMMISSION_PAYMENT_TYPES.has(paymentType),
     showCommission: paymentType === "hybrid" || COMMISSION_PAYMENT_TYPES.has(paymentType),
   };

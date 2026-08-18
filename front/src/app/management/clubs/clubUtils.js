@@ -2,6 +2,7 @@ import { formatLocalizedName } from "../../../lib/utils";
 
 export const EMPTY_CLUB_FORM = {
   name: "",
+  logo: null,
   logo_url: "",
   is_active: true,
 };
@@ -97,6 +98,7 @@ export function createClubFormValues(club) {
 
   return {
     name: getClubName(club) === "-" ? "" : getClubName(club),
+    logo: club.logo || null,
     logo_url: club.logo_url || "",
     is_active: club.is_active !== false,
   };
@@ -108,9 +110,30 @@ export function createClubFormValues(club) {
 export function createClubPayload(form) {
   return {
     name: form.name.trim(),
-    logo_url: form.logo_url.trim() || null,
+    logo: form.logo instanceof File ? form.logo : form.logo || null,
+    logo_url: form.logo_url?.trim() || null,
     is_active: Boolean(form.is_active),
   };
+}
+
+/**
+ * Converts editor values to FormData for multipart upload.
+ */
+export function createClubFormData(values) {
+  const formData = new FormData();
+  if (values.name) {
+    formData.append("name", values.name.trim());
+  }
+  if (values.logo instanceof File) {
+    formData.append("logo", values.logo);
+  }
+  if (values.logo_url && typeof values.logo_url === "string" && values.logo_url.trim()) {
+    formData.append("logo_url", values.logo_url.trim());
+  }
+  if (values.is_active !== undefined) {
+    formData.append("is_active", values.is_active ? "1" : "0");
+  }
+  return formData;
 }
 
 /**

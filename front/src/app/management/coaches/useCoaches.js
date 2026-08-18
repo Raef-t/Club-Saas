@@ -149,7 +149,10 @@ export function useCoaches(params = {}) {
     ).length;
     const fixedCount = branchCoaches.filter((c) => c.employment_type === "fixed_salary").length;
     const commCount = branchCoaches.filter(
-      (c) => c.employment_type === "commission" || c.employment_type === "hybrid",
+      (c) =>
+        c.employment_type === "commission" ||
+        c.employment_type === "commission_based" ||
+        c.employment_type === "hybrid",
     ).length;
 
     return [

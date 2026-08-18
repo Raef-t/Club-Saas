@@ -5,6 +5,7 @@ import {
   getLocalDateValue,
   getSubscriptionEndDate,
   getSubscriptionDetail,
+  getSubscriptionReceiptNumber,
   getSubscriptionRows,
   isDailyEntrySubscriptionPlan,
   parseSubscriptionAmount,
@@ -31,6 +32,20 @@ describe("subscription utilities", () => {
   it("extracts a subscription detail safely", () => {
     expect(getSubscriptionDetail({ data: { id: 1 } })).toEqual({ id: 1 });
     expect(getSubscriptionDetail(null)).toBeNull();
+  });
+
+  it("reads the receipt number from the subscription or related payments", () => {
+    expect(getSubscriptionReceiptNumber({ receipt_number: "REC-10" })).toBe("REC-10");
+    expect(
+      getSubscriptionReceiptNumber({
+        receipt_number: null,
+        payments: [{ receipt_number: "PAY-11" }],
+      }),
+    ).toBe("PAY-11");
+    expect(getSubscriptionReceiptNumber({ invoices: [{ receipt_number: "INV-12" }] })).toBe(
+      "INV-12",
+    );
+    expect(getSubscriptionReceiptNumber(null)).toBeNull();
   });
 
   it("formats a local date for subscription fields", () => {

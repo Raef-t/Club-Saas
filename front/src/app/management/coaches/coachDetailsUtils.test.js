@@ -64,13 +64,13 @@ describe("coach details utilities", () => {
     ).toMatchObject({ showSalary, showCommission });
   });
 
-  it("hides compensation for a private-only equipment coach", () => {
+  it("shows commission for a private-only equipment coach", () => {
     const coach = {
       employment_type: "commission_based",
       base_salary: "0.00",
       details: {
         payment_type: "commission_based",
-        default_commission_rate: "0.00",
+        default_commission_rate: "40.00",
         work_types: ["equipment"],
       },
       activities: [
@@ -85,17 +85,17 @@ describe("coach details utilities", () => {
     expect(getCoachCompensationVisibility(coach)).toMatchObject({
       isPrivateEquipment: true,
       showSalary: false,
-      showCommission: false,
+      showCommission: true,
     });
   });
 
   it.each([
     ["general_training", ["equipment"]],
     ["group_class", ["equipment", "activities"]],
-  ])("shows salary when private equipment is combined with %s", (activityType, workTypes) => {
+  ])("shows salary and commission when private equipment is combined with %s", (activityType, workTypes) => {
     const coach = {
-      employment_type: "fixed_salary",
-      details: { payment_type: "fixed_salary", work_types: workTypes },
+      employment_type: "hybrid",
+      details: { payment_type: "hybrid", work_types: workTypes },
       activities: [
         { activity_type: { code: "private_training" }, is_private_equipment: 1 },
         { activity_type: { code: activityType } },
@@ -106,7 +106,7 @@ describe("coach details utilities", () => {
     expect(getCoachCompensationVisibility(coach)).toMatchObject({
       isPrivateEquipment: false,
       showSalary: true,
-      showCommission: false,
+      showCommission: true,
     });
   });
 

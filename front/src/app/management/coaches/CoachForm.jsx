@@ -60,19 +60,6 @@ export function CoachCreateForm({
     () => getCoachRulesForActivities(selectedActivities),
     [selectedActivities],
   );
-  const employmentTypeOptions = useMemo(
-    () =>
-      activityRules.hasPrivateTraining &&
-      !activityRules.hasGeneralTraining &&
-      !activityRules.hasGroupClass
-        ? [{ value: "commission_based", label: "بدون راتب أو نسبة (أجهزة خاص)" }]
-        : employmentTypes,
-    [
-      activityRules.hasGeneralTraining,
-      activityRules.hasGroupClass,
-      activityRules.hasPrivateTraining,
-    ],
-  );
   const selectableActivities = useMemo(
     () =>
       activities.filter((activity) => {
@@ -80,15 +67,9 @@ export function CoachCreateForm({
 
         const kind = getCoachActivityKind(activity);
         if (kind === COACH_ACTIVITY_KINDS.DAILY_ENTRY) return false;
-        if (activityRules.hasGroupClass && kind === COACH_ACTIVITY_KINDS.GENERAL_TRAINING) {
-          return false;
-        }
-        if (activityRules.hasGeneralTraining && kind === COACH_ACTIVITY_KINDS.GROUP_CLASS) {
-          return false;
-        }
         return true;
       }),
-    [activities, activityRules, form.activity_ids],
+    [activities, form.activity_ids],
   );
 
   const branchId1 = form.branch_ids?.[0];
@@ -182,13 +163,6 @@ export function CoachCreateForm({
       setErrors({ activity_ids: "نشاط الدخول اليومي لا يُسند إلى مدرب." });
       return;
     }
-    if (activityRules.hasIncompatibleActivities) {
-      setErrors({
-        activity_ids: "لا يمكن جمع الفعالية مع التدريب العام لنفس المدرب.",
-      });
-      return;
-    }
-
     const normalizedForm = activityRules.hasRecognizedActivity
       ? {
           ...form,
@@ -401,8 +375,8 @@ export function CoachCreateForm({
             </div>
           )}
           <p className="mt-2 text-xs text-app-muted-light">
-            نوع العمل والتعويض والشفتات تُحدد تلقائياً حسب نوع النشاط. أنشطة الدخول اليومي لا تُسند
-            إلى مدرب.
+            أجهزة عام = راتب، والفعاليات أو أجهزة خاص = نسبة، والجمع بينهما = راتب ونسبة.
+            أنشطة الدخول اليومي لا تُسند إلى مدرب.
           </p>
         </div>
       </div>
@@ -523,7 +497,7 @@ export function CoachCreateForm({
           buttonClassName="bg-app-card-soft h-11"
           value={form.employment_type}
           onChange={(val) => updateField("employment_type", val)}
-          options={employmentTypeOptions}
+          options={employmentTypes}
           disabled={true}
           error={errors && errors.employment_type}
         />

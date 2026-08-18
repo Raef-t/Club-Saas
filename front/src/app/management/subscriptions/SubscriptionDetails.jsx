@@ -6,7 +6,11 @@ import Button from "@/components/ui/Button";
 import SkeletonPage from "@/components/ui/Skeleton";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import { formatDate } from "@/lib/utils";
-import { formatSubscriptionMoney, parseSubscriptionAmount } from "./subscriptionUtils";
+import {
+  formatSubscriptionMoney,
+  getSubscriptionReceiptNumber,
+  parseSubscriptionAmount,
+} from "./subscriptionUtils";
 
 /**
  * Renders a labeled value inside the subscription detail grid.
@@ -154,6 +158,7 @@ export default function SubscriptionDetails({
           value={formatSubscriptionMoney(subscription.remaining_amount)}
           tone={parseSubscriptionAmount(subscription.remaining_amount) > 0 ? "red" : "green"}
         />
+        <DetailItem label="رقم الإيصال" value={getSubscriptionReceiptNumber(subscription)} />
         <DetailItem label="المدرب المسؤول" value={coachNames} />
       </DetailSection>
 

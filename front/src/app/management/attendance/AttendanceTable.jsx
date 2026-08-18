@@ -15,6 +15,24 @@ const TYPE_OPTIONS = [
   { value: "staff", label: "الموظفون" },
 ];
 
+function AttendanceConsumptions({ consumptions }) {
+  if (!consumptions?.length) return <span className="text-app-muted-light">-</span>;
+
+  return (
+    <div className="flex min-w-0 flex-wrap justify-center gap-1.5">
+      {consumptions.map((consumption, index) => (
+        <span
+          key={consumption.id ?? `${consumption.subscriptionPlanId || "plan"}-${index}`}
+          title={consumption.subscriptionPlanName}
+          className="max-w-full break-words rounded-md bg-app-yellow/15 px-2 py-1 text-[11px] leading-5 text-app-yellow"
+        >
+          {consumption.subscriptionPlanName}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Renders attendance history with row-level checkout and rollback actions.
  */
@@ -56,6 +74,15 @@ export default function AttendanceTable({
         label: "العضو / الموظف",
         align: "center",
         width: "minmax(120px,1fr)",
+      },
+      {
+        key: "consumptions",
+        label: "الاشتراكات المستخدمة",
+        align: "center",
+        width: "minmax(180px,1.35fr)",
+        sortValue: (row) =>
+          row.consumptions.map((consumption) => consumption.subscriptionPlanName).join("، "),
+        render: (value) => <AttendanceConsumptions consumptions={value} />,
       },
       {
         key: "checkIn",

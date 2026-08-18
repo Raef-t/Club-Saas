@@ -18,6 +18,12 @@ export const subscriptionSchema = z.object({
     .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر")
     .or(z.string().min(1, "المبلغ المدفوع مطلوب").transform(Number)),
 
+  receipt_number: z
+    .string({ required_error: "رقم الإيصال مطلوب" })
+    .trim()
+    .min(1, "رقم الإيصال مطلوب")
+    .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف"),
+
   start_date: z
     .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
     .min(1, "تاريخ بداية الاشتراك مطلوب"),

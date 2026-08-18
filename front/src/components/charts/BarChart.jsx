@@ -27,20 +27,31 @@ export default function BarChart({ data = [], height = 200 }) {
         style={{ height: `${height}px` }}
       >
         {data.map((item, index) => {
-          const val = Math.max(0, Number(item.value) || 0);
+          const val = Math.max(0, Number(item?.value) || 0);
           const heightPercent = val > 0 ? Math.max((val / max) * 100, 6) : 3;
-          const labelParts = String(item.label || "").split(" - ");
+          const rawLabel = String(item?.label ?? "");
+          const labelParts = rawLabel
+            .split(" - ")
+            .map((s) => s.trim())
+            .filter((part) => part && part !== "undefined" && part !== "null");
+
+          const displayLabel =
+            labelParts.length > 0
+              ? labelParts.join(" - ")
+              : rawLabel && rawLabel !== "undefined" && rawLabel !== "null"
+                ? rawLabel
+                : "-";
 
           return (
             <div
-              key={`${item.label}-${item.value}-${index}`}
+              key={`${displayLabel}-${val}-${index}`}
               className="group relative flex flex-1 flex-col items-center h-full justify-end min-w-0 max-w-[56px]"
             >
               {/* Floating Tooltip on Hover */}
               <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-30 transform group-hover:-translate-y-1">
                 <div className="bg-app-cardSoft text-app-text text-[11px] font-semibold py-1 px-2.5 rounded-lg border border-app-border shadow-xl whitespace-nowrap flex items-center gap-1.5">
                   <span className="inline-block size-2 rounded-full bg-app-yellow shadow-[0_0_6px_#F2DC2E]" />
-                  <span>{item.label}:</span>
+                  <span>{displayLabel}:</span>
                   <span className="text-app-yellow font-bold">{val}</span>
                 </div>
               </div>
@@ -71,7 +82,7 @@ export default function BarChart({ data = [], height = 200 }) {
                   </>
                 ) : (
                   <span className="text-[11px] font-medium text-app-text truncate group-hover:text-app-yellow transition-colors">
-                    {item.label}
+                    {displayLabel}
                   </span>
                 )}
               </div>

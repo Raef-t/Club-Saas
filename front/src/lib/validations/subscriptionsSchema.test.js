@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { subscriptionEditSchema } from "./subscriptionsSchema";
+import { subscriptionEditSchema, subscriptionSchema } from "./subscriptionsSchema";
+
+describe("subscription create validation", () => {
+  const validSubscription = {
+    member_id: 1,
+    plan_id: 2,
+    paid_amount: 300,
+    receipt_number: "  REC-0007  ",
+    start_date: "2026-08-01",
+    end_date: "2026-08-31",
+  };
+
+  it("requires and normalizes the receipt number", () => {
+    expect(subscriptionSchema.parse(validSubscription).receipt_number).toBe("REC-0007");
+
+    const result = subscriptionSchema.safeParse({
+      ...validSubscription,
+      receipt_number: "   ",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.issues.some((issue) => issue.path[0] === "receipt_number")).toBe(true);
+  });
+});
 
 describe("subscription edit validation", () => {
   it("normalizes the documented update payload", () => {

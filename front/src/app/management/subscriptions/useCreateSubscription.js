@@ -11,6 +11,7 @@ import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { getApiErrorMessage } from "@/lib/apiError";
 import { getSubscriptionDetail } from "./subscriptionUtils";
 
 /**
@@ -95,7 +96,10 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
       return true;
     } catch (submitError) {
       setFormError(
-        submitError?.data?.message || "تعذر إنشاء الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
+        getApiErrorMessage(
+          submitError,
+          "تعذر إنشاء الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
+        ),
       );
       return false;
     }
@@ -111,7 +115,10 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
       return true;
     } catch (submitError) {
       setFormError(
-        submitError?.data?.message || "تعذر تعديل الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
+        getApiErrorMessage(
+          submitError,
+          "تعذر تعديل الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
+        ),
       );
       return false;
     }
