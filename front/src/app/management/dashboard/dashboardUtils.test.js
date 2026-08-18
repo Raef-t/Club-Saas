@@ -91,6 +91,21 @@ describe("management dashboard utilities", () => {
     expect(chartData[0]).toEqual({ label: "الاثنين - الوردية الثانية", value: 12 });
   });
 
+  it("handles shift attendance records without day_name without producing undefined", () => {
+    const reportResponse = {
+      data: {
+        records: [
+          { shift_name: "شيفت صباحي", attended_players_count: 20 },
+          { shift_name: "شيفت مسائي", attended_players_count: 35 },
+        ],
+      },
+    };
+    const chartData = createShiftAttendanceChart(reportResponse);
+    expect(chartData[0]).toEqual({ label: "شيفت مسائي", value: 35 });
+    expect(chartData[1]).toEqual({ label: "شيفت صباحي", value: 20 });
+    expect(chartData[0].label).not.toContain("undefined");
+  });
+
   it("maps the coaches subscriptions report into distinct chart items", () => {
     const items = createCoachSubscriptionMix({
       status: "success",

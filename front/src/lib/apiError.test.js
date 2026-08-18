@@ -6,6 +6,20 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage({ data: { message: "Invalid member" } })).toBe("Invalid member");
   });
 
+  it("translates maximum capacity errors to Arabic", () => {
+    expect(
+      getApiErrorMessage({
+        data: { message: ".This subscription plan has reached its maximum capacity" },
+      }),
+    ).toBe("هذه الفعالية مسددة (وصلت خطة الاشتراك إلى الحد الأقصى من المشتركين).");
+
+    expect(
+      getApiErrorMessage({
+        data: { message: "This subscription plan has reached its maximum capacity" },
+      }),
+    ).toBe("هذه الفعالية مسددة (وصلت خطة الاشتراك إلى الحد الأقصى من المشتركين).");
+  });
+
   it("uses the supplied fallback for unknown errors", () => {
     expect(getApiErrorMessage(null, "Try again")).toBe("Try again");
   });

@@ -89,6 +89,42 @@ describe("attendance utilities", () => {
     expect(row.checkIn).toMatch(/^\d{2}\/\d{2}\/\d{4} - /);
   });
 
+  it("maps the consumed subscription plans from attendance history", () => {
+    const rows = createAttendanceRows({
+      data: [
+        {
+          id: 71,
+          attendable_type: "member",
+          attendable_id: 41,
+          consumptions: [
+            {
+              id: 67,
+              subscription_plan_id: 1,
+              subscription_plan_name: "ميكس ايروبيك دانيه 5",
+            },
+          ],
+          status: "completed",
+        },
+        {
+          id: 72,
+          attendable_type: "member",
+          attendable_id: 41,
+          consumptions: [],
+          status: "completed",
+        },
+      ],
+    });
+
+    expect(rows[0].consumptions).toEqual([
+      {
+        id: 67,
+        subscriptionPlanId: 1,
+        subscriptionPlanName: "ميكس ايروبيك دانيه 5",
+      },
+    ]);
+    expect(rows[1].consumptions).toEqual([]);
+  });
+
   it("maps attendance history with localized status values", () => {
     const rows = createAttendanceRows(
       {

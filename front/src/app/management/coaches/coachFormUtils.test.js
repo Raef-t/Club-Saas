@@ -85,6 +85,15 @@ describe("coach form utilities", () => {
     expect(getCoachActivityKind({ activity_type_name: "دخول يومي" })).toBe(
       COACH_ACTIVITY_KINDS.DAILY_ENTRY,
     );
+    expect(getCoachActivityKind({ name: "أجهزة عام" })).toBe(
+      COACH_ACTIVITY_KINDS.GENERAL_TRAINING,
+    );
+    expect(getCoachActivityKind({ name: "اجهزة خاص" })).toBe(
+      COACH_ACTIVITY_KINDS.PRIVATE_TRAINING,
+    );
+    expect(getCoachActivityKind({ activity_type: { name: "فعالية" } })).toBe(
+      COACH_ACTIVITY_KINDS.GROUP_CLASS,
+    );
   });
 
   it("derives equipment, salary, and shifts for general training", () => {
@@ -107,50 +116,55 @@ describe("coach form utilities", () => {
     expect(rules.allowsShifts).toBe(false);
   });
 
-  it("removes salary, commission, and shifts from private-only equipment training", () => {
+  it("derives commission-only compensation for private equipment training", () => {
     const rules = getCoachRulesForActivities([{ activity_type: { name: { ar: "تدريب خاص" } } }]);
 
     expect(rules.employmentType).toBe("commission_based");
     expect(rules.allowsSalary).toBe(false);
-    expect(rules.allowsCommission).toBe(false);
+    expect(rules.allowsCommission).toBe(true);
     expect(rules.allowsShifts).toBe(false);
   });
 
-  it("uses a fixed salary when private and general equipment training are combined", () => {
+  it("uses salary and commission when private and general equipment training are combined", () => {
     const rules = getCoachRulesForActivities([
       { activity_type: { code: "private_training" } },
       { activity_type: { code: "general_training" } },
     ]);
 
     expect(rules.workTypes).toEqual(["equipment"]);
-    expect(rules.employmentType).toBe("fixed_salary");
+    expect(rules.employmentType).toBe("hybrid");
     expect(rules.allowsSalary).toBe(true);
-    expect(rules.allowsCommission).toBe(false);
+    expect(rules.allowsCommission).toBe(true);
     expect(rules.allowsShifts).toBe(true);
     expect(rules.hasIncompatibleActivities).toBe(false);
   });
 
-  it("uses a fixed salary when private equipment training is combined with an activity", () => {
+  it("uses commission when private equipment training is combined with an activity", () => {
     const rules = getCoachRulesForActivities([
       { activity_type: { code: "private_training" } },
       { activity_type: { code: "group_class" } },
     ]);
 
     expect(rules.workTypes).toEqual(["equipment", "activities"]);
-    expect(rules.employmentType).toBe("fixed_salary");
-    expect(rules.allowsSalary).toBe(true);
-    expect(rules.allowsCommission).toBe(false);
+    expect(rules.employmentType).toBe("commission_based");
+    expect(rules.allowsSalary).toBe(false);
+    expect(rules.allowsCommission).toBe(true);
     expect(rules.allowsShifts).toBe(false);
     expect(rules.hasIncompatibleActivities).toBe(false);
   });
 
-  it("marks group classes mixed with equipment training as incompatible", () => {
+  it("uses salary and commission when a group class is mixed with general equipment", () => {
     const rules = getCoachRulesForActivities([
       { activity_type: { code: "general_training" } },
       { activity_type: { code: "group_class" } },
     ]);
 
-    expect(rules.hasIncompatibleActivities).toBe(true);
+    expect(rules.workTypes).toEqual(["equipment", "activities"]);
+    expect(rules.employmentType).toBe("hybrid");
+    expect(rules.allowsSalary).toBe(true);
+    expect(rules.allowsCommission).toBe(true);
+    expect(rules.allowsShifts).toBe(true);
+    expect(rules.hasIncompatibleActivities).toBe(false);
   });
 
   it("calculates age correctly from date of birth", () => {

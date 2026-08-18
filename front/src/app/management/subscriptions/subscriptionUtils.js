@@ -127,6 +127,31 @@ export function getSubscriptionDetail(response) {
   return response?.data || null;
 }
 
+/**
+ * Returns the receipt number from the subscription or its related payment data.
+ */
+export function getSubscriptionReceiptNumber(subscription) {
+  const candidates = [
+    subscription?.receipt_number,
+    ...(Array.isArray(subscription?.payments)
+      ? subscription.payments.map((payment) => payment?.receipt_number)
+      : []),
+    ...(Array.isArray(subscription?.invoices)
+      ? subscription.invoices.flatMap((invoice) => [
+          invoice?.receipt_number,
+          ...(Array.isArray(invoice?.payments)
+            ? invoice.payments.map((payment) => payment?.receipt_number)
+            : []),
+        ])
+      : []),
+  ];
+
+  return (
+    candidates.find((value) => value !== null && value !== undefined && String(value).trim()) ??
+    null
+  );
+}
+
 function getSubscriptionMemberId(subscription) {
   return (
     subscription?.member_id ??

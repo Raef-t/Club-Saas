@@ -24,4 +24,17 @@ describe("BarChart component", () => {
     expect(screen.getByText("شيفت الظهر")).toBeInTheDocument();
     expect(screen.getByText("شيفت مسائي")).toBeInTheDocument();
   });
+
+  it("filters out undefined strings from labels", () => {
+    const data = [
+      { label: "undefined - وردية الفجر", value: 45 },
+      { label: "undefined - وردية الليل", value: 15 },
+    ];
+
+    render(<BarChart data={data} />);
+
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
+    expect(screen.getByText("وردية الفجر")).toBeInTheDocument();
+    expect(screen.getByText("وردية الليل")).toBeInTheDocument();
+  });
 });

@@ -231,9 +231,7 @@ export default function CoachesClient({ initialData }) {
         align: "center",
         render: (value, coach) => {
           const compensation = getCoachCompensationVisibility(coach);
-          const label = compensation.isPrivateEquipment
-            ? "تدريب خاص"
-            : employmentLabels[compensation.paymentType] || value;
+          const label = employmentLabels[compensation.paymentType] || value;
 
           return <span className="text-xs text-app-muted-light">{label}</span>;
         },
@@ -248,10 +246,6 @@ export default function CoachesClient({ initialData }) {
           const commission = formatCoachCommission(
             coach.details?.default_commission_rate ?? coach.default_commission_rate,
           );
-
-          if (compensation.isPrivateEquipment) {
-            return <span className="text-xs text-app-muted-light">-</span>;
-          }
 
           if (compensation.showCommission && !compensation.showSalary) {
             return (

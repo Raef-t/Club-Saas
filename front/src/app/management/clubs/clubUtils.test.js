@@ -38,6 +38,7 @@ describe("club utilities", () => {
     expect(form.name).toBe("تكنوجيم");
     expect(createClubPayload({ ...form, logo_url: " " })).toEqual({
       name: "تكنوجيم",
+      logo: null,
       logo_url: null,
       is_active: true,
     });

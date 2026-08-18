@@ -47,6 +47,7 @@ export function SubscriptionCreateForm({
           : "",
       plan_id: initialPlan?.id ? String(initialPlan.id) : "",
       paid_amount: initialPlan?.base_price ? String(initialPlan.base_price) : "0",
+      receipt_number: "",
       start_date: initialDate,
       end_date: initialDate,
     };
@@ -100,6 +101,7 @@ export function SubscriptionCreateForm({
       member_id: Number(form.member_id),
       plan_id: Number(form.plan_id),
       paid_amount: Number(form.paid_amount) || 0,
+      receipt_number: form.receipt_number,
       start_date: dailyEntryDate || form.start_date || "",
       end_date: dailyEntryDate || form.end_date || "",
     };
@@ -117,7 +119,7 @@ export function SubscriptionCreateForm({
     setErrors({});
     onSubmit(
       {
-        ...validationData,
+        ...result.data,
         payment_method: "cash",
         activities: [],
       },
@@ -192,6 +194,34 @@ export function SubscriptionCreateForm({
         {errors && errors.paid_amount && (
           <span className="mt-1.5 block text-xs text-app-red" role="alert">
             {errors.paid_amount}
+          </span>
+        )}
+      </label>
+
+      <label className="block text-right text-sm text-app-muted-light">
+        رقم الإيصال *
+        <input
+          type="text"
+          value={form.receipt_number}
+          onChange={(event) => updateField("receipt_number", event.target.value)}
+          aria-invalid={Boolean(errors && errors.receipt_number)}
+          aria-describedby={errors && errors.receipt_number ? "receipt-number-error" : undefined}
+          className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+            errors && errors.receipt_number
+              ? "border border-app-red focus:border-app-red"
+              : "focus:border-app-yellow/70"
+          }`}
+          placeholder="أدخل رقم الإيصال"
+          maxLength={100}
+          required
+        />
+        {errors && errors.receipt_number && (
+          <span
+            id="receipt-number-error"
+            className="mt-1.5 block text-xs text-app-red"
+            role="alert"
+          >
+            {errors.receipt_number}
           </span>
         )}
       </label>

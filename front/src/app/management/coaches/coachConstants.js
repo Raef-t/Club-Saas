@@ -19,14 +19,14 @@ export const SHIFT_GENDER_LABELS = {
 export const EMPLOYMENT_TYPES = [
   { value: "fixed_salary", label: "راتب ثابت" },
   { value: "commission_based", label: "نسبة فقط" },
-  { value: "hybrid", label: "هجين (ثابت + نسبة)" },
+  { value: "hybrid", label: "راتب ونسبة" },
 ];
 
 export const EMPLOYMENT_LABELS = {
   fixed_salary: "راتب ثابت",
   commission: "نسبة فقط",
   commission_based: "نسبة فقط",
-  hybrid: "نظام هجين",
+  hybrid: "راتب ونسبة",
 };
 
 export const COACH_GENDER_LABELS = {

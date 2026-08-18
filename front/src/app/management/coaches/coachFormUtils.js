@@ -129,8 +129,13 @@ function normalizeActivityTypeText(value) {
  * Resolves the backend activity type across its nested and flat response shapes.
  */
 export function getCoachActivityKind(activity) {
+  if (activity?.is_private_equipment === true || Number(activity?.is_private_equipment) === 1) {
+    return COACH_ACTIVITY_KINDS.PRIVATE_TRAINING;
+  }
+
   const activityType = activity?.activity_type || activity?.type || {};
   const candidates = [
+    activity?.name,
     activity?.activity_type_code,
     activity?.activity_type_slug,
     activity?.activity_type_name,
@@ -154,6 +159,8 @@ export function getCoachActivityKind(activity) {
     typeText.includes("group class") ||
     typeText.includes("group session") ||
     typeText.includes("group training") ||
+    typeText.includes("فعالية") ||
+    typeText.includes("نشاط جماعي") ||
     typeText.includes("حصة جماعية") ||
     typeText.includes("حصص جماعية") ||
     typeText.includes("تدريب جماعي")
@@ -165,9 +172,11 @@ export function getCoachActivityKind(activity) {
     typeText.includes("private training") ||
     typeText.includes("personal training") ||
     typeText.includes("private session") ||
+    typeText.includes("private equipment") ||
     typeText.includes("تدريب خاص") ||
     typeText.includes("تدريب شخصي") ||
-    typeText.includes("تدريب فردي")
+    typeText.includes("تدريب فردي") ||
+    typeText.includes("اجهزة خاص")
   ) {
     return COACH_ACTIVITY_KINDS.PRIVATE_TRAINING;
   }
@@ -175,7 +184,9 @@ export function getCoachActivityKind(activity) {
   if (
     typeText.includes("general training") ||
     typeText.includes("general gym") ||
-    typeText.includes("تدريب عام")
+    typeText.includes("general equipment") ||
+    typeText.includes("تدريب عام") ||
+    typeText.includes("اجهزة عام")
   ) {
     return COACH_ACTIVITY_KINDS.GENERAL_TRAINING;
   }
@@ -193,7 +204,18 @@ export function getCoachRulesForActivities(selectedActivities = []) {
   const hasGroupClass = kinds.has(COACH_ACTIVITY_KINDS.GROUP_CLASS);
   const hasDailyEntry = kinds.has(COACH_ACTIVITY_KINDS.DAILY_ENTRY);
   const hasRecognizedActivity = hasGeneralTraining || hasPrivateTraining || hasGroupClass;
-  const hasIncompatibleActivities = hasGroupClass && hasGeneralTraining;
+  const allowsSalary = hasGeneralTraining;
+  const allowsCommission = hasPrivateTraining || hasGroupClass;
+  const workTypes = [
+    ...(hasGeneralTraining || hasPrivateTraining ? ["equipment"] : []),
+    ...(hasGroupClass ? ["activities"] : []),
+  ];
+  const employmentType =
+    allowsSalary && allowsCommission
+      ? "hybrid"
+      : allowsCommission
+        ? "commission_based"
+        : "fixed_salary";
 
   const common = {
     hasRecognizedActivity,
@@ -201,50 +223,17 @@ export function getCoachRulesForActivities(selectedActivities = []) {
     hasPrivateTraining,
     hasGroupClass,
     hasDailyEntry,
-    hasIncompatibleActivities,
+    hasIncompatibleActivities: false,
   };
 
-  if (hasGeneralTraining) {
+  if (hasRecognizedActivity) {
     return {
       ...common,
-      workTypes: ["equipment"],
-      employmentType: "fixed_salary",
-      allowsSalary: true,
-      allowsCommission: false,
-      allowsShifts: true,
-    };
-  }
-
-  if (hasPrivateTraining && hasGroupClass) {
-    return {
-      ...common,
-      workTypes: ["equipment", "activities"],
-      employmentType: "fixed_salary",
-      allowsSalary: true,
-      allowsCommission: false,
-      allowsShifts: false,
-    };
-  }
-
-  if (hasGroupClass) {
-    return {
-      ...common,
-      workTypes: ["activities"],
-      employmentType: "commission_based",
-      allowsSalary: false,
-      allowsCommission: true,
-      allowsShifts: false,
-    };
-  }
-
-  if (hasPrivateTraining) {
-    return {
-      ...common,
-      workTypes: ["equipment"],
-      employmentType: "commission_based",
-      allowsSalary: false,
-      allowsCommission: false,
-      allowsShifts: false,
+      workTypes,
+      employmentType,
+      allowsSalary,
+      allowsCommission,
+      allowsShifts: hasGeneralTraining,
     };
   }
 

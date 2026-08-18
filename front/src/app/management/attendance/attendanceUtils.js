@@ -221,6 +221,17 @@ export function createAttendanceRows(response, activeMember, people = {}) {
           ? staffNames.get(String(record.attendable_id || record.staff_id))
           : memberNames.get(String(record.attendable_id || record.member_id))) ||
         `${record.attendable_type === "staff" ? "موظف" : "عضو"} #${record.attendable_id || record.member_id || record.staff_id || "-"}`,
+      consumptions: Array.isArray(record.consumptions)
+        ? record.consumptions.map((consumption) => ({
+            id: consumption.id ?? null,
+            subscriptionPlanId: consumption.subscription_plan_id ?? null,
+            subscriptionPlanName:
+              formatLocalizedName(consumption.subscription_plan_name) ||
+              (consumption.subscription_plan_id
+                ? `خطة #${consumption.subscription_plan_id}`
+                : "خطة غير معروفة"),
+          }))
+        : [],
       activity: formatLocalizedName(record.activity?.name || record.activity_name) || "-",
       coach: record.coach?.person?.full_name || record.coach?.name || record.coach_name || "-",
       lockerId: locker.id || record.locker_id || record.active_locker_id || null,

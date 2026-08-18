@@ -23,11 +23,17 @@ export const clubsApi = createApi({
       invalidatesTags: ["Clubs"],
     }),
     updateClub: builder.mutation({
-      query: ({ id, body }) => ({
-        url: `clubs/${id}`,
-        method: "PUT",
-        body,
-      }),
+      query: ({ id, body }) => {
+        const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+        if (isFormData && !body.has("_method")) {
+          body.append("_method", "PUT");
+        }
+        return {
+          url: `clubs/${id}`,
+          method: isFormData ? "POST" : "PUT",
+          body,
+        };
+      },
       invalidatesTags: (result, error, { id }) => [
         "Clubs",
         { type: "Clubs", id },

@@ -3,7 +3,7 @@ const CLOCK_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 /**
  * Adds a duration to a 24-hour clock value and wraps across midnight.
  */
-export function addMinutesToTime(time, minutesToAdd = 60) {
+export function addMinutesToTime(time, minutesToAdd = 90) {
   if (!CLOCK_TIME_PATTERN.test(time || "")) return "";
 
   const [hours, minutes] = time.split(":").map(Number);

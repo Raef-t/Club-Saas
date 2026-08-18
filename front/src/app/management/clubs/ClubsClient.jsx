@@ -27,9 +27,9 @@ export default function ClubsClient({ initialData }) {
           <Button
             href="/management/clubs/create"
             icon={<PlusIcon className="size-4 text-black" />}
-            className="text-black"
+            className="!text-black font-semibold"
           >
-            إضافة نادٍ
+            إضافة نادي
           </Button>
         }
       />

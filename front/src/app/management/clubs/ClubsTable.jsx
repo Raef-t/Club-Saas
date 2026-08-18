@@ -20,7 +20,11 @@ export default function ClubsTable({ state }) {
         align: "center",
         render: (value, club) => (
           <div className="flex justify-center">
-            <ClubLogo src={value} name={getClubName(club)} className="size-10" />
+            <ClubLogo
+              src={club.logo || club.logo_url || value}
+              name={getClubName(club)}
+              className="size-10"
+            />
           </div>
         ),
       },

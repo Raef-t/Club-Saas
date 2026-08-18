@@ -8,7 +8,18 @@ import { useState } from "react";
 export function ClubLogo({ src, name, className = "size-10" }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!src || hasError) {
+  let resolvedSrc = src;
+  if (resolvedSrc && typeof resolvedSrc === "string") {
+    if (
+      !resolvedSrc.startsWith("http") &&
+      !resolvedSrc.startsWith("blob:") &&
+      !resolvedSrc.startsWith("data:")
+    ) {
+      resolvedSrc = `http://31.70.108.63/${resolvedSrc.replace(/^\//, "")}`;
+    }
+  }
+
+  if (!resolvedSrc || hasError) {
     const initial = name ? name.charAt(0).toUpperCase() : "?";
 
     return (
@@ -23,7 +34,7 @@ export function ClubLogo({ src, name, className = "size-10" }) {
 
   return (
     <img
-      src={src}
+      src={resolvedSrc}
       alt={`شعار ${name || "النادي"}`}
       onError={() => setHasError(true)}
       className={`rounded-lg border border-app-line bg-app-card-hover object-cover ${className}`}
