@@ -203,4 +203,28 @@ class SubscriptionPlan extends Model
                     ->whereIn('status', ['active', 'scheduled'])
                     ->latestOfMany();
     }
+
+    /**
+     * Get the dynamically calculated count of active subscribers from player_subscriptions.
+     */
+    public function getCurrentSubscribersCount(): int
+    {
+        if (array_key_exists('active_subscribers_count', $this->attributes)) {
+            return (int) $this->attributes['active_subscribers_count'];
+        }
+
+        if ($this->relationLoaded('playerSubscriptions')) {
+            return $this->playerSubscriptions
+                ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE)
+                ->count();
+        }
+
+        if ($this->exists) {
+            return $this->playerSubscriptions()
+                ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE)
+                ->count();
+        }
+
+        return (int) ($this->attributes['current_subscribers'] ?? 0);
+    }
 }

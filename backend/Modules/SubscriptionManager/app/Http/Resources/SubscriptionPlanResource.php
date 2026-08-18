@@ -17,7 +17,7 @@ class SubscriptionPlanResource extends JsonResource
             'sessions_per_week' => $this->sessions_per_week,
             'base_price' => $this->base_price,
             'max_subscribers' => $this->max_subscribers,
-            'current_subscribers' => $this->current_subscribers,
+            'current_subscribers' => method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers,
             'is_unlimited_subscribers' => (bool) ($this->is_unlimited_subscribers ?? ($this->max_subscribers == 0)),
             'gender_restriction' => $this->gender_restriction,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,

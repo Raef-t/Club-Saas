@@ -60,7 +60,11 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities', 'sessionTemplates', 'activeSuspension.coach.person']);
+        $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::withCount([
+            'playerSubscriptions as active_subscribers_count' => function ($q) {
+                $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
+            }
+        ])->with(['planActivities', 'sessionTemplates', 'activeSuspension.coach.person']);
         
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -112,6 +116,11 @@ class SubscriptionPlanController extends BaseController
         // Get active plans that have available capacity, and eager load their activities
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
             ->available()
+            ->withCount([
+                'playerSubscriptions as active_subscribers_count' => function ($q) {
+                    $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
+                }
+            ])
             ->with(['planActivities', 'sessionTemplates']);
             
         if ($request->has('branch_id')) {
