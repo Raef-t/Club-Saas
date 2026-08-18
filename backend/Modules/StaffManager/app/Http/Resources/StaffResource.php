@@ -38,6 +38,7 @@ class StaffResource extends JsonResource
                     'payment_type'            => $this->activeContract?->employment_type,
                     'commission_type'         => $this->activeContract?->commission_type,
                     'default_commission_rate' => $this->activeContract?->commission_rate,
+                    'private_commission_rate' => $this->activeContract?->private_commission_rate,
                     'working_hours_per_week'  => $detail->working_hours_per_week,
                     'gym_type'                => $detail->gym_type,
                     'certifications'          => $detail->relationLoaded('certifications')

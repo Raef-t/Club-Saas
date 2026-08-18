@@ -498,24 +498,52 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Delete(
         path: '/v1/player-subscriptions/{id}',
         summary: '🗑️ حذف اشتراك متدرب (Soft Delete)',
-        description: 'حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.',
+        description: 'حذف اشتراك المتدرب ناعماً. يقبل معامل is_refunded لتحديد ما إذا تمت إعادة سعر الاشتراك للاعب (إذا نعم: يُحذف سجل الكسر المالي subscription_revenue_splits، إذا لا: يبقى السجل المالي محفوظاً).',
         tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح')]
+    #[OA\Parameter(name: 'is_refunded', in: 'query', required: false, description: 'هل تمت إعادة سعر الاشتراك للاعب؟ (true / false)', schema: new OA\Schema(type: 'boolean', example: true))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'is_refunded', type: 'boolean', example: true, description: 'هل تمت إعادة سعر الاشتراك للاعب؟ (إذا نعم يتم حذف سجل الكسر المالي، إذا لا يبقى محفوظاً)'),
+                new OA\Property(property: 'reason', type: 'string', example: 'طلب اللاعب إلغاء واسترداد المبلغ', description: 'سبب الحذف (اختياري)')
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم حذف الاشتراك بنجاح')]
     #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود')]
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::findOrFail($id);
+
+        $isRefunded = filter_var($request->input('is_refunded', $request->input('refunded', false)), FILTER_VALIDATE_BOOLEAN);
+        $reason = $request->input('reason');
+
+        if ($reason) {
+            $subscription->update(['reason' => $reason]);
+        }
+
+        // If price was refunded to player, soft delete the revenue split record as well
+        if ($isRefunded && $subscription->revenueSplit) {
+            $subscription->revenueSplit->delete();
+        }
+
         $subscription->delete();
-        return $this->successResponse(null, __('Player subscription deleted successfully'));
+
+        $message = $isRefunded 
+            ? __('Player subscription deleted and revenue split record removed due to refund.') 
+            : __('Player subscription deleted successfully and revenue split record preserved.');
+
+        return $this->successResponse(null, $message);
     }
 
     #[OA\Post(
         path: '/v1/player-subscriptions/{id}/restore',
         summary: '♻️ استرجاع اشتراك محذوف',
-        description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.',
+        description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره وسجل كسر الإيرادات إن وُجد تلقائياً.',
         tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
@@ -525,6 +553,10 @@ class PlayerSubscriptionController extends BaseController
     public function restore(int $id)
     {
         $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->findOrFail($id);
+        
+        // Restore revenue split if it was soft-deleted
+        $subscription->revenueSplit()->onlyTrashed()->restore();
+
         $subscription->restore();
         return $this->successResponse(null, __('Player subscription restored successfully'));
     }

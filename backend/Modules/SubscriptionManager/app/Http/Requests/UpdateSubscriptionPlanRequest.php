@@ -36,8 +36,6 @@ class UpdateSubscriptionPlanRequest extends FormRequest
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',
             'gender_restriction' => 'nullable|in:male,female,mixed',
-            'club_commission_percentage' => 'nullable|numeric|min:0|max:100',
-            'coach_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'status' => ['nullable', 'string', Rule::in(['active', 'inactive', 'completed'])],
             'activities' => 'nullable|array',
             'activities.*.activity_id' => 'required_with:activities|exists:activities,id',

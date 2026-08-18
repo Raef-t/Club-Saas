@@ -22,8 +22,6 @@ class SubscriptionPlan extends Model
         'max_subscribers',
         'current_subscribers',
         'gender_restriction',
-        'club_commission_percentage',
-        'coach_commission_percentage',
         'reason',
     ];
 
@@ -32,16 +30,6 @@ class SubscriptionPlan extends Model
         static::creating(function ($plan) {
             if (empty($plan->subscription_number)) {
                 $plan->subscription_number = self::generateUniqueSubscriptionNumber();
-            }
-
-            if ($plan->club_commission_percentage === null && $plan->branch_id) {
-                $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $plan->branch_id)->first();
-                $plan->club_commission_percentage = $branchSetting ? (float) ($branchSetting->private_subscription_commission ?? 0) : 0.00;
-            }
-
-            if ($plan->coach_commission_percentage === null) {
-                $clubCommission = (float) ($plan->club_commission_percentage ?? 0);
-                $plan->coach_commission_percentage = max(0, 100.00 - $clubCommission);
             }
         });
 
@@ -92,8 +80,6 @@ class SubscriptionPlan extends Model
     protected $casts = [
         'status' => SubscriptionPlanStatus::class,
         'base_price' => 'decimal:2',
-        'club_commission_percentage' => 'decimal:2',
-        'coach_commission_percentage' => 'decimal:2',
         'max_subscribers' => 'integer',
         'current_subscribers' => 'integer',
         'sessions_per_week' => 'integer',
@@ -130,6 +116,41 @@ class SubscriptionPlan extends Model
             if ($activity && method_exists($activity, 'isEquipmentOrUnlimited') && $activity->isEquipmentOrUnlimited()) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if this subscription plan is specifically a private equipment plan (أجهزة خاص).
+     */
+    public function isPrivateEquipmentPlan(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.activity.activityType')->get();
+
+        foreach ($activities as $planActivity) {
+            $activity = $planActivity->activity ?? ($planActivity->staffActivity ? $planActivity->staffActivity->activity : null);
+            if ($activity) {
+                if (!empty($activity->is_private_equipment)) {
+                    return true;
+                }
+                $name = trim((string) $activity->name);
+                $lowerName = strtolower($name);
+                if (in_array($name, ['أجهزة خاص', 'اجهزة خاص', 'تدريب خاص', 'خاص أجهزة', 'خاص اجهزة'])) {
+                    return true;
+                }
+                if (str_contains($name, 'خاص') || str_contains($lowerName, 'private')) {
+                    return true;
+                }
+            }
+        }
+
+        $planName = trim((string) $this->name);
+        $lowerPlanName = strtolower($planName);
+        if (str_contains($planName, 'خاص') || str_contains($lowerPlanName, 'private')) {
+            return true;
         }
 
         return false;
