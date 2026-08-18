@@ -109,6 +109,14 @@ class PlayerSubscription extends Model
                 $invoice->delete();
             });
 
+            // Decrement plan subscribers count
+            if ($subscription->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($subscription->plan_id);
+                if ($plan) {
+                    app(\Modules\SubscriptionManager\Services\SubscriptionService::class)->decrementPlanSubscribers($plan);
+                }
+            }
+
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
@@ -126,6 +134,14 @@ class PlayerSubscription extends Model
             $subscription->invoices()->onlyTrashed()->get()->each(function ($invoice) {
                 $invoice->restore();
             });
+
+            // Increment plan subscribers count
+            if ($subscription->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($subscription->plan_id);
+                if ($plan) {
+                    app(\Modules\SubscriptionManager\Services\SubscriptionService::class)->incrementPlanSubscribers($plan);
+                }
+            }
 
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;

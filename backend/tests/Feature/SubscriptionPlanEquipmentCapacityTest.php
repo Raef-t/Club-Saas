@@ -35,10 +35,10 @@ class SubscriptionPlanEquipmentCapacityTest extends TestCase
 
         config([
             'database.default' => 'mysql',
-            'database.connections.mysql.database' => 'club_saas',
-            'database.connections.mysql.host' => '127.0.0.1',
-            'database.connections.mysql.username' => 'root',
-            'database.connections.mysql.password' => '',
+            'database.connections.mysql.database' => (env('DB_DATABASE') === ':memory:' || empty(env('DB_DATABASE'))) ? 'club_db' : env('DB_DATABASE'),
+            'database.connections.mysql.host' => env('DB_HOST', '127.0.0.1'),
+            'database.connections.mysql.username' => env('DB_USERNAME', 'root'),
+            'database.connections.mysql.password' => env('DB_PASSWORD', ''),
         ]);
         \Illuminate\Support\Facades\DB::purge('mysql');
         \Illuminate\Support\Facades\DB::reconnect('mysql');
@@ -182,6 +182,7 @@ class SubscriptionPlanEquipmentCapacityTest extends TestCase
             'name' => 'خطة تم تحويلها لأجهزة عام',
             'base_price' => 120.00,
             'max_subscribers' => 50,
+            'reason' => 'تحديث الخطة لأجهزة عام',
             'activities' => [
                 ['activity_id' => $this->generalEquipmentActivity->id],
             ],
