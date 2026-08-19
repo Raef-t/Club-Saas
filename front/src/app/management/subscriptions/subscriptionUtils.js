@@ -173,7 +173,7 @@ export function getCurrentMemberSubscription(response, memberId) {
         (subscription) => String(getSubscriptionMemberId(subscription)) === String(memberId),
       )
     : rows;
-  const statusPriority = { active: 0, frozen: 1, pending: 2 };
+  const statusPriority = { active: 0, frozen: 1 };
 
   return (
     [...memberRows].sort((first, second) => {

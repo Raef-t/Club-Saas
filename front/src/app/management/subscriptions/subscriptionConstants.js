@@ -1,17 +1,15 @@
 export const SUBSCRIPTION_STATUS_LABELS = {
-  active: "نشط",
-  expired: "منتهي",
-  cancelled: "ملغي",
-  frozen: "مجمّد",
-  pending: "قيد الانتظار",
+  active: "فعال",
+  finished: "منتهي",
+  frozen: "مجمد",
+  terminated: "تم إنهاؤه من الإدارة",
 };
 
 export const SUBSCRIPTION_STATUS_CLASSES = {
   active: "status-success",
-  expired: "status-danger",
-  cancelled: "status-danger",
+  finished: "status-danger",
   frozen: "status-warning",
-  pending: "status-review",
+  terminated: "status-danger",
 };
 
 export const SUBSCRIPTION_STATUS_OPTIONS = [
