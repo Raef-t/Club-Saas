@@ -62,7 +62,7 @@ class SubscriptionNotificationService
                         $title = $template->subject ?? 'تذكير هام: اقتراب موعد انتهاء الاشتراك ⏰';
                     } else {
                         $title = 'تذكير هام: اقتراب موعد انتهاء الاشتراك ⏰';
-                        $body = "عزيزي {$playerName}، نود تذكيرك بأن اشتراكك \"{$planName}\" سينتهي قريباً بتاريخ {$targetDate} الموافق ليوم {$targetDayName}. سارع بتجديد اشتراكك!";
+                        $body = "أهلاً بك {$playerName}، نود تذكيرك بأن اشتراكك \"{$planName}\" سينتهي قريباً بتاريخ {$targetDate} الموافق ليوم {$targetDayName}. سارع بتجديد اشتراكك لضمان استمرارية تمارينك ولياقتك معنا!";
                     }
 
                     $this->notificationService->createNotification([

@@ -399,7 +399,7 @@ class SessionTemplateController extends BaseController
                         $title = $notificationTemplate->subject ?? 'اعتذار عن إلغاء جلسة تمرين ⚠️';
                     } else {
                         $title = 'اعتذار عن إلغاء جلسة تمرين ⚠️';
-                        $body = "عزيزي {$playerName}، نعتذر منك بشدة عن إلغاء جلستك الخاصة باشتراك {$planName} والمقررة يوم {$dayName} بتاريخ {$request->date} مع الكوتش {$coachName}. سبب الإلغاء: {$request->reason}. نتمنى تفهمكم ونراكم قريباً!";
+                        $body = "أهلاً بك {$playerName}، نعتذر منك عن إلغاء جلستك الخاصة باشتراك {$planName} والمقررة يوم {$dayName} بتاريخ {$request->date} مع الكوتش {$coachName}. سبب الإلغاء: {$request->reason}. نتمنى تفهمك ونراك قريباً!";
                     }
 
                     $notificationService->createNotification([

@@ -625,7 +625,7 @@ class SessionDeductionService
                         $title = $template->subject ?? 'إلغاء دخول واسترجاع جلسة 🔄';
                     } else {
                         $title = 'إلغاء دخول واسترجاع جلسة 🔄';
-                        $body  = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingStr} جلسة.";
+                        $body  = "أهلاً بك {$playerName}، تم إلغاء تسجيل دخولك الأخير واسترجاع الجلسة إلى رصيدك. الجلسات المتبقية لك الآن: {$remainingStr} جلسة.";
                     }
                 } else {
                     $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'attendance_rollback_time')->first();
@@ -634,7 +634,7 @@ class SessionDeductionService
                         $title = $template->subject ?? 'إلغاء تسجيل الدخول 🔄';
                     } else {
                         $title = 'إلغاء تسجيل الدخول 🔄';
-                        $body  = "عزيزي {$playerName}، تم إلغاء تسجيل دخولك الأخير بنجاح. نتمنى رؤيتك قريباً!";
+                        $body  = "أهلاً بك {$playerName}، تم إلغاء تسجيل دخولك الأخير بنجاح. نتمنى رؤيتك قريباً!";
                     }
                 }
 

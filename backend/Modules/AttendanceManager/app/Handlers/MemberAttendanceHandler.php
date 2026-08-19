@@ -185,7 +185,7 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 $title = $template->subject ?? 'تسجيل خروج ناجح';
             } else {
                 $title = 'تسجيل خروج ناجح';
-                $body = "عزيزي {$playerName}، نتمنى أن تكون قد حظيت بتمرين رائع! تم تسجيل خروجك بنجاح بتاريخ {$date} الموافق ليوم {$dayName} الساعة {$time}. لقد استمر تدريبك لمدة {$duration} ضمن اشتراكك الحالي: {$planName}. نشكر التزامك ونتطلع لرؤيتك قريباً.";
+                $body = "أهلاً بك {$playerName}، نتمنى أن تكون قد قضيت وقتاً رياضياً ممتعاً! تم تسجيل خروجك بنجاح بتاريخ {$date} الموافق ليوم {$dayName} الساعة {$time}. لقد استمر تدريبك لمدة {$duration} ضمن اشتراكك الحالي: {$planName}. نشكر التزامك ونتطلع لرؤيتك قريباً.";
             }
 
             app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
