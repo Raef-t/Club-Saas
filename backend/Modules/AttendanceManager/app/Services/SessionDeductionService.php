@@ -303,7 +303,7 @@ class SessionDeductionService
                     ->first();
 
                 if (!$subscription) {
-                    throw new Exception(__('The selected subscription (ID: :id) is not active or does not belong to this member.', ['id' => $subscriptionId]));
+                    throw new Exception(__('الاشتراك المحدد (رقم :id) غير نشط أو لا ينتمي لهذا المشترك.', ['id' => $subscriptionId]));
                 }
 
                 $this->validateSubscriptionAvailability($subscription, $attendanceTimestamp, $effectiveReason);
@@ -535,6 +535,7 @@ class SessionDeductionService
 
         // Only enrich if private type is being deducted and general type is NOT already in the list
         if (in_array($privateTypeId, $typesInRequest) && !in_array($generalTypeId, $typesInRequest)) {
+            $today = now()->toDateString();
             // Find the member's active general subscription that is NOT already included
             $generalSubId = DB::table('player_subscriptions as ps')
                 ->join('plan_activities as pa', 'pa.plan_id', '=', 'ps.plan_id')
@@ -542,9 +543,17 @@ class SessionDeductionService
                 ->join('activities as act', 'act.id', '=', 'sa.activity_id')
                 ->where('ps.member_id', $memberId)
                 ->where('ps.status', 'active')
-                ->whereDate('ps.end_date', '>=', now())
-                ->where('act.activity_type_id', $generalTypeId)
+                ->whereNull('ps.deleted_at')
                 ->whereNull('pa.deleted_at')
+                ->where(function ($dateQ) use ($today) {
+                    $dateQ->whereNull('ps.start_date')
+                          ->orWhereDate('ps.start_date', '<=', $today);
+                })
+                ->where(function ($dateQ) use ($today) {
+                    $dateQ->whereNull('ps.end_date')
+                          ->orWhereDate('ps.end_date', '>=', $today);
+                })
+                ->where('act.activity_type_id', $generalTypeId)
                 ->whereNotIn('ps.id', $subscriptionIds)
                 ->value('ps.id');
 
