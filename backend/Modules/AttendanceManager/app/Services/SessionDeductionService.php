@@ -38,86 +38,142 @@ class SessionDeductionService
      */
     public function autoDeductSessionForGate(int $attendanceId, int $memberId): Attendance
     {
-        $today = now();
-        $todayString = $today->toDateString();
-        $dayOfWeek = (int) $today->dayOfWeek;
+        $todayString = now()->toDateString();
+        $subscriptionIds = $this->getAvailableSubscriptionsForMemberOnDate($memberId, $todayString);
 
-        // Retrieve all active subscriptions for the member that have sessions today
-        $subscriptionIds = DB::table('player_subscriptions as ps')
+        // Deduct a session from each active subscription in a single transaction
+        return $this->deductMultipleSessions($attendanceId, $subscriptionIds);
+    }
+
+    /**
+     * Get all active and valid subscription IDs for a member on a specific date that have scheduled sessions
+     * (or are open plans without templates) and have remaining sessions.
+     * Throws an informative exception if no valid subscriptions are found.
+     *
+     * @param int $memberId
+     * @param string $dateString
+     * @return int[]
+     * @throws Exception
+     */
+    public function getAvailableSubscriptionsForMemberOnDate(int $memberId, string $dateString): array
+    {
+        $checkDate = \Carbon\Carbon::parse($dateString)->startOfDay();
+        $targetDate = $checkDate->toDateString();
+        $dayOfWeek = (int) $checkDate->dayOfWeek;
+
+        // 1. Check if the member has ANY active subscription in the system
+        $hasAnyActiveSub = DB::table('player_subscriptions as ps')
             ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
             ->where('ps.member_id', $memberId)
             ->where('ps.status', 'active')
             ->whereNull('ps.deleted_at')
             ->whereNull('sp.deleted_at')
             ->where('sp.status', '!=', 'inactive')
-            ->whereDate('ps.start_date', '<=', $todayString)
-            ->whereDate('ps.end_date', '>=', $todayString)
-            ->whereNotExists(function ($freezeQ) use ($todayString) {
+            ->exists();
+
+        if (!$hasAnyActiveSub) {
+            throw new Exception(__('لا توجد اشتراكات نشطة لهذا المشترك.'));
+        }
+
+        // 2. Check if the member has active subscriptions valid on the check-in date
+        // (started, not expired, not frozen, plan not suspended)
+        $validDateQuery = DB::table('player_subscriptions as ps')
+            ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
+            ->where('ps.member_id', $memberId)
+            ->where('ps.status', 'active')
+            ->whereNull('ps.deleted_at')
+            ->whereNull('sp.deleted_at')
+            ->where('sp.status', '!=', 'inactive')
+            ->whereDate('ps.start_date', '<=', $targetDate)
+            ->whereDate('ps.end_date', '>=', $targetDate)
+            ->whereNotExists(function ($freezeQ) use ($targetDate) {
                 $freezeQ->select(DB::raw(1))
                     ->from('subscription_freezes as sf')
                     ->whereColumn('sf.player_subscription_id', 'ps.id')
                     ->whereNull('sf.deleted_at')
-                    ->whereDate('sf.freeze_start_date', '<=', $todayString)
-                    ->whereDate('sf.freeze_end_date', '>=', $todayString);
+                    ->whereDate('sf.freeze_start_date', '<=', $targetDate)
+                    ->whereDate('sf.freeze_end_date', '>=', $targetDate);
             })
-            ->whereNotExists(function ($suspQ) use ($todayString) {
+            ->whereNotExists(function ($suspQ) use ($targetDate) {
                 $suspQ->select(DB::raw(1))
                     ->from('subscription_plan_suspensions as sps')
                     ->whereColumn('sps.plan_id', 'ps.plan_id')
                     ->whereNull('sps.deleted_at')
-                    ->where(function ($subQ) use ($todayString) {
+                    ->where(function ($subQ) use ($targetDate) {
                         $subQ->where('sps.status', 'active')
-                             ->orWhere(function ($dateQ) use ($todayString) {
-                                 $dateQ->whereDate('sps.suspend_start_date', '<=', $todayString)
-                                       ->whereDate('sps.suspend_end_date', '>=', $todayString);
+                             ->orWhere(function ($dateQ) use ($targetDate) {
+                                 $dateQ->whereDate('sps.suspend_start_date', '<=', $targetDate)
+                                       ->whereDate('sps.suspend_end_date', '>=', $targetDate);
                              });
                     });
-            })
-            ->where(function ($sessionQ) use ($dayOfWeek, $todayString) {
-                $sessionQ->whereNotExists(function ($noTmplQ) {
-                    $noTmplQ->select(DB::raw(1))
-                        ->from('sport_session_templates as sst_all')
-                        ->whereColumn('sst_all.plan_id', 'ps.plan_id')
-                        ->where('sst_all.is_active', true)
-                        ->whereNull('sst_all.deleted_at');
-                })
-                ->orWhereExists(function ($hasTmplQ) use ($dayOfWeek, $todayString) {
-                    $hasTmplQ->select(DB::raw(1))
-                        ->from('sport_session_templates as sst_today')
-                        ->whereColumn('sst_today.plan_id', 'ps.plan_id')
-                        ->where('sst_today.is_active', true)
-                        ->where('sst_today.day_of_week', $dayOfWeek)
-                        ->whereNull('sst_today.deleted_at')
-                        ->whereNotExists(function ($excQ) use ($todayString) {
-                            $excQ->select(DB::raw(1))
-                                ->from('session_exceptions as se')
-                                ->whereColumn('se.sport_session_template_id', 'sst_today.id')
-                                ->whereDate('se.date', $todayString)
-                                ->whereIn('se.status', ['cancelled', 'canceled'])
-                                ->whereNull('se.deleted_at');
-                        });
-                });
-            })
-            ->orderBy('ps.id', 'asc')
-            ->pluck('ps.id')
-            ->toArray();
+            });
 
-        if (empty($subscriptionIds)) {
-            $hasAnyActive = DB::table('player_subscriptions')
-                ->where('member_id', $memberId)
-                ->where('status', 'active')
-                ->whereNull('deleted_at')
-                ->exists();
-
-            if ($hasAnyActive) {
-                throw new Exception(__('لا توجد جلسات مجدولة لهذا المشترك اليوم.'));
-            }
-
-            throw new Exception(__('لا توجد اشتراكات نشطة لهذا المشترك. تم رفض الدخول (قد يكون الاشتراك منتهياً أو مجمداً).'));
+        if (!(clone $validDateQuery)->exists()) {
+            throw new Exception(__('لا توجد اشتراكات نشطة وصالحة لهذا المشترك اليوم (قد يكون الاشتراك منتهياً أو مجمداً أو لم يبدأ بعد).'));
         }
 
-        // Deduct a session from each active subscription in a single transaction
-        return $this->deductMultipleSessions($attendanceId, $subscriptionIds);
+        // 3. Check if any valid subscription has a scheduled session today (or is an open plan without templates)
+        $validSessionQuery = (clone $validDateQuery)->where(function ($sessionQ) use ($dayOfWeek, $targetDate) {
+            // Case 1: Plan has NO session templates defined (open gym / equipment / daily entry)
+            $sessionQ->whereNotExists(function ($noTmplQ) {
+                $noTmplQ->select(DB::raw(1))
+                    ->from('sport_session_templates as sst_all')
+                    ->whereColumn('sst_all.plan_id', 'ps.plan_id')
+                    ->where('sst_all.is_active', true)
+                    ->whereNull('sst_all.deleted_at');
+            })
+            // Case 2: Plan HAS session templates, and has at least one active template for today's day_of_week and not cancelled
+            ->orWhereExists(function ($hasTmplQ) use ($dayOfWeek, $targetDate) {
+                $hasTmplQ->select(DB::raw(1))
+                    ->from('sport_session_templates as sst_today')
+                    ->whereColumn('sst_today.plan_id', 'ps.plan_id')
+                    ->where('sst_today.is_active', true)
+                    ->where('sst_today.day_of_week', $dayOfWeek)
+                    ->whereNull('sst_today.deleted_at')
+                    ->whereNotExists(function ($excQ) use ($targetDate) {
+                        $excQ->select(DB::raw(1))
+                            ->from('session_exceptions as se')
+                            ->whereColumn('se.sport_session_template_id', 'sst_today.id')
+                            ->whereDate('se.date', $targetDate)
+                            ->whereIn('se.status', ['cancelled', 'canceled'])
+                            ->whereNull('se.deleted_at');
+                    });
+            });
+        });
+
+        $candidateSubIds = (clone $validSessionQuery)->orderBy('ps.id', 'asc')->pluck('ps.id')->toArray();
+
+        if (empty($candidateSubIds)) {
+            throw new Exception(__('لا توجد جلسات مجدولة لهذا المشترك اليوم.'));
+        }
+
+        // 4. Filter by remaining sessions
+        $availableSubIds = [];
+        foreach ($candidateSubIds as $subId) {
+            $items = DB::table('player_subscription_items')
+                ->where('player_subscription_id', $subId)
+                ->whereNull('deleted_at')
+                ->get();
+
+            if ($items->isEmpty()) {
+                $availableSubIds[] = $subId;
+                continue;
+            }
+
+            $hasRemaining = $items->contains(function ($item) {
+                return !empty($item->is_unlimited) || ($item->sessions_allocated > $item->sessions_consumed);
+            });
+
+            if ($hasRemaining) {
+                $availableSubIds[] = $subId;
+            }
+        }
+
+        if (empty($availableSubIds)) {
+            throw new Exception(__('لا توجد جلسات مجدولة أو متبقية لهذا المشترك اليوم.'));
+        }
+
+        return $availableSubIds;
     }
 
     /**

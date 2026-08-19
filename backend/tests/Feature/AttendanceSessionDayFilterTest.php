@@ -346,4 +346,111 @@ class AttendanceSessionDayFilterTest extends TestCase
         $response = $this->getJson("/api/v1/reception/members/{$this->member->id}/subscriptions?date=2026-08-16");
         $response->assertStatus(404);
     }
+
+    public function test_member_checkin_fails_when_member_has_no_active_subscriptions(): void
+    {
+        // Member has no subscriptions at all
+        $response = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'branch_id'       => $this->branch->id,
+            'check_in_at'     => '2026-08-16 10:00:00',
+        ]);
+
+        $response->assertStatus(400);
+        $this->assertStringContainsString('لا توجد اشتراكات نشطة لهذا المشترك', $response->json('message'));
+        $this->assertDatabaseMissing('attendances', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+        ]);
+    }
+
+    public function test_member_checkin_fails_when_member_has_no_session_today(): void
+    {
+        // Plan has session only on Sunday (day 0)
+        $sundayPlan = $this->createPlanWithActivity('Sunday Football Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $sundayPlan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '10:00',
+            'end_time' => '11:30',
+            'is_active' => true,
+        ]);
+
+        $this->createPlayerSubscription($sundayPlan, '2026-08-01', '2026-08-31', 12, 0, false);
+
+        // Attempt check-in on Tuesday 2026-08-18 (dayOfWeek = 2)
+        $response = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'branch_id'       => $this->branch->id,
+            'check_in_at'     => '2026-08-18 10:00:00',
+        ]);
+
+        $response->assertStatus(400);
+        $this->assertStringContainsString('لا توجد جلسات مجدولة لهذا المشترك اليوم', $response->json('message'));
+        $this->assertDatabaseMissing('attendances', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+        ]);
+    }
+
+    public function test_member_checkin_fails_when_all_sessions_are_consumed(): void
+    {
+        $sundayPlan = $this->createPlanWithActivity('Sunday Swimming Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $sundayPlan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '12:00',
+            'end_time' => '13:30',
+            'is_active' => true,
+        ]);
+
+        // Allocated 10, consumed 10 (0 remaining)
+        $this->createPlayerSubscription($sundayPlan, '2026-08-01', '2026-08-31', 10, 10, false);
+
+        // Attempt check-in on Sunday 2026-08-16
+        $response = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'branch_id'       => $this->branch->id,
+            'check_in_at'     => '2026-08-16 12:00:00',
+        ]);
+
+        $response->assertStatus(400);
+        $this->assertStringContainsString('لا توجد جلسات مجدولة أو متبقية لهذا المشترك اليوم', $response->json('message'));
+        $this->assertDatabaseMissing('attendances', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+        ]);
+    }
+
+    public function test_member_checkin_succeeds_when_member_has_valid_session_today(): void
+    {
+        $sundayPlan = $this->createPlanWithActivity('Sunday Karate Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $sundayPlan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '15:00',
+            'end_time' => '16:30',
+            'is_active' => true,
+        ]);
+
+        $sub = $this->createPlayerSubscription($sundayPlan, '2026-08-01', '2026-08-31', 12, 2, false);
+
+        // Check-in on Sunday 2026-08-16
+        $response = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'branch_id'       => $this->branch->id,
+            'check_in_at'     => '2026-08-16 15:00:00',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('attendances', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'status'          => 'checked_in',
+        ]);
+    }
 }

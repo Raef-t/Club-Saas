@@ -40,9 +40,19 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 throw new Exception(__('Member is already checked in.'));
             }
 
-            // ── 2. Create Attendance record ─────────────────────
             $checkInTimestamp = $checkInAt ? Carbon::parse($checkInAt) : now();
+            $checkInDate = $checkInTimestamp->toDateString();
 
+            /** @var \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService */
+            $sessionDeductionService = app(\Modules\AttendanceManager\Services\SessionDeductionService::class);
+
+            // ── 2. Validate member subscription & session availability ───────────────
+            if (empty($subscriptionIds)) {
+                // If no specific subscription IDs are given, verify the member has at least one valid subscription with sessions today
+                $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate($entityId, $checkInDate);
+            }
+
+            // ── 3. Create Attendance record ─────────────────────
             $attendance = Attendance::create([
                 'attendable_type'      => 'member',
                 'attendable_id'        => $entityId,
@@ -55,10 +65,9 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
 
             event(new MemberCheckedIn($attendance));
 
-            // ── 3. Deduct sessions if subscriptions were selected ────────────────────
+            // ── 4. Deduct sessions if subscriptions were selected ────────────────────
             if (!empty($subscriptionIds)) {
-                app(\Modules\AttendanceManager\Services\SessionDeductionService::class)
-                    ->deductMultipleSessions($attendance->id, $subscriptionIds);
+                $sessionDeductionService->deductMultipleSessions($attendance->id, $subscriptionIds);
                 $attendance = $attendance->fresh();
             }
 

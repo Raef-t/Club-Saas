@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Modules\ClubManager\Models\Club;
 use Modules\ClubManager\Models\Branch;
@@ -15,7 +15,7 @@ use Laravel\Sanctum\Sanctum;
 
 class AttendanceLockerHistoryTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected $user;
     protected $branch;
@@ -26,16 +26,6 @@ class AttendanceLockerHistoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        config([
-            'database.default' => 'mysql',
-            'database.connections.mysql.database' => 'club_db',
-            'database.connections.mysql.host' => '127.0.0.1',
-            'database.connections.mysql.username' => 'root',
-            'database.connections.mysql.password' => '',
-        ]);
-        \Illuminate\Support\Facades\DB::purge('mysql');
-        \Illuminate\Support\Facades\DB::reconnect('mysql');
 
         $person = Person::create([
             'full_name' => 'Admin Test User',
@@ -90,6 +80,32 @@ class AttendanceLockerHistoryTest extends TestCase
             'branch_id' => $this->branch->id,
             'locker_number' => '10',
             'status' => 'available',
+        ]);
+
+        $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'Open Gym Plan',
+            'session_count' => 100,
+            'base_price' => 100,
+            'status' => 'active',
+        ]);
+
+        $sub = \Modules\SubscriptionManager\Models\PlayerSubscription::create([
+            'member_id' => $this->member->id,
+            'plan_id' => $plan->id,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'active',
+            'total_amount' => 100,
+            'paid_amount' => 100,
+            'remaining_amount' => 0,
+        ]);
+
+        \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::create([
+            'player_subscription_id' => $sub->id,
+            'sessions_allocated' => 100,
+            'sessions_consumed' => 0,
+            'is_unlimited' => true,
         ]);
     }
 
