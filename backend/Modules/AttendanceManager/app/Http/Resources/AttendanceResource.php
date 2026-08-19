@@ -30,6 +30,7 @@ class AttendanceResource extends JsonResource
             'duration_minutes'   => $this->duration_minutes ?? null,
             'duration_formatted' => $this->formatted_duration,
             'status'           => $this->status,
+            'notes'            => $this->notes,
             'consumptions'     => $this->consumptions ? $this->consumptions->map(function ($consumption) {
                 return [
                     'id'                     => $consumption->id,

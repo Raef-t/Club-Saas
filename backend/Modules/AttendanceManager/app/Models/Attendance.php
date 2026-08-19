@@ -19,6 +19,7 @@ class Attendance extends Model
         // Staff member (receptionist) who registered this attendance
         'recorded_by_staff_id',
         'locker_id',
+        'notes',
         'check_in_at',
         'check_out_at',
         'duration_minutes',

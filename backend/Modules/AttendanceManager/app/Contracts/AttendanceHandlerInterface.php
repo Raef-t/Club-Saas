@@ -15,9 +15,10 @@ interface AttendanceHandlerInterface
      * @param  string|null $checkInAt
      * @param  array|null  $subscriptionIds
      * @param  int|null    $lockerId
+     * @param  string|null $notes
      * @return Attendance
      */
-    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null, ?int $lockerId = null): Attendance;
+    public function checkIn(int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null, ?int $lockerId = null, ?string $notes = null): Attendance;
 
     /**
      * Record a check-out for the given attendance record.

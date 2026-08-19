@@ -179,14 +179,15 @@ class SessionDeductionService
     /**
      * Deducts a session from the specified subscription for the given attendance record.
      * 
-     * @param int $attendanceId
-     * @param int $subscriptionId
+     * @param int         $attendanceId
+     * @param int         $subscriptionId
+     * @param string|null $reason
      * @return Attendance
      * @throws Exception
      */
-    public function deductSession(int $attendanceId, int $subscriptionId): Attendance
+    public function deductSession(int $attendanceId, int $subscriptionId, ?string $reason = null): Attendance
     {
-        return DB::transaction(function () use ($attendanceId, $subscriptionId) {
+        return DB::transaction(function () use ($attendanceId, $subscriptionId, $reason) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
 
             $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
@@ -208,8 +209,9 @@ class SessionDeductionService
                 throw new Exception(__('The selected subscription is not active or does not belong to this member.'));
             }
 
-            $attendanceDate = $attendance->check_in_at ? \Carbon\Carbon::parse($attendance->check_in_at)->toDateString() : now()->toDateString();
-            $this->validateSubscriptionAvailability($subscription, $attendanceDate);
+            $attendanceTimestamp = $attendance->check_in_at ?: now();
+            $effectiveReason = $reason ?? $attendance->notes;
+            $this->validateSubscriptionAvailability($subscription, $attendanceTimestamp, $effectiveReason);
 
             $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
             $this->validateDebt($subscription, $branch ? $branch->club_id : 1);
@@ -233,6 +235,10 @@ class SessionDeductionService
                 'subscription_plan_id' => $subscription->plan_id,
             ]);
 
+            if (!empty($reason) && $attendance->notes !== $reason) {
+                $attendance->update(['notes' => $reason]);
+            }
+
             $attendance = $attendance->fresh();
 
             $this->sendNotification($attendance, $planName, $deductedItem);
@@ -245,14 +251,15 @@ class SessionDeductionService
      * Deducts a session from each of the specified subscriptions for the given attendance record.
      * All deductions are performed inside a single transaction; any failure rolls back everything.
      *
-     * @param int   $attendanceId
-     * @param int[] $subscriptionIds
+     * @param int         $attendanceId
+     * @param int[]       $subscriptionIds
+     * @param string|null $reason
      * @return Attendance
      * @throws Exception
      */
-    public function deductMultipleSessions(int $attendanceId, array $subscriptionIds): Attendance
+    public function deductMultipleSessions(int $attendanceId, array $subscriptionIds, ?string $reason = null): Attendance
     {
-        return DB::transaction(function () use ($attendanceId, $subscriptionIds) {
+        return DB::transaction(function () use ($attendanceId, $subscriptionIds, $reason) {
             $attendance = Attendance::where('attendable_type', 'member')->findOrFail($attendanceId);
             $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
             $clubId = $branch ? $branch->club_id : 1;
@@ -260,7 +267,8 @@ class SessionDeductionService
             // Auto-add the general (عام) subscription when deducting from a private (خاص) subscription
             $subscriptionIds = $this->enrichWithGeneralSubscription($attendance->attendable_id, $subscriptionIds);
 
-            $attendanceDate = $attendance->check_in_at ? \Carbon\Carbon::parse($attendance->check_in_at)->toDateString() : now()->toDateString();
+            $attendanceTimestamp = $attendance->check_in_at ?: now();
+            $effectiveReason = $reason ?? $attendance->notes;
 
             foreach ($subscriptionIds as $subscriptionId) {
                 $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
@@ -282,7 +290,7 @@ class SessionDeductionService
                     throw new Exception(__('The selected subscription (ID: :id) is not active or does not belong to this member.', ['id' => $subscriptionId]));
                 }
 
-                $this->validateSubscriptionAvailability($subscription, $attendanceDate);
+                $this->validateSubscriptionAvailability($subscription, $attendanceTimestamp, $effectiveReason);
 
                 $this->validateDebt($subscription, $clubId);
 
@@ -307,6 +315,10 @@ class SessionDeductionService
                 $this->sendNotification($attendance, $planName, $deductedItem);
             }
 
+            if (!empty($reason) && $attendance->notes !== $reason) {
+                $attendance->update(['notes' => $reason]);
+            }
+
             return $attendance->fresh();
         });
     }
@@ -314,12 +326,16 @@ class SessionDeductionService
     /**
      * Validate that the subscription is valid, has started, is not expired, not frozen,
      * not suspended, and has a scheduled session today (or is an open plan).
+     * If off schedule, ensures an override reason is provided.
      */
-    private function validateSubscriptionAvailability($subscription, string $attendanceDate): void
+    private function validateSubscriptionAvailability($subscription, $attendanceTimestamp, ?string $reason = null): void
     {
-        $checkDate = \Carbon\Carbon::parse($attendanceDate)->startOfDay();
-        $dateString = $checkDate->toDateString();
-        $dayOfWeek = (int) $checkDate->dayOfWeek;
+        $checkCarbon = $attendanceTimestamp instanceof \Carbon\Carbon
+            ? $attendanceTimestamp
+            : \Carbon\Carbon::parse($attendanceTimestamp);
+
+        $dateString = $checkCarbon->toDateString();
+        $dayOfWeek = (int) $checkCarbon->dayOfWeek;
 
         // 1. Check if subscription has not started yet
         if ($subscription->start_date && $dateString < \Carbon\Carbon::parse($subscription->start_date)->toDateString()) {
@@ -368,7 +384,7 @@ class SessionDeductionService
             ->exists();
 
         if ($hasTemplates) {
-            $hasSessionToday = DB::table('sport_session_templates as sst')
+            $todayTemplates = DB::table('sport_session_templates as sst')
                 ->where('sst.plan_id', $subscription->plan_id)
                 ->where('sst.is_active', true)
                 ->where('sst.day_of_week', $dayOfWeek)
@@ -381,10 +397,43 @@ class SessionDeductionService
                         ->whereIn('se.status', ['cancelled', 'canceled'])
                         ->whereNull('se.deleted_at');
                 })
-                ->exists();
+                ->select('sst.id', 'sst.start_time', 'sst.end_time')
+                ->get();
 
-            if (!$hasSessionToday) {
+            if ($todayTemplates->isEmpty()) {
                 throw new Exception(__('لا يمكن تسجيل الحضور: لا توجد جلسة مجدولة لهذا الاشتراك اليوم.'));
+            }
+
+            // Check if attendance check-in time falls within any active template today
+            $checkInTimeStr = $checkCarbon->format('H:i:s');
+            $isOnSchedule = false;
+            $formattedScheduleTimes = [];
+
+            foreach ($todayTemplates as $tmpl) {
+                $startTimeStr = \Carbon\Carbon::parse($tmpl->start_time)->format('H:i:s');
+                $endTimeStr = \Carbon\Carbon::parse($tmpl->end_time)->format('H:i:s');
+
+                $formattedStart = \Carbon\Carbon::parse($tmpl->start_time)->format('h:i A');
+                $formattedEnd = \Carbon\Carbon::parse($tmpl->end_time)->format('h:i A');
+                $formattedScheduleTimes[] = "{$formattedStart} - {$formattedEnd}";
+
+                if ($endTimeStr >= $startTimeStr) {
+                    if ($checkInTimeStr >= $startTimeStr && $checkInTimeStr <= $endTimeStr) {
+                        $isOnSchedule = true;
+                        break;
+                    }
+                } else {
+                    // Cross-midnight session
+                    if ($checkInTimeStr >= $startTimeStr || $checkInTimeStr <= $endTimeStr) {
+                        $isOnSchedule = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$isOnSchedule && empty(trim($reason ?? ''))) {
+                $timesList = implode(', ', $formattedScheduleTimes);
+                throw new Exception(__('لا يمكن تسجيل الحضور: هذا ليس موعد فعاليتك المجدول (الموعد المجدول اليوم: :times). يرجى إدخال سبب تسجيل الحضور في هذا الوقت.', ['times' => $timesList]));
             }
         }
     }

@@ -247,6 +247,40 @@ class ReceptionAttendanceController extends BaseController
                 $sub->today_sessions = $todaySessions;
                 $sub->has_scheduled_sessions = $todaySessions->isNotEmpty();
 
+                // Determine if the subscription has session templates at all across all days
+                $hasAnySessionTemplates = DB::table('sport_session_templates')
+                    ->where('plan_id', $sub->plan_id)
+                    ->where('is_active', true)
+                    ->whereNull('deleted_at')
+                    ->exists();
+
+                // If plan has no session templates at all (open gym / general entrance), it's always on schedule
+                if (!$hasAnySessionTemplates) {
+                    $sub->is_on_schedule = true;
+                    $sub->requires_override_reason = false;
+                } else {
+                    // Check if current time falls within any of today's active templates
+                    $currentTimeStr = now()->format('H:i:s');
+                    $isOnSchedule = false;
+                    foreach ($todaySessions as $sessionTmpl) {
+                        $startTimeStr = \Carbon\Carbon::parse($sessionTmpl->start_time)->format('H:i:s');
+                        $endTimeStr = \Carbon\Carbon::parse($sessionTmpl->end_time)->format('H:i:s');
+                        if ($endTimeStr >= $startTimeStr) {
+                            if ($currentTimeStr >= $startTimeStr && $currentTimeStr <= $endTimeStr) {
+                                $isOnSchedule = true;
+                                break;
+                            }
+                        } else {
+                            if ($currentTimeStr >= $startTimeStr || $currentTimeStr <= $endTimeStr) {
+                                $isOnSchedule = true;
+                                break;
+                            }
+                        }
+                    }
+                    $sub->is_on_schedule = $isOnSchedule;
+                    $sub->requires_override_reason = !$isOnSchedule;
+                }
+
                 // Attach general active lockers
                 $sub->active_lockers = $activeLockers;
 
@@ -298,6 +332,13 @@ class ReceptionAttendanceController extends BaseController
                 example: [5, 7],
                 description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم منها (يمكن إرسال اشتراك واحد أو أكثر)'
             ),
+            new OA\Property(
+                property: 'notes',
+                type: 'string',
+                nullable: true,
+                example: 'اللاعبة غيرت موعدها لظرف خاص',
+                description: 'سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي عند الحضور خارج وقت الجلسة)'
+            ),
         ]
     ))]
     #[OA\Response(response: 200, description: '✅ تم خصم الجلسات بنجاح', content: new OA\JsonContent())]
@@ -307,11 +348,15 @@ class ReceptionAttendanceController extends BaseController
         $request->validate([
             'player_subscription_ids'   => 'required|array|min:1',
             'player_subscription_ids.*' => 'required|integer',
+            'notes'                     => 'nullable|string|max:1000',
+            'reason'                    => 'nullable|string|max:1000',
+            'override_reason'           => 'nullable|string|max:1000',
         ]);
 
         try {
             $subscriptionIds = $request->input('player_subscription_ids');
-            $attendance = $sessionDeductionService->deductMultipleSessions($attendanceId, $subscriptionIds);
+            $reason = $request->input('notes') ?? $request->input('reason') ?? $request->input('override_reason');
+            $attendance = $sessionDeductionService->deductMultipleSessions($attendanceId, $subscriptionIds, $reason);
 
             return $this->successResponse(new AttendanceResource($attendance), __('Sessions deducted successfully.'));
         } catch (Exception $e) {
