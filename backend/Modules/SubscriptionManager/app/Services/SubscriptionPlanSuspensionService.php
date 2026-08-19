@@ -198,7 +198,7 @@ class SubscriptionPlanSuspensionService
                     } else {
                         $reasonText = !empty($data['reason']) ? " بسبب: {$data['reason']}" : "";
                         $title = "⚠️ تعليق فعالية {$plan->name}";
-                        $body  = "عزيزي {$playerName}، نعتذر عن تعليق فعالية \"{$plan->name}\" مع الكوتش {$coachName} من {$start->toDateString()} حتى {$end->toDateString()}{$reasonText}. تم تمديد اشتراكك تلقائياً ليصبح تاريخ النهاية: {$newEndDateString}.";
+                        $body  = "أهلاً بك {$playerName}، نود إعلامك بتعليق فعالية \"{$plan->name}\" مع الكوتش {$coachName} من {$start->toDateString()} حتى {$end->toDateString()}{$reasonText}. تم تمديد اشتراكك تلقائياً ليصبح تاريخ النهاية: {$newEndDateString}.";
                     }
 
                     $notificationsToSend[] = [
