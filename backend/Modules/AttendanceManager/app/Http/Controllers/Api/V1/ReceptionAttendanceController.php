@@ -362,6 +362,19 @@ class ReceptionAttendanceController extends BaseController
     #[OA\Response(response: 400, description: '❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)')]
     public function deductSession(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
+        $rawIds = $request->input('player_subscription_ids') 
+            ?? $request->input('subscription_ids') 
+            ?? $request->input('player_subscription_id') 
+            ?? $request->input('subscription_id');
+
+        if (!is_null($rawIds) && !is_array($rawIds)) {
+            $rawIds = [$rawIds];
+        }
+
+        if (!empty($rawIds)) {
+            $request->merge(['player_subscription_ids' => $rawIds]);
+        }
+
         $request->validate([
             'player_subscription_ids'   => 'required|array|min:1',
             'player_subscription_ids.*' => 'required|integer',
