@@ -74,9 +74,18 @@ class ReceptionAttendanceController extends BaseController
                 ->where('ps.status', 'active')
                 ->whereNull('ps.deleted_at')
                 ->whereNull('sp.deleted_at')
-                ->where('sp.status', '!=', 'inactive')
-                ->whereDate('ps.start_date', '<=', $todayString)
-                ->whereDate('ps.end_date', '>=', $todayString)
+                ->where(function ($planStatusQ) {
+                    $planStatusQ->whereNull('sp.status')
+                                ->orWhere('sp.status', '!=', 'inactive');
+                })
+                ->where(function ($startQ) use ($todayString) {
+                    $startQ->whereNull('ps.start_date')
+                           ->orWhereDate('ps.start_date', '<=', $todayString);
+                })
+                ->where(function ($endQ) use ($todayString) {
+                    $endQ->whereNull('ps.end_date')
+                         ->orWhereDate('ps.end_date', '>=', $todayString);
+                })
                 ->whereNotExists(function ($freezeQ) use ($todayString) {
                     $freezeQ->select(DB::raw(1))
                         ->from('subscription_freezes as sf')
@@ -90,12 +99,16 @@ class ReceptionAttendanceController extends BaseController
                         ->from('subscription_plan_suspensions as sps')
                         ->whereColumn('sps.plan_id', 'ps.plan_id')
                         ->whereNull('sps.deleted_at')
-                        ->where(function ($subQ) use ($todayString) {
-                            $subQ->where('sps.status', 'active')
-                                 ->orWhere(function ($dateQ) use ($todayString) {
-                                     $dateQ->whereDate('sps.suspend_start_date', '<=', $todayString)
-                                           ->whereDate('sps.suspend_end_date', '>=', $todayString);
-                                 });
+                        ->where('sps.status', '!=', 'cancelled')
+                        ->whereDate('sps.suspend_start_date', '<=', $todayString)
+                        ->where(function ($dateQ) use ($todayString) {
+                            $dateQ->where(function ($actualQ) use ($todayString) {
+                                $actualQ->whereNotNull('sps.actual_end_date')
+                                        ->whereDate('sps.actual_end_date', '>=', $todayString);
+                            })->orWhere(function ($endQ) use ($todayString) {
+                                $endQ->whereNull('sps.actual_end_date')
+                                     ->whereDate('sps.suspend_end_date', '>=', $todayString);
+                            });
                         });
                 })
                 ->where(function ($sessionQ) use ($dayOfWeek, $todayString) {
@@ -148,6 +161,10 @@ class ReceptionAttendanceController extends BaseController
                     ->where('ps.status', 'active')
                     ->whereNull('ps.deleted_at')
                     ->whereNull('sp.deleted_at')
+                    ->where(function ($planStatusQ) {
+                        $planStatusQ->whereNull('sp.status')
+                                    ->orWhere('sp.status', '!=', 'inactive');
+                    })
                     ->exists();
 
                 if ($hasAnyActiveSub) {

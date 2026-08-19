@@ -68,7 +68,10 @@ class SessionDeductionService
             ->where('ps.status', 'active')
             ->whereNull('ps.deleted_at')
             ->whereNull('sp.deleted_at')
-            ->where('sp.status', '!=', 'inactive')
+            ->where(function ($planStatusQ) {
+                $planStatusQ->whereNull('sp.status')
+                            ->orWhere('sp.status', '!=', 'inactive');
+            })
             ->exists();
 
         if (!$hasAnyActiveSub) {
@@ -83,9 +86,18 @@ class SessionDeductionService
             ->where('ps.status', 'active')
             ->whereNull('ps.deleted_at')
             ->whereNull('sp.deleted_at')
-            ->where('sp.status', '!=', 'inactive')
-            ->whereDate('ps.start_date', '<=', $targetDate)
-            ->whereDate('ps.end_date', '>=', $targetDate)
+            ->where(function ($planStatusQ) {
+                $planStatusQ->whereNull('sp.status')
+                            ->orWhere('sp.status', '!=', 'inactive');
+            })
+            ->where(function ($startQ) use ($targetDate) {
+                $startQ->whereNull('ps.start_date')
+                       ->orWhereDate('ps.start_date', '<=', $targetDate);
+            })
+            ->where(function ($endQ) use ($targetDate) {
+                $endQ->whereNull('ps.end_date')
+                     ->orWhereDate('ps.end_date', '>=', $targetDate);
+            })
             ->whereNotExists(function ($freezeQ) use ($targetDate) {
                 $freezeQ->select(DB::raw(1))
                     ->from('subscription_freezes as sf')
@@ -99,12 +111,16 @@ class SessionDeductionService
                     ->from('subscription_plan_suspensions as sps')
                     ->whereColumn('sps.plan_id', 'ps.plan_id')
                     ->whereNull('sps.deleted_at')
-                    ->where(function ($subQ) use ($targetDate) {
-                        $subQ->where('sps.status', 'active')
-                             ->orWhere(function ($dateQ) use ($targetDate) {
-                                 $dateQ->whereDate('sps.suspend_start_date', '<=', $targetDate)
-                                       ->whereDate('sps.suspend_end_date', '>=', $targetDate);
-                             });
+                    ->where('sps.status', '!=', 'cancelled')
+                    ->whereDate('sps.suspend_start_date', '<=', $targetDate)
+                    ->where(function ($dateQ) use ($targetDate) {
+                        $dateQ->where(function ($actualQ) use ($targetDate) {
+                            $actualQ->whereNotNull('sps.actual_end_date')
+                                    ->whereDate('sps.actual_end_date', '>=', $targetDate);
+                        })->orWhere(function ($endQ) use ($targetDate) {
+                            $endQ->whereNull('sps.actual_end_date')
+                                 ->whereDate('sps.suspend_end_date', '>=', $targetDate);
+                        });
                     });
             });
 
@@ -363,12 +379,16 @@ class SessionDeductionService
         $isSuspended = DB::table('subscription_plan_suspensions')
             ->where('plan_id', $subscription->plan_id)
             ->whereNull('deleted_at')
-            ->where(function ($subQ) use ($dateString) {
-                $subQ->where('status', 'active')
-                     ->orWhere(function ($dateQ) use ($dateString) {
-                         $dateQ->whereDate('suspend_start_date', '<=', $dateString)
-                               ->whereDate('suspend_end_date', '>=', $dateString);
-                     });
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('suspend_start_date', '<=', $dateString)
+            ->where(function ($dateQ) use ($dateString) {
+                $dateQ->where(function ($actualQ) use ($dateString) {
+                    $actualQ->whereNotNull('actual_end_date')
+                            ->whereDate('actual_end_date', '>=', $dateString);
+                })->orWhere(function ($endQ) use ($dateString) {
+                    $endQ->whereNull('actual_end_date')
+                         ->whereDate('suspend_end_date', '>=', $dateString);
+                });
             })
             ->exists();
 

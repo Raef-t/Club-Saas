@@ -453,4 +453,86 @@ class AttendanceSessionDayFilterTest extends TestCase
             'status'          => 'checked_in',
         ]);
     }
+
+    public function test_subscriptions_with_null_end_date_are_returned_when_having_session_today(): void
+    {
+        $sundayPlan = $this->createPlanWithActivity('Sunday Open-Ended Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $sundayPlan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '10:00',
+            'end_time' => '11:00',
+            'is_active' => true,
+        ]);
+
+        // end_date is null
+        $sub = PlayerSubscription::create([
+            'member_id' => $this->member->id,
+            'plan_id' => $sundayPlan->id,
+            'start_date' => '2026-08-01',
+            'end_date' => null,
+            'status' => 'active',
+            'total_amount' => 100,
+            'paid_amount' => 100,
+            'remaining_amount' => 0,
+        ]);
+        $sub->items()->create([
+            'sessions_allocated' => 12,
+            'sessions_consumed' => 0,
+            'is_unlimited' => false,
+        ]);
+
+        $response = $this->getJson('/api/v1/reception/members/' . $this->member->id . '/subscriptions?date=2026-08-16');
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals($sub->id, $response->json('data.0.player_subscription_id'));
+    }
+
+    public function test_subscriptions_with_past_plan_suspension_are_returned_today(): void
+    {
+        $sundayPlan = $this->createPlanWithActivity('Sunday Plan Past Suspension');
+        SportSessionTemplate::create([
+            'plan_id' => $sundayPlan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '10:00',
+            'end_time' => '11:00',
+            'is_active' => true,
+        ]);
+
+        // Create past suspension with status 'active' but end date in past
+        \Modules\SubscriptionManager\Models\SubscriptionPlanSuspension::create([
+            'plan_id' => $sundayPlan->id,
+            'suspend_start_date' => '2026-08-01',
+            'suspend_end_date' => '2026-08-05',
+            'suspension_days' => 5,
+            'status' => 'active',
+        ]);
+
+        $this->createPlayerSubscription($sundayPlan, '2026-08-01', '2026-08-31', 12, 0, false);
+
+        // On Sunday 2026-08-16 (after suspension ended)
+        $response = $this->getJson('/api/v1/reception/members/' . $this->member->id . '/subscriptions?date=2026-08-16');
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data'));
+    }
+
+    public function test_subscriptions_with_completed_plan_status_are_returned_today(): void
+    {
+        $sundayPlan = $this->createPlanWithActivity('Sunday Completed Plan');
+        $sundayPlan->update(['status' => 'completed']);
+
+        SportSessionTemplate::create([
+            'plan_id' => $sundayPlan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '10:00',
+            'end_time' => '11:00',
+            'is_active' => true,
+        ]);
+
+        $this->createPlayerSubscription($sundayPlan, '2026-08-01', '2026-08-31', 12, 0, false);
+
+        $response = $this->getJson('/api/v1/reception/members/' . $this->member->id . '/subscriptions?date=2026-08-16');
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data'));
+    }
 }
