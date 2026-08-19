@@ -93,8 +93,14 @@ class PlayerSubscription extends Model
     {
         $date = $date ?? now()->toDateString();
         return $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
-            ->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date);
+            ->where(function ($startQ) use ($date) {
+                $startQ->whereNull('start_date')
+                       ->orWhereDate('start_date', '<=', $date);
+            })
+            ->where(function ($endQ) use ($date) {
+                $endQ->whereNull('end_date')
+                     ->orWhereDate('end_date', '>=', $date);
+            });
     }
 
     /**
@@ -124,12 +130,16 @@ class PlayerSubscription extends Model
                 ->from('subscription_plan_suspensions as sps')
                 ->whereColumn('sps.plan_id', 'player_subscriptions.plan_id')
                 ->whereNull('sps.deleted_at')
-                ->where(function ($subQ) use ($date) {
-                    $subQ->where('sps.status', 'active')
-                         ->orWhere(function ($dateQ) use ($date) {
-                             $dateQ->whereDate('sps.suspend_start_date', '<=', $date)
-                                   ->whereDate('sps.suspend_end_date', '>=', $date);
-                         });
+                ->where('sps.status', '!=', 'cancelled')
+                ->whereDate('sps.suspend_start_date', '<=', $date)
+                ->where(function ($dateQ) use ($date) {
+                    $dateQ->where(function ($actualQ) use ($date) {
+                        $actualQ->whereNotNull('sps.actual_end_date')
+                                ->whereDate('sps.actual_end_date', '>=', $date);
+                    })->orWhere(function ($endQ) use ($date) {
+                        $endQ->whereNull('sps.actual_end_date')
+                             ->whereDate('sps.suspend_end_date', '>=', $date);
+                    });
                 });
         });
     }
