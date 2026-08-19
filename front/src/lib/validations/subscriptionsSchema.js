@@ -41,7 +41,7 @@ export const subscriptionEditSchema = z
     months_count: z.coerce.number().int().positive("عدد الأشهر يجب أن يكون واحداً أو أكثر"),
     start_date: z.string().min(1, "تاريخ بداية الاشتراك مطلوب"),
     end_date: z.string().min(1, "تاريخ نهاية الاشتراك مطلوب"),
-    status: z.enum(["active", "expired", "cancelled", "frozen", "pending"], {
+    status: z.enum(["active", "finished", "frozen", "terminated"], {
       message: "حالة الاشتراك غير صالحة",
     }),
     paid_amount: z.coerce.number().nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
