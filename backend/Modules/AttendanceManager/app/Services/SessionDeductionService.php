@@ -103,7 +103,17 @@ class SessionDeductionService
             ->toArray();
 
         if (empty($subscriptionIds)) {
-            throw new Exception(__('No active subscription found. Access denied (Subscription might be frozen or expired).'));
+            $hasAnyActive = DB::table('player_subscriptions')
+                ->where('member_id', $memberId)
+                ->where('status', 'active')
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if ($hasAnyActive) {
+                throw new Exception(__('لا توجد جلسات مجدولة لهذا المشترك اليوم.'));
+            }
+
+            throw new Exception(__('لا توجد اشتراكات نشطة لهذا المشترك. تم رفض الدخول (قد يكون الاشتراك منتهياً أو مجمداً).'));
         }
 
         // Deduct a session from each active subscription in a single transaction
