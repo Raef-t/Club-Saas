@@ -3040,6 +3040,64 @@
                 ]
             }
         },
+        "/accounting/salary-payments": {
+            "get": {
+                "tags": [
+                    "Accounting - رواتب الكوادر والموظفين"
+                ],
+                "summary": "📋 عرض قائمة مدفوعات الرواتب للكوادر",
+                "description": "يسترجع قائمة بمدفوعات الرواتب المصروفة لكوادر النادي عبر الصناديق المالية مع دعم التصفية حسب الفرع والفترة المالية والبحث.",
+                "operationId": "172f073aef01484c4e0b96b862743613",
+                "responses": {
+                    "200": {
+                        "description": "تم جلب مدفوعات الرواتب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting - رواتب الكوادر والموظفين"
+                ],
+                "summary": "💵 صرف وتسجيل راتب جديد لكادر النادي",
+                "description": "يقوم بصرف راتب لموظف أو مدرب من صندوق محدد وتوليد سند صرف (PV) وقيد محاسبي مزدوج تلقائياً.",
+                "operationId": "f91a290e6faa5d6fa2cc6380574203d3",
+                "responses": {
+                    "201": {
+                        "description": "تم تسجيل وصرف الراتب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/accounting/salary-payments/{id}": {
+            "delete": {
+                "tags": [
+                    "Accounting - رواتب الكوادر والموظفين"
+                ],
+                "summary": "🗑️ إلغاء دفعة راتب وسند الصرف المرتبط بها",
+                "description": "يلغي حركة صرف الراتب ويقوم بإلغاء سند الصرف المحاسبي المولد تلقائياً.",
+                "operationId": "f9f32e62b460d08c12a4d81f25d1a101",
+                "responses": {
+                    "200": {
+                        "description": "تم إلغاء دفعة الراتب بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/attendance-manager/dashboard-stats": {
             "get": {
                 "tags": [
@@ -3470,6 +3528,12 @@
                                             5,
                                             7
                                         ]
+                                    },
+                                    "notes": {
+                                        "description": "سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي عند الحضور خارج وقت الجلسة)",
+                                        "type": "string",
+                                        "example": "اللاعبة غيرت موعدها لظرف خاص",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -25130,6 +25194,96 @@
     },
     "components": {
         "schemas": {
+            "AccSalaryPaymentResource": {
+                "title": "مورد تفاصيل صرف راتب الكادر",
+                "description": "يمثل كائن إرجاع تفاصيل سند صرف راتب لموظف أو مدرب بالنادي الرياضي.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "staff": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "first_name": {
+                                "type": "string",
+                                "example": "أحمد"
+                            },
+                            "last_name": {
+                                "type": "string",
+                                "example": "المحمد"
+                            },
+                            "role": {
+                                "type": "string",
+                                "example": "coach"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "safe": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "صندوق الاستقبال الرئيسي"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "period": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "شهر حزيران 2026"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 500
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-07-01"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "راتب شهر حزيران",
+                        "nullable": true
+                    },
+                    "journal_id": {
+                        "type": "integer",
+                        "example": 12,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-07-01T10:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
             "AccAccount": {
                 "title": "حساب شجرة الحسابات (دليل الحسابات)",
                 "description": "يمثل حساباً مالياً فريداً ضمن شجرة الحسابات (الأصول، الخصوم، حقوق الملكية، الإيرادات، المصروفات). يمكن أن يكون حساباً رئيسياً (مجمعاً) أو فرعياً (يقبل الحركات المالية والقيود).",
@@ -25754,6 +25908,74 @@
                         "type": "string",
                         "format": "date-time",
                         "example": "2026-06-30T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AccSalaryPayment": {
+                "title": "سند صرف راتب للموظف / الكادر",
+                "description": "يمثل حركة صرف راتب أو مكافأة لأحد كوادر أو موظفي النادي الرياضي عبر صندوق محدد وقيد محاسبي مزدوج.",
+                "properties": {
+                    "id": {
+                        "description": "المعرف الفريد لحركة صرف الراتب",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "staff_id": {
+                        "description": "معرف الموظف/الكادر في النادي",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "safe_id": {
+                        "description": "معرف الصندوق المالي الذي تم الصرف منه",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "period_id": {
+                        "description": "معرف الفترة المالية والمحاسبية",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "amount": {
+                        "description": "مبلغ الراتب المصروف",
+                        "type": "number",
+                        "format": "float",
+                        "example": 500
+                    },
+                    "currency": {
+                        "description": "العملة (USD أو SYP)",
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "date": {
+                        "description": "تاريخ صرف الراتب",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-07-01"
+                    },
+                    "notes": {
+                        "description": "ملاحظات إضافية حول الراتب أو الدفعة",
+                        "type": "string",
+                        "example": "راتب شهر حزيران",
+                        "nullable": true
+                    },
+                    "journal_id": {
+                        "description": "معرف السند المحاسبي المولد تلقائياً",
+                        "type": "integer",
+                        "example": 12,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "تاريخ الإنشاء",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-07-01T10:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "تاريخ التحديث",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-07-01T10:00:00Z"
                     }
                 },
                 "type": "object"
@@ -26691,6 +26913,10 @@
         {
             "name": "Accounting - الصناديق والعهد المالية",
             "description": "Accounting - الصناديق والعهد المالية"
+        },
+        {
+            "name": "Accounting - رواتب الكوادر والموظفين",
+            "description": "Accounting - رواتب الكوادر والموظفين"
         },
         {
             "name": "Reports",

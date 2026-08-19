@@ -8,7 +8,6 @@ import {
   FileUpIcon,
   FolderPlusIcon,
   HandCoinsIcon,
-  LogoMark,
 } from "@/components/icons/Icons";
 import Image from "next/image";
 
@@ -30,22 +29,24 @@ const quickActions = [
   },
   {
     label: "إضافة قيد",
-    href: "/accounting/cashbox/create",
+    href: "/accounting/journals",
     icon: FolderPlusIcon,
   },
 ];
 
 const navItems = [
   { title: "لوحة التحكم", href: "/accounting" },
-  { title: "الصندوق", href: "/accounting/cashbox" },
+  { title: "الصناديق والخزائن", href: "/accounting/safes" },
+  { title: "دليل الحسابات", href: "/accounting/accounts" },
+  { title: "سندات القيود", href: "/accounting/journals" },
   { title: "الإيرادات", href: "/accounting/revenues" },
   { title: "المصاريف", href: "/accounting/expenses" },
   { title: "اشتراكات الأعضاء", href: "/accounting/subscriptions" },
-  { title: "رواتب المدربين", href: "/accounting/salaries/trainers" },
-  { title: "رواتب الموظفين", href: "/accounting/salaries/employees" },
-  { title: "الذمم المدينة", href: "/accounting/receivables" },
-  { title: "الذمم الدائنة", href: "/accounting/debts" },
-  { title: "إدارة الفروع", href: "/reports" },
+  { title: "الرواتب والأجور", href: "/accounting/salaries" },
+  { title: "الشركاء والأرباح", href: "/accounting/partners" },
+  { title: "الجهات والأطراف", href: "/accounting/counterparties" },
+  { title: "الفترات المحاسبية", href: "/accounting/periods" },
+  { title: "التقارير المالية", href: "/accounting/reports" },
 ];
 
 function isActive(pathname, href) {
@@ -97,8 +98,8 @@ export default function AccountingSidebar({ className }) {
         {navItems.map((item) => {
           const active =
             isActive(pathname, item.href) ||
-            (pathname.includes("/cashbox/") &&
-              item.href === "/accounting/cashbox");
+            (pathname.includes("/safes") && item.href === "/accounting/safes") ||
+            (pathname.includes("/cashbox") && item.href === "/accounting/safes");
           const hasSubItems = Boolean(
             (item.children && item.children.length > 0) ||
             (item.subItems && item.subItems.length > 0)
