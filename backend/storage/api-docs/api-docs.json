@@ -3389,8 +3389,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "📋 اشتراكات اللاعب النشطة (للاستقبال)",
-                "description": "يعرض جميع اشتراكات اللاعب النشطة مع تفاصيل الجلسات المتبقية لكل بند. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب قبل تسجيل الحضور.",
+                "summary": "📋 اشتراكات اللاعب النشطة المتاحة اليوم (للاستقبال)",
+                "description": "يعرض اشتراكات اللاعب النشطة التي تحتوي على جلسات مجدولة لهذا اليوم (أو اشتراكات الدخول العام/المفتوح) مع تفاصيل الجلسات المتبقية وجلسات اليوم، مع استبعاد الاشتراكات غير المبدوءة، المنتهية، المجمدة، الموقوفة، المحذوفة، أو منتهية الرصيد. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب عند تسجيل الحضور.",
                 "operationId": "f1db92d243e3d4c288a81cc1fe3e5231",
                 "parameters": [
                     {
@@ -3399,6 +3399,17 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "تاريخ التحقق من الجلسات (الافتراضي: اليوم بصيغة Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-08-19"
                         }
                     }
                 ],
@@ -3412,7 +3423,7 @@
                         }
                     },
                     "404": {
-                        "description": "❌ لا توجد اشتراكات نشطة"
+                        "description": "❌ لا توجد اشتراكات نشطة لها جلسات اليوم"
                     }
                 },
                 "security": [
@@ -20834,7 +20845,7 @@
                     "Player Subscriptions"
                 ],
                 "summary": "🗑️ حذف اشتراك متدرب (Soft Delete)",
-                "description": "حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.",
+                "description": "حذف اشتراك المتدرب ناعماً. يقبل معامل is_refunded لتحديد ما إذا تمت إعادة سعر الاشتراك للاعب (إذا نعم: يُحذف سجل الكسر المالي subscription_revenue_splits، إذا لا: يبقى السجل المالي محفوظاً).",
                 "operationId": "397414f0216c095ed8c6a7b15c216061",
                 "parameters": [
                     {
@@ -20846,11 +20857,43 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "is_refunded",
+                        "in": "query",
+                        "description": "هل تمت إعادة سعر الاشتراك للاعب؟ (true / false)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "is_refunded": {
+                                        "description": "هل تمت إعادة سعر الاشتراك للاعب؟ (إذا نعم يتم حذف سجل الكسر المالي، إذا لا يبقى محفوظاً)",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "reason": {
+                                        "description": "سبب الحذف (اختياري)",
+                                        "type": "string",
+                                        "example": "طلب اللاعب إلغاء واسترداد المبلغ"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح"
+                        "description": "✅ تم حذف الاشتراك بنجاح"
                     },
                     "404": {
                         "description": "🚫 الاشتراك غير موجود"
@@ -21570,7 +21613,7 @@
                     "Player Subscriptions"
                 ],
                 "summary": "♻️ استرجاع اشتراك محذوف",
-                "description": "استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.",
+                "description": "استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره وسجل كسر الإيرادات إن وُجد تلقائياً.",
                 "operationId": "3705194785ed48deca2ca7dc82401a37",
                 "parameters": [
                     {
@@ -22328,20 +22371,6 @@
                                             "mixed"
                                         ]
                                     },
-                                    "club_commission_percentage": {
-                                        "description": "(اختياري) نسبة النادي (%)",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 20,
-                                        "nullable": true
-                                    },
-                                    "coach_commission_percentage": {
-                                        "description": "(اختياري) نسبة الكوتش (%)",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 80,
-                                        "nullable": true
-                                    },
                                     "status": {
                                         "description": "(اختياري) حالة الخطة: active, inactive, completed",
                                         "type": "string",
@@ -22773,20 +22802,6 @@
                                             "female",
                                             "mixed"
                                         ]
-                                    },
-                                    "club_commission_percentage": {
-                                        "description": "(اختياري) نسبة النادي (%)",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 20,
-                                        "nullable": true
-                                    },
-                                    "coach_commission_percentage": {
-                                        "description": "(اختياري) نسبة الكوتش (%)",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 80,
-                                        "nullable": true
                                     },
                                     "status": {
                                         "description": "(اختياري) حالة الخطة: active, inactive, completed",
@@ -26557,6 +26572,12 @@
                                 "type": "number",
                                 "format": "float",
                                 "example": 15.5
+                            },
+                            "private_commission_rate": {
+                                "description": "نسبة الكوتش من اشتراكات أجهزة خاص (مئوية)",
+                                "type": "number",
+                                "format": "float",
+                                "example": 70
                             }
                         },
                         "type": "object"
