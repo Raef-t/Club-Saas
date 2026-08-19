@@ -27,15 +27,79 @@ class SessionDeductionService
      * @return Attendance
      * @throws Exception
      */
+    /**
+     * Automatically find an active subscription for a member and deduct a session.
+     * Used mainly for Gate entries where there's no receptionist to pick a subscription.
+     *
+     * @param int $attendanceId
+     * @param int $memberId
+     * @return Attendance
+     * @throws Exception
+     */
     public function autoDeductSessionForGate(int $attendanceId, int $memberId): Attendance
     {
-        // Retrieve all active subscriptions for the member
-        $subscriptionIds = DB::table('player_subscriptions')
-            ->where('member_id', $memberId)
-            ->where('status', 'active')
-            ->whereDate('end_date', '>=', now())
-            ->orderBy('id', 'asc')
-            ->pluck('id')
+        $today = now();
+        $todayString = $today->toDateString();
+        $dayOfWeek = (int) $today->dayOfWeek;
+
+        // Retrieve all active subscriptions for the member that have sessions today
+        $subscriptionIds = DB::table('player_subscriptions as ps')
+            ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
+            ->where('ps.member_id', $memberId)
+            ->where('ps.status', 'active')
+            ->whereNull('ps.deleted_at')
+            ->whereNull('sp.deleted_at')
+            ->where('sp.status', '!=', 'inactive')
+            ->whereDate('ps.start_date', '<=', $todayString)
+            ->whereDate('ps.end_date', '>=', $todayString)
+            ->whereNotExists(function ($freezeQ) use ($todayString) {
+                $freezeQ->select(DB::raw(1))
+                    ->from('subscription_freezes as sf')
+                    ->whereColumn('sf.player_subscription_id', 'ps.id')
+                    ->whereNull('sf.deleted_at')
+                    ->whereDate('sf.freeze_start_date', '<=', $todayString)
+                    ->whereDate('sf.freeze_end_date', '>=', $todayString);
+            })
+            ->whereNotExists(function ($suspQ) use ($todayString) {
+                $suspQ->select(DB::raw(1))
+                    ->from('subscription_plan_suspensions as sps')
+                    ->whereColumn('sps.plan_id', 'ps.plan_id')
+                    ->whereNull('sps.deleted_at')
+                    ->where(function ($subQ) use ($todayString) {
+                        $subQ->where('sps.status', 'active')
+                             ->orWhere(function ($dateQ) use ($todayString) {
+                                 $dateQ->whereDate('sps.suspend_start_date', '<=', $todayString)
+                                       ->whereDate('sps.suspend_end_date', '>=', $todayString);
+                             });
+                    });
+            })
+            ->where(function ($sessionQ) use ($dayOfWeek, $todayString) {
+                $sessionQ->whereNotExists(function ($noTmplQ) {
+                    $noTmplQ->select(DB::raw(1))
+                        ->from('sport_session_templates as sst_all')
+                        ->whereColumn('sst_all.plan_id', 'ps.plan_id')
+                        ->where('sst_all.is_active', true)
+                        ->whereNull('sst_all.deleted_at');
+                })
+                ->orWhereExists(function ($hasTmplQ) use ($dayOfWeek, $todayString) {
+                    $hasTmplQ->select(DB::raw(1))
+                        ->from('sport_session_templates as sst_today')
+                        ->whereColumn('sst_today.plan_id', 'ps.plan_id')
+                        ->where('sst_today.is_active', true)
+                        ->where('sst_today.day_of_week', $dayOfWeek)
+                        ->whereNull('sst_today.deleted_at')
+                        ->whereNotExists(function ($excQ) use ($todayString) {
+                            $excQ->select(DB::raw(1))
+                                ->from('session_exceptions as se')
+                                ->whereColumn('se.sport_session_template_id', 'sst_today.id')
+                                ->whereDate('se.date', $todayString)
+                                ->whereIn('se.status', ['cancelled', 'canceled'])
+                                ->whereNull('se.deleted_at');
+                        });
+                });
+            })
+            ->orderBy('ps.id', 'asc')
+            ->pluck('ps.id')
             ->toArray();
 
         if (empty($subscriptionIds)) {
@@ -71,11 +135,15 @@ class SessionDeductionService
                 ->where('id', $subscriptionId)
                 ->where('member_id', $attendance->attendable_id)
                 ->where('status', 'active')
+                ->whereNull('deleted_at')
                 ->first();
 
             if (!$subscription) {
                 throw new Exception(__('The selected subscription is not active or does not belong to this member.'));
             }
+
+            $attendanceDate = $attendance->check_in_at ? \Carbon\Carbon::parse($attendance->check_in_at)->toDateString() : now()->toDateString();
+            $this->validateSubscriptionAvailability($subscription, $attendanceDate);
 
             $branch = DB::table('branches')->where('id', $attendance->branch_id)->first();
             $this->validateDebt($subscription, $branch ? $branch->club_id : 1);
@@ -83,6 +151,7 @@ class SessionDeductionService
             $items = DB::table('player_subscription_items')
                 ->where('player_subscription_id', $subscription->id)
                 ->where('is_unlimited', false)
+                ->whereNull('deleted_at')
                 ->lockForUpdate()
                 ->get();
 
@@ -125,6 +194,8 @@ class SessionDeductionService
             // Auto-add the general (عام) subscription when deducting from a private (خاص) subscription
             $subscriptionIds = $this->enrichWithGeneralSubscription($attendance->attendable_id, $subscriptionIds);
 
+            $attendanceDate = $attendance->check_in_at ? \Carbon\Carbon::parse($attendance->check_in_at)->toDateString() : now()->toDateString();
+
             foreach ($subscriptionIds as $subscriptionId) {
                 $alreadyConsumed = \Modules\AttendanceManager\Models\AttendanceConsumption::where('attendance_id', $attendanceId)
                     ->where('player_subscription_id', $subscriptionId)
@@ -138,17 +209,21 @@ class SessionDeductionService
                     ->where('id', $subscriptionId)
                     ->where('member_id', $attendance->attendable_id)
                     ->where('status', 'active')
+                    ->whereNull('deleted_at')
                     ->first();
 
                 if (!$subscription) {
                     throw new Exception(__('The selected subscription (ID: :id) is not active or does not belong to this member.', ['id' => $subscriptionId]));
                 }
 
+                $this->validateSubscriptionAvailability($subscription, $attendanceDate);
+
                 $this->validateDebt($subscription, $clubId);
 
                 $items = DB::table('player_subscription_items')
                     ->where('player_subscription_id', $subscription->id)
                     ->where('is_unlimited', false)
+                    ->whereNull('deleted_at')
                     ->lockForUpdate()
                     ->get();
 
@@ -168,6 +243,84 @@ class SessionDeductionService
 
             return $attendance->fresh();
         });
+    }
+
+    /**
+     * Validate that the subscription is valid, has started, is not expired, not frozen,
+     * not suspended, and has a scheduled session today (or is an open plan).
+     */
+    private function validateSubscriptionAvailability($subscription, string $attendanceDate): void
+    {
+        $checkDate = \Carbon\Carbon::parse($attendanceDate)->startOfDay();
+        $dateString = $checkDate->toDateString();
+        $dayOfWeek = (int) $checkDate->dayOfWeek;
+
+        // 1. Check if subscription has not started yet
+        if ($subscription->start_date && $dateString < \Carbon\Carbon::parse($subscription->start_date)->toDateString()) {
+            throw new Exception(__('لا يمكن تسجيل الحضور: الاشتراك أو الفعالية لم تبدأ بعد. (تاريخ البدء: :date)', ['date' => $subscription->start_date]));
+        }
+
+        // 2. Check if subscription has expired
+        if ($subscription->end_date && $dateString > \Carbon\Carbon::parse($subscription->end_date)->toDateString()) {
+            throw new Exception(__('لا يمكن تسجيل الحضور: الاشتراك منتهي الصلاحية. (تاريخ الانتهاء: :date)', ['date' => $subscription->end_date]));
+        }
+
+        // 3. Check if subscription is currently frozen
+        $isFrozen = DB::table('subscription_freezes')
+            ->where('player_subscription_id', $subscription->id)
+            ->whereNull('deleted_at')
+            ->whereDate('freeze_start_date', '<=', $dateString)
+            ->whereDate('freeze_end_date', '>=', $dateString)
+            ->exists();
+
+        if ($isFrozen) {
+            throw new Exception(__('لا يمكن تسجيل الحضور: الاشتراك مجمّد حالياً.'));
+        }
+
+        // 4. Check if plan is suspended
+        $isSuspended = DB::table('subscription_plan_suspensions')
+            ->where('plan_id', $subscription->plan_id)
+            ->whereNull('deleted_at')
+            ->where(function ($subQ) use ($dateString) {
+                $subQ->where('status', 'active')
+                     ->orWhere(function ($dateQ) use ($dateString) {
+                         $dateQ->whereDate('suspend_start_date', '<=', $dateString)
+                               ->whereDate('suspend_end_date', '>=', $dateString);
+                     });
+            })
+            ->exists();
+
+        if ($isSuspended) {
+            throw new Exception(__('لا يمكن تسجيل الحضور: الفعالية موقوفة حالياً.'));
+        }
+
+        // 5. Check if plan has session templates and whether today has a valid session
+        $hasTemplates = DB::table('sport_session_templates')
+            ->where('plan_id', $subscription->plan_id)
+            ->where('is_active', true)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if ($hasTemplates) {
+            $hasSessionToday = DB::table('sport_session_templates as sst')
+                ->where('sst.plan_id', $subscription->plan_id)
+                ->where('sst.is_active', true)
+                ->where('sst.day_of_week', $dayOfWeek)
+                ->whereNull('sst.deleted_at')
+                ->whereNotExists(function ($excQ) use ($dateString) {
+                    $excQ->select(DB::raw(1))
+                        ->from('session_exceptions as se')
+                        ->whereColumn('se.sport_session_template_id', 'sst.id')
+                        ->whereDate('se.date', $dateString)
+                        ->whereIn('se.status', ['cancelled', 'canceled'])
+                        ->whereNull('se.deleted_at');
+                })
+                ->exists();
+
+            if (!$hasSessionToday) {
+                throw new Exception(__('لا يمكن تسجيل الحضور: لا توجد جلسة مجدولة لهذا الاشتراك اليوم.'));
+            }
+        }
     }
 
     private function validateDebt($subscription, $clubId): void
