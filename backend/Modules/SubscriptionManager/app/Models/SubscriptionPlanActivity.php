@@ -25,37 +25,6 @@ class SubscriptionPlanActivity extends Model
 
     protected $with = ['staffActivity'];
 
-    protected static function booted()
-    {
-        static::saved(function ($planActivity) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $planActivity->plan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-
-        static::deleted(function ($planActivity) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $planActivity->plan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-
-        static::restored(function ($planActivity) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $planActivity->plan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-
-        static::forceDeleted(function ($planActivity) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $planActivity->plan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-    }
-
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id')->withTrashed();
