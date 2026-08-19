@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\NotificationManager\Models\NotificationTemplate;
 use Modules\NotificationManager\Services\NotificationService;
 use Modules\Sports\Models\SessionException;
 use Modules\Sports\Models\SportSessionTemplate;
@@ -141,6 +142,16 @@ class SubscriptionPlanSuspensionService
 
             $notificationsToSend = [];
 
+            // Resolve notification template for suspension
+            $template = NotificationTemplate::whereIn('system_key', ['subscription_plan_suspension', 'plan_suspension'])
+                ->where('is_active', true)
+                ->first();
+
+            $coachName = $coach?->person?->full_name ?? __('الكوتش');
+            $reason = !empty($data['reason']) ? $data['reason'] : __('اعتذار الكوتش');
+            $startDay = $start->locale('ar')->translatedFormat('l');
+            $endDay   = $end->locale('ar')->translatedFormat('l');
+
             foreach ($subscriptions as $sub) {
                 // Record freeze entry
                 SubscriptionFreeze::create([
@@ -165,13 +176,34 @@ class SubscriptionPlanSuspensionService
                 $person = $sub->member?->person;
                 $userId = $person?->user?->id;
                 if ($person && $userId) {
-                    $newRemainingDays = max(0, (int) $today->diffInDays($newEndDate, false));
-                    $coachName = $coach?->person?->full_name ?? __('الكوتش');
-                    $reasonText = !empty($data['reason']) ? " بسبب: {$data['reason']}" : "";
+                    $playerName = $person->full_name;
+                    $newEndDateString = $newEndDate->toDateString();
+
+                    if ($template) {
+                        $body = $template->parseBody([
+                            'اسم اللاعب'                  => $playerName,
+                            'اسم الفعالية'                => $plan->name,
+                            'اسم الاشتراك'                => $plan->name,
+                            'اسم الكوتش'                  => $coachName,
+                            'تاريخ البداية'               => $start->toDateString(),
+                            'تاريخ النهاية'               => $end->toDateString(),
+                            'يوم البداية'                 => $startDay,
+                            'يوم النهاية'                 => $endDay,
+                            'السبب'                       => $reason,
+                            'تاريخ الانتهاء الجديد'       => $newEndDateString,
+                            'تاريخ انتهاء الاشتراك الجديد' => $newEndDateString,
+                        ]);
+                        $title = $template->subject ?? "⚠️ تعليق فعالية {$plan->name}";
+                        $title = str_replace(['{اسم الفعالية}', '{اسم الاشتراك}'], $plan->name, $title);
+                    } else {
+                        $reasonText = !empty($data['reason']) ? " بسبب: {$data['reason']}" : "";
+                        $title = "⚠️ تعليق فعالية {$plan->name}";
+                        $body  = "عزيزي {$playerName}، نعتذر عن تعليق فعالية \"{$plan->name}\" مع الكوتش {$coachName} من {$start->toDateString()} حتى {$end->toDateString()}{$reasonText}. تم تمديد اشتراكك تلقائياً ليصبح تاريخ النهاية: {$newEndDateString}.";
+                    }
 
                     $notificationsToSend[] = [
-                        'title'           => "⚠️ تعليق فعالية {$plan->name}",
-                        'body'            => "عزيزي {$person->full_name}، نعتذر عن تعليق فعالية \"{$plan->name}\" مع الكوتش {$coachName} من {$start->toDateString()} حتى {$end->toDateString()}{$reasonText}. تم تمديد اشتراكك تلقائياً ليصبح تاريخ النهاية: {$newEndDate->toDateString()} (أيامك المتبقية: {$newRemainingDays} يوم).",
+                        'title'           => $title,
+                        'body'            => $body,
                         'user_ids'        => [$userId],
                         'sender_type'     => 'system',
                         'target_snapshot' => [
@@ -383,15 +415,32 @@ class SubscriptionPlanSuspensionService
     protected function sendResumptionNotifications(SubscriptionPlanSuspension $suspension, string $message): void
     {
         $plan = $suspension->plan;
+        $template = NotificationTemplate::whereIn('system_key', ['subscription_plan_resumption', 'plan_resumption'])
+            ->where('is_active', true)
+            ->first();
+
         foreach ($suspension->freezes as $freeze) {
             $sub = $freeze->subscription;
             $person = $sub?->member?->person;
             $userId = $person?->user?->id;
             if ($person && $userId) {
+                if ($template && empty($message)) {
+                    $body = $template->parseBody([
+                        'اسم اللاعب'   => $person->full_name,
+                        'اسم الفعالية' => $plan?->name ?? '',
+                        'اسم الاشتراك' => $plan?->name ?? '',
+                    ]);
+                    $title = $template->subject ?? "🟢 استئناف فعالية {$plan?->name}";
+                    $title = str_replace(['{اسم الفعالية}', '{اسم الاشتراك}'], $plan?->name ?? '', $title);
+                } else {
+                    $title = $template?->subject ? str_replace(['{اسم الفعالية}', '{اسم الاشتراك}'], $plan?->name ?? '', $template->subject) : "🟢 استئناف فعالية {$plan?->name}";
+                    $body  = $message;
+                }
+
                 try {
                     $this->notificationService->createNotification([
-                        'title'           => "🟢 استئناف فعالية {$plan?->name}",
-                        'body'            => $message,
+                        'title'           => $title,
+                        'body'            => $body,
                         'user_ids'        => [$userId],
                         'sender_type'     => 'system',
                         'target_snapshot' => [
@@ -408,3 +457,4 @@ class SubscriptionPlanSuspensionService
         }
     }
 }
+
