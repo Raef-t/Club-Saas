@@ -145,7 +145,7 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
             $date = $now->format('Y-m-d');
             $dayName = $now->locale('ar')->translatedFormat('l');
             $time = $now->locale('ar')->translatedFormat('h:i A');
-            $duration = $attendance->duration_minutes;
+            $duration = $attendance->formatted_duration ?? '0 دقيقة';
 
             $planName = 'اشتراك غير محدد';
             
@@ -175,7 +175,7 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 $title = $template->subject ?? 'تسجيل خروج ناجح';
             } else {
                 $title = 'تسجيل خروج ناجح';
-                $body = "عزيزي {$playerName}، نتمنى أن تكون قد حظيت بتمرين رائع! تم تسجيل خروجك بنجاح بتاريخ {$date} الموافق ليوم {$dayName} الساعة {$time}. لقد استمر تدريبك لمدة {$duration} دقيقة ضمن اشتراكك الحالي: {$planName}. نشكر التزامك ونتطلع لرؤيتك قريباً.";
+                $body = "عزيزي {$playerName}، نتمنى أن تكون قد حظيت بتمرين رائع! تم تسجيل خروجك بنجاح بتاريخ {$date} الموافق ليوم {$dayName} الساعة {$time}. لقد استمر تدريبك لمدة {$duration} ضمن اشتراكك الحالي: {$planName}. نشكر التزامك ونتطلع لرؤيتك قريباً.";
             }
 
             app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
