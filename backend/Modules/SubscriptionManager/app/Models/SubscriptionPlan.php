@@ -39,6 +39,12 @@ class SubscriptionPlan extends Model
             }
         });
 
+        static::saved(function ($plan) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($plan->branch_id);
+            }
+        });
+
         static::deleted(function ($plan) {
             if ($plan->isForceDeleting()) {
                 return;
@@ -53,6 +59,10 @@ class SubscriptionPlan extends Model
             \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $plan->id)->get()->each(function ($subscription) {
                 $subscription->delete();
             });
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($plan->branch_id);
+            }
         });
 
         static::restored(function ($plan) {
@@ -65,6 +75,16 @@ class SubscriptionPlan extends Model
             \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->where('plan_id', $plan->id)->get()->each(function ($subscription) {
                 $subscription->restore();
             });
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($plan->branch_id);
+            }
+        });
+
+        static::forceDeleted(function ($plan) {
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($plan->branch_id);
+            }
         });
     }
 
