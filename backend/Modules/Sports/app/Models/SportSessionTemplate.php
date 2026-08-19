@@ -30,36 +30,8 @@ class SportSessionTemplate extends Model
 
     protected static function booted()
     {
-        static::saved(function ($template) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $template->facility?->branch_id ?? $template->subscriptionPlan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-
         static::deleted(function ($template) {
             $template->exceptions()->delete();
-
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $template->facility?->branch_id ?? $template->subscriptionPlan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-
-        static::restored(function ($template) {
-            $template->exceptions()->onlyTrashed()->restore();
-
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $template->facility?->branch_id ?? $template->subscriptionPlan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
-        });
-
-        static::forceDeleted(function ($template) {
-            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
-                $branchId = $template->facility?->branch_id ?? $template->subscriptionPlan?->branch_id;
-                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
-            }
         });
     }
 
