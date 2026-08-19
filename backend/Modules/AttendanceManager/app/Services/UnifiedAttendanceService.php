@@ -39,12 +39,13 @@ class UnifiedAttendanceService
      * @param  string|null $checkInAt
      * @param  array|null  $subscriptionIds
      * @param  int|null    $lockerId
+     * @param  string|null $notes
      * @return Attendance
      * @throws Exception
      */
-    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null, ?int $lockerId = null): Attendance
+    public function checkIn(string $type, int $entityId, int $branchId, ?string $checkInAt = null, ?array $subscriptionIds = null, ?int $lockerId = null, ?string $notes = null): Attendance
     {
-        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt, $subscriptionIds, $lockerId);
+        return $this->resolveHandler($type)->checkIn($entityId, $branchId, $checkInAt, $subscriptionIds, $lockerId, $notes);
     }
 
     /**

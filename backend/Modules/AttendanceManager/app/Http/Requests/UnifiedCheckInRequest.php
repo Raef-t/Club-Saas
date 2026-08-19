@@ -22,6 +22,9 @@ class UnifiedCheckInRequest extends FormRequest
             'check_in_at'               => ['nullable', 'date'],
             'player_subscription_ids'   => ['nullable', 'array'],
             'player_subscription_ids.*' => ['integer'],
+            'notes'                     => ['nullable', 'string', 'max:1000'],
+            'reason'                    => ['nullable', 'string', 'max:1000'],
+            'override_reason'           => ['nullable', 'string', 'max:1000'],
         ];
     }
 }
