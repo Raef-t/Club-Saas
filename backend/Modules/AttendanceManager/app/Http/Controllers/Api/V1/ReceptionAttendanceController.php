@@ -142,7 +142,19 @@ class ReceptionAttendanceController extends BaseController
                 ->get();
 
             if ($subscriptions->isEmpty()) {
-                return $this->errorResponse(__('No active subscriptions found for this member.'), 404);
+                $hasAnyActiveSub = DB::table('player_subscriptions as ps')
+                    ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
+                    ->where('ps.member_id', $memberId)
+                    ->where('ps.status', 'active')
+                    ->whereNull('ps.deleted_at')
+                    ->whereNull('sp.deleted_at')
+                    ->exists();
+
+                if ($hasAnyActiveSub) {
+                    return $this->errorResponse(__('لا توجد جلسات مجدولة لهذا المشترك اليوم.'), 404);
+                }
+
+                return $this->errorResponse(__('لا توجد اشتراكات نشطة لهذا المشترك.'), 404);
             }
 
             // Attach items (session breakdown per activity) and today's sessions for each subscription
@@ -255,7 +267,7 @@ class ReceptionAttendanceController extends BaseController
             })->values();
 
             if ($filteredSubscriptions->isEmpty()) {
-                return $this->errorResponse(__('No active subscriptions found for this member.'), 404);
+                return $this->errorResponse(__('لا توجد جلسات مجدولة أو متبقية لهذا المشترك اليوم.'), 404);
             }
 
             return $this->successResponse($filteredSubscriptions, __('Subscriptions retrieved successfully'));
