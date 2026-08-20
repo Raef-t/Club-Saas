@@ -5,9 +5,9 @@ import DatePickerSmart from "./DatePickerSmart";
 export function Field({
   label,
   required = true,
-  placeholder = "اختر الفئة",
+  placeholder = "",
   value,
-  type = "select",
+  type = "text",
   className = "",
   variant = "default",
   icon: Icon,

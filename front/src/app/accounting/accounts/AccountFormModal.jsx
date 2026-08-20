@@ -7,6 +7,58 @@ import { Field, TextAreaField } from "@/components/forms/FormControls";
 import { ChevronDownIcon } from "@/components/icons/Icons";
 import { ACCOUNT_TYPES, CURRENCY_OPTIONS } from "./useAccounts";
 
+function getNextAccountCode(parentId, allAccounts) {
+  const pId = parentId ? Number(parentId) : null;
+  const parentAcc = pId ? allAccounts.find((a) => a.id === pId) : null;
+
+  if (!parentAcc) {
+    // Root accounts (1000, 2000, 3000, 4000, 5000)
+    const rootCodes = allAccounts
+      .filter((a) => !a.parent_id && /^\d+$/.test(String(a.code).trim()))
+      .map((a) => parseInt(String(a.code).trim(), 10))
+      .sort((a, b) => a - b);
+    if (rootCodes.length > 0) {
+      const maxRoot = rootCodes[rootCodes.length - 1];
+      return String(maxRoot >= 1000 ? maxRoot + 1000 : maxRoot + 1);
+    }
+    return "1000";
+  }
+
+  const parentCode = String(parentAcc.code).trim();
+  const parentNum = parseInt(parentCode, 10);
+
+  // Find all direct children of this parent with numeric codes
+  const directChildren = allAccounts.filter(
+    (a) => a.parent_id === parentAcc.id && /^\d+$/.test(String(a.code).trim())
+  );
+
+  if (directChildren.length > 0) {
+    const childCodes = directChildren
+      .map((a) => parseInt(String(a.code).trim(), 10))
+      .sort((a, b) => a - b);
+    const maxCode = childCodes[childCodes.length - 1];
+    return String(maxCode + 1);
+  }
+
+  // Parent has no children yet:
+  if (parentCode.endsWith("000")) {
+    const candidate = parentNum + 100;
+    return allAccounts.some((a) => a.code === String(candidate))
+      ? String(parentNum + 1)
+      : String(candidate);
+  }
+
+  if (parentCode.endsWith("00")) {
+    return String(parentNum + 1);
+  }
+
+  if (parentCode.endsWith("0")) {
+    return String(parentNum + 1);
+  }
+
+  return `${parentCode}01`;
+}
+
 export default function AccountFormModal({
   isOpen,
   onClose,
@@ -83,7 +135,7 @@ export default function AccountFormModal({
   }, [accounts, forbiddenParentIds]);
 
   useEffect(() => {
-    if (account) {
+    if (account?.id) {
       setFormData({
         code: account.code || "",
         name: account.name || "",
@@ -96,19 +148,28 @@ export default function AccountFormModal({
         description: account.description || account.notes || "",
       });
     } else {
+      const initialParentId = account?.parent_id ? String(account.parent_id) : "";
+      const parentAcc = initialParentId ? accounts.find((a) => a.id === Number(initialParentId)) : null;
+      const initialCode = getNextAccountCode(initialParentId, accounts);
+      const initialType = parentAcc ? parentAcc.type : account?.type || "asset";
+      const initialCurrency =
+        parentAcc && parentAcc.currency !== "BOTH"
+          ? parentAcc.currency
+          : account?.currency || "BOTH";
+
       setFormData({
-        code: "",
+        code: initialCode,
         name: "",
         name_en: "",
-        type: "asset",
-        currency: "BOTH",
-        parent_id: "",
+        type: initialType,
+        currency: initialCurrency,
+        parent_id: initialParentId,
         allow_manual_entry: true,
         is_active: true,
         description: "",
       });
     }
-  }, [account, isOpen]);
+  }, [account, accounts, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -126,33 +187,16 @@ export default function AccountFormModal({
     setFormData((prev) => {
       let nextType = prev.type;
       let nextCurrency = prev.currency;
-      let nextCode = prev.code;
 
       if (parentAcc) {
         nextType = parentAcc.type;
         if (parentAcc.currency !== "BOTH") {
           nextCurrency = parentAcc.currency;
         }
-        // Auto-suggest next code for new account creation
-        if (!account?.id) {
-          const siblings = accounts
-            .filter((a) => a.parent_id === parentAcc.id && /^\d+$/.test(a.code))
-            .map((a) => a.code)
-            .sort();
-
-          if (siblings.length > 0) {
-            const maxSibling = siblings[siblings.length - 1];
-            nextCode = String(parseInt(maxSibling, 10) + 1);
-          } else {
-            const parentNum = parseInt(parentAcc.code, 10);
-            if (parentAcc.code.endsWith("00")) {
-              nextCode = String(parentNum + 1);
-            } else {
-              nextCode = `${parentAcc.code}01`;
-            }
-          }
-        }
       }
+
+      // Auto-compute sequential code when creating a new account
+      const nextCode = !account?.id ? getNextAccountCode(parentIdStr, accounts) : prev.code;
 
       return {
         ...prev,
@@ -217,6 +261,7 @@ export default function AccountFormModal({
           </div>
 
           <Field
+            type="text"
             label="رمز الحساب (الكود المحاسبي) *"
             name="code"
             value={formData.code}
@@ -227,6 +272,7 @@ export default function AccountFormModal({
           />
 
           <Field
+            type="text"
             label="اسم الحساب (بالعربية) *"
             name="name"
             value={formData.name}
@@ -237,12 +283,14 @@ export default function AccountFormModal({
           />
 
           <Field
+            type="text"
             label="اسم الحساب (بالإنجليزية)"
             name="name_en"
             value={formData.name_en}
             onChange={handleChange}
             placeholder="e.g. Reception Main Cashbox"
             error={errors.name_en}
+            required={false}
           />
 
           <div>
