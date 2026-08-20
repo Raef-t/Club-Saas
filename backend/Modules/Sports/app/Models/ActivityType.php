@@ -30,6 +30,7 @@ class ActivityType extends Model
         'is_session_based' => 'boolean',
         'has_unlimited_subscribers' => 'boolean',
         'has_shifts' => 'boolean',
+        'is_daily_entry' => 'boolean',
     ];
 
     protected static function booted()
