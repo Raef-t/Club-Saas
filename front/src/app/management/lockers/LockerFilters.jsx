@@ -31,12 +31,7 @@ export default function LockerFilters({
           <FilterIcon className="size-4" />
           <span>التصفية</span>
         </div>
-        <Dropdown
-          options={branchOptions}
-          value={branchFilter}
-          onChange={onBranchChange}
-          className="w-full sm:w-[180px]"
-        />
+
         <Dropdown
           options={LOCKER_FILTER_OPTIONS}
           value={statusFilter}

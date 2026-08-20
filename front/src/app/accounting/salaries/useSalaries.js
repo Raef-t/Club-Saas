@@ -27,6 +27,7 @@ export function useSalaries({
   const [roleFilter, setRoleFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deletePayment, setDeletePayment] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [formErrors, setFormErrors] = useState({});
 
   const queryParams = useMemo(() => {
@@ -108,11 +109,12 @@ export function useSalaries({
   };
 
   const handleDeletePayment = async () => {
-    if (!deletePayment?.id) return;
+    if (!deletePayment?.id || deleteConfirmation !== "delete") return;
     try {
       await deletePaymentMutation(deletePayment.id).unwrap();
       toast.success("تم حذف سجل صرف الراتب بنجاح");
       setDeletePayment(null);
+      setDeleteConfirmation("");
       return true;
     } catch (err) {
       toast.error(getApiErrorMessage(err, "تعذر حذف سجل صرف الراتب"));
@@ -140,6 +142,8 @@ export function useSalaries({
     isFormOpen,
     deletePayment,
     setDeletePayment,
+    deleteConfirmation,
+    setDeleteConfirmation,
     formErrors,
     isSaving: isCreating,
     isDeleting,

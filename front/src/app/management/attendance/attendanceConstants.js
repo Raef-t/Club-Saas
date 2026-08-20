@@ -17,5 +17,12 @@ export const ATTENDANCE_STATUS_CLASSES = {
   ملغي: "bg-app-red/15 text-app-red",
 };
 
+export const ATTENDANCE_STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "كل الحالات" },
+  { value: "checked_in", label: "حاضر (في التدريب)" },
+  { value: "checked_out", label: "انصرف (تم الخروج)" },
+];
+
 export const ATTENDANCE_TABLE_COLUMNS =
   "minmax(0,0.45fr) minmax(0,0.6fr) minmax(0,1.4fr) minmax(0,1.9fr) minmax(0,1.55fr) minmax(0,0.9fr) minmax(0,1.15fr) minmax(0,0.65fr) minmax(0,0.75fr) minmax(0,0.75fr)";
+

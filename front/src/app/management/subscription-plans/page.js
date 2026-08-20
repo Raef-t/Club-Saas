@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import SubscriptionPlansClient from "@/app/management/subscription-plans/SubscriptionPlansClient";
 import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
@@ -15,5 +16,9 @@ export default async function SubscriptionPlansPage() {
     requestBackend("coaches", { token }),
   ]);
 
-  return <SubscriptionPlansClient initialData={{ plans, branches, activities, coaches }} />;
+  return (
+    <Suspense fallback={null}>
+      <SubscriptionPlansClient initialData={{ plans, branches, activities, coaches }} />
+    </Suspense>
+  );
 }

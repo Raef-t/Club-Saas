@@ -26,6 +26,7 @@ export function useBranches({ initialBranches } = {}) {
   const [genderFilter, setGenderFilter] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const {
     currentData: branchesResponse,
     error,
@@ -79,6 +80,7 @@ export function useBranches({ initialBranches } = {}) {
    * Opens the destructive confirmation for one branch.
    */
   function requestDelete(branch) {
+    setDeleteConfirmation("");
     setDeleteTarget(branch);
   }
 
@@ -86,12 +88,13 @@ export function useBranches({ initialBranches } = {}) {
    * Deletes the selected branch after confirmation.
    */
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
       await deleteBranch(deleteTarget.id).unwrap();
       toast.success("تم حذف الفرع بنجاح");
       setDeleteTarget(null);
+      setDeleteConfirmation("");
     } catch (deleteError) {
       toast.error(getApiErrorMessage(deleteError, "تعذر حذف الفرع. حاول مرة أخرى."));
     }
@@ -131,6 +134,8 @@ export function useBranches({ initialBranches } = {}) {
     requestDelete,
     confirmDelete,
     isDeleting,
+    deleteConfirmation,
+    setDeleteConfirmation,
     toggleStatus,
     isToggling,
   };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useCreateStaffMemberMutation,
   useDeleteStaffMemberMutation,
@@ -56,17 +57,23 @@ export function useStaff({
   initialData,
 } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const urlRole = searchParams?.get("role");
+  const urlGender = searchParams?.get("gender");
+  const urlWorkStatus = searchParams?.get("work_status") || searchParams?.get("status");
+
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [genderFilter, setGenderFilter] = useState("all");
-  const [workStatusFilter, setWorkStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState(urlRole || "all");
+  const [genderFilter, setGenderFilter] = useState(urlGender || "all");
+  const [workStatusFilter, setWorkStatusFilter] = useState(urlWorkStatus || "all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedStaffId, setSelectedStaffId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const queryParams = useMemo(
     () =>
@@ -145,6 +152,12 @@ export function useStaff({
         tone: "yellow",
         iconKey: "members",
         compact: true,
+        onClick: () => {
+          setRoleFilter("all");
+          setWorkStatusFilter("all");
+          setGenderFilter("all");
+        },
+        active: roleFilter === "all" && workStatusFilter === "all" && genderFilter === "all",
       },
       {
         title: "الموظفون النشطون",
@@ -153,6 +166,8 @@ export function useStaff({
         tone: "green",
         iconKey: "members",
         compact: true,
+        onClick: () => setWorkStatusFilter(workStatusFilter === "active" ? "all" : "active"),
+        active: workStatusFilter === "active",
       },
       {
         title: "الإدارة",
@@ -160,6 +175,14 @@ export function useStaff({
         helper: "المديرون ومسؤولو النظام",
         tone: "blue",
         compact: true,
+        onClick: () =>
+          setRoleFilter(
+            roleFilter === "manager" || roleFilter === "admin" ? "all" : "management_admin",
+          ),
+        active:
+          roleFilter === "admin" ||
+          roleFilter === "management_admin" ||
+          roleFilter === "manager",
       },
       {
         title: "رواتب ثابتة",
@@ -169,7 +192,7 @@ export function useStaff({
         compact: true,
       },
     ];
-  }, [staff]);
+  }, [genderFilter, roleFilter, staff, workStatusFilter]);
 
   function closeDrawer() {
     setDrawerMode(null);
@@ -221,16 +244,18 @@ export function useStaff({
 
   function handleDelete(item) {
     setItemToDelete(item);
+    setDeleteConfirmation("");
     setDeleteConfirmOpen(true);
   }
 
   function closeDeleteConfirm() {
     setDeleteConfirmOpen(false);
     setItemToDelete(null);
+    setDeleteConfirmation("");
   }
 
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
       const response = await deleteStaffMember(itemToDelete.id).unwrap();
       toast.success(response?.message || "تم حذف الموظف بنجاح.");
@@ -278,6 +303,8 @@ export function useStaff({
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     getEditInitialValues,
     branches,
     closeDrawer,

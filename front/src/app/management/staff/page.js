@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import StaffClient from "./StaffClient";
 import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
@@ -13,5 +14,9 @@ export default async function StaffPage() {
     requestBackend("branches", { token }),
   ]);
 
-  return <StaffClient initialData={{ staff, branches }} />;
+  return (
+    <Suspense fallback={null}>
+      <StaffClient initialData={{ staff, branches }} />
+    </Suspense>
+  );
 }

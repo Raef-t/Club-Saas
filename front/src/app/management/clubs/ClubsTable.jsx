@@ -18,6 +18,7 @@ export default function ClubsTable({ state }) {
         key: "logo_url",
         label: "الشعار",
         align: "center",
+        sortable: false,
         render: (value, club) => (
           <div className="flex justify-center">
             <ClubLogo
@@ -32,6 +33,7 @@ export default function ClubsTable({ state }) {
         key: "name",
         label: "الاسم",
         align: "center",
+        sortValue: (club) => getClubName(club) || "",
         render: (_, club) => (
           <span className="text-sm font-medium text-app-text">{getClubName(club)}</span>
         ),
@@ -40,18 +42,21 @@ export default function ClubsTable({ state }) {
         key: "created_at",
         label: "تاريخ الإنشاء",
         align: "center",
+        sortValue: (club) => club.created_at || "",
         render: (value) => formatDate(value),
       },
       {
         key: "is_active",
         label: "الحالة",
         align: "center",
+        sortValue: (club) => (club.is_active ? 1 : 0),
         render: (value) => <ClubStatusBadge active={value} />,
       },
       {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, club) => (
           <RowActions
             disabled={state.isDeleting}
@@ -75,6 +80,7 @@ export default function ClubsTable({ state }) {
       showSearch={false}
       showFilter={false}
       showExport={false}
+      defaultSortColumn="name"
       isLoading={state.isLoading}
       emptyMessage={
         state.errorMessage ? (
@@ -90,7 +96,6 @@ export default function ClubsTable({ state }) {
       }
       rowClassName="gap-2 px-3 py-4"
       headerClassName="gap-2 px-3"
-      totalPages={0}
       onRowClick={state.openDetails}
       getRowKey={(club) => club.id}
       toolbarActions={

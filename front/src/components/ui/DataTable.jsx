@@ -59,6 +59,11 @@ function CellValue({ column, row, value, card = false, rowNumber }) {
     return <span className="font-medium text-[#d99300]">{value}</span>;
   }
 
+  if (value && typeof value === "object" && !(value instanceof Date)) {
+    const stringVal = value.ar || value.en || value.name || value.label || value.title || "";
+    return <span className={`min-w-0 ${card ? "break-words" : "truncate"}`}>{stringVal}</span>;
+  }
+
   return <span className={`min-w-0 ${card ? "break-words" : "truncate"}`}>{value}</span>;
 }
 
@@ -187,7 +192,7 @@ export default function DataTable({
 
   const handleHeaderClick = (column) => {
     if (!sortable || column.sortable === false || column.key === "actions") return;
-    const colKey = column.sortKey || column.key;
+    const colKey = typeof column.sortKey === "string" ? column.sortKey : column.key;
 
     let nextColumn = activeSortColumn;
     let nextDirection = "asc";
@@ -225,50 +230,108 @@ export default function DataTable({
     typeof onPageChange === "function" && Number.isFinite(totalPages) && totalPages > 0;
 
   const sortedRows = useMemo(() => {
-    if (!sortable || !activeSortColumn || !activeSortDirection || hasControlledPagination) {
+    if (
+      !sortable ||
+      !activeSortColumn ||
+      !activeSortDirection ||
+      !Array.isArray(rows) ||
+      rows.length === 0
+    ) {
+      return rows || [];
+    }
+
+    if (typeof onSortChange === "function") {
       return rows;
     }
 
     const colDef = columns.find(
-      (col) => (col.sortKey || col.key) === activeSortColumn || col.key === activeSortColumn,
+      (col) => (typeof col.sortKey === "string" ? col.sortKey : col.key) === activeSortColumn,
     );
 
-    return [...rows].sort((a, b) => {
-      let valA, valB;
-      if (colDef?.sortValue) {
-        valA = colDef.sortValue(a, a[colDef.key]);
-        valB = colDef.sortValue(b, b[colDef.key]);
-      } else if (typeof colDef?.sortKey === "function") {
-        valA = colDef.sortKey(a);
-        valB = colDef.sortKey(b);
-      } else {
-        valA = a[activeSortColumn] ?? (colDef ? a[colDef.key] : undefined);
-        valB = b[activeSortColumn] ?? (colDef ? b[colDef.key] : undefined);
+    if (!colDef) {
+      return rows;
+    }
+
+    const extractValue = (row) => {
+      if (!row) return null;
+      if (typeof colDef.sortValue === "function") {
+        return colDef.sortValue(row, row[colDef.key]);
+      }
+      if (typeof colDef.sortKey === "function") {
+        return colDef.sortKey(row);
       }
 
+      const raw =
+        row[colDef.key] ??
+        (typeof colDef.sortKey === "string" ? row[colDef.sortKey] : undefined);
+
+      if (raw && typeof raw === "object" && !(raw instanceof Date)) {
+        if (typeof raw.ar === "string" || typeof raw.en === "string") {
+          return raw.ar || raw.en;
+        }
+        if (typeof raw.name === "string" || (raw.name && typeof raw.name === "object")) {
+          return typeof raw.name === "string" ? raw.name : raw.name.ar || raw.name.en || "";
+        }
+        if (typeof raw.full_name === "string") {
+          return raw.full_name;
+        }
+        if (typeof raw.label === "string") {
+          return raw.label;
+        }
+        if (typeof raw.title === "string") {
+          return raw.title;
+        }
+      }
+      return raw;
+    };
+
+    const normalizeSortValue = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (val instanceof Date) return val.getTime();
+      if (typeof val === "boolean") return val ? 1 : 0;
+      if (typeof val === "number") return isNaN(val) ? null : val;
+
+      const str = String(val).trim();
+      if (!str) return null;
+
+      const cleanedNumeric = str.replace(/[$,\s]|(ل\.س|ر\.س|USD|SAR|SYP|EUR|GBP)/gi, "").trim();
       if (
-        (valA === null || valA === undefined || valA === "") &&
-        (valB === null || valB === undefined || valB === "")
-      )
-        return 0;
-      if (valA === null || valA === undefined || valA === "") return 1;
-      if (valB === null || valB === undefined || valB === "") return -1;
+        cleanedNumeric !== "" &&
+        !isNaN(Number(cleanedNumeric)) &&
+        !isNaN(parseFloat(cleanedNumeric))
+      ) {
+        return parseFloat(cleanedNumeric);
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const timestamp = Date.parse(str);
+        if (!isNaN(timestamp)) return timestamp;
+      }
+
+      return str;
+    };
+
+    return [...rows].sort((a, b) => {
+      const valA = normalizeSortValue(extractValue(a));
+      const valB = normalizeSortValue(extractValue(b));
+
+      if (valA === null && valB === null) return 0;
+      if (valA === null) return 1;
+      if (valB === null) return -1;
 
       let result = 0;
-
       if (typeof valA === "number" && typeof valB === "number") {
         result = valA - valB;
-      } else if (typeof valA === "boolean" && typeof valB === "boolean") {
-        result = valA === valB ? 0 : valA ? 1 : -1;
       } else {
-        const strA = String(valA).trim();
-        const strB = String(valB).trim();
-        result = strA.localeCompare(strB, "ar", { numeric: true, sensitivity: "base" });
+        result = String(valA).localeCompare(String(valB), "ar", {
+          numeric: true,
+          sensitivity: "base",
+        });
       }
 
       return activeSortDirection === "asc" ? result : -result;
     });
-  }, [rows, sortable, activeSortColumn, activeSortDirection, hasControlledPagination, columns]);
+  }, [rows, sortable, activeSortColumn, activeSortDirection, onSortChange, columns]);
 
   const rowsSignature = sortedRows
     .map((row, index) => getRowKey?.(row, index) ?? row.id ?? row.key ?? index)
@@ -349,7 +412,7 @@ export default function DataTable({
               style={{ gridTemplateColumns: resolvedTableColumns }}
             >
               {columns.map((column) => {
-                const colKey = column.sortKey || column.key;
+                const colKey = typeof column.sortKey === "string" ? column.sortKey : column.key;
                 const isColumnSortable =
                   sortable && column.sortable !== false && column.key !== "actions";
                 const isSorted = isColumnSortable && activeSortColumn === colKey;
@@ -358,6 +421,7 @@ export default function DataTable({
                 return (
                   <div
                     key={column.key}
+                    data-testid={`data-table-header-${column.key}`}
                     className={`group flex min-w-0 items-center gap-1.5 ${getAlignClass(column.align)} ${
                       isColumnSortable
                         ? "cursor-pointer select-none transition-colors hover:text-app-text"
@@ -392,6 +456,7 @@ export default function DataTable({
                   return (
                     <div
                       key={key}
+                      data-testid="data-table-row"
                       role={onRowClick ? "button" : undefined}
                       tabIndex={onRowClick ? 0 : undefined}
                       className={`grid w-full items-center rounded-lg border border-transparent bg-app-card-soft px-3 py-3 text-xs text-app-text transition hover:border-app-line hover:bg-app-card-hover focus:outline-none focus:ring-1 focus:ring-app-yellow/60 ${onRowClick ? "cursor-pointer" : ""} ${rowClassName}`}
@@ -458,6 +523,7 @@ export default function DataTable({
             return (
               <article
                 key={key}
+                data-testid="data-table-card"
                 role={onRowClick ? "button" : undefined}
                 tabIndex={onRowClick ? 0 : undefined}
                 className={`rounded-xl border border-app-line bg-app-card-soft/70 p-3 text-xs text-app-text shadow-sm transition hover:border-app-yellow/40 hover:bg-app-card-hover focus:outline-none focus:ring-2 focus:ring-app-yellow/50 ${onRowClick ? "cursor-pointer" : ""}`}

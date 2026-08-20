@@ -18,6 +18,7 @@ export default function ConfirmDialog({
   confirmationValue = "",
   onConfirmationChange,
   confirmationLabel,
+  children,
 }) {
   const confirmationMatches = !requiredConfirmation || confirmationValue === requiredConfirmation;
 
@@ -112,6 +113,8 @@ export default function ConfirmDialog({
               />
             </label>
           )}
+
+          {children && <div className="mt-4 text-right">{children}</div>}
         </div>
 
         {/* Actions */}

@@ -35,6 +35,8 @@ export default function SalariesClient({
     isFormOpen,
     deletePayment,
     setDeletePayment,
+    deleteConfirmation,
+    setDeleteConfirmation,
     formErrors,
     isSaving,
     isDeleting,
@@ -189,6 +191,10 @@ export default function SalariesClient({
         open={Boolean(deletePayment)}
         title="تأكيد حذف سند الراتب"
         message="هل أنت متأكد من رغبتك في حذف سجل صرف هذا الراتب؟"
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         confirmText="حذف السجل"
         onConfirm={handleDeletePayment}
         onClose={() => setDeletePayment(null)}

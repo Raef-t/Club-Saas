@@ -6,7 +6,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
-import { ATTENDANCE_TABLE_COLUMNS } from "./attendanceConstants";
+import { ATTENDANCE_STATUS_FILTER_OPTIONS, ATTENDANCE_TABLE_COLUMNS } from "./attendanceConstants";
 import AttendanceStatusBadge from "./AttendanceStatusBadge";
 
 const TYPE_OPTIONS = [
@@ -42,10 +42,12 @@ export default function AttendanceTable({
   errorMessage,
   onRetry,
   typeFilter,
+  statusFilter = "all",
   fromDate,
   toDate,
   hasFilters,
   onTypeFilterChange,
+  onStatusFilterChange,
   onFromDateChange,
   onToDateChange,
   onResetFilters,
@@ -81,7 +83,9 @@ export default function AttendanceTable({
         align: "center",
         width: "minmax(180px,1.35fr)",
         sortValue: (row) =>
-          row.consumptions.map((consumption) => consumption.subscriptionPlanName).join("، "),
+          Array.isArray(row.consumptions)
+            ? row.consumptions.map((consumption) => consumption.subscriptionPlanName || "").join("، ")
+            : "",
         render: (value) => <AttendanceConsumptions consumptions={value} />,
       },
       {
@@ -195,6 +199,16 @@ export default function AttendanceTable({
                 value={typeFilter}
                 options={TYPE_OPTIONS}
                 onChange={onTypeFilterChange}
+              />
+            </label>
+            <label className="min-w-36 flex-1 text-right text-xs text-app-muted-light sm:flex-none">
+              الحالة
+              <Dropdown
+                className="mt-1.5"
+                buttonClassName="h-9 bg-app-card-soft"
+                value={statusFilter}
+                options={ATTENDANCE_STATUS_FILTER_OPTIONS}
+                onChange={onStatusFilterChange}
               />
             </label>
             <div className="min-w-40 flex-1 sm:flex-none">

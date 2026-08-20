@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import MembersClient from "@/app/management/members/MembersClient";
 import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
@@ -14,5 +15,9 @@ export default async function MembersPage() {
     requestBackend("subscription-plans", { token }),
   ]);
 
-  return <MembersClient initialData={{ members, branches, plans }} />;
+  return (
+    <Suspense fallback={null}>
+      <MembersClient initialData={{ members, branches, plans }} />
+    </Suspense>
+  );
 }

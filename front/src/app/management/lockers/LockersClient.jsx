@@ -83,32 +83,62 @@ export default function LockersClient({ initialData }) {
         title: "متاحة",
         value: available_lockers_count,
         tone: "green",
+        onClick: () =>
+          lockerState.setStatusFilter(
+            lockerState.statusFilter === "available" ? "all" : "available",
+          ),
+        active: lockerState.statusFilter === "available",
       },
       {
         title: "مؤجرة",
         value: rented_lockers_count,
         iconKey: "subscriptions",
         tone: "blue",
+        onClick: () =>
+          lockerState.setStatusFilter(lockerState.statusFilter === "rented" ? "all" : "rented"),
+        active: lockerState.statusFilter === "rented",
       },
       {
         title: "مع الأعضاء",
         value: assigned_to_member_count,
         iconKey: "members",
         tone: "cyan",
+        onClick: () =>
+          lockerState.setStatusFilter(
+            lockerState.statusFilter === "with_member" ? "all" : "with_member",
+          ),
+        active: lockerState.statusFilter === "with_member",
       },
       {
         title: "مع المدربين",
         value: assigned_to_coach_count,
         iconKey: "coaches",
         tone: "purple",
+        onClick: () =>
+          lockerState.setStatusFilter(
+            lockerState.statusFilter === "with_coach" ? "all" : "with_coach",
+          ),
+        active: lockerState.statusFilter === "with_coach",
       },
       {
         title: "غير متاحة",
         value: unavailable_lockers_count,
         tone: "orange",
+        onClick: () =>
+          lockerState.setStatusFilter(
+            lockerState.statusFilter === "maintenance" ||
+              lockerState.statusFilter === "disabled" ||
+              lockerState.statusFilter === "unavailable"
+              ? "all"
+              : "unavailable",
+          ),
+        active:
+          lockerState.statusFilter === "maintenance" ||
+          lockerState.statusFilter === "disabled" ||
+          lockerState.statusFilter === "unavailable",
       },
     ];
-  }, [lockerState.lockerSummary]);
+  }, [lockerState]);
 
   return (
     <div className="space-y-6">
@@ -177,6 +207,10 @@ export default function LockersClient({ initialData }) {
         onConfirm={lockerState.confirmDelete}
         title="حذف الخزانة"
         message={`هل أنت متأكد من حذف الخزانة "${lockerState.deleteTarget?.locker_number || ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={lockerState.deleteConfirmation}
+        onConfirmationChange={lockerState.setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={lockerState.isDeleting}
       />
 

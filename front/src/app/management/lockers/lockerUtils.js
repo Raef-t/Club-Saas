@@ -122,6 +122,57 @@ export function isLockerOccupied(locker) {
 }
 
 /**
+ * Checks if a locker matches a specific status filter.
+ */
+export function matchesLockerStatus(locker, status) {
+  if (!status || status === "all") return true;
+  if (status === "occupied") return isLockerOccupied(locker);
+  if (status === "available") return locker.status === "available";
+  if (status === "unavailable") return locker.status !== "available";
+
+  const reservation = getLockerCurrentReservation(locker) || {};
+  const holder = getLockerHolder(locker);
+
+  if (status === "assigned_free" || status === "free") {
+    return (
+      reservation.reservation_type === "assign" ||
+      locker.reservation_type === "assign" ||
+      reservation.type === "assign" ||
+      (isLockerOccupied(locker) && reservation.reservation_type !== "rental" && !locker.rental_price)
+    );
+  }
+
+  if (status === "rented") {
+    return (
+      reservation.reservation_type === "rental" ||
+      locker.reservation_type === "rental" ||
+      reservation.type === "rental" ||
+      locker.status === "rented"
+    );
+  }
+
+  if (status === "with_member") {
+    return (
+      holder.type === "member" ||
+      locker.status === "with_member" ||
+      reservation.holder_type === "member" ||
+      Boolean(locker.member || locker.member_id)
+    );
+  }
+
+  if (status === "with_coach") {
+    return (
+      holder.type === "coach" ||
+      locker.status === "with_coach" ||
+      reservation.holder_type === "coach" ||
+      Boolean(locker.coach || locker.coach_id)
+    );
+  }
+
+  return locker.status === status;
+}
+
+/**
  * Filters lockers by number, branch, and aggregate UI status.
  */
 export function filterLockers(lockers, { search = "", branch = "all", status = "all" } = {}) {
@@ -134,9 +185,7 @@ export function filterLockers(lockers, { search = "", branch = "all", status = "
         .toLowerCase()
         .includes(normalizedSearch);
     const matchesBranch = branch === "all" || String(locker.branch_id) === String(branch);
-    const matchesStatus =
-      status === "all" ||
-      (status === "occupied" ? isLockerOccupied(locker) : locker.status === status);
+    const matchesStatus = matchesLockerStatus(locker, status);
 
     return matchesSearch && matchesBranch && matchesStatus;
   });
@@ -146,9 +195,10 @@ export function filterLockers(lockers, { search = "", branch = "all", status = "
  * Creates the exact query params supported by the locker list endpoint.
  */
 export function createLockerQueryParams(branchFilter, statusFilter) {
+  const standardStatuses = ["available", "assigned", "maintenance", "disabled"];
   return {
     branch_id: branchFilter !== "all" ? String(branchFilter) : undefined,
-    status: statusFilter !== "all" && statusFilter !== "occupied" ? statusFilter : undefined,
+    status: standardStatuses.includes(statusFilter) ? statusFilter : undefined,
   };
 }
 

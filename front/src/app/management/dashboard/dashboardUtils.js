@@ -216,7 +216,7 @@ export function createDashboardStats({ sseStats }) {
       tone: "yellow",
       iconKey: "members",
       compact: true,
-      href: "/management/members",
+      href: "/management/subscriptions?status=active",
     },
     {
       title: "اللاعبون في التدريب",
@@ -225,7 +225,7 @@ export function createDashboardStats({ sseStats }) {
       tone: "cyan",
       iconKey: "coaches",
       compact: true,
-      href: "/management/attendance",
+      href: "/management/attendance?status=checked_in",
     },
     {
       title: "اشتراكات تقترب من الانتهاء",
@@ -234,7 +234,7 @@ export function createDashboardStats({ sseStats }) {
       tone: "orange",
       iconKey: "expiring",
       compact: true,
-      href: "/management/subscriptions",
+      href: "/management/subscriptions?status=expiring_soon",
     },
     {
       title: "خزائن مسندة مجاناً",
@@ -243,7 +243,7 @@ export function createDashboardStats({ sseStats }) {
       tone: "green",
       iconKey: "subscriptions",
       compact: true,
-      href: "/management/lockers",
+      href: "/management/lockers?status=assigned_free",
     },
     {
       title: "الفعاليات الجارية الآن",

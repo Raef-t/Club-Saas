@@ -76,7 +76,7 @@ function MiniSpark({ tone = "yellow" }) {
 }
 
 /**
- * Renders one statistic with a semantic icon and an optional destination.
+ * Renders one statistic with a semantic icon and an optional destination or click handler.
  */
 export default function StatCard({
   title,
@@ -88,12 +88,21 @@ export default function StatCard({
   compact = false,
   href,
   iconKey,
+  onClick,
+  active = false,
 }) {
   const styles = toneMap[tone] || toneMap.yellow;
   const Icon = statIcons[iconKey] || GridIcon;
 
   const card = (
-    <article className="card-shell h-32 min-w-0 overflow-hidden rounded-2xl p-3.5" dir="rtl">
+    <article
+      className={`card-shell h-32 min-w-0 overflow-hidden rounded-2xl p-3.5 transition-all duration-200 ${
+        active
+          ? "ring-2 ring-app-yellow border-app-yellow/80 bg-app-card-soft/90 shadow-[0_0_20px_rgba(242,220,46,0.15)]"
+          : ""
+      }`}
+      dir="rtl"
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1 text-right">
           <h3 className="truncate text-sm font-medium text-app-text">{title}</h3>
@@ -138,12 +147,25 @@ export default function StatCard({
     </article>
   );
 
+  if (onClick && !href) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="group block w-full min-w-0 rounded-2xl text-right transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow/60 cursor-pointer"
+        aria-label={`تصفية حسب ${title}`}
+      >
+        {card}
+      </button>
+    );
+  }
+
   if (!href) return card;
 
   return (
     <Link
       href={href}
-      className="block min-w-0 rounded-2xl transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow/60"
+      className="group block min-w-0 rounded-2xl transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow/60 cursor-pointer"
       aria-label={`فتح صفحة ${title}`}
     >
       {card}

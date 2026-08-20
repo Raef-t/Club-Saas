@@ -38,4 +38,19 @@ describe("ConfirmDialog typed confirmation", () => {
     fireEvent.click(confirmButton);
     expect(onConfirm).toHaveBeenCalledOnce();
   });
+
+  it("renders custom children such as checkboxes and inputs", () => {
+    render(
+      <ConfirmDialog open onClose={() => {}} onConfirm={() => {}}>
+        <div data-testid="custom-checkbox-container">
+          <input type="checkbox" data-testid="refund-checkbox" />
+          <label htmlFor="refund-checkbox">إعادة سعر الاشتراك</label>
+        </div>
+      </ConfirmDialog>,
+    );
+
+    expect(screen.getByTestId("custom-checkbox-container")).toBeInTheDocument();
+    expect(screen.getByTestId("refund-checkbox")).toBeInTheDocument();
+    expect(screen.getByText("إعادة سعر الاشتراك")).toBeInTheDocument();
+  });
 });

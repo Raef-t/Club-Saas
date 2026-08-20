@@ -14,6 +14,7 @@ export function useClubs({ initialClubs } = {}) {
   const [search, setSearch] = useState("");
   const [selectedClub, setSelectedClub] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const { currentData: clubsResponse, error, isLoading, isFetching, refetch } = useGetClubsQuery();
   const {
     currentData: detailsResponse,
@@ -54,6 +55,7 @@ export function useClubs({ initialClubs } = {}) {
    * Opens the destructive confirmation for one club.
    */
   function requestDelete(club) {
+    setDeleteConfirmation("");
     setDeleteTarget(club);
   }
 
@@ -61,12 +63,13 @@ export function useClubs({ initialClubs } = {}) {
    * Deletes the selected club after confirmation.
    */
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
       await deleteClub(deleteTarget.id).unwrap();
       toast.success("تم حذف النادي بنجاح");
       setDeleteTarget(null);
+      setDeleteConfirmation("");
     } catch (deleteError) {
       toast.error(getApiErrorMessage(deleteError, "تعذر حذف النادي. حاول مرة أخرى."));
     }
@@ -92,5 +95,7 @@ export function useClubs({ initialClubs } = {}) {
     requestDelete,
     confirmDelete,
     isDeleting,
+    deleteConfirmation,
+    setDeleteConfirmation,
   };
 }

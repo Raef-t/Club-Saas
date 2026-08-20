@@ -223,6 +223,9 @@ export function CoachCreateForm({
           private_club_commission_rate: activityRules.hasPrivateTraining
             ? form.private_club_commission_rate
             : "0",
+          private_commission_rate: activityRules.hasPrivateTraining
+            ? privateCoachCommissionRate
+            : "0",
           shifts: activityRules.allowsShifts ? form.shifts : [],
         }
       : form;
@@ -261,6 +264,7 @@ export function CoachCreateForm({
       employment_type: normalizedForm.employment_type,
       base_salary: Number(normalizedForm.base_salary) || 0,
       default_commission_rate: Number(normalizedForm.default_commission_rate) || 0,
+      private_commission_rate: Number(normalizedForm.private_commission_rate) || 0,
       work_types: normalizedForm.work_types,
       activity_ids: normalizedForm.activity_ids,
       shifts: shiftsPayload,

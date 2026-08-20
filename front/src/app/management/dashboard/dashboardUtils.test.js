@@ -167,7 +167,13 @@ describe("management dashboard utilities", () => {
       "subscriptions",
       "schedule",
     ]);
-    expect(stats.every((stat) => stat.href.startsWith("/management/"))).toBe(true);
+    expect(stats.map((stat) => stat.href)).toEqual([
+      "/management/subscriptions?status=active",
+      "/management/attendance?status=checked_in",
+      "/management/subscriptions?status=expiring_soon",
+      "/management/lockers?status=assigned_free",
+      "/management/schedule",
+    ]);
   });
 
   it("does not calculate statistics before the API stream responds", () => {

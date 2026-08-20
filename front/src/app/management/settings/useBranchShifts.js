@@ -31,6 +31,7 @@ export function useBranchShifts({
   const toast = useToast();
   const [editor, setEditor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [form, setForm] = useState(() => createShiftForm());
   const [errors, setErrors] = useState({});
   const {
@@ -53,6 +54,7 @@ export function useBranchShifts({
   useEffect(() => {
     setEditor(null);
     setDeleteTarget(null);
+    setDeleteConfirmation("");
     setErrors({});
   }, [branchId]);
 
@@ -138,7 +140,7 @@ export function useBranchShifts({
    * Deletes the selected shift after confirmation.
    */
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
       await deleteShift({
@@ -147,6 +149,7 @@ export function useBranchShifts({
       }).unwrap();
       toast.success("تم حذف الوردية بنجاح");
       setDeleteTarget(null);
+      setDeleteConfirmation("");
     } catch (deleteError) {
       toast.error(getApiErrorMessage(deleteError, "حدث خطأ أثناء حذف الوردية."));
     }
@@ -185,6 +188,8 @@ export function useBranchShifts({
     isSaving: isCreating || isUpdating,
     deleteTarget,
     setDeleteTarget,
+    deleteConfirmation,
+    setDeleteConfirmation,
     confirmDelete,
     isDeleting,
     printShifts,

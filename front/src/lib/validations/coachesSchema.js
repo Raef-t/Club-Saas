@@ -102,6 +102,12 @@ export const coachFormSchema = z.object({
     .min(0, "نسبة النادي لا يمكن أن تكون سالبة")
     .max(100, "نسبة النادي لا يمكن أن تتجاوز 100%")
     .or(z.string().transform((val) => Number(val) || 0)),
+  private_commission_rate: z
+    .number()
+    .min(0, "نسبة المدرب الخاص لا يمكن أن تكون سالبة")
+    .max(100, "نسبة المدرب الخاص لا يمكن أن تتجاوز 100%")
+    .or(z.string().transform((val) => Number(val) || 0))
+    .optional(),
   work_types: z
     .array(z.enum(["equipment", "activities"]))
     .optional()

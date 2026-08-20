@@ -139,6 +139,7 @@ export default function MembersClient({ initialData }) {
         key: "name",
         label: "الاسم",
         align: "center",
+        sortValue: (member) => getMemberDisplayName(member) || "",
         render: (_, member) => (
           <span className="text-sm font-medium text-white">
             {getMemberDisplayName(member) || "-"}
@@ -149,6 +150,15 @@ export default function MembersClient({ initialData }) {
         key: "mobile",
         label: "رقم الهاتف",
         align: "center",
+        sortValue: (member) => {
+          const person = member.person || {};
+          const personalContact = person.contacts?.find(
+            (c) => c.relation === "self" || c.name === "Personal",
+          );
+          return (
+            personalContact?.phone_number || person.phone || person.mobile || member.mobile || ""
+          );
+        },
         render: (_, member) => {
           const person = member.person || {};
           const personalContact = person.contacts?.find(
@@ -172,6 +182,11 @@ export default function MembersClient({ initialData }) {
         key: "gender",
         label: "الجنس",
         align: "center",
+        sortValue: (member) => {
+          const person = member.person || {};
+          const gender = person.gender || member.gender;
+          return genderLabels[gender] || gender || "";
+        },
         render: (_, member) => {
           const person = member.person || {};
           const gender = person.gender || member.gender;
@@ -186,6 +201,10 @@ export default function MembersClient({ initialData }) {
         key: "dob",
         label: "تاريخ الميلاد",
         align: "center",
+        sortValue: (member) => {
+          const person = member.person || {};
+          return person.dob || member.dob || "";
+        },
         render: (_, member) => {
           const person = member.person || {};
           const dob = person.dob || member.dob;
@@ -196,6 +215,10 @@ export default function MembersClient({ initialData }) {
         key: "branch_id",
         label: "الفرع",
         align: "center",
+        sortValue: (member) => {
+          const branch = branches.find((b) => b.id === member.branch_id);
+          return formatLocalizedName(branch?.name) || "";
+        },
         render: (value) => {
           const branchName =
             formatLocalizedName(branches.find((b) => b.id === value)?.name) || `فرع #${value}`;
@@ -206,6 +229,7 @@ export default function MembersClient({ initialData }) {
         key: "is_active",
         label: "الحالة",
         align: "center",
+        sortValue: (member) => (member.is_active !== false ? "نشط" : "غير نشط"),
         render: (value) => (
           <span
             className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -220,6 +244,7 @@ export default function MembersClient({ initialData }) {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, member) => (
           <RowActions
             disabled={isDeleting}
@@ -279,6 +304,7 @@ export default function MembersClient({ initialData }) {
         showSearch={false}
         showFilter={false}
         showExport={false}
+        defaultSortColumn="name"
         isLoading={isLoading}
         emptyMessage={
           error ? (
@@ -294,7 +320,6 @@ export default function MembersClient({ initialData }) {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        totalPages={0}
         onRowClick={(member) => {
           router.push(`/management/members/${member.id}`);
         }}
@@ -312,13 +337,7 @@ export default function MembersClient({ initialData }) {
               />
             </label>
 
-            <Dropdown
-              className="min-w-48 bg-app-card-soft border-app-line text-white"
-              icon={FilterIcon}
-              value={branchFilter}
-              options={branchOptions}
-              onChange={setBranchFilter}
-            />
+
 
             <Dropdown
               className="min-w-48 bg-app-card-soft border-app-line text-white"

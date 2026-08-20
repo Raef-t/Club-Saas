@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useDeductAttendanceMutation,
   useBulkCheckOutMutation,
@@ -43,6 +44,15 @@ import {
  */
 export function useAttendance({ initialBranches } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams?.get("status");
+  const initialStatus =
+    urlStatus === "checked_in" || urlStatus === "present" || urlStatus === "in_training"
+      ? "checked_in"
+      : urlStatus === "checked_out"
+        ? "checked_out"
+        : "all";
+
   const {
     branches: managementBranches,
     isAllBranches,
@@ -67,6 +77,7 @@ export function useAttendance({ initialBranches } = {}) {
   const [lockerNumber, setLockerNumber] = useState("");
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
   const [attendanceTypeFilter, setAttendanceTypeFilter] = useState("all");
+  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState(initialStatus);
   const [attendanceFromDate, setAttendanceFromDate] = useState("");
   const [attendanceToDate, setAttendanceToDate] = useState("");
 
@@ -147,16 +158,26 @@ export function useAttendance({ initialBranches } = {}) {
       branchLockersResponse,
     );
 
-    return pendingAttendanceIds.length
+    const pendingRows = pendingAttendanceIds.length
       ? rows.filter(
           (row) => !pendingAttendanceIds.some((pendingId) => String(row.id) === String(pendingId)),
         )
       : rows;
+
+    if (attendanceStatusFilter === "checked_in") {
+      return pendingRows.filter((row) => row.isOpen || row.status === "دخول");
+    }
+    if (attendanceStatusFilter === "checked_out") {
+      return pendingRows.filter((row) => !row.isOpen && row.status !== "دخول");
+    }
+
+    return pendingRows;
   }, [
     activeMember,
     attendanceHistoryResponse,
     attendanceMembersResponse,
     attendanceStaffResponse,
+    attendanceStatusFilter,
     branchLockersResponse,
     pendingAttendanceIds,
   ]);
@@ -220,6 +241,7 @@ export function useAttendance({ initialBranches } = {}) {
 
   function resetAttendanceFilters() {
     setAttendanceTypeFilter("all");
+    setAttendanceStatusFilter("all");
     setAttendanceFromDate("");
     setAttendanceToDate("");
   }
@@ -639,13 +661,18 @@ export function useAttendance({ initialBranches } = {}) {
     isRegistered: Boolean(activeMember) && registeredMemberId === activeMember?.id,
     isPendingDeduction: Boolean(lastAttendanceId),
     attendanceTypeFilter,
+    attendanceStatusFilter,
     attendanceFromDate,
     attendanceToDate,
     hasAttendanceFilters: Boolean(
-      attendanceTypeFilter !== "all" || attendanceFromDate || attendanceToDate,
+      attendanceTypeFilter !== "all" ||
+        attendanceStatusFilter !== "all" ||
+        attendanceFromDate ||
+        attendanceToDate,
     ),
     setBranchId,
     setAttendanceTypeFilter,
+    setAttendanceStatusFilter,
     setAttendanceFromDate,
     setAttendanceToDate,
     resetAttendanceFilters,

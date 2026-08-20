@@ -36,6 +36,8 @@ export default function PartnersClient({ initialPartners = [], initialSafes = []
     transactionConfig,
     deleteConfirmPartner,
     setDeleteConfirmPartner,
+    deleteConfirmation,
+    setDeleteConfirmation,
     formErrors,
     isSaving,
     isProcessingTx,
@@ -233,6 +235,10 @@ export default function PartnersClient({ initialPartners = [], initialSafes = []
         open={Boolean(deleteConfirmPartner)}
         title="تأكيد حذف الشريك"
         message={`هل أنت متأكد من رغبتك في حذف الشريك "${deleteConfirmPartner?.name}" وحساباته؟ لن ينجح الحذف في حال وجود حركات مالية مسجلة مسبقاً.`}
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         confirmText="حذف الشريك"
         onConfirm={handleDeletePartner}
         onClose={() => setDeleteConfirmPartner(null)}
