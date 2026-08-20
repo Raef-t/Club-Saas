@@ -43,10 +43,11 @@ class EloquentStaffRepository implements StaffRepositoryInterface
     {
         $query = Staff::onlyTrashed()->with([
             'person.contacts',
-            'coachDetail.certifications',
+            'coachDetail',
             'branches',
             'user',
         ]);
+
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
