@@ -333,6 +333,7 @@ class SubscriptionPlanSuspensionService
 
     protected function resolveCoachFromPlan(SubscriptionPlan $plan)
     {
+        $plan->loadMissing(['planActivities.staffActivity.staff', 'planActivities.coach']);
         foreach ($plan->planActivities as $pa) {
             if ($pa->staffActivity && $pa->staffActivity->staff) {
                 return $pa->staffActivity->staff;
@@ -414,6 +415,7 @@ class SubscriptionPlanSuspensionService
 
     protected function sendResumptionNotifications(SubscriptionPlanSuspension $suspension, string $message): void
     {
+        $suspension->loadMissing(['plan', 'freezes.subscription.member.person.user']);
         $plan = $suspension->plan;
         $template = NotificationTemplate::whereIn('system_key', ['subscription_plan_resumption', 'plan_resumption'])
             ->where('is_active', true)
@@ -456,5 +458,6 @@ class SubscriptionPlanSuspensionService
             }
         }
     }
+
 }
 
