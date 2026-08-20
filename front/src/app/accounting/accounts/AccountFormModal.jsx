@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { Field, TextAreaField } from "@/components/forms/FormControls";
+import { ChevronDownIcon } from "@/components/icons/Icons";
 import { ACCOUNT_TYPES, CURRENCY_OPTIONS } from "./useAccounts";
 
 export default function AccountFormModal({
@@ -194,19 +195,22 @@ export default function AccountFormModal({
             <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
               الحساب الأب (المستوى الأعلى)
             </label>
-            <select
-              name="parent_id"
-              value={formData.parent_id}
-              onChange={handleParentChange}
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
-            >
-              <option value="">-- حساب رئيسي (بدون حساب أب) --</option>
-              {hierarchicalParents.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.prefix} {p.code} - {p.name} ({ACCOUNT_TYPES[p.type]?.label || p.type})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                name="parent_id"
+                value={formData.parent_id}
+                onChange={handleParentChange}
+                className="h-11 w-full appearance-none rounded-xl border border-app-line bg-app-card-soft ps-3 pe-9 text-sm text-app-text outline-none focus:border-app-yellow"
+              >
+                <option value="" className="bg-[#1a1b22] text-[#efefef]">-- حساب رئيسي (بدون حساب أب) --</option>
+                {hierarchicalParents.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#1a1b22] text-[#efefef]">
+                    {p.prefix} {p.code} - {p.name} ({ACCOUNT_TYPES[p.type]?.label || p.type})
+                  </option>
+                ))}
+              </select>
+              <ChevronDownIcon className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
+            </div>
             {errors.parent_id && (
               <p className="mt-1 text-xs text-rose-500">{errors.parent_id}</p>
             )}
@@ -250,22 +254,25 @@ export default function AccountFormModal({
                 <span className="text-[10px] text-app-yellow">موروث من الحساب الأب</span>
               )}
             </div>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              disabled={isChildAccount}
-              className={`h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow ${
-                isChildAccount ? "opacity-75 cursor-not-allowed bg-app-panel" : ""
-              }`}
-              required
-            >
-              {Object.entries(ACCOUNT_TYPES).map(([key, item]) => (
-                <option key={key} value={key}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                disabled={isChildAccount}
+                className={`h-11 w-full appearance-none rounded-xl border border-app-line bg-app-card-soft ps-3 pe-9 text-sm text-app-text outline-none focus:border-app-yellow ${
+                  isChildAccount ? "opacity-75 cursor-not-allowed bg-app-panel" : ""
+                }`}
+                required
+              >
+                {Object.entries(ACCOUNT_TYPES).map(([key, item]) => (
+                  <option key={key} value={key} className="bg-[#1a1b22] text-[#efefef]">
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDownIcon className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
+            </div>
             {errors.type && <p className="mt-1 text-xs text-rose-500">{errors.type}</p>}
           </div>
 
@@ -273,19 +280,22 @@ export default function AccountFormModal({
             <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
               العملة المقبولة بالحساب *
             </label>
-            <select
-              name="currency"
-              value={formData.currency}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
-              required
-            >
-              {CURRENCY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                name="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                className="h-11 w-full appearance-none rounded-xl border border-app-line bg-app-card-soft ps-3 pe-9 text-sm text-app-text outline-none focus:border-app-yellow"
+                required
+              >
+                {CURRENCY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-[#1a1b22] text-[#efefef]">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDownIcon className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
+            </div>
             {errors.currency && (
               <p className="mt-1 text-xs text-rose-500">{errors.currency}</p>
             )}

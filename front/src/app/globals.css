@@ -127,6 +127,21 @@ a { color: inherit; text-decoration: none; }
 input, select, textarea { caret-color: var(--app-yellow); }
 input::placeholder, textarea::placeholder { color: var(--app-muted); opacity: 1; }
 
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #1a1b22;
+  color: #efefef;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background-color: #282932;
+  color: #f2dc2e;
+}
+
 :where(button, a, [role="button"]):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--app-yellow) 72%, transparent);
   outline-offset: 2px;
