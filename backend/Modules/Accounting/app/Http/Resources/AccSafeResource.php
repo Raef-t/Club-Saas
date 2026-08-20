@@ -14,6 +14,11 @@ class AccSafeResource extends JsonResource
             'currency'   => $this->currency,
             'is_active'  => $this->is_active,
             'notes'      => $this->notes,
+            'branch_id'  => $this->branch_id,
+            'branch'     => $this->whenLoaded('branch', fn() => [
+                'id'   => $this->branch?->id,
+                'name' => $this->branch?->name,
+            ]),
             'account'    => $this->whenLoaded('account', fn() => new AccAccountResource($this->account)),
             'created_at' => $this->created_at,
         ];

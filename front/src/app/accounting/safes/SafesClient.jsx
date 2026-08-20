@@ -133,9 +133,16 @@ export default function SafesClient({ initialSafes = [], initialAccounts = [] })
                 <div>
                   {/* Top Badges */}
                   <div className="flex items-center justify-between gap-2 pb-3 border-b border-app-line/30">
-                    <span className="rounded-lg bg-app-yellow-soft px-2.5 py-1 text-xs font-bold text-app-yellow border border-app-yellow/30 font-mono">
-                      {safe.currency}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-lg bg-app-yellow-soft px-2.5 py-1 text-xs font-bold text-app-yellow border border-app-yellow/30 font-mono">
+                        {safe.currency}
+                      </span>
+                      {safe.branch?.name && (
+                        <span className="rounded-lg bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/20">
+                          {safe.branch.name}
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-2">
                       {safe.is_default && (

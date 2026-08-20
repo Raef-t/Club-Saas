@@ -59,19 +59,23 @@ export function useSafes({ initialSafes = [], initialAccounts = [] } = {}) {
 
       const matchCurrency = currencyFilter === "all" || safe.currency === currencyFilter;
 
-      return matchSearch && matchCurrency;
-    });
-  }, [safes, search, currencyFilter]);
+      const matchBranch =
+        !selectedBranchId ||
+        selectedBranchId === "all" ||
+        String(safe.branch_id) === String(selectedBranchId);
 
+      return matchSearch && matchCurrency && matchBranch;
+    });
+  }, [safes, search, currencyFilter, selectedBranchId]);
 
   const stats = useMemo(() => {
-    const total = safes.length;
-    const active = safes.filter((s) => s.is_active).length;
-    const usdSafes = safes.filter((s) => s.currency === "USD").length;
-    const sypSafes = safes.filter((s) => s.currency === "SYP").length;
+    const total = filteredSafes.length;
+    const active = filteredSafes.filter((s) => s.is_active).length;
+    const usdSafes = filteredSafes.filter((s) => s.currency === "USD").length;
+    const sypSafes = filteredSafes.filter((s) => s.currency === "SYP").length;
 
     return { total, active, usdSafes, sypSafes };
-  }, [safes]);
+  }, [filteredSafes]);
 
   const openCreateModal = () => {
     setEditingSafe(null);

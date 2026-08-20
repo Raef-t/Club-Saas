@@ -41,7 +41,8 @@ class SafeController extends Controller
     public function index(Request $request)
     {
         try {
-            $safes = AccSafe::with('account')
+            $safes = AccSafe::with(['account', 'branch'])
+                ->when($request->filled('branch_id') && $request->branch_id !== 'all', fn($q) => $q->where('branch_id', $request->branch_id))
                 ->when($request->has('is_active'), fn($q) => $q->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN)))
                 ->orderBy('name')->get();
             return $this->successResponse(AccSafeResource::collection($safes), 'تم جلب الصناديق');
