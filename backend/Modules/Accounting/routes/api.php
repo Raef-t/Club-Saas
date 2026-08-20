@@ -11,8 +11,8 @@ use Modules\Accounting\Http\Controllers\ReportController;
 use Modules\Accounting\Http\Controllers\ReconciliationController;
 
 Route::group([
-    'middleware' => ['api', 'auth:sanctum', 'role:super_admin|admin|accountant'],
-    'prefix'     => 'accounting',
+    'middleware' => ['api', 'auth:sanctum'],
+    'prefix'     => 'v1/accounting',
     'as'         => 'api.accounting.',
 ], function () {
 

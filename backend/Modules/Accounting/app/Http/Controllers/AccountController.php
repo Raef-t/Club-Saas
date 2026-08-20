@@ -44,13 +44,19 @@ class AccountController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = AccAccount::with('children');
-            if ($request->has('type'))      $query->where('type', $request->type);
-            if ($request->has('is_active')) $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
-            if ($request->has('parent_id') && $request->parent_id !== 'all') {
-                $query->where('parent_id', $request->parent_id);
-            } elseif (!$request->has('parent_id') && !$request->has('type')) {
-                $query->whereNull('parent_id');
+            $query = AccAccount::query();
+            if ($request->has('type')) {
+                $query->where('type', $request->type);
+            }
+            if ($request->has('is_active')) {
+                $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+            }
+            if ($request->has('parent_id')) {
+                if ($request->parent_id === 'root' || $request->parent_id === 'null') {
+                    $query->whereNull('parent_id');
+                } elseif ($request->parent_id !== 'all') {
+                    $query->where('parent_id', $request->parent_id);
+                }
             }
             $accounts = $query->orderBy('code')->get();
             return $this->successResponse(AccAccountResource::collection($accounts), 'تم جلب دليل الحسابات');

@@ -36,15 +36,13 @@ const quickActions = [
 
 const navItems = [
   { title: "لوحة التحكم", href: "/accounting" },
-  { title: "الصناديق والخزائن", href: "/accounting/safes" },
+  { title: "الصناديق", href: "/accounting/safes" },
   { title: "دليل الحسابات", href: "/accounting/accounts" },
   { title: "سندات القيود", href: "/accounting/journals" },
   { title: "الإيرادات", href: "/accounting/revenues" },
   { title: "المصاريف", href: "/accounting/expenses" },
   { title: "اشتراكات الأعضاء", href: "/accounting/subscriptions" },
   { title: "الرواتب والأجور", href: "/accounting/salaries" },
-  { title: "الشركاء والأرباح", href: "/accounting/partners" },
-  { title: "الجهات والأطراف", href: "/accounting/counterparties" },
   { title: "الفترات المحاسبية", href: "/accounting/periods" },
   { title: "التقارير المالية", href: "/accounting/reports" },
 ];

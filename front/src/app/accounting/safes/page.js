@@ -3,7 +3,7 @@ import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
-  title: "الصناديق والخزائن المالية | نظام المحاسبة",
+  title: "الصناديق | نظام المحاسبة",
 };
 
 export default async function SafesPage() {
