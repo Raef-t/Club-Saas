@@ -1,6 +1,5 @@
 "use client";
 
-import StatsGrid from "@/components/ui/StatsGrid";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -48,33 +47,25 @@ export default function SafesClient({ initialSafes = [], initialAccounts = [] })
     handleSaveReconciliation,
   } = useSafes({ initialSafes, initialAccounts });
 
-  const statsItems = [
-    { label: "إجمالي الصناديق", value: stats.total },
-    { label: "الصناديق النشطة", value: stats.active },
-    { label: "صناديق الدولار (USD)", value: stats.usdSafes },
-    { label: "صناديق الليرة (SYP)", value: stats.sypSafes },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Top Stats Overview */}
-      <StatsGrid items={statsItems} />
-
       {/* Toolbar: Search, Filters, Add Button */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
-        <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
-          <div className="w-full sm:w-72">
+      <div className="flex flex-col gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
+          <div className="w-full sm:w-80 shrink-0">
             <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="البحث باسم الصندوق أو الملاحظات..."
+              className="!min-w-0 w-full"
             />
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
+              type="button"
               onClick={() => setCurrencyFilter("all")}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+              className={`rounded-xl px-3 py-2 text-xs font-medium transition shrink-0 ${
                 currencyFilter === "all"
                   ? "bg-app-yellow text-app-bg font-bold shadow"
                   : "bg-app-card-soft text-app-muted-light hover:bg-app-line-soft hover:text-app-text"
@@ -83,8 +74,9 @@ export default function SafesClient({ initialSafes = [], initialAccounts = [] })
               كافة العملات
             </button>
             <button
+              type="button"
               onClick={() => setCurrencyFilter("USD")}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+              className={`rounded-xl px-3 py-2 text-xs font-medium transition shrink-0 ${
                 currencyFilter === "USD"
                   ? "bg-app-yellow text-app-bg font-bold shadow"
                   : "bg-app-card-soft text-app-muted-light hover:bg-app-line-soft hover:text-app-text"
@@ -93,8 +85,9 @@ export default function SafesClient({ initialSafes = [], initialAccounts = [] })
               دولار (USD)
             </button>
             <button
+              type="button"
               onClick={() => setCurrencyFilter("SYP")}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+              className={`rounded-xl px-3 py-2 text-xs font-medium transition shrink-0 ${
                 currencyFilter === "SYP"
                   ? "bg-app-yellow text-app-bg font-bold shadow"
                   : "bg-app-card-soft text-app-muted-light hover:bg-app-line-soft hover:text-app-text"
@@ -105,7 +98,7 @@ export default function SafesClient({ initialSafes = [], initialAccounts = [] })
           </div>
         </div>
 
-        <Button variant="primary" onClick={openCreateModal} className="flex items-center gap-2">
+        <Button variant="primary" onClick={openCreateModal} className="flex items-center justify-center gap-2 shrink-0">
           <FolderPlusIcon className="size-4" />
           <span>إضافة صندوق جديد</span>
         </Button>
