@@ -64,10 +64,10 @@ class StaffService
             });
         }
 
-        // Eager-load person contacts, coach details with certifications, active contract, branches, user and shifts
+        // Eager-load person contacts, coach details, active contract, branches, user and shifts
         $query->with([
             'person.contacts',
-            'coachDetail.certifications',
+            'coachDetail',
             'activeContract',
             'branches',
             'user',
@@ -91,7 +91,7 @@ class StaffService
         $staff = $this->staffRepository->find($id);
         $staff->load([
             'person.contacts',
-            'coachDetail.certifications',
+            'coachDetail',
             'activeContract',
             'branches',
             'user',
@@ -99,6 +99,7 @@ class StaffService
         ]);
         return $this->attachSharedDTOs($staff);
     }
+
 
 
     /**
