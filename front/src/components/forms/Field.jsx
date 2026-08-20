@@ -18,12 +18,24 @@ export function Field({
   error,
   ...props
 }) {
+  const handlePickerChange = (val) => {
+    if (!onChange) return;
+    if (name) {
+      onChange({
+        target: { name, value: val },
+        currentTarget: { name, value: val },
+      });
+    } else {
+      onChange(val);
+    }
+  };
+
   if (type === "time") {
     return (
       <TimePickerSmart
         label={label}
         value={value}
-        onChange={onChange}
+        onChange={handlePickerChange}
         placeholder={placeholder || "HH:MM"}
         required={required}
         disabled={props.disabled}
@@ -39,7 +51,7 @@ export function Field({
       <DatePickerSmart
         label={label}
         value={value}
-        onChange={onChange}
+        onChange={handlePickerChange}
         placeholder={placeholder || "DD/MM/YYYY"}
         required={required}
         disabled={props.disabled}

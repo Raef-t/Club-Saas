@@ -48,7 +48,7 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
                 label="من تاريخ"
                 type="date"
                 value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
+                onChange={(e) => setFromDate(e?.target?.value ?? e)}
               />
             </div>
             <div className="w-36">
@@ -56,7 +56,7 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
                 label="إلى تاريخ"
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                onChange={(e) => setToDate(e?.target?.value ?? e)}
               />
             </div>
             <Button

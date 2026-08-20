@@ -94,7 +94,7 @@ export default function RevenuesClient({
               <Field
                 type="date"
                 value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
+                onChange={(e) => setFromDate(e?.target?.value ?? e)}
                 placeholder="من تاريخ"
               />
             </div>
@@ -102,7 +102,7 @@ export default function RevenuesClient({
               <Field
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                onChange={(e) => setToDate(e?.target?.value ?? e)}
                 placeholder="إلى تاريخ"
               />
             </div>
