@@ -45,12 +45,18 @@ export default function SubscriptionsClient({ initialData }) {
     stats,
     errorMessage,
     branches,
+    deleteConfirmation,
+    setDeleteConfirmation,
     isFreezing,
     isUnfreezing,
     isCancelling,
     isDeleting,
     deleteConfirmOpen,
     itemToDelete,
+    isRefunded,
+    setIsRefunded,
+    deleteReason,
+    setDeleteReason,
     handleFreeze,
     handleUnfreeze,
     handleCancel,
@@ -66,6 +72,11 @@ export default function SubscriptionsClient({ initialData }) {
         key: "member",
         label: "العضو",
         align: "center",
+        sortValue: (subscription) => {
+          const member = subscription.member || {};
+          const person = member.person || {};
+          return person.full_name || member.member_number || "";
+        },
         render: (_, subscription) => {
           const member = subscription.member || {};
           const person = member.person || {};
@@ -86,6 +97,10 @@ export default function SubscriptionsClient({ initialData }) {
         key: "plan",
         label: "الخطة",
         align: "center",
+        sortValue: (subscription) => {
+          const plan = subscription.plan || {};
+          return typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "";
+        },
         render: (_, subscription) => {
           const plan = subscription.plan || {};
           const planName =
@@ -105,6 +120,7 @@ export default function SubscriptionsClient({ initialData }) {
         key: "remaining_amount",
         label: "المتبقي",
         align: "center",
+        sortValue: (subscription) => Number(subscription.remaining_amount || 0),
         render: (value) => (
           <span className="font-medium text-app-red">{formatSubscriptionMoney(value)}</span>
         ),
@@ -113,6 +129,7 @@ export default function SubscriptionsClient({ initialData }) {
         key: "dates",
         label: "تاريخ الصلاحية",
         align: "center",
+        sortValue: (subscription) => subscription.start_date || subscription.end_date || "",
         render: (_, subscription) => (
           <div className="text-center text-[11px]">
             <p className="text-app-muted-light">{formatDate(subscription.start_date)}</p>
@@ -124,12 +141,14 @@ export default function SubscriptionsClient({ initialData }) {
         key: "status",
         label: "الحالة",
         align: "center",
+        sortValue: (subscription) => subscription.status || "",
         render: (value) => <SubscriptionStatusBadge status={value} />,
       },
       {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, subscription) => (
           <RowActions
             disabled={isDeleting}
@@ -185,6 +204,7 @@ export default function SubscriptionsClient({ initialData }) {
         showSearch={false}
         showFilter={false}
         showExport={false}
+        defaultSortColumn="member"
         isLoading={isLoading}
         loadingRows={5}
         emptyMessage={
@@ -225,13 +245,7 @@ export default function SubscriptionsClient({ initialData }) {
               onChange={setStatus}
             />
 
-            <Dropdown
-              className="min-w-48 bg-app-card-soft text-white"
-              icon={FilterIcon}
-              value={branchFilter}
-              options={branchOptions}
-              onChange={setBranchFilter}
-            />
+
           </div>
         }
         toolbarMeta={
@@ -272,9 +286,56 @@ export default function SubscriptionsClient({ initialData }) {
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف الاشتراك"
-        message={`هل أنت متأكد من رغبتك في حذف الاشتراك${itemToDelete?.member?.person?.full_name ? ` الخاص برقم العضوية (${itemToDelete.member.member_number || itemToDelete.id})` : ""}؟ لا يمكن التراجع عن هذا الإجراء.`}
+        message={`هل أنت متأكد من رغبتك في حذف اشتراك "${
+          selectedSubscription?.plan?.name || "هذا اللاعب"
+        }"؟`}
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={isDeleting}
-      />
+      >
+        <div className="space-y-4 rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right">
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isRefunded}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIsRefunded(checked);
+                if (checked && !deleteReason) {
+                  setDeleteReason("طلب اللاعب إلغاء واسترداد المبلغ");
+                }
+              }}
+              className="mt-1 size-4 rounded border-app-line bg-black/40 text-app-yellow accent-app-yellow focus:ring-1 focus:ring-app-yellow focus:ring-offset-0 cursor-pointer"
+            />
+            <div className="flex-1">
+              <span className="block text-sm font-medium text-app-text">
+                إعادة سعر الاشتراك للاعب (استرداد المبلغ - Refund)
+              </span>
+              <span className="mt-1 block text-xs leading-relaxed text-app-muted-light">
+                {isRefunded
+                  ? "سيتم حذف سجل التوزيع المالي (subscription_revenue_splits) واعتبار المبلغ مستردًا للاعب."
+                  : "يبقى السجل المالي وتوزيع الإيرادات محفوظاً في النظام بدون استرداد مالي."}
+              </span>
+            </div>
+          </label>
+
+          <div className="pt-3 border-t border-app-line/50">
+            <label className="block text-xs font-medium text-app-muted-light mb-1.5">
+              سبب الحذف / الاسترداد (اختياري):
+            </label>
+            <input
+              type="text"
+              className="app-input h-10 w-full px-3 text-right text-sm text-app-text outline-none transition focus:border-app-yellow/70 bg-black/25"
+              placeholder="مثال: طلب اللاعب إلغاء واسترداد المبلغ"
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              disabled={isDeleting}
+            />
+          </div>
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

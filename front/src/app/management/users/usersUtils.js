@@ -112,7 +112,7 @@ export function buildUserRoleTabs(users) {
   ];
 }
 
-export function createUserStats(users) {
+export function createUserStats(users, { roleFilter, setRoleFilter } = {}) {
   const hasRole = (user, roles) => getUserRoles(user).some((role) => roles.includes(role));
   const countByRoles = (roles) => users.filter((user) => hasRole(user, roles)).length;
   const needsPasswordChange = users.filter(
@@ -127,6 +127,8 @@ export function createUserStats(users) {
       tone: "yellow",
       iconKey: "members",
       compact: true,
+      onClick: setRoleFilter ? () => setRoleFilter("all") : undefined,
+      active: roleFilter === "all",
     },
     {
       title: "حسابات الإدارة",
@@ -137,6 +139,14 @@ export function createUserStats(users) {
       tone: "purple",
       iconKey: "members",
       compact: true,
+      onClick: setRoleFilter
+        ? () => setRoleFilter(roleFilter === "admin" ? "all" : "admin")
+        : undefined,
+      active:
+        roleFilter === "admin" ||
+        roleFilter === "super_admin" ||
+        roleFilter === "management_admin" ||
+        roleFilter === "manager",
     },
     {
       title: "حسابات المدربين",
@@ -145,6 +155,10 @@ export function createUserStats(users) {
       tone: "blue",
       iconKey: "coaches",
       compact: true,
+      onClick: setRoleFilter
+        ? () => setRoleFilter(roleFilter === "coach" ? "all" : "coach")
+        : undefined,
+      active: roleFilter === "coach",
     },
     {
       title: "حسابات اللاعبين",
@@ -153,6 +167,10 @@ export function createUserStats(users) {
       tone: "green",
       iconKey: "members",
       compact: true,
+      onClick: setRoleFilter
+        ? () => setRoleFilter(roleFilter === "player" ? "all" : "player")
+        : undefined,
+      active: roleFilter === "player",
     },
     {
       title: "بانتظار تغيير كلمة المرور",

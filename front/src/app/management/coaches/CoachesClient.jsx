@@ -158,6 +158,8 @@ export default function CoachesClient({ initialData }) {
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     getEditInitialValues,
     branches,
     activities,
@@ -229,6 +231,10 @@ export default function CoachesClient({ initialData }) {
         key: "employment_type",
         label: "التوظيف",
         align: "center",
+        sortValue: (coach) => {
+          const compensation = getCoachCompensationVisibility(coach);
+          return employmentLabels[compensation.paymentType] || coach.employment_type || "";
+        },
         render: (value, coach) => {
           const compensation = getCoachCompensationVisibility(coach);
           const label = employmentLabels[compensation.paymentType] || value;
@@ -240,6 +246,7 @@ export default function CoachesClient({ initialData }) {
         key: "base_salary",
         label: "الراتب / النسبة",
         align: "center",
+        sortValue: (coach) => Number(coach.base_salary || 0),
         render: (_, coach) => {
           const compensation = getCoachCompensationVisibility(coach);
           const salary = formatMoney(coach.base_salary);
@@ -298,6 +305,7 @@ export default function CoachesClient({ initialData }) {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, coach) => (
           <RowActions
             disabled={isDeleting}
@@ -399,13 +407,6 @@ export default function CoachesClient({ initialData }) {
               />
             </label>
 
-            <Dropdown
-              className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
-              icon={FilterIcon}
-              value={branchFilter}
-              options={branchOptions}
-              onChange={setBranchFilter}
-            />
 
             <Dropdown
               className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
@@ -462,6 +463,10 @@ export default function CoachesClient({ initialData }) {
         onConfirm={confirmDelete}
         title="تأكيد حذف المدرب"
         message={`هل أنت متأكد من رغبتك في حذف المدرب "${itemToDelete ? itemToDelete.person?.full_name : ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={isDeleting}
       />
     </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useGetPlayerSubscriptionQuery,
   useGetPlayerSubscriptionsQuery,
@@ -19,18 +20,39 @@ import {
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
 
+function isExpiringSoon(subscription) {
+  if (subscription.status !== "active") return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endDate = new Date(subscription.end_date);
+  if (Number.isNaN(endDate.getTime())) return false;
+  endDate.setHours(23, 59, 59, 999);
+  const diffDays = (endDate - today) / (1000 * 60 * 60 * 24);
+  return diffDays >= 0 && diffDays <= 7;
+}
+
 /**
  * Coordinates subscription data, filters, selection, and lifecycle mutations.
  */
 export function useSubscriptions({ initialData } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams?.get("status");
+  const initialStatus =
+    urlStatus === "expiring_soon" || urlStatus === "expiring"
+      ? "expiring_soon"
+      : urlStatus || "all";
+
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(initialStatus);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isRefunded, setIsRefunded] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const queryParams = useMemo(() => {
     return branchFilter !== "all" ? { branch_id: branchFilter } : {};
@@ -82,7 +104,11 @@ export function useSubscriptions({ initialData } = {}) {
       const plan = subscription.plan || {};
       const planName =
         typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "";
-      const matchesStatus = status === "all" || subscription.status === status;
+      const matchesStatus =
+        status === "all" ||
+        (status === "expiring_soon" || status === "expiring"
+          ? isExpiringSoon(subscription)
+          : subscription.status === status);
       const matchesSearch =
         !normalizedSearch ||
         [person.full_name, person.phone, member.member_number, planName]
@@ -103,13 +129,7 @@ export function useSubscriptions({ initialData } = {}) {
       (sum, item) => sum + parseSubscriptionAmount(item.remaining_amount),
       0,
     );
-    const today = new Date();
-    const soon = branchSubscriptions.filter((item) => {
-      const endDate = new Date(item.end_date);
-      if (Number.isNaN(endDate.getTime())) return false;
-      const diffDays = (endDate - today) / (1000 * 60 * 60 * 24);
-      return diffDays >= 0 && diffDays <= 7;
-    }).length;
+    const soon = branchSubscriptions.filter(isExpiringSoon).length;
 
     return [
       {
@@ -118,6 +138,8 @@ export function useSubscriptions({ initialData } = {}) {
         helper: "كل الاشتراكات المسترجعة",
         tone: "yellow",
         compact: true,
+        onClick: () => setStatus("all"),
+        active: status === "all",
       },
       {
         title: "الاشتراكات النشطة",
@@ -125,6 +147,8 @@ export function useSubscriptions({ initialData } = {}) {
         helper: "حالة العضوية active",
         tone: "green",
         compact: true,
+        onClick: () => setStatus(status === "active" ? "all" : "active"),
+        active: status === "active",
       },
       {
         title: "المبالغ المدفوعة",
@@ -139,9 +163,12 @@ export function useSubscriptions({ initialData } = {}) {
         helper: `${soon.toLocaleString("ar")} اشتراك ينتهي خلال ٧ أيام`,
         tone: "purple",
         compact: true,
+        onClick: () =>
+          setStatus(status === "expiring_soon" || status === "expiring" ? "all" : "expiring_soon"),
+        active: status === "expiring_soon" || status === "expiring",
       },
     ];
-  }, [branchSubscriptions]);
+  }, [branchSubscriptions, status]);
 
   const errorMessage =
     error?.data?.message ||
@@ -187,19 +214,33 @@ export function useSubscriptions({ initialData } = {}) {
 
   function handleDelete(subscription) {
     setItemToDelete(subscription);
+    setIsRefunded(false);
+    setDeleteReason("");
+    setDeleteConfirmation("");
     setDeleteConfirmOpen(true);
   }
 
   function closeDeleteConfirm() {
     setDeleteConfirmOpen(false);
     setItemToDelete(null);
+    setIsRefunded(false);
+    setDeleteReason("");
+    setDeleteConfirmation("");
   }
 
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
-      await deletePlayerSubscription(itemToDelete.id).unwrap();
-      toast.success("تم حذف الاشتراك بنجاح!");
+      await deletePlayerSubscription({
+        id: itemToDelete.id,
+        is_refunded: isRefunded,
+        reason: deleteReason ? deleteReason.trim() : undefined,
+      }).unwrap();
+      toast.success(
+        isRefunded
+          ? "تم حذف الاشتراك واسترداد المبلغ بنجاح!"
+          : "تم حذف الاشتراك بنجاح!"
+      );
     } catch {
       toast.error("تعذر حذف الاشتراك. حاول مرة أخرى.");
     } finally {
@@ -236,6 +277,12 @@ export function useSubscriptions({ initialData } = {}) {
     isDeleting,
     deleteConfirmOpen,
     itemToDelete,
+    isRefunded,
+    setIsRefunded,
+    deleteReason,
+    setDeleteReason,
+    deleteConfirmation,
+    setDeleteConfirmation,
     handleFreeze,
     handleUnfreeze,
     handleCancel,

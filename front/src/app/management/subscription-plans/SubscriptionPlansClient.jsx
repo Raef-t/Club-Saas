@@ -1062,6 +1062,8 @@ export default function SubscriptionPlansClient({ initialData }) {
     getEditInitialValues,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     closeDeleteConfirm,
     confirmDelete,
     suspensionModalOpen,
@@ -1083,6 +1085,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         key: "name",
         label: "الفعالية",
         align: "center",
+        sortValue: (plan) => planName(plan) || "",
         render: (_, plan) => (
           <div className="min-w-0 text-center">
             <p className="truncate text-sm font-medium text-app-text">{planName(plan)}</p>
@@ -1094,18 +1097,21 @@ export default function SubscriptionPlansClient({ initialData }) {
         key: "sessions_per_week",
         label: "جلسات/أسبوع",
         align: "center",
+        sortValue: (plan) => Number(plan.sessions_per_week || 0),
         render: (value) => value || "-",
       },
       {
         key: "session_count",
         label: "الجلسات",
         align: "center",
+        sortValue: (plan) => Number(plan.session_count || 0),
         render: (value) => `${value || 0} جلسة`,
       },
       {
         key: "base_price",
         label: "السعر",
         align: "center",
+        sortValue: (plan) => Number(plan.base_price ?? plan.price ?? 0),
         render: (value) => (
           <span className="font-medium text-app-yellow">{formatMoney(value)}</span>
         ),
@@ -1114,6 +1120,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         key: "subscribers",
         label: "المشتركين",
         align: "center",
+        sortValue: (plan) => Number(plan.current_subscribers || 0),
         render: (_, plan) =>
           plan.is_unlimited_subscribers
             ? `${plan.current_subscribers || 0} / غير محدود`
@@ -1123,12 +1130,14 @@ export default function SubscriptionPlansClient({ initialData }) {
         key: "is_active",
         label: "الحالة",
         align: "center",
+        sortValue: (plan) => getSubscriptionPlanStatusMeta(plan).label,
         render: (_, plan) => <StatusBadge plan={plan} />,
       },
       {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, plan) => (
           <div className="flex items-center justify-center gap-2">
             <PlanSuspensionAction
@@ -1179,6 +1188,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         showSearch={false}
         showFilter={false}
         showExport={false}
+        defaultSortColumn="name"
         isLoading={isLoading}
         emptyMessage={
           error ? (
@@ -1259,6 +1269,10 @@ export default function SubscriptionPlansClient({ initialData }) {
         onConfirm={confirmDelete}
         title="تأكيد حذف الفعالية"
         message={`هل أنت متأكد من رغبتك في حذف فعالية "${itemToDelete ? planName(itemToDelete) : ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={isDeleting}
       />
 

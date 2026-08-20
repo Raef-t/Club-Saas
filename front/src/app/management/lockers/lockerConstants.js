@@ -23,6 +23,10 @@ export const LOCKER_STATUS_CLASSES = {
 export const LOCKER_FILTER_OPTIONS = [
   { value: "all", label: "كل الحالات" },
   { value: "available", label: "متاحة" },
+  { value: "assigned_free", label: "إسناد مجاني" },
+  { value: "rented", label: "مؤجرة" },
+  { value: "with_member", label: "مع الأعضاء" },
+  { value: "with_coach", label: "مع المدربين" },
   { value: "occupied", label: "مشغولة" },
   { value: "maintenance", label: "صيانة" },
   { value: "disabled", label: "معطلة" },

@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useGetUsersQuery } from "@/lib/api/usersApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { buildUserRoleTabs, createUserStats, filterUsers, getUsersCollection } from "./usersUtils";
 
 export function useUsers({ initialUsers } = {}) {
+  const searchParams = useSearchParams();
+  const urlRole = searchParams?.get("role");
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState(urlRole || "all");
   const {
     currentData: allUsersResponse,
     error: allUsersError,
@@ -35,7 +38,10 @@ export function useUsers({ initialUsers } = {}) {
     [allUsers, roleFilter, roleUsersResponse],
   );
   const users = useMemo(() => filterUsers(roleUsers, search), [roleUsers, search]);
-  const stats = useMemo(() => createUserStats(allUsers), [allUsers]);
+  const stats = useMemo(
+    () => createUserStats(allUsers, { roleFilter, setRoleFilter }),
+    [allUsers, roleFilter],
+  );
   const roleOptions = useMemo(() => buildUserRoleTabs(allUsers), [allUsers]);
   const isRoleFiltered = roleFilter !== "all";
   const activeError = isRoleFiltered ? roleUsersError : allUsersError;

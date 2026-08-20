@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import LockersClient from "./LockersClient";
 import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
@@ -18,14 +19,16 @@ export default async function LockersPage() {
   ]);
 
   return (
-    <LockersClient
-      initialData={{
-        lockers,
-        branches,
-        members,
-        coaches,
-        staff,
-      }}
-    />
+    <Suspense fallback={null}>
+      <LockersClient
+        initialData={{
+          lockers,
+          branches,
+          members,
+          coaches,
+          staff,
+        }}
+      />
+    </Suspense>
   );
 }

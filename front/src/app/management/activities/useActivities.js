@@ -24,6 +24,7 @@ export function useActivities({ initialActivities } = {}) {
   const [search, setSearch] = useState("");
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const {
     currentData: activitiesResponse,
     error,
@@ -72,6 +73,7 @@ export function useActivities({ initialActivities } = {}) {
    * Opens the destructive confirmation for one activity.
    */
   function requestDelete(activity) {
+    setDeleteConfirmation("");
     setDeleteTarget(activity);
   }
 
@@ -79,12 +81,13 @@ export function useActivities({ initialActivities } = {}) {
    * Deletes the selected activity after confirmation.
    */
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
       await deleteActivity(deleteTarget.id).unwrap();
       toast.success("تم حذف النشاط بنجاح");
       setDeleteTarget(null);
+      setDeleteConfirmation("");
     } catch (deleteError) {
       toast.error(getApiErrorMessage(deleteError, "تعذر حذف النشاط. حاول مرة أخرى."));
     }
@@ -110,5 +113,7 @@ export function useActivities({ initialActivities } = {}) {
     requestDelete,
     confirmDelete,
     isDeleting,
+    deleteConfirmation,
+    setDeleteConfirmation,
   };
 }

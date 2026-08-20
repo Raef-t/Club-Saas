@@ -20,6 +20,7 @@ export default function BranchesTable({ state }) {
         key: "name",
         label: "اسم الفرع",
         align: "center",
+        sortValue: (branch) => getBranchDisplayName(branch) || "",
         render: (_, branch) => (
           <span className="text-sm font-medium text-app-text">{getBranchDisplayName(branch)}</span>
         ),
@@ -28,6 +29,7 @@ export default function BranchesTable({ state }) {
         key: "gender_restriction",
         label: "التقييد الجنسي",
         align: "center",
+        sortValue: (branch) => genderLabels[branch.gender_restriction] || branch.gender_restriction || "",
         render: (value) => (
           <span className="text-xs text-app-muted-light">{genderLabels[value] || value}</span>
         ),
@@ -46,6 +48,7 @@ export default function BranchesTable({ state }) {
         key: "phone",
         label: "الهاتف",
         align: "center",
+        sortValue: (branch) => (branch.phone ? `${branch.country_code || ""} ${branch.phone}`.trim() : ""),
         render: (_, branch) => (
           <span className="text-xs text-app-muted-light" dir="ltr">
             {branch.phone ? `${branch.country_code || ""} ${branch.phone}` : "-"}
@@ -56,6 +59,7 @@ export default function BranchesTable({ state }) {
         key: "is_active",
         label: "الحالة",
         align: "center",
+        sortValue: (branch) => (branch.is_active ? 1 : 0),
         render: (value, branch) => (
           <div className="flex justify-center" onClick={(event) => event.stopPropagation()}>
             <ToggleSwitch
@@ -71,6 +75,7 @@ export default function BranchesTable({ state }) {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, branch) => (
           <RowActions
             disabled={state.isDeleting || state.isToggling}
@@ -94,6 +99,7 @@ export default function BranchesTable({ state }) {
       showSearch={false}
       showFilter={false}
       showExport={false}
+      defaultSortColumn="name"
       isLoading={state.isLoading}
       emptyMessage={
         state.errorMessage ? (

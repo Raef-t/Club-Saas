@@ -48,6 +48,7 @@ export default function ShiftsSettingsTab({
         label: "الفئة المسموح بها",
         align: "center",
         width: "140px",
+        sortValue: (row) => GENDER_MAP[row.gender_allowed] ?? row.gender_allowed ?? "",
         render: (value) => GENDER_MAP[value] ?? value,
       },
       {
@@ -55,6 +56,7 @@ export default function ShiftsSettingsTab({
         label: "الإجراءات",
         align: "center",
         width: "140px",
+        sortable: false,
         render: (_, row) => (
           <SettingsTableActions
             onEdit={() => state.openEdit(row)}
@@ -134,6 +136,10 @@ export default function ShiftsSettingsTab({
         isLoading={state.isDeleting}
         title="حذف الوردية"
         message={`هل أنت متأكد من حذف الوردية "${state.deleteTarget?.name || ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={state.deleteConfirmation}
+        onConfirmationChange={state.setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
       />
     </>
   );

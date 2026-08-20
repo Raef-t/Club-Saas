@@ -58,6 +58,10 @@ export default function ActivitiesClient({ initialData }) {
         onConfirm={state.confirmDelete}
         title="تأكيد حذف النشاط"
         message={`هل أنت متأكد من رغبتك في حذف نشاط "${getActivityName(state.deleteTarget)}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={state.deleteConfirmation}
+        onConfirmationChange={state.setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={state.isDeleting}
       />
     </div>

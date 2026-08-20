@@ -79,10 +79,12 @@ export default function AttendanceClient({ initialBranches }) {
         errorMessage={attendance.attendancesErrorMessage}
         onRetry={attendance.retryAttendances}
         typeFilter={attendance.attendanceTypeFilter}
+        statusFilter={attendance.attendanceStatusFilter}
         fromDate={attendance.attendanceFromDate}
         toDate={attendance.attendanceToDate}
         hasFilters={attendance.hasAttendanceFilters}
         onTypeFilterChange={attendance.setAttendanceTypeFilter}
+        onStatusFilterChange={attendance.setAttendanceStatusFilter}
         onFromDateChange={attendance.setAttendanceFromDate}
         onToDateChange={attendance.setAttendanceToDate}
         onResetFilters={attendance.resetAttendanceFilters}

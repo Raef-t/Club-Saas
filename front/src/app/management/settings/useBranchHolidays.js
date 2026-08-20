@@ -18,6 +18,7 @@ export function useBranchHolidays({ branchId, initialBranchId, initialHolidays }
   const toast = useToast();
   const [editor, setEditor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [form, setForm] = useState(() => createHolidayForm());
   const [errors, setErrors] = useState({});
   const {
@@ -39,6 +40,7 @@ export function useBranchHolidays({ branchId, initialBranchId, initialHolidays }
   useEffect(() => {
     setEditor(null);
     setDeleteTarget(null);
+    setDeleteConfirmation("");
     setErrors({});
   }, [branchId]);
 
@@ -126,7 +128,7 @@ export function useBranchHolidays({ branchId, initialBranchId, initialHolidays }
    * Deletes the selected holiday after confirmation.
    */
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
       await deleteHoliday({
@@ -135,6 +137,7 @@ export function useBranchHolidays({ branchId, initialBranchId, initialHolidays }
       }).unwrap();
       toast.success("تم حذف الإجازة بنجاح");
       setDeleteTarget(null);
+      setDeleteConfirmation("");
     } catch (deleteError) {
       toast.error(getApiErrorMessage(deleteError, "حدث خطأ أثناء حذف الإجازة."));
     }
@@ -158,6 +161,8 @@ export function useBranchHolidays({ branchId, initialBranchId, initialHolidays }
     isSaving: isCreating || isUpdating,
     deleteTarget,
     setDeleteTarget,
+    deleteConfirmation,
+    setDeleteConfirmation,
     confirmDelete,
     isDeleting,
   };

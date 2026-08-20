@@ -27,6 +27,7 @@ export default function HolidaysSettingsTab({
         label: "نوع العطلة / الإجازة",
         align: "center",
         width: "180px",
+        sortValue: (row) => HOLIDAY_TYPE_MAP[row.type] ?? row.type ?? "",
         render: (value) => HOLIDAY_TYPE_MAP[value] ?? value,
       },
       {
@@ -34,6 +35,7 @@ export default function HolidaysSettingsTab({
         label: "تفاصيل الفترة",
         align: "center",
         width: "240px",
+        sortValue: (row) => getHolidayPeriod(row, DAYS_MAP) || "",
         render: (_, row) => getHolidayPeriod(row, DAYS_MAP),
       },
       {
@@ -41,6 +43,7 @@ export default function HolidaysSettingsTab({
         label: "الإجراءات",
         align: "center",
         width: "140px",
+        sortable: false,
         render: (_, row) => (
           <SettingsTableActions
             onEdit={() => state.openEdit(row)}
@@ -109,6 +112,10 @@ export default function HolidaysSettingsTab({
         isLoading={state.isDeleting}
         title="حذف العطلة / الإجازة"
         message="هل أنت متأكد من حذف هذه العطلة أو الإجازة؟ لا يمكن التراجع عن هذا الإجراء."
+        requiredConfirmation="delete"
+        confirmationValue={state.deleteConfirmation}
+        onConfirmationChange={state.setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
       />
     </>
   );

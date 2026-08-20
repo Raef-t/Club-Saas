@@ -58,6 +58,16 @@ describe("locker utilities", () => {
       }),
     ).toEqual([lockers[1]]);
     expect(filterLockers([{ locker_number: null }], { search: "1" })).toEqual([]);
+    expect(filterLockers(lockers, { status: "with_member" })).toEqual([lockers[1]]);
+    expect(
+      filterLockers(
+        [
+          { id: 1, locker_number: "L-1", current_reservation: { reservation_type: "assign" } },
+          { id: 2, locker_number: "L-2", current_reservation: { reservation_type: "rental" } },
+        ],
+        { status: "assigned_free" },
+      ),
+    ).toEqual([{ id: 1, locker_number: "L-1", current_reservation: { reservation_type: "assign" } }]);
   });
 
   it("does not send the aggregate occupied status to the backend", () => {

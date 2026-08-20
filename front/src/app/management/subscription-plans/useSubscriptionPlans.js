@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useCreateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
@@ -50,8 +51,11 @@ export function useSubscriptionPlans({
   initialData,
 } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams?.get("status") || searchParams?.get("active");
   const { selectedBranchId } = useManagementBranch();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState(urlStatus || "all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedPlanId, setSelectedPlanId] = useState(initialSelectedPlanId);
   const [formError, setFormError] = useState("");
@@ -143,14 +147,22 @@ export function useSubscriptionPlans({
 
   const filteredPlans = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return plans;
 
-    return plans.filter((plan) =>
-      [plan.name?.ar, plan.name?.en, plan.type, plan.base_price]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
-    );
-  }, [plans, search]);
+    return plans.filter((plan) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active"
+          ? isSubscriptionPlanActive(plan)
+          : !isSubscriptionPlanActive(plan));
+      const matchesSearch =
+        !normalizedSearch ||
+        [plan.name?.ar, plan.name?.en, plan.type, plan.base_price]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(normalizedSearch));
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [plans, search, statusFilter]);
 
   const stats = useMemo(() => {
     const activeCount = plans.filter(isSubscriptionPlanActive).length;
@@ -165,6 +177,8 @@ export function useSubscriptionPlans({
         helper: "كل الخطط المتاحة",
         tone: "yellow",
         compact: true,
+        onClick: () => setStatusFilter("all"),
+        active: statusFilter === "all",
       },
       {
         title: "الخطط الفعالة",
@@ -172,6 +186,8 @@ export function useSubscriptionPlans({
         helper: "جاهزة للاستخدام",
         tone: "green",
         compact: true,
+        onClick: () => setStatusFilter(statusFilter === "active" ? "all" : "active"),
+        active: statusFilter === "active",
       },
       {
         title: "متوسط السعر",
@@ -188,7 +204,7 @@ export function useSubscriptionPlans({
         compact: true,
       },
     ];
-  }, [plans]);
+  }, [plans, statusFilter]);
 
   function closeDrawer() {
     setDrawerMode(null);
@@ -251,19 +267,22 @@ export function useSubscriptionPlans({
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   function handleDelete(plan) {
     setItemToDelete(plan);
+    setDeleteConfirmation("");
     setDeleteConfirmOpen(true);
   }
 
   function closeDeleteConfirm() {
     setDeleteConfirmOpen(false);
     setItemToDelete(null);
+    setDeleteConfirmation("");
   }
 
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
       await deletePlan(itemToDelete.id).unwrap();
       toast.success("تم حذف خطة الاشتراك بنجاح!");
@@ -374,6 +393,8 @@ export function useSubscriptionPlans({
   return {
     search,
     setSearch,
+    statusFilter,
+    setStatusFilter,
     drawerMode,
     setDrawerMode,
     selectedPlanId,
@@ -407,6 +428,8 @@ export function useSubscriptionPlans({
     getEditInitialValues,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     closeDeleteConfirm,
     confirmDelete,
     suspensionModalOpen,

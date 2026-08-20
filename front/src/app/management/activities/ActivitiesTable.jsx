@@ -26,6 +26,7 @@ export default function ActivitiesTable({ state }) {
         key: "description",
         label: "الوصف",
         align: "center",
+        sortValue: (activity) => activity.description || "",
         render: (value) => (
           <span className="block max-w-64 truncate text-center text-xs text-app-muted-light">
             {value || "-"}
@@ -36,6 +37,7 @@ export default function ActivitiesTable({ state }) {
         key: "activity_type",
         label: "الفئة",
         align: "center",
+        sortValue: (activity) => formatLocalizedName(activity.activity_type?.name) || "",
         render: (_, activity) => (
           <span className="text-xs text-app-muted-light">
             {formatLocalizedName(activity.activity_type?.name)}
@@ -46,6 +48,7 @@ export default function ActivitiesTable({ state }) {
         key: "is_active",
         label: "الحالة",
         align: "center",
+        sortValue: (activity) => (activity.is_active ? 1 : 0),
         render: (value) => (
           <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -60,6 +63,7 @@ export default function ActivitiesTable({ state }) {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, activity) => (
           <RowActions
             disabled={state.isDeleting}

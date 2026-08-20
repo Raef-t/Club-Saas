@@ -53,6 +53,9 @@ export default function StaffClient({ initialData }) {
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
+    getEditInitialValues,
     branches,
     closeDrawer,
   } = useStaff({ initialData });
@@ -94,6 +97,7 @@ export default function StaffClient({ initialData }) {
         key: "role",
         label: "الدور",
         align: "center",
+        sortValue: (staff) => STAFF_ROLE_LABELS[staff.role] || staff.role || "",
         render: (value) => (
           <span className="rounded-full bg-app-blue/10 px-2.5 py-1 text-xs text-app-blue">
             {STAFF_ROLE_LABELS[value] || value || "-"}
@@ -104,6 +108,7 @@ export default function StaffClient({ initialData }) {
         key: "branches",
         label: "الفروع",
         align: "center",
+        sortValue: (staff) => getStaffBranchNames(staff, branches).join("، "),
         render: (_, staff) => {
           const names = getStaffBranchNames(staff, branches);
           return <span className="text-xs text-app-muted-light">{names.join("، ") || "-"}</span>;
@@ -113,6 +118,7 @@ export default function StaffClient({ initialData }) {
         key: "employment_type",
         label: "نوع التوظيف",
         align: "center",
+        sortValue: (staff) => STAFF_EMPLOYMENT_LABELS[staff.employment_type] || staff.employment_type || "",
         render: (value) => (
           <span className="text-xs text-app-muted-light">
             {STAFF_EMPLOYMENT_LABELS[value] || value || "-"}
@@ -123,6 +129,7 @@ export default function StaffClient({ initialData }) {
         key: "base_salary",
         label: "الراتب الأساسي",
         align: "center",
+        sortValue: (staff) => Number(staff.base_salary || 0),
         render: (value) => (
           <span className="text-xs font-semibold text-app-green">{formatMoney(value)}</span>
         ),
@@ -147,6 +154,7 @@ export default function StaffClient({ initialData }) {
         key: "actions",
         label: "الإجراءات",
         align: "center",
+        sortable: false,
         render: (_, staff) => (
           <RowActions
             disabled={isDeleting}
@@ -251,13 +259,7 @@ export default function StaffClient({ initialData }) {
                 aria-label="البحث في الموظفين"
               />
             </label>
-            <Dropdown
-              className="min-w-40 text-app-text"
-              icon={FilterIcon}
-              value={branchFilter}
-              options={branchOptions}
-              onChange={setBranchFilter}
-            />
+
             <Dropdown
               className="min-w-40 text-app-text"
               icon={FilterIcon}
@@ -311,6 +313,10 @@ export default function StaffClient({ initialData }) {
         onConfirm={confirmDelete}
         title="تأكيد حذف الموظف"
         message={`هل أنت متأكد من حذف الموظف "${itemToDelete?.person?.full_name || ""}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        requiredConfirmation="delete"
+        confirmationValue={deleteConfirmation}
+        onConfirmationChange={setDeleteConfirmation}
+        confirmationLabel="اكتب كلمة delete لتأكيد الحذف"
         isLoading={isDeleting}
       />
     </div>

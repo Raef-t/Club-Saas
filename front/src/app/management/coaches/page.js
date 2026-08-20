@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import CoachesClient from "@/app/management/coaches/CoachesClient";
 import { verifySession } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
@@ -14,5 +15,9 @@ export default async function CoachesPage() {
     requestBackend("activities", { token }),
   ]);
 
-  return <CoachesClient initialData={{ coaches, branches, activities }} />;
+  return (
+    <Suspense fallback={null}>
+      <CoachesClient initialData={{ coaches, branches, activities }} />
+    </Suspense>
+  );
 }

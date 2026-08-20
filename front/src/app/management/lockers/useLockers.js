@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import {
   useDeleteLockerMutation,
@@ -21,11 +22,19 @@ import {
  */
 export function useLockers({ initialLockers } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams?.get("status") || searchParams?.get("reservation_type");
+  const initialStatus =
+    urlStatus === "free" || urlStatus === "assign" || urlStatus === "assigned_free"
+      ? "assigned_free"
+      : urlStatus || "all";
+
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [reserveTarget, setReserveTarget] = useState(null);
   const [releaseTarget, setReleaseTarget] = useState(null);
   const [reserveError, setReserveError] = useState("");
@@ -119,12 +128,13 @@ export function useLockers({ initialLockers } = {}) {
    * Permanently deletes the selected locker after confirmation.
    */
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
       await deleteLocker(deleteTarget.id).unwrap();
       toast.success("تم حذف الخزانة بنجاح!");
       setDeleteTarget(null);
+      setDeleteConfirmation("");
     } catch (error) {
       toast.error(
         getApiErrorMessage(error, "تعذر حذف الخزانة. تأكد من عدم ارتباطها ببيانات أخرى."),
@@ -151,6 +161,8 @@ export function useLockers({ initialLockers } = {}) {
     setDeleteTarget,
     confirmDelete,
     isDeleting,
+    deleteConfirmation,
+    setDeleteConfirmation,
     reserveTarget,
     reserveError,
     openReserve,

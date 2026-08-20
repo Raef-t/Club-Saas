@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useGetCoachesQuery,
   useGetCoachQuery,
@@ -33,17 +34,23 @@ function getActivitiesArray(response) {
  */
 export function useCoaches(params = {}) {
   const { selectedCoachId: initialSelectedId, fetchDetails = false, initialData } = params;
+  const searchParams = useSearchParams();
+  const urlWorkStatus = searchParams?.get("work_status") || searchParams?.get("status");
+  const urlEmployment = searchParams?.get("employment_type") || searchParams?.get("employment");
+  const urlActivity = searchParams?.get("activity_id") || searchParams?.get("activity");
+
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
   const [search, setSearch] = useState("");
-  const [employmentFilter, setEmploymentFilter] = useState("all");
-  const [activityFilter, setActivityFilter] = useState("all");
-  const [workStatusFilter, setWorkStatusFilter] = useState("all");
+  const [employmentFilter, setEmploymentFilter] = useState(urlEmployment || "all");
+  const [activityFilter, setActivityFilter] = useState(urlActivity || "all");
+  const [workStatusFilter, setWorkStatusFilter] = useState(urlWorkStatus || "all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedCoachId, setSelectedCoachId] = useState(initialSelectedId || null);
   const [formError, setFormError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -162,6 +169,13 @@ export function useCoaches(params = {}) {
         helper: "المدربين المسجلين في النظام",
         tone: "yellow",
         compact: true,
+        onClick: () => {
+          setWorkStatusFilter("all");
+          setEmploymentFilter("all");
+          setActivityFilter("all");
+        },
+        active:
+          workStatusFilter === "all" && employmentFilter === "all" && activityFilter === "all",
       },
       {
         title: "المدربين النشطين",
@@ -169,6 +183,8 @@ export function useCoaches(params = {}) {
         helper: "المدربين الذين يعملون حالياً",
         tone: "green",
         compact: true,
+        onClick: () => setWorkStatusFilter(workStatusFilter === "active" ? "all" : "active"),
+        active: workStatusFilter === "active",
       },
       {
         title: "مدرب براتب ثابت",
@@ -176,6 +192,9 @@ export function useCoaches(params = {}) {
         helper: "موظفون براتب شهري ثابت",
         tone: "blue",
         compact: true,
+        onClick: () =>
+          setEmploymentFilter(employmentFilter === "fixed_salary" ? "all" : "fixed_salary"),
+        active: employmentFilter === "fixed_salary",
       },
       {
         title: "نسبة أو هجين",
@@ -183,9 +202,21 @@ export function useCoaches(params = {}) {
         helper: "أجور نسبية أو هجينة",
         tone: "purple",
         compact: true,
+        onClick: () =>
+          setEmploymentFilter(
+            employmentFilter === "commission" ||
+              employmentFilter === "commission_based" ||
+              employmentFilter === "hybrid"
+              ? "all"
+              : "commission",
+          ),
+        active:
+          employmentFilter === "commission" ||
+          employmentFilter === "commission_based" ||
+          employmentFilter === "hybrid",
       },
     ];
-  }, [branchCoaches]);
+  }, [activityFilter, branchCoaches, employmentFilter, workStatusFilter]);
 
   function closeDrawer() {
     setDrawerMode(null);
@@ -310,16 +341,18 @@ export function useCoaches(params = {}) {
 
   function handleDelete(coach) {
     setItemToDelete(coach);
+    setDeleteConfirmation("");
     setDeleteConfirmOpen(true);
   }
 
   function closeDeleteConfirm() {
     setDeleteConfirmOpen(false);
     setItemToDelete(null);
+    setDeleteConfirmation("");
   }
 
   async function confirmDelete() {
-    if (!itemToDelete) return;
+    if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
       await deleteCoach(itemToDelete.id).unwrap();
     } catch {
@@ -365,6 +398,8 @@ export function useCoaches(params = {}) {
     closeDeleteConfirm,
     deleteConfirmOpen,
     itemToDelete,
+    deleteConfirmation,
+    setDeleteConfirmation,
     getEditInitialValues,
     branches,
     activities,

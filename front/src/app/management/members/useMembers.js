@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useGetMembersQuery,
   useCreatePlayerMutation,
@@ -32,10 +33,15 @@ function getPlansArray(response) {
  */
 export function useMembers({ selectedMemberId: initialSelectedMemberId = null, initialData } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams?.get("status");
+  const urlGender = searchParams?.get("gender");
+
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
   const [search, setSearch] = useState("");
-  const [genderFilter, setGenderFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState(urlGender || "all");
+  const [statusFilter, setStatusFilter] = useState(urlStatus || "all");
   const [drawerMode, setDrawerMode] = useState(null);
   const [selectedMemberId, setSelectedMemberId] = useState(initialSelectedMemberId);
   const [formError, setFormError] = useState("");
@@ -93,6 +99,9 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       const mobileVal = person.phone || person.mobile || m.mobile || "";
 
       const matchesGender = genderFilter === "all" || (person.gender || m.gender) === genderFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" ? m.is_active !== false : m.is_active === false);
 
       const matchesSearch =
         !normalizedSearch ||
@@ -105,9 +114,9 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
           .toLowerCase()
           .includes(normalizedSearch);
 
-      return matchesGender && matchesSearch;
+      return matchesGender && matchesStatus && matchesSearch;
     });
-  }, [branchMembers, genderFilter, search]);
+  }, [branchMembers, genderFilter, search, statusFilter]);
 
   const stats = useMemo(() => {
     const activeCount = branchMembers.filter((m) => m.is_active !== false).length;
@@ -123,6 +132,11 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         helper: "كل اللاعبين المسجلين",
         tone: "yellow",
         compact: true,
+        onClick: () => {
+          setStatusFilter("all");
+          setGenderFilter("all");
+        },
+        active: statusFilter === "all" && genderFilter === "all",
       },
       {
         title: "الأعضاء النشطين",
@@ -130,6 +144,8 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         helper: "اللاعبين ذوي الاشتراكات الفعالة",
         tone: "green",
         compact: true,
+        onClick: () => setStatusFilter(statusFilter === "active" ? "all" : "active"),
+        active: statusFilter === "active",
       },
       {
         title: "الذكور",
@@ -137,6 +153,8 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         helper: "اللاعبين الرجال",
         tone: "blue",
         compact: true,
+        onClick: () => setGenderFilter(genderFilter === "male" ? "all" : "male"),
+        active: genderFilter === "male",
       },
       {
         title: "الإناث",
@@ -144,9 +162,11 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         helper: "اللاعبات السيدات",
         tone: "purple",
         compact: true,
+        onClick: () => setGenderFilter(genderFilter === "female" ? "all" : "female"),
+        active: genderFilter === "female",
       },
     ];
-  }, [branchMembers]);
+  }, [branchMembers, genderFilter, statusFilter]);
 
   function closeDrawer() {
     setDrawerMode(null);
@@ -269,6 +289,8 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     setBranchFilter,
     genderFilter,
     setGenderFilter,
+    statusFilter,
+    setStatusFilter,
     drawerMode,
     setDrawerMode,
     selectedMemberId,

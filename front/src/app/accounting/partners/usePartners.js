@@ -24,6 +24,7 @@ export function usePartners({ initialPartners = [], initialSafes = [] } = {}) {
   const [statementPartner, setStatementPartner] = useState(null);
   const [transactionConfig, setTransactionConfig] = useState({ isOpen: false, type: null, partner: null });
   const [deleteConfirmPartner, setDeleteConfirmPartner] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [formErrors, setFormErrors] = useState({});
 
   const queryParams = useMemo(() => {
@@ -132,11 +133,12 @@ export function usePartners({ initialPartners = [], initialSafes = [] } = {}) {
   };
 
   const handleDeletePartner = async () => {
-    if (!deleteConfirmPartner?.id) return;
+    if (!deleteConfirmPartner?.id || deleteConfirmation !== "delete") return;
     try {
       await deletePartnerMutation(deleteConfirmPartner.id).unwrap();
       toast.success("تم حذف الشريك وحساباته المالية بنجاح");
       setDeleteConfirmPartner(null);
+      setDeleteConfirmation("");
       return true;
     } catch (err) {
       toast.error(getApiErrorMessage(err, "تعذر حذف الشريك لوجود حركات مالية مسجلة على حساباته"));
@@ -183,6 +185,8 @@ export function usePartners({ initialPartners = [], initialSafes = [] } = {}) {
     transactionConfig,
     deleteConfirmPartner,
     setDeleteConfirmPartner,
+    deleteConfirmation,
+    setDeleteConfirmation,
     formErrors,
     isSaving: isCreating || isUpdating,
     isProcessingTx: isDepositing || isWithdrawing,

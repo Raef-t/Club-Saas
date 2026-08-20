@@ -76,14 +76,53 @@ export const playerSubscriptionsApi = createApi({
       ],
     }),
     deletePlayerSubscription: builder.mutation({
-      query: (id) => ({
-        url: `player-subscriptions/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: (result, error, id) => [
-        { type: "PlayerSubscriptions", id },
-        "PlayerSubscriptions",
-      ],
+      query: (arg) => {
+        if (typeof arg === "object" && arg !== null) {
+          const { id, is_refunded, reason, params, body } = arg;
+          const searchParams = new URLSearchParams();
+
+          if (params) {
+            Object.entries(params).forEach(([key, value]) => {
+              if (value !== undefined && value !== null && value !== "") {
+                searchParams.set(key, String(value));
+              }
+            });
+          }
+
+          if (is_refunded !== undefined && !searchParams.has("is_refunded")) {
+            searchParams.set("is_refunded", String(Boolean(is_refunded)));
+          }
+
+          const queryString = searchParams.toString();
+          let finalBody = body;
+          if (finalBody === undefined && (is_refunded !== undefined || reason !== undefined)) {
+            finalBody = {
+              ...(is_refunded !== undefined ? { is_refunded: Boolean(is_refunded) } : {}),
+              ...(reason !== undefined && String(reason).trim() !== ""
+                ? { reason: String(reason).trim() }
+                : {}),
+            };
+          }
+
+          return {
+            url: `player-subscriptions/${id}${queryString ? `?${queryString}` : ""}`,
+            method: "DELETE",
+            body: finalBody,
+          };
+        }
+
+        return {
+          url: `player-subscriptions/${arg}`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: (result, error, arg) => {
+        const id = typeof arg === "object" && arg !== null ? arg.id : arg;
+        return [
+          { type: "PlayerSubscriptions", id },
+          "PlayerSubscriptions",
+        ];
+      },
     }),
   }),
 });
