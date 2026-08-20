@@ -38,7 +38,7 @@ class MemberService
 
     public function getAllMembers(array $filters = [])
     {
-        $query = \Modules\MemberManager\Models\Member::query()->with(['person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
+        $query = \Modules\MemberManager\Models\Member::query();
 
         // 1. Filtering by Branch
         if (!empty($filters['branch_id'])) {
@@ -58,14 +58,15 @@ class MemberService
         }
 
         return $query->with([
-            'creator.person',
             'person.contacts',
             'person.user',
             'branch',
             'healthProfile',
             'measurements',
+            'creator.person',
         ])->latest()->get();
     }
+
 
     /**
      * Register a new member (Orchestration).

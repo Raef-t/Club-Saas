@@ -58,14 +58,17 @@ class PayrollService
     /**
      * Calculate commission pay based on subscriptions.
      */
-    public function calculateCommissionPay(int $staffId, StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, BranchSetting $branchSetting): float
+    public function calculateCommissionPay(int $staffId, StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, BranchSetting $branchSetting, ?Staff $staff = null): float
     {
         if (!in_array($contract->employment_type, ['commission_based', 'hybrid'])) {
             return 0;
         }
 
-        $staff = Staff::with('coachDetail')->find($staffId);
-        $rate = $contract->commission_rate ?: ($staff?->coachDetail?->default_commission_rate ?? 0);
+        $rate = $contract->commission_rate;
+        if (!$rate) {
+            $staffModel = $staff ?? Staff::with('coachDetail')->find($staffId);
+            $rate = $staffModel?->coachDetail?->default_commission_rate ?? 0;
+        }
 
         if ($rate <= 0) {
             return 0;
@@ -159,7 +162,8 @@ class PayrollService
 
             $staffStartDate = Carbon::parse($staff->start_date);
             $basePay = $this->calculateFixedSalary($contract, $periodStart, $periodEnd, $totalDaysInPeriod, $staffStartDate);
-            $commissionPay = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting);
+            $commissionPay = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting, $staff);
+
 
             $payslipsData[] = [
                 'staff_id' => $staff->id,

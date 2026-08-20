@@ -35,7 +35,7 @@ class Branch extends Model {
             $branch->shifts()->delete();
 
             if (class_exists(\Modules\MemberManager\Models\Member::class)) {
-                \Modules\MemberManager\Models\Member::where('branch_id', $branch->id)->get()->each(function ($member) {
+                \Modules\MemberManager\Models\Member::where('branch_id', $branch->id)->with(['person.user', 'subscriptions'])->lazyById(100)->each(function ($member) {
                     $member->delete();
                 });
             }
@@ -43,25 +43,25 @@ class Branch extends Model {
             if (class_exists(\Modules\StaffManager\Models\Staff::class)) {
                 \Modules\StaffManager\Models\Staff::whereHas('branches', function ($q) use ($branch) {
                     $q->where('branch_id', $branch->id);
-                })->get()->each(function ($staff) {
+                })->with(['person.user', 'coachDetail'])->lazyById(100)->each(function ($staff) {
                     $staff->delete();
                 });
             }
 
             if (class_exists(\Modules\SubscriptionManager\Models\SubscriptionPlan::class)) {
-                \Modules\SubscriptionManager\Models\SubscriptionPlan::where('branch_id', $branch->id)->get()->each(function ($plan) {
+                \Modules\SubscriptionManager\Models\SubscriptionPlan::where('branch_id', $branch->id)->lazyById(100)->each(function ($plan) {
                     $plan->delete();
                 });
             }
 
             if (class_exists(\Modules\Sports\Models\Activity::class)) {
-                \Modules\Sports\Models\Activity::where('branch_id', $branch->id)->get()->each(function ($activity) {
+                \Modules\Sports\Models\Activity::where('branch_id', $branch->id)->lazyById(100)->each(function ($activity) {
                     $activity->delete();
                 });
             }
 
             if (class_exists(\Modules\SubscriptionManager\Models\Invoice::class)) {
-                \Modules\SubscriptionManager\Models\Invoice::where('branch_id', $branch->id)->get()->each(function ($invoice) {
+                \Modules\SubscriptionManager\Models\Invoice::where('branch_id', $branch->id)->lazyById(100)->each(function ($invoice) {
                     $invoice->delete();
                 });
             }
@@ -78,7 +78,7 @@ class Branch extends Model {
             $branch->shifts()->onlyTrashed()->restore();
 
             if (class_exists(\Modules\MemberManager\Models\Member::class)) {
-                \Modules\MemberManager\Models\Member::onlyTrashed()->where('branch_id', $branch->id)->get()->each(function ($member) {
+                \Modules\MemberManager\Models\Member::onlyTrashed()->where('branch_id', $branch->id)->lazyById(100)->each(function ($member) {
                     $member->restore();
                 });
             }
@@ -86,28 +86,29 @@ class Branch extends Model {
             if (class_exists(\Modules\StaffManager\Models\Staff::class)) {
                 \Modules\StaffManager\Models\Staff::onlyTrashed()->whereHas('branches', function ($q) use ($branch) {
                     $q->where('branch_id', $branch->id);
-                })->get()->each(function ($staff) {
+                })->lazyById(100)->each(function ($staff) {
                     $staff->restore();
                 });
             }
 
             if (class_exists(\Modules\SubscriptionManager\Models\SubscriptionPlan::class)) {
-                \Modules\SubscriptionManager\Models\SubscriptionPlan::onlyTrashed()->where('branch_id', $branch->id)->get()->each(function ($plan) {
+                \Modules\SubscriptionManager\Models\SubscriptionPlan::onlyTrashed()->where('branch_id', $branch->id)->lazyById(100)->each(function ($plan) {
                     $plan->restore();
                 });
             }
 
             if (class_exists(\Modules\Sports\Models\Activity::class)) {
-                \Modules\Sports\Models\Activity::onlyTrashed()->where('branch_id', $branch->id)->get()->each(function ($activity) {
+                \Modules\Sports\Models\Activity::onlyTrashed()->where('branch_id', $branch->id)->lazyById(100)->each(function ($activity) {
                     $activity->restore();
                 });
             }
 
             if (class_exists(\Modules\SubscriptionManager\Models\Invoice::class)) {
-                \Modules\SubscriptionManager\Models\Invoice::onlyTrashed()->where('branch_id', $branch->id)->get()->each(function ($invoice) {
+                \Modules\SubscriptionManager\Models\Invoice::onlyTrashed()->where('branch_id', $branch->id)->lazyById(100)->each(function ($invoice) {
                     $invoice->restore();
                 });
             }
         });
+
     }
 }
