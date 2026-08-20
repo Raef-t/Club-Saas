@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { Field, TextAreaField } from "@/components/forms/FormControls";
@@ -24,8 +24,62 @@ export default function AccountFormModal({
     parent_id: "",
     allow_manual_entry: true,
     is_active: true,
-    notes: "",
+    description: "",
   });
+
+  // Calculate forbidden parent IDs to prevent circular hierarchy
+  const forbiddenParentIds = useMemo(() => {
+    if (!account?.id) return new Set();
+    const ids = new Set([account.id]);
+    let added = true;
+    while (added) {
+      added = false;
+      accounts.forEach((a) => {
+        if (a.parent_id && ids.has(a.parent_id) && !ids.has(a.id)) {
+          ids.add(a.id);
+          added = true;
+        }
+      });
+    }
+    return ids;
+  }, [account?.id, accounts]);
+
+  // Build hierarchical list of parents with tree depth and prefixes
+  const hierarchicalParents = useMemo(() => {
+    const map = {};
+    const roots = [];
+    accounts.forEach((a) => {
+      map[a.id] = { ...a, children: [] };
+    });
+    accounts.forEach((a) => {
+      if (a.parent_id && map[a.parent_id]) {
+        map[a.parent_id].children.push(map[a.id]);
+      } else {
+        roots.push(map[a.id]);
+      }
+    });
+
+    const result = [];
+    const traverse = (nodes, depth = 0) => {
+      nodes.forEach((node) => {
+        if (!forbiddenParentIds.has(node.id)) {
+          result.push({
+            id: node.id,
+            code: node.code,
+            name: node.name,
+            type: node.type,
+            currency: node.currency,
+            prefix: depth === 0 ? "📁 " : `${"— ".repeat(depth)}↳ `,
+          });
+        }
+        if (node.children && node.children.length > 0) {
+          traverse(node.children, depth + 1);
+        }
+      });
+    };
+    traverse(roots);
+    return result;
+  }, [accounts, forbiddenParentIds]);
 
   useEffect(() => {
     if (account) {
@@ -38,7 +92,7 @@ export default function AccountFormModal({
         parent_id: account.parent_id ? String(account.parent_id) : "",
         allow_manual_entry: account.allow_manual_entry ?? true,
         is_active: account.is_active ?? true,
-        notes: account.notes || account.description || "",
+        description: account.description || account.notes || "",
       });
     } else {
       setFormData({
@@ -50,7 +104,7 @@ export default function AccountFormModal({
         parent_id: "",
         allow_manual_entry: true,
         is_active: true,
-        notes: "",
+        description: "",
       });
     }
   }, [account, isOpen]);
@@ -63,30 +117,101 @@ export default function AccountFormModal({
     }));
   };
 
+  const handleParentChange = (e) => {
+    const parentIdStr = e.target.value;
+    const parentId = parentIdStr ? Number(parentIdStr) : null;
+    const parentAcc = accounts.find((a) => a.id === parentId);
+
+    setFormData((prev) => {
+      let nextType = prev.type;
+      let nextCurrency = prev.currency;
+      let nextCode = prev.code;
+
+      if (parentAcc) {
+        nextType = parentAcc.type;
+        if (parentAcc.currency !== "BOTH") {
+          nextCurrency = parentAcc.currency;
+        }
+        // Auto-suggest next code for new account creation
+        if (!account?.id) {
+          const siblings = accounts
+            .filter((a) => a.parent_id === parentAcc.id && /^\d+$/.test(a.code))
+            .map((a) => a.code)
+            .sort();
+
+          if (siblings.length > 0) {
+            const maxSibling = siblings[siblings.length - 1];
+            nextCode = String(parseInt(maxSibling, 10) + 1);
+          } else {
+            const parentNum = parseInt(parentAcc.code, 10);
+            if (parentAcc.code.endsWith("00")) {
+              nextCode = String(parentNum + 1);
+            } else {
+              nextCode = `${parentAcc.code}01`;
+            }
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        parent_id: parentIdStr,
+        type: nextType,
+        currency: nextCurrency,
+        code: nextCode,
+      };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
-      ...formData,
-      parent_id: formData.parent_id ? Number(formData.parent_id) : null,
       code: formData.code.trim(),
       name: formData.name.trim(),
       name_en: formData.name_en?.trim() || null,
+      type: formData.type,
+      currency: formData.currency,
+      parent_id: formData.parent_id ? Number(formData.parent_id) : null,
+      allow_manual_entry: Boolean(formData.allow_manual_entry),
+      is_active: Boolean(formData.is_active),
+      description: formData.description?.trim() || null,
     };
     await onSave(payload);
   };
 
-  // Filter out the current account itself from potential parents
-  const availableParents = accounts.filter((a) => !account?.id || a.id !== account.id);
+  const isChildAccount = Boolean(formData.parent_id);
 
   return (
     <Modal
       open={isOpen}
       onClose={onClose}
-      title={account?.id ? `تعديل الحساب: ${account.name}` : "إضافة حساب جديد إلى الدليل"}
+      title={account?.id ? `تعديل الحساب: ${account.code} - ${account.name}` : "إضافة حساب جديد إلى الدليل"}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
+              الحساب الأب (المستوى الأعلى)
+            </label>
+            <select
+              name="parent_id"
+              value={formData.parent_id}
+              onChange={handleParentChange}
+              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
+            >
+              <option value="">-- حساب رئيسي (بدون حساب أب) --</option>
+              {hierarchicalParents.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.prefix} {p.code} - {p.name} ({ACCOUNT_TYPES[p.type]?.label || p.type})
+                </option>
+              ))}
+            </select>
+            {errors.parent_id && (
+              <p className="mt-1 text-xs text-rose-500">{errors.parent_id}</p>
+            )}
+          </div>
+
           <Field
             label="رمز الحساب (الكود المحاسبي) *"
             name="code"
@@ -97,34 +222,12 @@ export default function AccountFormModal({
             required
           />
 
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
-              الحساب الأب (المستوى الأعلى)
-            </label>
-            <select
-              name="parent_id"
-              value={formData.parent_id}
-              onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
-            >
-              <option value="">-- حساب رئيسي (بدون حساب أب) --</option>
-              {availableParents.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.code} - {p.name} ({ACCOUNT_TYPES[p.type]?.label || p.type})
-                </option>
-              ))}
-            </select>
-            {errors.parent_id && (
-              <p className="mt-1 text-xs text-rose-500">{errors.parent_id}</p>
-            )}
-          </div>
-
           <Field
             label="اسم الحساب (بالعربية) *"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="مثال: الصندوق الرئيسي"
+            placeholder="مثال: صندوق الاستقبال الرئيسي"
             error={errors.name}
             required
           />
@@ -134,19 +237,27 @@ export default function AccountFormModal({
             name="name_en"
             value={formData.name_en}
             onChange={handleChange}
-            placeholder="e.g. Main Cashbox"
+            placeholder="e.g. Reception Main Cashbox"
             error={errors.name_en}
           />
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
-              طبيعة الحساب (التبويب المالي) *
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium text-app-muted-light">
+                طبيعة الحساب (التبويب المالي) *
+              </label>
+              {isChildAccount && (
+                <span className="text-[10px] text-app-yellow">موروث من الحساب الأب</span>
+              )}
+            </div>
             <select
               name="type"
               value={formData.type}
               onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
+              disabled={isChildAccount}
+              className={`h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow ${
+                isChildAccount ? "opacity-75 cursor-not-allowed bg-app-panel" : ""
+              }`}
               required
             >
               {Object.entries(ACCOUNT_TYPES).map(([key, item]) => (
@@ -182,7 +293,7 @@ export default function AccountFormModal({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-app-line/40 bg-app-card-soft/50 p-3">
+          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-app-line/40 bg-app-card-soft/50 p-3 hover:border-app-yellow/40 transition">
             <input
               type="checkbox"
               name="allow_manual_entry"
@@ -192,11 +303,11 @@ export default function AccountFormModal({
             />
             <div className="text-xs">
               <span className="font-semibold text-app-text block">السماح بالقيد اليدوي</span>
-              <span className="text-app-muted">يسمح باختيار الحساب في سندات القيد اليومية</span>
+              <span className="text-app-muted">يسمح باختيار الحساب في سندات القيد اليومية والقبض/الصرف</span>
             </div>
           </label>
 
-          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-app-line/40 bg-app-card-soft/50 p-3">
+          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-app-line/40 bg-app-card-soft/50 p-3 hover:border-app-yellow/40 transition">
             <input
               type="checkbox"
               name="is_active"
@@ -206,18 +317,19 @@ export default function AccountFormModal({
             />
             <div className="text-xs">
               <span className="font-semibold text-app-text block">حالة الحساب نشط</span>
-              <span className="text-app-muted">يمكن استخدامه في العمليات المالية الجارية</span>
+              <span className="text-app-muted">يمكن استخدامه في العمليات والتقارير المالية الجارية</span>
             </div>
           </label>
         </div>
 
         <TextAreaField
           label="شرح أو ملاحظات إضافية"
-          name="notes"
-          value={formData.notes}
+          name="description"
+          value={formData.description}
           onChange={handleChange}
           placeholder="تفاصيل الغرض من الحساب أو توجيهات الاستخدام..."
           rows={3}
+          error={errors.description}
         />
 
         <div className="flex justify-end gap-3 pt-4 border-t border-app-line/30">
