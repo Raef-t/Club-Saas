@@ -107,7 +107,13 @@ class LockerController extends BaseController
     #[OA\Post(
         path: '/v1/lockers',
         summary: '➕ إضافة خزانة جديدة',
-        description: 'إنشاء خزانة جديدة في فرع معين وتعيين رقمها.',
+        description: "إنشاء خزانة جديدة في فرع معين وتعيين رقمها وحالتها الأولية.\n\n" .
+                     "**الحالات المتاحة للخزانة (`status`):**\n" .
+                     "- `available`: متاحة وفارغة (الافتراضية).\n" .
+                     "- `maintenance`: معطلة أو قيد الصيانة (خارج الخدمة).\n" .
+                     "- `with_member`: مسندة للاعب.\n" .
+                     "- `with_coach`: مسندة لمدرب.\n" .
+                     "- `with_staff`: مسندة لموظف.",
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]

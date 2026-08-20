@@ -9747,7 +9747,7 @@
                     "Locker Management"
                 ],
                 "summary": "➕ إضافة خزانة جديدة",
-                "description": "إنشاء خزانة جديدة في فرع معين وتعيين رقمها.",
+                "description": "إنشاء خزانة جديدة في فرع معين وتعيين رقمها وحالتها الأولية.\n\n**الحالات المتاحة للخزانة (`status`):**\n- `available`: متاحة وفارغة (الافتراضية).\n- `maintenance`: معطلة أو قيد الصيانة (خارج الخدمة).\n- `with_member`: مسندة للاعب.\n- `with_coach`: مسندة لمدرب.\n- `with_staff`: مسندة لموظف.",
                 "operationId": "582bd0a2c4a7c33eb2fa4ffb26b6b133",
                 "requestBody": {
                     "required": true,
@@ -26222,20 +26222,23 @@
                 ],
                 "properties": {
                     "branch_id": {
+                        "description": "معرف الفرع التابعة له الخزانة",
                         "type": "integer",
                         "example": 1
                     },
                     "locker_number": {
+                        "description": "رقم الخزانة الفريد ضمن الفرع",
                         "type": "string",
                         "example": "L-101"
                     },
                     "key_number": {
+                        "description": "رقم المفتاح الفريد ضمن الفرع (اختياري)",
                         "type": "string",
                         "example": "K-101",
                         "nullable": true
                     },
                     "status": {
-                        "description": "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
+                        "description": "حالة الخزانة عند الإنشاء (افتراضياً: available):\n• `available`: متاحة وفارغة وجاهزة للاستخدام\n• `maintenance`: معطلة أو قيد الصيانة (خارج الخدمة)\n• `with_member`: مسندة لمشترك / لاعب\n• `with_coach`: مسندة لمدرب\n• `with_staff`: مسندة لموظف",
                         "type": "string",
                         "example": "available",
                         "enum": [

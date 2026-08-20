@@ -9,14 +9,19 @@ use OpenApi\Attributes as OA;
     title: "StoreLockerRequest",
     required: ["branch_id", "locker_number"],
     properties: [
-        new OA\Property(property: "branch_id", type: "integer", example: 1),
-        new OA\Property(property: "locker_number", type: "string", example: "L-101"),
-        new OA\Property(property: "key_number", type: "string", nullable: true, example: "K-101"),
+        new OA\Property(property: "branch_id", type: "integer", example: 1, description: "معرف الفرع التابعة له الخزانة"),
+        new OA\Property(property: "locker_number", type: "string", example: "L-101", description: "رقم الخزانة الفريد ضمن الفرع"),
+        new OA\Property(property: "key_number", type: "string", nullable: true, example: "K-101", description: "رقم المفتاح الفريد ضمن الفرع (اختياري)"),
         new OA\Property(
             property: "status",
             type: "string",
             enum: ["available", "with_member", "with_staff", "with_coach", "maintenance"],
-            description: "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
+            description: "حالة الخزانة عند الإنشاء (افتراضياً: available):\n" .
+                         "• `available`: متاحة وفارغة وجاهزة للاستخدام\n" .
+                         "• `maintenance`: معطلة أو قيد الصيانة (خارج الخدمة)\n" .
+                         "• `with_member`: مسندة لمشترك / لاعب\n" .
+                         "• `with_coach`: مسندة لمدرب\n" .
+                         "• `with_staff`: مسندة لموظف",
             example: "available"
         ),
     ]
