@@ -64,8 +64,15 @@ class StaffService
             });
         }
 
-        // Eager-load coach details, active contract, branches, user and shifts
-        $query->with(['coachDetail', 'activeContract', 'branches', 'user', 'shifts.branchShift']);
+        // Eager-load person contacts, coach details with certifications, active contract, branches, user and shifts
+        $query->with([
+            'person.contacts',
+            'coachDetail.certifications',
+            'activeContract',
+            'branches',
+            'user',
+            'shifts.branchShift',
+        ]);
 
         $staffMembers = $query->latest()->get();
 
@@ -82,9 +89,17 @@ class StaffService
     public function getStaffById($id)
     {
         $staff = $this->staffRepository->find($id);
-        $staff->load(['coachDetail.certifications', 'activeContract', 'user', 'shifts.branchShift']);
+        $staff->load([
+            'person.contacts',
+            'coachDetail.certifications',
+            'activeContract',
+            'branches',
+            'user',
+            'shifts.branchShift',
+        ]);
         return $this->attachSharedDTOs($staff);
     }
+
 
     /**
      * Register a new staff member.
@@ -232,12 +247,23 @@ class StaffService
     protected function attachSharedDTOs($staff)
     {
         if ($staff) {
-            $staff->personDto = $staff->person_id ? $this->personService->getPersonById($staff->person_id) : null;
-            $firstBranch = $staff->branches->first();
-            $staff->branchDto = $firstBranch ? $this->branchService->getBranchById($firstBranch->id) : null;
+            if ($staff->relationLoaded('person') && $staff->person) {
+                $staff->personDto = $this->personService->mapToDTO($staff->person);
+            } elseif ($staff->person_id) {
+                $staff->personDto = $this->personService->getPersonById($staff->person_id);
+            } else {
+                $staff->personDto = null;
+            }
+
+            $firstBranch = $staff->relationLoaded('branches')
+                ? $staff->branches->first()
+                : $staff->branches()->first();
+
+            $staff->branchDto = $firstBranch ? $this->branchService->mapToDTO($firstBranch) : null;
         }
         return $staff;
     }
+
 
     /**
      * Update staff member data.
