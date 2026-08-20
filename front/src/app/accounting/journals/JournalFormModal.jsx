@@ -229,12 +229,14 @@ export default function JournalFormModal({
                         className="w-full rounded-lg border border-app-line bg-app-card px-2 py-1.5 text-xs text-app-text outline-none focus:border-app-yellow"
                         required
                       >
-                        <option value="">-- اختر الحساب --</option>
-                        {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.code} - {acc.name}
-                          </option>
-                        ))}
+                        <option value="" className="bg-[#1a1b22] text-[#efefef]">-- اختر الحساب --</option>
+                        {accounts
+                          .filter((acc) => acc.allow_manual_entry !== false && acc.is_active !== false)
+                          .map((acc) => (
+                            <option key={acc.id} value={acc.id} className="bg-[#1a1b22] text-[#efefef]">
+                              {acc.code} - {acc.name}
+                            </option>
+                          ))}
                       </select>
                     </td>
 
