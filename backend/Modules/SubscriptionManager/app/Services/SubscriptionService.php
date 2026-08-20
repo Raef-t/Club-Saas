@@ -113,7 +113,18 @@ class SubscriptionService
             $this->incrementPlanSubscribers($plan);
 
 
-            // 2. Financials & Dates Calculation
+            // 2. Fetch Member Profile & Branch
+            $memberDTO = $this->memberSharedService->getMemberById($memberId);
+            if (!$memberDTO) {
+                throw new Exception(__('Member not found.'));
+            }
+
+            $branchId = $memberDTO->branchId ?? $plan->branch_id;
+            if (!$branchId) {
+                throw new Exception(__('Member does not belong to any branch.'));
+            }
+
+            // 3. Financials & Dates Calculation
             $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
             $startDate = Carbon::parse($options['start_date']);
             $endDate = isset($options['end_date']) && !empty($options['end_date']) ? Carbon::parse($options['end_date']) : null;
@@ -128,11 +139,6 @@ class SubscriptionService
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
 
             if ($paidAmount < $totalAmount) {
-                $memberDTO = $this->memberSharedService->getMemberById($memberId);
-                $branchId = $memberDTO->branchId;
-                if (!$branchId) {
-                    throw new Exception(__('Member does not belong to any branch.'));
-                }
                 $branch = \Modules\ClubManager\Models\Branch::find($branchId);
                 if (!$branch) {
                     throw new Exception(__('Branch not found.'));
@@ -182,12 +188,6 @@ class SubscriptionService
             }
 
             // 5b. Create Revenue Split snapshot (for private subscriptions — أجهزة خاص حصراً)
-            $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId  = $memberDTO->branchId ?? $plan->branch_id;
-            if (!$branchId) {
-                throw new Exception(__('Member does not belong to any branch.'));
-            }
-
             $firstActivity = $plan->planActivities->first();
             $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
             $isPrivateEquipment = $plan->isPrivateEquipmentPlan();
@@ -279,13 +279,14 @@ class SubscriptionService
 
 
 
-            $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+            $subscription->member = $memberDTO;
 
             // Dispatch SubscriptionCreated event so other modules (like StaffManager) can react
             event(new \Modules\SubscriptionManager\Events\SubscriptionCreated($subscription, $plan));
 
             return $subscription;
         });
+
     }
 
     /**
@@ -296,7 +297,7 @@ class SubscriptionService
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
         return DB::transaction(function () use ($subscription, $startDate, $reason) {
-            $memberModel = \Modules\MemberManager\Models\Member::with('branch.settings')->find($subscription->member_id);
+            $memberModel = \Modules\MemberManager\Models\Member::with(['branch.settings', 'person.user'])->find($subscription->member_id);
             $allowFreeze = $memberModel?->branch?->settings?->allow_freeze ?? false;
 
             if (!$allowFreeze) {
@@ -320,13 +321,12 @@ class SubscriptionService
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
             // إرسال إشعار التجميد
-            $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
-            $userId = $member?->person?->user?->id;
+            $userId = $memberModel?->person?->user?->id;
 
             if ($userId) {
                 $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_frozen')->first();
                 if ($template) {
-                    $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
+                    $playerName = $memberModel?->person?->full_name ?? 'لاعبنا العزيز';
                     $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
 
                     $startCarbon = \Carbon\Carbon::parse($startDate);
@@ -351,6 +351,7 @@ class SubscriptionService
 
             return $subscription;
         });
+
     }
 
     /**
