@@ -31,7 +31,7 @@ class SubscriptionNotificationService
             $targetDate = Carbon::now()->addDays($daysBefore)->toDateString();
 
             // Fetch subscriptions expiring on the target date
-            $expiringSubscriptions = PlayerSubscription::with(['plan'])
+            $expiringSubscriptions = PlayerSubscription::with(['plan', 'member.person.user'])
                 ->where('status', 'active')
                 ->whereNotNull('end_date')
                 ->whereDate('end_date', $targetDate)
@@ -46,10 +46,11 @@ class SubscriptionNotificationService
 
             foreach ($expiringSubscriptions as $subscription) {
                 // Get the user corresponding to the member
-                $member = Member::with('person.user')->find($subscription->member_id);
+                $member = $subscription->member;
                 $userId = $member?->person?->user?->id;
                 $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
                 $planName = $subscription?->plan?->name ?? 'اشتراك';
+
 
                 if ($userId) {
                     if ($template) {
