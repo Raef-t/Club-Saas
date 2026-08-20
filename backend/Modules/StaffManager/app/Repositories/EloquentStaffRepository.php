@@ -41,7 +41,12 @@ class EloquentStaffRepository implements StaffRepositoryInterface
 
     public function getTrashed(array $filters = [])
     {
-        $query = Staff::onlyTrashed()->with(['coachDetail', 'branches', 'user']);
+        $query = Staff::onlyTrashed()->with([
+            'person.contacts',
+            'coachDetail.certifications',
+            'branches',
+            'user',
+        ]);
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {

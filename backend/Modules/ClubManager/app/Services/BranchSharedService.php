@@ -22,6 +22,11 @@ class BranchSharedService implements BranchSharedServiceInterface
             return null;
         }
 
+        return $this->mapToDTO($branch);
+    }
+
+    public function mapToDTO(\Modules\ClubManager\Models\Branch $branch): BranchDTO
+    {
         // Handle possible array/JSON decode for name attribute
         $name = $branch->name;
         if (is_string($name)) {
@@ -34,7 +39,7 @@ class BranchSharedService implements BranchSharedServiceInterface
         return new BranchDTO(
             id: $branch->id,
             name: $name,
-            genderRestriction: \Modules\Core\Enums\Gender::from($branch->gender_restriction),
+            genderRestriction: \Modules\Core\Enums\Gender::tryFrom($branch->gender_restriction ?? 'mixed') ?? \Modules\Core\Enums\Gender::MIXED,
             isActive: (bool)$branch->is_active
         );
     }
@@ -44,3 +49,4 @@ class BranchSharedService implements BranchSharedServiceInterface
         return \Modules\ClubManager\Models\Facility::where('id', $facilityId)->exists();
     }
 }
+

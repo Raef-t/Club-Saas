@@ -175,17 +175,19 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
         return $this->mapToDTO($person);
     }
 
-    private function mapToDTO(Person $person): PersonDTO
+    public function mapToDTO(Person $person): PersonDTO
     {
-        $primaryContact = $person->contacts()->where('name', 'Personal')->first() ?? $person->contacts()->first();
-        $secondaryContact = $person->contacts()->where('name', 'Secondary Mobile')->first();
-        $landline = $person->contacts()->where('name', 'Landline')->first();
-        $emergency = $person->contacts()->where('relation', 'emergency')->first();
+        $contacts = $person->relationLoaded('contacts') ? $person->contacts : $person->contacts()->get();
+
+        $primaryContact = $contacts->first(fn($c) => $c->name === 'Personal' || $c->relation === 'self') ?? $contacts->first();
+        $secondaryContact = $contacts->first(fn($c) => $c->name === 'Secondary Mobile');
+        $landline = $contacts->first(fn($c) => $c->name === 'Landline');
+        $emergency = $contacts->first(fn($c) => $c->relation === 'emergency');
 
         return new PersonDTO(
             id: $person->id,
             fullName: $person->full_name,
-            gender: \Modules\Core\Enums\Gender::tryFrom($person->gender),
+            gender: \Modules\Core\Enums\Gender::tryFrom($person->gender ?? ''),
             age: $person->age,
             mobile1: $primaryContact?->phone_number,
             mobile1CountryCode: $primaryContact?->country_code,
@@ -208,3 +210,4 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
         );
     }
 }
+
