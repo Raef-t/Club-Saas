@@ -70,10 +70,14 @@ class LockerService
         }
 
         if (!empty($filters['status'])) {
-            if ($filters['status'] === 'available') {
-                $query->where('lockers.status', 'available');
-            } elseif ($filters['status'] === 'occupied') {
+            $statuses = array_filter(array_map('trim', explode(',', $filters['status'])));
+
+            if (in_array('occupied', $statuses)) {
                 $query->where('lockers.status', '!=', 'available');
+            } elseif (in_array('with_staff_or_coach', $statuses) || in_array('staff_and_coach', $statuses) || in_array('with_staff_coach', $statuses)) {
+                $query->whereIn('lockers.status', ['with_staff', 'with_coach']);
+            } elseif (!empty($statuses)) {
+                $query->whereIn('lockers.status', $statuses);
             }
         }
 
@@ -451,12 +455,14 @@ class LockerService
         }
 
         return [
-            'available_lockers_count'   => (clone $baseQuery)->where('status', 'available')->count(),
-            'unavailable_lockers_count' => (clone $baseQuery)->where('status', '!=', 'available')->count(),
-            'assigned_to_member_count'  => (clone $baseQuery)->where('status', 'with_member')->count(),
-            'assigned_to_staff_count'   => (clone $baseQuery)->where('status', 'with_staff')->count(),
-            'assigned_to_coach_count'   => (clone $baseQuery)->where('status', 'with_coach')->count(),
-            'rented_lockers_count'      => $rentedQuery->distinct('lr.locker_id')->count('lr.locker_id'),
+            'available_lockers_count'          => (clone $baseQuery)->where('status', 'available')->count(),
+            'unavailable_lockers_count'        => (clone $baseQuery)->where('status', '!=', 'available')->count(),
+            'assigned_to_member_count'         => (clone $baseQuery)->where('status', 'with_member')->count(),
+            'assigned_to_staff_count'          => (clone $baseQuery)->where('status', 'with_staff')->count(),
+            'assigned_to_coach_count'          => (clone $baseQuery)->where('status', 'with_coach')->count(),
+            'assigned_to_staff_or_coach_count' => (clone $baseQuery)->whereIn('status', ['with_staff', 'with_coach'])->count(),
+            'maintenance_lockers_count'        => (clone $baseQuery)->where('status', 'maintenance')->count(),
+            'rented_lockers_count'             => $rentedQuery->distinct('lr.locker_id')->count('lr.locker_id'),
         ];
     }
 }

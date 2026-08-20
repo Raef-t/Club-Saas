@@ -34,10 +34,27 @@ class LockerController extends BaseController
         name: 'status',
         in: 'query',
         required: false,
-        description: 'تصفية الخزائن حسب الحالة (متاحة أو مشغولة)',
+        description: "تصفية الخزائن حسب الحالة. الخيارات المتاحة:\n" .
+                     "• `available`: الخزائن المتاحة فقط\n" .
+                     "• `with_member`: الخزائن المسندة للاعبين / المشتركين فقط\n" .
+                     "• `with_staff_or_coach`: الخزائن المسندة للموظفين أو المدربين معاً (كوتش + موظف)\n" .
+                     "• `with_coach`: الخزائن المسندة للمدربين فقط\n" .
+                     "• `with_staff`: الخزائن المسندة للموظفين فقط\n" .
+                     "• `maintenance`: الخزائن المعطلة أو التي في الصيانة\n" .
+                     "• `occupied`: جميع الخزائن غير المتاحة (مشغولة عموماً)\n" .
+                     "💡 ملاحظة: يمكن أيضاً تمرير أكثر من حالة مفصولة بفاصلة مثل: `with_member,with_coach`",
         schema: new OA\Schema(
             type: 'string',
-            enum: ['available', 'occupied']
+            enum: [
+                'available',
+                'with_member',
+                'with_staff_or_coach',
+                'with_coach',
+                'with_staff',
+                'maintenance',
+                'occupied'
+            ],
+            example: 'with_staff_or_coach'
         )
     )]
     #[OA\Response(
@@ -51,13 +68,21 @@ class LockerController extends BaseController
                     property: 'data',
                     type: 'object',
                     properties: [
-                        new OA\Property(property: 'summary', type: 'object', properties: [
-                            new OA\Property(property: 'available_lockers_count', type: 'integer', example: 12),
-                            new OA\Property(property: 'unavailable_lockers_count', type: 'integer', example: 8),
-                            new OA\Property(property: 'assigned_to_member_count', type: 'integer', example: 5),
-                            new OA\Property(property: 'assigned_to_coach_count', type: 'integer', example: 2),
-                            new OA\Property(property: 'rented_lockers_count', type: 'integer', example: 4),
-                        ]),
+                        new OA\Property(
+                            property: 'summary',
+                            type: 'object',
+                            description: 'ملخص إحصائيات الخزائن',
+                            properties: [
+                                new OA\Property(property: 'available_lockers_count', type: 'integer', example: 12, description: 'عدد الخزائن المتاحة'),
+                                new OA\Property(property: 'unavailable_lockers_count', type: 'integer', example: 8, description: 'إجمالي الخزائن غير المتاحة / المشغولة'),
+                                new OA\Property(property: 'assigned_to_member_count', type: 'integer', example: 5, description: 'الخزائن المسندة للاعبين'),
+                                new OA\Property(property: 'assigned_to_coach_count', type: 'integer', example: 2, description: 'الخزائن المسندة للمدربين'),
+                                new OA\Property(property: 'assigned_to_staff_count', type: 'integer', example: 1, description: 'الخزائن المسندة للموظفين'),
+                                new OA\Property(property: 'assigned_to_staff_or_coach_count', type: 'integer', example: 3, description: 'إجمالي الخزائن المسندة لموظفين أو مدربين'),
+                                new OA\Property(property: 'maintenance_lockers_count', type: 'integer', example: 1, description: 'الخزائن المعطلة أو التي في الصيانة'),
+                                new OA\Property(property: 'rented_lockers_count', type: 'integer', example: 4, description: 'الخزائن المستأجرة بمقابل مادي'),
+                            ]
+                        ),
                         new OA\Property(property: 'lockers', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
