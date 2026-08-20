@@ -152,7 +152,7 @@ class LockerService
             ->where('status', 'active')
             ->count();
 
-        if ($activeReservationsCount > 0 || $locker->status !== 'available') {
+        if ($activeReservationsCount > 0 || in_array($locker->status, ['with_member', 'with_staff', 'with_coach'])) {
             throw new \Modules\Core\Exceptions\CannotDeleteException(
                 "لا يمكن حذف الخزانة لأنها مستأجرة أو مسندة حالياً (يوجد حجز نشط). يُرجى إلغاء/إنهاء الحجز أولاً.",
                 ['active_reservations_count' => $activeReservationsCount]
