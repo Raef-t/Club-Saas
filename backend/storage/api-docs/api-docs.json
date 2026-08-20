@@ -9624,12 +9624,18 @@
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "تصفية الخزائن حسب الحالة (متاحة أو مشغولة)",
+                        "description": "تصفية الخزائن حسب الحالة. الخيارات المتاحة:\n• `available`: الخزائن المتاحة فقط\n• `with_member`: الخزائن المسندة للاعبين / المشتركين فقط\n• `with_staff_or_coach`: الخزائن المسندة للموظفين أو المدربين معاً (كوتش + موظف)\n• `with_coach`: الخزائن المسندة للمدربين فقط\n• `with_staff`: الخزائن المسندة للموظفين فقط\n• `maintenance`: الخزائن المعطلة أو التي في الصيانة\n• `occupied`: جميع الخزائن غير المتاحة (مشغولة عموماً)\n💡 ملاحظة: يمكن أيضاً تمرير أكثر من حالة مفصولة بفاصلة مثل: `with_member,with_coach`",
                         "required": false,
                         "schema": {
                             "type": "string",
+                            "example": "with_staff_or_coach",
                             "enum": [
                                 "available",
+                                "with_member",
+                                "with_staff_or_coach",
+                                "with_coach",
+                                "with_staff",
+                                "maintenance",
                                 "occupied"
                             ]
                         }
@@ -9653,24 +9659,45 @@
                                         "data": {
                                             "properties": {
                                                 "summary": {
+                                                    "description": "ملخص إحصائيات الخزائن",
                                                     "properties": {
                                                         "available_lockers_count": {
+                                                            "description": "عدد الخزائن المتاحة",
                                                             "type": "integer",
                                                             "example": 12
                                                         },
                                                         "unavailable_lockers_count": {
+                                                            "description": "إجمالي الخزائن غير المتاحة / المشغولة",
                                                             "type": "integer",
                                                             "example": 8
                                                         },
                                                         "assigned_to_member_count": {
+                                                            "description": "الخزائن المسندة للاعبين",
                                                             "type": "integer",
                                                             "example": 5
                                                         },
                                                         "assigned_to_coach_count": {
+                                                            "description": "الخزائن المسندة للمدربين",
                                                             "type": "integer",
                                                             "example": 2
                                                         },
+                                                        "assigned_to_staff_count": {
+                                                            "description": "الخزائن المسندة للموظفين",
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "assigned_to_staff_or_coach_count": {
+                                                            "description": "إجمالي الخزائن المسندة لموظفين أو مدربين",
+                                                            "type": "integer",
+                                                            "example": 3
+                                                        },
+                                                        "maintenance_lockers_count": {
+                                                            "description": "الخزائن المعطلة أو التي في الصيانة",
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
                                                         "rented_lockers_count": {
+                                                            "description": "الخزائن المستأجرة بمقابل مادي",
                                                             "type": "integer",
                                                             "example": 4
                                                         }
@@ -26208,13 +26235,15 @@
                         "nullable": true
                     },
                     "status": {
+                        "description": "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
                         "type": "string",
                         "example": "available",
                         "enum": [
                             "available",
                             "with_member",
                             "with_staff",
-                            "with_coach"
+                            "with_coach",
+                            "maintenance"
                         ]
                     }
                 },
@@ -26300,13 +26329,15 @@
                         "nullable": true
                     },
                     "status": {
+                        "description": "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
                         "type": "string",
                         "example": "available",
                         "enum": [
                             "available",
                             "with_member",
                             "with_staff",
-                            "with_coach"
+                            "with_coach",
+                            "maintenance"
                         ]
                     },
                     "holder_id": {

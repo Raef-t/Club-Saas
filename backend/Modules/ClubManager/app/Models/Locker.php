@@ -53,6 +53,11 @@ class Locker extends Model
         return $this->status === 'with_coach';
     }
 
+    public function isMaintenance(): bool
+    {
+        return $this->status === 'maintenance';
+    }
+
     public function isOccupied(): bool
     {
         return $this->status !== 'available';
@@ -85,5 +90,10 @@ class Locker extends Model
     public function scopeWithCoach($query)
     {
         return $query->where('status', 'with_coach');
+    }
+
+    public function scopeMaintenance($query)
+    {
+        return $query->where('status', 'maintenance');
     }
 }
