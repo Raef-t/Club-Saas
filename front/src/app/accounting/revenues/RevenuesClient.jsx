@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import StatsGrid from "@/components/ui/StatsGrid";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -19,6 +18,7 @@ export default function RevenuesClient({
   initialJournals = [],
   initialAccounts = [],
   initialSafes = [],
+  initialCounterparties = [],
 }) {
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
 
@@ -26,6 +26,7 @@ export default function RevenuesClient({
     journals,
     accounts,
     safes,
+    counterparties,
     fromDate,
     setFromDate,
     toDate,
@@ -48,71 +49,67 @@ export default function RevenuesClient({
     initialJournals,
     initialAccounts,
     initialSafes,
+    initialCounterparties,
     defaultType: "RV",
   });
 
   // Filter only RV vouchers for this page
   const revenueJournals = journals.filter((j) => j.type === "RV");
 
-  const totalUsd = revenueJournals.reduce(
-    (sum, j) =>
-      sum + (j.entries || []).reduce((s, e) => s + Number(e.credit_usd || 0), 0),
-    0
-  );
-
-  const totalSyp = revenueJournals.reduce(
-    (sum, j) =>
-      sum + (j.entries || []).reduce((s, e) => s + Number(e.credit_syp || 0), 0),
-    0
-  );
-
-  const statsItems = [
-    { label: "إجمالي سندات القبض", value: revenueJournals.length },
-    { label: "إجمالي الإيرادات (USD)", value: `$${totalUsd.toLocaleString()}` },
-    { label: "إجمالي الإيرادات (SYP)", value: `${totalSyp.toLocaleString()} ل.س` },
-    { label: "سندات بانتظار الترحيل", value: revenueJournals.filter((j) => j.status === "draft").length },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Stats */}
-      <StatsGrid items={statsItems} />
-
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
-        <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
-          <div className="w-full sm:w-72">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
+        <div className="flex flex-1 flex-wrap items-center gap-3">
+          <div className="w-full sm:w-64 md:w-80">
             <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="البحث في الإيرادات..."
+              placeholder="البحث برقم السند، البيان، الحساب، الصندوق..."
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="w-36">
-              <Field
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl border border-app-line bg-app-card px-3 py-2 text-xs">
+              <span className="text-app-muted shrink-0">من:</span>
+              <input
                 type="date"
                 value={fromDate}
-                onChange={(e) => setFromDate(e?.target?.value ?? e)}
-                placeholder="من تاريخ"
+                onChange={(e) => setFromDate(e.target.value)}
+                className="bg-transparent text-app-text outline-none text-xs cursor-pointer font-mono"
               />
             </div>
-            <div className="w-36">
-              <Field
+            <div className="flex items-center gap-2 rounded-xl border border-app-line bg-app-card px-3 py-2 text-xs">
+              <span className="text-app-muted shrink-0">إلى:</span>
+              <input
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e?.target?.value ?? e)}
-                placeholder="إلى تاريخ"
+                onChange={(e) => setToDate(e.target.value)}
+                className="bg-transparent text-app-text outline-none text-xs cursor-pointer font-mono"
               />
             </div>
+
+            {(fromDate || toDate || search) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFromDate("");
+                  setToDate("");
+                  setSearch("");
+                }}
+                className="rounded-xl border border-app-line bg-app-card px-3 py-2 text-xs text-app-muted hover:text-rose-400 hover:border-rose-500/40 transition shrink-0"
+                title="إلغاء الفلترة"
+              >
+                مسح الفلاتر
+              </button>
+            )}
           </div>
         </div>
 
         <Button
           variant="primary"
           onClick={() => setIsRevenueModalOpen(true)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 shrink-0"
         >
           <FileUpIcon className="size-4" />
           <span>تسجيل إيراد جديد</span>
@@ -214,6 +211,16 @@ export default function RevenuesClient({
                               ترحيل
                             </button>
                           )}
+
+                          {journal.status !== "cancelled" && (
+                            <button
+                              onClick={() => openActionModal("cancel", journal)}
+                              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-400 hover:bg-rose-500/20 transition"
+                              title="إلغاء السند وإزالة أثره المالي"
+                            >
+                              إلغاء
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -231,6 +238,7 @@ export default function RevenuesClient({
         onClose={() => setIsRevenueModalOpen(false)}
         accounts={accounts}
         safes={safes}
+        counterparties={counterparties}
         onSave={async (data) => {
           const success = await handleSaveJournal(data);
           if (success) setIsRevenueModalOpen(false);

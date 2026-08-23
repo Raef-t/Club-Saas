@@ -1,6 +1,5 @@
 "use client";
 
-import StatsGrid from "@/components/ui/StatsGrid";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -55,22 +54,8 @@ export default function JournalsClient({
     handleExecuteAction,
   } = useJournals({ initialJournals, initialAccounts, initialSafes });
 
-  const jvCount = journals.filter((j) => j.type === "JV").length;
-  const rvCount = journals.filter((j) => j.type === "RV").length;
-  const pvCount = journals.filter((j) => j.type === "PV").length;
-
-  const statsItems = [
-    { label: "إجمالي السندات", value: pagination.total || journals.length },
-    { label: "قيود عامة (JV)", value: jvCount },
-    { label: "سندات قبض (RV)", value: rvCount },
-    { label: "سندات صرف (PV)", value: pvCount },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Stats Overview */}
-      <StatsGrid items={statsItems} />
-
       {/* Toolbar: Search, Filters, Date Range, Add Button */}
       <div className="space-y-3 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -261,6 +246,16 @@ export default function JournalsClient({
                               className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400 hover:bg-emerald-500/20 transition"
                             >
                               ترحيل
+                            </button>
+                          )}
+
+                          {journal.status !== "cancelled" && (
+                            <button
+                              onClick={() => openActionModal("cancel", journal)}
+                              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-400 hover:bg-rose-500/20 transition"
+                              title="إلغاء السند وإزالة أثره المالي"
+                            >
+                              إلغاء
                             </button>
                           )}
                         </div>

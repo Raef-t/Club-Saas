@@ -1,6 +1,5 @@
 "use client";
 
-import StatsGrid from "@/components/ui/StatsGrid";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -15,7 +14,6 @@ export default function PeriodsClient({ initialPeriods = [] }) {
   const {
     periods,
     filteredPeriods,
-    stats,
     search,
     setSearch,
     isLoading,
@@ -31,18 +29,8 @@ export default function PeriodsClient({ initialPeriods = [] }) {
     handleReopenPeriod,
   } = usePeriods({ initialPeriods });
 
-  const statsItems = [
-    { label: "إجمالي الفترات", value: stats.total },
-    { label: "فترات مفتوحة (Open)", value: stats.open },
-    { label: "فترات مغلقة (Closed)", value: stats.closed },
-    { label: "فترات مقفلة (Locked)", value: stats.locked },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Stats */}
-      <StatsGrid items={statsItems} />
-
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
         <div className="w-full sm:w-80">

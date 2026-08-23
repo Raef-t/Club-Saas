@@ -9,6 +9,7 @@ import {
   useCancelJournalMutation,
   useGetAccountsQuery,
   useGetSafesQuery,
+  useGetCounterpartiesQuery,
 } from "@/lib/api/accountingApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useToast } from "@/components/ui/Toast";
@@ -31,6 +32,7 @@ export function useJournals({
   initialJournals = [],
   initialAccounts = [],
   initialSafes = [],
+  initialCounterparties = [],
   defaultType = null,
 } = {}) {
   const toast = useToast();
@@ -63,6 +65,7 @@ export function useJournals({
   const { data: safesResponse } = useGetSafesQuery(
     selectedBranchId && selectedBranchId !== "all" ? { branch_id: selectedBranchId } : {}
   );
+  const { data: counterpartiesResponse } = useGetCounterpartiesQuery();
 
   const [createJournalMutation, { isLoading: isCreating }] = useCreateJournalMutation();
   const [postJournalMutation, { isLoading: isPosting }] = usePostJournalMutation();
@@ -74,11 +77,26 @@ export function useJournals({
     const list = Array.isArray(journalsData?.data) ? journalsData.data : Array.isArray(journalsData) ? journalsData : [];
     if (!search.trim()) return list;
 
-    return list.filter((j) =>
-      j.number?.toLowerCase().includes(search.toLowerCase()) ||
-      j.description?.toLowerCase().includes(search.toLowerCase()) ||
-      j.notes?.toLowerCase().includes(search.toLowerCase())
-    );
+    const q = search.toLowerCase().trim();
+
+    return list.filter((j) => {
+      const numMatch = (j.number || "").toLowerCase().includes(q) || (j.reference_number || "").toLowerCase().includes(q);
+      const descMatch = (j.description || "").toLowerCase().includes(q);
+      const notesMatch = (j.notes || "").toLowerCase().includes(q);
+      const safeMatch = (j.safe?.name || "").toLowerCase().includes(q);
+      const cpMatch = (j.counterparty?.name || "").toLowerCase().includes(q);
+      const entriesMatch = (j.entries || []).some((e) =>
+        (e.memo || "").toLowerCase().includes(q) ||
+        (e.account?.name || "").toLowerCase().includes(q) ||
+        (e.account?.code || "").toLowerCase().includes(q) ||
+        String(e.debit_usd || "").includes(q) ||
+        String(e.credit_usd || "").includes(q) ||
+        String(e.debit_syp || "").includes(q) ||
+        String(e.credit_syp || "").includes(q)
+      );
+
+      return numMatch || descMatch || notesMatch || safeMatch || cpMatch || entriesMatch;
+    });
   }, [journalsData, search]);
 
   const pagination = useMemo(() => {
@@ -102,6 +120,11 @@ export function useJournals({
     const raw = safesResponse?.data || initialSafes;
     return Array.isArray(raw) ? raw : [];
   }, [safesResponse, initialSafes]);
+
+  const counterparties = useMemo(() => {
+    const raw = counterpartiesResponse?.data || initialCounterparties;
+    return Array.isArray(raw) ? raw : [];
+  }, [counterpartiesResponse, initialCounterparties]);
 
   const openCreateModal = () => {
     setFormErrors({});
@@ -177,6 +200,7 @@ export function useJournals({
     pagination,
     accounts,
     safes,
+    counterparties,
     branches,
     selectedBranchId,
     typeFilter,

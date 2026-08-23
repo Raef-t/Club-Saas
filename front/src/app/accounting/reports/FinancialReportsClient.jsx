@@ -1,11 +1,6 @@
 "use client";
 
-import StatsGrid from "@/components/ui/StatsGrid";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import {
-  TipJarIcon,
-  TrendUpIcon,
-} from "@/components/icons/Icons";
 import { useFinancialReports } from "./useFinancialReports";
 
 export default function FinancialReportsClient({ initialPeriods = [] }) {
@@ -91,35 +86,41 @@ export default function FinancialReportsClient({ initialPeriods = [] }) {
   );
 }
 
-function TrialBalanceView({ data }) {
+function TrialBalanceView({ data = {} }) {
   const rows = data.accounts || data.data || [];
-  const totalDebit = Number(data.total_debit || 0);
-  const totalCredit = Number(data.total_credit || 0);
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
-
-  const stats = [
-    { label: "إجمالي الأرصدة المدينة", value: `$${totalDebit.toLocaleString()}` },
-    { label: "إجمالي الأرصدة الدائنة", value: `$${totalCredit.toLocaleString()}` },
-    { label: "حالة التوازن", value: isBalanced ? "✓ ميزان متوازن" : "✕ غير متوازن" },
-  ];
+  const totals = data.totals || {};
+  const totalDebit = Number(totals.total_debit_usd ?? data.total_debit ?? 0);
+  const totalCredit = Number(totals.total_credit_usd ?? data.total_credit ?? 0);
+  const isBalanced = totals.is_balanced ?? Math.abs(totalDebit - totalCredit) < 0.01;
 
   return (
     <div className="space-y-6">
-      <StatsGrid items={stats} />
-
       <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">
-        <div className="mb-4 flex items-center justify-between border-b border-app-line/30 pb-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-app-line/30 pb-3">
           <div>
             <h2 className="text-lg font-bold text-app-text">ميزان المراجعة بالأرصدة والمجاميع</h2>
             <p className="text-xs text-app-muted">
-              استعراض كافة الحسابات وحركاتها ورصيدها الختامي خلال الفترة
+              استعراض كافة الحسابات المدينة والدائنة للتحقق من توازن الأستاذ المالي
             </p>
+          </div>
+          <div>
+            {isBalanced ? (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-400">
+                <span className="size-2 rounded-full bg-emerald-400" />
+                ميزان المراجعة متوازن ✓
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-1 text-xs font-bold text-rose-400">
+                <span className="size-2 rounded-full bg-rose-400" />
+                غير متوازن ✕
+              </span>
+            )}
           </div>
         </div>
 
         {rows.length === 0 ? (
           <div className="rounded-xl border border-dashed border-app-line/60 p-12 text-center text-app-muted">
-            لا توجد بيانات متاحة لميزان المراجعة في هذه الفترة.
+            لا توجد حركات أو حسابات مرحلة في هذه الفترة.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -129,38 +130,33 @@ function TrialBalanceView({ data }) {
                   <th className="p-3">الكود</th>
                   <th className="p-3">اسم الحساب</th>
                   <th className="p-3">النوع</th>
-                  <th className="p-3 text-left">مجموع مدين (USD)</th>
-                  <th className="p-3 text-left">مجموع دائن (USD)</th>
-                  <th className="p-3 text-left">رصيد مدين (USD)</th>
-                  <th className="p-3 text-left">رصيد دائن (USD)</th>
+                  <th className="p-3 text-left">الرصيد المدين (USD)</th>
+                  <th className="p-3 text-left">الرصيد الدائن (USD)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {rows.map((row, idx) => (
-                  <tr key={row.id || idx} className="hover:bg-app-card-soft/40 transition">
-                    <td className="p-3 font-mono font-bold text-app-yellow">{row.code}</td>
-                    <td className="p-3 font-medium">{row.name}</td>
-                    <td className="p-3 text-app-muted">{row.type}</td>
-                    <td className="p-3 text-left font-mono text-emerald-400">
-                      {Number(row.period_debit || 0) > 0 ? `$${Number(row.period_debit).toLocaleString()}` : "-"}
-                    </td>
-                    <td className="p-3 text-left font-mono text-rose-400">
-                      {Number(row.period_credit || 0) > 0 ? `$${Number(row.period_credit).toLocaleString()}` : "-"}
-                    </td>
-                    <td className="p-3 text-left font-mono font-bold text-emerald-400">
-                      {Number(row.closing_debit || 0) > 0 ? `$${Number(row.closing_debit).toLocaleString()}` : "-"}
-                    </td>
-                    <td className="p-3 text-left font-mono font-bold text-rose-400">
-                      {Number(row.closing_credit || 0) > 0 ? `$${Number(row.closing_credit).toLocaleString()}` : "-"}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((row, idx) => {
+                  const debit = Number(row.debit_usd || 0);
+                  const credit = Number(row.credit_usd || 0);
+
+                  return (
+                    <tr key={row.code || idx} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 font-mono font-bold text-app-yellow">{row.code}</td>
+                      <td className="p-3 font-medium">{row.name}</td>
+                      <td className="p-3 text-app-muted">{row.type}</td>
+                      <td className="p-3 text-left font-mono font-bold text-emerald-400">
+                        {debit > 0 ? `$${debit.toLocaleString()}` : "-"}
+                      </td>
+                      <td className="p-3 text-left font-mono font-bold text-rose-400">
+                        {credit > 0 ? `$${credit.toLocaleString()}` : "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot className="bg-app-card-soft font-bold border-t border-app-line/40 text-xs">
                 <tr>
                   <td colSpan={3} className="p-3 text-app-text">المجموع الإجمالي العام:</td>
-                  <td className="p-3 text-left font-mono text-emerald-400">${totalDebit.toLocaleString()}</td>
-                  <td className="p-3 text-left font-mono text-rose-400">${totalCredit.toLocaleString()}</td>
                   <td className="p-3 text-left font-mono text-emerald-400">${totalDebit.toLocaleString()}</td>
                   <td className="p-3 text-left font-mono text-rose-400">${totalCredit.toLocaleString()}</td>
                 </tr>
@@ -173,45 +169,51 @@ function TrialBalanceView({ data }) {
   );
 }
 
-function IncomeStatementView({ data }) {
-  const totalRevenues = Number(data.total_revenues || 0);
-  const totalExpenses = Number(data.total_expenses || 0);
-  const netIncome = Number(data.net_income || totalRevenues - totalExpenses);
-  const isProfitable = netIncome >= 0;
+function IncomeStatementView({ data = {} }) {
+  const summary = data.summary || {};
+  const totalRevenues = Number(summary.total_revenue_usd ?? data.total_revenues_usd ?? 0);
+  const totalExpenses = Number(summary.total_expense_usd ?? data.total_expenses_usd ?? 0);
+  const netIncome = Number(summary.net_income_usd ?? (totalRevenues - totalExpenses));
+  const isProfitable = summary.is_profitable ?? (netIncome >= 0);
 
   const revenuesList = data.revenues || [];
   const expensesList = data.expenses || [];
 
-  const stats = [
-    { label: "إجمالي الإيرادات", value: `$${totalRevenues.toLocaleString()}` },
-    { label: "إجمالي المصروفات", value: `$${totalExpenses.toLocaleString()}` },
-    { label: isProfitable ? "صافي الربح" : "صافي الخسارة", value: `$${Math.abs(netIncome).toLocaleString()}` },
-  ];
-
   return (
     <div className="space-y-6">
-      <StatsGrid items={stats} />
+      {/* Summary Banner */}
+      <div className={`rounded-2xl border p-5 text-center ${
+        isProfitable ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"
+      }`}>
+        <span className="text-xs text-app-muted block font-medium">النتيجة المالية الصافية للفترة:</span>
+        <h2 className={`text-2xl font-bold font-mono mt-1 ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
+          {isProfitable ? `صافي أرباح: $${netIncome.toLocaleString()}` : `صافي خسائر: $${Math.abs(netIncome).toLocaleString()}`}
+        </h2>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Revenues Card */}
         <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">
           <div className="flex items-center justify-between border-b border-app-line/30 pb-3 mb-4">
             <h3 className="text-base font-bold text-emerald-400">الإيرادات المحصلة</h3>
-            <span className="font-mono font-bold text-emerald-400">${totalRevenues.toLocaleString()}</span>
+            <span className="font-mono font-bold text-emerald-400 text-lg">${totalRevenues.toLocaleString()}</span>
           </div>
 
           <div className="space-y-2 text-xs">
             {revenuesList.length === 0 ? (
               <p className="text-app-muted text-center py-6">لا توجد إيرادات مسجلة بالفترة.</p>
             ) : (
-              revenuesList.map((item, idx) => (
-                <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
-                  <span className="text-app-text">{item.name || item.code}</span>
-                  <span className="font-mono font-bold text-emerald-400">
-                    ${Number(item.amount || item.balance || 0).toLocaleString()}
-                  </span>
-                </div>
-              ))
+              revenuesList.map((item, idx) => {
+                const amount = Number(item.credit_usd ? (item.credit_usd - (item.debit_usd || 0)) : item.amount || item.balance || 0);
+                return (
+                  <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
+                    <span className="text-app-text font-medium">{item.code ? `${item.code} - ${item.name}` : item.name}</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      ${amount.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -220,81 +222,92 @@ function IncomeStatementView({ data }) {
         <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">
           <div className="flex items-center justify-between border-b border-app-line/30 pb-3 mb-4">
             <h3 className="text-base font-bold text-rose-400">المصروفات والتكاليف</h3>
-            <span className="font-mono font-bold text-rose-400">${totalExpenses.toLocaleString()}</span>
+            <span className="font-mono font-bold text-rose-400 text-lg">${totalExpenses.toLocaleString()}</span>
           </div>
 
           <div className="space-y-2 text-xs">
             {expensesList.length === 0 ? (
               <p className="text-app-muted text-center py-6">لا توجد مصروفات مسجلة بالفترة.</p>
             ) : (
-              expensesList.map((item, idx) => (
-                <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
-                  <span className="text-app-text">{item.name || item.code}</span>
-                  <span className="font-mono font-bold text-rose-400">
-                    ${Number(item.amount || item.balance || 0).toLocaleString()}
-                  </span>
-                </div>
-              ))
+              expensesList.map((item, idx) => {
+                const amount = Number(item.debit_usd ? (item.debit_usd - (item.credit_usd || 0)) : item.amount || item.balance || 0);
+                return (
+                  <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
+                    <span className="text-app-text font-medium">{item.code ? `${item.code} - ${item.name}` : item.name}</span>
+                    <span className="font-mono font-bold text-rose-400">
+                      ${amount.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
-      </div>
-
-      {/* Net Summary Banner */}
-      <div className={`rounded-2xl border p-5 text-center ${
-        isProfitable ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"
-      }`}>
-        <span className="text-xs text-app-muted block">النتيجة المالية النهائية للفترة:</span>
-        <h2 className={`text-2xl font-bold font-mono mt-1 ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
-          {isProfitable ? `صافي ربح: $${netIncome.toLocaleString()}` : `صافي خسارة: $${Math.abs(netIncome).toLocaleString()}`}
-        </h2>
       </div>
     </div>
   );
 }
 
-function BalanceSheetView({ data }) {
-  const totalAssets = Number(data.total_assets || 0);
-  const totalLiabilities = Number(data.total_liabilities || 0);
-  const totalEquity = Number(data.total_equity || 0);
-  const totalLiabEquity = totalLiabilities + totalEquity;
-  const isBalanced = Math.abs(totalAssets - totalLiabEquity) < 0.01;
+function BalanceSheetView({ data = {} }) {
+  const summary = data.summary || {};
+  const totalAssets = Number(summary.total_assets_usd ?? data.total_assets_usd ?? 0);
+  const totalLiabilities = Number(summary.total_liabilities_usd ?? 0);
+  const totalEquity = Number(summary.total_equity_usd ?? 0);
+  const netIncome = Number(summary.net_income_usd ?? 0);
+  const isBalanced = summary.is_balanced ?? (Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01);
 
   const assets = data.assets || [];
   const liabilities = data.liabilities || [];
   const equity = data.equity || [];
 
-  const stats = [
-    { label: "إجمالي الأصول (Assets)", value: `$${totalAssets.toLocaleString()}` },
-    { label: "إجمالي الخصوم (Liabilities)", value: `$${totalLiabilities.toLocaleString()}` },
-    { label: "حقوق الملكية (Equity)", value: `$${totalEquity.toLocaleString()}` },
-    { label: "معادلة الميزانية", value: isBalanced ? "✓ الأصول = الخصوم + الملكية" : "✕ غير متوازنة" },
-  ];
-
   return (
     <div className="space-y-6">
-      <StatsGrid items={stats} />
+      {/* Balance Equation Status */}
+      <div className="rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 text-xs">
+          <span className="text-app-muted font-medium">معادلة الميزانية:</span>
+          <span className="font-mono font-bold text-blue-400">الأصول (${totalAssets.toLocaleString()})</span>
+          <span className="text-app-muted">=</span>
+          <span className="font-mono font-bold text-amber-400">الخصوم (${totalLiabilities.toLocaleString()})</span>
+          <span className="text-app-muted">+</span>
+          <span className="font-mono font-bold text-purple-400">حقوق الملكية والأرباح (${totalEquity.toLocaleString()})</span>
+        </div>
+        <div>
+          {isBalanced ? (
+            <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-400">
+              ✓ الميزانية العمومية متوازنة
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-1 text-xs font-bold text-rose-400">
+              ✕ غير متوازنة
+            </span>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Assets Side */}
         <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">
           <div className="flex items-center justify-between border-b border-app-line/30 pb-3 mb-4">
             <h3 className="text-base font-bold text-blue-400">جانب الأصول (الموجودات)</h3>
-            <span className="font-mono font-bold text-blue-400">${totalAssets.toLocaleString()}</span>
+            <span className="font-mono font-bold text-blue-400 text-lg">${totalAssets.toLocaleString()}</span>
           </div>
 
           <div className="space-y-2 text-xs">
             {assets.length === 0 ? (
               <p className="text-app-muted text-center py-6">لا توجد أصول مسجلة.</p>
             ) : (
-              assets.map((item, idx) => (
-                <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
-                  <span className="text-app-text">{item.name || item.code}</span>
-                  <span className="font-mono font-bold text-blue-400">
-                    ${Number(item.balance || item.amount || 0).toLocaleString()}
-                  </span>
-                </div>
-              ))
+              assets.map((item, idx) => {
+                const amount = Number(item.debit_usd ? (item.debit_usd - (item.credit_usd || 0)) : item.balance || item.amount || 0);
+                return (
+                  <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
+                    <span className="text-app-text font-medium">{item.code ? `${item.code} - ${item.name}` : item.name}</span>
+                    <span className="font-mono font-bold text-blue-400">
+                      ${amount.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -305,21 +318,24 @@ function BalanceSheetView({ data }) {
           <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">
             <div className="flex items-center justify-between border-b border-app-line/30 pb-3 mb-4">
               <h3 className="text-base font-bold text-amber-400">الخصوم (الالتزامات والذمم)</h3>
-              <span className="font-mono font-bold text-amber-400">${totalLiabilities.toLocaleString()}</span>
+              <span className="font-mono font-bold text-amber-400 text-lg">${totalLiabilities.toLocaleString()}</span>
             </div>
 
             <div className="space-y-2 text-xs">
               {liabilities.length === 0 ? (
                 <p className="text-app-muted text-center py-4">لا توجد التزامات مسجلة.</p>
               ) : (
-                liabilities.map((item, idx) => (
-                  <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
-                    <span className="text-app-text">{item.name || item.code}</span>
-                    <span className="font-mono font-bold text-amber-400">
-                      ${Number(item.balance || item.amount || 0).toLocaleString()}
-                    </span>
-                  </div>
-                ))
+                liabilities.map((item, idx) => {
+                  const amount = Number(item.credit_usd ? (item.credit_usd - (item.debit_usd || 0)) : item.balance || item.amount || 0);
+                  return (
+                    <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
+                      <span className="text-app-text font-medium">{item.code ? `${item.code} - ${item.name}` : item.name}</span>
+                      <span className="font-mono font-bold text-amber-400">
+                        ${amount.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -327,23 +343,29 @@ function BalanceSheetView({ data }) {
           {/* Equity */}
           <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">
             <div className="flex items-center justify-between border-b border-app-line/30 pb-3 mb-4">
-              <h3 className="text-base font-bold text-purple-400">حقوق الملكية ورأس المال</h3>
-              <span className="font-mono font-bold text-purple-400">${totalEquity.toLocaleString()}</span>
+              <h3 className="text-base font-bold text-purple-400">حقوق الملكية وصافي الدخل</h3>
+              <span className="font-mono font-bold text-purple-400 text-lg">${totalEquity.toLocaleString()}</span>
             </div>
 
             <div className="space-y-2 text-xs">
-              {equity.length === 0 ? (
-                <p className="text-app-muted text-center py-4">لا توجد حقوق ملكية مسجلة.</p>
-              ) : (
-                equity.map((item, idx) => (
+              {equity.map((item, idx) => {
+                const amount = Number(item.credit_usd ? (item.credit_usd - (item.debit_usd || 0)) : item.balance || item.amount || 0);
+                return (
                   <div key={idx} className="flex justify-between py-2 border-b border-app-line/20">
-                    <span className="text-app-text">{item.name || item.code}</span>
+                    <span className="text-app-text font-medium">{item.code ? `${item.code} - ${item.name}` : item.name}</span>
                     <span className="font-mono font-bold text-purple-400">
-                      ${Number(item.balance || item.amount || 0).toLocaleString()}
+                      ${amount.toLocaleString()}
                     </span>
                   </div>
-                ))
-              )}
+                );
+              })}
+
+              <div className="flex justify-between py-2 border-b border-app-line/20 font-bold bg-purple-500/5 px-2 rounded-lg">
+                <span className="text-purple-300">صافي ربح / خسارة الفترة (من قائمة الدخل)</span>
+                <span className={`font-mono ${netIncome >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  ${netIncome.toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
         </div>

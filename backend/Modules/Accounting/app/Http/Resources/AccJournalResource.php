@@ -12,6 +12,7 @@ class AccJournalResource extends JsonResource
 
         return [
             'id'               => $this->id,
+            'number'           => $this->reference_number,
             'reference_number' => $this->reference_number,
             'type'             => $this->type,
             'date'             => $this->date?->format('Y-m-d'),
@@ -32,6 +33,8 @@ class AccJournalResource extends JsonResource
             'entries'          => $this->whenLoaded('entries',      fn() => AccJournalEntryResource::collection($this->entries)),
             'total_debit_usd'  => $this->whenLoaded('entries', fn() => (float) $this->entries->sum('debit_usd'),  0),
             'total_credit_usd' => $this->whenLoaded('entries', fn() => (float) $this->entries->sum('credit_usd'), 0),
+            'total_debit_syp'  => $this->whenLoaded('entries', fn() => (float) $this->entries->sum('debit_syp'),  0),
+            'total_credit_syp' => $this->whenLoaded('entries', fn() => (float) $this->entries->sum('credit_syp'), 0),
             'created_at'       => $this->created_at,
         ];
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import StatsGrid from "@/components/ui/StatsGrid";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -149,19 +148,8 @@ export default function AccountsClient({ initialAccounts = [] }) {
     handleSaveAccount,
   } = useAccounts({ initialAccounts });
 
-  const statsItems = [
-    { label: "إجمالي الحسابات", value: stats.total },
-    { label: "حسابات الأصول", value: stats.assets },
-    { label: "حسابات الخصوم", value: stats.liabilities },
-    { label: "حقوق الملكية", value: stats.equity },
-    { label: "الإيرادات والمصاريف", value: `${stats.revenues} / ${stats.expenses}` },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Top Stats Overview */}
-      <StatsGrid items={statsItems} />
-
       {/* Toolbar: Search, Filters, View Modes, Add Button */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
         <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">

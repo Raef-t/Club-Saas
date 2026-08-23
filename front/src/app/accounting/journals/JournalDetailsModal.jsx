@@ -142,9 +142,19 @@ export default function JournalDetailsModal({
               </>
             )}
             {journal.status === "posted" && (
-              <Button variant="warning" onClick={() => onOpenAction("reverse", journal)}>
-                عكس السند (Reverse Entry)
-              </Button>
+              <>
+                <Button variant="danger" onClick={() => onOpenAction("cancel", journal)}>
+                  إلغاء السند
+                </Button>
+                <Button variant="secondary" onClick={() => onOpenAction("reverse", journal)}>
+                  عكس السند (قيد عكسي)
+                </Button>
+              </>
+            )}
+            {journal.status === "cancelled" && (
+              <span className="text-xs text-rose-400 font-bold px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                هذا السند ملغي ولا يؤثر على الحسابات
+              </span>
             )}
           </div>
 

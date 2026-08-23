@@ -147,37 +147,76 @@ class ReportService
     public function getSafeStatement(int $safeId, string $from, string $to): array
     {
         $safe = AccSafe::with('account')->findOrFail($safeId);
-
-        // Fetch all journal entries for this safe's account in posted journals within the date range
-        $entries = AccJournalEntry::where('account_id', $safe->account_id)
-            ->whereHas('journal', function ($q) use ($from, $to) {
-                $q->where('status', 'posted')
-                  ->whereBetween('date', [$from, $to]);
-            })
-            ->with('journal')
-            ->get()
-            ->sortBy(fn($entry) => $entry->journal->date);
-
-        $totalInUsd  = 0.0;
-        $totalOutUsd = 0.0;
         $isUsd = $safe->currency === 'USD';
 
-        $rows = $entries->map(function ($entry) use ($isUsd, &$totalInUsd, &$totalOutUsd) {
+        // 1. حساب الرصيد الافتتاحي ما قبل تاريخ $from
+        $openingEntries = AccJournalEntry::where('account_id', $safe->account_id)
+            ->whereHas('journal', function ($q) use ($from, $safe) {
+                $q->where('status', 'posted')
+                  ->where('date', '<', $from)
+                  ->where(function ($sq) use ($safe) {
+                      $sq->where('safe_id', $safe->id);
+                      if ($safe->branch_id) {
+                          $sq->orWhere(function ($ssq) use ($safe) {
+                              $ssq->whereNull('safe_id')->where('branch_id', $safe->branch_id);
+                          });
+                      }
+                  });
+            })
+            ->selectRaw('SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
+            ->first();
+
+        $openingBalance = $isUsd
+            ? (float)(($openingEntries->debit_usd ?? 0) - ($openingEntries->credit_usd ?? 0))
+            : (float)(($openingEntries->debit_syp ?? 0) - ($openingEntries->credit_syp ?? 0));
+
+        // 2. جلب جميع حركات الصندوق في النطاق المحدد
+        $entries = AccJournalEntry::where('account_id', $safe->account_id)
+            ->whereHas('journal', function ($q) use ($from, $to, $safe) {
+                $q->where('status', 'posted')
+                  ->whereBetween('date', [$from, $to])
+                  ->where(function ($sq) use ($safe) {
+                      $sq->where('safe_id', $safe->id);
+                      if ($safe->branch_id) {
+                          $sq->orWhere(function ($ssq) use ($safe) {
+                              $ssq->whereNull('safe_id')->where('branch_id', $safe->branch_id);
+                          });
+                      }
+                  });
+            })
+            ->with(['journal'])
+            ->get()
+            ->sortBy(fn($entry) => $entry->journal ? $entry->journal->date : now());
+
+        $totalIn = 0.0;
+        $totalOut = 0.0;
+        $runningBalance = $openingBalance;
+
+        $rows = $entries->map(function ($entry) use ($isUsd, &$totalIn, &$totalOut, &$runningBalance) {
             $debit  = (float) ($isUsd ? $entry->debit_usd : $entry->debit_syp);
             $credit = (float) ($isUsd ? $entry->credit_usd : $entry->credit_syp);
-            $totalInUsd  += $debit;
-            $totalOutUsd += $credit;
+            $totalIn  += $debit;
+            $totalOut += $credit;
+            $runningBalance += ($debit - $credit);
 
             $sourceType = $entry->journal ? $entry->journal->source_type : null;
             $sourceId   = $entry->journal ? $entry->journal->source_id : null;
+            $refNumber  = $entry->journal ? $entry->journal->reference_number : '';
 
             return [
+                'id'                  => $entry->id,
                 'date'                => $entry->journal && $entry->journal->date ? $entry->journal->date->toDateString() : '',
-                'reference_number'    => $entry->journal ? $entry->journal->reference_number : '',
+                'number'              => $refNumber,
+                'reference_number'    => $refNumber,
                 'type'                => $entry->journal ? $entry->journal->type : '',
                 'description'         => $entry->journal ? $entry->journal->description : '',
+                'memo'                => $entry->memo,
+                'in'                  => $debit,
+                'out'                 => $credit,
                 'debit_usd'           => $debit,   // وارد للصندوق
                 'credit_usd'          => $credit,  // صادر من الصندوق
+                'amount'              => $debit > 0 ? $debit : $credit,
+                'running_balance'     => round($runningBalance, 2),
                 'source_type'         => $sourceType,
                 'source_id'           => $sourceId,
                 'journal_id'          => $entry->journal ? $entry->journal->id : null,
@@ -187,13 +226,18 @@ class ReportService
         })->values();
 
         return [
-            'safe'    => ['id' => $safe->id, 'name' => $safe->name, 'currency' => $safe->currency],
-            'period'  => ['from' => $from, 'to' => $to],
-            'entries' => $rows,
-            'totals'  => [
-                'total_in_usd'    => $totalInUsd,
-                'total_out_usd'   => $totalOutUsd,
-                'net_balance_usd' => $totalInUsd - $totalOutUsd,
+            'safe'             => ['id' => $safe->id, 'name' => $safe->name, 'currency' => $safe->currency],
+            'period'           => ['from' => $from, 'to' => $to],
+            'opening_balance'  => round($openingBalance, 2),
+            'total_in'         => round($totalIn, 2),
+            'total_out'        => round($totalOut, 2),
+            'closing_balance'  => round($runningBalance, 2),
+            'movements'        => $rows,
+            'entries'          => $rows,
+            'totals'           => [
+                'total_in'        => round($totalIn, 2),
+                'total_out'       => round($totalOut, 2),
+                'net_balance'     => round($totalIn - $totalOut, 2),
             ],
         ];
     }

@@ -14,17 +14,12 @@ import Image from "next/image";
 const quickActions = [
   {
     label: "إضافة مصروف",
-    href: "/accounting/expenses/create",
+    href: "/accounting/expenses",
     icon: FileDownIcon,
   },
   {
-    label: "إضافة دفعة",
-    href: "/accounting/subscriptions/payments/create",
-    icon: HandCoinsIcon,
-  },
-  {
     label: "إضافة إيراد",
-    href: "/accounting/revenues/create",
+    href: "/accounting/revenues",
     icon: FileUpIcon,
   },
   {
@@ -41,8 +36,6 @@ const navItems = [
   { title: "سندات القيود", href: "/accounting/journals" },
   { title: "الإيرادات", href: "/accounting/revenues" },
   { title: "المصاريف", href: "/accounting/expenses" },
-  { title: "اشتراكات الأعضاء", href: "/accounting/subscriptions" },
-  { title: "الرواتب والأجور", href: "/accounting/salaries" },
   { title: "الفترات المحاسبية", href: "/accounting/periods" },
   { title: "التقارير المالية", href: "/accounting/reports" },
 ];
