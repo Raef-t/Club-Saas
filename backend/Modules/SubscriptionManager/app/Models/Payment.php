@@ -36,15 +36,74 @@ class Payment extends Model
     {
         static::saved(function ($payment) {
             self::syncInvoiceAndSubscription($payment->invoice_id);
+            self::syncWithAccountingLedger($payment, 'saved');
         });
 
         static::deleted(function ($payment) {
             self::syncInvoiceAndSubscription($payment->invoice_id);
+            self::syncWithAccountingLedger($payment, 'deleted');
         });
 
         static::restored(function ($payment) {
             self::syncInvoiceAndSubscription($payment->invoice_id);
+            self::syncWithAccountingLedger($payment, 'restored');
         });
+    }
+
+    public static function syncWithAccountingLedger(self $payment, string $action): void
+    {
+        if (!class_exists(\Modules\Accounting\Models\AccJournal::class)) {
+            return;
+        }
+
+        try {
+            $journal = \Modules\Accounting\Models\AccJournal::withoutGlobalScopes()
+                ->where('source_type', 'payment')
+                ->where('source_id', $payment->id)
+                ->first();
+
+            if ($action === 'deleted') {
+                if ($journal && $journal->status !== 'cancelled') {
+                    $ledgerService = app(\Modules\Accounting\Services\LedgerService::class);
+                    $reason = $payment->reason ?? 'تم حذف الدفعة من سجل المدفوعات';
+                    $ledgerService->cancelJournal($journal, 'إلغاء تلقائي: ' . $reason);
+                }
+            } elseif ($action === 'restored') {
+                if ($journal && $journal->status === 'cancelled') {
+                    $journal->update([
+                        'status' => 'posted',
+                        'notes'  => trim(($journal->notes ? $journal->notes . ' | ' : '') . 'تم استرجاع الدفعة وإعادة تفعيل السند'),
+                    ]);
+                }
+            } elseif ($action === 'saved') {
+                if ($journal && $journal->status === 'posted' && $payment->wasChanged(['amount', 'safe_id'])) {
+                    $newAmount = (float) $payment->amount;
+                    $safe = \Modules\Accounting\Models\AccSafe::find($payment->safe_id);
+                    $isUsd = ($safe?->currency ?? 'USD') === 'USD';
+
+                    foreach ($journal->entries as $entry) {
+                        if ($entry->debit_usd > 0 || $entry->debit_syp > 0) {
+                            $entry->update([
+                                'account_id' => $safe?->account_id ?? $entry->account_id,
+                                'debit_usd'  => $isUsd ? $newAmount : 0,
+                                'debit_syp'  => !$isUsd ? $newAmount : 0,
+                            ]);
+                        } elseif ($entry->credit_usd > 0 || $entry->credit_syp > 0) {
+                            $entry->update([
+                                'credit_usd' => $isUsd ? $newAmount : 0,
+                                'credit_syp' => !$isUsd ? $newAmount : 0,
+                            ]);
+                        }
+                    }
+
+                    if ($payment->safe_id && $payment->safe_id !== $journal->safe_id) {
+                        $journal->update(['safe_id' => $payment->safe_id]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to sync payment with accounting ledger: ' . $e->getMessage());
+        }
     }
 
     public static function syncInvoiceAndSubscription($invoiceId): void
