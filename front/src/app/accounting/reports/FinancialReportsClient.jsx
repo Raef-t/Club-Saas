@@ -10,29 +10,41 @@ export default function FinancialReportsClient({ initialPeriods = [] }) {
     selectedPeriodId,
     setSelectedPeriodId,
     periods,
+    branches,
+    selectedBranchId,
     trialBalance,
     incomeStatement,
     balanceSheet,
     isLoading,
   } = useFinancialReports({ initialPeriods });
 
+  const activeBranch = branches?.find((b) => String(b.id) === String(selectedBranchId));
+  const branchName = selectedBranchId && selectedBranchId !== "all" ? (activeBranch?.name || `فرع #${selectedBranchId}`) : "كافة الفروع";
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Period & Tab Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
-        <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold text-app-muted-light">الفترة المالية المحاسبية:</label>
-          <select
-            value={selectedPeriodId}
-            onChange={(e) => setSelectedPeriodId(e.target.value)}
-            className="h-10 rounded-xl border border-app-line bg-app-card px-3 text-xs font-medium text-app-text outline-none focus:border-app-yellow"
-          >
-            {periods.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.status === "open" ? "مفتوحة" : p.status === "closed" ? "مغلقة" : "مقفلة"})
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-app-muted-light">الفترة المالية:</label>
+            <select
+              value={selectedPeriodId}
+              onChange={(e) => setSelectedPeriodId(e.target.value)}
+              className="h-10 rounded-xl border border-app-line bg-app-card px-3 text-xs font-medium text-app-text outline-none focus:border-app-yellow"
+            >
+              {periods.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.status === "open" ? "مفتوحة" : p.status === "closed" ? "مغلقة" : "مقفلة"})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl border border-app-line bg-app-card px-3 py-2 text-xs">
+            <span className="text-app-muted shrink-0">نطاق الفرع:</span>
+            <span className="font-semibold text-app-yellow">{branchName}</span>
+          </div>
         </div>
 
         {/* Tab Switcher */}

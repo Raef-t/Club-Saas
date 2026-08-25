@@ -17,11 +17,16 @@ class ReportService
      * ميزان المراجعة (Trial Balance)
      * يعرض جميع الحسابات مع إجمالي المدين والدائن للفترة
      */
-    public function getTrialBalance(int $periodId): array
+    public function getTrialBalance(int $periodId, ?int $branchId = null): array
     {
         $period = AccPeriod::findOrFail($periodId);
 
-        $totalsByAccount = AccJournalEntry::whereHas('journal', fn($q) => $q->where('status', 'posted')->where('period_id', $periodId))
+        $totalsByAccount = AccJournalEntry::whereHas('journal', function ($q) use ($periodId, $branchId) {
+            $q->where('status', 'posted')->where('period_id', $periodId);
+            if ($branchId) {
+                $q->where('branch_id', $branchId);
+            }
+        })
             ->selectRaw('account_id, SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
             ->groupBy('account_id')
             ->get()
@@ -72,10 +77,10 @@ class ReportService
     /**
      * قائمة الدخل (Income Statement): الإيرادات - المصاريف
      */
-    public function getIncomeStatement(int $periodId): array
+    public function getIncomeStatement(int $periodId, ?int $branchId = null): array
     {
         $period   = AccPeriod::findOrFail($periodId);
-        $tb       = $this->getTrialBalance($periodId);
+        $tb       = $this->getTrialBalance($periodId, $branchId);
         $accounts = collect($tb['accounts']);
 
         $revenues = $accounts->where('type', 'revenue')->values();
@@ -108,10 +113,10 @@ class ReportService
     /**
      * الميزانية العمومية (Balance Sheet): الأصول = الخصوم + حقوق الملكية
      */
-    public function getBalanceSheet(int $periodId): array
+    public function getBalanceSheet(int $periodId, ?int $branchId = null): array
     {
         $period   = AccPeriod::findOrFail($periodId);
-        $tb       = $this->getTrialBalance($periodId);
+        $tb       = $this->getTrialBalance($periodId, $branchId);
         $accounts = collect($tb['accounts']);
 
         $assets      = $accounts->where('type', 'asset')->values();
@@ -119,7 +124,7 @@ class ReportService
         $equity      = $accounts->where('type', 'equity')->values();
 
         // صافي الدخل من قائمة الدخل يُضاف لحقوق الملكية
-        $is        = $this->getIncomeStatement($periodId);
+        $is        = $this->getIncomeStatement($periodId, $branchId);
         $netIncome = $is['summary']['net_income_usd'];
 
         $totalAssetsUsd      = $assets->sum(fn($a) => $a['debit_usd'] - $a['credit_usd']);
