@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             guests: fn (\Illuminate\Http\Request $request) => ($request->is('api/*') || $request->expectsJson()) ? null : route('login')
         );
 
+        $middleware->api(append: [
+            'throttle:api',
+        ]);
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
@@ -29,6 +33,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 return true;
             }
             return $request->expectsJson();
+        });
+
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'تم تجاوز الحد المسموح من المحاولات. يرجى المحاولة لاحقاً.',
+                ], 429, $e->getHeaders());
+            }
         });
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, \Illuminate\Http\Request $request) {
