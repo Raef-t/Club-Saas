@@ -13,47 +13,89 @@ class UsernameValidationAndSuggestionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function createUser(array $attributes = []): User
+    {
+        if (empty($attributes['person_id'])) {
+            $person = Person::create([
+                'full_name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'gender' => 'male',
+                'type' => 'player',
+            ]);
+            $attributes['person_id'] = $person->id;
+        }
+
+        if (empty($attributes['password'])) {
+            $attributes['password'] = bcrypt('secret123');
+        }
+
+        return User::create($attributes);
+    }
+
     public function test_username_suggestion_service_validates_format()
     {
+        // Valid English cases
         $this->assertTrue(UsernameSuggestionService::isValidFormat('ahmed_99'));
         $this->assertTrue(UsernameSuggestionService::isValidFormat('player.one'));
         $this->assertTrue(UsernameSuggestionService::isValidFormat('user-name'));
         $this->assertTrue(UsernameSuggestionService::isValidFormat('coach123'));
 
-        // Invalid cases
-        $this->assertFalse(UsernameSuggestionService::isValidFormat('ab')); // too short (< 3)
-        $this->assertFalse(UsernameSuggestionService::isValidFormat('this_is_a_very_very_long_username_exceeding_thirty_chars')); // > 30
-        $this->assertFalse(UsernameSuggestionService::isValidFormat('_invalid_start')); // starts with _
-        $this->assertFalse(UsernameSuggestionService::isValidFormat('invalid_end_')); // ends with _
-        $this->assertFalse(UsernameSuggestionService::isValidFormat('user@name!')); // illegal symbols
-        $this->assertFalse(UsernameSuggestionService::isValidFormat('اسم_عربي')); // non-ascii
+        // Valid Arabic cases
+        $this->assertTrue(UsernameSuggestionService::isValidFormat('اسم_عربي'));
+        $this->assertTrue(UsernameSuggestionService::isValidFormat('أحمد_99'));
+        $this->assertTrue(UsernameSuggestionService::isValidFormat('كابتن_علي'));
+        $this->assertTrue(UsernameSuggestionService::isValidFormat('محمد-2026'));
+        $this->assertTrue(UsernameSuggestionService::isValidFormat('سارة.نادي'));
+        $this->assertTrue(UsernameSuggestionService::isValidFormat('بطل'));
+
+        // Invalid cases: too short (< 3 characters)
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('ab'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('اح'));
+
+        // Invalid cases: too long (> 30 characters)
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('this_is_a_very_very_long_username_exceeding_thirty_chars'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('اسم_مستخدم_طويل_جدا_يتجاوز_ثلاثين_حرفا_في_الطول'));
+
+        // Invalid cases: starts/ends with punctuation
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('_invalid_start'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('_احمد'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('invalid_end_'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('احمد_'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('-user'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('.player'));
+
+        // Invalid cases: illegal symbols and whitespace
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('user@name!'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('أحمد#1'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('user name'));
+        $this->assertFalse(UsernameSuggestionService::isValidFormat('أحمد علي'));
     }
 
     public function test_username_suggestion_service_checks_availability()
     {
-        $user1 = User::create([
+        $user1 = $this->createUser([
             'username' => 'tec-ply-10001',
-            'custom_username' => 'existing_player',
-            'password' => 'secret123',
+            'custom_username' => 'أحمد_البطل',
         ]);
 
         $this->assertFalse(UsernameSuggestionService::isAvailable('tec-ply-10001'));
-        $this->assertFalse(UsernameSuggestionService::isAvailable('existing_player'));
+        $this->assertFalse(UsernameSuggestionService::isAvailable('أحمد_البطل'));
+        $this->assertTrue(UsernameSuggestionService::isAvailable('خالد_المحترف'));
         $this->assertTrue(UsernameSuggestionService::isAvailable('completely_new_username'));
 
         // Ignore current user
-        $this->assertTrue(UsernameSuggestionService::isAvailable('existing_player', $user1->id));
+        $this->assertTrue(UsernameSuggestionService::isAvailable('أحمد_البطل', $user1->id));
     }
 
     public function test_username_suggestion_service_generates_valid_unique_suggestions()
     {
-        User::create([
+        $this->createUser([
             'username' => 'tec-ply-10002',
-            'custom_username' => 'ahmed',
-            'password' => 'secret123',
+            'custom_username' => 'أحمد',
         ]);
 
-        $suggestions = UsernameSuggestionService::generateSuggestions('ahmed', 'Ahmed Ali');
+        $suggestions = UsernameSuggestionService::generateSuggestions('أحمد', 'أحمد علي');
 
         $this->assertNotEmpty($suggestions);
         $this->assertCount(5, $suggestions);
@@ -64,36 +106,35 @@ class UsernameValidationAndSuggestionTest extends TestCase
         }
     }
 
-    public function test_check_username_api_returns_available_for_new_username()
+    public function test_check_username_api_returns_available_for_new_arabic_username()
     {
-        $response = $this->getJson('/api/v1/auth/check-username?username=brand_new_user');
+        $response = $this->getJson('/api/v1/auth/check-username?username=' . urlencode('بطل_النادي'));
 
         $response->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
                 'data' => [
-                    'username' => 'brand_new_user',
+                    'username' => 'بطل_النادي',
                     'is_available' => true,
                     'suggestions' => [],
                 ]
             ]);
     }
 
-    public function test_check_username_api_returns_suggestions_when_username_is_taken()
+    public function test_check_username_api_returns_suggestions_when_arabic_username_is_taken()
     {
-        User::create([
+        $this->createUser([
             'username' => 'tec-ply-10003',
-            'custom_username' => 'taken_username',
-            'password' => 'secret123',
+            'custom_username' => 'كابتن_سامي',
         ]);
 
-        $response = $this->getJson('/api/v1/auth/check-username?username=taken_username');
+        $response = $this->getJson('/api/v1/auth/check-username?username=' . urlencode('كابتن_سامي'));
 
         $response->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
                 'data' => [
-                    'username' => 'taken_username',
+                    'username' => 'كابتن_سامي',
                     'is_available' => false,
                 ]
             ]);
@@ -108,24 +149,22 @@ class UsernameValidationAndSuggestionTest extends TestCase
         }
     }
 
-    public function test_set_custom_username_endpoint_returns_suggestions_on_duplicate()
+    public function test_set_custom_username_endpoint_returns_suggestions_on_duplicate_arabic_username()
     {
-        User::create([
+        $this->createUser([
             'username' => 'tec-ply-10004',
-            'custom_username' => 'first_star',
-            'password' => 'secret123',
+            'custom_username' => 'نجم_الساحة',
         ]);
 
-        $currentUser = User::create([
+        $currentUser = $this->createUser([
             'username' => 'tec-ply-10005',
             'custom_username' => null,
-            'password' => 'secret123',
         ]);
 
         Sanctum::actingAs($currentUser);
 
         $response = $this->postJson('/api/v1/auth/set-custom-username', [
-            'custom_username' => 'first_star',
+            'custom_username' => 'نجم_الساحة',
         ]);
 
         $response->assertStatus(422)
@@ -139,18 +178,17 @@ class UsernameValidationAndSuggestionTest extends TestCase
         $this->assertNotEmpty($response->json('data.suggestions'));
     }
 
-    public function test_set_custom_username_endpoint_succeeds_for_unique_username()
+    public function test_set_custom_username_endpoint_succeeds_for_unique_arabic_username()
     {
-        $currentUser = User::create([
+        $currentUser = $this->createUser([
             'username' => 'tec-ply-10006',
             'custom_username' => null,
-            'password' => 'secret123',
         ]);
 
         Sanctum::actingAs($currentUser);
 
         $response = $this->postJson('/api/v1/auth/set-custom-username', [
-            'custom_username' => 'unique_star_99',
+            'custom_username' => 'أحمد_البطل_99',
         ]);
 
         $response->assertStatus(200)
@@ -158,10 +196,63 @@ class UsernameValidationAndSuggestionTest extends TestCase
                 'status' => 'success',
                 'data' => [
                     'username' => 'tec-ply-10006',
-                    'custom_username' => 'unique_star_99',
+                    'custom_username' => 'أحمد_البطل_99',
                 ]
             ]);
 
-        $this->assertEquals('unique_star_99', $currentUser->fresh()->custom_username);
+        $this->assertEquals('أحمد_البطل_99', $currentUser->fresh()->custom_username);
+    }
+
+    public function test_login_with_arabic_custom_username()
+    {
+        $this->createUser([
+            'username' => 'tec-ply-10007',
+            'custom_username' => 'الأسطورة_2026',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'username' => 'الأسطورة_2026',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'data' => [
+                    'user' => [
+                        'custom_username' => 'الأسطورة_2026',
+                    ],
+                ]
+            ]);
+    }
+
+    public function test_change_password_with_arabic_custom_username()
+    {
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10008',
+            'custom_username' => null,
+            'password' => bcrypt('oldpassword123'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'current_password' => 'oldpassword123',
+            'new_password' => 'newpassword123',
+            'new_password_confirmation' => 'newpassword123',
+            'custom_username' => 'صقر_النادي',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'data' => [
+                    'custom_username' => 'صقر_النادي',
+                ]
+            ]);
+
+        $this->assertEquals('صقر_النادي', $currentUser->fresh()->custom_username);
     }
 }
+
