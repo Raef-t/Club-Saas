@@ -168,12 +168,13 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Get(
         path: '/v1/attendances/history',
         summary: '📆 سجل حضور موحد',
-        description: 'يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).',
+        description: 'يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية والفرع. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).',
         tags: ['Attendance'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'attendable_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['all', 'member', 'staff'], default: 'all'), description: 'نوع المستخدم (member, staff, أو all للجلب الشامل)')]
     #[OA\Parameter(name: 'attendable_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'معرف المستخدم (اختياري - إذا لم يحدد يجلب الكل)')]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'معرف الفرع للفلترة (اختياري)')]
     #[OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'), description: 'تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-21'), description: 'تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Response(response: 200, description: '✅', content: new OA\JsonContent())]
@@ -182,18 +183,22 @@ class UnifiedAttendanceController extends BaseController
         $request->validate([
             'attendable_type' => 'nullable|string|in:all,member,staff',
             'attendable_id'   => 'nullable|integer',
+            'branch_id'       => 'nullable|integer',
+            'branch'          => 'nullable|integer',
             'from'            => 'nullable|date_format:Y-m-d',
             'to'              => 'nullable|date_format:Y-m-d',
         ]);
 
         $type = $request->input('attendable_type', 'all');
         $entityId = $request->filled('attendable_id') ? (int) $request->input('attendable_id') : null;
+        $branchId = $request->filled('branch_id') ? (int) $request->input('branch_id') : ($request->filled('branch') ? (int) $request->input('branch') : null);
 
         $query = $this->attendanceService->getHistory(
             $type,
             $entityId,
             $request->input('from'),
-            $request->input('to')
+            $request->input('to'),
+            $branchId
         );
 
         // إزالة Pagination وجلب جميع السجلات بناءً على الفلترة
