@@ -20,7 +20,9 @@ class SubscribeOfferRequest extends FormRequest
             'receipt_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
             'start_date' => 'nullable|date',
-
+            'end_date' => 'nullable|date',
+            'duration_days' => 'nullable|integer|min:1',
+            'months_count' => 'nullable|integer|min:1',
         ];
     }
 }
