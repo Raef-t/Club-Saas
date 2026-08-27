@@ -257,7 +257,11 @@ class LockerService
                         if (!$safeId) {
                             $safeId = DB::table('acc_safes')
                                 ->where('branch_id', $locker->branch_id)
-                                ->value('id');
+                                ->where('currency', 'SYP')
+                                ->value('id')
+                                ?? DB::table('acc_safes')
+                                    ->where('branch_id', $locker->branch_id)
+                                    ->value('id');
                         }
                     }
 

@@ -78,12 +78,12 @@ class AccountingSeeder extends Seeder
             \Modules\Accounting\Models\AccBranchSetting::firstOrCreate([
                 'branch_id' => $branch->id,
             ], [
-                'default_safe_id' => $usdSafe->id,
+                'default_safe_id' => $sypSafe->id,
                 'cash_usd_account_code' => '1101',
                 'cash_syp_account_code' => '1102',
                 'revenue_account_code' => '4100',
                 'expense_account_code' => '5300',
-                'supported_currencies' => ['USD', 'SYP'],
+                'supported_currencies' => ['SYP', 'USD'],
             ]);
         }
 
