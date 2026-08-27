@@ -24,9 +24,15 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Support\Facades\Event::subscribe(\App\Listeners\GlobalAuditSubscriber::class);
 
-        // General API rate limiter: 60 requests per minute
+        // General API rate limiter: generous limits with loopback bypass for SSR
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            if ($request->ip() === '127.0.0.1' || $request->ip() === '::1') {
+                return Limit::none();
+            }
+
+            return $request->user()
+                ? Limit::perMinute(1000)->by($request->user()->id)
+                : Limit::perMinute(300)->by($request->ip());
         });
 
         // Login rate limiter: 5 attempts per minute per username + IP
