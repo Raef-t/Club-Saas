@@ -24,6 +24,15 @@ class RecordSubscriptionPayment
             return;
         }
 
+        // Prevent duplicate journal creation if already exists for this payment
+        $existing = DB::table('acc_journals')
+            ->where('source_type', 'payment')
+            ->where('source_id', $payment->id)
+            ->exists();
+        if ($existing) {
+            return;
+        }
+
         // 1. Get safe details
         $safe = DB::table('acc_safes')->where('id', $payment->safe_id)->first();
         if (!$safe) {

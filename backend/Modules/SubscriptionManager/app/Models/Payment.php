@@ -34,6 +34,10 @@ class Payment extends Model
 
     protected static function booted(): void
     {
+        static::created(function ($payment) {
+            event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
+        });
+
         static::saved(function ($payment) {
             self::syncInvoiceAndSubscription($payment->invoice_id);
             self::syncWithAccountingLedger($payment, 'saved');

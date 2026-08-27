@@ -265,13 +265,15 @@ class LockerService
                         }
                     }
 
-                    \Modules\SubscriptionManager\Models\Payment::create([
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
                         'invoice_id' => $invoiceId,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'status' => 'completed',
                     ]);
+
+                    event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
                 }
             }
 
