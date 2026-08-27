@@ -63,6 +63,10 @@ class RecordSubscriptionPayment
         }
 
         $currency = $safe->currency ?? 'USD';
+        $isLocker = !empty($invoice->locker_reservation_id);
+        $memoSafe = $isLocker ? ('دفعة تأجير خزانة - فاتورة رقم ' . $invoice->id) : ('دفعة اشتراك - فاتورة رقم ' . $invoice->id);
+        $memoRevenue = $isLocker ? ('إيراد تأجير خزائن - فاتورة رقم ' . $invoice->id) : ('إيراد مبيعات اشتراكات - فاتورة رقم ' . $invoice->id);
+        $journalDesc = $isLocker ? ('قيد تلقائي: إيراد تأجير خزانة - دفعة رقم ' . $payment->id) : ('قيد تلقائي: إيراد اشتراك لاعب - دفعة رقم ' . $payment->id);
 
         // 4. Construct debit and credit lines
         $lines = [];
@@ -72,13 +76,13 @@ class RecordSubscriptionPayment
                     'account_id' => $safe->account_id,
                     'debit_syp'  => $payment->amount,
                     'credit_syp' => 0,
-                    'memo'       => 'دفعة اشتراك - فاتورة رقم ' . $invoice->id,
+                    'memo'       => $memoSafe,
                 ],
                 [
                     'account_id' => $revenueAccountId,
                     'debit_syp'  => 0,
                     'credit_syp' => $payment->amount,
-                    'memo'       => 'إيراد مبيعات اشتراكات - فاتورة رقم ' . $invoice->id,
+                    'memo'       => $memoRevenue,
                 ]
             ];
         } else {
@@ -87,13 +91,13 @@ class RecordSubscriptionPayment
                     'account_id' => $safe->account_id,
                     'debit_usd'  => $payment->amount,
                     'credit_usd' => 0,
-                    'memo'       => 'Subscription Payment - Invoice #' . $invoice->id,
+                    'memo'       => $isLocker ? ('Locker Payment - Invoice #' . $invoice->id) : ('Subscription Payment - Invoice #' . $invoice->id),
                 ],
                 [
                     'account_id' => $revenueAccountId,
                     'debit_usd'  => 0,
                     'credit_usd' => $payment->amount,
-                    'memo'       => 'Subscription Sales Revenue - Invoice #' . $invoice->id,
+                    'memo'       => $isLocker ? ('Locker Rental Revenue - Invoice #' . $invoice->id) : ('Subscription Sales Revenue - Invoice #' . $invoice->id),
                 ]
             ];
         }
@@ -103,7 +107,7 @@ class RecordSubscriptionPayment
             header: [
                 'type'        => 'RV', // Receipt Voucher (سند قبض)
                 'date'        => now()->toDateString(),
-                'description' => 'قيد تلقائي: إيراد اشتراك لاعب - دفعة رقم ' . $payment->id,
+                'description' => $journalDesc,
                 'safe_id'     => $payment->safe_id,
                 'branch_id'   => $branchId,
                 'source_type' => 'payment',
