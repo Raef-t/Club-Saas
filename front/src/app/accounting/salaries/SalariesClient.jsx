@@ -51,17 +51,8 @@ export default function SalariesClient({
     initialPeriods,
   });
 
-  const statsItems = [
-    { label: "إجمالي سندات الرواتب", value: stats.totalCount },
-    { label: "إجمالي المبالغ المصروفة", value: `$${stats.totalAmount.toLocaleString()}` },
-    { label: "رواتب المدربين", value: stats.trainerCount },
-    { label: "رواتب الموظفين والإداريين", value: stats.staffCount },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Stats */}
-      <StatsGrid items={statsItems} />
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
@@ -149,10 +140,12 @@ export default function SalariesClient({
                           {p.staff?.role || "كادر"}
                         </span>
                       </td>
-                      <td className="p-3 font-mono text-app-muted whitespace-nowrap">{p.payment_date}</td>
+                      <td className="p-3 font-mono text-app-muted whitespace-nowrap">{p.date || p.payment_date}</td>
                       <td className="p-3 text-app-muted-light">{p.safe?.name || "صندوق عام"}</td>
                       <td className="p-3 text-left font-mono font-bold text-rose-400">
-                        ${Number(p.amount || 0).toLocaleString()}
+                        {p.currency === "SYP"
+                          ? `${Number(p.amount || 0).toLocaleString()} ل.س`
+                          : `$${Number(p.amount || 0).toLocaleString()}`}
                       </td>
                       <td className="p-3 font-mono text-app-muted">{p.payment_method || "نقداً"}</td>
                       <td className="p-3 text-app-muted max-w-xs truncate">{p.notes || "-"}</td>

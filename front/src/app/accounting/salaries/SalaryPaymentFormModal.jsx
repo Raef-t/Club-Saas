@@ -68,6 +68,7 @@ export default function SalaryPaymentFormModal({
       safe_id: Number(formData.safe_id),
       period_id: formData.period_id ? Number(formData.period_id) : null,
       amount: Number(formData.amount) || 0,
+      date: formData.payment_date,
       payment_date: formData.payment_date,
       payment_method: formData.payment_method,
       notes: formData.notes?.trim() || null,

@@ -73,6 +73,12 @@ class AccSalaryPaymentResource extends JsonResource
             'amount'      => $this->amount,
             'currency'    => $this->currency,
             'date'        => $this->date ? $this->date->toDateString() : null,
+            'payslip_id'  => $this->payslip_id,
+            'payslip'     => $this->relationLoaded('payslip') && $this->payslip ? [
+                'id'             => $this->payslip->id,
+                'payroll_run_id' => $this->payslip->payroll_run_id,
+                'net_pay'        => $this->payslip->net_pay,
+            ] : null,
             'notes'       => $this->notes,
             'journal_id'  => $this->journal_id,
             'created_at'  => $this->created_at,

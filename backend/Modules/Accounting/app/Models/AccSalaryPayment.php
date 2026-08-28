@@ -35,6 +35,7 @@ class AccSalaryPayment extends Model
         'staff_id',
         'safe_id',
         'period_id',
+        'payslip_id',
         'amount',
         'currency',
         'date',
@@ -64,6 +65,11 @@ class AccSalaryPayment extends Model
     public function period()
     {
         return $this->belongsTo(AccPeriod::class, 'period_id');
+    }
+
+    public function payslip()
+    {
+        return $this->belongsTo(\Modules\StaffManager\Models\Payslip::class, 'payslip_id');
     }
 
     public function journal()
