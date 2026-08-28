@@ -56,8 +56,8 @@ export default function SalariesClient({
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
-        <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
-          <div className="w-full sm:w-72">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-80">
             <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -74,14 +74,40 @@ export default function SalariesClient({
               <option value="all">كافة الفترات المالية</option>
               {periods.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.status})
+                  {p.name} ({p.status === "open" ? "مفتوحة" : p.status === "closed" ? "مغلقة" : p.status})
                 </option>
               ))}
             </select>
           </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="h-10 rounded-xl border border-app-line bg-app-card px-3 text-xs text-app-text outline-none focus:border-app-yellow"
+            >
+              <option value="all">كافة الكوادر (مدربين وموظفين)</option>
+              <option value="coach">المدربين فقط</option>
+              <option value="staff">الموظفين والإداريين فقط</option>
+            </select>
+          </div>
+
+          {(search || periodFilter !== "all" || roleFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setPeriodFilter("all");
+                setRoleFilter("all");
+              }}
+              className="rounded-xl border border-app-line bg-app-card px-3 py-2 text-xs text-app-muted hover:text-rose-400 hover:border-rose-500/40 transition shrink-0"
+            >
+              مسح الفلاتر
+            </button>
+          )}
         </div>
 
-        <Button variant="primary" onClick={openCreateModal} className="flex items-center gap-2">
+        <Button variant="primary" onClick={openCreateModal} className="flex items-center gap-2 shrink-0">
           <HandCoinsIcon className="size-4" />
           <span>صرف راتب جديد</span>
         </Button>
