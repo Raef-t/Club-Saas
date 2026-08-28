@@ -99,11 +99,13 @@ export default function SalaryPaymentFormModal({
               <option value="">-- اختر الكادر --</option>
               {staffList.map((s) => {
                 const name = s.person?.full_name || `${s.person?.first_name || ""} ${s.person?.last_name || ""}`.trim() || s.name || `#${s.id}`;
-                return (
-                  <option key={s.id} value={s.id}>
-                    {name} ({s.role || "موظف"}) - راتب: ${Number(s.base_salary || 0).toLocaleString()}
-                  </option>
-                );
+                  const roleLabel = s.role === "coach" ? "مدرب" : s.role === "admin" ? "إداري" : "موظف";
+                  const salaryLabel = Number(s.base_salary) > 0 ? ` — الراتب الأساسي: ${Number(s.base_salary).toLocaleString()}` : "";
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {name} ({roleLabel}){salaryLabel}
+                    </option>
+                  );
               })}
             </select>
             {errors.staff_id && <p className="mt-1 text-xs text-rose-500">{errors.staff_id}</p>}
