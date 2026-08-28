@@ -198,5 +198,5 @@ export function createStaffProfileUpdateBody(staff, values) {
 export function resolveStaffPhotoUrl(value) {
   if (!value || typeof value !== "string") return "";
   if (value.startsWith("http") || value.startsWith("blob:")) return value;
-  return `http://31.70.108.63/${value.replace(/^\//, "")}`;
+  return `/${value.replace(/^\//, "")}`;
 }

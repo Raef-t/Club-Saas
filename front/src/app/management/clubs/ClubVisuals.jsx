@@ -15,7 +15,7 @@ export function ClubLogo({ src, name, className = "size-10" }) {
       !resolvedSrc.startsWith("blob:") &&
       !resolvedSrc.startsWith("data:")
     ) {
-      resolvedSrc = `http://31.70.108.63/${resolvedSrc.replace(/^\//, "")}`;
+      resolvedSrc = `/${resolvedSrc.replace(/^\//, "")}`;
     }
   }
 

@@ -146,12 +146,12 @@ export function UploadBox({
                 previewUrl =
                   file.startsWith("http") || file.startsWith("blob:")
                     ? file
-                    : `http://31.70.108.63/${file.replace(/^\//, "")}`;
+                    : `/${file.replace(/^\//, "")}`;
               } else if (file?.url) {
                 previewUrl =
                   file.url.startsWith("http") || file.url.startsWith("blob:")
                     ? file.url
-                    : `http://31.70.108.63/${file.url.replace(/^\//, "")}`;
+                    : `/${file.url.replace(/^\//, "")}`;
               }
             }
 
