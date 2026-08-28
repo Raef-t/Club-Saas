@@ -185,11 +185,9 @@ export default function SalaryPaymentFormModal({
               name="payment_method"
               value={formData.payment_method}
               onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
+              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow cursor-default"
             >
               <option value="cash">نقداً (Cash)</option>
-              <option value="bank">تحويل بنكي (Bank Transfer)</option>
-              <option value="card">بطاقة (Card)</option>
             </select>
           </div>
         </div>
