@@ -9,8 +9,7 @@ import { resolveClubLogoUrl } from "@/lib/clubBranding";
 export function ClubLogo({ src, name, className = "size-10" }) {
   const [hasError, setHasError] = useState(false);
 
-  const resolvedSrc = src ? resolveClubLogoUrl({ logo: src }) : "";
-  let resolvedSrc = src;
+  let resolvedSrc = src ? resolveClubLogoUrl({ logo: src }) : "";
   if (resolvedSrc && typeof resolvedSrc === "string") {
     if (
       !resolvedSrc.startsWith("http") &&
