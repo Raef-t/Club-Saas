@@ -17494,6 +17494,42 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "delete": {
+                "tags": [
+                    "Payroll Management"
+                ],
+                "summary": "🗑️ التراجع عن مسير الرواتب وحذفه",
+                "description": "إلغاء مسير الرواتب المثبت وحذف كافة إيصالات الرواتب التابعة له للعودة إلى حالة المسودة.",
+                "operationId": "87925ecbe9f22f708f3b820ad22b59c0",
+                "parameters": [
+                    {
+                        "name": "payroll_run",
+                        "in": "path",
+                        "description": "معرف مسير الرواتب",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم التراجع عن مسير الرواتب بنجاح"
+                    },
+                    "422": {
+                        "description": "⚠️ لا يمكن التراجع لوجود سندات صرف مرتبطة بالمحاسبة"
+                    },
+                    "404": {
+                        "description": "🚫 مسير الرواتب غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/payroll-runs/{id}/generate-payslips": {
