@@ -34,9 +34,9 @@ export function createCoachEditInitialValues(coach) {
   const [firstName, ...remainingNameParts] = (coach.person?.full_name || "").split(/\s+/);
   const primaryContact = coach.person?.contacts?.[0] || null;
   const commissionRate =
-    coach.default_commission_rate ?? coach.details?.default_commission_rate ?? 0;
+    coach.details?.default_commission_rate ?? coach.default_commission_rate ?? 0;
   const privateCommissionRate =
-    coach.private_commission_rate ?? coach.details?.private_commission_rate ?? commissionRate;
+    coach.details?.private_commission_rate ?? coach.private_commission_rate ?? 0;
 
   return {
     first_name: coach.person?.first_name || firstName || "",
@@ -55,6 +55,7 @@ export function createCoachEditInitialValues(coach) {
     employment_type: coach.employment_type || "fixed_salary",
     base_salary: String(Number(coach.base_salary) || 0),
     default_commission_rate: String(Number(commissionRate) || 0),
+    private_commission_rate: String(Number(privateCommissionRate) || 0),
     private_club_commission_rate: getComplementaryCommissionPercentage(privateCommissionRate),
     work_types: Array.isArray(workTypes) ? workTypes : [],
     activity_ids: activityIds,
@@ -96,6 +97,7 @@ export function createCoachFormInitialValues(
     employment_type: initialValues?.employment_type || "fixed_salary",
     base_salary: initialValues?.base_salary || "0",
     default_commission_rate: initialValues?.default_commission_rate || "0",
+    private_commission_rate: initialValues?.private_commission_rate || "0",
     private_club_commission_rate: initialValues?.private_club_commission_rate || "",
     work_types: initialValues?.work_types || [],
     activity_ids: initialValues?.activity_ids || [],

@@ -17,6 +17,8 @@ describe("coach form utilities", () => {
       branch_ids: [5],
       employment_type: "commission_based",
       base_salary: "700.00",
+      default_commission_rate: "0",
+      private_commission_rate: "0",
       start_date: "2026-08-09",
       work_status: "active",
       person: {
@@ -30,6 +32,7 @@ describe("coach form utilities", () => {
         experience_years: 20,
         work_types: ["activities"],
         default_commission_rate: "40.00",
+        private_commission_rate: "70.00",
       },
       activities: [{ id: 8 }],
       shifts: [{ id: 4, branch_shift_id: 1 }],
@@ -39,7 +42,9 @@ describe("coach form utilities", () => {
     expect(values.country_code).toBe("+963");
     expect(values.first_name).toBe("رانية");
     expect(values.last_name).toBe("التنجي");
-    expect(values.private_club_commission_rate).toBe("60");
+    expect(values.default_commission_rate).toBe("40");
+    expect(values.private_commission_rate).toBe("70");
+    expect(values.private_club_commission_rate).toBe("30");
   });
 
   it("selects the first branch for a new coach", () => {
