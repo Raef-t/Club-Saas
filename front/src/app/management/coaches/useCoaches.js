@@ -249,7 +249,10 @@ export function useCoaches(params = {}) {
         "default_commission_rate",
         String(Number(values.default_commission_rate) || 0),
       );
-
+      formData.append(
+        "private_commission_rate",
+        String(Number(values.private_commission_rate) || 0),
+      );
       if (Array.isArray(values.work_types)) {
         values.work_types.forEach((type) => formData.append("work_types[]", type));
       }
@@ -301,6 +304,11 @@ export function useCoaches(params = {}) {
         "default_commission_rate",
         String(Number(values.default_commission_rate) || 0),
       );
+      formData.append(
+        "private_commission_rate",
+        String(Number(values.private_commission_rate) || 0),
+      );
+      formData.append("reason", values.reason?.trim() || "");
 
       if (Array.isArray(values.work_types)) {
         values.work_types.forEach((type) => formData.append("work_types[]", type));

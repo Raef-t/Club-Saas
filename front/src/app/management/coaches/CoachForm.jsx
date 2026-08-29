@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
@@ -50,6 +50,7 @@ export function CoachCreateForm({
     }
     return values;
   });
+  const lastBaseSalaryRef = useRef(form.base_salary);
 
   const calculatedAge = calculateAge(form.dob);
   const selectedActivities = useMemo(
@@ -68,13 +69,21 @@ export function CoachCreateForm({
     : form.employment_type === "commission_based" ||
       form.employment_type === "commission" ||
       form.employment_type === "hybrid";
-  const privateCoachCommissionRate = activityRules.hasPrivateTraining
-    ? getComplementaryCommissionPercentage(form.private_club_commission_rate)
+  const hasStoredPrivateCommission = Boolean(
+    initialValues &&
+    form.work_types.includes("equipment") &&
+    Number(form.private_commission_rate) > 0,
+  );
+  const showsPrivateCommission = activityRules.hasPrivateTraining || hasStoredPrivateCommission;
+  const showsActivityCommission = activityRules.hasRecognizedActivity
+    ? activityRules.hasGroupClass
+    : form.work_types.length > 0
+      ? form.work_types.includes("activities")
+      : showsCommissionFields && !showsPrivateCommission;
+  const privateCoachCommissionRate = showsPrivateCommission ? form.private_commission_rate : "";
+  const activityClubCommissionRate = showsActivityCommission
+    ? getComplementaryCommissionPercentage(form.default_commission_rate)
     : "";
-  const activityClubCommissionRate =
-    showsCommissionFields && !activityRules.hasPrivateTraining
-      ? getComplementaryCommissionPercentage(form.default_commission_rate)
-      : "";
   const selectableActivities = useMemo(
     () =>
       activities.filter((activity) => {
@@ -126,7 +135,24 @@ export function CoachCreateForm({
 
     setForm((current) => {
       let clubCommission = current.private_club_commission_rate;
-      let coachCommission = current.default_commission_rate;
+      let activityCoachCommission = current.default_commission_rate;
+      let privateCoachCommission = current.private_commission_rate;
+      let baseSalary = current.base_salary;
+
+      if (activityRules.allowsSalary) {
+        if (!Number(baseSalary)) {
+          const previousSalary = lastBaseSalaryRef.current;
+          baseSalary = Number(previousSalary)
+            ? previousSalary
+            : branchSettings?.default_employee_salary
+              ? String(Number(branchSettings.default_employee_salary))
+              : baseSalary;
+        }
+        if (Number(baseSalary)) lastBaseSalaryRef.current = baseSalary;
+      } else {
+        if (Number(baseSalary)) lastBaseSalaryRef.current = baseSalary;
+        baseSalary = "0";
+      }
 
       if (activityRules.hasPrivateTraining) {
         if (
@@ -136,29 +162,31 @@ export function CoachCreateForm({
           clubCommission = String(branchSettings.private_subscription_commission);
         }
 
-        const calculatedCoachCommission = getComplementaryCommissionPercentage(clubCommission);
-        if (calculatedCoachCommission !== "") coachCommission = calculatedCoachCommission;
-      } else if (
-        activityRules.allowsCommission &&
+        const calculatedPrivateCoachCommission =
+          getComplementaryCommissionPercentage(clubCommission);
+        if (calculatedPrivateCoachCommission !== "") {
+          privateCoachCommission = calculatedPrivateCoachCommission;
+        }
+      }
+
+      if (
+        activityRules.hasGroupClass &&
         !initialValues &&
-        !Number(coachCommission) &&
+        !Number(activityCoachCommission) &&
         branchSettings?.default_coach_commission_percentage !== undefined
       ) {
-        coachCommission = String(Number(branchSettings.default_coach_commission_percentage));
+        activityCoachCommission = String(
+          Number(branchSettings.default_coach_commission_percentage),
+        );
       }
 
       return {
         ...current,
         work_types: activityRules.workTypes,
         employment_type: activityRules.employmentType,
-        base_salary: activityRules.allowsSalary
-          ? !initialValues &&
-            !Number(current.base_salary) &&
-            branchSettings?.default_employee_salary
-            ? String(Number(branchSettings.default_employee_salary))
-            : current.base_salary
-          : "0",
-        default_commission_rate: activityRules.allowsCommission ? coachCommission : "0",
+        base_salary: baseSalary,
+        default_commission_rate: activityRules.hasGroupClass ? activityCoachCommission : "0",
+        private_commission_rate: activityRules.hasPrivateTraining ? privateCoachCommission : "0",
         private_club_commission_rate: activityRules.hasPrivateTraining ? clubCommission : "",
         shifts: activityRules.allowsShifts ? current.shifts : [],
       };
@@ -189,6 +217,7 @@ export function CoachCreateForm({
       if (field === "branch_ids" || field === "activity_ids") {
         updated.shifts = [];
         updated.private_club_commission_rate = "";
+        updated.private_commission_rate = "0";
         updated.default_commission_rate = "0";
       }
       return updated;
@@ -202,12 +231,12 @@ export function CoachCreateForm({
     setForm((current) => ({
       ...current,
       private_club_commission_rate: value,
-      default_commission_rate: getComplementaryCommissionPercentage(value),
+      private_commission_rate: getComplementaryCommissionPercentage(value),
     }));
     setErrors((current) => ({
       ...current,
       private_club_commission_rate: null,
-      default_commission_rate: null,
+      private_commission_rate: null,
     }));
   }
 
@@ -224,16 +253,12 @@ export function CoachCreateForm({
           work_types: activityRules.workTypes,
           employment_type: activityRules.employmentType,
           base_salary: activityRules.allowsSalary ? form.base_salary : "0",
-          default_commission_rate: activityRules.allowsCommission
-            ? activityRules.hasPrivateTraining
-              ? privateCoachCommissionRate
-              : form.default_commission_rate
-            : "0",
+          default_commission_rate: activityRules.hasGroupClass ? form.default_commission_rate : "0",
           private_club_commission_rate: activityRules.hasPrivateTraining
             ? form.private_club_commission_rate
             : "0",
           private_commission_rate: activityRules.hasPrivateTraining
-            ? privateCoachCommissionRate
+            ? form.private_commission_rate
             : "0",
           shifts: activityRules.allowsShifts ? form.shifts : [],
         }
@@ -574,7 +599,10 @@ export function CoachCreateForm({
           الراتب الأساسي ({CURRENCY_SYMBOL}) *
           <input
             value={form.base_salary}
-            onChange={(event) => updateField("base_salary", event.target.value)}
+            onChange={(event) => {
+              lastBaseSalaryRef.current = event.target.value;
+              updateField("base_salary", event.target.value);
+            }}
             aria-invalid={Boolean(errors && errors.base_salary)}
             className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
               errors && errors.base_salary
@@ -593,7 +621,7 @@ export function CoachCreateForm({
         </label>
       )}
 
-      {activityRules.hasPrivateTraining && (
+      {showsPrivateCommission && (
         <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/5 p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -609,13 +637,13 @@ export function CoachCreateForm({
               error={errors.private_club_commission_rate}
             />
             <Field
-              label="نسبة المدرب (%)"
+              label="نسبة المدرب من التدريب الخاص (%)"
               type="number"
               value={privateCoachCommissionRate}
               onChange={() => {}}
               disabled
               required={false}
-              error={errors.default_commission_rate}
+              error={errors.private_commission_rate}
             />
           </div>
           <p className="mt-3 text-right text-xs text-app-muted-light">
@@ -629,7 +657,7 @@ export function CoachCreateForm({
         </div>
       )}
 
-      {!activityRules.hasPrivateTraining && showsCommissionFields && (
+      {showsActivityCommission && (
         <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/5 p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
