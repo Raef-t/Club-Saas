@@ -29,9 +29,10 @@ export const branchesApi = createBackendApi({
       invalidatesTags: (result, error, { id }) => ["Branches", { type: "Branches", id }],
     }),
     deleteBranch: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `branches/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["Branches"],
     }),

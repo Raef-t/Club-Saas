@@ -5,16 +5,16 @@ import { usePathname } from "next/navigation";
 import {
   ChevronLeft,
   PlusIcon,
+  CheckCircleIcon,
   TagIcon,
-  DumbbellIcon,
   CalendarIcon,
 } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
 
 const quickActions = [
   { label: "إضافة لاعب", href: "/management/members/create", icon: PlusIcon },
-  { label: "فعالية", href: "/management/subscription-plans/create", icon: TagIcon },
-  { label: "نشاط", href: "/management/activities/create", icon: DumbbellIcon },
+  { label: "إضافة حضور", href: "/management/attendance", icon: CheckCircleIcon },
+  { label: "إضافة اشتراك الى لاعب", href: "/management/subscriptions/create", icon: TagIcon },
   { label: "برنامج الدوام", href: "/management/schedule", icon: CalendarIcon },
 ];
 
@@ -25,6 +25,7 @@ const navGroups = [
       { title: "الإحصائيات", href: "/management" },
       { title: "المدربين", href: "/management/coaches" },
       { title: "الموظفين", href: "/management/staff" },
+      { title: "الرواتب", href: "/management/payroll" },
       { title: "الأنشطة الرياضية", href: "/management/activities" },
       { title: "الفعاليات", href: "/management/subscription-plans" },
       { title: "المشتركين", href: "/management/members" },
