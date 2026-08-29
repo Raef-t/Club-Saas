@@ -11,9 +11,9 @@ import {
   EMPLOYMENT_LABELS as employmentLabels,
 } from "./coachConstants";
 import {
-  formatCoachCommission,
   getCoachAge,
   getCoachBranchNames,
+  getCoachCommissionItems,
   getCoachCompensationVisibility,
 } from "./coachDetailsUtils";
 export default function CoachDetails({ coach, branches = [], isLoading, error }) {
@@ -40,7 +40,7 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
   const branchNames = getCoachBranchNames(coach, branches);
   const coachActivities = coach.activities || [];
   const compensation = getCoachCompensationVisibility(coach);
-  const commissionRate = coach.details?.default_commission_rate ?? coach.default_commission_rate;
+  const commissionItems = getCoachCommissionItems(coach);
   const startDate = coach.start_date || coach.details?.start_date;
   const coachAge = getCoachAge(coach);
   const workStatus = getWorkStatusMeta(coach);
@@ -76,13 +76,10 @@ export default function CoachDetails({ coach, branches = [], isLoading, error })
         {compensation.showSalary && (
           <DetailItem label="الراتب الأساسي" value={formatMoney(coach.base_salary)} tone="green" />
         )}
-        {compensation.showCommission && (
-          <DetailItem
-            label="نسبة المدرب"
-            value={formatCoachCommission(commissionRate)}
-            tone="green"
-          />
-        )}
+        {compensation.showCommission &&
+          commissionItems.map((item) => (
+            <DetailItem key={item.key} label={item.label} value={item.value} tone="green" />
+          ))}
         <DetailItem label="العنوان" value={coach.person?.address} />
         {/* <DetailItem label="البريد الإلكتروني" value={coach.person?.email} /> */}
         {/* <DetailItem label="رقم الهوية الوطنية" value={coach.person?.national_id} /> */}

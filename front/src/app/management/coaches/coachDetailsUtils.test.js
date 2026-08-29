@@ -5,6 +5,7 @@ import {
   getCoachActivityPlanKey,
   getCoachAge,
   getCoachCompensationVisibility,
+  getCoachCommissionItems,
   getCoachBranchNames,
   getUnassignedActivities,
   isPrivateEquipmentCoach,
@@ -92,27 +93,66 @@ describe("coach details utilities", () => {
   it.each([
     ["general_training", ["equipment"]],
     ["group_class", ["equipment", "activities"]],
-  ])("shows salary and commission when private equipment is combined with %s", (activityType, workTypes) => {
-    const coach = {
-      employment_type: "hybrid",
-      details: { payment_type: "hybrid", work_types: workTypes },
-      activities: [
-        { activity_type: { code: "private_training" }, is_private_equipment: 1 },
-        { activity_type: { code: activityType } },
-      ],
-    };
+  ])(
+    "shows salary and commission when private equipment is combined with %s",
+    (activityType, workTypes) => {
+      const coach = {
+        employment_type: "hybrid",
+        details: { payment_type: "hybrid", work_types: workTypes },
+        activities: [
+          { activity_type: { code: "private_training" }, is_private_equipment: 1 },
+          { activity_type: { code: activityType } },
+        ],
+      };
 
-    expect(isPrivateEquipmentCoach(coach)).toBe(false);
-    expect(getCoachCompensationVisibility(coach)).toMatchObject({
-      isPrivateEquipment: false,
-      showSalary: true,
-      showCommission: true,
-    });
-  });
+      expect(isPrivateEquipmentCoach(coach)).toBe(false);
+      expect(getCoachCompensationVisibility(coach)).toMatchObject({
+        isPrivateEquipment: false,
+        showSalary: true,
+        showCommission: true,
+      });
+    },
+  );
 
   it("formats commission percentages", () => {
     expect(formatCoachCommission("40.00")).toBe("40%");
     expect(formatCoachCommission("12.50")).toBe("12.5%");
+  });
+
+  it("shows the private-training rate instead of a zero activity rate", () => {
+    const items = getCoachCommissionItems({
+      employment_type: "hybrid",
+      work_types: ["equipment"],
+      details: {
+        default_commission_rate: 0,
+        private_commission_rate: 100,
+      },
+      activities: [
+        { activity_type: { code: "general_training" } },
+        { activity_type: { code: "private_training" }, is_private_equipment: 1 },
+      ],
+    });
+
+    expect(items).toEqual([expect.objectContaining({ key: "private", value: "100%" })]);
+  });
+
+  it("keeps activity and private-training rates separate when a coach has both", () => {
+    const items = getCoachCommissionItems({
+      work_types: ["equipment", "activities"],
+      details: {
+        default_commission_rate: 15.5,
+        private_commission_rate: 70,
+      },
+      activities: [
+        { activity_type: { code: "group_class" } },
+        { activity_type: { code: "private_training" } },
+      ],
+    });
+
+    expect(items).toEqual([
+      expect.objectContaining({ key: "activity", value: "15.5%" }),
+      expect.objectContaining({ key: "private", value: "70%" }),
+    ]);
   });
 
   it("uses the API age and falls back to the date of birth", () => {

@@ -118,6 +118,61 @@ export function formatCoachCommission(value) {
 }
 
 /**
+ * Resolves the distinct activity and private-training commission rates that
+ * should be shown for a coach across list and details views.
+ */
+export function getCoachCommissionItems(coach) {
+  const activities = Array.isArray(coach?.activities) ? coach.activities : [];
+  const workTypes = Array.isArray(coach?.work_types)
+    ? coach.work_types
+    : Array.isArray(coach?.details?.work_types)
+      ? coach.details.work_types
+      : [];
+  const activityRate = coach?.details?.default_commission_rate ?? coach?.default_commission_rate;
+  const privateRate = coach?.details?.private_commission_rate ?? coach?.private_commission_rate;
+  const hasGroupClass = activities.some(
+    (activity) => getCoachActivityKind(activity) === COACH_ACTIVITY_KINDS.GROUP_CLASS,
+  );
+  const hasPrivateTraining = activities.some(
+    (activity) =>
+      Boolean(Number(activity?.is_private_equipment)) ||
+      getCoachActivityKind(activity) === COACH_ACTIVITY_KINDS.PRIVATE_TRAINING,
+  );
+  const showPrivate =
+    hasPrivateTraining || (workTypes.includes("equipment") && Number(privateRate) > 0);
+  const showActivity = hasGroupClass || workTypes.includes("activities");
+  const items = [];
+
+  if (showActivity) {
+    items.push({
+      key: "activity",
+      label: "نسبة المدرب من الفعالية",
+      shortLabel: "فعالية",
+      value: formatCoachCommission(activityRate),
+    });
+  }
+  if (showPrivate) {
+    items.push({
+      key: "private",
+      label: "نسبة المدرب من التدريب الخاص",
+      shortLabel: "خاص",
+      value: formatCoachCommission(privateRate),
+    });
+  }
+
+  if (items.length === 0 && activityRate != null) {
+    items.push({
+      key: "commission",
+      label: "نسبة المدرب",
+      shortLabel: "نسبة",
+      value: formatCoachCommission(activityRate),
+    });
+  }
+
+  return items;
+}
+
+/**
  * Returns activities that have not yet been assigned to the coach.
  */
 export function getUnassignedActivities(coachActivities = [], activities = []) {
