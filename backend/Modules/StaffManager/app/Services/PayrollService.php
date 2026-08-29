@@ -126,10 +126,16 @@ class PayrollService
             throw new Exception("لا يمكن حساب الراتب في الوقت الحالي. التواريخ المسموحة تبدأ من يوم {$branchSetting->payroll_end_day} من كل شهر.", 400);
         }
 
-        $periodEnd = clone $today;
-        $periodEnd->setDay($branchSetting->payroll_end_day)->endOfDay();
-        
-        $periodStart = (clone $periodEnd)->subMonth()->startOfDay();
+        $periodEnd = (clone $today)->setDay($branchSetting->payroll_end_day)->endOfDay();
+        $periodStart = (clone $periodEnd)->subMonthNoOverflow()->startOfDay();
+
+        $existingRun = PayrollRun::where('period_start', $periodStart->toDateString())
+            ->where('period_end', $periodEnd->toDateString())
+            ->first();
+
+        if ($existingRun) {
+            throw new Exception("تم توليد وتثبيت رواتب هذه الفترة مسبقاً ولا يمكن إعادة التوليد.", 409);
+        }
 
         $staffMembers = Staff::where('is_active', true)
             ->where('work_status', 'active')
