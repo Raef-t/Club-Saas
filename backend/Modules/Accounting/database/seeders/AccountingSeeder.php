@@ -34,7 +34,9 @@ class AccountingSeeder extends Seeder
             ['code' => '4200', 'name' => 'إيرادات أخرى', 'name_en' => 'Other Revenue', 'type' => 'revenue', 'currency' => 'BOTH', 'parent_code' => '4000', 'allow_manual_entry' => true],
             // Expenses (المصاريف)
             ['code' => '5000', 'name' => 'المصاريف', 'name_en' => 'Expenses', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => null, 'allow_manual_entry' => false],
-            ['code' => '5100', 'name' => 'رواتب وأجور', 'name_en' => 'Salaries & Wages', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5000', 'allow_manual_entry' => true],
+            ['code' => '5100', 'name' => 'رواتب وأجور', 'name_en' => 'Salaries & Wages', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5000', 'allow_manual_entry' => false],
+            ['code' => '5101', 'name' => 'رواتب وأجور المدربين', 'name_en' => 'Coaches Salaries & Wages', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5100', 'allow_manual_entry' => true],
+            ['code' => '5102', 'name' => 'رواتب وأجور الموظفين والإداريين', 'name_en' => 'Staff & Administrative Salaries', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5100', 'allow_manual_entry' => true],
             ['code' => '5200', 'name' => 'إيجارات', 'name_en' => 'Rent', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5000', 'allow_manual_entry' => true],
             ['code' => '5300', 'name' => 'مصاريف إدارية', 'name_en' => 'Administrative Expenses', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5000', 'allow_manual_entry' => true],
             ['code' => '5400', 'name' => 'مصاريف تشغيلية', 'name_en' => 'Operating Expenses', 'type' => 'expense', 'currency' => 'BOTH', 'parent_code' => '5000', 'allow_manual_entry' => true],
