@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const accountingApi = createApi({
+export const accountingApi = createBackendApi({
   reducerPath: "accountingApi",
-  baseQuery: backendBaseQuery,
   tagTypes: [
     "AccAccounts",
     "AccSafes",

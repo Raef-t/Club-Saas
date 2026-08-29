@@ -264,11 +264,10 @@ function PlanSuspensionAction({ plan, disabled, onSuspend, onResume }) {
         if (suspended) onResume(plan);
         else onSuspend(plan);
       }}
-      className={`grid size-8 place-items-center rounded-lg border bg-app-card-soft transition disabled:cursor-not-allowed disabled:opacity-50 ${
-        suspended
+      className={`grid size-8 place-items-center rounded-lg border bg-app-card-soft transition disabled:cursor-not-allowed disabled:opacity-50 ${suspended
           ? "border-app-green/40 text-app-green hover:bg-app-green/10"
           : "border-app-yellow/40 text-app-yellow hover:bg-app-yellow-soft"
-      }`}
+        }`}
     >
       {suspended ? <PlayIcon /> : <PauseIcon />}
     </button>
@@ -666,10 +665,10 @@ export function PlanForm({
       session_templates: isEquipmentOnlyPlan
         ? []
         : form.session_templates?.map((s) => ({
-            day_of_week: Number(s.day_of_week),
-            start_time: s.start_time,
-            end_time: s.end_time,
-          })) || [],
+          day_of_week: Number(s.day_of_week),
+          start_time: s.start_time,
+          end_time: s.end_time,
+        })) || [],
       ...(mode === "edit" ? { reason: form.reason } : {}),
     };
 

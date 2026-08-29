@@ -1,3 +1,5 @@
+import { DEFAULT_BRAND_LOGO_URL, getAbsoluteBrandLogoUrl } from "@/lib/clubBranding";
+
 /**
  * Escapes dynamic report values before inserting them into printable HTML.
  */
@@ -232,18 +234,18 @@ export function buildReportsPrintHtml({ reports, branchName, logoUrl, generatedA
 /**
  * Opens the browser print dialog for the requested reports.
  */
-export function printReports(reports, branchName) {
+export function printReports(reports, branchName, logoUrl = DEFAULT_BRAND_LOGO_URL) {
   if (typeof window === "undefined" || !reports.length) return false;
 
   const printWindow = window.open("", "_blank", "width=1200,height=800");
   if (!printWindow) return false;
 
   printWindow.opener = null;
-  const logoUrl = new URL("/img/test_logo.png", window.location.origin).href;
+  const absoluteLogoUrl = getAbsoluteBrandLogoUrl(logoUrl, window.location.origin);
   const html = buildReportsPrintHtml({
     reports,
     branchName,
-    logoUrl,
+    logoUrl: absoluteLogoUrl,
   });
 
   printWindow.document.open();

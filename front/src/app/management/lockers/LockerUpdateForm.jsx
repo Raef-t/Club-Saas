@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field } from "@/components/forms/FormControls";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { updateLockerSchema } from "@/lib/validations/lockersSchema";
 import {
   LOCKER_HOLDER_TYPE_OPTIONS,
@@ -167,6 +168,12 @@ export default function LockerUpdateForm({
             )}
           </>
         )}
+
+        <ModificationReasonField
+          value={form.reason}
+          onChange={(value) => updateField("reason", value)}
+          error={errors.reason}
+        />
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-3 border-t border-app-line pt-4">

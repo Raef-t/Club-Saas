@@ -52,6 +52,7 @@ export default function ActivityDetails({ activity, isLoading, error }) {
         />
         <DetailItem label="الفرع" value={formatLocalizedName(activity.branch?.name)} />
         <DetailItem label="تاريخ الإنشاء" value={formatDate(activity.created_at)} />
+        <DetailItem label="سبب آخر تعديل" value={activity.reason || "-"} />
       </section>
 
       {activity.description && (

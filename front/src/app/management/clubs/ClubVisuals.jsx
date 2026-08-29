@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { resolveClubLogoUrl } from "@/lib/clubBranding";
 
 /**
  * Renders a club logo with a text fallback when the image is unavailable.
@@ -8,6 +9,7 @@ import { useState } from "react";
 export function ClubLogo({ src, name, className = "size-10" }) {
   const [hasError, setHasError] = useState(false);
 
+  const resolvedSrc = src ? resolveClubLogoUrl({ logo: src }) : "";
   let resolvedSrc = src;
   if (resolvedSrc && typeof resolvedSrc === "string") {
     if (

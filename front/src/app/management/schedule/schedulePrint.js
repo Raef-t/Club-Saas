@@ -1,5 +1,6 @@
 import { SCHEDULE_DAYS } from "./scheduleConstants";
 import { escapeScheduleHtml } from "./scheduleUtils";
+import { DEFAULT_BRAND_LOGO_URL, getAbsoluteBrandLogoUrl } from "@/lib/clubBranding";
 
 /**
  * Preserves user-entered line breaks after escaping printable cell content.
@@ -58,6 +59,7 @@ export function buildSchedulePrintHtml({
   scheduleData,
   holidayDayKeys = [],
   formatTime,
+  logoUrl = DEFAULT_BRAND_LOGO_URL,
   printedAt = new Date(),
 }) {
   const morningHtml = buildPeriodTableHtml(
@@ -77,6 +79,7 @@ export function buildSchedulePrintHtml({
     formatTime,
   );
   const printDate = escapeScheduleHtml(printedAt.toLocaleDateString("ar-SY"));
+  const printableLogoUrl = escapeScheduleHtml(logoUrl);
 
   return `<!doctype html>
     <html lang="ar" dir="rtl">
@@ -107,22 +110,9 @@ export function buildSchedulePrintHtml({
             gap: 16px;
           }
           .header-right img {
-            width: 80px;
+            width: 159px;
             height: auto;
             border-radius: 8px;
-          }
-          .logo-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #111;
-            letter-spacing: 2px;
-          }
-          .logo-title span { color: #f2dc2e; }
-          .logo-subtitle {
-            margin-top: 4px;
-            color: #666;
-            font-size: 11px;
-            font-weight: 500;
           }
           .meta-area {
             color: #555;
@@ -223,11 +213,7 @@ export function buildSchedulePrintHtml({
       <body>
         <header class="header">
           <div class="header-right">
-            <img src="/img/Logo11.jpeg" alt="TechnoGYM" />
-            <div>
-              <div class="logo-title">TECHNO<span>GYM</span></div>
-              <div class="logo-subtitle">نادي تكنولوجي جيم الرياضي</div>
-            </div>
+            <img src="${printableLogoUrl}" alt="TechnoGYM" />
           </div>
           <div class="meta-area">
             <p>تاريخ الطباعة: ${printDate}</p>
@@ -259,8 +245,9 @@ export function openSchedulePrintWindow(values) {
   const printWindow = window.open("", "_blank");
   if (!printWindow) return false;
 
+  const logoUrl = getAbsoluteBrandLogoUrl(values.logoUrl, window.location.origin);
   printWindow.document.open();
-  printWindow.document.write(buildSchedulePrintHtml(values));
+  printWindow.document.write(buildSchedulePrintHtml({ ...values, logoUrl }));
   printWindow.document.close();
   return true;
 }

@@ -6,15 +6,13 @@ import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field, TextAreaField } from "@/components/forms/FormControls";
+import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { genderLabels } from "@/lib/constants";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import {
-  getPreferredBranchId,
-  getGenderForBranchId,
-} from "@/lib/managementBranchUtils";
+import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { getFieldErrors } from "@/lib/validations/formErrors";
-import { activitySchema } from "@/lib/validations/activitiesSchema";
+import { activitySchema, activityUpdateSchema } from "@/lib/validations/activitiesSchema";
 import { DAYS_OF_WEEK, GENDER_OPTIONS, SHIFT_ACTIVITY_TYPE_IDS } from "./activityConstants";
 import {
   createActivityFormValues,
@@ -61,11 +59,7 @@ export default function ActivityForm({
   useEffect(() => {
     setForm((current) => ({
       ...current,
-      gender_allowed: getGenderForBranchId(
-        branches,
-        current.branch_id,
-        current.gender_allowed,
-      ),
+      gender_allowed: getGenderForBranchId(branches, current.branch_id, current.gender_allowed),
     }));
   }, [branches, form.branch_id]);
   const branchId = Number(form.branch_id);
@@ -121,7 +115,8 @@ export default function ActivityForm({
    */
   function handleSubmit(event) {
     event.preventDefault();
-    const validation = activitySchema.safeParse({
+    const schema = mode === "edit" ? activityUpdateSchema : activitySchema;
+    const validation = schema.safeParse({
       ...form,
       name: form.name.trim(),
       description: form.description.trim(),
@@ -134,7 +129,7 @@ export default function ActivityForm({
     }
 
     setErrors({});
-    onSubmit(createActivityPayload(form, showShifts));
+    onSubmit(createActivityPayload(form, showShifts, mode === "edit"));
   }
 
   return (
@@ -203,6 +198,14 @@ export default function ActivityForm({
         <span className="relative h-6 w-11 cursor-pointer rounded-full bg-app-line after:absolute after:start-[2px] after:top-[2px] after:size-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow peer-checked:after:-translate-x-[18px]" />
         <span className="text-sm font-medium text-white">نشط في النظام</span>
       </label>
+
+      {mode === "edit" && (
+        <ModificationReasonField
+          value={form.reason}
+          onChange={(value) => updateField("reason", value)}
+          error={errors.reason}
+        />
+      )}
 
       {errorMessage && (
         <p className="rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">

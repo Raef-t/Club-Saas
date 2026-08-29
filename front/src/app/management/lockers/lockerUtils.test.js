@@ -4,13 +4,16 @@ import {
   createLockerQueryParams,
   createLockerReservationPayload,
   createLockerUpdatePayload,
+  doesLockerReleaseRequireReason,
   filterLockers,
   getLockerHolderLabel,
   getLockerRecord,
   getLockerReservationEndDate,
   isLockerEarlyRelease,
   isLockerOccupied,
+  isLockerRentalReservation,
 } from "./lockerUtils";
+import { updateLockerSchema } from "@/lib/validations/lockersSchema";
 
 describe("locker utilities", () => {
   const lockers = [
@@ -45,6 +48,33 @@ describe("locker utilities", () => {
     expect(isLockerEarlyRelease(locker, new Date("2026-08-21T12:00:00.000Z"))).toBe(false);
   });
 
+  it("requires a release reason only for a rental that ends in the future", () => {
+    const now = new Date("2026-08-18T12:00:00.000Z");
+    const rental = {
+      current_reservation: {
+        reservation_type: "rental",
+        end_date: "2026-08-20T12:00:00.000Z",
+      },
+    };
+    const freeAssignment = {
+      current_reservation: {
+        reservation_type: "assign",
+        end_date: "2026-08-20T12:00:00.000Z",
+      },
+    };
+    const expiredRental = {
+      current_reservation: {
+        reservation_type: "rental",
+        end_date: "2026-08-17T12:00:00.000Z",
+      },
+    };
+
+    expect(isLockerRentalReservation(rental)).toBe(true);
+    expect(doesLockerReleaseRequireReason(rental, now)).toBe(true);
+    expect(doesLockerReleaseRequireReason(freeAssignment, now)).toBe(false);
+    expect(doesLockerReleaseRequireReason(expiredRental, now)).toBe(false);
+  });
+
   it("extracts nested locker detail responses", () => {
     expect(getLockerRecord({ data: { data: lockers[0] } })).toEqual(lockers[0]);
   });
@@ -67,7 +97,9 @@ describe("locker utilities", () => {
         ],
         { status: "assigned_free" },
       ),
-    ).toEqual([{ id: 1, locker_number: "L-1", current_reservation: { reservation_type: "assign" } }]);
+    ).toEqual([
+      { id: 1, locker_number: "L-1", current_reservation: { reservation_type: "assign" } },
+    ]);
   });
 
   it("does not send the aggregate occupied status to the backend", () => {
@@ -98,12 +130,26 @@ describe("locker utilities", () => {
         holder_type: "member",
         holder_id: "9",
         holder_name: "قديم",
+        reason: "  تصحيح حالة الخزانة  ",
       }),
     ).toEqual({
       locker_number: "L-010",
       key_number: null,
       status: "available",
+      reason: "تصحيح حالة الخزانة",
     });
+  });
+
+  it("requires a modification reason when validating a locker update", () => {
+    const result = updateLockerSchema.safeParse({
+      locker_number: "L-010",
+      key_number: null,
+      status: "available",
+      reason: "   ",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.issues.some((issue) => issue.path[0] === "reason")).toBe(true);
   });
 
   it("omits rental price from a free assignment", () => {

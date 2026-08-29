@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const usersApi = createApi({
+export const usersApi = createBackendApi({
   reducerPath: "usersApi",
-  baseQuery: backendBaseQuery,
   tagTypes: ["Users"],
   endpoints: (builder) => ({
     getUsers: builder.query({

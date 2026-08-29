@@ -2,6 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
+import { useGetClubsQuery } from "@/lib/api/clubsApi";
+import { getBrandClubs, resolveClubLogoUrl, selectBrandClub } from "@/lib/clubBranding";
 import { getBranchesArray } from "@/lib/utils";
 import {
   ALL_BRANCHES_VALUE,
@@ -22,6 +24,7 @@ export function ManagementBranchProvider({
   cookiePath = "/management",
 }) {
   const { currentData: branchesResponse, isLoading, isFetching } = useGetBranchesQuery();
+  const { currentData: clubsResponse, isFetching: isFetchingClubs } = useGetClubsQuery();
   const branches = useMemo(
     () => getBranchesArray(branchesResponse || initialBranches),
     [branchesResponse, initialBranches],
@@ -57,22 +60,33 @@ export function ManagementBranchProvider({
     [branches, selectedBranchId],
   );
   const selectedClubId = selectedBranch?.club_id ?? selectedBranch?.club?.id ?? null;
+  const clubs = useMemo(() => getBrandClubs(clubsResponse), [clubsResponse]);
+  const selectedClub = useMemo(
+    () => selectBrandClub(clubs, selectedClubId, selectedBranch?.club),
+    [clubs, selectedBranch, selectedClubId],
+  );
+  const brandLogoUrl = useMemo(() => resolveClubLogoUrl(selectedClub), [selectedClub]);
   const value = useMemo(
     () => ({
       branches,
       selectedBranchId,
       selectedBranch,
       selectedClubId: selectedClubId == null ? null : String(selectedClubId),
+      selectedClub,
+      brandLogoUrl,
       isAllBranches: selectedBranchId === ALL_BRANCHES_VALUE,
       isLoading: isLoading && branches.length === 0,
-      isFetching,
+      isFetching: isFetching || isFetchingClubs,
       setSelectedBranchId,
     }),
     [
+      brandLogoUrl,
       branches,
       isFetching,
+      isFetchingClubs,
       isLoading,
       selectedBranch,
+      selectedClub,
       selectedClubId,
       selectedBranchId,
       setSelectedBranchId,

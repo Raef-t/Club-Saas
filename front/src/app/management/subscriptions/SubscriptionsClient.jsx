@@ -286,9 +286,8 @@ export default function SubscriptionsClient({ initialData }) {
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف الاشتراك"
-        message={`هل أنت متأكد من رغبتك في حذف اشتراك "${
-          selectedSubscription?.plan?.name || "هذا اللاعب"
-        }"؟`}
+        message={`هل أنت متأكد من رغبتك في حذف اشتراك "${selectedSubscription?.plan?.name || "هذا اللاعب"
+          }"؟`}
         requiredConfirmation="delete"
         confirmationValue={deleteConfirmation}
         onConfirmationChange={setDeleteConfirmation}

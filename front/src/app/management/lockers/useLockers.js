@@ -11,10 +11,10 @@ import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import {
   createLockerQueryParams,
+  doesLockerReleaseRequireReason,
   filterLockers,
   getLockerCollection,
   getLockerSummary,
-  isLockerEarlyRelease,
 } from "./lockerUtils";
 
 /**
@@ -113,7 +113,7 @@ export function useLockers({ initialLockers } = {}) {
     if (!releaseTarget) return;
 
     try {
-      const body = isLockerEarlyRelease(releaseTarget)
+      const body = doesLockerReleaseRequireReason(releaseTarget)
         ? { reason: String(reason || "").trim() }
         : undefined;
       await releaseReservation({ id: releaseTarget.id, body }).unwrap();

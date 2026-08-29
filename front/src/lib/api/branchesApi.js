@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const branchesApi = createApi({
+export const branchesApi = createBackendApi({
   reducerPath: "branchesApi",
-  baseQuery: backendBaseQuery,
   tagTypes: ["Branches", "BranchSettings", "BranchShifts", "BranchHolidays"],
   endpoints: (builder) => ({
     getBranches: builder.query({

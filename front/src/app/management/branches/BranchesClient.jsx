@@ -29,7 +29,7 @@ export default function BranchesClient({ initialData }) {
           <Button
             href="/management/branches/create"
             icon={<PlusIcon className="size-4 text-black" />}
-            className="text-black"
+            className="!text-black font-semibold"
           >
             إضافة فرع
           </Button>

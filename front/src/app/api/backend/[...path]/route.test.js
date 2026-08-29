@@ -41,6 +41,34 @@ describe("backend proxy streaming", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
+  it("does not follow redirects that can change login POST into GET", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, {
+        status: 301,
+        headers: { Location: "https://api.example.com/api/v1/auth/login" },
+      }),
+    );
+    const request = new NextRequest("http://localhost/api/backend/auth/login", {
+      method: "POST",
+      headers: {
+        Origin: "http://localhost",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username: "test-user", password: "test-password" }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ path: ["auth", "login"] }),
+    });
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      status: "error",
+      message: "Backend API URL must use its final HTTPS address.",
+    });
+    expect(fetchMock.mock.calls[0][1].redirect).toBe("manual");
+  });
+
   it("forwards SSE responses without buffering them", async () => {
     const event =
       'event: dashboard_updated\ndata: {"status":"success","data":{"total_active_subscribed_members":10}}\n\n';

@@ -7,6 +7,7 @@ import {
   getActivityCollection,
   getActivityRecord,
 } from "./activityUtils";
+import { activityUpdateSchema } from "@/lib/validations/activitiesSchema";
 
 const activities = [
   { id: 1, name: { ar: "السباحة", en: "Swimming" }, is_active: true },
@@ -49,5 +50,34 @@ describe("activity utilities", () => {
       description: null,
       shifts: [7],
     });
+  });
+
+  it("includes a trimmed modification reason only in update payloads", () => {
+    const form = {
+      ...createActivityFormValues(),
+      name: "يوغا",
+      branch_id: "3",
+      activity_type_id: "4",
+      reason: "  تصحيح وصف النشاط  ",
+    };
+
+    expect(createActivityPayload(form, false)).not.toHaveProperty("reason");
+    expect(createActivityPayload(form, false, true)).toHaveProperty("reason", "تصحيح وصف النشاط");
+  });
+
+  it("requires a modification reason when validating an activity update", () => {
+    const result = activityUpdateSchema.safeParse({
+      name: "يوغا",
+      description: "",
+      gender_allowed: "mixed",
+      branch_id: 3,
+      activity_type_id: 4,
+      is_active: true,
+      shifts: [],
+      reason: "   ",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.issues.some((issue) => issue.path[0] === "reason")).toBe(true);
   });
 });

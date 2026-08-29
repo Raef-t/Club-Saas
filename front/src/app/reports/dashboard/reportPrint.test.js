@@ -21,12 +21,12 @@ describe("report print utilities", () => {
         },
       ],
       branchName: "فرع الشباب",
-      logoUrl: "http://localhost/img/test_logo.png",
+      logoUrl: "http://localhost/img/techno_gym_logo.png",
       generatedAt: new Date(2026, 6, 27, 10, 30),
     });
 
     expect(html).toContain("فرع الشباب");
-    expect(html).toContain("test_logo.png");
+    expect(html).toContain("techno_gym_logo.png");
     expect(html).toContain("تقرير الحضور");
     expect(html).toContain("أحمد");
   });

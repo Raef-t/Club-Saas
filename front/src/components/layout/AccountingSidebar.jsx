@@ -9,7 +9,7 @@ import {
   FolderPlusIcon,
   HandCoinsIcon,
 } from "@/components/icons/Icons";
-import Image from "next/image";
+import BrandLogo from "@/components/common/BrandLogo";
 
 const quickActions = [
   {
@@ -58,13 +58,9 @@ export default function AccountingSidebar({ className }) {
       }
       dir="rtl"
     >
-      <div className="mx-auto grid h-[59px] w-[159px] place-items-center">
-        <Image src={"/img/test_logo.png"} alt="Logo" width={159} height={59} />
-      </div>
+      <BrandLogo className="mx-auto h-[59px] w-[159px]" preload />
 
-      <h3 className="mt-6 text-center text-base font-medium text-app-text">
-        إجراءات سريعة
-      </h3>
+      <h3 className="mt-6 text-center text-base font-medium text-app-text">إجراءات سريعة</h3>
       <div className="mt-5 grid grid-cols-4 gap-1.5 px-1 max-w-full">
         {quickActions.map((action) => {
           const Icon = action.icon;
@@ -94,7 +90,7 @@ export default function AccountingSidebar({ className }) {
             (pathname.includes("/cashbox") && item.href === "/accounting/safes");
           const hasSubItems = Boolean(
             (item.children && item.children.length > 0) ||
-            (item.subItems && item.subItems.length > 0)
+            (item.subItems && item.subItems.length > 0),
           );
           return (
             <Link

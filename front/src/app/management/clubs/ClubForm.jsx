@@ -47,7 +47,7 @@ export default function ClubForm({
     const validation = clubSchema.safeParse({
       name: form.name.trim(),
       logo: form.logo,
-      logo_url: form.logo_url ? form.logo_url.trim() : "",
+      logo_url: "",
       is_active: Boolean(form.is_active),
     });
 
@@ -57,7 +57,7 @@ export default function ClubForm({
     }
 
     setErrors({});
-    onSubmit(createClubPayload(form));
+    onSubmit(createClubPayload({ ...form, logo_url: "" }));
   }
 
   return (
@@ -98,11 +98,7 @@ export default function ClubForm({
         <Button type="button" tone="outline" className="h-11 flex-1" onClick={onCancel}>
           إلغاء
         </Button>
-        <Button
-          type="submit"
-          className="h-11 flex-1 !text-black font-semibold"
-          loading={isLoading}
-        >
+        <Button type="submit" className="h-11 flex-1 !text-black font-semibold" loading={isLoading}>
           {mode === "edit" ? "حفظ التعديل" : "إنشاء النادي"}
         </Button>
       </div>

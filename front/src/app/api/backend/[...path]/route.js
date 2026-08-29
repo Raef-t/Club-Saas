@@ -136,6 +136,7 @@ async function proxyBackendRequest(request, context) {
     method: request.method,
     headers,
     cache: "no-store",
+    redirect: "manual",
     signal: request.signal,
   };
 
@@ -150,6 +151,11 @@ async function proxyBackendRequest(request, context) {
 
   try {
     const response = await fetch(upstreamUrl, init);
+
+    if (response.status >= 300 && response.status < 400) {
+      return jsonError("Backend API URL must use its final HTTPS address.", 502);
+    }
+
     const responseContentType = response.headers.get("content-type") || "application/json";
     const normalizedResponseContentType = responseContentType.toLowerCase();
 
