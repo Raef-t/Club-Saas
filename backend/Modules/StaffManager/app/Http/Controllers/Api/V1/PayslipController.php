@@ -143,8 +143,7 @@ class PayslipController extends BaseController
             $previewData = $this->payrollService->generatePreview($branchId);
             return $this->successResponse($previewData, 'تم حساب مسودة الرواتب بنجاح');
         } catch (Exception $e) {
-            // Determine code 400 or 409 based on message or create custom exceptions
-            $code = str_contains($e->getMessage(), 'تم حساب وحفظ الرواتب مسبقاً') ? 409 : 400;
+            $code = ($e->getCode() >= 400 && $e->getCode() < 500) ? $e->getCode() : 400;
             return $this->errorResponse($e->getMessage(), $code);
         }
     }
