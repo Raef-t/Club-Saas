@@ -48,8 +48,8 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
 
             // ── 2. Validate member subscription & session availability ───────────────
             if (empty($subscriptionIds)) {
-                // If no specific subscription IDs are given, automatically resolve available valid subscriptions with sessions today
-                $subscriptionIds = $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate($entityId, $checkInDate);
+                // Verify the member has at least one valid subscription with sessions today
+                $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate($entityId, $checkInDate);
             }
 
             // ── 3. Create Attendance record ─────────────────────
@@ -64,9 +64,11 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
                 'status'               => 'checked_in',
             ]);
 
-            // ── 4. Deduct sessions ────────────────────
-            $sessionDeductionService->deductMultipleSessions($attendance->id, $subscriptionIds, $notes);
-            $attendance = $attendance->fresh();
+            // ── 4. Deduct sessions if subscriptions were selected ────────────────────
+            if (!empty($subscriptionIds)) {
+                $sessionDeductionService->deductMultipleSessions($attendance->id, $subscriptionIds, $notes);
+                $attendance = $attendance->fresh();
+            }
 
             // ── 5. Fire MemberCheckedIn event ────────────────────
             event(new MemberCheckedIn($attendance));

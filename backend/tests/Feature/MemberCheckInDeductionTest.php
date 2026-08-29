@@ -147,9 +147,9 @@ class MemberCheckInDeductionTest extends TestCase
     }
 
     /**
-     * التحقق من أن تسجيل الدخول بدون تمرير معرف الاشتراك يخصم تلقائياً من جلسات المشترك
+     * التحقق من أن تسجيل الدخول مع تمرير معرف الاشتراك يخصم الجلسة فورياً
      */
-    public function test_member_checkin_without_subscription_ids_automatically_deducts_session(): void
+    public function test_member_checkin_with_subscription_ids_deducts_session(): void
     {
         // 2026-08-16 is a Sunday (day 0)
         $plan = $this->createPlan('Yoga Sunday');
@@ -164,10 +164,11 @@ class MemberCheckInDeductionTest extends TestCase
         $sub = $this->createSubscription($plan, 10, 0);
 
         $response = $this->postJson('/api/v1/attendances/check-in', [
-            'attendable_type' => 'member',
-            'attendable_id'   => $this->member->id,
-            'branch_id'       => $this->branch->id,
-            'check_in_at'     => '2026-08-16 10:15:00',
+            'attendable_type'         => 'member',
+            'attendable_id'           => $this->member->id,
+            'branch_id'               => $this->branch->id,
+            'check_in_at'             => '2026-08-16 10:15:00',
+            'player_subscription_ids' => [$sub->id],
         ]);
 
         $response->assertStatus(200);
@@ -185,6 +186,58 @@ class MemberCheckInDeductionTest extends TestCase
         ]);
 
         // Item sessions_consumed incremented
+        $this->assertDatabaseHas('player_subscription_items', [
+            'player_subscription_id' => $sub->id,
+            'sessions_consumed'      => 1,
+        ]);
+    }
+
+    /**
+     * التحقق من مسار الاستقبال ذي الخطوتين: تسجيل الحضور أولاً ثم اختيار الاشتراك والخصم عبر /deduct
+     */
+    public function test_reception_two_step_checkin_and_deduct(): void
+    {
+        $plan = $this->createPlan('Swimming Sunday');
+        SportSessionTemplate::create([
+            'plan_id' => $plan->id,
+            'day_of_week' => 0,
+            'start_time' => '11:00',
+            'end_time' => '12:30',
+            'is_active' => true,
+        ]);
+
+        $sub = $this->createSubscription($plan, 10, 0);
+
+        // 1. Check in without subscriptions
+        $checkInResponse = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'branch_id'       => $this->branch->id,
+            'check_in_at'     => '2026-08-16 11:15:00',
+        ]);
+        $checkInResponse->assertStatus(200);
+        $attendanceId = $checkInResponse->json('data.id');
+
+        // Attendance exists but no consumption yet
+        $this->assertDatabaseHas('attendances', [
+            'id'     => $attendanceId,
+            'status' => 'checked_in',
+        ]);
+        $this->assertDatabaseMissing('attendance_consumptions', [
+            'attendance_id' => $attendanceId,
+        ]);
+
+        // 2. Receptionist picks subscription and deducts session
+        $deductResponse = $this->postJson("/api/v1/reception/attendances/{$attendanceId}/deduct", [
+            'player_subscription_ids' => [$sub->id],
+        ]);
+        $deductResponse->assertStatus(200);
+
+        // Session is now consumed
+        $this->assertDatabaseHas('attendance_consumptions', [
+            'attendance_id'          => $attendanceId,
+            'player_subscription_id' => $sub->id,
+        ]);
         $this->assertDatabaseHas('player_subscription_items', [
             'player_subscription_id' => $sub->id,
             'sessions_consumed'      => 1,
@@ -314,20 +367,14 @@ class MemberCheckInDeductionTest extends TestCase
         ]);
 
         $response->assertStatus(200);
+        $attendanceId = $response->json('data.attendance_id');
+        $this->assertNotNull($attendanceId);
 
-        // Check attendance & consumption
+        // Check attendance is recorded
         $this->assertDatabaseHas('attendances', [
+            'id'            => $attendanceId,
             'attendable_id' => $this->member->id,
             'status'        => 'checked_in',
-        ]);
-
-        $this->assertDatabaseHas('attendance_consumptions', [
-            'player_subscription_id' => $sub->id,
-        ]);
-
-        $this->assertDatabaseHas('player_subscription_items', [
-            'player_subscription_id' => $sub->id,
-            'sessions_consumed'      => 1,
         ]);
     }
 }
