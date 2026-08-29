@@ -17819,6 +17819,11 @@
                                                     "type": "integer",
                                                     "example": 1
                                                 },
+                                                "staff_name": {
+                                                    "type": "string",
+                                                    "example": "أحمد علي",
+                                                    "nullable": true
+                                                },
                                                 "base_pay": {
                                                     "type": "number",
                                                     "example": 5000
@@ -17826,6 +17831,11 @@
                                                 "commission_pay": {
                                                     "type": "number",
                                                     "example": 500
+                                                },
+                                                "subscribers_count": {
+                                                    "type": "integer",
+                                                    "example": 5,
+                                                    "nullable": true
                                                 },
                                                 "net_pay": {
                                                     "type": "number",

@@ -14,6 +14,7 @@ class Payslip extends Model
         'staff_name',
         'base_pay',
         'commission_pay',
+        'subscribers_count',
         'net_pay',
     ];
 
@@ -32,6 +33,7 @@ class Payslip extends Model
     protected $casts = [
         'base_pay' => 'decimal:2',
         'commission_pay' => 'decimal:2',
+        'subscribers_count' => 'integer',
         'net_pay' => 'decimal:2',
     ];
 

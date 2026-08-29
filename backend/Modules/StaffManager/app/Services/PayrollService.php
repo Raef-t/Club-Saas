@@ -198,8 +198,10 @@ class PayrollService
             foreach ($data['payslips'] as $payslipData) {
                 $payslip = $payrollRun->payslips()->create([
                     'staff_id' => $payslipData['staff_id'],
+                    'staff_name' => $payslipData['staff_name'] ?? null,
                     'base_pay' => $payslipData['base_pay'],
                     'commission_pay' => $payslipData['commission_pay'],
+                    'subscribers_count' => $payslipData['subscribers_count'] ?? 0,
                     'net_pay' => $payslipData['net_pay'],
                 ]);
 

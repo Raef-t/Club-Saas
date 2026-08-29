@@ -172,8 +172,10 @@ class PayslipController extends BaseController
                         required: ['staff_id', 'base_pay', 'commission_pay', 'net_pay'],
                         properties: [
                             new OA\Property(property: 'staff_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'staff_name', type: 'string', nullable: true, example: 'أحمد علي'),
                             new OA\Property(property: 'base_pay', type: 'number', example: 5000),
                             new OA\Property(property: 'commission_pay', type: 'number', example: 500),
+                            new OA\Property(property: 'subscribers_count', type: 'integer', nullable: true, example: 5),
                             new OA\Property(property: 'net_pay', type: 'number', example: 5500),
                             new OA\Property(
                                 property: 'adjustments',
@@ -204,8 +206,10 @@ class PayslipController extends BaseController
             'period_end' => 'required|date',
             'payslips' => 'required|array',
             'payslips.*.staff_id' => 'required|integer',
+            'payslips.*.staff_name' => 'nullable|string',
             'payslips.*.base_pay' => 'required|numeric',
             'payslips.*.commission_pay' => 'required|numeric',
+            'payslips.*.subscribers_count' => 'nullable|integer|min:0',
             'payslips.*.net_pay' => 'required|numeric',
             'payslips.*.adjustments' => 'nullable|array',
             'payslips.*.adjustments.*.type' => 'required|in:bonus,deduction',
