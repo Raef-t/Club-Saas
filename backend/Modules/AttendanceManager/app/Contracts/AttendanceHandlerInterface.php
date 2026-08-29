@@ -42,9 +42,10 @@ interface AttendanceHandlerInterface
      * Callers can paginate/filter the result.
      *
      * @param  int|null    $entityId
-     * @param  string|null $from  YYYY-MM-DD
-     * @param  string|null $to    YYYY-MM-DD
+     * @param  string|null $from      YYYY-MM-DD
+     * @param  string|null $to        YYYY-MM-DD
+     * @param  int|null    $branchId  Branch filter
      * @return Builder
      */
-    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder;
+    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null, ?int $branchId = null): Builder;
 }

@@ -149,6 +149,7 @@ class ActivityTypeController extends BaseController
                 new OA\Property(property: 'is_session_based', type: 'boolean', example: true),
                 new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: false),
                 new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+                new OA\Property(property: 'is_daily_entry', type: 'boolean', example: false),
             ]
         )
     )]
@@ -165,11 +166,7 @@ class ActivityTypeController extends BaseController
     )]
     public function updateSettings(\Modules\Sports\Http\Requests\UpdateActivityTypeSettingsRequest $request, ActivityType $activity_type)
     {
-        $activity_type->update($request->only([
-            'is_session_based',
-            'has_unlimited_subscribers',
-            'has_shifts',
-        ]));
+        $activity_type->update($request->validated());
 
         return $this->successResponse(
             new ActivityTypeResource($activity_type),

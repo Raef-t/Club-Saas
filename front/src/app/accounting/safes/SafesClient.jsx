@@ -167,8 +167,16 @@ export default function SafesClient({ initialSafes = [], initialAccounts = [] })
                     </p>
                   </div>
 
+                  {/* Live Balance Display */}
+                  <div className="mt-4 rounded-xl bg-app-card-soft/80 p-3 border border-app-line/40 flex items-center justify-between">
+                    <span className="text-xs text-app-muted font-medium">الرصيد الفعلي الحالي:</span>
+                    <span className={`text-base font-bold font-mono ${Number(safe.current_balance || 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                      {currencySymbol} {Number(safe.current_balance || 0).toLocaleString()}
+                    </span>
+                  </div>
+
                   {/* Account Mapping info */}
-                  <div className="mt-4 rounded-xl bg-app-card-soft/60 p-3 space-y-1.5 text-xs">
+                  <div className="mt-2.5 rounded-xl bg-app-card-soft/40 p-2.5 space-y-1 text-xs">
                     <div className="flex justify-between text-app-muted">
                       <span>الحساب المقابل:</span>
                       <span className="font-mono text-app-text font-medium">

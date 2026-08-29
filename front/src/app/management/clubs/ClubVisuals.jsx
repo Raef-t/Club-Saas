@@ -10,6 +10,16 @@ export function ClubLogo({ src, name, className = "size-10" }) {
   const [hasError, setHasError] = useState(false);
 
   const resolvedSrc = src ? resolveClubLogoUrl({ logo: src }) : "";
+  let resolvedSrc = src;
+  if (resolvedSrc && typeof resolvedSrc === "string") {
+    if (
+      !resolvedSrc.startsWith("http") &&
+      !resolvedSrc.startsWith("blob:") &&
+      !resolvedSrc.startsWith("data:")
+    ) {
+      resolvedSrc = `/${resolvedSrc.replace(/^\//, "")}`;
+    }
+  }
 
   if (!resolvedSrc || hasError) {
     const initial = name ? name.charAt(0).toUpperCase() : "?";

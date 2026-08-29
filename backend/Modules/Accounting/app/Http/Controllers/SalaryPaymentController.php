@@ -113,14 +113,17 @@ class SalaryPaymentController extends Controller
             $salaryPayment = DB::transaction(function () use ($data, $staff, $safe, $period, $currency, $amount, $expenseAccount, $personName) {
                 // 1. Create the salary payment record
                 $payment = AccSalaryPayment::create([
-                    'staff_id'  => $staff->id,
-                    'safe_id'   => $safe->id,
-                    'period_id' => $period->id,
-                    'amount'    => $amount,
-                    'currency'  => $currency,
-                    'date'      => $data['date'],
-                    'notes'     => $data['notes'] ?? null,
+                    'staff_id'   => $staff->id,
+                    'safe_id'    => $safe->id,
+                    'period_id'  => $period->id,
+                    'payslip_id' => $data['payslip_id'] ?? null,
+                    'amount'     => $amount,
+                    'currency'   => $currency,
+                    'date'       => $data['date'],
+                    'notes'      => $data['notes'] ?? null,
                 ]);
+
+                $slipInfo = !empty($data['payslip_id']) ? " (قسيمة #{$data['payslip_id']})" : "";
 
                 // 2. Prepare Double-Entry Lines
                 $debitLine = [
@@ -129,7 +132,7 @@ class SalaryPaymentController extends Controller
                     'credit_usd' => 0,
                     'debit_syp'  => ($currency === 'SYP') ? $amount : 0,
                     'credit_syp' => 0,
-                    'memo'       => "راتب الموظف/المدرب: {$personName} — لشهر {$period->name}",
+                    'memo'       => "راتب الموظف/المدرب: {$personName}{$slipInfo} — لشهر {$period->name}",
                 ];
 
                 $creditLine = [
@@ -146,7 +149,7 @@ class SalaryPaymentController extends Controller
                     header: [
                         'type'        => 'PV', // Payment Voucher
                         'date'        => $data['date'],
-                        'description' => "صرف راتب: {$personName} — لشهر {$period->name}",
+                        'description' => "صرف راتب: {$personName}{$slipInfo} — لشهر {$period->name}",
                         'safe_id'     => $safe->id,
                         'source_type' => 'SalaryPayments',
                         'source_id'   => $payment->id,
@@ -165,7 +168,7 @@ class SalaryPaymentController extends Controller
             });
 
             return $this->successResponse(
-                new AccSalaryPaymentResource($salaryPayment->load(['staff.person', 'safe', 'period'])),
+                new AccSalaryPaymentResource($salaryPayment->load(['staff.person', 'safe', 'period', 'payslip'])),
                 'تم تسجيل وصرف الراتب بنجاح',
                 201
             );

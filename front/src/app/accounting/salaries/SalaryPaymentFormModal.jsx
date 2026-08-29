@@ -68,6 +68,7 @@ export default function SalaryPaymentFormModal({
       safe_id: Number(formData.safe_id),
       period_id: formData.period_id ? Number(formData.period_id) : null,
       amount: Number(formData.amount) || 0,
+      date: formData.payment_date,
       payment_date: formData.payment_date,
       payment_method: formData.payment_method,
       notes: formData.notes?.trim() || null,
@@ -98,11 +99,13 @@ export default function SalaryPaymentFormModal({
               <option value="">-- اختر الكادر --</option>
               {staffList.map((s) => {
                 const name = s.person?.full_name || `${s.person?.first_name || ""} ${s.person?.last_name || ""}`.trim() || s.name || `#${s.id}`;
-                return (
-                  <option key={s.id} value={s.id}>
-                    {name} ({s.role || "موظف"}) - راتب: ${Number(s.base_salary || 0).toLocaleString()}
-                  </option>
-                );
+                  const roleLabel = s.role === "coach" ? "مدرب" : s.role === "admin" ? "إداري" : "موظف";
+                  const salaryLabel = Number(s.base_salary) > 0 ? ` — الراتب الأساسي: ${Number(s.base_salary).toLocaleString()}` : "";
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {name} ({roleLabel}){salaryLabel}
+                    </option>
+                  );
               })}
             </select>
             {errors.staff_id && <p className="mt-1 text-xs text-rose-500">{errors.staff_id}</p>}
@@ -182,11 +185,9 @@ export default function SalaryPaymentFormModal({
               name="payment_method"
               value={formData.payment_method}
               onChange={handleChange}
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
+              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow cursor-default"
             >
               <option value="cash">نقداً (Cash)</option>
-              <option value="bank">تحويل بنكي (Bank Transfer)</option>
-              <option value="card">بطاقة (Card)</option>
             </select>
           </div>
         </div>

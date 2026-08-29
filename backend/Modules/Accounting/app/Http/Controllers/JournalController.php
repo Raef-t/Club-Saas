@@ -56,16 +56,25 @@ class JournalController extends Controller
     {
         try {
             $query = AccJournal::with('period', 'safe', 'counterparty', 'entries.account', 'reversesJournal');
-            if ($request->has('type'))        $query->where('type', $request->type);
-            if ($request->has('status'))      $query->where('status', $request->status);
-            if ($request->has('safe_id'))     $query->where('safe_id', $request->safe_id);
-            if ($request->has('period_id'))   $query->where('period_id', $request->period_id);
-            if ($request->has('source_type')) $query->where('source_type', $request->source_type);
-            if ($request->has('source_id'))   $query->where('source_id', $request->source_id);
-            if ($request->has('from_date'))   $query->where('date', '>=', $request->from_date);
-            if ($request->has('to_date'))     $query->where('date', '<=', $request->to_date);
-            $journals = $query->orderBy('date', 'desc')->paginate($request->get('per_page', 20));
-            return $this->successResponse($journals, 'تم جلب سندات القيود');
+            if ($request->filled('type') && $request->type !== 'all')        $query->where('type', $request->type);
+            if ($request->filled('status') && $request->status !== 'all')    $query->where('status', $request->status);
+            if ($request->filled('safe_id') && $request->safe_id !== 'all')  $query->where('safe_id', $request->safe_id);
+            if ($request->filled('period_id')) $query->where('period_id', $request->period_id);
+            if ($request->filled('branch_id') && $request->branch_id !== 'all') $query->where('branch_id', $request->branch_id);
+            if ($request->filled('source_type')) $query->where('source_type', $request->source_type);
+            if ($request->filled('source_id'))   $query->where('source_id', $request->source_id);
+            if ($request->filled('from_date'))   $query->where('date', '>=', $request->from_date);
+            if ($request->filled('to_date'))     $query->where('date', '<=', $request->to_date);
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('reference_number', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhere('notes', 'like', "%{$search}%");
+                });
+            }
+            $journals = $query->orderBy('date', 'desc')->paginate($request->get('per_page', 25));
+            return $this->successResponse(AccJournalResource::collection($journals)->response()->getData(true), 'تم جلب سندات القيود');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
         }
@@ -231,6 +240,25 @@ class JournalController extends Controller
             $journal         = AccJournal::with('entries')->findOrFail($id);
             $reversalJournal = $this->ledgerService->reverseJournal($journal, $request->validated('reason'));
             return $this->successResponse(new AccJournalResource($reversalJournal), 'تم عكس السند بنجاح');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    #[OA\Post(
+        path: '/accounting/journals/{id}/cancel',
+        summary: '❌ إلغاء سند قيد مالي',
+        description: 'يقوم بإلغاء سند القيد المالي المحدد (سواء كان مسودة أو مرحلاً عبر قيد عكسي).',
+        tags: ['Accounting - القيود اليومية العامة'],
+        security: [['bearerAuth' => []]]
+    )]
+    public function cancel(Request $request, $id)
+    {
+        try {
+            $journal = AccJournal::with('entries')->findOrFail($id);
+            $reason  = $request->input('cancellation_reason') ?? $request->input('reason') ?? 'إلغاء السند';
+            $result  = $this->ledgerService->cancelJournal($journal, $reason);
+            return $this->successResponse(new AccJournalResource($result), 'تم إلغاء السند بنجاح');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);
         }

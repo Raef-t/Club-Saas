@@ -32,7 +32,19 @@ class LedgerService
         }
 
         return DB::transaction(function () use ($header, $lines, $period, $date, $postImmediately) {
-            // 3. إنشاء رأس السند
+            // 3. تحديد معرف الفرع
+            $branchId = $header['branch_id'] ?? null;
+            if (!$branchId && !empty($header['safe_id'])) {
+                $branchId = \Modules\Accounting\Models\AccSafe::withoutGlobalScopes()->where('id', $header['safe_id'])->value('branch_id');
+            }
+            if (!$branchId && !empty($header['period_id'])) {
+                $branchId = $period->branch_id ?? null;
+            }
+            if (!$branchId) {
+                $branchId = request()->header('X-Branch-ID') ?: (Auth::check() ? Auth::user()->branch_id : null);
+            }
+
+            // 4. إنشاء رأس السند
             $journal = AccJournal::create([
                 'reference_number' => $this->generateReferenceNumber($header['type'] ?? 'JV'),
                 'type'             => $header['type'] ?? 'JV',
@@ -46,7 +58,7 @@ class LedgerService
                 'source_type'      => $header['source_type'] ?? null,
                 'source_id'        => $header['source_id'] ?? null,
                 'notes'            => $header['notes'] ?? null,
-                'branch_id'        => $header['branch_id'] ?? null,
+                'branch_id'        => $branchId,
             ]);
 
             // 4. إنشاء تفاصيل القيد
@@ -152,6 +164,23 @@ class LedgerService
 
             return $reversalJournal;
         });
+    }
+
+    /**
+     * إلغاء سند قيد (يزيل أثره المالي تماماً من الصادر والوارد دون إنشاء قيد عكسي)
+     */
+    public function cancelJournal(AccJournal $journal, ?string $reason = null): AccJournal
+    {
+        if ($journal->status === 'cancelled') {
+            throw new \Exception('السند ملغى مسبقاً.');
+        }
+
+        $journal->update([
+            'status' => 'cancelled',
+            'notes'  => trim(($journal->notes ? $journal->notes . ' | ' : '') . ($reason ? 'سبب الإلغاء: ' . $reason : 'تم الإلغاء')),
+        ]);
+
+        return $journal->refresh();
     }
 
     /**

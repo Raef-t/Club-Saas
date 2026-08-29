@@ -43,6 +43,7 @@ class SessionTemplateController extends BaseController
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الجدول بنجاح',
@@ -57,9 +58,14 @@ class SessionTemplateController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function schedule(Request $request)
     {
+        $branchId = $request->input('branch_id') ?? $request->input('branch');
+
         $sessions = SportSessionTemplate::active()
-            ->whereHas('subscriptionPlan', function ($query) {
+            ->whereHas('subscriptionPlan', function ($query) use ($branchId) {
                 $query->where('status', '!=', SubscriptionPlanStatus::INACTIVE);
+                if (!empty($branchId)) {
+                    $query->where('branch_id', $branchId);
+                }
             })
             ->with([
                 'facility',

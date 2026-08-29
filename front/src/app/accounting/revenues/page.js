@@ -1,26 +1,42 @@
-import StatsGrid from "@/components/ui/StatsGrid";
-import Tabs from "@/components/ui/Tabs";
-import DataTable from "@/components/ui/DataTable";
-import { revenueColumns, revenues, revenueStats } from "@/data/mockData";
+import RevenuesClient from "./RevenuesClient";
+import { verifySession } from "@/lib/server/auth";
+import { requestBackend } from "@/lib/server/backend";
 
-const tabs = [
-  { title: "إيرادات الاشتراكات", href: "/accounting/revenues" },
-  { title: "إيرادات إضافية", href: "/accounting/revenues/additional" },
-  { title: "العروض الترويجية", href: "/accounting/revenues/offers" },
-];
+export const metadata = {
+  title: "سندات القبض والإيرادات | نظام المحاسبة",
+};
 
-export default function RevenuesPage() {
+export default async function RevenuesPage() {
+  const { token } = await verifySession();
+  let initialJournals = [];
+  let initialAccounts = [];
+  let initialSafes = [];
+  let initialCounterparties = [];
+
+  try {
+    const [journalsRes, accountsRes, safesRes, counterpartiesRes] = await Promise.all([
+      requestBackend("accounting/journals?type=RV", { token }),
+      requestBackend("accounting/accounts", { token }),
+      requestBackend("accounting/safes", { token }),
+      requestBackend("accounting/counterparties", { token }),
+    ]);
+    initialJournals = journalsRes?.data || [];
+    initialAccounts = accountsRes?.data || [];
+    initialSafes = safesRes?.data || [];
+    initialCounterparties = counterpartiesRes?.data || [];
+  } catch {
+    initialJournals = [];
+    initialAccounts = [];
+    initialSafes = [];
+    initialCounterparties = [];
+  }
+
   return (
-    <div className="space-y-6">
-      <StatsGrid items={revenueStats} />
-      <Tabs items={tabs} activeHref="/accounting/revenues" />
-      <DataTable
-        title="اشتراكات الأعضاء"
-        subtitle="جميع الاشتراكات والمدفوعات المرتبطة بالعضويات"
-        columns={revenueColumns}
-        rows={revenues}
-        addLabel="إضافة إيراد"
-      />
-    </div>
+    <RevenuesClient
+      initialJournals={initialJournals}
+      initialAccounts={initialAccounts}
+      initialSafes={initialSafes}
+      initialCounterparties={initialCounterparties}
+    />
   );
 }

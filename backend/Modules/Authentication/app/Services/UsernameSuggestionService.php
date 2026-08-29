@@ -9,11 +9,11 @@ class UsernameSuggestionService
 {
     /**
      * Regex pattern for valid custom usernames:
-     * - Must start and end with an alphanumeric character
-     * - May contain letters, numbers, underscores, dots, and hyphens in between
+     * - Must start and end with an alphanumeric character (English or Arabic)
+     * - May contain letters (English/Arabic), numbers, underscores, dots, and hyphens in between
      * - Length between 3 and 30 characters
      */
-    const USERNAME_REGEX = '/^[a-zA-Z0-9](?:[a-zA-Z0-9_.-]{1,28}[a-zA-Z0-9])?$/';
+    const USERNAME_REGEX = '/^[a-zA-Z0-9\p{Arabic}](?:[a-zA-Z0-9\p{Arabic}_.-]{1,28}[a-zA-Z0-9\p{Arabic}])?$/u';
 
     /**
      * Check if a username format is valid.
@@ -23,7 +23,8 @@ class UsernameSuggestionService
      */
     public static function isValidFormat(string $username): bool
     {
-        $len = strlen($username);
+        $username = trim($username);
+        $len = mb_strlen($username, 'UTF-8');
         if ($len < 3 || $len > 30) {
             return false;
         }
@@ -73,18 +74,18 @@ class UsernameSuggestionService
         $base = self::sanitizeBase($input);
 
         // If input base is empty or too short, fallback to full name or default
-        if (strlen($base) < 3) {
+        if (mb_strlen($base, 'UTF-8') < 3) {
             if (!empty($fullName)) {
                 $base = self::sanitizeBase($fullName);
             }
-            if (strlen($base) < 3) {
+            if (mb_strlen($base, 'UTF-8') < 3) {
                 $base = 'user';
             }
         }
 
         // Ensure base leaves room for suffixes (max total length is 30)
-        if (strlen($base) > 22) {
-            $base = substr($base, 0, 22);
+        if (mb_strlen($base, 'UTF-8') > 22) {
+            $base = mb_substr($base, 0, 22, 'UTF-8');
             $base = rtrim($base, '._-');
         }
 
@@ -118,7 +119,7 @@ class UsernameSuggestionService
         // Strategy 5: Name-based variations ONLY as a last resort if full_name is available
         if (!empty($fullName)) {
             $nameSlug = self::sanitizeBase($fullName);
-            if (strlen($nameSlug) >= 3 && $nameSlug !== $base) {
+            if (mb_strlen($nameSlug, 'UTF-8') >= 3 && $nameSlug !== $base) {
                 $candidates[] = $nameSlug . '_' . mt_rand(10, 99);
                 $candidates[] = $nameSlug . date('Y');
             }
@@ -129,11 +130,11 @@ class UsernameSuggestionService
         $seen = [];
 
         foreach ($candidates as $candidate) {
-            $candidate = strtolower(trim($candidate));
+            $candidate = mb_strtolower(trim($candidate), 'UTF-8');
 
             // Truncate to 30 characters if needed
-            if (strlen($candidate) > 30) {
-                $candidate = substr($candidate, 0, 30);
+            if (mb_strlen($candidate, 'UTF-8') > 30) {
+                $candidate = mb_substr($candidate, 0, 30, 'UTF-8');
                 $candidate = rtrim($candidate, '._-');
             }
 
@@ -153,7 +154,7 @@ class UsernameSuggestionService
         // If we still need more suggestions, generate randomized ones based on input base
         while (count($suggestions) < $limit) {
             $randSuffix = mt_rand(100, 9999);
-            $candidate = substr($base, 0, 24) . '_' . $randSuffix;
+            $candidate = mb_substr($base, 0, 24, 'UTF-8') . '_' . $randSuffix;
             if (self::isValidFormat($candidate) && self::isAvailable($candidate, $ignoreUserId) && !in_array($candidate, $suggestions)) {
                 $suggestions[] = $candidate;
             }
@@ -164,7 +165,7 @@ class UsernameSuggestionService
 
     /**
      * Sanitize an input string to be a valid base username.
-     * Handles Arabic transliteration and strips invalid characters.
+     * Preserves Arabic and alphanumeric characters while stripping invalid symbols.
      *
      * @param string $input
      * @return string
@@ -176,45 +177,18 @@ class UsernameSuggestionService
             return '';
         }
 
-        // Transliterate Arabic to English phonetic approximation if needed
-        $transliterated = self::transliterateArabic($input);
-
         // Convert spaces to underscores
-        $slug = preg_replace('/\s+/', '_', $transliterated);
+        $slug = preg_replace('/\s+/u', '_', $input);
 
-        // Remove any characters not in [a-zA-Z0-9_.-]
-        $slug = preg_replace('/[^a-zA-Z0-9_.-]/', '', $slug);
+        // Remove any characters not in [a-zA-Z0-9\p{Arabic}_.-]
+        $slug = preg_replace('/[^\p{Arabic}a-zA-Z0-9_.-]/u', '', $slug);
 
         // Remove consecutive dots, dashes, or underscores
-        $slug = preg_replace('/[._-]{2,}/', '_', $slug);
+        $slug = preg_replace('/[._-]{2,}/u', '_', $slug);
 
         // Trim leading and trailing dots, dashes, underscores
         $slug = trim($slug, '._-');
 
-        return strtolower($slug);
-    }
-
-    /**
-     * Arabic transliteration map for generating friendly English slugs from Arabic names.
-     *
-     * @param string $text
-     * @return string
-     */
-    protected static function transliterateArabic(string $text): string
-    {
-        $map = [
-            'أ' => 'a', 'إ' => 'e', 'آ' => 'aa', 'ا' => 'a',
-            'ب' => 'b', 'ت' => 't', 'ث' => 'th', 'ج' => 'j',
-            'ح' => 'h', 'خ' => 'kh', 'د' => 'd', 'ذ' => 'dh',
-            'ر' => 'r', 'ز' => 'z', 'س' => 's', 'ش' => 'sh',
-            'ص' => 's', 'ض' => 'd', 'ط' => 't', 'ظ' => 'z',
-            'ع' => 'a', 'غ' => 'gh', 'ف' => 'f', 'ق' => 'q',
-            'ك' => 'k', 'ل' => 'l', 'م' => 'm', 'ن' => 'n',
-            'ه' => 'h', 'و' => 'w', 'ي' => 'y', 'ى' => 'a',
-            'ة' => 'h', 'ء' => '', 'ئ' => 'e', 'ؤ' => 'o',
-            'پ' => 'p', 'چ' => 'ch', 'ڤ' => 'v', 'گ' => 'g',
-        ];
-
-        return strtr($text, $map);
+        return mb_strtolower($slug, 'UTF-8');
     }
 }

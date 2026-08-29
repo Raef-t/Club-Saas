@@ -127,9 +127,10 @@ class UnifiedAttendanceService
      * @param  int|null     $entityId
      * @param  string|null  $from
      * @param  string|null  $to
+     * @param  int|null     $branchId
      * @return Builder
      */
-    public function getHistory(?string $type = null, ?int $entityId = null, ?string $from = null, ?string $to = null): Builder
+    public function getHistory(?string $type = null, ?int $entityId = null, ?string $from = null, ?string $to = null, ?int $branchId = null): Builder
     {
         if (!$type || $type === 'all') {
             $query = Attendance::query()
@@ -138,6 +139,10 @@ class UnifiedAttendanceService
 
             if ($entityId) {
                 $query->where('attendable_id', $entityId);
+            }
+
+            if ($branchId) {
+                $query->where('branch_id', $branchId);
             }
 
             if ($from) {
@@ -151,7 +156,7 @@ class UnifiedAttendanceService
             return $query;
         }
 
-        return $this->resolveHandler($type)->getHistory($entityId, $from, $to);
+        return $this->resolveHandler($type)->getHistory($entityId, $from, $to, $branchId);
     }
 
     /**

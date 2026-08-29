@@ -177,7 +177,7 @@ export default function CoachesClient({ initialData }) {
         render: (_, coach) => {
           let photoUrl = coach.person?.photo_url || coach.person?.photo;
           if (photoUrl && !photoUrl.startsWith("http") && !photoUrl.startsWith("blob:")) {
-            photoUrl = `http://31.70.108.63/${photoUrl.replace(/^\//, "")}`;
+            photoUrl = `/${photoUrl.replace(/^\//, "")}`;
           }
 
           return (

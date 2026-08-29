@@ -3884,7 +3884,7 @@
                     "Attendance"
                 ],
                 "summary": "📆 سجل حضور موحد",
-                "description": "يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).",
+                "description": "يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية والفرع. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).",
                 "operationId": "3076ed071799f8e5c3593d9d7b5583be",
                 "parameters": [
                     {
@@ -3906,6 +3906,15 @@
                         "name": "attendable_id",
                         "in": "query",
                         "description": "معرف المستخدم (اختياري - إذا لم يحدد يجلب الكل)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "معرف الفرع للفلترة (اختياري)",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -14455,6 +14464,10 @@
                                     "has_shifts": {
                                         "type": "boolean",
                                         "example": false
+                                    },
+                                    "is_daily_entry": {
+                                        "type": "boolean",
+                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -14672,6 +14685,18 @@
                 "summary": "🗓️ جدول الجلسات",
                 "description": "استرجاع جدول دوام الجلسات الأسبوعية.",
                 "operationId": "22f43a5b77e7893029da2ff22365ba77",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الجدول بنجاح",

@@ -816,7 +816,7 @@ class AuthController extends BaseController
 
             return response()->json([
                 'status' => 'error',
-                'message' => __('صيغة اسم المستخدم غير صالحة. يجب أن يتكون من 3-30 حرفاً (حروف إنجليزية، أرقام، _ . -).'),
+                'message' => __('صيغة اسم المستخدم غير صالحة. يجب أن يتكون من 3-30 حرفاً (حروف، أرقام، _ . -).'),
                 'data' => [
                     'is_available' => false,
                     'suggestions'  => $suggestions,

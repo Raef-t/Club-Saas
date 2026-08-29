@@ -1,6 +1,5 @@
 "use client";
 
-import StatsGrid from "@/components/ui/StatsGrid";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -18,7 +17,6 @@ export default function CounterpartiesClient({ initialCounterparties = [] }) {
   const {
     counterparties,
     filteredCounterparties,
-    stats,
     search,
     setSearch,
     typeFilter,
@@ -34,18 +32,8 @@ export default function CounterpartiesClient({ initialCounterparties = [] }) {
     handleSaveCounterparty,
   } = useCounterparties({ initialCounterparties });
 
-  const statsItems = [
-    { label: "إجمالي الأطراف", value: stats.total },
-    { label: "الموردين (Suppliers)", value: stats.suppliers },
-    { label: "العملاء (Customers)", value: stats.customers },
-    { label: "جهات أخرى", value: stats.others },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Stats */}
-      <StatsGrid items={statsItems} />
-
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-app-line/40 bg-app-card-soft/40 p-4">
         <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">

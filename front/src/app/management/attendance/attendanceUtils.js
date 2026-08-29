@@ -1,8 +1,6 @@
 import { formatDate, formatLocalizedName, getBranchesArray } from "../../../lib/utils";
 import { ATTENDANCE_STATUS_LABELS } from "./attendanceConstants";
 
-const BACKEND_ASSET_ORIGIN = process.env.NEXT_PUBLIC_BACKEND_ASSET_URL || "http://31.70.108.63";
-
 /**
  * Extracts an array from the supported backend collection response shapes.
  */
@@ -383,5 +381,5 @@ export function getAttendancePhotoUrl(photoUrl) {
   if (!photoUrl) return null;
   if (/^(https?:|blob:|data:)/i.test(photoUrl)) return photoUrl;
 
-  return `${BACKEND_ASSET_ORIGIN}/${String(photoUrl).replace(/^\/+/, "")}`;
+  return `/${String(photoUrl).replace(/^\/+/, "")}`;
 }

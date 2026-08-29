@@ -106,7 +106,7 @@ export default function Navbar({ onMenuClick, initialUser }) {
                 src={
                   user.person.photo_url.startsWith("http")
                     ? user.person.photo_url
-                    : `http://31.70.108.63/${user.person.photo_url.replace(/^\//, "")}`
+                    : `/${user.person.photo_url.replace(/^\//, "")}`
                 }
                 className="absolute inset-0 size-full rounded-full object-cover object-center"
                 alt={`صورة ${fullName || "المستخدم"}`}

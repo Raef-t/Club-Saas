@@ -58,7 +58,8 @@ class ReportController extends Controller
     {
         try {
             $request->validate(['period_id' => 'required|integer|exists:acc_periods,id']);
-            $data = $this->reportService->getTrialBalance((int) $request->period_id);
+            $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
+            $data = $this->reportService->getTrialBalance((int) $request->period_id, $branchId);
             return $this->successResponse($data, 'تم جلب ميزان المراجعة');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);
@@ -99,7 +100,8 @@ class ReportController extends Controller
     {
         try {
             $request->validate(['period_id' => 'required|integer|exists:acc_periods,id']);
-            $data = $this->reportService->getIncomeStatement((int) $request->period_id);
+            $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
+            $data = $this->reportService->getIncomeStatement((int) $request->period_id, $branchId);
             return $this->successResponse($data, 'تم جلب قائمة الدخل');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);
@@ -140,7 +142,8 @@ class ReportController extends Controller
     {
         try {
             $request->validate(['period_id' => 'required|integer|exists:acc_periods,id']);
-            $data = $this->reportService->getBalanceSheet((int) $request->period_id);
+            $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
+            $data = $this->reportService->getBalanceSheet((int) $request->period_id, $branchId);
             return $this->successResponse($data, 'تم جلب الميزانية العمومية');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);

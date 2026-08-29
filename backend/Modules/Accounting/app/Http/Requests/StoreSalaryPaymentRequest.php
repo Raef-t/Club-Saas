@@ -11,15 +11,23 @@ class StoreSalaryPaymentRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('date') && $this->has('payment_date')) {
+            $this->merge(['date' => $this->input('payment_date')]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'staff_id'  => 'required|integer|exists:staff,id',
-            'safe_id'   => 'required|integer|exists:acc_safes,id',
-            'period_id' => 'required|integer|exists:acc_periods,id',
-            'amount'    => 'required|numeric|min:0.01',
-            'date'      => 'required|date',
-            'notes'     => 'nullable|string|max:500',
+            'staff_id'   => 'required|integer|exists:staff,id',
+            'safe_id'    => 'required|integer|exists:acc_safes,id',
+            'period_id'  => 'required|integer|exists:acc_periods,id',
+            'payslip_id' => 'nullable|integer|exists:payslips,id',
+            'amount'     => 'required|numeric|min:0.01',
+            'date'       => 'required|date',
+            'notes'      => 'nullable|string|max:500',
         ];
     }
 

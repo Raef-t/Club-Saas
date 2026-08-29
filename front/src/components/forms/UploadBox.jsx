@@ -147,6 +147,15 @@ export function UploadBox({
                 previewUrl = resolveClubLogoUrl({ logo: file });
               } else if (file?.url) {
                 previewUrl = resolveClubLogoUrl({ logo: file.url });
+                previewUrl =
+                  file.startsWith("http") || file.startsWith("blob:")
+                    ? file
+                    : `/${file.replace(/^\//, "")}`;
+              } else if (file?.url) {
+                previewUrl =
+                  file.url.startsWith("http") || file.url.startsWith("blob:")
+                    ? file.url
+                    : `/${file.url.replace(/^\//, "")}`;
               }
             }
 

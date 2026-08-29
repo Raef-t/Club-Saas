@@ -257,17 +257,23 @@ class LockerService
                         if (!$safeId) {
                             $safeId = DB::table('acc_safes')
                                 ->where('branch_id', $locker->branch_id)
-                                ->value('id');
+                                ->where('currency', 'SYP')
+                                ->value('id')
+                                ?? DB::table('acc_safes')
+                                    ->where('branch_id', $locker->branch_id)
+                                    ->value('id');
                         }
                     }
 
-                    \Modules\SubscriptionManager\Models\Payment::create([
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
                         'invoice_id' => $invoiceId,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'status' => 'completed',
                     ]);
+
+                    event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
                 }
             }
 

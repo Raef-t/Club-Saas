@@ -261,7 +261,11 @@ class SubscriptionService
                     if (!$safeId) {
                         $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
                             ->where('branch_id', $branchId)
-                            ->value('id');
+                            ->where('currency', 'SYP')
+                            ->value('id')
+                            ?? \Illuminate\Support\Facades\DB::table('acc_safes')
+                                ->where('branch_id', $branchId)
+                                ->value('id');
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
@@ -446,7 +450,11 @@ class SubscriptionService
                     if (!$safeId) {
                         $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
                             ->where('branch_id', $branchId)
-                            ->value('id');
+                            ->where('currency', 'SYP')
+                            ->value('id')
+                            ?? \Illuminate\Support\Facades\DB::table('acc_safes')
+                                ->where('branch_id', $branchId)
+                                ->value('id');
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
@@ -790,7 +798,11 @@ class SubscriptionService
                     if (!$safeId) {
                         $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
                             ->where('branch_id', $branchId)
-                            ->value('id');
+                            ->where('currency', 'SYP')
+                            ->value('id')
+                            ?? \Illuminate\Support\Facades\DB::table('acc_safes')
+                                ->where('branch_id', $branchId)
+                                ->value('id');
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
@@ -922,7 +934,11 @@ class SubscriptionService
                     if (!$safeId) {
                         $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
                             ->where('branch_id', $branchId)
-                            ->value('id');
+                            ->where('currency', 'SYP')
+                            ->value('id')
+                            ?? \Illuminate\Support\Facades\DB::table('acc_safes')
+                                ->where('branch_id', $branchId)
+                                ->value('id');
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([

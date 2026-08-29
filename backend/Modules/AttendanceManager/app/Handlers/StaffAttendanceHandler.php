@@ -122,7 +122,7 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
     /**
      * Return a history query for a given staff member.
      */
-    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null): Builder
+    public function getHistory(?int $entityId = null, ?string $from = null, ?string $to = null, ?int $branchId = null): Builder
     {
         $query = Attendance::where('attendable_type', 'staff')
             ->with(['locker'])
@@ -130,6 +130,10 @@ class StaffAttendanceHandler implements AttendanceHandlerInterface
 
         if ($entityId) {
             $query->where('attendable_id', $entityId);
+        }
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
         }
 
         if ($from) {

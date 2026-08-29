@@ -29,8 +29,15 @@ export default function PeriodFormModal({
   }, [isOpen]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (e?.target) {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleDateChange = (field, val) => {
+    const value = typeof val === "object" && val?.target ? val.target.value : val;
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -66,7 +73,7 @@ export default function PeriodFormModal({
             type="date"
             name="start_date"
             value={formData.start_date}
-            onChange={handleChange}
+            onChange={(val) => handleDateChange("start_date", val)}
             error={errors.start_date}
             required
           />
@@ -76,7 +83,7 @@ export default function PeriodFormModal({
             type="date"
             name="end_date"
             value={formData.end_date}
-            onChange={handleChange}
+            onChange={(val) => handleDateChange("end_date", val)}
             error={errors.end_date}
             required
           />

@@ -219,8 +219,8 @@ class SafeController extends Controller
     public function statement(Request $request, $id)
     {
         try {
-            $from = $request->get('from', now()->startOfMonth()->toDateString());
-            $to   = $request->get('to', now()->toDateString());
+            $from = $request->get('from', $request->get('from_date', now()->startOfYear()->toDateString()));
+            $to   = $request->get('to', $request->get('to_date', now()->toDateString()));
             $data = $this->reportService->getSafeStatement((int) $id, $from, $to);
             return $this->successResponse($data, 'تم جلب كشف الصندوق');
         } catch (\Exception $e) {

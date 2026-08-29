@@ -82,6 +82,7 @@ export default function ExpenseFormModal({
       type: "PV",
       date: formData.date,
       safe_id: Number(formData.safe_id),
+      branch_id: safe.branch_id || null,
       description: formData.description.trim(),
       counterparty_id: formData.counterparty_id ? Number(formData.counterparty_id) : null,
       notes: formData.notes?.trim() || null,
@@ -220,11 +221,12 @@ export default function ExpenseFormModal({
 
           <div>
             <Field
-              label="ملاحظات أو رقم الفاتورة الورقية"
+              label="ملاحظات أو رقم الفاتورة الورقية (اختياري)"
               name="notes"
               value={formData.notes}
               onChange={handleChange}
               placeholder="رقم الفاتورة أو المستند..."
+              required={false}
             />
           </div>
         </div>

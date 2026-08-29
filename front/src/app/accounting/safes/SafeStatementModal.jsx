@@ -24,11 +24,11 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
   );
 
   const statement = data?.data || {};
-  const movements = statement.movements || statement.data || statement.entries || [];
-  const openingBalance = Number(statement.opening_balance || 0);
-  const totalIn = Number(statement.total_in || statement.total_receipts || 0);
-  const totalOut = Number(statement.total_out || statement.total_payments || 0);
-  const closingBalance = Number(statement.closing_balance || (openingBalance + totalIn - totalOut));
+  const movements = statement.movements || statement.entries || (Array.isArray(statement) ? statement : []);
+  const openingBalance = Number(statement.opening_balance ?? 0);
+  const totalIn = Number(statement.total_in ?? statement.totals?.total_in ?? statement.total_receipts ?? 0);
+  const totalOut = Number(statement.total_out ?? statement.totals?.total_out ?? statement.total_payments ?? 0);
+  const closingBalance = Number(statement.closing_balance ?? (openingBalance + totalIn - totalOut));
 
   const currencySymbol = safe?.currency === "USD" ? "$" : "ل.س";
 
@@ -48,7 +48,8 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
                 label="من تاريخ"
                 type="date"
                 value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
+                onChange={(e) => setFromDate(e?.target?.value ?? e)}
+                required={false}
               />
             </div>
             <div className="w-36">
@@ -56,7 +57,8 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
                 label="إلى تاريخ"
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                onChange={(e) => setToDate(e?.target?.value ?? e)}
+                required={false}
               />
             </div>
             <Button
@@ -124,14 +126,14 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
               </thead>
               <tbody className="divide-y divide-app-line/20 bg-app-card-soft/20 text-app-text">
                 {movements.map((row, idx) => {
-                  const amountIn = Number(row.in || row.receipt || (row.type === "RV" ? row.amount : 0));
-                  const amountOut = Number(row.out || row.payment || (row.type === "PV" ? row.amount : 0));
+                  const amountIn = Number(row.in ?? row.debit_usd ?? (row.type === "RV" ? row.amount : 0));
+                  const amountOut = Number(row.out ?? row.credit_usd ?? (row.type === "PV" ? row.amount : 0));
 
                   return (
                     <tr key={row.id || idx} className="hover:bg-app-line/10 transition-colors">
                       <td className="p-2.5 whitespace-nowrap text-app-muted font-mono">{row.date}</td>
                       <td className="p-2.5 whitespace-nowrap font-mono font-medium text-app-yellow">
-                        {row.number || row.journal_number || `#${row.journal_id || row.id}`}
+                        {row.number || row.reference_number || `#${row.journal_id || row.id}`}
                       </td>
                       <td className="p-2.5">
                         <span className="rounded bg-app-panel px-2 py-0.5 font-mono text-[10px] font-semibold text-app-text">
@@ -148,7 +150,9 @@ export default function SafeStatementModal({ isOpen, onClose, safe }) {
                         {amountOut > 0 ? `- ${currencySymbol} ${amountOut.toLocaleString()}` : "-"}
                       </td>
                       <td className="p-2.5 text-left font-mono font-bold text-app-text">
-                        {row.running_balance !== undefined ? `${currencySymbol} ${Number(row.running_balance).toLocaleString()}` : "-"}
+                        {row.running_balance !== undefined && row.running_balance !== null
+                          ? `${currencySymbol} ${Number(row.running_balance).toLocaleString()}`
+                          : "-"}
                       </td>
                     </tr>
                   );

@@ -82,6 +82,7 @@ export default function RevenueFormModal({
       type: "RV",
       date: formData.date,
       safe_id: Number(formData.safe_id),
+      branch_id: safe.branch_id || null,
       description: formData.description.trim(),
       counterparty_id: formData.counterparty_id ? Number(formData.counterparty_id) : null,
       notes: formData.notes?.trim() || null,
@@ -220,11 +221,12 @@ export default function RevenueFormModal({
 
           <div>
             <Field
-              label="ملاحظات أو رقم الإيصال"
+              label="ملاحظات أو رقم الإيصال (اختياري)"
               name="notes"
               value={formData.notes}
               onChange={handleChange}
               placeholder="رقم الإيصال أو المستند الورقي..."
+              required={false}
             />
           </div>
         </div>

@@ -82,6 +82,7 @@ Route::group([
     Route::get('journals/{id}', [JournalController::class, 'show'])->name('journals.show');
     Route::post('journals/{id}/post', [JournalController::class, 'post'])->name('journals.post');
     Route::post('journals/{id}/reverse', [JournalController::class, 'reverse'])->name('journals.reverse');
+    Route::post('journals/{id}/cancel', [JournalController::class, 'cancel'])->name('journals.cancel');
 
     /*
     |--------------------------------------------------------------------------

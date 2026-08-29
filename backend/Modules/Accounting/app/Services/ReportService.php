@@ -17,11 +17,16 @@ class ReportService
      * ميزان المراجعة (Trial Balance)
      * يعرض جميع الحسابات مع إجمالي المدين والدائن للفترة
      */
-    public function getTrialBalance(int $periodId): array
+    public function getTrialBalance(int $periodId, ?int $branchId = null): array
     {
         $period = AccPeriod::findOrFail($periodId);
 
-        $totalsByAccount = AccJournalEntry::whereHas('journal', fn($q) => $q->where('status', 'posted')->where('period_id', $periodId))
+        $totalsByAccount = AccJournalEntry::whereHas('journal', function ($q) use ($periodId, $branchId) {
+            $q->where('status', 'posted')->where('period_id', $periodId);
+            if ($branchId) {
+                $q->where('branch_id', $branchId);
+            }
+        })
             ->selectRaw('account_id, SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
             ->groupBy('account_id')
             ->get()
@@ -72,10 +77,10 @@ class ReportService
     /**
      * قائمة الدخل (Income Statement): الإيرادات - المصاريف
      */
-    public function getIncomeStatement(int $periodId): array
+    public function getIncomeStatement(int $periodId, ?int $branchId = null): array
     {
         $period   = AccPeriod::findOrFail($periodId);
-        $tb       = $this->getTrialBalance($periodId);
+        $tb       = $this->getTrialBalance($periodId, $branchId);
         $accounts = collect($tb['accounts']);
 
         $revenues = $accounts->where('type', 'revenue')->values();
@@ -108,10 +113,10 @@ class ReportService
     /**
      * الميزانية العمومية (Balance Sheet): الأصول = الخصوم + حقوق الملكية
      */
-    public function getBalanceSheet(int $periodId): array
+    public function getBalanceSheet(int $periodId, ?int $branchId = null): array
     {
         $period   = AccPeriod::findOrFail($periodId);
-        $tb       = $this->getTrialBalance($periodId);
+        $tb       = $this->getTrialBalance($periodId, $branchId);
         $accounts = collect($tb['accounts']);
 
         $assets      = $accounts->where('type', 'asset')->values();
@@ -119,7 +124,7 @@ class ReportService
         $equity      = $accounts->where('type', 'equity')->values();
 
         // صافي الدخل من قائمة الدخل يُضاف لحقوق الملكية
-        $is        = $this->getIncomeStatement($periodId);
+        $is        = $this->getIncomeStatement($periodId, $branchId);
         $netIncome = $is['summary']['net_income_usd'];
 
         $totalAssetsUsd      = $assets->sum(fn($a) => $a['debit_usd'] - $a['credit_usd']);
@@ -147,37 +152,76 @@ class ReportService
     public function getSafeStatement(int $safeId, string $from, string $to): array
     {
         $safe = AccSafe::with('account')->findOrFail($safeId);
-
-        // Fetch all journal entries for this safe's account in posted journals within the date range
-        $entries = AccJournalEntry::where('account_id', $safe->account_id)
-            ->whereHas('journal', function ($q) use ($from, $to) {
-                $q->where('status', 'posted')
-                  ->whereBetween('date', [$from, $to]);
-            })
-            ->with('journal')
-            ->get()
-            ->sortBy(fn($entry) => $entry->journal->date);
-
-        $totalInUsd  = 0.0;
-        $totalOutUsd = 0.0;
         $isUsd = $safe->currency === 'USD';
 
-        $rows = $entries->map(function ($entry) use ($isUsd, &$totalInUsd, &$totalOutUsd) {
+        // 1. حساب الرصيد الافتتاحي ما قبل تاريخ $from
+        $openingEntries = AccJournalEntry::where('account_id', $safe->account_id)
+            ->whereHas('journal', function ($q) use ($from, $safe) {
+                $q->where('status', 'posted')
+                  ->where('date', '<', $from)
+                  ->where(function ($sq) use ($safe) {
+                      $sq->where('safe_id', $safe->id);
+                      if ($safe->branch_id) {
+                          $sq->orWhere(function ($ssq) use ($safe) {
+                              $ssq->whereNull('safe_id')->where('branch_id', $safe->branch_id);
+                          });
+                      }
+                  });
+            })
+            ->selectRaw('SUM(debit_usd) as debit_usd, SUM(credit_usd) as credit_usd, SUM(debit_syp) as debit_syp, SUM(credit_syp) as credit_syp')
+            ->first();
+
+        $openingBalance = $isUsd
+            ? (float)(($openingEntries->debit_usd ?? 0) - ($openingEntries->credit_usd ?? 0))
+            : (float)(($openingEntries->debit_syp ?? 0) - ($openingEntries->credit_syp ?? 0));
+
+        // 2. جلب جميع حركات الصندوق في النطاق المحدد
+        $entries = AccJournalEntry::where('account_id', $safe->account_id)
+            ->whereHas('journal', function ($q) use ($from, $to, $safe) {
+                $q->where('status', 'posted')
+                  ->whereBetween('date', [$from, $to])
+                  ->where(function ($sq) use ($safe) {
+                      $sq->where('safe_id', $safe->id);
+                      if ($safe->branch_id) {
+                          $sq->orWhere(function ($ssq) use ($safe) {
+                              $ssq->whereNull('safe_id')->where('branch_id', $safe->branch_id);
+                          });
+                      }
+                  });
+            })
+            ->with(['journal'])
+            ->get()
+            ->sortBy(fn($entry) => $entry->journal ? $entry->journal->date : now());
+
+        $totalIn = 0.0;
+        $totalOut = 0.0;
+        $runningBalance = $openingBalance;
+
+        $rows = $entries->map(function ($entry) use ($isUsd, &$totalIn, &$totalOut, &$runningBalance) {
             $debit  = (float) ($isUsd ? $entry->debit_usd : $entry->debit_syp);
             $credit = (float) ($isUsd ? $entry->credit_usd : $entry->credit_syp);
-            $totalInUsd  += $debit;
-            $totalOutUsd += $credit;
+            $totalIn  += $debit;
+            $totalOut += $credit;
+            $runningBalance += ($debit - $credit);
 
             $sourceType = $entry->journal ? $entry->journal->source_type : null;
             $sourceId   = $entry->journal ? $entry->journal->source_id : null;
+            $refNumber  = $entry->journal ? $entry->journal->reference_number : '';
 
             return [
+                'id'                  => $entry->id,
                 'date'                => $entry->journal && $entry->journal->date ? $entry->journal->date->toDateString() : '',
-                'reference_number'    => $entry->journal ? $entry->journal->reference_number : '',
+                'number'              => $refNumber,
+                'reference_number'    => $refNumber,
                 'type'                => $entry->journal ? $entry->journal->type : '',
                 'description'         => $entry->journal ? $entry->journal->description : '',
+                'memo'                => $entry->memo,
+                'in'                  => $debit,
+                'out'                 => $credit,
                 'debit_usd'           => $debit,   // وارد للصندوق
                 'credit_usd'          => $credit,  // صادر من الصندوق
+                'amount'              => $debit > 0 ? $debit : $credit,
+                'running_balance'     => round($runningBalance, 2),
                 'source_type'         => $sourceType,
                 'source_id'           => $sourceId,
                 'journal_id'          => $entry->journal ? $entry->journal->id : null,
@@ -187,13 +231,18 @@ class ReportService
         })->values();
 
         return [
-            'safe'    => ['id' => $safe->id, 'name' => $safe->name, 'currency' => $safe->currency],
-            'period'  => ['from' => $from, 'to' => $to],
-            'entries' => $rows,
-            'totals'  => [
-                'total_in_usd'    => $totalInUsd,
-                'total_out_usd'   => $totalOutUsd,
-                'net_balance_usd' => $totalInUsd - $totalOutUsd,
+            'safe'             => ['id' => $safe->id, 'name' => $safe->name, 'currency' => $safe->currency],
+            'period'           => ['from' => $from, 'to' => $to],
+            'opening_balance'  => round($openingBalance, 2),
+            'total_in'         => round($totalIn, 2),
+            'total_out'        => round($totalOut, 2),
+            'closing_balance'  => round($runningBalance, 2),
+            'movements'        => $rows,
+            'entries'          => $rows,
+            'totals'           => [
+                'total_in'        => round($totalIn, 2),
+                'total_out'       => round($totalOut, 2),
+                'net_balance'     => round($totalIn - $totalOut, 2),
             ],
         ];
     }
