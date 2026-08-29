@@ -39,17 +39,10 @@ class PayrollService
     /**
      * Calculate fixed or hybrid salary base.
      */
-    public function calculateFixedSalary(StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, int $totalDaysInPeriod, Carbon $staffStartDate): float
+    public function calculateFixedSalary(StaffContract $contract): float
     {
         if (!in_array($contract->employment_type, ['fixed_salary', 'hybrid'])) {
             return 0;
-        }
-
-        if ($staffStartDate->greaterThan($periodStart)) {
-            $daysWorked = (int) $staffStartDate->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1;
-            if ($daysWorked < 0) $daysWorked = 0;
-            if ($daysWorked > $totalDaysInPeriod) $daysWorked = $totalDaysInPeriod;
-            return ($contract->base_salary / $totalDaysInPeriod) * $daysWorked;
         }
 
         return (float) ($contract->base_salary ?? 0);
@@ -57,11 +50,12 @@ class PayrollService
 
     /**
      * Calculate commission pay based on subscriptions.
+     * Returns an array with ['amount' => float, 'subscribers_count' => int]
      */
-    public function calculateCommissionPay(int $staffId, StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, BranchSetting $branchSetting, ?Staff $staff = null): float
+    public function calculateCommissionPay(int $staffId, StaffContract $contract, Carbon $periodStart, Carbon $periodEnd, BranchSetting $branchSetting, ?Staff $staff = null): array
     {
         if (!in_array($contract->employment_type, ['commission_based', 'hybrid'])) {
-            return 0;
+            return ['amount' => 0.0, 'subscribers_count' => 0];
         }
 
         $rate = $contract->commission_rate;
@@ -71,10 +65,11 @@ class PayrollService
         }
 
         if ($rate <= 0) {
-            return 0;
+            return ['amount' => 0.0, 'subscribers_count' => 0];
         }
 
         $commissionPay = 0;
+        $subscriberMemberIds = [];
 
         $subscriptions = PlayerSubscription::whereHas('plan.planActivities.staffActivity', function ($q) use ($staffId) {
                 $q->where('staff_id', $staffId);
@@ -99,11 +94,15 @@ class PayrollService
 
                 if ($validStatus) {
                     $commissionPay += ($sub->total_amount * ($rate / 100));
+                    $subscriberMemberIds[] = $sub->member_id;
                 }
             }
         }
 
-        return $commissionPay;
+        return [
+            'amount' => (float) $commissionPay,
+            'subscribers_count' => count(array_unique($subscriberMemberIds)),
+        ];
     }
 
     /**
@@ -128,7 +127,7 @@ class PayrollService
         }
 
         $periodEnd = clone $today;
-        $periodEnd->setDay($branchSetting->payroll_end_day)->subDay()->endOfDay();
+        $periodEnd->setDay($branchSetting->payroll_end_day)->endOfDay();
         
         $periodStart = clone $today;
         $periodStart->setDay($branchSetting->payroll_start_day)->startOfDay();
@@ -150,8 +149,7 @@ class PayrollService
                 $q->where('branch_id', $branchId);
             })->with(['activeContract', 'person', 'coachDetail'])->get();
 
-        $totalDaysInPeriod = (int) $periodStart->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1;
-        if ($totalDaysInPeriod <= 0) $totalDaysInPeriod = 1;
+        $commissionPeriodEnd = $periodEnd->copy()->subDay()->endOfDay();
 
         $payslipsData = [];
         $staffCount = 0;
@@ -160,9 +158,10 @@ class PayrollService
             $contract = $staff->activeContract;
             if (!$contract) continue;
 
-            $staffStartDate = Carbon::parse($staff->start_date);
-            $basePay = $this->calculateFixedSalary($contract, $periodStart, $periodEnd, $totalDaysInPeriod, $staffStartDate);
-            $commissionPay = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting, $staff);
+            $basePay = $this->calculateFixedSalary($contract);
+            $commissionResult = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $commissionPeriodEnd, $branchSetting, $staff);
+            $commissionPay = $commissionResult['amount'];
+            $subscribersCount = $commissionResult['subscribers_count'];
 
 
             $payslipsData[] = [
@@ -170,6 +169,7 @@ class PayrollService
                 'staff_name' => $staff->person?->fullName ?? 'Unknown',
                 'base_pay' => round($basePay, 2),
                 'commission_pay' => round($commissionPay, 2),
+                'subscribers_count' => $subscribersCount,
                 'deductions' => 0, // Fallbacks for frontend
                 'bonuses' => 0,    // Fallbacks for frontend
                 'net_pay' => round($basePay + $commissionPay, 2),
