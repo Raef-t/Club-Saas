@@ -27,10 +27,93 @@ class SubscriptionService
     }
 
     /**
+     * Scan and transition active subscriptions to finished if their end_date has passed or sessions have run out.
+     */
+    public function syncExpiredSubscriptions(): void
+    {
+        $today = now()->toDateString();
+
+        // 1. Subscriptions where end_date has passed (< today)
+        $expiredByDate = PlayerSubscription::with('plan')
+            ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $today)
+            ->get();
+
+        foreach ($expiredByDate as $sub) {
+            $sub->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
+            if ($sub->plan) {
+                $this->decrementPlanSubscribers($sub->plan);
+            }
+        }
+
+        // 2. Subscriptions where all sessions are fully consumed (no unlimited items and all sessions_consumed >= sessions_allocated)
+        $expiredBySessions = PlayerSubscription::with(['items', 'plan'])
+            ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+            ->whereHas('items')
+            ->whereDoesntHave('items', function ($q) {
+                $q->where('is_unlimited', true)
+                  ->orWhereRaw('sessions_consumed < sessions_allocated');
+            })
+            ->get();
+
+        foreach ($expiredBySessions as $sub) {
+            $sub->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
+            if ($sub->plan) {
+                $this->decrementPlanSubscribers($sub->plan);
+            }
+        }
+    }
+
+    /**
+     * Check and sync status for a single subscription instance if it has expired by date or sessions.
+     */
+    public function syncSingleSubscriptionStatus(PlayerSubscription $subscription): PlayerSubscription
+    {
+        $currentStatus = $subscription->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
+            ? $subscription->status->value
+            : (string) $subscription->status;
+
+        // Only automatically finish active subscriptions (leave terminated/frozen alone)
+        if ($currentStatus !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value) {
+            return $subscription;
+        }
+
+        $today = now()->toDateString();
+        $isDateExpired = !empty($subscription->end_date) && Carbon::parse($subscription->end_date)->toDateString() < $today;
+
+        $subscription->loadMissing(['items', 'plan']);
+
+        $isSessionsExhausted = false;
+        if ($subscription->items->isNotEmpty()) {
+            $hasUnlimited = $subscription->items->contains('is_unlimited', true);
+            $hasRemaining = $subscription->items->contains(function ($item) {
+                return $item->sessions_consumed < $item->sessions_allocated;
+            });
+
+            if (!$hasUnlimited && !$hasRemaining) {
+                $isSessionsExhausted = true;
+            }
+        }
+
+        if ($isDateExpired || $isSessionsExhausted) {
+            $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
+            if ($subscription->plan) {
+                $this->decrementPlanSubscribers($subscription->plan);
+            }
+            $subscription->refresh();
+        }
+
+        return $subscription;
+    }
+
+    /**
      * Get all player subscriptions with resolved Member DTOs.
      */
     public function getAllSubscriptions(array $filters = [])
     {
+        $this->syncExpiredSubscriptions();
+
         $query = PlayerSubscription::query()->with([
             'creator.person',
             'plan.planActivities.staffActivity.activity',
@@ -89,6 +172,7 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($id);
         if ($subscription) {
+            $subscription = $this->syncSingleSubscriptionStatus($subscription);
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
         }
         return $subscription;
@@ -879,6 +963,9 @@ class SubscriptionService
 
             $oldPaidAmount = (float) $subscription->paid_amount;
             $oldTotalAmount = (float) $subscription->total_amount;
+            $oldStatus = $subscription->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
+                ? $subscription->status->value
+                : (string) $subscription->status;
 
             // 1. Calculate new total amount if plan_id or offer_id changes
             if (!empty($data['plan_id']) && $data['plan_id'] != $subscription->plan_id) {
@@ -898,11 +985,50 @@ class SubscriptionService
             $remainingAmount = max(0, $totalAmount - $paidAmount);
             $data['remaining_amount'] = $remainingAmount;
 
-            // 3. Update subscription model
+            // 3. Status determination based on dates and sessions
+            $today = now()->toDateString();
+            $effectiveEndDate = array_key_exists('end_date', $data)
+                ? ($data['end_date'] ? Carbon::parse($data['end_date'])->toDateString() : null)
+                : ($subscription->end_date ? Carbon::parse($subscription->end_date)->toDateString() : null);
+
+            $isDateExpired = !empty($effectiveEndDate) && $effectiveEndDate < $today;
+
+            $subscription->loadMissing(['items', 'plan']);
+            $isSessionsExhausted = false;
+            if ($subscription->items->isNotEmpty()) {
+                $hasUnlimited = $subscription->items->contains('is_unlimited', true);
+                $hasRemaining = $subscription->items->contains(function ($item) {
+                    return $item->sessions_consumed < $item->sessions_allocated;
+                });
+                if (!$hasUnlimited && !$hasRemaining) {
+                    $isSessionsExhausted = true;
+                }
+            }
+
+            if ($isDateExpired || $isSessionsExhausted) {
+                $data['status'] = \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value;
+            }
+
+            // 4. Update subscription model
             $subscription = $this->subscriptionRepository->update($id, $data);
             $subscription->refresh();
 
-            // 4. Synchronize linked Invoice
+            $newStatus = $subscription->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
+                ? $subscription->status->value
+                : (string) $subscription->status;
+
+            // Manage plan subscriber count if status changed
+            if ($oldStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value && $newStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value) {
+                if ($subscription->plan) {
+                    $this->decrementPlanSubscribers($subscription->plan);
+                }
+            } elseif ($oldStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value && $newStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value) {
+                if ($subscription->plan) {
+                    $this->incrementPlanSubscribers($subscription->plan);
+                }
+            }
+
+            // 5. Synchronize linked Invoice
             $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
             $branchId = $memberDTO->branchId;
 

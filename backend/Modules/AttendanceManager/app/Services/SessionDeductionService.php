@@ -243,6 +243,8 @@ class SessionDeductionService
 
             $deductedItem = $this->decrementSessionsConsumed($items);
 
+            $this->checkAndFinishSubscriptionIfExhausted($subscription->id, $subscription->plan_id);
+
             $planName = DB::table('subscription_plans')->where('id', $subscription->plan_id)->value('name') ?? 'اشتراك';
 
             \Modules\AttendanceManager\Models\AttendanceConsumption::create([
@@ -320,6 +322,8 @@ class SessionDeductionService
                 $this->validateRemainingSessions($items);
 
                 $deductedItem = $this->decrementSessionsConsumed($items);
+
+                $this->checkAndFinishSubscriptionIfExhausted($subscription->id, $subscription->plan_id);
 
                 \Modules\AttendanceManager\Models\AttendanceConsumption::create([
                     'attendance_id' => $attendance->id,
@@ -633,6 +637,8 @@ class SessionDeductionService
                 }
 
                 $consumption->delete();
+
+                $this->restoreSubscriptionIfActiveCandidate($consumption->player_subscription_id);
             }
 
             // Check if any consumptions remain for this attendance
@@ -731,6 +737,59 @@ class SessionDeductionService
                 'user_ids' => [$userId],
                 'sender_type' => 'system'
             ]);
+        }
+    }
+
+    private function checkAndFinishSubscriptionIfExhausted(int $subscriptionId, ?int $planId = null): void
+    {
+        $items = DB::table('player_subscription_items')
+            ->where('player_subscription_id', $subscriptionId)
+            ->whereNull('deleted_at')
+            ->get();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $hasUnlimited = $items->contains(fn($i) => (bool) $i->is_unlimited);
+        $hasRemaining = $items->contains(fn($i) => (int) $i->sessions_consumed < (int) $i->sessions_allocated);
+
+        if (!$hasUnlimited && !$hasRemaining) {
+            DB::table('player_subscriptions')
+                ->where('id', $subscriptionId)
+                ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                ->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value]);
+
+            if ($planId) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($planId);
+                if ($plan) {
+                    app(\Modules\SubscriptionManager\Services\SubscriptionService::class)->decrementPlanSubscribers($plan);
+                }
+            }
+        }
+    }
+
+    private function restoreSubscriptionIfActiveCandidate(int $subscriptionId): void
+    {
+        $sub = DB::table('player_subscriptions')->where('id', $subscriptionId)->first();
+        if (!$sub || $sub->status !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value) {
+            return;
+        }
+
+        $today = now()->toDateString();
+        $dateValid = empty($sub->end_date) || \Carbon\Carbon::parse($sub->end_date)->toDateString() >= $today;
+
+        if ($dateValid) {
+            DB::table('player_subscriptions')
+                ->where('id', $subscriptionId)
+                ->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value]);
+
+            if ($sub->plan_id) {
+                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($sub->plan_id);
+                if ($plan) {
+                    app(\Modules\SubscriptionManager\Services\SubscriptionService::class)->incrementPlanSubscribers($plan);
+                }
+            }
         }
     }
 }

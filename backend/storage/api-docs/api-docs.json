@@ -1351,6 +1351,82 @@
                 ]
             }
         },
+        "/accounting/journals/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Accounting - القيود اليومية العامة"
+                ],
+                "summary": "❌ إلغاء سند قيد مالي",
+                "description": "يقوم بإلغاء سند القيد المالي المحدد (سواء كان مسودة أو مرحلاً عبر قيد عكسي).",
+                "operationId": "b3a92cf47196df1b09b20714e7d7761b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف السند المراد إلغاؤه (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "cancellation_reason": {
+                                        "description": "سبب إلغاء السند المحاسبي",
+                                        "type": "string",
+                                        "example": "تم إلغاء السند لوجود خطأ في الإدخال"
+                                    },
+                                    "reason": {
+                                        "description": "سبب بديل للإلغاء",
+                                        "type": "string",
+                                        "example": "تم إلغاء السند"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إلغاء السند بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم إلغاء السند بنجاح"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AccJournal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ أثناء محاولة إلغاء السند"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/accounting/partners": {
             "get": {
                 "tags": [
