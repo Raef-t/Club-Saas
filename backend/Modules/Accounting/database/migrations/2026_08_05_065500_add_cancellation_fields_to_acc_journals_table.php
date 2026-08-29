@@ -15,12 +15,16 @@ return new class extends Migration
         });
 
         // Update status ENUM to include 'cancelled'
-        DB::statement("ALTER TABLE acc_journals MODIFY COLUMN status ENUM('draft', 'posted', 'reversed', 'cancelled') DEFAULT 'draft'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE acc_journals MODIFY COLUMN status ENUM('draft', 'posted', 'reversed', 'cancelled') DEFAULT 'draft'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE acc_journals MODIFY COLUMN status ENUM('draft', 'posted', 'reversed') DEFAULT 'draft'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE acc_journals MODIFY COLUMN status ENUM('draft', 'posted', 'reversed') DEFAULT 'draft'");
+        }
 
         Schema::table('acc_journals', function (Blueprint $table) {
             $table->dropColumn(['cancelled_by', 'cancellation_reason']);

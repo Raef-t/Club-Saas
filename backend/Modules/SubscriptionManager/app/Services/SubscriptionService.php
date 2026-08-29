@@ -288,6 +288,38 @@ class SubscriptionService
             // Dispatch SubscriptionCreated event so other modules (like StaffManager) can react
             event(new \Modules\SubscriptionManager\Events\SubscriptionCreated($subscription, $plan));
 
+            // Send notification to member
+            $isRenewal = !empty($options['is_renewal']);
+            $playerName = $memberDTO->person?->fullName ?? 'لاعبنا العزيز';
+            $planName = $plan->name ?? 'الاشتراك';
+            $endDateStr = $endDate ? $endDate->toDateString() : '';
+
+            if ($isRenewal) {
+                $this->sendSubscriptionNotification(
+                    $subscription,
+                    'subscription_renewed',
+                    [
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                        'تاريخ الانتهاء' => $endDateStr,
+                    ],
+                    'تم تجديد اشتراكك بنجاح 🔄',
+                    "أهلاً بك {$playerName}، تم تجديد اشتراكك \"{$planName}\" بنجاح حتى تاريخ {$endDateStr}. نشكر ثقتك واستمرارك معنا!"
+                );
+            } else {
+                $this->sendSubscriptionNotification(
+                    $subscription,
+                    'subscription_created',
+                    [
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                        'تاريخ الانتهاء' => $endDateStr,
+                    ],
+                    'تم تفعيل اشتراكك بنجاح 🎉',
+                    "أهلاً بك {$playerName}، يسعدنا انضمامك! تم تفعيل اشتراكك \"{$planName}\" بنجاح حتى تاريخ {$endDateStr}. نتمنى لك تدريباً ممتعاً وموفقاً!"
+                );
+            }
+
             return $subscription;
         });
 
@@ -324,34 +356,24 @@ class SubscriptionService
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
-            // إرسال إشعار التجميد
-            $userId = $memberModel?->person?->user?->id;
+            // Send freeze notification
+            $playerName = $memberModel?->person?->full_name ?? 'لاعبنا العزيز';
+            $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
+            $startCarbon = \Carbon\Carbon::parse($startDate);
+            $startDay = $startCarbon->locale('ar')->translatedFormat('l');
 
-            if ($userId) {
-                $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_frozen')->first();
-                if ($template) {
-                    $playerName = $memberModel?->person?->full_name ?? 'لاعبنا العزيز';
-                    $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
-
-                    $startCarbon = \Carbon\Carbon::parse($startDate);
-
-                    $startDay = $startCarbon->locale('ar')->translatedFormat('l');
-
-                    $body = $template->parseBody([
-                        'اسم اللاعب' => $playerName,
-                        'اسم الاشتراك' => $planName,
-                        'تاريخ البداية' => $startDate,
-                        'يوم البداية' => $startDay,
-                    ]);
-
-                    app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
-                        'title' => $template->subject ?? 'تم تجميد اشتراكك مؤقتاً ❄️',
-                        'body' => $body,
-                        'user_ids' => [$userId],
-                        'sender_type' => 'system'
-                    ]);
-                }
-            }
+            $this->sendSubscriptionNotification(
+                $subscription,
+                'subscription_frozen',
+                [
+                    'اسم اللاعب' => $playerName,
+                    'اسم الاشتراك' => $planName,
+                    'تاريخ البداية' => $startDate,
+                    'يوم البداية' => $startDay,
+                ],
+                'تم تجميد اشتراكك مؤقتاً ❄️',
+                "أهلاً بك {$playerName}، نعلمك بأنه تم تجميد اشتراكك \"{$planName}\" اعتباراً من تاريخ {$startDate} الموافق ليوم {$startDay}. نتمنى لك أوقاتاً سعيدة ونراك قريباً!"
+            );
 
             return $subscription;
         });
@@ -376,6 +398,7 @@ class SubscriptionService
 
             // coach_id is no longer stored per item; it is derived from the plan's planActivities
             $options['start_date'] = $startDate->toDateString();
+            $options['is_renewal'] = true;
 
             return $this->subscribeMember($oldSubscription->member_id, $plan->id, $options);
         });
@@ -476,6 +499,22 @@ class SubscriptionService
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
+            $playerName = $memberDTO->person?->fullName ?? 'لاعبنا العزيز';
+            $planName = $subscription->plan?->name ?? 'الاشتراك';
+
+            $this->sendSubscriptionNotification(
+                $subscription,
+                'subscription_payment_recorded',
+                [
+                    'اسم اللاعب' => $playerName,
+                    'اسم الاشتراك' => $planName,
+                    'المبلغ' => number_format($amount, 2),
+                    'المبلغ المتبقي' => number_format($newRemainingAmount, 2),
+                ],
+                'تم تسجيل دفعة مالية 💳',
+                "أهلاً بك {$playerName}، تم استلام دفعة مالية بقيمة " . number_format($amount, 2) . " لاشتراكك \"{$planName}\". المبلغ المتبقي: " . number_format($newRemainingAmount, 2) . "."
+            );
+
             return $subscription;
         });
     }
@@ -504,6 +543,23 @@ class SubscriptionService
 
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
+
+            $memberModel = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+            $playerName = $memberModel?->person?->full_name ?? 'لاعبنا العزيز';
+            $planName = $subscription->plan?->name ?? 'الاشتراك';
+            $reasonText = $reason ? " (السبب: {$reason})" : "";
+
+            $this->sendSubscriptionNotification(
+                $subscription,
+                'subscription_cancelled',
+                [
+                    'اسم اللاعب' => $playerName,
+                    'اسم الاشتراك' => $planName,
+                    'السبب' => $reasonText,
+                ],
+                'تم إلغاء اشتراكك ❌',
+                "أهلاً بك {$playerName}، نود إعلامك بأنه تم إلغاء اشتراكك \"{$planName}\".{$reasonText}"
+            );
 
             return $subscription;
         });
@@ -632,36 +688,24 @@ class SubscriptionService
     private function sendUnfreezeNotification(PlayerSubscription $subscription): void
     {
         $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
-        $userId = $member?->person?->user?->id;
-
-        if (!$userId) {
-            return;
-        }
-
-        $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', 'subscription_unfrozen')->first();
-        if (!$template) {
-            return;
-        }
-
         $playerName = $member?->person?->full_name ?? 'لاعبنا العزيز';
         $planName = $subscription->plan ? $subscription->plan->name : 'الاشتراك';
 
         $endDate = now();
         $endDay = $endDate->locale('ar')->translatedFormat('l');
 
-        $body = $template->parseBody([
-            'اسم اللاعب' => $playerName,
-            'اسم الاشتراك' => $planName,
-            'تاريخ النهاية' => $endDate->toDateString(),
-            'يوم النهاية' => $endDay,
-        ]);
-
-        app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
-            'title' => $template->subject ?? 'انتهاء فترة التجميد وتفعيل الاشتراك 🟢',
-            'body' => $body,
-            'user_ids' => [$userId],
-            'sender_type' => 'system'
-        ]);
+        $this->sendSubscriptionNotification(
+            $subscription,
+            'subscription_unfrozen',
+            [
+                'اسم اللاعب' => $playerName,
+                'اسم الاشتراك' => $planName,
+                'تاريخ النهاية' => $endDate->toDateString(),
+                'يوم النهاية' => $endDay,
+            ],
+            'انتهاء فترة التجميد وتفعيل الاشتراك 🟢',
+            "أهلاً بك {$playerName}، نود إعلامك بانتهاء فترة التجميد الخاصة باشتراكك \"{$planName}\" بتاريخ {$endDate->toDateString()} الموافق ليوم {$endDay} وتم تفعيله بنجاح. نحن بانتظارك لمواصلة التمارين وتحقيق أهدافك معنا!"
+        );
     }
 
     /**
@@ -828,6 +872,23 @@ class SubscriptionService
 
             $invoice->load('payments');
 
+            if ($createdSubscriptions->isNotEmpty()) {
+                $firstSub = $createdSubscriptions->first();
+                $playerName = $memberDTO->fullName ?? 'لاعبنا العزيز';
+                $offerName = $offer->name ?? 'العرض';
+
+                $this->sendSubscriptionNotification(
+                    $firstSub,
+                    'subscription_offer_created',
+                    [
+                        'اسم اللاعب' => $playerName,
+                        'اسم العرض' => $offerName,
+                    ],
+                    'تم الاشتراك في العرض بنجاح 🎉',
+                    "أهلاً بك {$playerName}، تم تفعيل اشتراكك في عرض \"{$offerName}\" بنجاح. نتمنى لك تجربة رياضية مميزة!"
+                );
+            }
+
             return [
                 'invoice' => $invoice,
                 'subscriptions' => $createdSubscriptions
@@ -958,5 +1019,136 @@ class SubscriptionService
 
             return $subscription;
         });
+    }
+
+    /**
+     * Delete (soft-delete) a player subscription and send notification.
+     */
+    public function deleteSubscription(int $id, bool $isRefunded = false, ?string $reason = null): bool
+    {
+        return DB::transaction(function () use ($id, $isRefunded, $reason) {
+            $subscription = PlayerSubscription::with(['plan', 'member.person.user', 'revenueSplit'])->findOrFail($id);
+
+            if ($reason) {
+                $subscription->update(['reason' => $reason]);
+            }
+
+            // If price was refunded to player, soft delete the revenue split record as well
+            if ($isRefunded && $subscription->revenueSplit) {
+                $subscription->revenueSplit->delete();
+            }
+
+            $subscription->delete();
+
+            // Send notification to member
+            $playerName = $subscription->member?->person?->full_name ?? 'لاعبنا العزيز';
+            $planName = $subscription->plan?->name ?? 'الاشتراك';
+            $reasonText = $reason ? " (السبب: {$reason})" : "";
+
+            if ($isRefunded) {
+                $this->sendSubscriptionNotification(
+                    $subscription,
+                    'subscription_deleted_refunded',
+                    [
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                        'السبب' => $reasonText,
+                    ],
+                    'تم حذف اشتراكك واسترداد المبلغ 💰',
+                    "أهلاً بك {$playerName}، نود إعلامك بأنه تم حذف اشتراكك \"{$planName}\" واسترداد المبلغ بنجاح.{$reasonText}"
+                );
+            } else {
+                $this->sendSubscriptionNotification(
+                    $subscription,
+                    'subscription_deleted',
+                    [
+                        'اسم اللاعب' => $playerName,
+                        'اسم الاشتراك' => $planName,
+                        'السبب' => $reasonText,
+                    ],
+                    'تم حذف اشتراكك 🗑️',
+                    "أهلاً بك {$playerName}، نود إعلامك بأنه تم حذف اشتراكك \"{$planName}\".{$reasonText}"
+                );
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Restore a soft-deleted player subscription and send notification.
+     */
+    public function restoreSubscription(int $id): PlayerSubscription
+    {
+        return DB::transaction(function () use ($id) {
+            $subscription = PlayerSubscription::onlyTrashed()->with(['plan', 'member.person.user', 'revenueSplit'])->findOrFail($id);
+
+            // Restore revenue split if it was soft-deleted
+            $subscription->revenueSplit()->onlyTrashed()->restore();
+
+            $subscription->restore();
+
+            $playerName = $subscription->member?->person?->full_name ?? 'لاعبنا العزيز';
+            $planName = $subscription->plan?->name ?? 'الاشتراك';
+
+            $this->sendSubscriptionNotification(
+                $subscription,
+                'subscription_restored',
+                [
+                    'اسم اللاعب' => $playerName,
+                    'اسم الاشتراك' => $planName,
+                ],
+                'تم استرجاع اشتراكك ♻️',
+                "أهلاً بك {$playerName}، تم استرجاع وتفعيل اشتراكك \"{$planName}\" بنجاح. نتمنى لك تدريباً ممتعاً!"
+            );
+
+            return $subscription;
+        });
+    }
+
+    /**
+     * Send notification to member's user account using template or fallback.
+     */
+    public function sendSubscriptionNotification(
+        PlayerSubscription $subscription,
+        string $templateKey,
+        array $variables,
+        string $fallbackTitle,
+        string $fallbackBody
+    ): void {
+        try {
+            $member = \Modules\MemberManager\Models\Member::with('person.user')->find($subscription->member_id);
+            $userId = $member?->person?->user?->id;
+            if (!$userId) {
+                return;
+            }
+
+            if (empty($variables['اسم اللاعب'])) {
+                $variables['اسم اللاعب'] = $member?->person?->full_name ?? 'لاعبنا العزيز';
+            }
+
+            $template = \Modules\NotificationManager\Models\NotificationTemplate::where('system_key', $templateKey)->first();
+
+            if ($template && $template->is_active) {
+                $title = $template->subject ?? $fallbackTitle;
+                $body = $template->parseBody($variables);
+            } else {
+                $title = $fallbackTitle;
+                $body = $fallbackBody;
+                foreach ($variables as $varKey => $varVal) {
+                    $body = str_replace('{' . $varKey . '}', (string) $varVal, $body);
+                    $title = str_replace('{' . $varKey . '}', (string) $varVal, $title);
+                }
+            }
+
+            app(\Modules\NotificationManager\Services\NotificationService::class)->createNotification([
+                'title' => $title,
+                'body' => $body,
+                'user_ids' => [$userId],
+                'sender_type' => 'system'
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send subscription notification [{$templateKey}]: " . $e->getMessage());
+        }
     }
 }

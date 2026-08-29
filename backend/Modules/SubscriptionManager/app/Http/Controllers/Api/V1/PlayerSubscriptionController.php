@@ -517,21 +517,10 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود')]
     public function destroy(Request $request, int $id)
     {
-        $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::findOrFail($id);
-
         $isRefunded = filter_var($request->input('is_refunded', $request->input('refunded', false)), FILTER_VALIDATE_BOOLEAN);
         $reason = $request->input('reason');
 
-        if ($reason) {
-            $subscription->update(['reason' => $reason]);
-        }
-
-        // If price was refunded to player, soft delete the revenue split record as well
-        if ($isRefunded && $subscription->revenueSplit) {
-            $subscription->revenueSplit->delete();
-        }
-
-        $subscription->delete();
+        $this->subscriptionService->deleteSubscription($id, $isRefunded, $reason);
 
         $message = $isRefunded 
             ? __('Player subscription deleted and revenue split record removed due to refund.') 
@@ -552,12 +541,7 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود في سلة المحذوفات')]
     public function restore(int $id)
     {
-        $subscription = \Modules\SubscriptionManager\Models\PlayerSubscription::onlyTrashed()->findOrFail($id);
-        
-        // Restore revenue split if it was soft-deleted
-        $subscription->revenueSplit()->onlyTrashed()->restore();
-
-        $subscription->restore();
+        $this->subscriptionService->restoreSubscription($id);
         return $this->successResponse(null, __('Player subscription restored successfully'));
     }
 }
