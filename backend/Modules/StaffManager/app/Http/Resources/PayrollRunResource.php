@@ -10,6 +10,7 @@ class PayrollRunResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'branch_id' => $this->branch_id,
             'period_start' => $this->period_start?->toDateString(),
             'period_end' => $this->period_end?->toDateString(),
             'status' => $this->status,

@@ -129,12 +129,13 @@ class PayrollService
         $periodEnd = (clone $today)->setDay($branchSetting->payroll_end_day)->endOfDay();
         $periodStart = (clone $periodEnd)->subMonthNoOverflow()->startOfDay();
 
-        $existingRun = PayrollRun::where('period_start', $periodStart->toDateString())
+        $existingRun = PayrollRun::where('branch_id', $branchId)
+            ->where('period_start', $periodStart->toDateString())
             ->where('period_end', $periodEnd->toDateString())
             ->first();
 
         if ($existingRun) {
-            throw new Exception("تم توليد وتثبيت رواتب هذه الفترة مسبقاً ولا يمكن إعادة التوليد.", 409);
+            throw new Exception("تم توليد وتثبيت رواتب هذه الفترة مسبقاً لهذا الفرع ولا يمكن إعادة التوليد.", 409);
         }
 
         $staffMembers = Staff::where('is_active', true)
@@ -206,16 +207,22 @@ class PayrollService
     public function confirmPayroll(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $existingRun = PayrollRun::where('period_start', $data['period_start'])
-                ->where('period_end', $data['period_end'])
-                ->lockForUpdate()
-                ->first();
+            $branchId = $data['branch_id'] ?? null;
+            $existingRunQuery = PayrollRun::where('period_start', $data['period_start'])
+                ->where('period_end', $data['period_end']);
+
+            if ($branchId) {
+                $existingRunQuery->where('branch_id', $branchId);
+            }
+
+            $existingRun = $existingRunQuery->lockForUpdate()->first();
 
             if ($existingRun) {
-                throw new Exception("تم تثبيت رواتب هذه الفترة مسبقاً.", 409);
+                throw new Exception("تم تثبيت رواتب هذه الفترة مسبقاً لهذا الفرع.", 409);
             }
 
             $payrollRun = PayrollRun::create([
+                'branch_id' => $branchId,
                 'period_start' => $data['period_start'],
                 'period_end' => $data['period_end'],
                 'status' => 'draft',
