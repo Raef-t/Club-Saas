@@ -39,8 +39,8 @@ import {
   getEmploymentTypeForWorkTypes,
 } from "@/app/management/coaches/coachFormUtils";
 import {
-  formatCoachCommission,
   getCoachBranchNames,
+  getCoachCommissionItems,
   getCoachCompensationVisibility,
   getCoachActivityPlanKey,
   getUnassignedActivities,
@@ -250,16 +250,20 @@ export default function CoachesClient({ initialData }) {
         render: (_, coach) => {
           const compensation = getCoachCompensationVisibility(coach);
           const salary = formatMoney(coach.base_salary);
-          const commission = formatCoachCommission(
-            coach.details?.default_commission_rate ?? coach.default_commission_rate,
+          const commissionItems = getCoachCommissionItems(coach);
+          const commission = (
+            <div className="flex flex-col items-center gap-0.5" dir="rtl">
+              {commissionItems.map((item) => (
+                <span key={item.key} className="whitespace-nowrap">
+                  {commissionItems.length > 1 ? `${item.shortLabel} ` : ""}
+                  <span dir="ltr">{item.value}</span>
+                </span>
+              ))}
+            </div>
           );
 
           if (compensation.showCommission && !compensation.showSalary) {
-            return (
-              <span className="text-xs font-semibold text-app-green" dir="ltr">
-                {commission}
-              </span>
-            );
+            return <div className="text-xs font-semibold text-app-green">{commission}</div>;
           }
 
           if (compensation.showSalary && compensation.showCommission) {
@@ -267,7 +271,7 @@ export default function CoachesClient({ initialData }) {
               <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-app-green">
                 <span>{salary}</span>
                 <span className="text-app-muted-light">+</span>
-                <span dir="ltr">{commission}</span>
+                {commission}
               </div>
             );
           }
@@ -406,7 +410,6 @@ export default function CoachesClient({ initialData }) {
                 type="search"
               />
             </label>
-
 
             <Dropdown
               className="min-w-36 flex-1 bg-app-card-soft border-app-line text-white"
