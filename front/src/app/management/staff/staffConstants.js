@@ -38,6 +38,16 @@ export const STAFF_EMPLOYMENT_OPTIONS = [
   { value: "hybrid", label: STAFF_EMPLOYMENT_LABELS.hybrid },
 ];
 
+export const STAFF_WORK_STATUS_LABELS = {
+  active: "نشط",
+  suspended: "غير نشط",
+  on_leave: "إجازة",
+};
+
+export const STAFF_WORK_STATUS_OPTIONS = Object.entries(STAFF_WORK_STATUS_LABELS).map(
+  ([value, label]) => ({ value, label }),
+);
+
 export const STAFF_GENDER_LABELS = {
   male: "ذكر",
   female: "أنثى",

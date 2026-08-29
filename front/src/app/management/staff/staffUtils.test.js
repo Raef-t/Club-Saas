@@ -5,6 +5,7 @@ import {
   createStaffProfileUpdateBody,
   getStaffCollection,
   getStaffEditHref,
+  getStaffWorkStatusMeta,
   isManagerStaffRole,
 } from "./staffUtils";
 
@@ -49,7 +50,7 @@ describe("staff utilities", () => {
     );
   });
 
-  it("maps staff names, branches, and shift identifiers into edit values", () => {
+  it("maps staff names, branches, and attendance times into edit values", () => {
     const branches = [{ id: 5, name: "تكنو جيم بنات" }];
     const values = createStaffInitialValues({
       branches,
@@ -60,6 +61,8 @@ describe("staff utilities", () => {
         is_active: true,
         work_status: "suspended",
         start_date: "2026-02-16",
+        start_time: "08:30:00",
+        end_time: "16:45:00",
         branch_name: ["تكنو جيم بنات"],
         shifts: [{ branch_shift_id: 12, branch_shift: { id: 12, branch_id: 5 } }],
         person: {
@@ -75,10 +78,20 @@ describe("staff utilities", () => {
       first_name: "يمان",
       last_name: "عبدالله",
       branch_ids: [5],
-      shifts: [12],
+      start_time: "08:30",
+      end_time: "16:45",
       base_salary: "4500",
       work_status: "suspended",
     });
+    expect(values).not.toHaveProperty("shifts");
+  });
+
+  it("labels a suspended staff member as inactive without changing the API value", () => {
+    expect(getStaffWorkStatusMeta("suspended")).toMatchObject({
+      value: "suspended",
+      label: "غير نشط",
+    });
+    expect(getStaffWorkStatusMeta({ role: "coach", work_status: "suspended" }).label).toBe("موقوف");
   });
 
   it("keeps required employment fields in personal profile updates", () => {

@@ -6,20 +6,19 @@ import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
+import TimePickerSmart from "@/components/forms/TimePickerSmart";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
-import { useGetBranchSettingsQuery, useLazyGetBranchShiftsQuery } from "@/lib/api/branchesApi";
+import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { staffFormSchema, staffUpdateFormSchema } from "@/lib/validations/staffSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
-import { WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
-  SHIFT_GENDER_LABELS,
   STAFF_EMPLOYMENT_OPTIONS,
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
+  STAFF_WORK_STATUS_OPTIONS,
 } from "./staffConstants";
-import { createStaffInitialValues, getStaffCollection, isManagerStaffRole } from "./staffUtils";
+import { createStaffInitialValues } from "./staffUtils";
 
 function StaffTextField({ label, value, onChange, error, placeholder, type = "text", min }) {
   return (
@@ -55,7 +54,6 @@ export default function StaffForm({
   errorMessage = "",
 }) {
   const { selectedBranchId } = useManagementBranch();
-  const { formatTime } = useTimeFormat();
   const [form, setForm] = useState(() => {
     const defaults = createStaffInitialValues({ branches, selectedBranchId });
     return initialValues
@@ -63,17 +61,11 @@ export default function StaffForm({
           ...defaults,
           ...initialValues,
           branch_ids: initialValues.branch_ids || defaults.branch_ids,
-          shifts: initialValues.shifts || [],
         }
       : defaults;
   });
   const [errors, setErrors] = useState({});
-  const [shiftResponses, setShiftResponses] = useState([]);
-  const [isLoadingShifts, setIsLoadingShifts] = useState(false);
-  const [loadBranchShifts] = useLazyGetBranchShiftsQuery();
   const primaryBranchId = form.branch_ids[0];
-  const branchIdsKey = form.branch_ids.join(",");
-  const isManagerRole = isManagerStaffRole(form.role);
   const { data: branchSettingsResponse } = useGetBranchSettingsQuery(primaryBranchId, {
     skip: !primaryBranchId,
   });
@@ -89,56 +81,6 @@ export default function StaffForm({
     );
   }, [branchSettingsResponse, initialValues]);
 
-  useEffect(() => {
-    let active = true;
-
-    if (isManagerRole) {
-      setShiftResponses([]);
-      setIsLoadingShifts(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    const branchIds = branchIdsKey
-      .split(",")
-      .map(Number)
-      .filter((id) => Number.isFinite(id) && id > 0);
-
-    if (!branchIds.length) {
-      setShiftResponses([]);
-      setIsLoadingShifts(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    setIsLoadingShifts(true);
-    Promise.all(
-      branchIds.map((branchId) =>
-        loadBranchShifts(branchId, true)
-          .unwrap()
-          .catch(() => ({ data: [] })),
-      ),
-    ).then((responses) => {
-      if (!active) return;
-      setShiftResponses(responses);
-      setIsLoadingShifts(false);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [branchIdsKey, isManagerRole, loadBranchShifts]);
-
-  const availableShifts = useMemo(() => {
-    const byId = new Map();
-    shiftResponses.forEach((response) => {
-      getStaffCollection(response).forEach((shift) => byId.set(Number(shift.id), shift));
-    });
-    return [...byId.values()];
-  }, [shiftResponses]);
-
   const roleOptions = useMemo(() => {
     if (initialValues?.role === "coach") {
       return [...STAFF_ROLE_OPTIONS, { value: "coach", label: STAFF_ROLE_LABELS.coach }];
@@ -147,22 +89,14 @@ export default function StaffForm({
   }, [initialValues?.role]);
 
   function updateField(field, value) {
-    setForm((current) => {
-      const next = { ...current, [field]: value };
-      if (field === "branch_ids") next.shifts = [];
-      if (field === "role" && isManagerStaffRole(value)) next.shifts = [];
-      return next;
-    });
+    setForm((current) => ({ ...current, [field]: value }));
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
     const schema = initialValues ? staffUpdateFormSchema : staffFormSchema;
-    const result = schema.safeParse({
-      ...form,
-      shifts: isManagerRole ? [] : form.shifts,
-    });
+    const result = schema.safeParse(form);
 
     if (!result.success) {
       const nextErrors = {};
@@ -184,7 +118,6 @@ export default function StaffForm({
       base_salary: Number(result.data.base_salary) || 0,
       address: result.data.address?.trim() || "",
       branch_ids: result.data.branch_ids.map(Number),
-      shifts: result.data.shifts.map(Number),
     });
   }
 
@@ -304,46 +237,32 @@ export default function StaffForm({
         )}
       </div>
 
-      {!isManagerRole && (
-        <div className="block text-right text-sm text-app-muted-light">
-          الورديات / الشفتات المتاحة
-          <div className="mt-2 grid max-h-52 grid-cols-1 gap-3 overflow-y-auto rounded-lg border border-app-line bg-app-card-soft p-3 sm:grid-cols-2">
-            {isLoadingShifts ? (
-              <p className="py-2 text-center text-xs text-app-muted-light sm:col-span-2">
-                جاري تحميل الورديات...
-              </p>
-            ) : availableShifts.length ? (
-              availableShifts.map((shift) => {
-                const id = Number(shift.id);
-                const checked = form.shifts.includes(id);
-                const start = shift.start_time ? formatTime(shift.start_time) : "";
-                const end = shift.end_time ? formatTime(shift.end_time) : "";
-                const gender = SHIFT_GENDER_LABELS[shift.gender_allowed] || "مختلط";
-                const label = `${shift.name || "وردية"} | ${start} - ${end} (${gender})`;
-                return (
-                  <Checkbox
-                    key={shift.id}
-                    label={label}
-                    checked={checked}
-                    onChange={() =>
-                      updateField(
-                        "shifts",
-                        checked
-                          ? form.shifts.filter((shiftId) => shiftId !== id)
-                          : [...form.shifts, id],
-                      )
-                    }
-                  />
-                );
-              })
-            ) : (
-              <p className="py-2 text-center text-xs text-app-muted-light sm:col-span-2">
-                لا توجد ورديات مسجلة للفروع المحددة.
-              </p>
-            )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="block text-right text-sm text-app-muted-light">
+          موعد القدوم
+          <div className="mt-2">
+            <TimePickerSmart
+              value={form.start_time}
+              onChange={(value) => updateField("start_time", value)}
+              placeholder="HH:MM"
+              required={false}
+              error={errors.start_time}
+            />
           </div>
-        </div>
-      )}
+        </label>
+        <label className="block text-right text-sm text-app-muted-light">
+          موعد المغادرة
+          <div className="mt-2">
+            <TimePickerSmart
+              value={form.end_time}
+              onChange={(value) => updateField("end_time", value)}
+              placeholder="HH:MM"
+              required={false}
+              error={errors.end_time}
+            />
+          </div>
+        </label>
+      </div>
 
       <label className="block text-right text-sm text-app-muted-light">
         العنوان
@@ -371,7 +290,7 @@ export default function StaffForm({
           buttonClassName="h-11 bg-app-card-soft"
           value={form.work_status}
           onChange={(value) => updateField("work_status", value)}
-          options={WORK_STATUS_OPTIONS}
+          options={STAFF_WORK_STATUS_OPTIONS}
           error={errors.work_status}
         />
       </label>

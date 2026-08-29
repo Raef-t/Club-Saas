@@ -1,5 +1,11 @@
 import { formatLocalizedName } from "@/lib/utils";
-import { resolveWorkStatus, WORK_STATUSES } from "@/lib/workStatus";
+import {
+  resolveWorkStatus,
+  WORK_STATUSES,
+  WORK_STATUS_CLASSES,
+  WORK_STATUS_LABELS,
+} from "@/lib/workStatus";
+import { STAFF_WORK_STATUS_LABELS } from "./staffConstants";
 
 const MANAGER_STAFF_ROLES = new Set(["admin", "management_admin", "manager"]);
 
@@ -53,6 +59,16 @@ export function buildStaffQueryParams({ branchId, role, gender, workStatus }) {
   return params;
 }
 
+export function getStaffWorkStatusMeta(recordOrStatus) {
+  const value = resolveWorkStatus(recordOrStatus);
+  const isCoach = typeof recordOrStatus === "object" && isCoachStaff(recordOrStatus);
+  return {
+    value,
+    label: isCoach ? WORK_STATUS_LABELS[value] : STAFF_WORK_STATUS_LABELS[value],
+    className: WORK_STATUS_CLASSES[value],
+  };
+}
+
 export function splitStaffName(person = {}) {
   const fullName = String(person.full_name || "").trim();
   const [firstPart = "", ...remainingParts] = fullName.split(/\s+/).filter(Boolean);
@@ -103,20 +119,6 @@ export function getStaffBranchIds(staff, branches = []) {
     .filter((id) => Number.isFinite(id) && id > 0);
 }
 
-export function getStaffShiftIds(staff) {
-  if (!Array.isArray(staff?.shifts)) return [];
-
-  return staff.shifts
-    .map((shift) =>
-      Number(
-        typeof shift === "object"
-          ? shift.branch_shift_id || shift.branch_shift?.id || shift.id
-          : shift,
-      ),
-    )
-    .filter((id) => Number.isFinite(id) && id > 0);
-}
-
 export function createStaffInitialValues({ staff, branches = [], selectedBranchId = "all" } = {}) {
   const defaultBranchId =
     selectedBranchId !== "all" &&
@@ -138,7 +140,8 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
       work_status: "active",
       is_active: true,
       start_date: "",
-      shifts: [],
+      start_time: "",
+      end_time: "",
       address: "",
       branch_ids: defaultBranchId ? [defaultBranchId] : [],
       reason: "",
@@ -158,7 +161,8 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
     work_status: resolveWorkStatus(staff),
     is_active: resolveWorkStatus(staff) === "active",
     start_date: String(staff.start_date || "").split("T")[0],
-    shifts: getStaffShiftIds(staff),
+    start_time: String(staff.start_time || "").slice(0, 5),
+    end_time: String(staff.end_time || "").slice(0, 5),
     address: staff.person?.address || "",
     branch_ids: getStaffBranchIds(staff, branches),
     reason: "",

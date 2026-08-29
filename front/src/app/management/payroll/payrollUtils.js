@@ -47,7 +47,13 @@ export function normalizePayslip(payslip) {
     ...payslip,
     base_pay: basePay,
     commission_pay: commissionPay,
-    subscribers_count: Number(payslip?.subscribers_count) || 0,
+    subscribers_count:
+      Number(
+        payslip?.subscribers_count ??
+          payslip?.subscribers_coun ??
+          payslip?.subscriptions_count ??
+          payslip?.subscribers?.length,
+      ) || 0,
     adjustments,
     bonuses: payslip?.bonuses == null ? calculated.bonuses : Number(payslip.bonuses) || 0,
     deductions:

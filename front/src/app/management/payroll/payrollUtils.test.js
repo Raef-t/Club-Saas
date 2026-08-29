@@ -71,4 +71,14 @@ describe("payroll utils", () => {
     expect(getPayslips({ data: { data: [{ id: 1 }] } })).toEqual([{ id: 1 }]);
     expect(getPayrollEndDay({ data: { payroll_end_day: 28 } })).toBe(28);
   });
+
+  it("normalizes the subscriber count aliases returned by saved payslips", () => {
+    const draft = getPayrollDraft({
+      data: {
+        payslips: [{ staff_id: 1, subscribers_coun: 7 }],
+      },
+    });
+
+    expect(draft.payslips[0].subscribers_count).toBe(7);
+  });
 });
