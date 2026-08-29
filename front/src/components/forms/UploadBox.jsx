@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { ArrowUpIcon, TagIcon, TrashIcon } from "@/components/icons/Icons";
-import { resolveClubLogoUrl } from "@/lib/clubBranding";
 
 export function UploadBox({
   label = "المرفقات",
@@ -144,16 +143,13 @@ export function UploadBox({
                   console.error(e);
                 }
               } else if (typeof file === "string") {
-                previewUrl = resolveClubLogoUrl({ logo: file });
-              } else if (file?.url) {
-                previewUrl = resolveClubLogoUrl({ logo: file.url });
                 previewUrl =
-                  file.startsWith("http") || file.startsWith("blob:")
+                  file.startsWith("http") || file.startsWith("blob:") || file.startsWith("data:")
                     ? file
                     : `/${file.replace(/^\//, "")}`;
               } else if (file?.url) {
                 previewUrl =
-                  file.url.startsWith("http") || file.url.startsWith("blob:")
+                  file.url.startsWith("http") || file.url.startsWith("blob:") || file.url.startsWith("data:")
                     ? file.url
                     : `/${file.url.replace(/^\//, "")}`;
               }
