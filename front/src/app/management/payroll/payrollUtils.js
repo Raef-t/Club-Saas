@@ -43,8 +43,15 @@ export function normalizePayslip(payslip) {
     adjustments,
   });
 
+  const branchId = payslip?.branch_id ?? payslip?.branch_ids?.[0] ?? payslip?.staff?.branch_id ?? null;
+  const branchIds = Array.isArray(payslip?.branch_ids) && payslip.branch_ids.length > 0
+    ? payslip.branch_ids
+    : (branchId != null ? [branchId] : []);
+
   return {
     ...payslip,
+    branch_id: branchId,
+    branch_ids: branchIds,
     status: payslip?.status || "pending",
     paid_at: payslip?.paid_at || null,
     salary_payments: payslip?.salary_payments || [],
@@ -73,13 +80,12 @@ export function calculatePayslipTotals(payslip) {
   const deductions = adjustments
     .filter((item) => item.type === "deduction")
     .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const netPay =
-    (Number(payslip?.base_pay) || 0) +
-    (Number(payslip?.commission_pay) || 0) +
-    bonuses -
-    deductions;
 
-  return { bonuses, deductions, netPay };
+  return {
+    bonuses,
+    deductions,
+    netPay: (Number(payslip?.base_pay) || 0) + (Number(payslip?.commission_pay) || 0) + bonuses - deductions,
+  };
 }
 
 export function updateDraftPayslip(payslip, changes) {
@@ -133,9 +139,13 @@ export function getPayslipBranchId(payslip) {
 
 export function filterPayslipsByBranch(payslips, branchId) {
   if (!branchId || branchId === "all") return payslips;
-  const hasBranchInformation = payslips.some((payslip) => getPayslipBranchId(payslip) != null);
-  if (!hasBranchInformation) return payslips;
-  return payslips.filter((payslip) => String(getPayslipBranchId(payslip)) === String(branchId));
+  return payslips.filter((payslip) => {
+    if (Array.isArray(payslip?.branch_ids) && payslip.branch_ids.length > 0) {
+      return payslip.branch_ids.some((id) => String(id) === String(branchId));
+    }
+    const slipBranchId = getPayslipBranchId(payslip);
+    return slipBranchId != null ? String(slipBranchId) === String(branchId) : true;
+  });
 }
 
 export function getPayrollEndDay(settingsResponse) {

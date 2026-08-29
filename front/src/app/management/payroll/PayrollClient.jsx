@@ -61,7 +61,7 @@ export default function PayrollClient() {
     isLoading: isLoadingSaved,
     isFetching: isFetchingSaved,
     refetch: refetchSaved,
-  } = useGetPayslipsQuery();
+  } = useGetPayslipsQuery(branchId ? { branch_id: branchId } : undefined);
   const [generatePayslips, { isLoading: isGenerating }] = useGeneratePayslipsMutation();
   const [updatePayslip, { isLoading: isUpdating }] = useUpdatePayslipMutation();
   const [confirmPayslips, { isLoading: isConfirming }] = useConfirmPayslipsMutation();

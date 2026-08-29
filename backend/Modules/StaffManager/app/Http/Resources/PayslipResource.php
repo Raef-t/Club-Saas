@@ -8,10 +8,17 @@ class PayslipResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $branchIds = $this->staff && $this->staff->relationLoaded('branches')
+            ? $this->staff->branches->pluck('id')->toArray()
+            : [];
+        $primaryBranchId = $branchIds[0] ?? null;
+
         return [
             'id' => $this->id,
             'payroll_run_id' => $this->payroll_run_id,
             'staff_id' => $this->staff_id,
+            'branch_id' => $primaryBranchId,
+            'branch_ids' => $branchIds,
             'staff_name' => $this->staff_name ?? $this->staff?->person?->full_name ?? 'Unknown',
             'is_coach' => $this->staff ? $this->staff->isCoach() : false,
             'staff' => new StaffResource($this->whenLoaded('staff')),

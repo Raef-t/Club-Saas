@@ -43,7 +43,7 @@ class PayslipController extends BaseController
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request) {
-        $query = Payslip::with(['staff.person', 'staff.coachDetail', 'payrollRun', 'adjustments', 'salaryPayments']);
+        $query = Payslip::with(['staff.person', 'staff.coachDetail', 'staff.branches', 'payrollRun', 'adjustments', 'salaryPayments']);
 
         if ($request->filled('staff_id')) {
             $query->where('staff_id', $request->input('staff_id'));
