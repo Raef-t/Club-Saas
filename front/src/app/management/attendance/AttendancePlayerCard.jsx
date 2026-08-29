@@ -3,6 +3,7 @@
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
+import { TextAreaField } from "@/components/forms/TextAreaField";
 import SkeletonPage from "@/components/ui/Skeleton";
 import { CheckCircleIcon } from "./AttendanceIcons";
 import { getAttendancePhotoUrl } from "./attendanceUtils";
@@ -65,6 +66,9 @@ export default function AttendancePlayerCard({
   selectedActivity,
   playerSubscriptions,
   selectedSubscriptionIds,
+  attendanceNote,
+  attendanceErrorMessage,
+  requiresCheckInNote,
   lockerNumber,
   availableLockerOptions,
   isMemberLoading,
@@ -81,6 +85,7 @@ export default function AttendancePlayerCard({
   onRetryAvailableLockers,
   onSubscriptionToggle,
   onLockerChange,
+  onAttendanceNoteChange,
   onRegister,
 }) {
   if (isMemberLoading) {
@@ -116,13 +121,14 @@ export default function AttendancePlayerCard({
 
   const photoSrc = getAttendancePhotoUrl(member.photoUrl);
   const hasSubscriptions = playerSubscriptions.length > 0;
-  const registerDisabled =
-    !hasSubscriptions ||
-    !selectedSubscriptionIds.length ||
-    !isPendingDeduction ||
-    isRegistered ||
-    isRegistering ||
-    Boolean(subscriptionsErrorMessage);
+  const registerDisabled = requiresCheckInNote
+    ? !attendanceNote.trim() || isRegistering
+    : !hasSubscriptions ||
+      !selectedSubscriptionIds.length ||
+      !isPendingDeduction ||
+      isRegistered ||
+      isRegistering ||
+      Boolean(subscriptionsErrorMessage);
 
   return (
     <section className="app-card w-full rounded-2xl p-6" dir="rtl">
@@ -132,6 +138,15 @@ export default function AttendancePlayerCard({
         </span>
         <CheckCircleIcon className="size-5" />
       </div>
+
+      {attendanceErrorMessage && (
+        <div
+          className="mt-4 rounded-xl border border-app-red/40 bg-app-red/10 px-4 py-3 text-right text-sm leading-7 text-app-red"
+          role="alert"
+        >
+          {attendanceErrorMessage}
+        </div>
+      )}
 
       <div className="mt-4 flex flex-col items-center">
         {photoSrc ? (
@@ -225,6 +240,23 @@ export default function AttendancePlayerCard({
           )}
         </div>
 
+        <div>
+          <TextAreaField
+            label={`سبب تسجيل الحضور خارج الموعد ${requiresCheckInNote ? "*" : "(عند الحاجة)"}`}
+            name="note"
+            value={attendanceNote}
+            onChange={(event) => onAttendanceNoteChange(event.target.value)}
+            placeholder="اكتب سبب تسجيل الحضور في هذا الوقت"
+            rows={3}
+            maxLength={1000}
+            disabled={isRegistering || isRegistered}
+            required={requiresCheckInNote}
+          />
+          <p className="mt-1.5 text-right text-[11px] text-app-muted-light">
+            يُرسل هذا السبب تلقائيًا مع عملية تسجيل الحضور.
+          </p>
+        </div>
+
         <Button
           type="button"
           className="h-11 w-full"
@@ -234,9 +266,11 @@ export default function AttendancePlayerCard({
         >
           {isRegistered
             ? "تم تأكيد الحضور"
-            : isPendingDeduction
-              ? "خصم الجلسة وتأكيد الحضور"
-              : "لا توجد حركة دخول معلّقة"}
+            : requiresCheckInNote
+              ? "إعادة تسجيل الدخول بالسبب"
+              : isPendingDeduction
+                ? "خصم الجلسة وتأكيد الحضور"
+                : "لا توجد حركة دخول معلّقة"}
         </Button>
       </div>
     </section>

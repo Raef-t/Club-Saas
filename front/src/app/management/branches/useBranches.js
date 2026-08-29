@@ -91,7 +91,10 @@ export function useBranches({ initialBranches } = {}) {
     if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
-      await deleteBranch(deleteTarget.id).unwrap();
+      await deleteBranch({
+        id: deleteTarget.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف الفرع بنجاح");
       setDeleteTarget(null);
       setDeleteConfirmation("");

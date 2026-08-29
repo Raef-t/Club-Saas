@@ -679,3 +679,19 @@ export function CheckIcon({ className = "size-4" }) {
   );
 }
 
+export function CheckCircleIcon({ className = "size-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="m8 12.2 2.5 2.5L16.5 9"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+

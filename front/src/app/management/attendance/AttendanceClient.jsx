@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/common/PageHeader";
+import Modal from "@/components/ui/Modal";
 import AttendancePlayerCard from "./AttendancePlayerCard";
 import AttendanceScanner from "./AttendanceScanner";
 import AttendanceTable from "./AttendanceTable";
@@ -12,10 +13,8 @@ import { useAttendance } from "./useAttendance";
  */
 export default function AttendanceClient({ initialBranches }) {
   const attendance = useAttendance({ initialBranches });
-  const showPlayerCard =
-    Boolean(attendance.scannedMemberId) ||
-    attendance.isMemberLoading ||
-    Boolean(attendance.memberErrorMessage);
+  const isPlayerModalBusy =
+    attendance.isRegistering || (attendance.requiresCheckInNote && attendance.isManualCheckingIn);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -44,14 +43,27 @@ export default function AttendanceClient({ initialBranches }) {
         />
       </section>
 
-      {showPlayerCard && (
-        <div className="mx-auto w-full max-w-3xl">
+      <Modal
+        open={attendance.isPlayerModalOpen}
+        onClose={isPlayerModalBusy ? undefined : attendance.closePlayerModal}
+        title="تأكيد حضور اللاعب"
+        subtitle={
+          attendance.requiresCheckInNote
+            ? "أدخل سبب الحضور خارج الموعد ثم أعد تسجيل الدخول."
+            : "راجع الاشتراك وأدخل سبب الحضور عند الحاجة قبل خصم الجلسة."
+        }
+        contentClassName="p-0"
+      >
+        <div className="w-full">
           <AttendancePlayerCard
             member={attendance.activeMember}
             selectedSubscription={attendance.selectedSubscription}
             selectedActivity={attendance.selectedActivity}
             playerSubscriptions={attendance.playerSubscriptions}
             selectedSubscriptionIds={attendance.selectedSubscriptionIds}
+            attendanceNote={attendance.attendanceNote}
+            attendanceErrorMessage={attendance.attendanceModalErrorMessage}
+            requiresCheckInNote={attendance.requiresCheckInNote}
             lockerNumber={attendance.lockerNumber}
             availableLockerOptions={attendance.availableLockerOptions}
             isMemberLoading={attendance.isMemberLoading}
@@ -62,16 +74,21 @@ export default function AttendanceClient({ initialBranches }) {
             availableLockersErrorMessage={attendance.availableLockersErrorMessage}
             isRegistered={attendance.isRegistered}
             isPendingDeduction={attendance.isPendingDeduction}
-            isRegistering={attendance.isRegistering}
+            isRegistering={isPlayerModalBusy}
             onRetryMember={attendance.retryMember}
             onRetrySubscriptions={attendance.retrySubscriptions}
             onRetryAvailableLockers={attendance.retryAvailableLockers}
             onSubscriptionToggle={attendance.handleSubscriptionToggle}
             onLockerChange={attendance.handleLockerChange}
-            onRegister={attendance.handleRegister}
+            onAttendanceNoteChange={attendance.handleAttendanceNoteChange}
+            onRegister={
+              attendance.requiresCheckInNote
+                ? attendance.handleRetryManualCheckIn
+                : attendance.handleRegister
+            }
           />
         </div>
-      )}
+      </Modal>
 
       <AttendanceTable
         rows={attendance.attendanceRows}

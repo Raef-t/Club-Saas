@@ -329,12 +329,26 @@ export function getInitialAttendanceSelection(subscriptions) {
 }
 
 /**
- * Builds the session-deduction body.
+ * Builds the session-deduction body, including an optional off-schedule reason.
  */
-export function createAttendanceDeductionBody(subscriptionIds) {
+export function createAttendanceDeductionBody(subscriptionIds, note = "") {
+  const normalizedNote = String(note).trim();
+
   return {
     player_subscription_ids: subscriptionIds.map(Number).filter(Number.isFinite),
+    ...(normalizedNote ? { notes: normalizedNote } : {}),
   };
+}
+
+/**
+ * Detects the backend response that requires a reason before an off-schedule check-in.
+ */
+export function isAttendanceNoteRequiredMessage(message) {
+  if (typeof message !== "string") return false;
+
+  return /سبب تسجيل الحضور|موعد فعاليتك المجدول|scheduled (?:activity|appointment)|attendance.+(?:reason|note)/i.test(
+    message,
+  );
 }
 
 /**

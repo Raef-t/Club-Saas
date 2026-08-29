@@ -63,9 +63,18 @@ export function CoachCreateForm({
     () => getCoachRulesForActivities(selectedActivities),
     [selectedActivities],
   );
+  const showsCommissionFields = activityRules.hasRecognizedActivity
+    ? activityRules.allowsCommission
+    : form.employment_type === "commission_based" ||
+      form.employment_type === "commission" ||
+      form.employment_type === "hybrid";
   const privateCoachCommissionRate = activityRules.hasPrivateTraining
     ? getComplementaryCommissionPercentage(form.private_club_commission_rate)
     : "";
+  const activityClubCommissionRate =
+    showsCommissionFields && !activityRules.hasPrivateTraining
+      ? getComplementaryCommissionPercentage(form.default_commission_rate)
+      : "";
   const selectableActivities = useMemo(
     () =>
       activities.filter((activity) => {
@@ -603,6 +612,7 @@ export function CoachCreateForm({
               label="نسبة المدرب (%)"
               type="number"
               value={privateCoachCommissionRate}
+              onChange={() => {}}
               disabled
               required={false}
               error={errors.default_commission_rate}
@@ -619,36 +629,38 @@ export function CoachCreateForm({
         </div>
       )}
 
-      {!activityRules.hasPrivateTraining &&
-        (activityRules.hasRecognizedActivity
-          ? activityRules.allowsCommission
-          : form.employment_type === "commission_based" ||
-            form.employment_type === "commission" ||
-            form.employment_type === "hybrid") && (
-          <label className="block text-right text-sm text-app-muted-light">
-            نسبة العمولة الافتراضية للمدرب (%) *
-            <input
-              value={form.default_commission_rate}
-              onChange={(event) => updateField("default_commission_rate", event.target.value)}
-              aria-invalid={Boolean(errors && errors.default_commission_rate)}
-              className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-                errors && errors.default_commission_rate
-                  ? "border border-app-red focus:border-app-red"
-                  : "focus:border-app-yellow/70"
-              }`}
+      {!activityRules.hasPrivateTraining && showsCommissionFields && (
+        <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/5 p-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="نسبة النادي من الفعالية (%)"
+              type="number"
+              value={activityClubCommissionRate}
+              onChange={() => {}}
+              disabled
+              required={false}
+            />
+            <Field
+              label="نسبة المدرب من الفعالية (%)"
               type="number"
               min="0"
               max="100"
               step="0.1"
-              required
+              value={form.default_commission_rate}
+              onChange={(event) => updateField("default_commission_rate", event.target.value)}
+              error={errors.default_commission_rate}
             />
-            {errors && errors.default_commission_rate && (
-              <span className="mt-1.5 block text-xs text-app-red" role="alert">
-                {errors.default_commission_rate}
-              </span>
-            )}
-          </label>
-        )}
+          </div>
+          <p className="mt-3 text-right text-xs text-app-muted-light">
+            تبدأ نسبة المدرب من إعدادات الفرع، وتُحسب نسبة النادي تلقائياً ليكون المجموع 100%.
+          </p>
+          {branchSettingsError && (
+            <p className="mt-2 text-right text-xs text-app-red">
+              تعذر تحميل النسبة الافتراضية، يمكنك إدخال نسبة المدرب يدوياً.
+            </p>
+          )}
+        </div>
+      )}
 
       <label className="block text-right text-sm text-app-muted-light">
         العنوان السكني

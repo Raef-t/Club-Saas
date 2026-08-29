@@ -13,6 +13,7 @@ import {
   formatAttendanceTime,
   findAttendanceLockerId,
   getInitialAttendanceSelection,
+  isAttendanceNoteRequiredMessage,
   toggleRequiredSubscription,
 } from "./attendanceUtils";
 
@@ -262,8 +263,12 @@ describe("attendance utilities", () => {
   });
 
   it("builds attendance deduction and locker assignment payloads", () => {
-    expect(createAttendanceDeductionBody(["4", "7"])).toEqual({
+    expect(createAttendanceDeductionBody(["4", "7"], "  حضور استثنائي  ")).toEqual({
       player_subscription_ids: [4, 7],
+      notes: "حضور استثنائي",
+    });
+    expect(createAttendanceDeductionBody(["4"], "   ")).toEqual({
+      player_subscription_ids: [4],
     });
     expect(createAttendanceLockerReservation(12, new Date(2026, 7, 8, 12))).toEqual({
       reservation_type: "assign",
@@ -271,6 +276,15 @@ describe("attendance utilities", () => {
       holder_id: 12,
       start_date: "2026-08-08",
     });
+  });
+
+  it("detects when the backend requires an off-schedule attendance reason", () => {
+    expect(
+      isAttendanceNoteRequiredMessage(
+        "لا يمكن تسجيل الحضور: هذا ليس موعد فعاليتك المجدول. يرجى إدخال سبب تسجيل الحضور في هذا الوقت",
+      ),
+    ).toBe(true);
+    expect(isAttendanceNoteRequiredMessage("تعذر الاتصال بالخادم")).toBe(false);
   });
 
   it("keeps locker details on attendance rows and resolves ids by locker number", () => {

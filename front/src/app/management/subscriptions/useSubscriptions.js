@@ -153,7 +153,6 @@ export function useSubscriptions({ initialData } = {}) {
       {
         title: "المبالغ المدفوعة",
         value: formatSubscriptionMoney(totalPaid),
-        helper: "حسب paid_amount",
         tone: "blue",
         compact: true,
       },
