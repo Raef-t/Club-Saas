@@ -14,6 +14,8 @@ class AllSubscriptionsReportService
      */
     public function getReport(array $filters = []): array
     {
+        app(\Modules\SubscriptionManager\Services\SubscriptionService::class)->syncExpiredSubscriptions();
+
         $status        = $filters['status'] ?? 'all';
         $planId        = $filters['plan_id'] ?? null;
         $paymentStatus = $filters['payment_status'] ?? 'all';

@@ -252,6 +252,28 @@ class JournalController extends Controller
         tags: ['Accounting - القيود اليومية العامة'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف السند المراد إلغاؤه (ID)', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'cancellation_reason', type: 'string', description: 'سبب إلغاء السند المحاسبي', example: 'تم إلغاء السند لوجود خطأ في الإدخال'),
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب بديل للإلغاء', example: 'تم إلغاء السند')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم إلغاء السند بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'تم إلغاء السند بنجاح'),
+                new OA\Property(property: 'data', ref: '#/components/schemas/AccJournal')
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ خطأ أثناء محاولة إلغاء السند')]
     public function cancel(Request $request, $id)
     {
         try {
