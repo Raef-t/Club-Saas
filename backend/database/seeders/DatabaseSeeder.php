@@ -25,5 +25,8 @@ class DatabaseSeeder extends Seeder
 
         // 5. Seed default plans and activities
         $this->call(RealPlansAndActivitiesSeeder::class);
+
+        // 6. Seed Notification Templates
+        $this->call(\Modules\NotificationManager\Database\Seeders\NotificationTemplateSeeder::class);
     }
 }
