@@ -20,8 +20,10 @@ class PayslipResource extends JsonResource
             'subscribers_count' => (int) ($this->subscribers_count ?? 0),
             'deductions' => $this->relationLoaded('adjustments') ? (float) $this->adjustments->where('type', 'deduction')->sum('amount') : 0,
             'bonuses' => $this->relationLoaded('adjustments') ? (float) $this->adjustments->where('type', 'bonus')->sum('amount') : 0,
-            'adjustments' => $this->whenLoaded('adjustments'),
             'net_pay' => (float) $this->net_pay,
+            'status' => $this->status ?? 'pending',
+            'paid_at' => $this->paid_at?->toIso8601String(),
+            'salary_payments' => $this->relationLoaded('salaryPayments') ? $this->salaryPayments : null,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

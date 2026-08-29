@@ -11,6 +11,7 @@ export const accountingApi = createBackendApi({
     "AccPeriods",
     "AccReconciliations",
     "AccSalaryPayments",
+    "Payslips",
     "AccReports",
   ],
   endpoints: (builder) => ({
@@ -367,6 +368,7 @@ export const accountingApi = createBackendApi({
       }),
       invalidatesTags: [
         "AccSalaryPayments",
+        "Payslips",
         "AccSafes",
         "AccJournals",
         "AccAccounts",
@@ -380,6 +382,7 @@ export const accountingApi = createBackendApi({
       }),
       invalidatesTags: [
         "AccSalaryPayments",
+        "Payslips",
         "AccSafes",
         "AccJournals",
         "AccAccounts",

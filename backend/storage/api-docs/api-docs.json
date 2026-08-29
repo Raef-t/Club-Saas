@@ -3140,11 +3140,78 @@
                     "Accounting - رواتب الكوادر والموظفين"
                 ],
                 "summary": "💵 صرف وتسجيل راتب جديد لكادر النادي",
-                "description": "يقوم بصرف راتب لموظف أو مدرب من صندوق محدد وتوليد سند صرف (PV) وقيد محاسبي مزدوج تلقائياً.",
+                "description": "يقوم بصرف راتب أو سلفة أو مكافأة لموظف أو مدرب من صندوق محدد وتوليد سند صرف (PV) وقيد محاسبي مزدوج تلقائياً وتحديث حالة القسيمة المرتبطة إلى مدفوعة.",
                 "operationId": "f91a290e6faa5d6fa2cc6380574203d3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "staff_id",
+                                    "safe_id",
+                                    "period_id",
+                                    "amount",
+                                    "date"
+                                ],
+                                "properties": {
+                                    "staff_id": {
+                                        "description": "معرف الكادر",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "safe_id": {
+                                        "description": "معرف الصندوق المالي المصروف منه",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "period_id": {
+                                        "description": "معرف الفترة المالية",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "payslip_id": {
+                                        "description": "معرف قسيمة الراتب المعتمدة إن وجدت",
+                                        "type": "integer",
+                                        "example": 12,
+                                        "nullable": true
+                                    },
+                                    "payment_type": {
+                                        "description": "نوع الدفعة: راتب مسير، سلفة، مكافأة",
+                                        "type": "string",
+                                        "example": "salary",
+                                        "enum": [
+                                            "salary",
+                                            "advance",
+                                            "bonus"
+                                        ]
+                                    },
+                                    "amount": {
+                                        "description": "المبلغ المصروف",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500000
+                                    },
+                                    "date": {
+                                        "description": "تاريخ الصرف",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-29"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "صرف مستحقات شهر آب",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
-                        "description": "تم تسجيل وصرف الراتب بنجاح"
+                        "description": "تم تسجيل وصرف المستحقات بنجاح"
                     }
                 },
                 "security": [
@@ -17626,8 +17693,40 @@
                     "Payslips"
                 ],
                 "summary": "📄 عرض سجلات الرواتب",
-                "description": "استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات.",
+                "description": "استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات وحالة الصرف.",
                 "operationId": "ad90293a6ae0700fc8ebd09b515c780e",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب حالة الصرف (pending, paid)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "pending"
+                        }
+                    },
+                    {
+                        "name": "staff_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الكادر",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع السجلات بنجاح",
@@ -25429,6 +25528,15 @@
                     "currency": {
                         "type": "string",
                         "example": "USD"
+                    },
+                    "payment_type": {
+                        "type": "string",
+                        "example": "salary",
+                        "enum": [
+                            "salary",
+                            "advance",
+                            "bonus"
+                        ]
                     },
                     "date": {
                         "type": "string",

@@ -16,6 +16,8 @@ class Payslip extends Model
         'commission_pay',
         'subscribers_count',
         'net_pay',
+        'status',
+        'paid_at',
     ];
 
     protected static function booted(): void
@@ -27,6 +29,9 @@ class Payslip extends Model
                     $payslip->staff_name = $staff->person->full_name;
                 }
             }
+            if (empty($payslip->status)) {
+                $payslip->status = 'pending';
+            }
         });
     }
 
@@ -35,9 +40,10 @@ class Payslip extends Model
         'commission_pay' => 'decimal:2',
         'subscribers_count' => 'integer',
         'net_pay' => 'decimal:2',
+        'paid_at' => 'datetime',
     ];
 
-    // --- Same-module relationships only ---
+    // --- Relationships ---
 
     public function payrollRun()
     {
@@ -52,5 +58,15 @@ class Payslip extends Model
     public function adjustments()
     {
         return $this->hasMany(PayslipAdjustment::class);
+    }
+
+    public function salaryPayments()
+    {
+        return $this->hasMany(\Modules\Accounting\Models\AccSalaryPayment::class, 'payslip_id');
+    }
+
+    public function salaryPayment()
+    {
+        return $this->hasOne(\Modules\Accounting\Models\AccSalaryPayment::class, 'payslip_id')->latestOfMany();
     }
 }

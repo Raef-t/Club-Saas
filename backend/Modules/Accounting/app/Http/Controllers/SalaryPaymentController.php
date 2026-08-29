@@ -77,11 +77,27 @@ class SalaryPaymentController extends Controller
     #[OA\Post(
         path: '/accounting/salary-payments',
         summary: '💵 صرف وتسجيل راتب جديد لكادر النادي',
-        description: 'يقوم بصرف راتب لموظف أو مدرب من صندوق محدد وتوليد سند صرف (PV) وقيد محاسبي مزدوج تلقائياً.',
+        description: 'يقوم بصرف راتب أو سلفة أو مكافأة لموظف أو مدرب من صندوق محدد وتوليد سند صرف (PV) وقيد محاسبي مزدوج تلقائياً وتحديث حالة القسيمة المرتبطة إلى مدفوعة.',
         tags: ['Accounting - رواتب الكوادر والموظفين'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Response(response: 201, description: 'تم تسجيل وصرف الراتب بنجاح')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['staff_id', 'safe_id', 'period_id', 'amount', 'date'],
+            properties: [
+                new OA\Property(property: 'staff_id', type: 'integer', example: 5, description: 'معرف الكادر'),
+                new OA\Property(property: 'safe_id', type: 'integer', example: 2, description: 'معرف الصندوق المالي المصروف منه'),
+                new OA\Property(property: 'period_id', type: 'integer', example: 1, description: 'معرف الفترة المالية'),
+                new OA\Property(property: 'payslip_id', type: 'integer', nullable: true, example: 12, description: 'معرف قسيمة الراتب المعتمدة إن وجدت'),
+                new OA\Property(property: 'payment_type', type: 'string', enum: ['salary', 'advance', 'bonus'], example: 'salary', description: 'نوع الدفعة: راتب مسير، سلفة، مكافأة'),
+                new OA\Property(property: 'amount', type: 'number', format: 'float', example: 500000, description: 'المبلغ المصروف'),
+                new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-08-29', description: 'تاريخ الصرف'),
+                new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'صرف مستحقات شهر آب')
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: 'تم تسجيل وصرف المستحقات بنجاح')]
     public function store(StoreSalaryPaymentRequest $request)
     {
         try {
@@ -110,29 +126,48 @@ class SalaryPaymentController extends Controller
 
             $personName = $staff->person ? trim($staff->person->first_name . ' ' . $staff->person->last_name) : ('الكادر #' . $staff->id);
 
-            $salaryPayment = DB::transaction(function () use ($data, $staff, $safe, $period, $currency, $amount, $expenseAccount, $personName) {
+            $paymentType = $data['payment_type'] ?? 'salary';
+            $typeLabel = match($paymentType) {
+                'advance' => 'سلفة',
+                'bonus'   => 'مكافأة',
+                default   => 'راتب',
+            };
+
+            $salaryPayment = DB::transaction(function () use ($data, $staff, $safe, $period, $currency, $amount, $expenseAccount, $personName, $paymentType, $typeLabel) {
                 // 1. Create the salary payment record
                 $payment = AccSalaryPayment::create([
-                    'staff_id'   => $staff->id,
-                    'safe_id'    => $safe->id,
-                    'period_id'  => $period->id,
-                    'payslip_id' => $data['payslip_id'] ?? null,
-                    'amount'     => $amount,
-                    'currency'   => $currency,
-                    'date'       => $data['date'],
-                    'notes'      => $data['notes'] ?? null,
+                    'staff_id'     => $staff->id,
+                    'safe_id'      => $safe->id,
+                    'period_id'    => $period->id,
+                    'payslip_id'   => $data['payslip_id'] ?? null,
+                    'payment_type' => $paymentType,
+                    'amount'       => $amount,
+                    'currency'     => $currency,
+                    'date'         => $data['date'],
+                    'notes'        => $data['notes'] ?? null,
                 ]);
+
+                // 2. If linked to a payslip, mark payslip as paid
+                if (!empty($data['payslip_id'])) {
+                    $payslip = \Modules\StaffManager\Models\Payslip::find($data['payslip_id']);
+                    if ($payslip) {
+                        $payslip->update([
+                            'status'  => 'paid',
+                            'paid_at' => $data['date'],
+                        ]);
+                    }
+                }
 
                 $slipInfo = !empty($data['payslip_id']) ? " (قسيمة #{$data['payslip_id']})" : "";
 
-                // 2. Prepare Double-Entry Lines
+                // 3. Prepare Double-Entry Lines
                 $debitLine = [
                     'account_id' => $expenseAccount->id,
                     'debit_usd'  => ($currency === 'USD') ? $amount : 0,
                     'credit_usd' => 0,
                     'debit_syp'  => ($currency === 'SYP') ? $amount : 0,
                     'credit_syp' => 0,
-                    'memo'       => "راتب الموظف/المدرب: {$personName}{$slipInfo} — لشهر {$period->name}",
+                    'memo'       => "{$typeLabel} الموظف/المدرب: {$personName}{$slipInfo} — لشهر {$period->name}",
                 ];
 
                 $creditLine = [
@@ -141,15 +176,15 @@ class SalaryPaymentController extends Controller
                     'credit_usd' => ($currency === 'USD') ? $amount : 0,
                     'debit_syp'  => 0,
                     'credit_syp' => ($currency === 'SYP') ? $amount : 0,
-                    'memo'       => "صرف راتب من صندوق: {$safe->name}",
+                    'memo'       => "صرف {$typeLabel} من صندوق: {$safe->name}",
                 ];
 
-                // 3. Post Journal Entry
+                // 4. Post Journal Entry
                 $journal = $this->ledgerService->postJournal(
                     header: [
                         'type'        => 'PV', // Payment Voucher
                         'date'        => $data['date'],
-                        'description' => "صرف راتب: {$personName}{$slipInfo} — لشهر {$period->name}",
+                        'description' => "صرف {$typeLabel}: {$personName}{$slipInfo} — لشهر {$period->name}",
                         'safe_id'     => $safe->id,
                         'source_type' => 'SalaryPayments',
                         'source_id'   => $payment->id,
@@ -161,7 +196,7 @@ class SalaryPaymentController extends Controller
                     postImmediately: true
                 );
 
-                // 4. Update payment with journal ID
+                // 5. Update payment with journal ID
                 $payment->update(['journal_id' => $journal->id]);
 
                 return $payment;
@@ -169,7 +204,7 @@ class SalaryPaymentController extends Controller
 
             return $this->successResponse(
                 new AccSalaryPaymentResource($salaryPayment->load(['staff.person', 'safe', 'period', 'payslip'])),
-                'تم تسجيل وصرف الراتب بنجاح',
+                'تم تسجيل وصرف المستحقات بنجاح',
                 201
             );
         } catch (\Exception $e) {

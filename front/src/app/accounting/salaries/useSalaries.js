@@ -8,6 +8,7 @@ import {
   useGetSafesQuery,
   useGetPeriodsQuery,
 } from "@/lib/api/accountingApi";
+import { useGetPayslipsQuery } from "@/lib/api/payslipsApi";
 import { useGetStaffQuery } from "@/lib/api/staffApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useToast } from "@/components/ui/Toast";
@@ -46,6 +47,11 @@ export function useSalaries({
     selectedBranchId && selectedBranchId !== "all" ? { branch_id: selectedBranchId } : {}
   );
   const { data: periodsResponse } = useGetPeriodsQuery();
+  const { data: payslipsResponse } = useGetPayslipsQuery(
+    selectedBranchId && selectedBranchId !== "all"
+      ? { branch_id: selectedBranchId, status: "pending" }
+      : { status: "pending" }
+  );
 
   const [createPaymentMutation, { isLoading: isCreating }] = useCreateSalaryPaymentMutation();
   const [deletePaymentMutation, { isLoading: isDeleting }] = useDeleteSalaryPaymentMutation();
@@ -71,6 +77,11 @@ export function useSalaries({
     const raw = periodsResponse?.data || initialPeriods;
     return Array.isArray(raw) ? raw : [];
   }, [periodsResponse, initialPeriods]);
+
+  const unpaidPayslips = useMemo(() => {
+    const raw = payslipsResponse?.data?.data || payslipsResponse?.data || payslipsResponse || [];
+    return Array.isArray(raw) ? raw.filter((p) => p.status !== "paid") : [];
+  }, [payslipsResponse]);
 
   const stats = useMemo(() => {
     const totalCount = payments.length;
@@ -127,6 +138,7 @@ export function useSalaries({
     staffList,
     safes,
     periods,
+    unpaidPayslips,
     branches,
     selectedBranchId,
     stats,

@@ -36,7 +36,7 @@ import {
 const DRAFT_PAYROLL_TABLE_GRID =
   "48px minmax(130px,1.4fr) minmax(84px,.85fr) minmax(84px,.85fr) minmax(60px,.6fr) minmax(80px,.75fr) minmax(80px,.75fr) minmax(96px,.9fr) 72px";
 const SAVED_PAYROLL_TABLE_GRID =
-  "48px minmax(150px,1.5fr) minmax(90px,.9fr) minmax(90px,.9fr) minmax(70px,.65fr) minmax(90px,.8fr) minmax(90px,.8fr) minmax(106px,.95fr)";
+  "48px minmax(140px,1.4fr) minmax(84px,.85fr) minmax(84px,.85fr) minmax(60px,.6fr) minmax(80px,.75fr) minmax(80px,.75fr) minmax(96px,.9fr) 110px";
 
 export default function PayrollClient() {
   const toast = useToast();
@@ -233,6 +233,25 @@ export default function PayrollClient() {
           render: (value) => <Money value={value} className="font-semibold text-app-yellow" />,
         },
         {
+          key: "status",
+          label: "حالة الصرف",
+          align: "center",
+          render: (_, payslip) => {
+            const isPaid = payslip?.status === "paid";
+            return (
+              <span
+                className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${
+                  isPaid
+                    ? "bg-app-green/15 text-app-green border border-app-green/30"
+                    : "bg-app-yellow/15 text-app-yellow border border-app-yellow/30"
+                }`}
+              >
+                {isPaid ? "مدفوع" : "بانتظار الصرف"}
+              </span>
+            );
+          },
+        },
+        {
           key: "actions",
           label: "الإجراء",
           align: "center",
@@ -248,7 +267,10 @@ export default function PayrollClient() {
             </button>
           ),
         },
-      ].filter((column) => activeTab === "draft" || column.key !== "actions"),
+      ].filter((column) => {
+        if (activeTab === "draft") return column.key !== "status";
+        return column.key !== "actions";
+      }),
     [activeTab],
   );
 

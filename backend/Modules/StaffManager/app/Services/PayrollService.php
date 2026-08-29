@@ -158,16 +158,36 @@ class PayrollService
             $subscribersCount = $commissionResult['subscribers_count'];
 
 
+            // Check for unlinked salary advances or payments in accounting during this period
+            $advances = \Modules\Accounting\Models\AccSalaryPayment::where('staff_id', $staff->id)
+                ->whereNull('payslip_id')
+                ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+                ->get();
+
+            $autoAdjustments = [];
+            $totalDeductions = 0;
+            foreach ($advances as $adv) {
+                $typeLabel = ($adv->payment_type === 'advance') ? 'سلفة مصروفة مسبقاً' : 'دفعة مسبقة';
+                $autoAdjustments[] = [
+                    'type' => 'deduction',
+                    'amount' => round($adv->amount, 2),
+                    'reason' => "{$typeLabel} بتاريخ {$adv->date->toDateString()}",
+                ];
+                $totalDeductions += (float) $adv->amount;
+            }
+
+            $calculatedNet = max(0, ($basePay + $commissionPay) - $totalDeductions);
+
             $payslipsData[] = [
                 'staff_id' => $staff->id,
                 'staff_name' => $staff->person?->fullName ?? 'Unknown',
                 'base_pay' => round($basePay, 2),
                 'commission_pay' => round($commissionPay, 2),
                 'subscribers_count' => $subscribersCount,
-                'deductions' => 0, // Fallbacks for frontend
-                'bonuses' => 0,    // Fallbacks for frontend
-                'net_pay' => round($basePay + $commissionPay, 2),
-                'adjustments' => []
+                'deductions' => round($totalDeductions, 2),
+                'bonuses' => 0,
+                'net_pay' => round($calculatedNet, 2),
+                'adjustments' => $autoAdjustments,
             ];
             $staffCount++;
         }
@@ -209,6 +229,7 @@ class PayrollService
                     'commission_pay' => $payslipData['commission_pay'],
                     'subscribers_count' => $payslipData['subscribers_count'] ?? 0,
                     'net_pay' => $payslipData['net_pay'],
+                    'status' => 'pending',
                 ]);
 
                 if (!empty($payslipData['adjustments'])) {

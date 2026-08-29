@@ -45,6 +45,9 @@ export function normalizePayslip(payslip) {
 
   return {
     ...payslip,
+    status: payslip?.status || "pending",
+    paid_at: payslip?.paid_at || null,
+    salary_payments: payslip?.salary_payments || [],
     base_pay: basePay,
     commission_pay: commissionPay,
     subscribers_count:

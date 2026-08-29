@@ -23,10 +23,13 @@ class PayslipController extends BaseController
     #[OA\Get(
         path: '/v1/payslips',
         summary: '📄 عرض سجلات الرواتب',
-        description: 'استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات.',
+        description: 'استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات وحالة الصرف.',
         tags: ['Payslips'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الصرف (pending, paid)', schema: new OA\Schema(type: 'string', example: 'pending'))]
+    #[OA\Parameter(name: 'staff_id', in: 'query', required: false, description: 'تصفية حسب معرف الكادر', schema: new OA\Schema(type: 'integer', example: 5))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع السجلات بنجاح',
@@ -39,8 +42,25 @@ class PayslipController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index() {
-        $payslips = Payslip::with(['staff.person', 'staff.coachDetail', 'payrollRun', 'adjustments'])->get();
+    public function index(Request $request) {
+        $query = Payslip::with(['staff.person', 'staff.coachDetail', 'payrollRun', 'adjustments', 'salaryPayments']);
+
+        if ($request->filled('staff_id')) {
+            $query->where('staff_id', $request->input('staff_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('branch_id')) {
+            $branchId = $request->input('branch_id');
+            $query->whereHas('staff.branches', function ($q) use ($branchId) {
+                $q->where('branches.id', $branchId);
+            });
+        }
+
+        $payslips = $query->latest('id')->get();
         return $this->successResponse(PayslipResource::collection($payslips), 'Retrieved successfully');
     }
 

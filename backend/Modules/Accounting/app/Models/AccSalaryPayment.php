@@ -38,6 +38,7 @@ class AccSalaryPayment extends Model
         'payslip_id',
         'amount',
         'currency',
+        'payment_type',
         'date',
         'notes',
         'journal_id',

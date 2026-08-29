@@ -24,6 +24,7 @@ export default function SalariesClient({
     staffList,
     safes,
     periods,
+    unpaidPayslips,
     stats,
     search,
     setSearch,
@@ -200,6 +201,7 @@ export default function SalariesClient({
         staffList={staffList}
         safes={safes}
         periods={periods}
+        unpaidPayslips={unpaidPayslips}
         onSave={handleSavePayment}
         isLoading={isSaving}
         errors={formErrors}

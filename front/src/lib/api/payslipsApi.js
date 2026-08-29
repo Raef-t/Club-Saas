@@ -5,7 +5,10 @@ export const payslipsApi = createBackendApi({
   tagTypes: ["Payslips"],
   endpoints: (builder) => ({
     getPayslips: builder.query({
-      query: () => "payslips",
+      query: (params = {}) => ({
+        url: "payslips",
+        params,
+      }),
       providesTags: ["Payslips"],
     }),
     generatePayslips: builder.mutation({

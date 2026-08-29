@@ -42,6 +42,7 @@ use OpenApi\Attributes as OA;
         ),
         new OA\Property(property: "amount", type: "number", format: "float", example: 500.00),
         new OA\Property(property: "currency", type: "string", example: "USD"),
+        new OA\Property(property: "payment_type", type: "string", enum: ["salary", "advance", "bonus"], example: "salary"),
         new OA\Property(property: "date", type: "string", format: "date", example: "2026-07-01"),
         new OA\Property(property: "notes", type: "string", nullable: true, example: "راتب شهر حزيران"),
         new OA\Property(property: "journal_id", type: "integer", nullable: true, example: 12),
@@ -55,25 +56,26 @@ class AccSalaryPaymentResource extends JsonResource
         $person = $this->relationLoaded('staff') && $this->staff ? $this->staff->person : null;
 
         return [
-            'id'          => $this->id,
-            'staff'       => $this->relationLoaded('staff') && $this->staff ? [
+            'id'           => $this->id,
+            'staff'        => $this->relationLoaded('staff') && $this->staff ? [
                 'id'         => $this->staff->id,
                 'first_name' => $person ? $person->first_name : null,
                 'last_name'  => $person ? $person->last_name : null,
                 'role'       => $this->staff->role,
             ] : null,
-            'safe'        => $this->relationLoaded('safe') && $this->safe ? [
+            'safe'         => $this->relationLoaded('safe') && $this->safe ? [
                 'id'   => $this->safe->id,
                 'name' => $this->safe->name,
             ] : null,
-            'period'      => $this->relationLoaded('period') && $this->period ? [
+            'period'       => $this->relationLoaded('period') && $this->period ? [
                 'id'   => $this->period->id,
                 'name' => $this->period->name,
             ] : null,
-            'amount'      => $this->amount,
-            'currency'    => $this->currency,
-            'date'        => $this->date ? $this->date->toDateString() : null,
-            'payslip_id'  => $this->payslip_id,
+            'amount'       => $this->amount,
+            'currency'     => $this->currency,
+            'payment_type' => $this->payment_type ?? 'salary',
+            'date'         => $this->date ? $this->date->toDateString() : null,
+            'payslip_id'   => $this->payslip_id,
             'payslip'     => $this->relationLoaded('payslip') && $this->payslip ? [
                 'id'             => $this->payslip->id,
                 'payroll_run_id' => $this->payslip->payroll_run_id,
