@@ -452,6 +452,14 @@ class AttendanceSessionDayFilterTest extends TestCase
             'attendable_id'   => $this->member->id,
             'status'          => 'checked_in',
         ]);
+        $this->assertDatabaseHas('attendance_consumptions', [
+            'player_subscription_id' => $sub->id,
+            'subscription_plan_id'   => $sundayPlan->id,
+        ]);
+        $this->assertDatabaseHas('player_subscription_items', [
+            'player_subscription_id' => $sub->id,
+            'sessions_consumed'      => 3,
+        ]);
     }
 
     public function test_subscriptions_with_null_end_date_are_returned_when_having_session_today(): void
