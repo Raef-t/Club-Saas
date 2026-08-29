@@ -111,8 +111,8 @@ class PayrollService
     public function generatePreview(int $branchId)
     {
         $branchSetting = BranchSetting::where('branch_id', $branchId)->first();
-        if (!$branchSetting || !$branchSetting->payroll_start_day || !$branchSetting->payroll_end_day) {
-            throw new Exception('إعدادات حساب الرواتب (payroll_start_day, payroll_end_day) غير مكتملة لهذا الفرع.');
+        if (!$branchSetting || !$branchSetting->payroll_end_day) {
+            throw new Exception('إعدادات حساب الرواتب (payroll_end_day) غير مكتملة لهذا الفرع.');
         }
 
         $today = now();
@@ -129,19 +129,7 @@ class PayrollService
         $periodEnd = clone $today;
         $periodEnd->setDay($branchSetting->payroll_end_day)->endOfDay();
         
-        $periodStart = clone $today;
-        $periodStart->setDay($branchSetting->payroll_start_day)->startOfDay();
-        if ($branchSetting->payroll_start_day >= $branchSetting->payroll_end_day) {
-            $periodStart->subMonth();
-        }
-
-        $existingRun = PayrollRun::where('period_start', $periodStart->toDateString())
-            ->where('period_end', $periodEnd->toDateString())
-            ->first();
-
-        if ($existingRun) {
-            throw new Exception("تم حساب وحفظ الرواتب مسبقاً لهذه الفترة (Run ID: {$existingRun->id}).", 409);
-        }
+        $periodStart = (clone $periodEnd)->subMonth()->startOfDay();
 
         $staffMembers = Staff::where('is_active', true)
             ->where('work_status', 'active')
