@@ -20,10 +20,9 @@ import {
   createStaffInitialValues,
   getStaffCollection,
   getStaffRecord,
-  isManagerStaffRole,
 } from "./staffUtils";
 
-function createStaffFormData(values, { includePhoto = false } = {}) {
+export function createStaffFormData(values, { includePhoto = false } = {}) {
   const formData = new FormData();
   formData.append("first_name", values.first_name.trim());
   formData.append("last_name", values.last_name.trim());
@@ -33,6 +32,8 @@ function createStaffFormData(values, { includePhoto = false } = {}) {
   formData.append("base_salary", String(Number(values.base_salary) || 0));
   formData.append("work_status", values.work_status);
   formData.append("is_active", values.work_status === "active" ? "1" : "0");
+  formData.append("start_time", values.start_time || "");
+  formData.append("end_time", values.end_time || "");
 
   if (values.country_code) formData.append("country_code", values.country_code.trim());
   if (values.start_date) formData.append("start_date", values.start_date);
@@ -40,9 +41,6 @@ function createStaffFormData(values, { includePhoto = false } = {}) {
   if (values.reason) formData.append("reason", values.reason.trim());
 
   values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
-  if (!isManagerStaffRole(values.role)) {
-    values.shifts.forEach((id) => formData.append("shifts[]", String(id)));
-  }
 
   if (includePhoto && values.photo instanceof File) {
     formData.append("photo", values.photo);
@@ -180,9 +178,7 @@ export function useStaff({
             roleFilter === "manager" || roleFilter === "admin" ? "all" : "management_admin",
           ),
         active:
-          roleFilter === "admin" ||
-          roleFilter === "management_admin" ||
-          roleFilter === "manager",
+          roleFilter === "admin" || roleFilter === "management_admin" || roleFilter === "manager",
       },
       {
         title: "رواتب ثابتة",

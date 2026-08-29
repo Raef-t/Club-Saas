@@ -33,8 +33,10 @@ import {
   updateDraftPayslip,
 } from "./payrollUtils";
 
-const PAYROLL_TABLE_GRID =
+const DRAFT_PAYROLL_TABLE_GRID =
   "48px minmax(130px,1.4fr) minmax(84px,.85fr) minmax(84px,.85fr) minmax(60px,.6fr) minmax(80px,.75fr) minmax(80px,.75fr) minmax(96px,.9fr) 72px";
+const SAVED_PAYROLL_TABLE_GRID =
+  "48px minmax(150px,1.5fr) minmax(90px,.9fr) minmax(90px,.9fr) minmax(70px,.65fr) minmax(90px,.8fr) minmax(90px,.8fr) minmax(106px,.95fr)";
 
 export default function PayrollClient() {
   const toast = useToast();
@@ -43,6 +45,7 @@ export default function PayrollClient() {
   const [draft, setDraft] = useState(null);
   const [editing, setEditing] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedPayrollDay, setSelectedPayrollDay] = useState("");
   const branchId = isAllBranches ? "" : selectedBranchId;
 
   const {
@@ -64,6 +67,16 @@ export default function PayrollClient() {
   const [confirmPayslips, { isLoading: isConfirming }] = useConfirmPayslipsMutation();
 
   const payrollEndDay = getPayrollEndDay(settingsResponse);
+  const payrollDayOptions = useMemo(
+    () =>
+      payrollEndDay
+        ? Array.from({ length: payrollEndDay }, (_, index) => ({
+            value: String(index + 1),
+            label: `اليوم ${index + 1}`,
+          }))
+        : [],
+    [payrollEndDay],
+  );
   const savedPayslips = useMemo(
     () =>
       filterPayslipsByBranch(getPayslips(savedResponse).map(normalizePayslip), selectedBranchId),
@@ -75,6 +88,10 @@ export default function PayrollClient() {
     setEditing(null);
     setConfirmOpen(false);
   }, [selectedBranchId]);
+
+  useEffect(() => {
+    setSelectedPayrollDay(payrollEndDay ? String(payrollEndDay) : "");
+  }, [payrollEndDay]);
 
   const displayedPayslips = activeTab === "draft" ? draft?.payslips || [] : savedPayslips;
   const totals = useMemo(
@@ -161,74 +178,77 @@ export default function PayrollClient() {
   }
 
   const columns = useMemo(
-    () => [
-      { key: "rowNumber", label: "#", type: "rowNumber", align: "center", sortable: false },
-      {
-        key: "staff_name",
-        label: "الموظف",
-        align: "start",
-        sortValue: getPayslipStaffName,
-        render: (_, payslip) => (
-          <div className="min-w-0 px-2 text-start">
-            <p className="truncate text-sm font-medium text-app-text">
-              {getPayslipStaffName(payslip)}
-            </p>
-          </div>
-        ),
-      },
-      {
-        key: "base_pay",
-        label: "الراتب الأساسي",
-        align: "center",
-        render: (value) => <Money value={value} />,
-      },
-      {
-        key: "commission_pay",
-        label: "العمولات",
-        align: "center",
-        render: (value) => <Money value={value} />,
-      },
-      {
-        key: "subscribers_count",
-        label: "المشتركون",
-        align: "center",
-        render: (value) => <span>{Number(value || 0).toLocaleString("ar")}</span>,
-      },
-      {
-        key: "bonuses",
-        label: "المكافآت",
-        align: "center",
-        render: (value) => <Money value={value} className="text-app-green" />,
-      },
-      {
-        key: "deductions",
-        label: "الخصومات",
-        align: "center",
-        render: (value) => <Money value={value} className="text-app-red" />,
-      },
-      {
-        key: "net_pay",
-        label: "صافي الراتب",
-        align: "center",
-        render: (value) => <Money value={value} className="font-semibold text-app-yellow" />,
-      },
-      {
-        key: "actions",
-        label: "الإجراء",
-        align: "center",
-        sortable: false,
-        render: (_, payslip) => (
-          <button
-            type="button"
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-app-line bg-app-card px-2.5 text-xs text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow"
-            onClick={() => setEditing({ source: activeTab, payslip })}
-          >
-            <PencilIcon className="size-3.5" />
-            تعديل
-          </button>
-        ),
-      },
-    ],
+    () =>
+      [
+        { key: "rowNumber", label: "#", type: "rowNumber", align: "center", sortable: false },
+        {
+          key: "staff_name",
+          label: "الموظف",
+          align: "start",
+          sortValue: getPayslipStaffName,
+          render: (_, payslip) => (
+            <div className="min-w-0 px-2 text-start">
+              <p className="truncate text-sm font-medium text-app-text">
+                {getPayslipStaffName(payslip)}
+              </p>
+            </div>
+          ),
+        },
+        {
+          key: "base_pay",
+          label: "الراتب الأساسي",
+          align: "center",
+          render: (value, payslip) =>
+            isCommissionBased(payslip) ? <EmptyMoney /> : <Money value={value} />,
+        },
+        {
+          key: "commission_pay",
+          label: "النسبة",
+          align: "center",
+          render: (value, payslip) =>
+            isFixedSalary(payslip) ? <EmptyMoney /> : <Money value={value} />,
+        },
+        {
+          key: "subscribers_count",
+          label: "المشتركون",
+          align: "center",
+          render: (value) => <span>{Number(value || 0).toLocaleString("ar")}</span>,
+        },
+        {
+          key: "bonuses",
+          label: "المكافآت",
+          align: "center",
+          render: (value) => <Money value={value} className="text-app-green" />,
+        },
+        {
+          key: "deductions",
+          label: "الخصومات",
+          align: "center",
+          render: (value) => <Money value={value} className="text-app-red" />,
+        },
+        {
+          key: "net_pay",
+          label: "صافي الراتب",
+          align: "center",
+          render: (value) => <Money value={value} className="font-semibold text-app-yellow" />,
+        },
+        {
+          key: "actions",
+          label: "الإجراء",
+          align: "center",
+          sortable: false,
+          render: (_, payslip) => (
+            <button
+              type="button"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-app-line bg-app-card px-2.5 text-xs text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow"
+              onClick={() => setEditing({ source: activeTab, payslip })}
+            >
+              <PencilIcon className="size-3.5" />
+              تعديل
+            </button>
+          ),
+        },
+      ].filter((column) => activeTab === "draft" || column.key !== "actions"),
     [activeTab],
   );
 
@@ -257,12 +277,9 @@ export default function PayrollClient() {
             <div>
               <p className="mb-2 text-xs font-medium text-app-muted-light">يوم إقفال الرواتب</p>
               <Dropdown
-                value={payrollEndDay ? String(payrollEndDay) : ""}
-                options={
-                  payrollEndDay
-                    ? [{ value: String(payrollEndDay), label: `يوم ${payrollEndDay} من كل شهر` }]
-                    : []
-                }
+                value={selectedPayrollDay}
+                options={payrollDayOptions}
+                onChange={setSelectedPayrollDay}
                 icon={CalendarIcon}
                 disabled={!branchId || isLoadingSettings || isFetchingSettings || !payrollEndDay}
                 placeholder={
@@ -292,7 +309,7 @@ export default function PayrollClient() {
             onClick={handleGenerate}
             loading={isGenerating}
             loadingLabel="جاري توليد المسودة"
-            disabled={!branchId || !payrollEndDay}
+            disabled={!branchId || !payrollEndDay || !selectedPayrollDay}
           >
             توليد مسودة الرواتب
           </Button>
@@ -300,7 +317,7 @@ export default function PayrollClient() {
 
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-app-line pt-4 text-xs text-app-muted-light">
           <span className="rounded-full bg-app-yellow-soft px-3 py-1 text-app-yellow">
-            يوم الإقفال: {payrollEndDay || "-"}
+            اليوم المختار: {selectedPayrollDay || "-"} من {payrollEndDay || "-"}
           </span>
           <span>
             الفترة الحالية: {getPayrollPeriodLabel(draft?.period_start, draft?.period_end)}
@@ -364,7 +381,7 @@ export default function PayrollClient() {
         }
         columns={columns}
         rows={displayedPayslips}
-        tableColumns={PAYROLL_TABLE_GRID}
+        tableColumns={activeTab === "draft" ? DRAFT_PAYROLL_TABLE_GRID : SAVED_PAYROLL_TABLE_GRID}
         minWidth="0px"
         desktopScrollable={false}
         showAdd={false}
@@ -427,6 +444,26 @@ export default function PayrollClient() {
 
 function Money({ value, className = "text-app-text" }) {
   return <span className={`whitespace-nowrap text-xs ${className}`}>{formatMoney(value)}</span>;
+}
+
+function EmptyMoney() {
+  return <span className="text-sm text-app-muted-light">-</span>;
+}
+
+function getEmploymentType(payslip) {
+  return payslip?.employment_type || payslip?.staff?.employment_type || "";
+}
+
+function isCommissionBased(payslip) {
+  const employmentType = getEmploymentType(payslip);
+  if (employmentType) return employmentType === "commission_based";
+  return Number(payslip?.commission_pay) > 0 && Number(payslip?.base_pay) <= 0;
+}
+
+function isFixedSalary(payslip) {
+  const employmentType = getEmploymentType(payslip);
+  if (employmentType) return employmentType === "fixed_salary";
+  return Number(payslip?.commission_pay) <= 0;
 }
 
 function TabButton({ active, onClick, children }) {

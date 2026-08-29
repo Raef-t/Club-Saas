@@ -11,16 +11,21 @@ import RowActions from "@/components/ui/RowActions";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { FilterIcon, PlusIcon, SearchIcon } from "@/components/icons/Icons";
 import { formatLocalizedName, formatMoney } from "@/lib/utils";
-import { getWorkStatusMeta, WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   STAFF_EMPLOYMENT_LABELS,
   STAFF_FILTER_ROLE_OPTIONS,
   STAFF_GENDER_LABELS,
   STAFF_ROLE_LABELS,
   STAFF_TABLE_GRID,
+  STAFF_WORK_STATUS_OPTIONS,
 } from "./staffConstants";
 import StaffDetails from "./StaffDetails";
-import { getStaffBranchNames, getStaffEditHref, resolveStaffPhotoUrl } from "./staffUtils";
+import {
+  getStaffBranchNames,
+  getStaffEditHref,
+  getStaffWorkStatusMeta,
+  resolveStaffPhotoUrl,
+} from "./staffUtils";
 import { useStaff } from "./useStaff";
 
 export default function StaffClient({ initialData }) {
@@ -118,7 +123,8 @@ export default function StaffClient({ initialData }) {
         key: "employment_type",
         label: "نوع التوظيف",
         align: "center",
-        sortValue: (staff) => STAFF_EMPLOYMENT_LABELS[staff.employment_type] || staff.employment_type || "",
+        sortValue: (staff) =>
+          STAFF_EMPLOYMENT_LABELS[staff.employment_type] || staff.employment_type || "",
         render: (value) => (
           <span className="text-xs text-app-muted-light">
             {STAFF_EMPLOYMENT_LABELS[value] || value || "-"}
@@ -138,9 +144,9 @@ export default function StaffClient({ initialData }) {
         key: "work_status",
         label: "الحالة",
         align: "center",
-        sortValue: (staff) => getWorkStatusMeta(staff).label,
+        sortValue: (staff) => getStaffWorkStatusMeta(staff).label,
         render: (_, staff) => {
-          const status = getWorkStatusMeta(staff);
+          const status = getStaffWorkStatusMeta(staff);
           return (
             <span
               className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${status.className}`}
@@ -190,7 +196,7 @@ export default function StaffClient({ initialData }) {
     [],
   );
   const statusOptions = useMemo(
-    () => [{ value: "all", label: "كل الحالات" }, ...WORK_STATUS_OPTIONS],
+    () => [{ value: "all", label: "كل الحالات" }, ...STAFF_WORK_STATUS_OPTIONS],
     [],
   );
 
@@ -199,7 +205,7 @@ export default function StaffClient({ initialData }) {
       <PageHeader
         eyebrow="إدارة النظام"
         title="إدارة الموظفين"
-        subtitle="إضافة الموظفين وإدارة بياناتهم الوظيفية والفروع والورديات وحالة العمل."
+        subtitle="إضافة الموظفين وإدارة بياناتهم الوظيفية والفروع ومواعيد الدوام وحالة العمل."
         action={
           <Button
             href="/management/staff/create"

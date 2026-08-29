@@ -43,7 +43,16 @@ export const staffFormSchema = z.object({
   }),
   is_active: z.boolean().optional(),
   start_date: z.string().optional().or(z.literal("")),
-  shifts: z.array(z.number().positive()).optional().default([]),
+  start_time: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "يرجى إدخال موعد قدوم صالح")
+    .optional()
+    .or(z.literal("")),
+  end_time: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "يرجى إدخال موعد مغادرة صالح")
+    .optional()
+    .or(z.literal("")),
   address: z
     .string()
     .trim()

@@ -94,7 +94,7 @@ export default function PayslipEditorModal({ payslip, onClose, onSave, isSaving 
             onChange={(value) => setForm((current) => ({ ...current, base_pay: value }))}
           />
           <MoneyField
-            label="العمولات"
+            label="النسبة"
             value={form.commission_pay}
             onChange={(value) => setForm((current) => ({ ...current, commission_pay: value }))}
           />

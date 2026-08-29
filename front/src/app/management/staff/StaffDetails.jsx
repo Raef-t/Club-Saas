@@ -5,13 +5,13 @@ import DetailItem from "@/components/ui/DetailItem";
 import ProfileIdentityCard from "@/components/ui/ProfileIdentityCard";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
 import { formatDate, formatMoney } from "@/lib/utils";
-import { getWorkStatusMeta } from "@/lib/workStatus";
+import { STAFF_EMPLOYMENT_LABELS, STAFF_GENDER_LABELS } from "./staffConstants";
 import {
-  SHIFT_GENDER_LABELS,
-  STAFF_EMPLOYMENT_LABELS,
-  STAFF_GENDER_LABELS,
-} from "./staffConstants";
-import { getStaffBranchNames, getStaffEditHref, isCoachStaff } from "./staffUtils";
+  getStaffBranchNames,
+  getStaffEditHref,
+  getStaffWorkStatusMeta,
+  isCoachStaff,
+} from "./staffUtils";
 
 export default function StaffDetails({ staff, branches = [], isLoading, error }) {
   const { formatTime } = useTimeFormat();
@@ -31,9 +31,8 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
   }
 
   const branchNames = getStaffBranchNames(staff, branches);
-  const shifts = Array.isArray(staff.shifts) ? staff.shifts : [];
   const phone = [staff.person?.country_code, staff.person?.phone_number].filter(Boolean).join(" ");
-  const workStatus = getWorkStatusMeta(staff);
+  const workStatus = getStaffWorkStatusMeta(staff);
 
   return (
     <div className="space-y-5">
@@ -57,6 +56,14 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
         />
         <DetailItem label="تاريخ المباشرة" value={formatDate(staff.start_date)} />
         <DetailItem label="تاريخ الانتهاء" value={formatDate(staff.end_date)} />
+        <DetailItem
+          label="موعد القدوم"
+          value={staff.start_time ? formatTime(staff.start_time) : "-"}
+        />
+        <DetailItem
+          label="موعد المغادرة"
+          value={staff.end_time ? formatTime(staff.end_time) : "-"}
+        />
         <DetailItem label="تاريخ الإضافة" value={formatDate(staff.created_at)} />
         <DetailItem label="سبب آخر تعديل" value={staff.reason || "-"} />
       </div>
@@ -82,37 +89,6 @@ export default function StaffDetails({ staff, branches = [], isLoading, error })
             <span className="text-xs text-app-muted-light">لا توجد فروع مرتبطة.</span>
           )}
         </div>
-      </section>
-
-      <section className="space-y-2 text-right">
-        <h4 className="text-sm font-medium text-app-text">الورديات</h4>
-        {shifts.length ? (
-          <div className="space-y-2">
-            {shifts.map((item) => {
-              const shift = item.branch_shift || item;
-              return (
-                <div
-                  key={item.id || shift.id}
-                  className="rounded-lg border border-app-line bg-app-card-soft p-3"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-app-text">
-                      {shift.name || "وردية"}
-                    </span>
-                    <span className="text-[11px] text-app-muted-light">
-                      {SHIFT_GENDER_LABELS[shift.gender_allowed] || shift.gender_allowed || "مختلط"}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-app-muted-light" dir="ltr">
-                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-xs text-app-muted-light">لا توجد ورديات مسندة لهذا الموظف.</p>
-        )}
       </section>
 
       <Button href={getStaffEditHref(staff)} tone="outline" className="w-full">
