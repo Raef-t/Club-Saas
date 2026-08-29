@@ -31,6 +31,7 @@ export const branchSettingsSchema = z
       max: 100,
     }),
     defaultEmployeeSalary: requiredNumber("راتب الموظف الافتراضي"),
+    payrollEndDay: requiredNumber("يوم إقفال الرواتب الشهري", { min: 1, max: 31 }),
     workingHoursStart: z.string(),
     workingHoursEnd: z.string(),
     dailyEntryPrice: requiredNumber("سعر الدخول اليومي"),

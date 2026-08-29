@@ -143,6 +143,18 @@ function BranchSettingsFields({ form, errors, onFieldChange }) {
           placeholder="3500"
           error={errors.defaultEmployeeSalary}
         />
+        <Field
+          label="يوم إقفال وحساب الرواتب الشهري (من 1 إلى 31)"
+          type="number"
+          required
+          min="1"
+          max="31"
+          step="1"
+          value={form.payrollEndDay}
+          onChange={(event) => onFieldChange("payrollEndDay", event.target.value)}
+          placeholder="28"
+          error={errors.payrollEndDay}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
