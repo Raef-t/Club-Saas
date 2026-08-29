@@ -306,4 +306,34 @@ class PayrollService
         $run->update(['status' => 'approved']);
         return $run;
     }
+
+    /**
+     * Rollback and delete a payroll run with all its payslips and adjustments.
+     */
+    public function rollbackPayrollRun(int $id): bool
+    {
+        return DB::transaction(function () use ($id) {
+            $run = PayrollRun::with('payslips.adjustments')->findOrFail($id);
+
+            $payslipIds = $run->payslips->pluck('id')->toArray();
+
+            // Check if any payslip has linked accounting salary payments
+            if (!empty($payslipIds) && class_exists(\Modules\Accounting\Models\AccSalaryPayment::class)) {
+                $hasPayments = \Modules\Accounting\Models\AccSalaryPayment::whereIn('payslip_id', $payslipIds)->exists();
+                if ($hasPayments) {
+                    throw new Exception('لا يمكن التراجع عن مسير الرواتب لوجود سندات صرف رواتب مرتبطة به في قسم المحاسبة. يرجى إلغاء سندات الصرف أولاً.', 422);
+                }
+            }
+
+            // Delete adjustments and payslips
+            foreach ($run->payslips as $payslip) {
+                $payslip->adjustments()->delete();
+                $payslip->delete();
+            }
+
+            $run->delete();
+
+            return true;
+        });
+    }
 }

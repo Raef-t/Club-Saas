@@ -136,4 +136,26 @@ class PayrollController extends BaseController
         $run = $this->payrollService->generatePayslips($id);
         return $this->successResponse(new PayrollRunResource($run), __('Payslips generated successfully'));
     }
+
+    #[OA\Delete(
+        path: '/v1/payroll-runs/{payroll_run}',
+        summary: '🗑️ التراجع عن مسير الرواتب وحذفه',
+        description: 'إلغاء مسير الرواتب المثبت وحذف كافة إيصالات الرواتب التابعة له للعودة إلى حالة المسودة.',
+        tags: ['Payroll Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'payroll_run', in: 'path', required: true, description: 'معرف مسير الرواتب', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم التراجع عن مسير الرواتب بنجاح')]
+    #[OA\Response(response: 422, description: '⚠️ لا يمكن التراجع لوجود سندات صرف مرتبطة بالمحاسبة')]
+    #[OA\Response(response: 404, description: '🚫 مسير الرواتب غير موجود')]
+    public function destroy(int $id)
+    {
+        try {
+            $this->payrollService->rollbackPayrollRun($id);
+            return $this->successResponse(null, __('تم التراجع عن مسير الرواتب بنجاح، يمكنك الآن إعادة توليد المسودة وتعديلها.'));
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            return $this->errorResponse($e->getMessage(), $code);
+        }
+    }
 }

@@ -24,7 +24,8 @@ Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(fun
     // Payroll & Payslips
     Route::post('payroll-runs/{id}/generate-payslips', [PayrollController::class, 'generatePayslips']);
     Route::post('payroll-runs/{id}/process', [PayrollController::class, 'process']);
-    Route::apiResource('payroll-runs', PayrollController::class)->except(['update', 'destroy']);
+    Route::post('payroll-runs/{id}/rollback', [PayrollController::class, 'destroy']);
+    Route::apiResource('payroll-runs', PayrollController::class)->except(['update']);
     Route::get('payslips', [PayslipController::class, 'index']);
     Route::post('payslips/generate', [PayslipController::class, 'generate']);
     Route::post('payslips/confirm', [PayslipController::class, 'confirm']);
