@@ -7182,11 +7182,6 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "payroll_start_day": {
-                                        "description": "يوم بداية الرواتب (1-31)",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "payroll_end_day": {
                                         "description": "يوم نهاية الرواتب (1-31)",
                                         "type": "integer",
@@ -26583,11 +26578,6 @@
                     "display_mixed_activities": {
                         "type": "boolean",
                         "example": false,
-                        "nullable": true
-                    },
-                    "payroll_start_day": {
-                        "type": "integer",
-                        "example": 1,
                         "nullable": true
                     },
                     "payroll_end_day": {

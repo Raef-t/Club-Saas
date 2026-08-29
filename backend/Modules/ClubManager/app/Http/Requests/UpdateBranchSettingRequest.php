@@ -24,7 +24,6 @@ class UpdateBranchSettingRequest extends FormRequest
             'locker_price' => 'nullable|numeric|min:0',
             'allow_freeze' => 'nullable|boolean',
             'display_mixed_activities' => 'nullable|boolean',
-            'payroll_start_day' => 'nullable|integer|between:1,31',
             'payroll_end_day' => 'nullable|integer|between:1,31',
             'include_terminated_subscriptions' => 'nullable|boolean',
             'allow_installments' => 'nullable|boolean',
