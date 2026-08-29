@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft } from "@/components/icons/Icons";
-import Image from "next/image";
+import BrandLogo from "@/components/common/BrandLogo";
 
 const navItems = [{ title: "التقارير التشغيلية", href: "/reports" }];
 
@@ -24,9 +24,7 @@ export default function ReportsSidebar({ className }) {
       }
       dir="rtl"
     >
-      <div className="mx-auto grid h-[59px] w-[159px] place-items-center">
-        <Image src={"/img/test_logo.png"} alt="Logo" width={159} height={59} />
-      </div>
+      <BrandLogo className="mx-auto h-[59px] w-[159px]" preload />
 
       <h3 className="mt-6 text-center text-base font-medium text-app-text">نظام التقارير</h3>
 

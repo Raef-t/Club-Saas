@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { ArrowUpIcon, TagIcon, TrashIcon } from "@/components/icons/Icons";
+import { resolveClubLogoUrl } from "@/lib/clubBranding";
 
 export function UploadBox({
   label = "المرفقات",
@@ -121,9 +122,9 @@ export function UploadBox({
           {value.map((file, index) => {
             const isImage =
               file.type?.startsWith("image/") ||
-              file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
-              (typeof file === "string" && file.match(/\.(jpg|jpeg|png|gif|webp)/i)) ||
-              (file?.url && file.url.match(/\.(jpg|jpeg|png|gif|webp)/i));
+              file.name?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
+              (typeof file === "string" && file.match(/\.(jpg|jpeg|png|gif|webp|svg)/i)) ||
+              (file?.url && file.url.match(/\.(jpg|jpeg|png|gif|webp|svg)/i));
             const fileSizeStr = file.size ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "";
             const fileName =
               file.name ||
@@ -143,15 +144,9 @@ export function UploadBox({
                   console.error(e);
                 }
               } else if (typeof file === "string") {
-                previewUrl =
-                  file.startsWith("http") || file.startsWith("blob:")
-                    ? file
-                    : `http://31.70.108.63/${file.replace(/^\//, "")}`;
+                previewUrl = resolveClubLogoUrl({ logo: file });
               } else if (file?.url) {
-                previewUrl =
-                  file.url.startsWith("http") || file.url.startsWith("blob:")
-                    ? file.url
-                    : `http://31.70.108.63/${file.url.replace(/^\//, "")}`;
+                previewUrl = resolveClubLogoUrl({ logo: file.url });
               }
             }
 

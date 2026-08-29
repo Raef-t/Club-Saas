@@ -1,6 +1,7 @@
 import { z } from "zod";
 import "./zodErrorMap";
 import { toIsoDate } from "@/components/forms/datePickerUtils";
+import { modificationReasonSchema } from "./modificationReasonSchema";
 
 export const lockerSchema = z.object({
   locker_number: z
@@ -24,6 +25,7 @@ export const updateLockerSchema = z.object({
   holder_type: z.string().optional(),
   holder_id: z.union([z.number(), z.string().transform(Number)]).optional(),
   holder_name: z.string().optional(),
+  reason: modificationReasonSchema,
 });
 
 export const reserveLockerSchema = z
@@ -72,6 +74,7 @@ export const initialUpdateLockerForm = {
   holder_type: "",
   holder_id: "",
   holder_name: "",
+  reason: "",
 };
 
 export function createInitialReserveLockerForm(date = new Date()) {

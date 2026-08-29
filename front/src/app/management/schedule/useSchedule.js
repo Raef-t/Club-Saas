@@ -3,6 +3,7 @@ import { useGetScheduleQuery } from "@/lib/api/scheduleApi";
 import { useGetBranchHolidaysQuery, useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
 import { useToast } from "@/components/ui/Toast";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getApiErrorMessage } from "@/lib/apiError";
 import {
   createScheduleDataFromApi,
@@ -18,6 +19,7 @@ import { openSchedulePrintWindow } from "./schedulePrint";
 export function useSchedule({ initialSchedule, selectedBranchId = "all" } = {}) {
   const toast = useToast();
   const { formatTime } = useTimeFormat();
+  const { brandLogoUrl } = useManagementBranch();
   const initialScopedSchedule = selectedBranchId === "all" ? initialSchedule : null;
   const branchId = selectedBranchId !== "all" ? selectedBranchId : null;
   const {
@@ -71,6 +73,7 @@ export function useSchedule({ initialSchedule, selectedBranchId = "all" } = {}) 
       scheduleData,
       holidayDayKeys,
       formatTime,
+      logoUrl: brandLogoUrl,
     });
 
     if (!opened) {

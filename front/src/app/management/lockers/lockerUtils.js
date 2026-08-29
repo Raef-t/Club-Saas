@@ -84,6 +84,26 @@ export function isLockerEarlyRelease(locker, now = new Date()) {
   );
 }
 
+/**
+ * Reports whether the active reservation is a paid locker rental.
+ */
+export function isLockerRentalReservation(locker) {
+  const reservation = getLockerCurrentReservation(locker) || {};
+  const reservationType = String(
+    reservation.reservation_type || locker?.reservation_type || reservation.type || "",
+  ).toLowerCase();
+
+  return reservationType === "rental" || String(locker?.status || "").toLowerCase() === "rented";
+}
+
+/**
+ * The backend requires a reason only when ending an active rental before its
+ * scheduled end date. Free assignments can be released without a reason.
+ */
+export function doesLockerReleaseRequireReason(locker, now = new Date()) {
+  return isLockerRentalReservation(locker) && isLockerEarlyRelease(locker, now);
+}
+
 function getLockerHolder(locker) {
   const reservation = getLockerCurrentReservation(locker) || {};
   const relatedHolder = reservation.holder || locker?.holder || {};
@@ -138,7 +158,9 @@ export function matchesLockerStatus(locker, status) {
       reservation.reservation_type === "assign" ||
       locker.reservation_type === "assign" ||
       reservation.type === "assign" ||
-      (isLockerOccupied(locker) && reservation.reservation_type !== "rental" && !locker.rental_price)
+      (isLockerOccupied(locker) &&
+        reservation.reservation_type !== "rental" &&
+        !locker.rental_price)
     );
   }
 
@@ -339,6 +361,7 @@ export function createLockerUpdateInitialValues(locker) {
     holder_type: locker?.holder_type || "",
     holder_id: locker?.holder_id ? String(locker.holder_id) : "",
     holder_name: locker?.holder_name || "",
+    reason: "",
   };
 }
 
@@ -350,6 +373,7 @@ export function createLockerUpdatePayload(form) {
     locker_number: form.locker_number.trim(),
     key_number: form.key_number?.trim() || null,
     status: form.status,
+    reason: form.reason.trim(),
   };
 
   if (LOCKER_OCCUPIED_STATUSES.includes(form.status) && form.holder_type) {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import "./zodErrorMap";
+import { modificationReasonSchema } from "./modificationReasonSchema";
 
 export const activitySchema = z.object({
   name: z
@@ -7,14 +8,10 @@ export const activitySchema = z.object({
     .min(2, "الاسم يجب أن يكون حرفين على الأقل")
     .max(100, "الاسم يجب ألا يتجاوز 100 حرف"),
 
-  description: z
-    .string()
-    .max(500, "الوصف طويل جداً")
-    .optional()
-    .or(z.literal("")),
+  description: z.string().max(500, "الوصف طويل جداً").optional().or(z.literal("")),
 
-  gender_allowed: z.enum(["mixed", "male", "female"], { 
-    required_error: "يرجى تحديد قيود الجنس" 
+  gender_allowed: z.enum(["mixed", "male", "female"], {
+    required_error: "يرجى تحديد قيود الجنس",
   }),
 
   branch_id: z
@@ -29,4 +26,8 @@ export const activitySchema = z.object({
 
   is_active: z.boolean().optional(),
   shifts: z.array(z.number()).optional(),
+});
+
+export const activityUpdateSchema = activitySchema.extend({
+  reason: modificationReasonSchema,
 });

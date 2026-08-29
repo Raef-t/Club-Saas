@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const clubsApi = createApi({
+export const clubsApi = createBackendApi({
   reducerPath: "clubsApi",
-  baseQuery: backendBaseQuery,
   tagTypes: ["Clubs"],
   endpoints: (builder) => ({
     getClubs: builder.query({
@@ -34,10 +32,20 @@ export const clubsApi = createApi({
           body,
         };
       },
-      invalidatesTags: (result, error, { id }) => [
-        "Clubs",
-        { type: "Clubs", id },
-      ],
+      invalidatesTags: (result, error, { id }) => ["Clubs", { type: "Clubs", id }],
+    }),
+    updateClubLogo: builder.mutation({
+      query: ({ id, logo }) => {
+        const body = new FormData();
+        body.append("logo", logo);
+
+        return {
+          url: `clubs/${id}/logo`,
+          method: "POST",
+          body,
+        };
+      },
+      invalidatesTags: (result, error, { id }) => ["Clubs", { type: "Clubs", id }],
     }),
     deleteClub: builder.mutation({
       query: (id) => ({
@@ -54,5 +62,6 @@ export const {
   useGetClubQuery,
   useCreateClubMutation,
   useUpdateClubMutation,
+  useUpdateClubLogoMutation,
   useDeleteClubMutation,
 } = clubsApi;

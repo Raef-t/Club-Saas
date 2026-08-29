@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
 function getPlanList(response) {
   if (Array.isArray(response?.data)) return response.data;
@@ -123,9 +122,8 @@ export function mergeSubscriptionPlanIntoResponse(response, plan) {
   };
 }
 
-export const subscriptionPlansApi = createApi({
+export const subscriptionPlansApi = createBackendApi({
   reducerPath: "subscriptionPlansApi",
-  baseQuery: backendBaseQuery,
   tagTypes: ["SubscriptionPlans"],
   endpoints: (builder) => ({
     getSubscriptionPlans: builder.query({

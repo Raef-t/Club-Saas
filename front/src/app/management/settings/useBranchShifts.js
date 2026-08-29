@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "@/lib/apiError";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { shiftSchema } from "@/lib/validations/settingsSchema";
 import { getGenderForBranchId } from "@/lib/managementBranchUtils";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { printBranchShifts } from "./shiftPrint";
 import {
   createShiftForm,
@@ -29,6 +30,7 @@ export function useBranchShifts({
   initialShifts,
 }) {
   const toast = useToast();
+  const { brandLogoUrl } = useManagementBranch();
   const [editor, setEditor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -164,6 +166,7 @@ export function useBranchShifts({
       branchName: getBranchName(branch),
       shifts,
       formatTime,
+      logoUrl: brandLogoUrl,
     });
 
     if (!didOpen) {

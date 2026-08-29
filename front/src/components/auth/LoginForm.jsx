@@ -98,7 +98,7 @@ export default function LoginForm() {
       dir="rtl"
     >
       <div className="mb-8 text-center">
-        <BrandLogo src="/img/test_logo.png" className="mx-auto mb-5 h-16 w-40" />
+        <BrandLogo className="mx-auto mb-5 h-16 w-40" />
         <h1 className="text-2xl font-semibold text-white">تسجيل الدخول</h1>
         <p className="mt-2 text-sm text-app-muted-light">ادخل إلى أنظمة TechnoGYM الإدارية</p>
       </div>

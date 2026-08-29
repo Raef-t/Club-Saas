@@ -8,6 +8,7 @@ export const EMPTY_ACTIVITY_FORM = {
   activity_type_id: "",
   is_active: true,
   shifts: [],
+  reason: "",
 };
 
 /**
@@ -120,13 +121,14 @@ export function createActivityFormValues(activity) {
     shifts: Array.isArray(activity.shifts)
       ? activity.shifts.map((shift) => Number(typeof shift === "object" ? shift.id : shift))
       : [],
+    reason: "",
   };
 }
 
 /**
  * Converts validated editor values to the backend activity contract.
  */
-export function createActivityPayload(form, includeShifts) {
+export function createActivityPayload(form, includeShifts, includeReason = false) {
   return {
     name: form.name.trim(),
     description: form.description.trim() || null,
@@ -135,6 +137,7 @@ export function createActivityPayload(form, includeShifts) {
     activity_type_id: Number(form.activity_type_id),
     is_active: Boolean(form.is_active),
     shifts: includeShifts ? form.shifts.map(Number) : [],
+    ...(includeReason ? { reason: form.reason.trim() } : {}),
   };
 }
 

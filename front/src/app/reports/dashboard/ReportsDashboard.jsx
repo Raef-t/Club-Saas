@@ -7,6 +7,7 @@ import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { PrintIcon } from "@/components/icons/Icons";
 import { useToast } from "@/components/ui/Toast";
+import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { printReports } from "./reportPrint";
 import { ReportCards, ReportPanel } from "./ReportsDashboardWidgets";
 import { useOperationalReports } from "./useOperationalReports";
@@ -16,6 +17,7 @@ import { useOperationalReports } from "./useOperationalReports";
  */
 export default function ReportsDashboard({ initialData }) {
   const toast = useToast();
+  const { brandLogoUrl } = useManagementBranch();
   const reportData = useOperationalReports({ initialData });
   const [selectedReportId, setSelectedReportId] = useState("hall");
   const selectedReport =
@@ -25,7 +27,7 @@ export default function ReportsDashboard({ initialData }) {
    * Prints one report and warns when the browser blocks the print window.
    */
   function handlePrintReport(report) {
-    const opened = printReports([report], reportData.branchName);
+    const opened = printReports([report], reportData.branchName, brandLogoUrl);
     if (!opened) {
       toast.warning("اسمح بالنوافذ المنبثقة حتى تتمكن من طباعة التقرير.");
     }
@@ -35,7 +37,7 @@ export default function ReportsDashboard({ initialData }) {
    * Prints every available report on a separate page.
    */
   function handlePrintAll() {
-    const opened = printReports(reportData.reports, reportData.branchName);
+    const opened = printReports(reportData.reports, reportData.branchName, brandLogoUrl);
     if (!opened) {
       toast.warning("اسمح بالنوافذ المنبثقة حتى تتمكن من طباعة التقارير.");
     }

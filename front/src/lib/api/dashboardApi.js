@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const dashboardApi = createApi({
+export const dashboardApi = createBackendApi({
   reducerPath: "dashboardApi",
-  baseQuery: backendBaseQuery,
   endpoints: (builder) => ({
     getDashboardStatsStream: builder.query({
       queryFn: () => ({ data: null }),

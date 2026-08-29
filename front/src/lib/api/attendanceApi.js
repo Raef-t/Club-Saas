@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const attendanceApi = createApi({
+export const attendanceApi = createBackendApi({
   reducerPath: "attendanceApi",
-  baseQuery: backendBaseQuery,
   tagTypes: ["Attendance"],
   endpoints: (builder) => ({
     qrCheckIn: builder.mutation({

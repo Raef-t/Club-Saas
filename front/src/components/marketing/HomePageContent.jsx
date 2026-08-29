@@ -9,7 +9,7 @@ export default function HomePageContent() {
     <main className="dashboard-bg min-h-screen px-4 py-8 text-app-text">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
         <header className="flex items-center justify-between gap-4">
-          <BrandLogo className="h-14 w-36 bg-black/30 ring-1 ring-app-yellow/20" priority />
+          <BrandLogo className="h-14 w-36 bg-black/30 ring-1 ring-app-yellow/20" preload />
 
           <Button href="/login" className="h-11 rounded-xl px-6 font-semibold">
             تسجيل الدخول

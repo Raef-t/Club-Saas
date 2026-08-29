@@ -98,8 +98,8 @@ export function createClubFormValues(club) {
 
   return {
     name: getClubName(club) === "-" ? "" : getClubName(club),
-    logo: club.logo || null,
-    logo_url: club.logo_url || "",
+    logo: club.logo || club.logo_url || null,
+    logo_url: "",
     is_active: club.is_active !== false,
   };
 }
@@ -110,7 +110,7 @@ export function createClubFormValues(club) {
 export function createClubPayload(form) {
   return {
     name: form.name.trim(),
-    logo: form.logo instanceof File ? form.logo : form.logo || null,
+    logo: form.logo instanceof File ? form.logo : null,
     logo_url: form.logo_url?.trim() || null,
     is_active: Boolean(form.is_active),
   };
@@ -119,12 +119,12 @@ export function createClubPayload(form) {
 /**
  * Converts editor values to FormData for multipart upload.
  */
-export function createClubFormData(values) {
+export function createClubFormData(values, { includeLogo = true } = {}) {
   const formData = new FormData();
   if (values.name) {
     formData.append("name", values.name.trim());
   }
-  if (values.logo instanceof File) {
+  if (includeLogo && values.logo instanceof File) {
     formData.append("logo", values.logo);
   }
   if (values.logo_url && typeof values.logo_url === "string" && values.logo_url.trim()) {

@@ -1,9 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { backendBaseQuery } from "@/lib/api/baseQuery";
+import { createBackendApi } from "@/lib/api/baseQuery";
 
-export const reportsApi = createApi({
+export const reportsApi = createBackendApi({
   reducerPath: "reportsApi",
-  baseQuery: backendBaseQuery,
   endpoints: (builder) => ({
     getShiftAttendanceReport: builder.query({
       query: (params) => ({

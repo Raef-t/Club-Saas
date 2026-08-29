@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
-import { isLockerEarlyRelease } from "./lockerUtils";
+import { doesLockerReleaseRequireReason } from "./lockerUtils";
 
 export default function LockerReleaseDialog({ locker, onClose, onConfirm, isLoading = false }) {
   const [reason, setReason] = useState("");
   const [reasonError, setReasonError] = useState("");
-  const requiresReason = isLockerEarlyRelease(locker);
+  const requiresReason = doesLockerReleaseRequireReason(locker);
 
   useEffect(() => {
     setReason("");

@@ -1,5 +1,6 @@
 import { GENDER_MAP } from "./settingsConstants";
 import { escapeHtml } from "./settingsUtils";
+import { DEFAULT_BRAND_LOGO_URL, getAbsoluteBrandLogoUrl } from "@/lib/clubBranding";
 
 /**
  * Creates the complete printable document for a branch's daily shifts.
@@ -8,6 +9,7 @@ export function createShiftPrintDocument({
   branchName,
   shifts,
   formatTime,
+  logoUrl = DEFAULT_BRAND_LOGO_URL,
   printedAt = new Date(),
 }) {
   const rows = shifts
@@ -45,21 +47,9 @@ export function createShiftPrintDocument({
             padding-bottom: 20px;
             margin-bottom: 30px;
           }
-          .logo-title {
-            margin: 0;
-            color: #111;
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: 2px;
-          }
-          .logo-title span {
-            color: #e2b714;
-          }
-          .logo-subtitle {
-            margin: 5px 0 0;
-            color: #666;
-            font-size: 11px;
-            font-weight: 500;
+          .brand-logo {
+            width: 159px;
+            height: auto;
           }
           .meta-area {
             color: #555;
@@ -119,10 +109,7 @@ export function createShiftPrintDocument({
       </head>
       <body>
         <header class="header">
-          <div>
-            <div class="logo-title">TECHNO<span>GYM</span></div>
-            <div class="logo-subtitle">نادي تكنولوجي جيم الرياضي</div>
-          </div>
+          <img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="TechnoGYM" />
           <div class="meta-area">
             <p>تاريخ الطباعة: ${escapeHtml(printedAt.toLocaleDateString("ar-SY"))}</p>
             <p>نظام إدارة الصالات الرياضية</p>
@@ -162,8 +149,9 @@ export function printBranchShifts(options) {
     return false;
   }
 
+  const logoUrl = getAbsoluteBrandLogoUrl(options.logoUrl, window.location.origin);
   printWindow.opener = null;
-  printWindow.document.write(createShiftPrintDocument(options));
+  printWindow.document.write(createShiftPrintDocument({ ...options, logoUrl }));
   printWindow.document.close();
 
   printWindow.addEventListener(
