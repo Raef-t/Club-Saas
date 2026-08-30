@@ -159,8 +159,9 @@ class PayrollService
             $subscribersCount = $commissionResult['subscribers_count'];
 
 
-            // Check for unlinked salary advances or payments in accounting during this period
+            // Check for unlinked salary advances in accounting during this period
             $advances = \Modules\Accounting\Models\AccSalaryPayment::where('staff_id', $staff->id)
+                ->where('payment_type', 'advance')
                 ->whereNull('payslip_id')
                 ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
                 ->get();
@@ -168,11 +169,11 @@ class PayrollService
             $autoAdjustments = [];
             $totalDeductions = 0;
             foreach ($advances as $adv) {
-                $typeLabel = ($adv->payment_type === 'advance') ? 'سلفة مصروفة مسبقاً' : 'دفعة مسبقة';
+                $voucherText = $adv->journal_id ? " (سند #{$adv->journal_id})" : "";
                 $autoAdjustments[] = [
                     'type' => 'deduction',
                     'amount' => round($adv->amount, 2),
-                    'reason' => "{$typeLabel} بتاريخ {$adv->date->toDateString()}",
+                    'reason' => "سلفة مصروفة مسبقاً{$voucherText} بتاريخ {$adv->date->toDateString()}",
                 ];
                 $totalDeductions += (float) $adv->amount;
             }
