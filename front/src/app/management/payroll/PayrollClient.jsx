@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -8,7 +9,7 @@ import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { useToast } from "@/components/ui/Toast";
-import { CalendarIcon, CheckIcon, PencilIcon } from "@/components/icons/Icons";
+import { CalendarIcon, CheckIcon, HandCoinsIcon, PencilIcon } from "@/components/icons/Icons";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
 import {
@@ -36,7 +37,7 @@ import {
 const DRAFT_PAYROLL_TABLE_GRID =
   "48px minmax(130px,1.4fr) minmax(84px,.85fr) minmax(84px,.85fr) minmax(60px,.6fr) minmax(80px,.75fr) minmax(80px,.75fr) minmax(96px,.9fr) 72px";
 const SAVED_PAYROLL_TABLE_GRID =
-  "48px minmax(140px,1.4fr) minmax(84px,.85fr) minmax(84px,.85fr) minmax(60px,.6fr) minmax(80px,.75fr) minmax(80px,.75fr) minmax(96px,.9fr) 110px";
+  "48px minmax(130px,1.3fr) minmax(80px,.8fr) minmax(80px,.8fr) minmax(60px,.6fr) minmax(75px,.7fr) minmax(75px,.7fr) minmax(90px,.85fr) 110px 105px";
 
 export default function PayrollClient() {
   const toast = useToast();
@@ -238,16 +239,28 @@ export default function PayrollClient() {
           align: "center",
           render: (_, payslip) => {
             const isPaid = payslip?.status === "paid";
+            const journalId =
+              payslip?.salary_payments?.[0]?.journal_id ||
+              payslip?.salary_payment?.journal_id ||
+              payslip?.salary_payments?.[0]?.id;
+
             return (
-              <span
-                className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${
-                  isPaid
-                    ? "bg-app-green/15 text-app-green border border-app-green/30"
-                    : "bg-app-yellow/15 text-app-yellow border border-app-yellow/30"
-                }`}
-              >
-                {isPaid ? "مدفوع" : "بانتظار الصرف"}
-              </span>
+              <div className="flex flex-col items-center gap-0.5">
+                <span
+                  className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${
+                    isPaid
+                      ? "bg-app-green/15 text-app-green border border-app-green/30"
+                      : "bg-app-yellow/15 text-app-yellow border border-app-yellow/30"
+                  }`}
+                >
+                  {isPaid ? "مدفوع" : "بانتظار الصرف"}
+                </span>
+                {isPaid && journalId && (
+                  <span className="text-[10px] text-app-muted-light">
+                    سند #{journalId}
+                  </span>
+                )}
+              </div>
             );
           },
         },
@@ -256,20 +269,44 @@ export default function PayrollClient() {
           label: "الإجراء",
           align: "center",
           sortable: false,
-          render: (_, payslip) => (
-            <button
-              type="button"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-app-line bg-app-card px-2.5 text-xs text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow"
-              onClick={() => setEditing({ source: activeTab, payslip })}
-            >
-              <PencilIcon className="size-3.5" />
-              تعديل
-            </button>
-          ),
+          render: (_, payslip) => {
+            if (activeTab === "draft") {
+              return (
+                <button
+                  type="button"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-app-line bg-app-card px-2.5 text-xs text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow"
+                  onClick={() => setEditing({ source: activeTab, payslip })}
+                >
+                  <PencilIcon className="size-3.5" />
+                  تعديل
+                </button>
+              );
+            }
+
+            const isPaid = payslip?.status === "paid";
+            if (isPaid) {
+              return (
+                <span className="inline-flex h-8 items-center px-2 text-xs text-app-muted-light/60">
+                  تم الصرف
+                </span>
+              );
+            }
+
+            return (
+              <Link
+                href={`/accounting/salaries?openModal=true&payslip_id=${payslip.id}&staff_id=${payslip.staff_id}&amount=${payslip.net_pay}`}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-app-yellow/40 bg-app-yellow/10 px-2.5 text-xs font-medium text-app-yellow transition hover:bg-app-yellow hover:text-black"
+                title="صرف القسيمة عبر قسم المحاسبة"
+              >
+                <HandCoinsIcon className="size-3.5" />
+                صرف نقدي
+              </Link>
+            );
+          },
         },
       ].filter((column) => {
         if (activeTab === "draft") return column.key !== "status";
-        return column.key !== "actions";
+        return true;
       }),
     [activeTab],
   );

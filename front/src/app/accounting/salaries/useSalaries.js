@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useGetSalaryPaymentsQuery,
   useCreateSalaryPaymentMutation,
@@ -21,15 +22,35 @@ export function useSalaries({
   initialPeriods = [],
 } = {}) {
   const toast = useToast();
+  const searchParams = useSearchParams();
   const { selectedBranchId, branches } = useManagementBranch();
 
   const [search, setSearch] = useState("");
   const [periodFilter, setPeriodFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [initialFormValues, setInitialFormValues] = useState(null);
   const [deletePayment, setDeletePayment] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [formErrors, setFormErrors] = useState({});
+
+  useEffect(() => {
+    if (searchParams) {
+      const openModal = searchParams.get("openModal");
+      const payslipId = searchParams.get("payslip_id");
+      const staffId = searchParams.get("staff_id");
+      const amount = searchParams.get("amount");
+
+      if (openModal === "true" || payslipId) {
+        setInitialFormValues({
+          payslip_id: payslipId || "",
+          staff_id: staffId || "",
+          amount: amount || "",
+        });
+        setIsFormOpen(true);
+      }
+    }
+  }, [searchParams]);
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -163,5 +184,6 @@ export function useSalaries({
     closeFormModal,
     handleSavePayment,
     handleDeletePayment,
+    initialFormValues,
   };
 }

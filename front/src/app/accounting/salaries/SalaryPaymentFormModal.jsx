@@ -15,6 +15,7 @@ export default function SalaryPaymentFormModal({
   onSave,
   isLoading,
   errors = {},
+  initialValues = null,
 }) {
   const [formData, setFormData] = useState({
     staff_id: "",
@@ -36,30 +37,43 @@ export default function SalaryPaymentFormModal({
     if (isOpen) {
       const defaultSafe = safeSafesList.find((s) => s.is_default) || safeSafesList[0];
       const openPeriod = safePeriodsList.find((p) => p.status === "open") || safePeriodsList[0];
-      const initialStaff = safeStaffList[0];
+      const targetStaffId = initialValues?.staff_id
+        ? String(initialValues.staff_id)
+        : safeStaffList[0]?.id
+          ? String(safeStaffList[0].id)
+          : "";
+      const targetPayslipId = initialValues?.payslip_id ? String(initialValues.payslip_id) : "";
 
       // Check if this staff has an unpaid payslip
-      const initialPayslip = Array.isArray(unpaidPayslips)
-        ? unpaidPayslips.find((p) => String(p.staff_id) === String(initialStaff?.id))
-        : null;
+      const initialPayslip = targetPayslipId
+        ? (Array.isArray(unpaidPayslips) ? unpaidPayslips.find((p) => String(p.id) === targetPayslipId) : null)
+        : Array.isArray(unpaidPayslips)
+          ? unpaidPayslips.find((p) => String(p.staff_id) === targetStaffId)
+          : null;
 
-      setFormData({
-        staff_id: initialStaff?.id ? String(initialStaff.id) : "",
-        safe_id: defaultSafe?.id ? String(defaultSafe.id) : "",
-        period_id: openPeriod?.id ? String(openPeriod.id) : "",
-        payslip_id: initialPayslip?.id ? String(initialPayslip.id) : "",
-        payment_type: "salary",
-        amount: initialPayslip?.net_pay
+      const initialStaff = safeStaffList.find((s) => String(s.id) === targetStaffId) || safeStaffList[0];
+
+      const targetAmount = initialValues?.amount
+        ? String(initialValues.amount)
+        : initialPayslip?.net_pay
           ? String(initialPayslip.net_pay)
           : initialStaff?.base_salary
             ? String(initialStaff.base_salary)
-            : "",
+            : "";
+
+      setFormData({
+        staff_id: targetStaffId,
+        safe_id: initialValues?.safe_id ? String(initialValues.safe_id) : (defaultSafe?.id ? String(defaultSafe.id) : ""),
+        period_id: initialValues?.period_id ? String(initialValues.period_id) : (openPeriod?.id ? String(openPeriod.id) : ""),
+        payslip_id: targetPayslipId || (initialPayslip?.id ? String(initialPayslip.id) : ""),
+        payment_type: initialValues?.payment_type || "salary",
+        amount: targetAmount,
         payment_date: new Date().toISOString().split("T")[0],
         payment_method: "cash",
-        notes: "",
+        notes: initialValues?.notes || "",
       });
     }
-  }, [isOpen, safes, periods, staffList, unpaidPayslips]);
+  }, [isOpen, safes, periods, staffList, unpaidPayslips, initialValues]);
 
   const availablePayslips = Array.isArray(unpaidPayslips)
     ? unpaidPayslips.filter((p) => String(p.staff_id) === String(formData.staff_id))

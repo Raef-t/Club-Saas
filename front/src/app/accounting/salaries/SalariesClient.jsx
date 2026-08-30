@@ -45,6 +45,7 @@ export default function SalariesClient({
     closeFormModal,
     handleSavePayment,
     handleDeletePayment,
+    initialFormValues,
   } = useSalaries({
     initialPayments,
     initialStaff,
@@ -205,6 +206,7 @@ export default function SalariesClient({
         onSave={handleSavePayment}
         isLoading={isSaving}
         errors={formErrors}
+        initialValues={initialFormValues}
       />
 
       {/* Delete Confirmation Dialog */}
