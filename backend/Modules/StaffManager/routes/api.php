@@ -17,7 +17,6 @@ Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(fun
     // Staff Actions
     Route::post('staff/{id}/schedule', [StaffController::class, 'setSchedule']);
     Route::patch('staff/{id}/toggle-status', [StaffController::class, 'toggleStatus']);
-    Route::post('staff/{id}/restore', [StaffController::class, 'restore']);
     Route::post('staff/{id}/photo', [StaffController::class, 'updatePhoto']);
 
 
@@ -43,7 +42,6 @@ Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(fun
         Route::post('/{id}/photo', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updatePhoto']);
         Route::post('/{id}/schedule', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'setSchedule']);
         Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
-        Route::post('/{id}/restore', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'restore']);
     });
 
     // Shifts

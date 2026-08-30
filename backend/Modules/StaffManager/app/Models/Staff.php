@@ -37,7 +37,7 @@ class Staff extends Model
     protected static function booted(): void
     {
         static::deleted(function ($staff) {
-            if ($staff->isForceDeleting()) {
+            if (method_exists($staff, 'isForceDeleting') && $staff->isForceDeleting()) {
                 return;
             }
 
@@ -46,21 +46,31 @@ class Staff extends Model
                 \Modules\Sports\Models\SessionException::where('coach_id', $staff->id)->update(['coach_id' => null]);
             }
 
-            // Soft-delete linked staff details
+            // Soft-delete linked coach details
             if ($staff->coachDetail) {
                 $staff->coachDetail->delete();
             }
+
+            // Soft-delete related records
             $staff->contracts()->delete();
             $staff->shifts()->delete();
-            $staff->leaves()->delete();
-            $staff->unavailabilities()->delete();
+            StaffBranch::where('staff_id', $staff->id)->delete();
 
             // Soft-delete Person & User
-            if ($staff->person) {
-                if ($staff->person->user) {
-                    $staff->person->user->delete();
+            if ($staff->person_id) {
+                $user = \Modules\Authentication\Models\User::where('person_id', $staff->person_id)->first();
+                if ($user) {
+                    $user->delete();
                 }
-                $staff->person->delete();
+                $person = \Modules\Authentication\Models\Person::find($staff->person_id);
+                if ($person) {
+                    $person->delete();
+                }
+            }
+
+            // Soft-delete Locker Reservations
+            if (class_exists(\Modules\SubscriptionManager\Models\LockerReservation::class)) {
+                \Modules\SubscriptionManager\Models\LockerReservation::where('staff_id', $staff->id)->delete();
             }
 
             // Soft-delete Attendance logs
@@ -72,26 +82,30 @@ class Staff extends Model
         });
 
         static::restored(function ($staff) {
-            $person = \Modules\Authentication\Models\Person::withTrashed()->find($staff->person_id);
-            if ($person) {
-                $person->restore();
-                $user = \Modules\Authentication\Models\User::withTrashed()->where('person_id', $person->id)->first();
+            // Restore Person & User
+            if ($staff->person_id) {
+                $person = \Modules\Authentication\Models\Person::withTrashed()->find($staff->person_id);
+                if ($person) {
+                    $person->restore();
+                }
+                $user = \Modules\Authentication\Models\User::withTrashed()->where('person_id', $staff->person_id)->first();
                 if ($user) {
                     $user->restore();
                 }
             }
 
-            // Restore related staff details
-            if ($staff->coachDetail) {
-                $staff->coachDetail()->withTrashed()->restore();
+            // Restore related coach details
+            if ($staff->coachDetail()->onlyTrashed()->exists()) {
+                $staff->coachDetail()->onlyTrashed()->first()->restore();
             }
+
+            // Restore related records
             $staff->contracts()->onlyTrashed()->restore();
             $staff->shifts()->onlyTrashed()->restore();
-            $staff->leaves()->onlyTrashed()->restore();
-            $staff->unavailabilities()->onlyTrashed()->restore();
+            StaffBranch::onlyTrashed()->where('staff_id', $staff->id)->restore();
 
             // Restore Locker Reservations only if the locker is still available
-            if (class_exists(\Modules\ClubManager\Models\Locker::class)) {
+            if (class_exists(\Modules\ClubManager\Models\Locker::class) && class_exists(\Modules\SubscriptionManager\Models\LockerReservation::class)) {
                 \Modules\SubscriptionManager\Models\LockerReservation::onlyTrashed()
                     ->where('staff_id', $staff->id)
                     ->get()
@@ -145,6 +159,11 @@ class Staff extends Model
     public function shifts()
     {
         return $this->hasMany(StaffShift::class);
+    }
+
+    public function staffBranches()
+    {
+        return $this->hasMany(StaffBranch::class);
     }
 
     public function branches()
