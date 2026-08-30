@@ -159,6 +159,18 @@ class ReportController extends Controller
         tags: ['Accounting - التقارير والقوائم المالية الختامية'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب إحصائيات لوحة التحكم بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'تم جلب إحصائيات لوحة التحكم بنجاح'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
+    #[OA\Response(response: 500, description: '❌ خطأ داخلي في الخادم')]
     public function dashboard(Request $request)
     {
         try {

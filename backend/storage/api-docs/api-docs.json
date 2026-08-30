@@ -2684,6 +2684,49 @@
                 ]
             }
         },
+        "/accounting/dashboard": {
+            "get": {
+                "tags": [
+                    "Accounting - التقارير والقوائم المالية الختامية"
+                ],
+                "summary": "📊 إحصائيات لوحة التحكم العامة للمحاسبة",
+                "description": "يسترجع مؤشرات وإحصائيات لوحة التحكم المحاسبية الحية (الإيرادات، المصروفات، صافي الأرباح، رصيد الصناديق، الرسوم البيانية، وآخر المعاملات) مفلترة بحسب الفرع الجغرافي المختار.",
+                "operationId": "d345b8f69514c41f83eef41585cb8929",
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب إحصائيات لوحة التحكم بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "تم جلب إحصائيات لوحة التحكم بنجاح"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "❌ خطأ داخلي في الخادم"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/accounting/safes": {
             "get": {
                 "tags": [
@@ -2963,6 +3006,41 @@
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "🚫 الصندوق غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Accounting - الصناديق والعهد المالية"
+                ],
+                "summary": "🗑️ حذف صندوق مالي",
+                "description": "يحذف الصندوق المالي بشرط عدم وجود أي حركات أو قيود مالية مسجلة عليه.",
+                "operationId": "8e6efba7b6c3161c606682af9bdb6f4d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف الصندوق (ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم حذف الصندوق بنجاح"
+                    },
+                    "400": {
+                        "description": "❌ لا يمكن حذف الصندوق لوجود حركات مالية"
                     },
                     "404": {
                         "description": "🚫 الصندوق غير موجود"
