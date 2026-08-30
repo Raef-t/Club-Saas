@@ -134,6 +134,24 @@ class SalaryPaymentController extends Controller
                 default   => 'راتب',
             };
 
+            // Strict validation when paying an approved payslip
+            if (!empty($data['payslip_id']) && $paymentType === 'salary') {
+                $payslip = \Modules\StaffManager\Models\Payslip::findOrFail($data['payslip_id']);
+
+                if ($payslip->status === 'paid') {
+                    return $this->error('قسيمة الراتب المحددة تم صرفها مسبقاً في النظام.', 422);
+                }
+
+                if ((int)$payslip->staff_id !== (int)$staff->id) {
+                    return $this->error('قسيمة الراتب المحددة لا تنتمي إلى هذا الكادر.', 422);
+                }
+
+                if (round($amount, 2) !== round((float)$payslip->net_pay, 2)) {
+                    $expected = number_format((float)$payslip->net_pay, 2);
+                    return $this->error("المبلغ المصروف يجب أن يطابق تماماً صافي القسيمة المعتمدة ({$expected} {$currency}).", 422);
+                }
+            }
+
             $salaryPayment = DB::transaction(function () use ($data, $staff, $safe, $period, $currency, $amount, $expenseAccount, $personName, $paymentType, $typeLabel) {
                 // 1. Create the salary payment record
                 $payment = AccSalaryPayment::create([

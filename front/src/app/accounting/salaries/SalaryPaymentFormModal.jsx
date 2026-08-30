@@ -79,6 +79,8 @@ export default function SalaryPaymentFormModal({
     ? unpaidPayslips.filter((p) => String(p.staff_id) === String(formData.staff_id))
     : [];
 
+  const isAmountLocked = formData.payment_type === "salary" && Boolean(formData.payslip_id);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "staff_id") {
@@ -206,20 +208,37 @@ export default function SalaryPaymentFormModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
-              المبلغ المصروف *
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-app-muted-light">
+                المبلغ المصروف *
+              </label>
+              {isAmountLocked && (
+                <span className="text-[10px] text-app-yellow font-medium">
+                  🔒 مقفل لمطابقة القسيمة
+                </span>
+              )}
+            </div>
             <input
               type="number"
               step="any"
               name="amount"
               value={formData.amount}
               onChange={handleChange}
+              readOnly={isAmountLocked}
               placeholder="0.00"
-              className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm font-mono text-rose-400 font-bold outline-none focus:border-app-yellow"
+              className={`h-11 w-full rounded-xl border px-3 text-sm font-mono font-bold outline-none transition ${
+                isAmountLocked
+                  ? "border-app-yellow/40 bg-app-panel-soft/60 cursor-not-allowed text-app-yellow"
+                  : "border-app-line bg-app-card-soft text-rose-400 focus:border-app-yellow"
+              }`}
               required
             />
             {errors.amount && <p className="mt-1 text-xs text-rose-500">{errors.amount}</p>}
+            {isAmountLocked && (
+              <p className="mt-1 text-[11px] text-app-muted-light">
+                المبلغ مقفل ومطابق لصافي قسيمة الراتب المعتمدة
+              </p>
+            )}
           </div>
 
           <Field
