@@ -134,8 +134,12 @@ class SalaryPaymentController extends Controller
                 default   => 'راتب',
             };
 
-            // Strict validation when paying an approved payslip
-            if (!empty($data['payslip_id']) && $paymentType === 'salary') {
+            // Strict validation for salary payments vs advances/bonuses
+            if ($paymentType === 'salary') {
+                if (empty($data['payslip_id'])) {
+                    return $this->error('لا يمكن صرف دفعة من نوع (راتب مسير معتمد) بدون تحديد قسيمة راتب معتمدة. يمكنك اختيار (سلفة) أو (مكافأة) إذا كانت الدفعة خارج المسير.', 422);
+                }
+
                 $payslip = \Modules\StaffManager\Models\Payslip::findOrFail($data['payslip_id']);
 
                 if ($payslip->status === 'paid') {

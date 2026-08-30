@@ -53,6 +53,12 @@ export default function SalaryPaymentFormModal({
 
       const initialStaff = safeStaffList.find((s) => String(s.id) === targetStaffId) || safeStaffList[0];
 
+      const defaultPaymentType = initialValues?.payment_type
+        ? initialValues.payment_type
+        : initialPayslip
+          ? "salary"
+          : "advance";
+
       const targetAmount = initialValues?.amount
         ? String(initialValues.amount)
         : initialPayslip?.net_pay
@@ -66,7 +72,7 @@ export default function SalaryPaymentFormModal({
         safe_id: initialValues?.safe_id ? String(initialValues.safe_id) : (defaultSafe?.id ? String(defaultSafe.id) : ""),
         period_id: initialValues?.period_id ? String(initialValues.period_id) : (openPeriod?.id ? String(openPeriod.id) : ""),
         payslip_id: targetPayslipId || (initialPayslip?.id ? String(initialPayslip.id) : ""),
-        payment_type: initialValues?.payment_type || "salary",
+        payment_type: defaultPaymentType,
         amount: targetAmount,
         payment_date: new Date().toISOString().split("T")[0],
         payment_method: "cash",
@@ -87,15 +93,19 @@ export default function SalaryPaymentFormModal({
       const selectedStaff = staffList.find((s) => String(s.id) === String(value));
       const staffPayslip = unpaidPayslips.find((p) => String(p.staff_id) === String(value));
 
+      const newPaymentType = staffPayslip ? "salary" : "advance";
+      const newAmount = staffPayslip?.net_pay
+        ? String(staffPayslip.net_pay)
+        : selectedStaff?.base_salary
+          ? String(selectedStaff.base_salary)
+          : "";
+
       setFormData((prev) => ({
         ...prev,
         staff_id: value,
+        payment_type: newPaymentType,
         payslip_id: staffPayslip?.id ? String(staffPayslip.id) : "",
-        amount: staffPayslip?.net_pay
-          ? String(staffPayslip.net_pay)
-          : selectedStaff?.base_salary
-            ? String(selectedStaff.base_salary)
-            : prev.amount,
+        amount: newAmount,
       }));
     } else if (name === "payslip_id") {
       const selectedSlip = availablePayslips.find((p) => String(p.id) === String(value));
@@ -260,30 +270,47 @@ export default function SalaryPaymentFormModal({
               onChange={handleChange}
               className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-text outline-none focus:border-app-yellow"
             >
-              <option value="salary">راتب مسير معتمد (Salary)</option>
+              {availablePayslips.length > 0 ? (
+                <option value="salary">راتب مسير معتمد (Salary)</option>
+              ) : (
+                <option value="salary" disabled>
+                  راتب مسير معتمد (لا توجد قسيمة معتمدة معلقة)
+                </option>
+              )}
               <option value="advance">سلفة على الراتب (Advance)</option>
               <option value="bonus">مكافأة استثنائية (Bonus)</option>
             </select>
+            {availablePayslips.length === 0 && (
+              <p className="mt-1 text-[11px] text-app-muted-light">
+                💡 لا توجد قسيمة مسير رواتب معتمدة وبانتظار الصرف لهذا الموظف.
+              </p>
+            )}
           </div>
 
-          {formData.payment_type === "salary" && availablePayslips.length > 0 && (
+          {formData.payment_type === "salary" && (
             <div>
               <label className="mb-1.5 block text-xs font-medium text-app-muted-light">
-                قسيمة الراتب المعتمدة
+                قسيمة الراتب المعتمدة *
               </label>
               <select
                 name="payslip_id"
                 value={formData.payslip_id}
                 onChange={handleChange}
                 className="h-11 w-full rounded-xl border border-app-line bg-app-card-soft px-3 text-sm text-app-yellow outline-none focus:border-app-yellow"
+                required
               >
-                <option value="">-- صرف حر بدون قسيمة --</option>
+                {availablePayslips.length === 0 && (
+                  <option value="">-- لا توجد قسائم معتمدة معلقة --</option>
+                )}
                 {availablePayslips.map((p) => (
                   <option key={p.id} value={p.id}>
                     قسيمة #{p.id} — صافي: {Number(p.net_pay || 0).toLocaleString()}
                   </option>
                 ))}
               </select>
+              {errors.payslip_id && (
+                <p className="mt-1 text-xs text-rose-500">{errors.payslip_id}</p>
+              )}
             </div>
           )}
 
