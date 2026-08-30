@@ -37,10 +37,14 @@ class ReconciliationController extends Controller
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         try {
+            $branchId = $request->header('X-Branch-ID') ?: $request->input('branch_id');
             $records = AccReconciliation::with('safe', 'period')
+                ->when($branchId && $branchId !== 'all', function ($q) use ($branchId) {
+                    $q->whereHas('safe', fn($sq) => $sq->where('branch_id', $branchId));
+                })
                 ->orderBy('reconciled_at', 'desc')->get();
             return $this->successResponse($records, 'تم جلب سجلات التسوية');
         } catch (\Exception $e) {

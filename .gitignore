@@ -42,7 +42,10 @@ Desktop.ini
 
 # Misc
 *.log
+*.sql
 .phpunit.result.cache
 .phpunit.cache/
 /backend/storage/*.key
 /backend/storage/pail
+/backend/storage/backups/
+

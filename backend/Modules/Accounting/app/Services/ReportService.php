@@ -323,4 +323,284 @@ class ReportService
             'period_net_equity_usd'        => $partnerShare - $drawingsUsd,
         ];
     }
+
+    /**
+     * إحصائيات ولوحة التحكم العامة للمحاسبة
+     */
+    public function getDashboardStats(?int $periodId = null, ?int $branchId = null): array
+    {
+        $period = $periodId ? AccPeriod::find($periodId) : AccPeriod::where('status', 'open')->latest('id')->first();
+        if (!$period) {
+            $period = AccPeriod::latest('id')->first();
+        }
+        $pid = $period?->id;
+
+        $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
+
+        // 1. Revenue & Expense for Today vs Yesterday
+        $revenueAccounts = AccAccount::where('type', 'revenue')->pluck('id')->toArray();
+        $expenseAccounts = AccAccount::where('type', 'expense')->pluck('id')->toArray();
+
+        $calcPeriodRevExp = function($date) use ($revenueAccounts, $expenseAccounts, $branchId) {
+            $query = AccJournalEntry::whereHas('journal', function($q) use ($date, $branchId) {
+                $q->where('status', 'posted')->where('date', $date);
+                if ($branchId) $q->where('branch_id', $branchId);
+            });
+            $revEntries = (clone $query)->whereIn('account_id', $revenueAccounts)->selectRaw('SUM(credit_usd - debit_usd) as usd, SUM(credit_syp - debit_syp) as syp')->first();
+            $expEntries = (clone $query)->whereIn('account_id', $expenseAccounts)->selectRaw('SUM(debit_usd - credit_usd) as usd, SUM(debit_syp - credit_syp) as syp')->first();
+
+            return [
+                'revenue_usd' => (float) ($revEntries->usd ?? 0),
+                'revenue_syp' => (float) ($revEntries->syp ?? 0),
+                'expense_usd' => (float) ($expEntries->usd ?? 0),
+                'expense_syp' => (float) ($expEntries->syp ?? 0),
+            ];
+        };
+
+        $todayData = $calcPeriodRevExp($today);
+        $yesterdayData = $calcPeriodRevExp($yesterday);
+
+        // Overall Period Income Statement
+        $incomeStatement = $pid ? $this->getIncomeStatement($pid, $branchId) : [
+            'summary' => [
+                'total_revenue_usd' => 0, 'total_expense_usd' => 0, 'net_income_usd' => 0,
+                'total_revenue_syp' => 0, 'total_expense_syp' => 0, 'net_income_syp' => 0,
+                'is_profitable' => true
+            ]
+        ];
+        $netProfitUsd = (float) ($incomeStatement['summary']['net_income_usd'] ?? 0);
+        $netProfitSyp = (float) ($incomeStatement['summary']['net_income_syp'] ?? 0);
+
+        // Helper to format dual currency
+        $formatDual = function(float $usd, float $syp): string {
+            if ($usd != 0 && $syp != 0) {
+                return number_format($usd, 2) . ' $ | ' . number_format($syp, 0) . ' ل.س';
+            } elseif ($syp != 0) {
+                return number_format($syp, 0) . ' ل.س';
+            } elseif ($usd != 0) {
+                return number_format($usd, 2) . ' $';
+            }
+            return '0.00 $';
+        };
+
+        // Safes Balance
+        $safesQuery = AccSafe::query();
+        if ($branchId) {
+            $safesQuery->where('branch_id', $branchId);
+        }
+        $safes = $safesQuery->get();
+        $totalSafesUsd = 0.0;
+        $totalSafesSyp = 0.0;
+        foreach ($safes as $s) {
+            if ($s->account_id) {
+                $bal = $this->ledger->getAccountBalance($s->account_id, null, $branchId);
+                if ($s->currency === 'USD') {
+                    $totalSafesUsd += $bal['balance_usd'];
+                } else {
+                    $totalSafesSyp += $bal['balance_syp'];
+                }
+            }
+        }
+
+        // Monthly Profit (12 months)
+        $monthlyProfit = [];
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $currentYear = now()->year;
+        for ($m = 1; $m <= 12; $m++) {
+            $mStart = sprintf('%04d-%02d-01', $currentYear, $m);
+            $mEnd = \Carbon\Carbon::parse($mStart)->endOfMonth()->toDateString();
+            $mRevUsd = (float) (AccJournalEntry::whereIn('account_id', $revenueAccounts)->whereHas('journal', function($q) use ($mStart, $mEnd, $branchId) {
+                $q->where('status', 'posted')->whereBetween('date', [$mStart, $mEnd]);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(credit_usd - debit_usd) as usd')->value('usd') ?? 0);
+
+            $mExpUsd = (float) (AccJournalEntry::whereIn('account_id', $expenseAccounts)->whereHas('journal', function($q) use ($mStart, $mEnd, $branchId) {
+                $q->where('status', 'posted')->whereBetween('date', [$mStart, $mEnd]);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(debit_usd - credit_usd) as usd')->value('usd') ?? 0);
+
+            $mRevSyp = (float) (AccJournalEntry::whereIn('account_id', $revenueAccounts)->whereHas('journal', function($q) use ($mStart, $mEnd, $branchId) {
+                $q->where('status', 'posted')->whereBetween('date', [$mStart, $mEnd]);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(credit_syp - debit_syp) as syp')->value('syp') ?? 0);
+
+            $mExpSyp = (float) (AccJournalEntry::whereIn('account_id', $expenseAccounts)->whereHas('journal', function($q) use ($mStart, $mEnd, $branchId) {
+                $q->where('status', 'posted')->whereBetween('date', [$mStart, $mEnd]);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(debit_syp - credit_syp) as syp')->value('syp') ?? 0);
+
+            $netUsd = $mRevUsd - $mExpUsd;
+            $netSyp = $mRevSyp - $mExpSyp;
+
+            $monthlyProfit[] = [
+                'label' => $months[$m - 1],
+                'value' => round($netUsd != 0 ? $netUsd : $netSyp, 2),
+            ];
+        }
+
+        // Comparison Chart (Last 7 Days)
+        $comparisonDays = [];
+        $yellowRevenues = [];
+        $greenExpenses = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $d = now()->subDays($i);
+            $dStr = $d->toDateString();
+            $dayName = $d->locale('ar')->isoFormat('dddd');
+            $comparisonDays[] = $dayName;
+
+            $dayRevUsd = (float) (AccJournalEntry::whereIn('account_id', $revenueAccounts)->whereHas('journal', function($q) use ($dStr, $branchId) {
+                $q->where('status', 'posted')->where('date', $dStr);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(credit_usd - debit_usd) as usd')->value('usd') ?? 0);
+
+            $dayExpUsd = (float) (AccJournalEntry::whereIn('account_id', $expenseAccounts)->whereHas('journal', function($q) use ($dStr, $branchId) {
+                $q->where('status', 'posted')->where('date', $dStr);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(debit_usd - credit_usd) as usd')->value('usd') ?? 0);
+
+            $dayRevSyp = (float) (AccJournalEntry::whereIn('account_id', $revenueAccounts)->whereHas('journal', function($q) use ($dStr, $branchId) {
+                $q->where('status', 'posted')->where('date', $dStr);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(credit_syp - debit_syp) as syp')->value('syp') ?? 0);
+
+            $dayExpSyp = (float) (AccJournalEntry::whereIn('account_id', $expenseAccounts)->whereHas('journal', function($q) use ($dStr, $branchId) {
+                $q->where('status', 'posted')->where('date', $dStr);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->selectRaw('SUM(debit_syp - credit_syp) as syp')->value('syp') ?? 0);
+
+            $revVal = $dayRevUsd != 0 ? $dayRevUsd : $dayRevSyp;
+            $expVal = $dayExpUsd != 0 ? $dayExpUsd : $dayExpSyp;
+
+            $yellowRevenues[] = round($revVal, 2);
+            $greenExpenses[] = round($expVal, 2);
+        }
+
+        // Recent Transactions (Last 5 journals)
+        $journalsQuery = AccJournal::with('safe', 'entries.account')
+            ->where('status', 'posted');
+        if ($branchId) {
+            $journalsQuery->where('branch_id', $branchId);
+        }
+        $recentJournals = $journalsQuery->orderBy('date', 'desc')->orderBy('id', 'desc')->take(5)->get();
+
+        $recentTransactions = $recentJournals->map(function($j) {
+            $sumDebitUsd = (float) $j->entries->sum('debit_usd');
+            $sumDebitSyp = (float) $j->entries->sum('debit_syp');
+            $sumCreditUsd = (float) $j->entries->sum('credit_usd');
+            $sumCreditSyp = (float) $j->entries->sum('credit_syp');
+
+            $isSyp = ($sumDebitSyp > 0 || $sumCreditSyp > 0);
+            $amountValue = $isSyp ? max($sumDebitSyp, $sumCreditSyp) : max($sumDebitUsd, $sumCreditUsd);
+            $currencyLabel = $isSyp ? 'ل.س' : '$';
+
+            $isIncome = in_array($j->type, ['RV']) || ($j->source_type === 'payment') || str_contains($j->description, 'إيراد');
+            $desc = trim($j->description ?? '');
+            if (empty($desc) || $desc === '.') {
+                $desc = $isIncome ? 'سند قبض / إيراد' : 'سند صرف / مصروف';
+            }
+
+            return [
+                'id'          => $j->id,
+                'title'       => $j->reference_number ?: ('قيد #' . $j->id),
+                'description' => $desc,
+                'amount'      => number_format($amountValue, $isSyp ? 0 : 2) . ' ' . $currencyLabel,
+                'time'        => $j->date ? $j->date->format('Y-m-d') : '',
+                'type'        => $isIncome ? 'in' : 'out',
+            ];
+        });
+
+        // Salary Summary for Coaches
+        $coachesQuery = \Modules\StaffManager\Models\Staff::where('role', 'coach')->where('is_active', true);
+        if ($branchId) {
+            $coachesQuery->whereHas('branches', fn($bq) => $bq->where('branches.id', $branchId));
+        }
+        $coachesCount = $coachesQuery->count();
+
+        $salariesPaidQuery = AccJournalEntry::whereHas('account', fn($aq) => $aq->where('code', 'like', '51%'))
+            ->whereHas('journal', function($q) use ($pid, $branchId) {
+                $q->where('status', 'posted');
+                if ($pid) $q->where('period_id', $pid);
+                if ($branchId) $q->where('branch_id', $branchId);
+            });
+        $totalSalariesPaidUsd = (float) ($salariesPaidQuery->sum('debit_usd') ?? 0);
+        $totalSalariesPaidSyp = (float) ($salariesPaidQuery->sum('debit_syp') ?? 0);
+
+        // Upcoming / Pending Payments
+        $upcomingPayments = [];
+        $unpaidInvoices = \Modules\SubscriptionManager\Models\Invoice::where('status', '!=', 'paid')
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->with('member.person')
+            ->latest('id')
+            ->take(3)
+            ->get();
+
+        foreach ($unpaidInvoices as $inv) {
+            $name = $inv->member?->person?->full_name ?? ('فاتورة #' . $inv->id);
+            $upcomingPayments[] = [
+                'title'  => 'مستحق: ' . $name,
+                'date'   => $inv->created_at ? $inv->created_at->format('d M') : 'قريباً',
+                'amount' => number_format((float)$inv->total, 2) . ' $',
+            ];
+        }
+
+        $overviewStats = [
+            [
+                'title'   => 'إيرادات اليوم',
+                'value'   => $formatDual($todayData['revenue_usd'], $todayData['revenue_syp']),
+                'change'  => ($todayData['revenue_usd'] > 0 || $todayData['revenue_syp'] > 0) ? '+100%' : '+0%',
+                'helper'  => 'عن أمس',
+                'tone'    => 'yellow',
+            ],
+            [
+                'title'   => 'مصاريف اليوم',
+                'value'   => $formatDual($todayData['expense_usd'], $todayData['expense_syp']),
+                'change'  => ($todayData['expense_usd'] > 0 || $todayData['expense_syp'] > 0) ? '+100%' : '+0%',
+                'helper'  => 'عن أمس',
+                'tone'    => 'green',
+            ],
+            [
+                'title'    => 'صافي الأرباح',
+                'value'    => $formatDual($netProfitUsd, $netProfitSyp),
+                'change'   => ($netProfitUsd >= 0 && $netProfitSyp >= 0) ? 'مربح' : 'عجز',
+                'helper'   => 'الفترة الحالية',
+                'tone'     => 'purple',
+                'negative' => ($netProfitUsd < 0 || $netProfitSyp < 0),
+            ],
+            [
+                'title'   => 'رصيد الصناديق (دولار)',
+                'value'   => number_format($totalSafesUsd, 2) . ' $',
+                'change'  => $branchId ? 'فرع محدد' : 'كافة الفروع',
+                'helper'  => 'الرصيد الفعلي',
+                'tone'    => 'blue',
+            ],
+            [
+                'title'   => 'رصيد الصناديق (ليرة)',
+                'value'   => number_format($totalSafesSyp, 0) . ' ل.س',
+                'change'  => $branchId ? 'فرع محدد' : 'كافة الفروع',
+                'helper'  => 'الرصيد الفعلي',
+                'tone'    => 'blue',
+            ],
+        ];
+
+        $salarySummary = [
+            ['label' => 'المدربون', 'value' => (string) $coachesCount],
+            ['label' => 'الإجمالي المصروف', 'value' => $formatDual($totalSalariesPaidUsd, $totalSalariesPaidSyp), 'tone' => 'yellow'],
+            ['label' => 'الفترة', 'value' => $period ? $period->name : now()->format('Y-m')],
+        ];
+
+        return [
+            'period'             => $period ? ['id' => $period->id, 'name' => $period->name] : null,
+            'overviewStats'      => $overviewStats,
+            'monthlyProfit'      => $monthlyProfit,
+            'comparisonChart'    => [
+                'labels' => $comparisonDays,
+                'yellow' => $yellowRevenues,
+                'green'  => $greenExpenses,
+            ],
+            'recentTransactions' => $recentTransactions,
+            'salarySummary'      => $salarySummary,
+            'upcomingPayments'   => $upcomingPayments,
+        ];
+    }
 }

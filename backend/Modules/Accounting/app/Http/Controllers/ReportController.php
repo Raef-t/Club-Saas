@@ -57,8 +57,8 @@ class ReportController extends Controller
     public function trialBalance(Request $request)
     {
         try {
-            $request->validate(['period_id' => 'required|integer|exists:acc_periods,id']);
-            $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
+            $rawBranch = $request->header('X-Branch-ID') ?: $request->input('branch_id');
+            $branchId = ($rawBranch && $rawBranch !== 'all') ? (int) $rawBranch : null;
             $data = $this->reportService->getTrialBalance((int) $request->period_id, $branchId);
             return $this->successResponse($data, 'تم جلب ميزان المراجعة');
         } catch (\Exception $e) {
@@ -100,7 +100,8 @@ class ReportController extends Controller
     {
         try {
             $request->validate(['period_id' => 'required|integer|exists:acc_periods,id']);
-            $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
+            $rawBranch = $request->header('X-Branch-ID') ?: $request->input('branch_id');
+            $branchId = ($rawBranch && $rawBranch !== 'all') ? (int) $rawBranch : null;
             $data = $this->reportService->getIncomeStatement((int) $request->period_id, $branchId);
             return $this->successResponse($data, 'تم جلب قائمة الدخل');
         } catch (\Exception $e) {
@@ -142,11 +143,32 @@ class ReportController extends Controller
     {
         try {
             $request->validate(['period_id' => 'required|integer|exists:acc_periods,id']);
-            $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
+            $rawBranch = $request->header('X-Branch-ID') ?: $request->input('branch_id');
+            $branchId = ($rawBranch && $rawBranch !== 'all') ? (int) $rawBranch : null;
             $data = $this->reportService->getBalanceSheet((int) $request->period_id, $branchId);
             return $this->successResponse($data, 'تم جلب الميزانية العمومية');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    #[OA\Get(
+        path: '/accounting/dashboard',
+        summary: '📊 إحصائيات لوحة التحكم العامة للمحاسبة',
+        description: 'يسترجع مؤشرات وإحصائيات لوحة التحكم المحاسبية الحية (الإيرادات، المصروفات، صافي الأرباح، رصيد الصناديق، الرسوم البيانية، وآخر المعاملات) مفلترة بحسب الفرع الجغرافي المختار.',
+        tags: ['Accounting - التقارير والقوائم المالية الختامية'],
+        security: [['bearerAuth' => []]]
+    )]
+    public function dashboard(Request $request)
+    {
+        try {
+            $rawBranch = $request->header('X-Branch-ID') ?: $request->input('branch_id');
+            $branchId = ($rawBranch && $rawBranch !== 'all') ? (int) $rawBranch : null;
+            $periodId = $request->input('period_id') ? (int) $request->input('period_id') : null;
+            $data = $this->reportService->getDashboardStats($periodId, $branchId);
+            return $this->successResponse($data, 'تم جلب إحصائيات لوحة التحكم بنجاح');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
         }
     }
 }

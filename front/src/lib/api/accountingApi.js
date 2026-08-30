@@ -421,10 +421,18 @@ export const accountingApi = createBackendApi({
       }),
       providesTags: ["AccReports"],
     }),
+    getAccountingDashboard: builder.query({
+      query: (params = {}) => ({
+        url: "accounting/dashboard",
+        params,
+      }),
+      providesTags: ["AccReports", "AccJournals", "AccSafes", "AccSalaryPayments"],
+    }),
   }),
 });
 
 export const {
+  getAccountingDashboard,
   // Accounts
   useGetAccountsQuery,
   useGetAccountQuery,
@@ -481,9 +489,10 @@ export const {
   useCreateSalaryPaymentMutation,
   useDeleteSalaryPaymentMutation,
 
-  // Reports
+  // Reports & Dashboard
   useGetTrialBalanceQuery,
   useGetIncomeStatementQuery,
   useGetBalanceSheetQuery,
   useGetTransactionsByTypeQuery,
+  useGetAccountingDashboardQuery,
 } = accountingApi;

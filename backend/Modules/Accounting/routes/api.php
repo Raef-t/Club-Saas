@@ -9,6 +9,7 @@ use Modules\Accounting\Http\Controllers\PeriodController;
 use Modules\Accounting\Http\Controllers\JournalController;
 use Modules\Accounting\Http\Controllers\ReportController;
 use Modules\Accounting\Http\Controllers\ReconciliationController;
+use Modules\Accounting\Http\Controllers\SalaryPaymentController;
 
 Route::group([
     'middleware' => ['api', 'auth:sanctum'],
@@ -48,6 +49,7 @@ Route::group([
     Route::post('safes', [SafeController::class, 'store'])->name('safes.store');
     Route::get('safes/{id}', [SafeController::class, 'show'])->name('safes.show');
     Route::put('safes/{id}', [SafeController::class, 'update'])->name('safes.update');
+    Route::delete('safes/{id}', [SafeController::class, 'destroy'])->name('safes.destroy');
     Route::get('safes/{id}/statement', [SafeController::class, 'statement'])->name('safes.statement');
 
     /*
@@ -92,6 +94,7 @@ Route::group([
     Route::get('reports/trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial-balance');
     Route::get('reports/income-statement', [ReportController::class, 'incomeStatement'])->name('reports.income-statement');
     Route::get('reports/balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+    Route::get('dashboard', [ReportController::class, 'dashboard'])->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -101,4 +104,13 @@ Route::group([
     Route::get('reconciliations', [ReconciliationController::class, 'index'])->name('reconciliations.index');
     Route::post('reconciliations', [ReconciliationController::class, 'store'])->name('reconciliations.store');
     Route::get('reconciliations/{id}', [ReconciliationController::class, 'show'])->name('reconciliations.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | رواتب الكوادر والموظفين — Salary Payments
+    |--------------------------------------------------------------------------
+    */
+    Route::get('salary-payments', [SalaryPaymentController::class, 'index'])->name('salary-payments.index');
+    Route::post('salary-payments', [SalaryPaymentController::class, 'store'])->name('salary-payments.store');
+    Route::delete('salary-payments/{id}', [SalaryPaymentController::class, 'destroy'])->name('salary-payments.destroy');
 });

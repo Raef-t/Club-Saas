@@ -60,7 +60,8 @@ class JournalController extends Controller
             if ($request->filled('status') && $request->status !== 'all')    $query->where('status', $request->status);
             if ($request->filled('safe_id') && $request->safe_id !== 'all')  $query->where('safe_id', $request->safe_id);
             if ($request->filled('period_id')) $query->where('period_id', $request->period_id);
-            if ($request->filled('branch_id') && $request->branch_id !== 'all') $query->where('branch_id', $request->branch_id);
+            $branchId = $request->header('X-Branch-ID') ?: $request->input('branch_id');
+            if ($branchId && $branchId !== 'all') $query->where('branch_id', $branchId);
             if ($request->filled('source_type')) $query->where('source_type', $request->source_type);
             if ($request->filled('source_id'))   $query->where('source_id', $request->source_id);
             if ($request->filled('from_date'))   $query->where('date', '>=', $request->from_date);

@@ -54,15 +54,21 @@ class AccSalaryPaymentResource extends JsonResource
     public function toArray($request): array
     {
         $person = $this->relationLoaded('staff') && $this->staff ? $this->staff->person : null;
+        $fullName = $person ? ($person->full_name ?? trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? ''))) : null;
 
         return [
             'id'           => $this->id,
             'staff'        => $this->relationLoaded('staff') && $this->staff ? [
                 'id'         => $this->staff->id,
-                'first_name' => $person ? $person->first_name : null,
-                'last_name'  => $person ? $person->last_name : null,
+                'first_name' => $fullName,
+                'last_name'  => '',
                 'role'       => $this->staff->role,
+                'person'     => $person ? [
+                    'id'        => $person->id,
+                    'full_name' => $fullName,
+                ] : null,
             ] : null,
+            'staff_name'   => $fullName,
             'safe'         => $this->relationLoaded('safe') && $this->safe ? [
                 'id'   => $this->safe->id,
                 'name' => $this->safe->name,
@@ -75,6 +81,7 @@ class AccSalaryPaymentResource extends JsonResource
             'currency'     => $this->currency,
             'payment_type' => $this->payment_type ?? 'salary',
             'date'         => $this->date ? $this->date->toDateString() : null,
+            'payment_date' => $this->date ? $this->date->toDateString() : null,
             'payslip_id'   => $this->payslip_id,
             'payslip'     => $this->relationLoaded('payslip') && $this->payslip ? [
                 'id'             => $this->payslip->id,

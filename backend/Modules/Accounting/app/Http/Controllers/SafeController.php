@@ -41,8 +41,9 @@ class SafeController extends Controller
     public function index(Request $request)
     {
         try {
+            $branchId = $request->header('X-Branch-ID') ?: $request->input('branch_id');
             $safes = AccSafe::with(['account', 'branch'])
-                ->when($request->filled('branch_id') && $request->branch_id !== 'all', fn($q) => $q->where('branch_id', $request->branch_id))
+                ->when($branchId && $branchId !== 'all', fn($q) => $q->where('branch_id', $branchId))
                 ->when($request->has('is_active'), fn($q) => $q->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN)))
                 ->orderBy('name')->get();
             return $this->successResponse(AccSafeResource::collection($safes), 'تم جلب الصناديق');
@@ -223,6 +224,46 @@ class SafeController extends Controller
             $to   = $request->get('to', $request->get('to_date', now()->toDateString()));
             $data = $this->reportService->getSafeStatement((int) $id, $from, $to);
             return $this->successResponse($data, 'تم جلب كشف الصندوق');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/accounting/safes/{id}',
+        summary: '🗑️ حذف صندوق مالي',
+        description: 'يحذف الصندوق المالي بشرط عدم وجود أي حركات أو قيود مالية مسجلة عليه.',
+        tags: ['Accounting - الصناديق والعهد المالية'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الصندوق (ID)', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: '✅ تم حذف الصندوق بنجاح')]
+    #[OA\Response(response: 400, description: '❌ لا يمكن حذف الصندوق لوجود حركات مالية')]
+    #[OA\Response(response: 404, description: '🚫 الصندوق غير موجود')]
+    public function destroy($id)
+    {
+        try {
+            $safe = AccSafe::findOrFail($id);
+
+            // التحقق من وجود حركات أو قيود مالية مرتبطة بالصندوق
+            $hasJournals  = \Illuminate\Support\Facades\DB::table('acc_journals')->where('safe_id', $safe->id)->exists();
+            $hasPayments  = \Illuminate\Support\Facades\DB::table('payments')->where('safe_id', $safe->id)->exists();
+            $hasSalaries  = \Illuminate\Support\Facades\DB::table('acc_salary_payments')->where('safe_id', $safe->id)->exists();
+            $hasReconcile = \Illuminate\Support\Facades\DB::table('acc_reconciliations')->where('safe_id', $safe->id)->exists();
+
+            if ($hasJournals || $hasPayments || $hasSalaries || $hasReconcile) {
+                return $this->error('لا يمكن حذف الصندوق لوجود حركات أو قيود مالية مسجلة عليه. يمكنك تعطيله بدلاً من ذلك.', 400);
+            }
+
+            // التحقق من كونه صندوقاً افتراضياً لفرع
+            $isDefault = \Illuminate\Support\Facades\DB::table('acc_branch_settings')->where('default_safe_id', $safe->id)->exists();
+            if ($isDefault) {
+                return $this->error('لا يمكن حذف الصندوق لأنه محدد كصندوق افتراضي للفرع في الإعدادات.', 400);
+            }
+
+            $safe->delete();
+
+            return $this->successResponse(null, 'تم حذف الصندوق بنجاح');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
         }

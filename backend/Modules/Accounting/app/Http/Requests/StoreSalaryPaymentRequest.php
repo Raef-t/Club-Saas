@@ -23,7 +23,7 @@ class StoreSalaryPaymentRequest extends FormRequest
         return [
             'staff_id'   => 'required|integer|exists:staff,id',
             'safe_id'    => 'required|integer|exists:acc_safes,id',
-            'period_id'  => 'required|integer|exists:acc_periods,id',
+            'period_id'  => 'nullable|integer|exists:acc_periods,id',
             'payslip_id'   => 'nullable|integer|exists:payslips,id',
             'payment_type' => 'nullable|string|in:salary,advance,bonus',
             'amount'       => 'required|numeric|min:0.01',

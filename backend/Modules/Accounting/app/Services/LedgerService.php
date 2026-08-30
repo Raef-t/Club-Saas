@@ -224,14 +224,19 @@ class LedgerService
     /**
      * كشف حساب تفصيلي (Ledger Card)
      */
-    public function getLedgerCard(int $accountId, string $from, string $to): array
+    public function getLedgerCard(int $accountId, string $from, string $to, ?int $branchId = null): array
     {
         $account       = AccAccount::findOrFail($accountId);
         $isDebitNormal = in_array($account->type, ['asset', 'expense']);
 
         $entries = AccJournalEntry::with(['journal'])
             ->where('account_id', $accountId)
-            ->whereHas('journal', fn($q) => $q->where('status', 'posted')->whereBetween('date', [$from, $to]))
+            ->whereHas('journal', function ($q) use ($from, $to, $branchId) {
+                $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                if ($branchId !== null) {
+                    $q->where('branch_id', $branchId);
+                }
+            })
             ->orderBy('created_at')
             ->get();
 

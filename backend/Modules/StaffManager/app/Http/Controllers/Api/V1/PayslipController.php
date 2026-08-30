@@ -102,33 +102,43 @@ class PayslipController extends BaseController
     #[OA\Response(response: 404, description: '❌ السجل غير موجود')]
     public function update(UpdatePayslipRequest $request, $id) {
         $payslip = Payslip::findOrFail($id);
+
+        if ($payslip->status === 'paid') {
+            return $this->errorResponse('لا يمكن تعديل قسيمة راتب تم صرفها بالفعل في النظام المحاسبي. يرجى إلغاء سند الصرف أولاً.', 422);
+        }
+
         $data = $request->validated();
 
-        if (isset($data['base_pay'])) {
-            $payslip->base_pay = $data['base_pay'];
-        }
-        if (isset($data['commission_pay'])) {
-            $payslip->commission_pay = $data['commission_pay'];
-        }
-
-        // Add new adjustments if provided
-        if (!empty($data['adjustments'])) {
-            foreach ($data['adjustments'] as $adj) {
-                $payslip->adjustments()->create([
-                    'type' => $adj['type'],
-                    'amount' => $adj['amount'],
-                    'reason' => $adj['reason'] ?? null,
-                ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($payslip, $data) {
+            if (isset($data['base_pay'])) {
+                $payslip->base_pay = $data['base_pay'];
             }
-        }
+            if (isset($data['commission_pay'])) {
+                $payslip->commission_pay = $data['commission_pay'];
+            }
 
-        // Recalculate net_pay dynamically from adjustments relation
-        $payslip->load('adjustments');
-        $totalDeductions = $payslip->adjustments->where('type', 'deduction')->sum('amount');
-        $totalBonuses = $payslip->adjustments->where('type', 'bonus')->sum('amount');
-        
-        $payslip->net_pay = $payslip->base_pay + $payslip->commission_pay + $totalBonuses - $totalDeductions;
-        $payslip->save();
+            // Synchronize adjustments if key is present
+            if (array_key_exists('adjustments', $data)) {
+                $payslip->adjustments()->delete();
+                if (!empty($data['adjustments'])) {
+                    foreach ($data['adjustments'] as $adj) {
+                        $payslip->adjustments()->create([
+                            'type'   => $adj['type'],
+                            'amount' => $adj['amount'],
+                            'reason' => $adj['reason'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Recalculate net_pay dynamically from adjustments relation
+            $payslip->load('adjustments');
+            $totalDeductions = $payslip->adjustments->where('type', 'deduction')->sum('amount');
+            $totalBonuses    = $payslip->adjustments->where('type', 'bonus')->sum('amount');
+            
+            $payslip->net_pay = max(0, (float) $payslip->base_pay + (float) $payslip->commission_pay + $totalBonuses - $totalDeductions);
+            $payslip->save();
+        });
 
         $payslip->load(['staff.person', 'staff.coachDetail', 'adjustments']);
         return $this->successResponse(new PayslipResource($payslip), 'Updated successfully');

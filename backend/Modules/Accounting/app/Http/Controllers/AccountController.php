@@ -237,9 +237,11 @@ class AccountController extends Controller
     public function ledger(Request $request, $id)
     {
         try {
-            $from = $request->get('from', now()->startOfMonth()->toDateString());
-            $to   = $request->get('to', now()->toDateString());
-            $data = $this->ledgerService->getLedgerCard((int) $id, $from, $to);
+            $from     = $request->get('from', now()->startOfMonth()->toDateString());
+            $to       = $request->get('to', now()->toDateString());
+            $rawBranch = $request->header('X-Branch-ID') ?: $request->input('branch_id');
+            $branchId = ($rawBranch && $rawBranch !== 'all') ? (int) $rawBranch : null;
+            $data     = $this->ledgerService->getLedgerCard((int) $id, $from, $to, $branchId);
             return $this->successResponse($data, 'تم جلب كشف الحساب');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);

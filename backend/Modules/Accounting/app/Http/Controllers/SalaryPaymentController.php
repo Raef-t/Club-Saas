@@ -38,7 +38,7 @@ class SalaryPaymentController extends Controller
             $periodId = $request->input('period_id');
             $search   = $request->input('search');
 
-            $query = AccSalaryPayment::with(['staff.person', 'safe', 'period']);
+            $query = AccSalaryPayment::with(['staff.person', 'safe', 'period', 'payslip']);
 
             if ($branchId && $branchId !== 'all') {
                 $query->whereHas('safe', function ($q) use ($branchId) {
@@ -46,29 +46,23 @@ class SalaryPaymentController extends Controller
                 });
             }
 
-            if ($periodId) {
+            if ($periodId && $periodId !== 'all') {
                 $query->where('period_id', $periodId);
             }
 
             if ($search) {
                 $query->whereHas('staff.person', function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%");
+                    $q->where('full_name', 'like', "%{$search}%");
                 });
             }
 
-            $perPage = $request->input('per_page', 15);
+            $perPage = $request->input('per_page', 25);
             $payments = $query->orderBy('date', 'desc')->paginate($perPage);
 
-            return $this->successResponse([
-                'payments' => AccSalaryPaymentResource::collection($payments),
-                'pagination' => [
-                    'current_page' => $payments->currentPage(),
-                    'last_page'    => $payments->lastPage(),
-                    'per_page'     => $payments->perPage(),
-                    'total'        => $payments->total(),
-                ]
-            ], 'تم جلب مدفوعات الرواتب بنجاح');
+            return $this->successResponse(
+                AccSalaryPaymentResource::collection($payments)->response()->getData(true),
+                'تم جلب مدفوعات الرواتب بنجاح'
+            );
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
         }
@@ -105,7 +99,14 @@ class SalaryPaymentController extends Controller
 
             $staff  = Staff::with('person')->findOrFail($data['staff_id']);
             $safe   = AccSafe::findOrFail($data['safe_id']);
-            $period = AccPeriod::findOrFail($data['period_id']);
+            $period = !empty($data['period_id'])
+                ? AccPeriod::findOrFail($data['period_id'])
+                : (AccPeriod::where('status', 'open')->where('start_date', '<=', $data['date'])->where('end_date', '>=', $data['date'])->first()
+                    ?? AccPeriod::where('status', 'open')->first());
+
+            if (!$period) {
+                return $this->error('لا توجد فترة مالية مفتوحة لتسجيل هذا الصرف.', 400);
+            }
 
             if ($period->isClosed()) {
                 return $this->error('الفترة المالية مغلقة، لا يمكن تسجيل رواتب بها.', 400);
@@ -237,9 +238,25 @@ class SalaryPaymentController extends Controller
                         $this->ledgerService->cancelJournal($journal, 'إلغاء دفعة الراتب رقم #' . $payment->id);
                     }
                 }
-                
+
+                $payslipId = $payment->payslip_id;
+
                 // Delete the payment record
                 $payment->delete();
+
+                // If linked to a payslip, check if any other active payment exists
+                if ($payslipId) {
+                    $remainingCount = AccSalaryPayment::where('payslip_id', $payslipId)->count();
+                    if ($remainingCount === 0) {
+                        $payslip = \Modules\StaffManager\Models\Payslip::find($payslipId);
+                        if ($payslip) {
+                            $payslip->update([
+                                'status'  => 'pending',
+                                'paid_at' => null,
+                            ]);
+                        }
+                    }
+                }
             });
 
             return $this->successResponse(null, 'تم إلغاء دفعة الراتب بنجاح');
