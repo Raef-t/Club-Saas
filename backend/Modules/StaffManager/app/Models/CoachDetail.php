@@ -32,6 +32,30 @@ class CoachDetail extends Model
     {
         return $this->belongsTo(Staff::class);
     }
+
+    public function certifications()
+    {
+        return $this->hasMany(CoachCertification::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleted(function ($coachDetail) {
+            if (\Illuminate\Support\Facades\Schema::hasTable('coach_certifications')) {
+                if (method_exists($coachDetail, 'isForceDeleting') && $coachDetail->isForceDeleting()) {
+                    $coachDetail->certifications()->withTrashed()->forceDelete();
+                } else {
+                    $coachDetail->certifications()->delete();
+                }
+            }
+        });
+
+        static::restored(function ($coachDetail) {
+            if (\Illuminate\Support\Facades\Schema::hasTable('coach_certifications')) {
+                $coachDetail->certifications()->onlyTrashed()->restore();
+            }
+        });
+    }
 }
 
 
