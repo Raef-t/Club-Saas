@@ -85,7 +85,7 @@ export default function SalaryPaymentFormModal({
     ? unpaidPayslips.filter((p) => String(p.staff_id) === String(formData.staff_id))
     : [];
 
-  const isAmountLocked = formData.payment_type === "salary" && Boolean(formData.payslip_id);
+  const isAmountLocked = formData.payment_type === "salary";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -112,14 +112,26 @@ export default function SalaryPaymentFormModal({
       setFormData((prev) => ({
         ...prev,
         payslip_id: value,
-        amount: selectedSlip?.net_pay ? String(selectedSlip.net_pay) : prev.amount,
+        amount: selectedSlip?.net_pay ? String(selectedSlip.net_pay) : "",
       }));
     } else if (name === "payment_type") {
-      setFormData((prev) => ({
-        ...prev,
-        payment_type: value,
-        payslip_id: value !== "salary" ? "" : prev.payslip_id,
-      }));
+      if (value === "salary") {
+        const defaultSlip = availablePayslips[0];
+        setFormData((prev) => ({
+          ...prev,
+          payment_type: value,
+          payslip_id: defaultSlip?.id ? String(defaultSlip.id) : "",
+          amount: defaultSlip?.net_pay ? String(defaultSlip.net_pay) : "",
+        }));
+      } else {
+        const selectedStaff = staffList.find((s) => String(s.id) === String(formData.staff_id));
+        setFormData((prev) => ({
+          ...prev,
+          payment_type: value,
+          payslip_id: "",
+          amount: prev.amount || (selectedStaff?.base_salary ? String(selectedStaff.base_salary) : ""),
+        }));
+      }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
