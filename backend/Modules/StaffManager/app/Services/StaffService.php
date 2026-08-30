@@ -28,7 +28,7 @@ class StaffService
     /**
      * Get all staff and coaches with resolved person/branch DTOs.
      */
-    public function getAllStaff(array $filters = [])
+    public function getAllStaff(array $filters = [], int $perPage = 15)
     {
         $query = \Modules\StaffManager\Models\Staff::query()
             ->where(function ($q) {
@@ -74,9 +74,9 @@ class StaffService
             'shifts.branchShift',
         ]);
 
-        $staffMembers = $query->latest()->get();
+        $staffMembers = $query->latest()->paginate($perPage);
 
-        foreach ($staffMembers as $staff) {
+        foreach ($staffMembers->items() as $staff) {
             $this->attachSharedDTOs($staff);
         }
 
@@ -427,10 +427,10 @@ class StaffService
         return (bool) $staff->delete();
     }
 
-    public function getTrashedStaff(array $filters = [])
+    public function getTrashedStaff(array $filters = [], int $perPage = 15)
     {
-        $staffMembers = $this->staffRepository->getTrashed($filters);
-        foreach ($staffMembers as $staff) {
+        $staffMembers = $this->staffRepository->getTrashed($filters, $perPage);
+        foreach ($staffMembers->items() as $staff) {
             $this->attachSharedDTOs($staff);
         }
 

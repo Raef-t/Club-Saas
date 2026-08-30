@@ -16,9 +16,9 @@ class FacilityService
     /**
      * Get all facilities.
      */
-    public function getAllFacilities()
+    public function getAllFacilities(int $perPage = 15)
     {
-        return $this->repository->all();
+        return $this->repository->all($perPage);
     }
 
     /**
@@ -75,9 +75,9 @@ class FacilityService
     /**
      * Get all soft-deleted (trashed) facilities.
      */
-    public function getTrashed()
+    public function getTrashed(int $perPage = 15)
     {
-        return $this->repository->getTrashed();
+        return $this->repository->getTrashed($perPage);
     }
 
     /**

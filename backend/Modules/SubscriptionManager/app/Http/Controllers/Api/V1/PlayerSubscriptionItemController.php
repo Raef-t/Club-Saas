@@ -16,8 +16,9 @@ class PlayerSubscriptionItemController extends BaseController
         $this->service = $service;
     }
 
-    public function index() {
-        return $this->successResponse(PlayerSubscriptionItemResource::collection($this->service->getAll()), 'Retrieved successfully');
+    public function index(\Illuminate\Http\Request $request) {
+        $perPage = $this->getPerPage($request);
+        return $this->successResponse(PlayerSubscriptionItemResource::collection($this->service->getAll($perPage)), 'Retrieved successfully');
     }
 
     public function store(StorePlayerSubscriptionItemRequest $request) {

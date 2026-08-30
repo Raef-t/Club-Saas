@@ -57,6 +57,8 @@ class SubscriptionPlanController extends BaseController
             ]
         )
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
@@ -84,7 +86,8 @@ class SubscriptionPlanController extends BaseController
             }
         }
         
-        $plans = $query->orderBy('id', 'desc')->get();
+        $perPage = $this->getPerPage($request);
+        $plans = $query->orderBy('id', 'desc')->paginate($perPage);
         return $this->successResponse(
             SubscriptionPlanResource::collection($plans),
             __('Subscription plans retrieved successfully')
@@ -100,6 +103,8 @@ class SubscriptionPlanController extends BaseController
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك المتاحة',
@@ -131,7 +136,8 @@ class SubscriptionPlanController extends BaseController
             $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
         }
 
-        $plans = $query->get();
+        $perPage = $this->getPerPage($request);
+        $plans = $query->paginate($perPage);
             
         return $this->successResponse(
             \Modules\SubscriptionManager\Http\Resources\SubscriptionPlanRegistrationResource::collection($plans),
@@ -582,10 +588,13 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الباقات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $plans = $this->planRepository->getTrashed();
+        $perPage = $this->getPerPage($request);
+        $plans = $this->planRepository->getTrashed($perPage);
         return $this->successResponse(SubscriptionPlanResource::collection($plans), __('Trashed subscription plans retrieved successfully'));
     }
 

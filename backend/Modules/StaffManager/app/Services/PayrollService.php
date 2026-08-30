@@ -297,9 +297,9 @@ class PayrollService
     /**
      * Get all payroll runs.
      */
-    public function getAllPayrollRuns()
+    public function getAllPayrollRuns(int $perPage = 15)
     {
-        return PayrollRun::with('payslips')->latest()->get();
+        return PayrollRun::with('payslips')->latest()->paginate($perPage);
     }
 
     /**

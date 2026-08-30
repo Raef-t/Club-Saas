@@ -201,8 +201,8 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأعضاء حسب الفرع، إذا لم يتم إرساله سيتم جلب الأعضاء من جميع الفروع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female']))]
-    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة العضوية', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'frozen']))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم جلب الأعضاء بنجاح',
@@ -221,7 +221,8 @@ class PlayerRegistrationController extends BaseController
     public function index(\Illuminate\Http\Request $request)
     {
         $filters = $request->all();
-        $members = $this->memberService->getAllMembers($filters);
+        $perPage = $this->getPerPage($request);
+        $members = $this->memberService->getAllMembers($filters, $perPage);
         return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Members retrieved successfully'));
     }
 
@@ -317,11 +318,14 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء المحذوفين بنجاح')]
     public function trashed(\Illuminate\Http\Request $request)
     {
         $filters = $request->all();
-        $members = $this->memberService->getTrashedMembers($filters);
+        $perPage = $this->getPerPage($request);
+        $members = $this->memberService->getTrashedMembers($filters, $perPage);
         return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Trashed members retrieved successfully'));
     }
 
