@@ -134,6 +134,7 @@ class AttendanceDashboardService
             ->join('subscription_plans as sp', 'sp.id', '=', 'sst.plan_id')
             ->whereNull('sst.deleted_at')
             ->whereNull('sp.deleted_at')
+            ->where('sp.status', '!=', 'inactive')
             ->leftJoin('attendances as att', function($join) use ($branchId) {
                 $join->on('att.attendable_type', '=', DB::raw("'member'"))
                      ->where('att.status', '=', 'checked_in')
