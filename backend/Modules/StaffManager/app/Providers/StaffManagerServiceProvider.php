@@ -11,9 +11,15 @@ class StaffManagerServiceProvider extends ServiceProvider
 {
     protected string $moduleName = 'StaffManager';
 
+    protected array $commands = [
+        \Modules\StaffManager\Console\CheckPayrollDue::class,
+    ];
+
     public function register(): void
     {
         $this->app->register(RouteServiceProvider::class);
+
+        $this->commands($this->commands);
 
         $this->app->bind(StaffRepositoryInterface::class, EloquentStaffRepository::class);
 
