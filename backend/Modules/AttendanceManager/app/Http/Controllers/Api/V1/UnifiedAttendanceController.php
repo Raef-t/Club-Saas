@@ -177,6 +177,8 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'معرف الفرع للفلترة (اختياري)')]
     #[OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'), description: 'تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-21'), description: 'تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', example: 15), description: 'عدد العناصر في الصفحة (الافتراضي: 15)')]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', example: 1), description: 'رقم الصفحة')]
     #[OA\Response(response: 200, description: '✅', content: new OA\JsonContent())]
     public function history(Request $request)
     {
@@ -187,6 +189,8 @@ class UnifiedAttendanceController extends BaseController
             'branch'          => 'nullable|integer',
             'from'            => 'nullable|date_format:Y-m-d',
             'to'              => 'nullable|date_format:Y-m-d',
+            'per_page'        => 'nullable',
+            'page'            => 'nullable|integer|min:1',
         ]);
 
         $type = $request->input('attendable_type', 'all');
@@ -201,8 +205,8 @@ class UnifiedAttendanceController extends BaseController
             $branchId
         );
 
-        // إزالة Pagination وجلب جميع السجلات بناءً على الفلترة
-        $history = $query->get();
+        $perPage = $this->getPerPage($request);
+        $history = $query->paginate($perPage);
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
     }

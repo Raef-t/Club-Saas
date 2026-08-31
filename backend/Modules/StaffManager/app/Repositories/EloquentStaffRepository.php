@@ -39,7 +39,7 @@ class EloquentStaffRepository implements StaffRepositoryInterface
         return Staff::where('role', 'coach')->get();
     }
 
-    public function getTrashed(array $filters = [])
+    public function getTrashed(array $filters = [], int $perPage = 15)
     {
         $query = Staff::onlyTrashed()->with([
             'person.contacts',
@@ -59,7 +59,7 @@ class EloquentStaffRepository implements StaffRepositoryInterface
             $query->where('role', $filters['role']);
         }
 
-        return $query->latest()->get();
+        return $query->latest()->paginate($perPage);
     }
 
     public function restore(int $id)

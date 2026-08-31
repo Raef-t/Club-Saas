@@ -31,10 +31,13 @@ class BranchHolidayController extends BaseController
             ]
         )
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    public function index($branchId)
+    public function index(\Illuminate\Http\Request $request, $branchId)
     {
-        $holidays = BranchHoliday::where('branch_id', $branchId)->get();
+        $perPage = $this->getPerPage($request);
+        $holidays = BranchHoliday::where('branch_id', $branchId)->paginate($perPage);
         return $this->successResponse(
             BranchHolidayResource::collection($holidays),
             __('Holidays retrieved successfully')
@@ -241,10 +244,13 @@ class BranchHolidayController extends BaseController
         tags: ['Branch Holidays'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب العطلات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $holidays = BranchHoliday::onlyTrashed()->get();
+        $perPage = $this->getPerPage($request);
+        $holidays = BranchHoliday::onlyTrashed()->paginate($perPage);
         return $this->successResponse(BranchHolidayResource::collection($holidays), __('Trashed holidays retrieved successfully'));
     }
 

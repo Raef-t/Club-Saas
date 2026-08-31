@@ -6,9 +6,9 @@ use Modules\ClubManager\Models\Branch;
 
 class EloquentBranchRepository implements BranchRepositoryInterface
 {
-    public function all()
+    public function all(int $perPage = 15)
     {
-        return Branch::all();
+        return Branch::paginate($perPage);
     }
 
     public function find($id)
@@ -34,9 +34,9 @@ class EloquentBranchRepository implements BranchRepositoryInterface
         return $branch->delete();
     }
 
-    public function getTrashed()
+    public function getTrashed(int $perPage = 15)
     {
-        return Branch::onlyTrashed()->get();
+        return Branch::onlyTrashed()->paginate($perPage);
     }
 
     public function restore($id)

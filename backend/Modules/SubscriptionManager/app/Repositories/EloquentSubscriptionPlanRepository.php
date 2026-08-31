@@ -209,9 +209,9 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
         return $prepared;
     }
 
-    public function getTrashed()
+    public function getTrashed(int $perPage = 15)
     {
-        return SubscriptionPlan::onlyTrashed()->get();
+        return SubscriptionPlan::onlyTrashed()->paginate($perPage);
     }
 
     public function restore(int $id)

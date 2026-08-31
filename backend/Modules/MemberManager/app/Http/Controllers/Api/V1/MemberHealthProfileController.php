@@ -19,6 +19,8 @@ class MemberHealthProfileController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
     public function index(Request $request)
     {
@@ -30,7 +32,8 @@ class MemberHealthProfileController extends BaseController
             });
         }
 
-        $profiles = $query->get();
+        $perPage = $this->getPerPage($request);
+        $profiles = $query->paginate($perPage);
         return $this->successResponse($profiles, __('Health profiles retrieved successfully'));
     }
 

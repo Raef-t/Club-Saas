@@ -13,7 +13,7 @@ class ClubService
         $this->repository = $repository;
     }
 
-    public function getAll() { return $this->repository->all(); }
+    public function getAll(int $perPage = 15) { return $this->repository->all($perPage); }
     public function getById($id) { return $this->repository->find($id); }
 
     public function create(array $data)
@@ -58,9 +58,9 @@ class ClubService
         $club->delete();
     }
 
-    public function getTrashed()
+    public function getTrashed(int $perPage = 15)
     {
-        return $this->repository->getTrashed();
+        return $this->repository->getTrashed($perPage);
     }
 
     public function restoreClub($id)

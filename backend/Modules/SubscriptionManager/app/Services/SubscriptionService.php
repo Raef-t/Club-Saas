@@ -110,7 +110,7 @@ class SubscriptionService
     /**
      * Get all player subscriptions with resolved Member DTOs.
      */
-    public function getAllSubscriptions(array $filters = [])
+    public function getAllSubscriptions(array $filters = [], int $perPage = 15)
     {
         $this->syncExpiredSubscriptions();
 
@@ -151,13 +151,13 @@ class SubscriptionService
             $query->where('end_date', '<=', $filters['end_date']);
         }
 
-        $subscriptions = $query->latest()->get();
+        $subscriptions = $query->latest()->paginate($perPage);
 
-        $memberIds = $subscriptions->pluck('member_id')->filter()->unique()->toArray();
+        $memberIds = collect($subscriptions->items())->pluck('member_id')->filter()->unique()->toArray();
         if (!empty($memberIds)) {
             $members = $this->memberSharedService->getMembersByIds($memberIds);
             $membersMap = collect($members)->keyBy('id');
-            foreach ($subscriptions as $subscription) {
+            foreach ($subscriptions->items() as $subscription) {
                 $subscription->member = $membersMap->get($subscription->member_id);
             }
         }

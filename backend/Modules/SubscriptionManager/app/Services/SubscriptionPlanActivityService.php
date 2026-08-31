@@ -11,13 +11,13 @@ class SubscriptionPlanActivityService
         $this->repository = $repository;
     }
 
-    public function getAll(array $filters = []) { 
+    public function getAll(array $filters = [], int $perPage = 15) { 
         if (!empty($filters['branch_id'])) {
             return \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::whereHas('plan', function($q) use ($filters) {
                 $q->where('branch_id', $filters['branch_id']);
-            })->get();
+            })->paginate($perPage);
         }
-        return $this->repository->all(); 
+        return $this->repository->all($perPage); 
     }
     public function getById($id) { return $this->repository->find($id); }
     public function create(array $data) { 

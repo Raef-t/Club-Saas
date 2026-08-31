@@ -31,14 +31,29 @@ class RoleController extends BaseController
         tags: ['Roles'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(
+        name: 'per_page',
+        in: 'query',
+        required: false,
+        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
+        schema: new OA\Schema(type: 'integer', example: 15)
+    )]
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: 'رقم الصفحة',
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(response: 200, description: '✅ تم جلب الأدوار بنجاح')]
     #[OA\Response(response: 401, description: '🔒 غير مصرح')]
-    public function index(): JsonResponse
+    public function index(\Illuminate\Http\Request $request): JsonResponse
     {
+        $perPage = $this->getPerPage($request);
         $roles = Role::where('guard_name', 'sanctum')
             ->with('permissions')
-            ->get()
-            ->map(fn($role) => [
+            ->paginate($perPage)
+            ->through(fn($role) => [
                 'id'                 => $role->id,
                 'name'               => $role->name,
                 'permissions_count'  => $role->permissions->count(),
@@ -52,7 +67,7 @@ class RoleController extends BaseController
                 'is_protected'       => in_array($role->name, self::PROTECTED_ROLES),
             ]);
 
-        return $this->successResponse(['roles' => $roles, 'total' => $roles->count()]);
+        return $this->successResponse($roles, 'تم جلب الأدوار بنجاح');
     }
 
     /**

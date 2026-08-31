@@ -5,7 +5,7 @@ use Modules\SubscriptionManager\Models\PlayerSubscriptionItem;
 
 class EloquentPlayerSubscriptionItemRepository implements PlayerSubscriptionItemRepositoryInterface
 {
-    public function all() { return PlayerSubscriptionItem::all(); }
+    public function all(int $perPage = 15) { return PlayerSubscriptionItem::paginate($perPage); }
     public function find($id) { return PlayerSubscriptionItem::findOrFail($id); }
     public function create(array $data) { return PlayerSubscriptionItem::create($data); }
     public function update($id, array $data) {

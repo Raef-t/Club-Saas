@@ -41,6 +41,20 @@ class OfferController extends BaseController
         description: 'تصفية العروض بناءً على معرف الفرع',
         schema: new OA\Schema(type: 'integer')
     )]
+    #[OA\Parameter(
+        name: 'per_page',
+        in: 'query',
+        required: false,
+        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
+        schema: new OA\Schema(type: 'integer', example: 15)
+    )]
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: 'رقم الصفحة',
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
         description: 'Successful operation',
@@ -76,7 +90,8 @@ class OfferController extends BaseController
     )]
     public function index(Request $request)
     {
-        $offers = $this->offerService->getAllOffers($request->all());
+        $perPage = $this->getPerPage($request);
+        $offers = $this->offerService->getAllOffers($request->all(), $perPage);
 
         return $this->successResponse(
             OfferResource::collection($offers),

@@ -319,12 +319,12 @@ class SubscriptionPlanSuspensionService
     /**
      * Get list of suspensions for a given SubscriptionPlan.
      */
-    public function getSuspensions(int $planId)
+    public function getSuspensions(int $planId, int $perPage = 15)
     {
         return SubscriptionPlanSuspension::where('plan_id', $planId)
             ->with(['coach.person', 'creator'])
             ->orderByDesc('id')
-            ->paginate(15);
+            ->paginate($perPage);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

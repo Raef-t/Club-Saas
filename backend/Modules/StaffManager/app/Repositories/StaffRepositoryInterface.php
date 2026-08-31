@@ -10,6 +10,6 @@ interface StaffRepositoryInterface
     public function update($id, array $data);
     public function delete($id);
     public function getCoaches();
-    public function getTrashed(array $filters = []);
+    public function getTrashed(array $filters = [], int $perPage = 15);
     public function restore(int $id);
 }

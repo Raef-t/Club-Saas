@@ -34,7 +34,8 @@ class FormulaController extends BaseController
             $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
         }
 
-        return $this->successResponse($query->orderBy('name')->get(), 'Formulas retrieved successfully');
+        $perPage = $this->getPerPage($request);
+        return $this->successResponse($query->orderBy('name')->paginate($perPage), 'Formulas retrieved successfully');
     }
 
     /**
