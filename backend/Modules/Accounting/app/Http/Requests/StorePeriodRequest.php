@@ -3,6 +3,7 @@
 namespace Modules\Accounting\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Accounting\Models\AccPeriod;
 
 class StorePeriodRequest extends FormRequest
 {
@@ -16,6 +17,28 @@ class StorePeriodRequest extends FormRequest
             'end_date'   => 'required|date|after:start_date',
             'notes'      => 'nullable|string',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $startDate = $this->input('start_date');
+            $endDate   = $this->input('end_date');
+
+            if ($startDate && $endDate && $endDate > $startDate) {
+                $overlap = AccPeriod::where(function ($query) use ($startDate, $endDate) {
+                    $query->where('start_date', '<=', $endDate)
+                          ->where('end_date', '>=', $startDate);
+                })->first();
+
+                if ($overlap) {
+                    $validator->errors()->add(
+                        'start_date',
+                        "تتعارض التواريخ المحددة مع الفترة المحاسبية '{$overlap->name}' ({$overlap->start_date->format('Y-m-d')} إلى {$overlap->end_date->format('Y-m-d')}). لا يُسمح بتداخل الفترات المالية في النظام المحاسبي."
+                    );
+                }
+            }
+        });
     }
 
     public function messages(): array
