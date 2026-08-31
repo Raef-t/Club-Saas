@@ -250,12 +250,10 @@ class PayrollService
                     }
                 }
             }
-
-            $this->notifySuperAdminsSuccess($data['period_start'], $data['period_end']);
         });
     }
 
-    protected function notifySuperAdminsHolidayError()
+    public function notifySuperAdminsHolidayError()
     {
         $superAdmins = User::role('super_admin')->pluck('id')->toArray();
         if (empty($superAdmins)) return;
@@ -272,7 +270,7 @@ class PayrollService
         }
     }
 
-    protected function notifySuperAdminsSuccess($periodStart, $periodEnd)
+    public function notifySuperAdminsSuccess($periodStart, $periodEnd)
     {
         $superAdmins = User::role('super_admin')->pluck('id')->toArray();
         if (empty($superAdmins)) return;
