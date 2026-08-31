@@ -17,8 +17,6 @@ class ActivityTypeController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة أنواع الأنشطة',
@@ -37,8 +35,7 @@ class ActivityTypeController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
-        $perPage = $this->getPerPage($request);
-        $types = ActivityType::paginate($perPage);
+        $types = ActivityType::all();
         return $this->successResponse(
             ActivityTypeResource::collection($types),
             __('Activity types retrieved successfully')

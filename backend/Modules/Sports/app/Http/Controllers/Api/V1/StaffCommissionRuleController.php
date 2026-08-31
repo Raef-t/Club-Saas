@@ -23,8 +23,6 @@ class StaffCommissionRuleController extends BaseController
         tags: ['Staff Commission Rules'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم الاسترجاع بنجاح',
@@ -37,9 +35,8 @@ class StaffCommissionRuleController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index(\Illuminate\Http\Request $request) {
-        $perPage = $this->getPerPage($request);
-        return $this->successResponse(StaffCommissionRuleResource::collection($this->service->getAll($perPage)), 'Retrieved successfully');
+    public function index() {
+        return $this->successResponse(StaffCommissionRuleResource::collection($this->service->getAll()), 'Retrieved successfully');
     }
 
     #[OA\Post(

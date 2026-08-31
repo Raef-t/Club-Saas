@@ -2,7 +2,7 @@
 
 namespace Modules\WalletManager\Http\Controllers\Api\V1;
 
-use Modules\Core\Http\Controllers\Api\BaseController;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\WalletManager\Services\WalletService;
 use Modules\WalletManager\Repositories\WalletRepositoryInterface;
@@ -10,7 +10,7 @@ use Modules\WalletManager\Repositories\WalletTransactionRepositoryInterface;
 use OpenApi\Attributes as OA;
 use Exception;
 
-class WalletController extends BaseController
+class WalletController extends Controller
 {
     protected $walletService;
     protected $walletRepository;
@@ -36,22 +36,18 @@ class WalletController extends BaseController
         ]
     )]
     #[OA\Parameter(name: 'person_id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد عناصر الحركات في الصفحة', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    public function show(Request $request, $personId)
+    public function show($personId)
     {
         $wallet = $this->walletRepository->findByPersonId($personId);
-        $perPage = $this->getPerPage($request);
         
         if (!$wallet) {
             $wallet = collect(['balance' => 0, 'status' => 'active']);
             $transactions = [];
         } else {
-            $transactions = $this->transactionRepository->getByWalletId($wallet->id, $perPage);
+            $transactions = $this->transactionRepository->getByWalletId($wallet->id);
         }
 
         return response()->json([
-            'status' => 'success',
             'data' => [
                 'wallet' => $wallet,
                 'transactions' => $transactions

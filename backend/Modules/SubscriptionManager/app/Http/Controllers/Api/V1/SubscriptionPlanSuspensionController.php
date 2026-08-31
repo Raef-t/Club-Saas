@@ -102,8 +102,6 @@ class SubscriptionPlanSuspensionController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفعالية', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم جلب سجل الإيقافات بنجاح',
@@ -115,10 +113,9 @@ class SubscriptionPlanSuspensionController extends BaseController
             ]
         )
     )]
-    public function index(\Illuminate\Http\Request $request, int $id)
+    public function index(int $id)
     {
-        $perPage = $this->getPerPage($request);
-        $suspensions = $this->suspensionService->getSuspensions($id, $perPage);
+        $suspensions = $this->suspensionService->getSuspensions($id);
         return $this->successResponse($suspensions, __('Plan suspensions retrieved successfully'));
     }
 

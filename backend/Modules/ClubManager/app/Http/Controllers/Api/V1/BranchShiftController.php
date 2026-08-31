@@ -37,13 +37,10 @@ class BranchShiftController extends BaseController
             ]
         )
     )]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index(\Illuminate\Http\Request $request, $branchId)
+    public function index($branchId)
     {
-        $perPage = $this->getPerPage($request);
-        $shifts = BranchShift::where('branch_id', $branchId)->paginate($perPage);
+        $shifts = BranchShift::where('branch_id', $branchId)->get();
         return $this->successResponse($shifts, __('Branch shifts retrieved'));
     }
 
@@ -135,13 +132,10 @@ class BranchShiftController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الورديات المحذوفة بنجاح')]
-    public function trashed(Request $request, $branchId)
+    public function trashed($branchId)
     {
-        $perPage = $this->getPerPage($request);
-        $shifts = BranchShift::onlyTrashed()->where('branch_id', $branchId)->paginate($perPage);
+        $shifts = BranchShift::onlyTrashed()->where('branch_id', $branchId)->get();
         return $this->successResponse($shifts, __('Trashed branch shifts retrieved'));
     }
 

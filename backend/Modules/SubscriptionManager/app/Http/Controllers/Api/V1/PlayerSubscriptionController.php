@@ -36,8 +36,6 @@ class PlayerSubscriptionController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الاشتراكات بنجاح',
@@ -61,8 +59,7 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $perPage = $this->getPerPage($request);
-        $subscriptions = $this->subscriptionService->getAllSubscriptions($request->all(), $perPage);
+        $subscriptions = $this->subscriptionService->getAllSubscriptions($request->all());
         return $this->successResponse(
             PlayerSubscriptionResource::collection($subscriptions),
             __('Subscriptions retrieved successfully')

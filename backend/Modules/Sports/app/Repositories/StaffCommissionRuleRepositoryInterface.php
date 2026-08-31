@@ -3,7 +3,7 @@ namespace Modules\Sports\Repositories;
 
 interface StaffCommissionRuleRepositoryInterface
 {
-    public function all(int $perPage = 15);
+    public function all();
     public function find($id);
     public function create(array $data);
     public function update($id, array $data);

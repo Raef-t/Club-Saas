@@ -5,7 +5,7 @@ use Modules\ClubManager\Models\Club;
 
 class EloquentClubRepository implements ClubRepositoryInterface
 {
-    public function all(int $perPage = 15) { return Club::paginate($perPage); }
+    public function all() { return Club::all(); }
     public function find($id) { return Club::findOrFail($id); }
     public function create(array $data) { return Club::create($data); }
     public function update($id, array $data) {
@@ -14,7 +14,7 @@ class EloquentClubRepository implements ClubRepositoryInterface
         return $record;
     }
     public function delete($id) { return $this->find($id)->delete(); }
-    public function getTrashed(int $perPage = 15) { return Club::onlyTrashed()->paginate($perPage); }
+    public function getTrashed() { return Club::onlyTrashed()->get(); }
     public function restore($id) {
         $club = Club::onlyTrashed()->findOrFail($id);
         $club->restore();

@@ -12,7 +12,7 @@ class OfferService
     /**
      * Get all offers based on filters.
      */
-    public function getAllOffers(array $filters = [], int $perPage = 15)
+    public function getAllOffers(array $filters = [])
     {
         $query = Offer::with(['plans' => function($q) {
             $q->active();
@@ -26,13 +26,20 @@ class OfferService
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
+        $offers = $query->latest()->get();
+
         if (isset($filters['available_only']) && filter_var($filters['available_only'], FILTER_VALIDATE_BOOLEAN)) {
-            $query->whereDoesntHave('plans', function ($q) {
-                $q->where('max_subscribers', '>', 0)->whereColumn('current_subscribers', '>=', 'max_subscribers');
+            $offers = $offers->filter(function ($offer) {
+                foreach ($offer->plans as $plan) {
+                    if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                        return false;
+                    }
+                }
+                return true;
             });
         }
 
-        return $query->latest()->paginate($perPage);
+        return $offers;
     }
 
     /**

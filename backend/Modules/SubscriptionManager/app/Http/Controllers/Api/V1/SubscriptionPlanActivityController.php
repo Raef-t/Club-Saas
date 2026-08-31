@@ -25,8 +25,6 @@ class SubscriptionPlanActivityController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الأنشطة حسب الفرع المرتبط بالخطة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع النشاطات بنجاح',
@@ -41,8 +39,7 @@ class SubscriptionPlanActivityController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request) {
         $filters = $request->only(['branch_id']);
-        $perPage = $this->getPerPage($request);
-        return $this->successResponse(SubscriptionPlanActivityResource::collection($this->service->getAll($filters, $perPage)), 'Retrieved successfully');
+        return $this->successResponse(SubscriptionPlanActivityResource::collection($this->service->getAll($filters)), 'Retrieved successfully');
     }
 
     #[OA\Post(

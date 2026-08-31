@@ -6,9 +6,9 @@ use Modules\ClubManager\Models\Facility;
 
 class EloquentFacilityRepository implements FacilityRepositoryInterface
 {
-    public function all(int $perPage = 15)
+    public function all()
     {
-        return Facility::with('branch')->paginate($perPage);
+        return Facility::with('branch')->get();
     }
 
     public function find($id)
@@ -34,9 +34,9 @@ class EloquentFacilityRepository implements FacilityRepositoryInterface
         return $facility->delete();
     }
 
-    public function getTrashed(int $perPage = 15)
+    public function getTrashed()
     {
-        return Facility::onlyTrashed()->with('branch')->paginate($perPage);
+        return Facility::onlyTrashed()->get();
     }
 
     public function restore($id)

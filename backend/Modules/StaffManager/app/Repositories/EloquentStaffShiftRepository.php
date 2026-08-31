@@ -5,7 +5,7 @@ use Modules\StaffManager\Models\StaffShift;
 
 class EloquentStaffShiftRepository implements StaffShiftRepositoryInterface
 {
-    public function all(int $perPage = 15) { return StaffShift::paginate($perPage); }
+    public function all() { return StaffShift::all(); }
     public function find($id) { return StaffShift::findOrFail($id); }
     public function create(array $data) { return StaffShift::create($data); }
     public function update($id, array $data) {

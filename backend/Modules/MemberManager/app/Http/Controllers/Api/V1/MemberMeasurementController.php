@@ -26,8 +26,6 @@ class MemberMeasurementController extends BaseController
     )]
     #[OA\Parameter(name: 'member_id', in: 'query', required: false, description: 'معرف العضو (ID) لعرض قياساته فقط', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
     public function index(Request $request)
     {
@@ -43,11 +41,10 @@ class MemberMeasurementController extends BaseController
             });
         }
 
-        $perPage = $this->getPerPage($request);
-        $measurements = $query->paginate($perPage)->through(function ($m) {
+        $measurements = $query->get();
+        foreach ($measurements as $m) {
             $m->setAttribute('last_updated_at', $m->updated_at);
-            return $m;
-        });
+        }
         
         return $this->successResponse($measurements, __('Measurements retrieved successfully'));
     }

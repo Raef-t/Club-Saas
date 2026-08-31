@@ -17,13 +17,10 @@ class PaymentController extends BaseController
         tags: ['Invoices & Payments'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم استرجاع الدفعات بنجاح')]
     public function index(Request $request)
     {
-        $perPage = $this->getPerPage($request);
-        $payments = Payment::orderBy('id', 'desc')->paginate($perPage);
+        $payments = Payment::orderBy('id', 'desc')->get();
         return $this->successResponse(PaymentResource::collection($payments), __('Payments retrieved successfully'));
     }
 

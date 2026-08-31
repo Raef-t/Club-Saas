@@ -36,7 +36,7 @@ class MemberService
         $this->qrCodeService = $qrCodeService;
     }
 
-    public function getAllMembers(array $filters = [], int $perPage = 15)
+    public function getAllMembers(array $filters = [])
     {
         $query = \Modules\MemberManager\Models\Member::query();
 
@@ -64,7 +64,7 @@ class MemberService
             'healthProfile',
             'measurements',
             'creator.person',
-        ])->latest()->paginate($perPage);
+        ])->latest()->get();
     }
 
 
@@ -242,9 +242,9 @@ class MemberService
         return (bool) $member->delete();
     }
 
-    public function getTrashedMembers(array $filters = [], int $perPage = 15)
+    public function getTrashedMembers(array $filters = [])
     {
-        return $this->repository->getTrashed($filters, $perPage);
+        return $this->repository->getTrashed($filters);
     }
 
     public function restoreMember(int $id)

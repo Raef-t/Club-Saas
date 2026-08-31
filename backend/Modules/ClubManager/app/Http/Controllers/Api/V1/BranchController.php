@@ -26,20 +26,6 @@ class BranchController extends BaseController
         tags: ['Branch Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(
-        name: 'per_page',
-        in: 'query',
-        required: false,
-        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
-        schema: new OA\Schema(type: 'integer', example: 15)
-    )]
-    #[OA\Parameter(
-        name: 'page',
-        in: 'query',
-        required: false,
-        description: 'رقم الصفحة',
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الفروع بنجاح',
@@ -55,10 +41,9 @@ class BranchController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index(Request $request)
+    public function index()
     {
-        $perPage = $this->getPerPage($request);
-        $branches = $this->branchService->getAllBranches($perPage);
+        $branches = $this->branchService->getAllBranches();
         return $this->successResponse(BranchResource::collection($branches), __('Branches retrieved successfully'));
     }
 
@@ -218,25 +203,10 @@ class BranchController extends BaseController
         tags: ['Branch Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(
-        name: 'per_page',
-        in: 'query',
-        required: false,
-        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
-        schema: new OA\Schema(type: 'integer', example: 15)
-    )]
-    #[OA\Parameter(
-        name: 'page',
-        in: 'query',
-        required: false,
-        description: 'رقم الصفحة',
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\Response(response: 200, description: '✅ تم جلب الفروع المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $perPage = $this->getPerPage($request);
-        $branches = $this->branchService->getTrashed($perPage);
+        $branches = $this->branchService->getTrashed();
         return $this->successResponse(BranchResource::collection($branches), __('Trashed branches retrieved successfully'));
     }
 

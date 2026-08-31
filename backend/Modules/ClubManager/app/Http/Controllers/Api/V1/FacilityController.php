@@ -26,20 +26,6 @@ class FacilityController extends BaseController
         tags: ['Facility Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(
-        name: 'per_page',
-        in: 'query',
-        required: false,
-        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
-        schema: new OA\Schema(type: 'integer', example: 15)
-    )]
-    #[OA\Parameter(
-        name: 'page',
-        in: 'query',
-        required: false,
-        description: 'رقم الصفحة',
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع المرافق بنجاح',
@@ -52,10 +38,9 @@ class FacilityController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index(Request $request)
+    public function index()
     {
-        $perPage = $this->getPerPage($request);
-        $facilities = $this->facilityService->getAllFacilities($perPage);
+        $facilities = $this->facilityService->getAllFacilities();
         return $this->successResponse(FacilityResource::collection($facilities), __('Facilities retrieved successfully'));
     }
 
@@ -190,25 +175,10 @@ class FacilityController extends BaseController
         tags: ['Facility Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(
-        name: 'per_page',
-        in: 'query',
-        required: false,
-        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
-        schema: new OA\Schema(type: 'integer', example: 15)
-    )]
-    #[OA\Parameter(
-        name: 'page',
-        in: 'query',
-        required: false,
-        description: 'رقم الصفحة',
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\Response(response: 200, description: '✅ تم جلب المرافق المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $perPage = $this->getPerPage($request);
-        $facilities = $this->facilityService->getTrashed($perPage);
+        $facilities = $this->facilityService->getTrashed();
         return $this->successResponse(FacilityResource::collection($facilities), __('Trashed facilities retrieved successfully'));
     }
 

@@ -89,50 +89,19 @@ class LockerController extends BaseController
             ]
         )
     )]
-    #[OA\Parameter(
-        name: 'per_page',
-        in: 'query',
-        required: false,
-        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
-        schema: new OA\Schema(type: 'integer', example: 15)
-    )]
-    #[OA\Parameter(
-        name: 'page',
-        in: 'query',
-        required: false,
-        description: 'رقم الصفحة',
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
         $filters = $request->only(['branch_id', 'status']);
         $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
-        $perPage = $this->getPerPage($request);
 
-        $lockers = $this->lockerService->getAllLockers($filters, $perPage);
+        $lockers = $this->lockerService->getAllLockers($filters);
         $summary = $this->lockerService->getLockersSummary($branchId);
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => __('Lockers retrieved successfully'),
-            'data'    => [
-                'summary' => $summary,
-                'lockers' => LockerResource::collection($lockers),
-            ],
-            'meta'    => [
-                'current_page' => $lockers->currentPage(),
-                'last_page'    => $lockers->lastPage(),
-                'per_page'     => $lockers->perPage(),
-                'total'        => $lockers->total(),
-            ],
-            'links'   => [
-                'first' => $lockers->url(1),
-                'last'  => $lockers->url($lockers->lastPage()),
-                'prev'  => $lockers->previousPageUrl(),
-                'next'  => $lockers->nextPageUrl(),
-            ],
-        ]);
+        return $this->successResponse([
+            'summary' => $summary,
+            'lockers' => LockerResource::collection($lockers),
+        ], __('Lockers retrieved successfully'));
     }
 
     #[OA\Post(

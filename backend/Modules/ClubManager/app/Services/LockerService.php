@@ -23,7 +23,7 @@ class LockerService
         $this->uniquenessRule = $uniquenessRule;
     }
 
-    public function getAllLockers(array $filters = [], int $perPage = 15)
+    public function getAllLockers(array $filters = [])
     {
         // Fetch active reservation details along with holder name from people table
         $columns = [
@@ -81,10 +81,10 @@ class LockerService
             }
         }
 
-        $lockers = $query->paginate($perPage);
+        $lockers = $query->get();
 
         // Batch fetch person_contacts for all holder person IDs
-        $personIds = collect($lockers->items())->pluck('holder_person_id')->filter()->unique()->values()->all();
+        $personIds = $lockers->pluck('holder_person_id')->filter()->unique()->values()->all();
 
         $contactsByPerson = [];
         if (!empty($personIds)) {
@@ -105,7 +105,7 @@ class LockerService
             }
         }
 
-        foreach ($lockers->items() as $locker) {
+        foreach ($lockers as $locker) {
             $locker->person_contacts = $contactsByPerson[$locker->holder_person_id] ?? [];
         }
 

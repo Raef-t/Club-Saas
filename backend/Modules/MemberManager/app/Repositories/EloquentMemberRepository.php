@@ -53,7 +53,7 @@ class EloquentMemberRepository implements MemberRepositoryInterface
         return null; // Legacy - no longer supported
     }
 
-    public function getTrashed(array $filters = [], int $perPage = 15)
+    public function getTrashed(array $filters = [])
     {
         $query = Member::onlyTrashed()->with(['person.contacts', 'branch', 'healthProfile']);
 
@@ -61,7 +61,7 @@ class EloquentMemberRepository implements MemberRepositoryInterface
             $query->where('branch_id', $filters['branch_id']);
         }
 
-        return $query->latest()->paginate($perPage);
+        return $query->latest()->get();
     }
 
     public function restore(int $id)

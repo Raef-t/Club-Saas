@@ -24,8 +24,6 @@ class PayrollController extends BaseController
         tags: ['Payroll Management'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع مسيرات الرواتب بنجاح',
@@ -38,10 +36,9 @@ class PayrollController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    public function index(Request $request)
+    public function index()
     {
-        $perPage = $this->getPerPage($request);
-        $runs = $this->payrollService->getAllPayrollRuns($perPage);
+        $runs = $this->payrollService->getAllPayrollRuns();
         return $this->successResponse(PayrollRunResource::collection($runs), __('Payroll runs retrieved'));
     }
 

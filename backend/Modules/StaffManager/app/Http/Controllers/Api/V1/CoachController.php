@@ -165,8 +165,6 @@ class CoachController extends Controller
             new OA\Parameter(name: 'activity_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed'])),
             new OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave'])),
-            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (الافتراضي: 15)', schema: new OA\Schema(type: 'integer', example: 15)),
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
@@ -214,9 +212,8 @@ class CoachController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['branch_id', 'activity_id', 'gender', 'work_status', 'is_active']);
-            $perPage = $this->getPerPage($request);
-            $coaches = $this->coachService->getAllCoaches($filters, $perPage);
+            $filters = $request->only(['branch_id', 'activity_id', 'gender']);
+            $coaches = $this->coachService->getAllCoaches($filters);
 
             return CoachResource::collection($coaches);
         } catch (Exception $e) {

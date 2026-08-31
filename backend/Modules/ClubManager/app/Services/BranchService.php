@@ -18,9 +18,9 @@ class BranchService
     /**
      * Get all branches.
      */
-    public function getAllBranches(int $perPage = 15)
+    public function getAllBranches()
     {
-        return $this->repository->all($perPage);
+        return $this->repository->all();
     }
 
     /**
@@ -72,9 +72,9 @@ class BranchService
     /**
      * Get all soft-deleted (trashed) branches.
      */
-    public function getTrashed(int $perPage = 15)
+    public function getTrashed()
     {
-        return $this->repository->getTrashed($perPage);
+        return $this->repository->getTrashed();
     }
 
     /**

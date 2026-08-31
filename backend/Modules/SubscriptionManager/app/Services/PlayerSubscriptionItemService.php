@@ -11,7 +11,7 @@ class PlayerSubscriptionItemService
         $this->repository = $repository;
     }
 
-    public function getAll(int $perPage = 15) { return $this->repository->all($perPage); }
+    public function getAll() { return $this->repository->all(); }
     public function getById($id) { return $this->repository->find($id); }
     public function create(array $data) {
         $record = $this->repository->create($data);

@@ -5,9 +5,7 @@ use Modules\SubscriptionManager\Models\SubscriptionPlanActivity;
 
 class EloquentSubscriptionPlanActivityRepository implements SubscriptionPlanActivityRepositoryInterface
 {
-    public function all(int $perPage = 15) { 
-        return SubscriptionPlanActivity::with(['plan', 'staffActivity.activity', 'staffActivity.staff.person'])->paginate($perPage); 
-    }
+    public function all() { return SubscriptionPlanActivity::all(); }
     public function find($id) { return SubscriptionPlanActivity::findOrFail($id); }
     public function create(array $data) { return SubscriptionPlanActivity::create($data); }
     public function update($id, array $data) {

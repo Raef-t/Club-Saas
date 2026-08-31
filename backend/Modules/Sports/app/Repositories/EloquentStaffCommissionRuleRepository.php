@@ -5,7 +5,7 @@ use Modules\Sports\Models\StaffCommissionRule;
 
 class EloquentStaffCommissionRuleRepository implements StaffCommissionRuleRepositoryInterface
 {
-    public function all(int $perPage = 15) { return StaffCommissionRule::paginate($perPage); }
+    public function all() { return StaffCommissionRule::all(); }
     public function find($id) { return StaffCommissionRule::findOrFail($id); }
     public function create(array $data) { return StaffCommissionRule::create($data); }
     public function update($id, array $data) {

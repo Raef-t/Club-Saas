@@ -40,20 +40,6 @@ class UserController extends BaseController
         description: 'معرف الفرع للفلترة',
         schema: new OA\Schema(type: 'integer')
     )]
-    #[OA\Parameter(
-        name: 'per_page',
-        in: 'query',
-        required: false,
-        description: 'عدد العناصر في الصفحة (الافتراضي: 15)',
-        schema: new OA\Schema(type: 'integer', example: 15)
-    )]
-    #[OA\Parameter(
-        name: 'page',
-        in: 'query',
-        required: false,
-        description: 'رقم الصفحة',
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
     #[OA\Response(response: 200, description: '✅ تم جلب قائمة المستخدمين بنجاح')]
     public function index(Request $request): JsonResponse
     {
@@ -82,8 +68,7 @@ class UserController extends BaseController
             });
         }
 
-        $perPage = $this->getPerPage($request);
-        $users = $query->paginate($perPage)->through(function ($user) {
+        $users = $query->get()->map(function ($user) {
             $rolesList = $user->getRoleNames()->toArray();
             if (empty($rolesList) && $user->role) {
                 $rolesList = [$user->role];

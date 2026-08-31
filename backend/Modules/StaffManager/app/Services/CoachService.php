@@ -135,7 +135,7 @@ class CoachService
     /**
      * Get all coaches with optional filters.
      */
-    public function getAllCoaches(array $filters = [], int $perPage = 15)
+    public function getAllCoaches(array $filters = [])
     {
         $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract', 'shifts.branchShift'])->where('role', 'coach');
 
@@ -165,7 +165,7 @@ class CoachService
 
         $query->orderBy('id', 'desc');
 
-        return $query->paginate($perPage);
+        return $query->get();
     }
 
     /**
