@@ -38,7 +38,13 @@ class SalaryPaymentController extends Controller
             $periodId = $request->input('period_id');
             $search   = $request->input('search');
 
-            $query = AccSalaryPayment::with(['staff.person', 'safe', 'period', 'payslip']);
+            $query = AccSalaryPayment::with(['staff.person', 'safe', 'period', 'payslip'])
+                ->where(function ($q) {
+                    $q->whereNull('journal_id')
+                      ->orWhereDoesntHave('journal', function ($jq) {
+                          $jq->where('status', 'cancelled');
+                      });
+                });
 
             if ($branchId && $branchId !== 'all') {
                 $query->whereHas('safe', function ($q) use ($branchId) {
@@ -253,22 +259,26 @@ class SalaryPaymentController extends Controller
             }
 
             DB::transaction(function () use ($payment) {
+                $payslipId = $payment->payslip_id;
+
                 // If there's an associated journal, void/cancel it
                 if ($payment->journal_id) {
                     $journal = AccJournal::find($payment->journal_id);
-                    if ($journal && $journal->isPosted()) {
+                    if ($journal && $journal->status !== 'cancelled') {
                         $this->ledgerService->cancelJournal($journal, 'إلغاء دفعة الراتب رقم #' . $payment->id);
                     }
                 }
 
-                $payslipId = $payment->payslip_id;
-
-                // Delete the payment record
-                $payment->delete();
+                // Delete the payment record if it still exists
+                if ($payment->exists) {
+                    $payment->delete();
+                }
 
                 // If linked to a payslip, check if any other active payment exists
                 if ($payslipId) {
-                    $remainingCount = AccSalaryPayment::where('payslip_id', $payslipId)->count();
+                    $remainingCount = AccSalaryPayment::where('payslip_id', $payslipId)
+                        ->whereHas('journal', fn($q) => $q->where('status', '!=', 'cancelled'))
+                        ->count();
                     if ($remainingCount === 0) {
                         $payslip = \Modules\StaffManager\Models\Payslip::find($payslipId);
                         if ($payslip) {

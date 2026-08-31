@@ -8,6 +8,8 @@ use Modules\Accounting\Models\AccAccount;
 use Modules\Accounting\Models\AccJournal;
 use Modules\Accounting\Models\AccJournalEntry;
 use Modules\Accounting\Models\AccPeriod;
+use Modules\Accounting\Models\AccSalaryPayment;
+use Modules\StaffManager\Models\Payslip;
 
 class LedgerService
 {
@@ -179,6 +181,32 @@ class LedgerService
             'status' => 'cancelled',
             'notes'  => trim(($journal->notes ? $journal->notes . ' | ' : '') . ($reason ? 'سبب الإلغاء: ' . $reason : 'تم الإلغاء')),
         ]);
+
+        // التعامل التلقائي مع السندات المرتبطة برواتب الموظفين والكوادر
+        if ($journal->source_type === 'SalaryPayments' || $journal->source_type === 'salary_payment') {
+            $payment = AccSalaryPayment::find($journal->source_id)
+                ?? AccSalaryPayment::where('journal_id', $journal->id)->first();
+
+            if ($payment) {
+                $payslipId = $payment->payslip_id;
+                $payment->delete();
+
+                if ($payslipId) {
+                    $remainingActive = AccSalaryPayment::where('payslip_id', $payslipId)
+                        ->whereHas('journal', fn($q) => $q->where('status', '!=', 'cancelled'))
+                        ->count();
+                    if ($remainingActive === 0) {
+                        $payslip = Payslip::find($payslipId);
+                        if ($payslip) {
+                            $payslip->update([
+                                'status'  => 'pending',
+                                'paid_at' => null,
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
 
         return $journal->refresh();
     }
