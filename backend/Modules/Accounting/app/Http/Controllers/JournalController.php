@@ -32,6 +32,8 @@ class JournalController extends Controller
     #[OA\Parameter(name: 'from_date', in: 'query', required: false, description: 'بدءاً من هذا التاريخ (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date'))]
     #[OA\Parameter(name: 'to_date', in: 'query', required: false, description: 'حتى هذا التاريخ (YYYY-MM-DD)', schema: new OA\Schema(type: 'string', format: 'date'))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد السندات في الصفحة (الافتراضي 20)', schema: new OA\Schema(type: 'integer', default: 20))]
+    #[OA\Parameter(name: 'account_id', in: 'query', required: false, description: 'معرف الحساب المالي لتصفية القيود التي تحتوي على هذا الحساب', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'account_type', in: 'query', required: false, description: 'نوع الحساب (expense, revenue, asset, liability, equity)', schema: new OA\Schema(type: 'string'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع قائمة السندات بنجاح',
@@ -45,7 +47,16 @@ class JournalController extends Controller
                     properties: [
                         new OA\Property(property: 'current_page', type: 'integer', example: 1),
                         new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AccJournal')),
-                        new OA\Property(property: 'total', type: 'integer', example: 120)
+                        new OA\Property(property: 'total', type: 'integer', example: 120),
+                        new OA\Property(
+                            property: 'totals',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'total_amount_usd', type: 'number', example: 1500.00),
+                                new OA\Property(property: 'total_amount_syp', type: 'number', example: 250000.00),
+                                new OA\Property(property: 'total_count', type: 'integer', example: 12)
+                            ]
+                        )
                     ]
                 )
             ]
@@ -59,6 +70,14 @@ class JournalController extends Controller
             if ($request->filled('type') && $request->type !== 'all')        $query->where('type', $request->type);
             if ($request->filled('status') && $request->status !== 'all')    $query->where('status', $request->status);
             if ($request->filled('safe_id') && $request->safe_id !== 'all')  $query->where('safe_id', $request->safe_id);
+            if ($request->filled('account_id') && $request->account_id !== 'all') {
+                $accountId = $request->account_id;
+                $query->whereHas('entries', fn($q) => $q->where('account_id', $accountId));
+            }
+            if ($request->filled('account_type') && $request->account_type !== 'all') {
+                $accountType = $request->account_type;
+                $query->whereHas('entries.account', fn($q) => $q->where('type', $accountType));
+            }
             if ($request->filled('period_id')) $query->where('period_id', $request->period_id);
             $branchId = $request->header('X-Branch-ID') ?: $request->input('branch_id');
             if ($branchId && $branchId !== 'all') $query->where('branch_id', $branchId);
@@ -74,8 +93,44 @@ class JournalController extends Controller
                       ->orWhere('notes', 'like', "%{$search}%");
                 });
             }
+
+            // Calculate totals for matching query
+            $totalsQuery = clone $query;
+            $journalIds = $totalsQuery->pluck('id');
+
+            $entriesQuery = \Illuminate\Support\Facades\DB::table('acc_journal_entries')
+                ->whereIn('journal_id', $journalIds);
+
+            if ($request->filled('account_id') && $request->account_id !== 'all') {
+                $entriesQuery->where('account_id', $request->account_id);
+            }
+
+            $rawTotals = $entriesQuery->selectRaw('
+                SUM(debit_usd) as total_debit_usd,
+                SUM(credit_usd) as total_credit_usd,
+                SUM(debit_syp) as total_debit_syp,
+                SUM(credit_syp) as total_credit_syp
+            ')->first();
+
+            $isAccountFiltered = $request->filled('account_id') && $request->account_id !== 'all';
+            $totalUsd = $isAccountFiltered
+                ? (float)(($rawTotals->total_debit_usd ?? 0) + ($rawTotals->total_credit_usd ?? 0))
+                : (float)($rawTotals->total_debit_usd ?? 0);
+            $totalSyp = $isAccountFiltered
+                ? (float)(($rawTotals->total_debit_syp ?? 0) + ($rawTotals->total_credit_syp ?? 0))
+                : (float)($rawTotals->total_debit_syp ?? 0);
+
+            $totals = [
+                'total_amount_usd' => round($totalUsd, 2),
+                'total_amount_syp' => round($totalSyp, 2),
+                'total_count'      => $journalIds->count(),
+            ];
+
             $journals = $query->orderBy('date', 'desc')->paginate($request->get('per_page', 25));
-            return $this->successResponse(AccJournalResource::collection($journals)->response()->getData(true), 'تم جلب سندات القيود');
+            $responseData = AccJournalResource::collection($journals)->response()->getData(true);
+            $responseData['totals'] = $totals;
+
+            return $this->successResponse($responseData, 'تم جلب سندات القيود');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
         }
