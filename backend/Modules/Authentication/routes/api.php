@@ -58,4 +58,22 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'check.permission'])->group(fun
     Route::get('users/{userId}/roles', [UserRoleController::class, 'index']);
     Route::post('users/{userId}/roles', [UserRoleController::class, 'assign']);
     Route::delete('users/{userId}/roles', [UserRoleController::class, 'revoke']);
+
+    // ─── Temporary Admin Permissions Sync Endpoint ──────────────────────────────
+    Route::post('admin/sync-all-permissions', function () {
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        \Illuminate\Support\Facades\Artisan::call('db:seed', [
+            '--class' => 'Database\\Seeders\\AllSystemPermissionsSeeder',
+            '--force' => true,
+        ]);
+
+        $output = \Illuminate\Support\Facades\Artisan::output();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم زرع وتحديث جميع الـ 269 صلاحية ومزامنتها مع رتبة admin بنجاح.',
+            'details' => trim($output),
+        ]);
+    });
 });
