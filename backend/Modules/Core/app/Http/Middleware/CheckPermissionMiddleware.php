@@ -26,7 +26,6 @@ class CheckPermissionMiddleware
         'POST:v1/users/{userId}/roles'                                  => 'user-role.assign',
         'DELETE:v1/users/{userId}/roles'                                => 'user-role.revoke',
 
-
         // ─── Contacts ─────────────────────────────────────────────────────────
         'GET:v1/contacts'                                               => 'contact.view-any',
         'GET:v1/contacts/{contact}'                                     => 'contact.view',
@@ -36,6 +35,7 @@ class CheckPermissionMiddleware
 
         // ─── Member Stats & Dashboard ──────────────────────────────────────────
         'GET:v1/members/stats'                                          => 'member.stats',
+        'GET:v1/members/trashed'                                        => 'member.view-trashed',
         'GET:v1/member/dashboard'                                       => 'member.stats',
 
         // ─── Members CRUD ──────────────────────────────────────────────────────
@@ -71,9 +71,9 @@ class CheckPermissionMiddleware
         // ─── Coaches ──────────────────────────────────────────────────────────
         'GET:v1/coaches'                                                => 'coach.view-any',
         'GET:v1/coaches/stats'                                          => 'coach.stats',
+        'GET:v1/coaches/trashed'                                        => 'coach.view-trashed',
         'GET:v1/coaches/{id}'                                           => 'coach.view',
         'POST:v1/coaches'                                               => 'coach.create',
-        'PATCH:v1/coaches/{id}'                                         => 'coach.update',
         'PUT:v1/coaches/{id}'                                           => 'coach.update',
         'POST:v1/coaches/{id}/photo'                                    => 'coach.update-photo',
         'POST:v1/coaches/{id}/schedule'                                 => 'coach.set-schedule',
@@ -82,6 +82,7 @@ class CheckPermissionMiddleware
 
         // ─── Staff ────────────────────────────────────────────────────────────
         'GET:v1/staff'                                                  => 'staff.view-any',
+        'GET:v1/staff/trashed'                                          => 'staff.view-trashed',
         'GET:v1/staff/{id}'                                             => 'staff.view',
         'POST:v1/staff'                                                 => 'staff.create',
         'PUT:v1/staff/{id}'                                             => 'staff.update',
@@ -89,6 +90,7 @@ class CheckPermissionMiddleware
         'POST:v1/staff/{id}/schedule'                                   => 'staff.set-schedule',
         'PATCH:v1/staff/{id}/toggle-status'                             => 'staff.toggle-status',
         'POST:v1/staff/{id}/restore'                                    => 'staff.restore',
+        'DELETE:v1/staff/{id}'                                          => 'staff.delete',
 
         // ─── Payroll & Payslips ───────────────────────────────────────────────
         'GET:v1/payroll-runs'                                           => 'payroll.view-any',
@@ -96,6 +98,8 @@ class CheckPermissionMiddleware
         'POST:v1/payroll-runs'                                          => 'payroll.create',
         'POST:v1/payroll-runs/{id}/generate-payslips'                  => 'payroll.generate-payslips',
         'POST:v1/payroll-runs/{id}/process'                             => 'payroll.process',
+        'POST:v1/payroll-runs/{id}/rollback'                            => 'payroll.rollback',
+        'DELETE:v1/payroll-runs/{id}'                                   => 'payroll.delete',
         'GET:v1/payslips'                                               => 'payslip.view-any',
         'POST:v1/payslips/generate'                                     => 'payslip.generate',
         'POST:v1/payslips/confirm'                                      => 'payslip.confirm',
@@ -103,6 +107,7 @@ class CheckPermissionMiddleware
 
         // ─── Staff Shifts ─────────────────────────────────────────────────────
         'GET:v1/staff-shifts'                                           => 'staff-shift.view-any',
+        'GET:v1/staff-shifts/{id}'                                      => 'staff-shift.view',
         'POST:v1/staff-shifts'                                          => 'staff-shift.create',
         'PUT:v1/staff-shifts/{shift}'                                   => 'staff-shift.update',
         'DELETE:v1/staff-shifts/{shift}'                                => 'staff-shift.delete',
@@ -110,6 +115,7 @@ class CheckPermissionMiddleware
         // ─── Activities ───────────────────────────────────────────────────────
         'GET:v1/activities'                                             => 'activity.view-any',
         'GET:v1/activities/stats'                                       => 'activity.stats',
+        'GET:v1/activities/trashed'                                     => 'activity.view-trashed',
         'GET:v1/activities/{id}'                                        => 'activity.view',
         'POST:v1/activities'                                            => 'activity.create',
         'PUT:v1/activities/{id}'                                        => 'activity.update',
@@ -118,6 +124,7 @@ class CheckPermissionMiddleware
 
         // ─── Activity Types ───────────────────────────────────────────────────
         'GET:v1/activity-types'                                         => 'activity-type.view-any',
+        'GET:v1/activity-types/{id}'                                    => 'activity-type.view',
         'POST:v1/activity-types'                                        => 'activity-type.create',
         'PUT:v1/activity-types/{id}'                                    => 'activity-type.update',
         'PATCH:v1/activity-types/{id}/settings'                         => 'activity-type.update-settings',
@@ -126,23 +133,39 @@ class CheckPermissionMiddleware
         // ─── Session Templates ────────────────────────────────────────────────
         'GET:v1/session-templates'                                      => 'session-template.view-any',
         'GET:v1/session-templates/schedule'                             => 'session-template.schedule',
+        'GET:v1/session-templates/{id}'                                 => 'session-template.view',
         'POST:v1/session-templates'                                     => 'session-template.create',
         'PUT:v1/session-templates/{id}'                                 => 'session-template.update',
         'POST:v1/session-templates/{id}/cancel'                         => 'session-template.cancel',
         'DELETE:v1/session-templates/{id}'                              => 'session-template.delete',
 
+        // ─── Staff Commission Rules ───────────────────────────────────────────
+        'GET:v1/staff-commission-rules'                                 => 'staff-commission-rule.view-any',
+        'GET:v1/staff-commission-rules/{id}'                            => 'staff-commission-rule.view',
+        'POST:v1/staff-commission-rules'                                => 'staff-commission-rule.create',
+        'PUT:v1/staff-commission-rules/{id}'                            => 'staff-commission-rule.update',
+
         // ─── Subscription Plans ───────────────────────────────────────────────
         'GET:v1/subscription-plans'                                     => 'subscription-plan.view-any',
+        'GET:v1/subscription-plans/trashed'                             => 'subscription-plan.view-trashed',
+        'GET:v1/subscription-plans/registration'                        => 'subscription-plan.view-any',
         'GET:v1/subscription-plans/{id}'                                => 'subscription-plan.view',
+        'GET:v1/subscription-plans/{id}/players'                        => 'subscription-plan.view-players',
+        'GET:v1/subscription-plans/{id}/delete-check'                   => 'subscription-plan.delete',
         'POST:v1/subscription-plans'                                    => 'subscription-plan.create',
         'PUT:v1/subscription-plans/{id}'                                => 'subscription-plan.update',
         'DELETE:v1/subscription-plans/{id}'                             => 'subscription-plan.delete',
         'POST:v1/subscription-plans/{id}/restore'                      => 'subscription-plan.restore',
+        'POST:v1/subscription-plans/{id}/suspensions/preview'           => 'subscription-plan.suspend',
+        'POST:v1/subscription-plans/{id}/suspend'                       => 'subscription-plan.suspend',
+        'GET:v1/subscription-plans/{id}/suspensions'                    => 'subscription-plan.view-suspensions',
+        'DELETE:v1/subscription-plans/{id}/suspensions/{suspensionId}' => 'subscription-plan.delete-suspension',
 
         // ─── Player Subscriptions ─────────────────────────────────────────────
         'GET:v1/player-subscriptions'                                   => 'player-subscription.view-any',
         'GET:v1/player-subscriptions/{id}'                               => 'player-subscription.view',
         'POST:v1/player-subscriptions'                                  => 'player-subscription.create',
+        'PUT:v1/player-subscriptions/{id}'                              => 'player-subscription.update',
         'DELETE:v1/player-subscriptions/{id}'                            => 'player-subscription.delete',
         'POST:v1/player-subscriptions/{id}/freeze'                     => 'player-subscription.freeze',
         'POST:v1/player-subscriptions/{id}/unfreeze'                   => 'player-subscription.unfreeze',
@@ -152,6 +175,7 @@ class CheckPermissionMiddleware
 
         // ─── Offers ───────────────────────────────────────────────────────────
         'GET:v1/offers'                                                 => 'offer.view-any',
+        'GET:v1/offers/trashed'                                         => 'offer.view-trashed',
         'GET:v1/offers/{id}'                                            => 'offer.view',
         'POST:v1/offers'                                                => 'offer.create',
         'PUT:v1/offers/{id}'                                            => 'offer.update',
@@ -161,12 +185,12 @@ class CheckPermissionMiddleware
 
         // ─── Sub-Plan Activities & Items ─────────────────────────────────────
         'GET:v1/subscription-plan-activities'                          => 'sub-plan-activity.view-any',
+        'GET:v1/subscription-plan-activities/trashed'                  => 'sub-plan-activity.view-trashed',
         'POST:v1/subscription-plan-activities'                         => 'sub-plan-activity.create',
+        'GET:v1/subscription-plan-activities/{id}'                     => 'sub-plan-activity.view',
         'PUT:v1/subscription-plan-activities/{id}'                     => 'sub-plan-activity.update',
         'DELETE:v1/subscription-plan-activities/{id}'                  => 'sub-plan-activity.delete',
-        'GET:v1/player-subscription-items'                              => 'player-sub-item.view-any',
-        'POST:v1/player-subscription-items'                             => 'player-sub-item.create',
-        'DELETE:v1/player-subscription-items/{id}'                      => 'player-sub-item.delete',
+        'POST:v1/subscription-plan-activities/{id}/restore'            => 'sub-plan-activity.restore',
 
         // ─── Subscription Reports ─────────────────────────────────────────────
         'GET:v1/reports/subscriptions/renewal-status'                  => 'report.subscriptions.renewal-status',
@@ -181,15 +205,20 @@ class CheckPermissionMiddleware
         'GET:v1/my-invoices'                                            => 'payment.view-invoices',
         'GET:v1/reports/subscriptions'                                  => 'payment.view-reports',
         'GET:v1/payments'                                               => 'payment.view-any',
+        'GET:v1/payments/trashed'                                       => 'payment.view-trashed',
+        'POST:v1/payments'                                              => 'payment.create',
         'GET:v1/payments/{id}'                                          => 'payment.view',
+        'PUT:v1/payments/{id}'                                          => 'payment.update',
         'DELETE:v1/payments/{id}'                                       => 'payment.delete',
         'POST:v1/payments/{id}/restore'                                 => 'payment.restore',
 
         // ─── Clubs ────────────────────────────────────────────────────────────
         'GET:v1/clubs'                                                  => 'club.view-any',
+        'GET:v1/clubs/trashed'                                          => 'club.view-trashed',
         'GET:v1/clubs/{id}'                                             => 'club.view',
         'POST:v1/clubs'                                                 => 'club.create',
         'PUT:v1/clubs/{id}'                                             => 'club.update',
+        'POST:v1/clubs/{id}/logo'                                       => 'club.update-logo',
         'DELETE:v1/clubs/{id}'                                          => 'club.delete',
         'POST:v1/clubs/{id}/restore'                                    => 'club.restore',
         'GET:v1/clubs/{club}/settings'                                  => 'club.settings.view',
@@ -198,20 +227,28 @@ class CheckPermissionMiddleware
         // ─── Branches ─────────────────────────────────────────────────────────
         'GET:v1/branches'                                               => 'branch.view-any',
         'GET:v1/branches/stats'                                         => 'branch.stats',
+        'GET:v1/branches/trashed'                                       => 'branch.view-trashed',
         'GET:v1/branches/{id}'                                          => 'branch.view',
         'POST:v1/branches'                                              => 'branch.create',
         'PUT:v1/branches/{id}'                                          => 'branch.update',
         'DELETE:v1/branches/{id}'                                       => 'branch.delete',
         'POST:v1/branches/{id}/restore'                                 => 'branch.restore',
         'PATCH:v1/branches/{id}/toggle-status'                          => 'branch.toggle-status',
+        'GET:v1/branches/{branch}/settings'                             => 'branch.settings.view',
         'PUT:v1/branches/{branch}/settings'                             => 'branch.settings.update',
         'GET:v1/branches/{branch}/holidays'                             => 'branch.holiday.view-any',
         'POST:v1/branches/{branch}/holidays'                            => 'branch.holiday.create',
+        'GET:v1/holidays/trashed'                                       => 'branch.holiday.view-trashed',
+        'GET:v1/holidays/{id}'                                          => 'branch.holiday.view',
+        'PUT:v1/holidays/{id}'                                          => 'branch.holiday.update',
         'DELETE:v1/holidays/{id}'                                       => 'branch.holiday.delete',
+        'POST:v1/holidays/{id}/restore'                                 => 'branch.holiday.restore',
         'GET:v1/branches/{branch}/shifts'                               => 'branch.shift.view-any',
+        'GET:v1/branches/{branch}/shifts/trashed'                       => 'branch.shift.view-trashed',
         'POST:v1/branches/{branch}/shifts'                              => 'branch.shift.create',
         'PUT:v1/branches/{branch}/shifts/{shift}'                       => 'branch.shift.update',
         'DELETE:v1/branches/{branch}/shifts/{shift}'                    => 'branch.shift.delete',
+        'POST:v1/branches/{branch}/shifts/{id}/restore'                 => 'branch.shift.restore',
 
         // ─── Lockers ──────────────────────────────────────────────────────────
         'GET:v1/lockers'                                                => 'locker.view-any',
@@ -249,9 +286,11 @@ class CheckPermissionMiddleware
         'GET:v1/notifications'                                          => 'notification.view-any',
         'GET:v1/notifications/unread/count'                            => 'notification.unread-count',
         'POST:v1/notifications/mark-all-as-read'                        => 'notification.mark-all-read',
+        'GET:v1/notifications/{id}'                                     => 'notification.view',
         'PATCH:v1/notifications/{id}/read'                              => 'notification.mark-read',
         'DELETE:v1/notifications/{id}'                                  => 'notification.delete-my',
         'GET:v1/admin/notifications'                                    => 'notification.admin.view-any',
+        'GET:v1/admin/notifications/{id}'                               => 'notification.admin.view',
         'POST:v1/admin/notifications'                                   => 'notification.admin.create',
         'POST:v1/admin/notifications/send-to-users'                    => 'notification.admin.send-to-users',
         'DELETE:v1/admin/notifications/{id}'                            => 'notification.admin.delete',
@@ -261,6 +300,67 @@ class CheckPermissionMiddleware
         'GET:v1/audits/meta'                                            => 'audit.meta',
         'GET:v1/audits/{id}'                                            => 'audit.view',
         'POST:v1/upload'                                                => 'upload.create',
+
+        // ─── Accounting: Periods ──────────────────────────────────────────────
+        'GET:v1/accounting/periods'                                     => 'accounting.period.view-any',
+        'POST:v1/accounting/periods'                                    => 'accounting.period.create',
+        'GET:v1/accounting/periods/{id}'                                => 'accounting.period.view',
+        'POST:v1/accounting/periods/{id}/close'                         => 'accounting.period.close',
+        'POST:v1/accounting/periods/{id}/lock'                          => 'accounting.period.lock',
+        'POST:v1/accounting/periods/{id}/reopen'                        => 'accounting.period.reopen',
+
+        // ─── Accounting: Chart of Accounts ───────────────────────────────────
+        'GET:v1/accounting/accounts'                                    => 'accounting.account.view-any',
+        'POST:v1/accounting/accounts'                                   => 'accounting.account.create',
+        'GET:v1/accounting/accounts/{id}'                               => 'accounting.account.view',
+        'PUT:v1/accounting/accounts/{id}'                               => 'accounting.account.update',
+        'GET:v1/accounting/accounts/{id}/ledger'                        => 'accounting.account.ledger',
+
+        // ─── Accounting: Safes ────────────────────────────────────────────────
+        'GET:v1/accounting/safes'                                       => 'accounting.safe.view-any',
+        'POST:v1/accounting/safes'                                      => 'accounting.safe.create',
+        'GET:v1/accounting/safes/{id}'                                  => 'accounting.safe.view',
+        'PUT:v1/accounting/safes/{id}'                                  => 'accounting.safe.update',
+        'DELETE:v1/accounting/safes/{id}'                               => 'accounting.safe.delete',
+        'GET:v1/accounting/safes/{id}/statement'                        => 'accounting.safe.statement',
+
+        // ─── Accounting: Partners ─────────────────────────────────────────────
+        'GET:v1/accounting/partners'                                    => 'accounting.partner.view-any',
+        'POST:v1/accounting/partners'                                   => 'accounting.partner.create',
+        'GET:v1/accounting/partners/{id}'                               => 'accounting.partner.view',
+        'PUT:v1/accounting/partners/{id}'                               => 'accounting.partner.update',
+        'DELETE:v1/accounting/partners/{id}'                            => 'accounting.partner.delete',
+        'GET:v1/accounting/partners/{id}/statement'                     => 'accounting.partner.statement',
+
+        // ─── Accounting: Counterparties ───────────────────────────────────────
+        'GET:v1/accounting/counterparties'                              => 'accounting.counterparty.view-any',
+        'POST:v1/accounting/counterparties'                             => 'accounting.counterparty.create',
+        'GET:v1/accounting/counterparties/{id}'                         => 'accounting.counterparty.view',
+        'PUT:v1/accounting/counterparties/{id}'                         => 'accounting.counterparty.update',
+
+        // ─── Accounting: Journals ─────────────────────────────────────────────
+        'GET:v1/accounting/journals'                                    => 'accounting.journal.view-any',
+        'POST:v1/accounting/journals'                                   => 'accounting.journal.create',
+        'GET:v1/accounting/journals/{id}'                               => 'accounting.journal.view',
+        'POST:v1/accounting/journals/{id}/post'                         => 'accounting.journal.post',
+        'POST:v1/accounting/journals/{id}/reverse'                      => 'accounting.journal.reverse',
+        'POST:v1/accounting/journals/{id}/cancel'                       => 'accounting.journal.cancel',
+
+        // ─── Accounting: Financial Reports ────────────────────────────────────
+        'GET:v1/accounting/reports/trial-balance'                       => 'accounting.report.trial-balance',
+        'GET:v1/accounting/reports/income-statement'                    => 'accounting.report.income-statement',
+        'GET:v1/accounting/reports/balance-sheet'                       => 'accounting.report.balance-sheet',
+        'GET:v1/accounting/dashboard'                                   => 'accounting.report.dashboard',
+
+        // ─── Accounting: Reconciliations ──────────────────────────────────────
+        'GET:v1/accounting/reconciliations'                             => 'accounting.reconciliation.view-any',
+        'POST:v1/accounting/reconciliations'                            => 'accounting.reconciliation.create',
+        'GET:v1/accounting/reconciliations/{id}'                        => 'accounting.reconciliation.view',
+
+        // ─── Accounting: Salary Payments ──────────────────────────────────────
+        'GET:v1/accounting/salary-payments'                             => 'accounting.salary.view-any',
+        'POST:v1/accounting/salary-payments'                            => 'accounting.salary.create',
+        'DELETE:v1/accounting/salary-payments/{id}'                      => 'accounting.salary.delete',
     ];
 
     /**
@@ -326,10 +426,31 @@ class CheckPermissionMiddleware
             return $this->routePermissionMap[$key];
         }
 
-        // 3. Fallback: Check with "api/" prefix just in case
+        // 3. Fallback for PATCH requests to check corresponding PUT route
+        if ($method === 'PATCH') {
+            $putKey = "PUT:{$uri}";
+            if (isset($this->routePermissionMap[$putKey])) {
+                return $this->routePermissionMap[$putKey];
+            }
+        }
+
+        // 4. Fallback: Check with "api/" prefix just in case
         $apiKey = "{$method}:api/{$uri}";
         if (isset($this->routePermissionMap[$apiKey])) {
             return $this->routePermissionMap[$apiKey];
+        }
+
+        // 5. Pattern / Parameter-Agnostic Matching (e.g. {id} matches {club}, {staff}, {payroll_run}, etc.)
+        $normalizedRouteUri = preg_replace('/\{[^}]+\}/', '{param}', $uri);
+        foreach ($this->routePermissionMap as $mapKey => $perm) {
+            [$mapMethod, $mapUri] = explode(':', $mapKey, 2);
+            if ($mapMethod === $method || ($method === 'PATCH' && $mapMethod === 'PUT')) {
+                $cleanMapUri = preg_replace('#^api/#', '', $mapUri);
+                $normalizedMapUri = preg_replace('/\{[^}]+\}/', '{param}', $cleanMapUri);
+                if ($normalizedMapUri === $normalizedRouteUri) {
+                    return $perm;
+                }
+            }
         }
 
         return null;

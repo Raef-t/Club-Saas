@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\FormulaEngine\Http\Controllers\Api\V1\FormulaController;
 use Modules\FormulaEngine\Http\Controllers\Api\V1\FormulaExecutionController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
 
     // ─── Admin: Formula Definitions ───────────────────────────────────────
     Route::prefix('admin/formulas')->group(function () {

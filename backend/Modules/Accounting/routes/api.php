@@ -12,7 +12,7 @@ use Modules\Accounting\Http\Controllers\ReconciliationController;
 use Modules\Accounting\Http\Controllers\SalaryPaymentController;
 
 Route::group([
-    'middleware' => ['api', 'auth:sanctum'],
+    'middleware' => ['api', 'auth:sanctum', 'check.permission'],
     'prefix'     => 'v1/accounting',
     'as'         => 'api.accounting.',
 ], function () {
