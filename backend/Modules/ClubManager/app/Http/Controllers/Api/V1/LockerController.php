@@ -57,6 +57,8 @@ class LockerController extends BaseController
             example: 'with_staff_or_coach'
         )
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الخزائن بنجاح',
@@ -92,12 +94,34 @@ class LockerController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $filters = $request->only(['branch_id', 'status']);
+        $filters = $request->all();
         $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
 
         $lockers = $this->lockerService->getAllLockers($filters);
         $summary = $this->lockerService->getLockersSummary($branchId);
 
+        // If paginated, return pagination meta at root level alongside data
+        if ($lockers instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+            $collection = LockerResource::collection($lockers);
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('Lockers retrieved successfully'),
+                'data'    => [
+                    'summary' => $summary,
+                    'lockers' => $collection->resolve(),
+                ],
+                'meta'    => [
+                    'current_page' => $lockers->currentPage(),
+                    'last_page'    => $lockers->lastPage(),
+                    'per_page'     => $lockers->perPage(),
+                    'total'        => $lockers->total(),
+                    'from'         => $lockers->firstItem(),
+                    'to'           => $lockers->lastItem(),
+                ],
+            ]);
+        }
+
+        // Non-paginated (per_page=all)
         return $this->successResponse([
             'summary' => $summary,
             'lockers' => LockerResource::collection($lockers),

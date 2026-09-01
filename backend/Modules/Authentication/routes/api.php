@@ -8,7 +8,7 @@ use Modules\Authentication\Http\Controllers\Api\V1\RoleController;
 use Modules\Authentication\Http\Controllers\Api\V1\UserController;
 use Modules\Authentication\Http\Controllers\Api\V1\UserRoleController;
 
-Route::prefix('v1/auth')->group(function () {
+Route::prefix('v1/auth')->middleware('throttle:api')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('check-username', [AuthController::class, 'checkUsername']);
 

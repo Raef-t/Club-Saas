@@ -23,6 +23,17 @@ class FormulaController extends BaseController
      * GET /v1/admin/formulas
      * List all formulas, optionally filtered by category.
      */
+    #[\OpenApi\Attributes\Get(
+        path: '/v1/admin/formulas',
+        summary: '📐 عرض المعادلات الحسابية',
+        tags: ['Formula Engine'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[\OpenApi\Attributes\Parameter(name: 'category', in: 'query', required: false, description: 'تصفية حسب الفئة', schema: new \OpenApi\Attributes\Schema(type: 'string'))]
+    #[\OpenApi\Attributes\Parameter(name: 'is_active', in: 'query', required: false, description: 'تصفية حسب الحالة', schema: new \OpenApi\Attributes\Schema(type: 'boolean'))]
+    #[\OpenApi\Attributes\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)', schema: new \OpenApi\Attributes\Schema(type: 'string', example: '15'))]
+    #[\OpenApi\Attributes\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new \OpenApi\Attributes\Schema(type: 'integer', example: 1))]
+    #[\OpenApi\Attributes\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
     public function index(Request $request): JsonResponse
     {
         $query = Formula::with('variables');
@@ -34,7 +45,16 @@ class FormulaController extends BaseController
             $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
         }
 
-        return $this->successResponse($query->orderBy('name')->get(), 'Formulas retrieved successfully');
+        $query->orderBy('name');
+
+        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
+            $formulas = $query->get();
+        } else {
+            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+            $formulas = $query->paginate($perPage);
+        }
+
+        return $this->successResponse($formulas, 'Formulas retrieved successfully');
     }
 
     /**

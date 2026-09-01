@@ -18,6 +18,8 @@ class SessionTemplateController extends BaseController
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع القوالب بنجاح',
@@ -32,7 +34,15 @@ class SessionTemplateController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $templates = SportSessionTemplate::with(['subscriptionPlan'])->get();
+        $query = SportSessionTemplate::with(['subscriptionPlan']);
+
+        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
+            $templates = $query->get();
+        } else {
+            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+            $templates = $query->paginate($perPage);
+        }
+
         return $this->successResponse($templates, __('Templates retrieved successfully'));
     }
 

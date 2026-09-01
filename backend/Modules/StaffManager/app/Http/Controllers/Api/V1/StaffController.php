@@ -36,6 +36,8 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'role', in: 'query', required: false, description: 'تصفية حسب الدور', schema: new OA\Schema(type: 'string', enum: ['admin', 'management_admin', 'manager', 'coach', 'receptionist', 'cleaner']))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave']))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الموظفين بنجاح',
@@ -382,6 +384,8 @@ class StaffController extends BaseController
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الموظفين المحذوفين بنجاح')]
     public function trashed(Request $request)
     {

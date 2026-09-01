@@ -2,7 +2,7 @@
 
 namespace Modules\StaffManager\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Modules\StaffManager\Services\CoachService;
 use Modules\StaffManager\Http\Requests\StoreCoachRequest;
@@ -20,7 +20,7 @@ use Illuminate\Database\QueryException;
 use Exception;
 
 #[OA\Tag(name: 'Coach Management', description: 'API Endpoints for managing coaches')]
-class CoachController extends Controller
+class CoachController extends BaseController
 {
     protected CoachService $coachService;
     protected StaffService $staffService;
@@ -165,6 +165,8 @@ class CoachController extends Controller
             new OA\Parameter(name: 'activity_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed'])),
             new OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave'])),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
@@ -212,10 +214,10 @@ class CoachController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['branch_id', 'activity_id', 'gender']);
+            $filters = $request->all();
             $coaches = $this->coachService->getAllCoaches($filters);
 
-            return CoachResource::collection($coaches);
+            return $this->successResponse(CoachResource::collection($coaches), __('Coaches retrieved successfully'));
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while retrieving coaches.',
@@ -788,6 +790,8 @@ class CoachController extends Controller
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200, 
         description: '✅ تم جلب المدربين المحذوفين بنجاح',
@@ -800,11 +804,7 @@ class CoachController extends Controller
     public function trashed(Request $request)
     {
         $coaches = $this->coachService->getTrashedCoaches($request->all());
-        return response()->json([
-            'status' => 'success',
-            'data' => CoachResource::collection($coaches),
-            'message' => __('Trashed coaches retrieved successfully')
-        ], 200);
+        return $this->successResponse(CoachResource::collection($coaches), __('Trashed coaches retrieved successfully'));
     }
 
     #[OA\Post(

@@ -4197,6 +4197,26 @@
                             "format": "date",
                             "example": "2026-07-21"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -5593,6 +5613,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -6054,6 +6094,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -6216,6 +6276,38 @@
                 "summary": "🏢 عرض جميع الفروع",
                 "description": "استرجاع قائمة بجميع الفروع المتاحة في النظام.",
                 "operationId": "958cc958d808a4d1e94e1a79bb86aeca",
+                "parameters": [
+                    {
+                        "name": "club_id",
+                        "in": "query",
+                        "description": "تصفية حسب النادي",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الفروع بنجاح",
@@ -6694,6 +6786,38 @@
                 "summary": "🗑️ عرض الفروع المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالفروع التي تم حذفها.",
                 "operationId": "3f27c6bd9565cbca4d22914eea895c68",
+                "parameters": [
+                    {
+                        "name": "club_id",
+                        "in": "query",
+                        "description": "تصفية حسب النادي",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الفروع المحذوفة بنجاح"
@@ -6840,6 +6964,26 @@
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
@@ -7228,6 +7372,38 @@
                 "summary": "🗑️ عرض العطلات المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بأيام العطل المحذوفة.",
                 "operationId": "9c510011d0c868b7d31fabdc9273970c",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب العطلات المحذوفة بنجاح"
@@ -7483,6 +7659,26 @@
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
@@ -7916,6 +8112,26 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -7980,6 +8196,28 @@
                 "summary": "🏢 عرض جميع الأندية",
                 "description": "استرجاع قائمة بجميع الأندية المسجلة في النظام مع شعاراتها وحالاتها.",
                 "operationId": "366d4361fb952980b2ed09241b6e55ca",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة الأندية",
@@ -8682,6 +8920,28 @@
                 "summary": "🗑️ عرض الأندية المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالأندية التي تم حذفها.",
                 "operationId": "8cc70a5ceb754d3ad5f7467a39748948",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الأندية المحذوفة بنجاح"
@@ -9055,6 +9315,38 @@
                 "summary": "🏊 عرض جميع المرافق",
                 "description": "استرجاع قائمة بجميع المرافق (كالمسابح، الملاعب، الصالات الرياضية) المتاحة في النظام.",
                 "operationId": "3fc7578b764098b72d173a71bb07579e",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع المرافق بنجاح",
@@ -9470,6 +9762,38 @@
                 "summary": "🗑️ عرض المرافق المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالمرافق التي تم حذفها.",
                 "operationId": "0302e2ef01f032a11b0239539b7623ac",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب المرافق المحذوفة بنجاح"
@@ -9943,6 +10267,26 @@
                                 "maintenance",
                                 "occupied"
                             ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -10957,6 +11301,66 @@
                 ]
             }
         },
+        "/v1/admin/formulas": {
+            "get": {
+                "tags": [
+                    "Formula Engine"
+                ],
+                "summary": "📐 عرض المعادلات الحسابية",
+                "description": "GET /v1/admin/formulas\nList all formulas, optionally filtered by category.",
+                "operationId": "af045f6bf52a86a0b986b2e7b51738fd",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "تصفية حسب الفئة",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الاسترجاع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/member/dashboard": {
             "get": {
                 "tags": [
@@ -11191,6 +11595,26 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -11402,6 +11826,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -12313,6 +12757,26 @@
                                 "frozen"
                             ]
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -12443,6 +12907,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -13916,6 +14400,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -14503,6 +15007,37 @@
                 "summary": "🗑️ عرض الأنشطة المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالأنشطة والرياضات التي تم حذفها لاسترجاعها أو المعاينة.",
                 "operationId": "9af50a6f9e148e8e0fd9a91f8e7dc438",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الأنشطة المحذوفة بنجاح"
@@ -14558,6 +15093,28 @@
                 "summary": "📋 عرض جميع أنواع الأنشطة",
                 "description": "استرجاع قائمة بجميع أنواع الأنشطة (تُستخدم لتحديد النشاط عند إضافة وردية أو نشاط جديد).",
                 "operationId": "d1bf4f6b012823495143265eabbc5aaf",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة أنواع الأنشطة",
@@ -14811,6 +15368,28 @@
                 "summary": "📅 عرض قوالب الجلسات",
                 "description": "استرجاع جميع قوالب الجلسات الأسبوعية.",
                 "operationId": "9d91c533f7c2c8f37a49b036f7356ff7",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع القوالب بنجاح",
@@ -15377,6 +15956,28 @@
                 "summary": "💰 عرض قواعد عمولات الموظفين",
                 "description": "استرجاع جميع القواعد الخاصة بعمولات الموظفين والمدربين.",
                 "operationId": "05a25f92d12607c374eb39dec1b9e0f3",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم الاسترجاع بنجاح",
@@ -15880,6 +16481,26 @@
                                 "suspended",
                                 "on_leave"
                             ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -17383,6 +18004,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -17483,6 +18124,38 @@
                 "summary": "💰 عرض مسيرات الرواتب",
                 "description": "استرجاع قائمة بجميع مسيرات الرواتب المُنفذة في النظام.",
                 "operationId": "e1f0685500ef39d9d498eecefe623385",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع مسيرات الرواتب بنجاح",
@@ -17883,6 +18556,26 @@
                             "type": "integer",
                             "example": 5
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -18250,6 +18943,26 @@
                                 "suspended",
                                 "on_leave"
                             ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -19333,6 +20046,28 @@
                 "summary": "🗑️ عرض الموظفين المحذوفين (سلة المهملات)",
                 "description": "جلب قائمة بالموظفين والمدربين المحذوفين.",
                 "operationId": "baeeeea5cff507a9231c8a6a59a010e4",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الموظفين المحذوفين بنجاح"
@@ -19385,6 +20120,38 @@
                 "summary": "🕒 عرض مناوبات الموظفين",
                 "description": "استرجاع قائمة بجميع مناوبات الموظفين في الفروع.",
                 "operationId": "6155013f68b13627589883958ab4aebd",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع المناوبات بنجاح",
@@ -19952,6 +20719,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -20428,6 +21215,28 @@
                 "summary": "🗑️ عرض العروض المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالعروض المحذوفة.",
                 "operationId": "47aa749cb9a6ef5b06d46575d10cf51b",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب العروض المحذوفة بنجاح"
@@ -20594,6 +21403,28 @@
                 "summary": "💰 عرض جميع الدفعات المالية",
                 "description": "استرجاع قائمة بجميع الدفعات المالية المسجلة في النظام.",
                 "operationId": "a0becc9fd87326d11087e5c9525d0ac5",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الدفعات بنجاح"
@@ -20760,6 +21591,28 @@
                 "summary": "🗑️ عرض الدفعات المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالدفعات المالية المحذوفة.",
                 "operationId": "623718b70788f6b07ee440d4646a0618",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الدفعات المحذوفة بنجاح"
@@ -20816,6 +21669,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية الاشتراكات حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -22132,6 +23005,47 @@
                 ]
             }
         },
+        "/v1/player-subscription-items": {
+            "get": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "📦 عرض عناصر اشتراكات اللاعبين",
+                "operationId": "a0514eb92c2275a005fb62e0edce5220",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الاسترجاع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/subscription-plan-activities": {
             "get": {
                 "tags": [
@@ -22145,6 +23059,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية الأنشطة حسب الفرع المرتبط بالخطة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -22615,6 +23549,38 @@
                 "summary": "🗑️ عرض نشاطات الخطط المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بنشاطات الخطط المحذوفة.",
                 "operationId": "2862ab3e6ca39dc625ab168afa2cf4d9",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية الأنشطة حسب الفرع المرتبط بالخطة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب النشاطات المحذوفة بنجاح"
@@ -22703,6 +23669,26 @@
                                 "female",
                                 "mixed"
                             ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -23858,6 +24844,38 @@
                 "summary": "🗑️ عرض باقات الاشتراك المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بباقات الاشتراك المحذوفة.",
                 "operationId": "7f4e8ddedf546ba46f0c7e79f1a12989",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الباقات المحذوفة بنجاح"
@@ -27418,6 +28436,10 @@
         {
             "name": "Core Utilities",
             "description": "Core Utilities"
+        },
+        {
+            "name": "Formula Engine",
+            "description": "Formula Engine"
         },
         {
             "name": "Member Management",

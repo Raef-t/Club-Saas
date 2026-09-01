@@ -74,9 +74,20 @@ class StaffService
             'shifts.branchShift',
         ]);
 
-        $staffMembers = $query->latest()->get();
+        $query->latest();
 
-        foreach ($staffMembers as $staff) {
+        if ((isset($filters['per_page']) && $filters['per_page'] === 'all') || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            $staffMembers = $query->get();
+            foreach ($staffMembers as $staff) {
+                $this->attachSharedDTOs($staff);
+            }
+            return $staffMembers;
+        }
+
+        $perPage = isset($filters['per_page']) ? min(max((int)$filters['per_page'], 1), 100) : 15;
+        $staffMembers = $query->paginate($perPage);
+
+        foreach ($staffMembers->items() as $staff) {
             $this->attachSharedDTOs($staff);
         }
 
@@ -430,7 +441,8 @@ class StaffService
     public function getTrashedStaff(array $filters = [])
     {
         $staffMembers = $this->staffRepository->getTrashed($filters);
-        foreach ($staffMembers as $staff) {
+        $items = $staffMembers instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $staffMembers->items() : $staffMembers;
+        foreach ($items as $staff) {
             $this->attachSharedDTOs($staff);
         }
 

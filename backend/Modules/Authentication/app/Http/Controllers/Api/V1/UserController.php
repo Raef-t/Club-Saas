@@ -40,6 +40,8 @@ class UserController extends BaseController
         description: 'معرف الفرع للفلترة',
         schema: new OA\Schema(type: 'integer')
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب قائمة المستخدمين بنجاح')]
     public function index(Request $request): JsonResponse
     {
@@ -68,7 +70,7 @@ class UserController extends BaseController
             });
         }
 
-        $users = $query->get()->map(function ($user) {
+        $mapUser = function ($user) {
             $rolesList = $user->getRoleNames()->toArray();
             if (empty($rolesList) && $user->role) {
                 $rolesList = [$user->role];
@@ -88,7 +90,15 @@ class UserController extends BaseController
                 'must_change_password' => (bool) $user->must_change_password,
                 'is_password_changed'  => !(bool) $user->must_change_password,
             ];
-        });
+        };
+
+        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
+            $users = $query->get()->map($mapUser);
+        } else {
+            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+            $paginator = $query->paginate($perPage);
+            $users = $paginator->through($mapUser);
+        }
 
         return $this->successResponse($users, 'تم جلب قائمة المستخدمين بنجاح.');
     }

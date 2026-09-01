@@ -18,9 +18,9 @@ class BranchService
     /**
      * Get all branches.
      */
-    public function getAllBranches()
+    public function getAllBranches(array $filters = [])
     {
-        return $this->repository->all();
+        return $this->repository->all($filters);
     }
 
     /**
@@ -72,9 +72,9 @@ class BranchService
     /**
      * Get all soft-deleted (trashed) branches.
      */
-    public function getTrashed()
+    public function getTrashed(array $filters = [])
     {
-        return $this->repository->getTrashed();
+        return $this->repository->getTrashed($filters);
     }
 
     /**
