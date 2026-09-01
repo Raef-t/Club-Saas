@@ -41,7 +41,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'check.permission'])->group(fun
     // DELETE /v1/roles/{id}           → delete role
     Route::get('roles', [RoleController::class, 'index']);
     Route::post('roles', [RoleController::class, 'store']);
-    Route::post('roles/grant-all-permissions', [RoleController::class, 'grantAllPermissionsToAllRoles']);
     Route::get('roles/{id}', [RoleController::class, 'show']);
     Route::put('roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
     Route::delete('roles/{id}', [RoleController::class, 'destroy']);
