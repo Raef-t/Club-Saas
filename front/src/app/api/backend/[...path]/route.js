@@ -203,12 +203,18 @@ async function proxyBackendRequest(request, context) {
       }
     }
 
+    const responseHeaders = {
+      "Content-Type": responseContentType,
+      "Cache-Control": "no-store",
+    };
+    const contentDisposition = response.headers.get("content-disposition");
+    if (contentDisposition) {
+      responseHeaders["Content-Disposition"] = contentDisposition;
+    }
+
     const nextResponse = new NextResponse(body, {
       status: response.status,
-      headers: {
-        "Content-Type": responseContentType,
-        "Cache-Control": "no-store",
-      },
+      headers: responseHeaders,
     });
 
     if (sessionToken) {
