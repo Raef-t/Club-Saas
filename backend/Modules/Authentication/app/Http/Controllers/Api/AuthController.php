@@ -521,7 +521,6 @@ class AuthController extends BaseController
             required: ['new_password', 'new_password_confirmation'],
             properties: [
                 new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)', example: 15, nullable: true),
-                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)', example: 'oldPassword123', nullable: true),
                 new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: '12345678'),
                 new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: '12345678'),
                 new OA\Property(property: 'custom_username', type: 'string', description: 'اسم المستخدم المخصص الفريد (اختياري)', example: 'ahmed_player99', nullable: true),
@@ -560,12 +559,11 @@ class AuthController extends BaseController
         description: '⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'كلمة المرور الحالية غير صحيحة.'),
+                new OA\Property(property: 'message', type: 'string', example: 'خطأ في التحقق من البيانات.'),
                 new OA\Property(
                     property: 'errors',
                     type: 'object',
                     properties: [
-                        new OA\Property(property: 'current_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الحالية غير مطابقة.')),
                         new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف.')),
                         new OA\Property(property: 'custom_username', type: 'array', items: new OA\Items(type: 'string', example: 'اسم المستخدم المخصص مُستخدَم بالفعل.'))
                     ]
@@ -582,9 +580,6 @@ class AuthController extends BaseController
             $user = User::findOrFail($validated['user_id']);
         } else {
             $user = $request->user();
-            if (!Hash::check($validated['current_password'], $user->password)) {
-                return $this->errorResponse(__('Current password is incorrect'), 422);
-            }
         }
 
         // فحص وتحديث custom_username في حال إرساله في نفس الطلب

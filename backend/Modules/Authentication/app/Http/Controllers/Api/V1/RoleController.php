@@ -4,6 +4,7 @@ namespace Modules\Authentication\Http\Controllers\Api\V1;
 
 use Illuminate\Http\JsonResponse;
 use Modules\Authentication\Http\Requests\StoreRoleRequest;
+use Modules\Authentication\Http\Requests\UpdateRoleRequest;
 use Modules\Authentication\Http\Requests\SyncRolePermissionsRequest;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Spatie\Permission\Models\Permission;
@@ -72,8 +73,8 @@ class RoleController extends BaseController
         content: new OA\JsonContent(
             required: ['name'],
             properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'member_manager',
-                    description: 'اسم الدور (حروف صغيرة وشرطة سفلية فقط)'),
+                new OA\Property(property: 'name', type: 'string', example: 'مدير الصالة',
+                    description: 'اسم الدور'),
             ]
         )
     )]
@@ -139,6 +140,62 @@ class RoleController extends BaseController
                 'is_protected'      => in_array($role->name, self::PROTECTED_ROLES),
             ],
         ]);
+    }
+
+    /**
+     * PUT /v1/roles/{id}
+     * Update role name (protected roles cannot be renamed).
+     */
+    #[OA\Put(
+        path: '/v1/roles/{id}',
+        summary: '✏️ تعديل اسم الدور',
+        description: 'يعدل اسم دور موجود في النظام. لا يمكن تعديل الأدوار المحمية (super_admin, admin).',
+        operationId: 'updateRole',
+        tags: ['Roles'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 3))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['name'],
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'مشرف الصالة الجديد', description: 'الاسم الجديد للدور'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: '✅ تم تعديل اسم الدور بنجاح')]
+    #[OA\Response(response: 403, description: '🚫 لا يمكن تعديل دور محمي')]
+    #[OA\Response(response: 404, description: '❌ الدور غير موجود')]
+    #[OA\Response(response: 422, description: '❌ خطأ في البيانات')]
+    public function update(UpdateRoleRequest $request, int $id): JsonResponse
+    {
+        $role = Role::where('guard_name', 'sanctum')->findOrFail($id);
+
+        if (in_array($role->name, self::PROTECTED_ROLES)) {
+            return $this->errorResponse(
+                'لا يمكن تعديل اسم الدور "' . $role->name . '" لأنه دور محمي في النظام.',
+                403
+            );
+        }
+
+        $oldName = $role->name;
+        $role->name = $request->name;
+        $role->save();
+
+        // Also update for web guard if it exists
+        Role::where('name', $oldName)->where('guard_name', 'web')->update([
+            'name' => $request->name,
+        ]);
+
+        return $this->successResponse([
+            'role' => [
+                'id'                => $role->id,
+                'name'              => $role->name,
+                'permissions_count' => $role->permissions()->count(),
+                'is_protected'      => false,
+            ],
+        ], 'تم تعديل اسم الدور بنجاح');
     }
 
     /**
