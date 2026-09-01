@@ -3,8 +3,9 @@
 namespace Modules\Authentication\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StoreRoleRequest extends FormRequest
+class UpdateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -13,8 +14,17 @@ class StoreRoleRequest extends FormRequest
 
     public function rules(): array
     {
+        $roleId = $this->route('id');
+
         return [
-            'name' => 'required|string|max:100|unique:roles,name',
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('roles', 'name')->where(function ($query) {
+                    return $query->where('guard_name', 'sanctum');
+                })->ignore($roleId),
+            ],
         ];
     }
 

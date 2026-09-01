@@ -118,7 +118,7 @@ class PayrollService
         $today = now();
 
         if ($this->isHoliday($branchId, $today)) {
-            $this->notifySuperAdminsHolidayError();
+            $this->notifyAdminsHolidayError();
             throw new Exception('لا يمكن حساب الرواتب لتاريخ اليوم، نرجو إعادة المحاولة في يوم عمل آخر لأنه يوم عطلة في النادي.', 400);
         }
 
@@ -253,10 +253,10 @@ class PayrollService
         });
     }
 
-    public function notifySuperAdminsHolidayError()
+    public function notifyAdminsHolidayError()
     {
-        $superAdmins = User::role('super_admin')->pluck('id')->toArray();
-        if (empty($superAdmins)) return;
+        $admins = User::role('admin')->pluck('id')->toArray();
+        if (empty($admins)) return;
 
         $template = NotificationTemplate::where('system_key', 'payroll_generation_holiday_error')->first();
         if ($template) {
@@ -265,33 +265,11 @@ class PayrollService
                 'body' => $template->parseBody([]),
                 'sender_id' => null,
                 'sender_type' => 'system',
-                'user_ids' => $superAdmins,
+                'user_ids' => $admins,
             ]);
         }
     }
 
-    public function notifySuperAdminsSuccess($periodStart, $periodEnd)
-    {
-        $superAdmins = User::role('super_admin')->pluck('id')->toArray();
-        if (empty($superAdmins)) return;
-
-        $template = NotificationTemplate::where('system_key', 'payroll_generation_success')->first();
-        if ($template) {
-            $body = $template->parseBody([
-                'شهر' => Carbon::parse($periodStart)->format('Y-m'),
-                'تاريخ_البداية' => $periodStart,
-                'تاريخ_النهاية' => $periodEnd,
-            ]);
-
-            app(NotificationService::class)->createNotification([
-                'title' => $template->subject ?? 'إعداد مسير الرواتب',
-                'body' => $body,
-                'sender_id' => null,
-                'sender_type' => 'system',
-                'user_ids' => $superAdmins,
-            ]);
-        }
-    }
 
     /**
      * Get all payroll runs.

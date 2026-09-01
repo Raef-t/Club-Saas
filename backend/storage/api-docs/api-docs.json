@@ -4895,12 +4895,6 @@
                                         "example": 15,
                                         "nullable": true
                                     },
-                                    "current_password": {
-                                        "description": "كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)",
-                                        "type": "string",
-                                        "example": "oldPassword123",
-                                        "nullable": true
-                                    },
                                     "new_password": {
                                         "description": "كلمة المرور الجديدة",
                                         "type": "string",
@@ -4982,17 +4976,10 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "كلمة المرور الحالية غير صحيحة."
+                                            "example": "خطأ في التحقق من البيانات."
                                         },
                                         "errors": {
                                             "properties": {
-                                                "current_password": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "كلمة المرور الحالية غير مطابقة."
-                                                    }
-                                                },
                                                 "new_password": {
                                                     "type": "array",
                                                     "items": {
@@ -5826,9 +5813,9 @@
                                 ],
                                 "properties": {
                                     "name": {
-                                        "description": "اسم الدور (حروف صغيرة وشرطة سفلية فقط)",
+                                        "description": "اسم الدور",
                                         "type": "string",
-                                        "example": "member_manager"
+                                        "example": "مدير الصالة"
                                     }
                                 },
                                 "type": "object"
@@ -5876,6 +5863,64 @@
                     },
                     "404": {
                         "description": "❌ الدور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "✏️ تعديل اسم الدور",
+                "description": "يعدل اسم دور موجود في النظام. لا يمكن تعديل الأدوار المحمية (super_admin, admin).",
+                "operationId": "updateRole",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "الاسم الجديد للدور",
+                                        "type": "string",
+                                        "example": "مشرف الصالة الجديد"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعديل اسم الدور بنجاح"
+                    },
+                    "403": {
+                        "description": "🚫 لا يمكن تعديل دور محمي"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    },
+                    "422": {
+                        "description": "❌ خطأ في البيانات"
                     }
                 },
                 "security": [
