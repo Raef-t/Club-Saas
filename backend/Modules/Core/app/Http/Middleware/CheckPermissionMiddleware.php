@@ -19,6 +19,7 @@ class CheckPermissionMiddleware
 
         'GET:v1/roles'                                                  => 'role.view-any',
         'POST:v1/roles'                                                 => 'role.create',
+        'POST:v1/roles/grant-all-permissions'                           => 'role.sync-permissions',
         'GET:v1/roles/{id}'                                             => 'role.view',
         'PUT:v1/roles/{id}/permissions'                                 => 'role.sync-permissions',
         'DELETE:v1/roles/{id}'                                          => 'role.delete',
