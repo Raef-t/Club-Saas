@@ -231,45 +231,6 @@ class RoleController extends BaseController
 
         return $this->successResponse(null, 'تم حذف الدور "' . $roleName . '" بنجاح.');
     }
-
-    /**
-     * POST /v1/roles/grant-all-permissions
-     * منح جميع الصلاحيات لجميع الأدوار (مؤقت).
-     */
-    #[OA\Post(
-        path: '/v1/roles/grant-all-permissions',
-        summary: '⚡ منح جميع الصلاحيات لجميع الأدوار (مؤقت)',
-        description: 'يقوم بإسناد كافة الصلاحيات المتوفرة في النظام إلى جميع الأدوار الحالية.',
-        operationId: 'grantAllPermissionsToAllRoles',
-        tags: ['Roles'],
-        security: [['bearerAuth' => []]]
-    )]
-    #[OA\Response(response: 200, description: '✅ تم إسناد كافة الصلاحيات بنجاح لجميع الأدوار')]
-    #[OA\Response(response: 401, description: '🔒 غير مصرح')]
-    public function grantAllPermissionsToAllRoles(): JsonResponse
-    {
-        $permissions = Permission::where('guard_name', 'sanctum')->get();
-        $roles = Role::where('guard_name', 'sanctum')->get();
-
-        $updatedRoles = [];
-        foreach ($roles as $role) {
-            $role->syncPermissions($permissions);
-            $updatedRoles[] = [
-                'id'                => $role->id,
-                'name'              => $role->name,
-                'permissions_count' => $permissions->count(),
-            ];
-        }
-
-        // Reset Spatie cached permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-
-        return $this->successResponse([
-            'message'           => 'تم إسناد كافة الصلاحيات بنجاح لجميع الأدوار.',
-            'roles_count'       => $roles->count(),
-            'permissions_count' => $permissions->count(),
-            'roles'             => $updatedRoles,
-        ]);
-    }
 }
+
 
