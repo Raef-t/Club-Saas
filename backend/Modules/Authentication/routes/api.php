@@ -20,7 +20,7 @@ Route::prefix('v1/auth')->group(function () {
         Route::post('set-custom-username', [AuthController::class, 'setCustomUsername']);
         Route::post('change-photo', [AuthController::class, 'updatePhoto']);
         Route::delete('delete-photo', [AuthController::class, 'deletePhoto']);
-        Route::put('profile', [AuthController::class, 'updateProfile']);
+        Route::put('profile', [AuthController::class, 'updateProfile'])->middleware('check.permission');
     });
 });
 

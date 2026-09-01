@@ -24,5 +24,5 @@ Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(fun
     Route::apiResource('session-templates', Modules\Sports\Http\Controllers\Api\V1\SessionTemplateController::class);
 
     // Staff Commission Rules & Activities
-    Route::apiResource('staff-commission-rules', StaffCommissionRuleController::class);
+    Route::apiResource('staff-commission-rules', StaffCommissionRuleController::class)->except(['destroy']);
 });

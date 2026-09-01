@@ -15,7 +15,7 @@ use Modules\WalletManager\Http\Controllers\Api\V1\WalletController;
  *
 */
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(function () {
     Route::apiResource('walletmanagers', WalletManagerController::class)->names('walletmanager');
     Route::get('people/{person_id}/wallet', [WalletController::class, 'show']);
     Route::post('people/{person_id}/wallet/deposit', [WalletController::class, 'deposit']);
