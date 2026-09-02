@@ -18,7 +18,6 @@ class UpdateClubSettingRequest extends FormRequest
             'language' => 'sometimes|string|in:ar,en,all',
             'allowed_debt_limit' => 'nullable|numeric|min:0',
             'grace_period_days' => 'nullable|integer|min:0',
-            'allow_partial_payment' => 'nullable|boolean',
             'enabled_features' => 'nullable|array',
             'bg_image_url' => 'nullable|string|url',
         ];
