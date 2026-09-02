@@ -8913,10 +8913,6 @@
                                         "type": "integer",
                                         "example": 5
                                     },
-                                    "allow_partial_payment": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
                                     "enabled_features": {
                                         "type": "array",
                                         "items": {

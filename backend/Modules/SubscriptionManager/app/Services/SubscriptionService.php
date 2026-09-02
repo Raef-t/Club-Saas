@@ -223,15 +223,9 @@ class SubscriptionService
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
 
             if ($paidAmount < $totalAmount) {
-                $branch = \Modules\ClubManager\Models\Branch::find($branchId);
-                if (!$branch) {
-                    throw new Exception(__('Branch not found.'));
-                }
-                $clubId = $branch->club_id;
-
-                $clubSetting = \Modules\ClubManager\Models\ClubSetting::where('club_id', $clubId)->first();
-                if ($clubSetting && !$clubSetting->allow_partial_payment) {
-                    throw new Exception(__('Partial payments are not allowed for this club. Please pay the full amount.'));
+                $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
+                if ($branchSetting && !$branchSetting->allow_installments) {
+                    throw new Exception(__('Installments/partial payments are not allowed for this branch. Please pay the full amount.'));
                 }
             }
 
