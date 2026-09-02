@@ -30,7 +30,10 @@ export const staffFormSchema = z.object({
     .min(1, "رقم الهاتف مطلوب")
     .max(15, "رقم الهاتف يجب ألا يتجاوز 15 رقمًا")
     .regex(/^\d+$/, "رقم الهاتف يجب أن يحتوي على أرقام فقط"),
-  role: z.enum(staffRoles, { message: "يرجى اختيار دور وظيفي صالح" }),
+  role: z
+    .string()
+    .trim()
+    .min(1, "يرجى اختيار دور وظيفي صالح"),
   employment_type: z.enum(["fixed_salary", "commission_based", "hybrid"], {
     message: "يرجى اختيار نوع توظيف صالح",
   }),

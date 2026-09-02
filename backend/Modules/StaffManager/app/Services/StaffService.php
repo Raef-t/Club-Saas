@@ -208,18 +208,17 @@ class StaffService
                 ? $data['username'] 
                 : \Modules\Authentication\Services\UsernameGeneratorService::generateForRole($roleName);
             $password = $data['password'] ?? '12345678';
-
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,
                 'password' => \Illuminate\Support\Facades\Hash::make($password),
                 'person_id' => $person->id,
+                'role' => $roleName,
                 'is_active' => true,
             ]);
 
-            // Assign matching role (admin, receptionist, cleaner, manager, staff, etc.)
-            $roleName = $data['role'] ?? 'staff';
-            $spatieRoleName = $roleName === 'receptionist' ? 'reception' : $roleName;
-            $spatieRole = Role::firstOrCreate(['name' => $spatieRoleName, 'guard_name' => 'sanctum']);
+            // Assign matching role in sanctum guard
+            $spatieRole = Role::where('name', $roleName)->where('guard_name', 'sanctum')->first()
+                ?? Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'sanctum']);
             $user->assignRole($spatieRole);
 
             // Expose credentials temporarily
@@ -319,6 +318,17 @@ class StaffService
 
             // Update Staff record (fillable will ignore removed fields)
             $staff->update($data);
+
+            // Sync User role if role was updated
+            if (!empty($data['role']) && $staff->person_id) {
+                $user = \Modules\Authentication\Models\User::where('person_id', $staff->person_id)->first();
+                if ($user) {
+                    $user->update(['role' => $data['role']]);
+                    $spatieRole = Role::where('name', $data['role'])->where('guard_name', 'sanctum')->first()
+                        ?? Role::firstOrCreate(['name' => $data['role'], 'guard_name' => 'sanctum']);
+                    $user->syncRoles([$spatieRole]);
+                }
+            }
 
             // Handle Contract Updates
             $activeContract = $staff->activeContract;
