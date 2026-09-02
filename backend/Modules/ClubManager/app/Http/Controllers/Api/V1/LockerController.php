@@ -226,11 +226,20 @@ class LockerController extends BaseController
     #[OA\Delete(
         path: '/v1/lockers/{id}',
         summary: '🗑️ حذف خزانة (Soft Delete)',
-        description: 'إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.',
+        description: 'إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة حتى لو كانت محجوزة أو مسندة. يتطلب إرسال كلمة التأكيد "delete" للموافقة على الحذف.',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخزانة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
+    #[OA\RequestBody(
+        required: false,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'confirmation', type: 'string', description: 'تأكيد الحذف (delete)', example: 'delete')
+            ]
+        )
+    )]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف الخزانة بنجاح ناعماً',
@@ -243,11 +252,60 @@ class LockerController extends BaseController
         )
     )]
     #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $this->lockerService->deleteLocker($id);
+        $confirmation = $request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? '';
+        $this->lockerService->deleteLocker((int) $id, (string) $confirmation);
         return $this->successResponse(null, __('Locker deleted successfully'));
+    }
+
+    #[OA\Get(
+        path: '/v1/lockers/trashed',
+        summary: '🗑️ عرض الخزائن المحذوفة (سلة المهملات)',
+        description: 'استرجاع قائمة بجميع الخزائن المحذوفة ناعماً مع إمكانية الفلترة حسب الفرع أو الترقيم.',
+        tags: ['Locker Management'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب الحالة', schema: new OA\Schema(type: 'string', example: 'available'))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الخزائن المحذوفة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Trashed lockers retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    public function trashed(Request $request)
+    {
+        $lockers = $this->lockerService->getTrashed($request->all());
+
+        if ($lockers instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+            $collection = LockerResource::collection($lockers);
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('Trashed lockers retrieved successfully'),
+                'data'    => $collection->resolve(),
+                'meta'    => [
+                    'current_page' => $lockers->currentPage(),
+                    'last_page'    => $lockers->lastPage(),
+                    'per_page'     => $lockers->perPage(),
+                    'total'        => $lockers->total(),
+                    'from'         => $lockers->firstItem(),
+                    'to'           => $lockers->lastItem(),
+                ],
+            ]);
+        }
+
+        return $this->successResponse(LockerResource::collection($lockers), __('Trashed lockers retrieved successfully'));
     }
 
     #[OA\Post(
@@ -258,13 +316,28 @@ class LockerController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الخزانة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الخزانة بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الخزانة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Locker restored successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 الخزانة غير موجودة في سلة المحذوفات')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ تكرار رقم الخزانة في الفرع')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح')]
     public function restore($id)
     {
-        $locker = \Modules\ClubManager\Models\Locker::onlyTrashed()->findOrFail($id);
-        $locker->restore();
-        return $this->successResponse(null, __('Locker restored successfully'));
+        try {
+            $locker = $this->lockerService->restoreLocker((int) $id);
+            return $this->successResponse(new LockerResource($locker), __('Locker restored successfully'));
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
     }
 
 

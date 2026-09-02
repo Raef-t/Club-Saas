@@ -10627,7 +10627,7 @@
                     "Locker Management"
                 ],
                 "summary": "🗑️ حذف خزانة (Soft Delete)",
-                "description": "إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.",
+                "description": "إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة حتى لو كانت محجوزة أو مسندة. يتطلب إرسال كلمة التأكيد \"delete\" للموافقة على الحذف.",
                 "operationId": "849979252fdb3ee314725226a799e838",
                 "parameters": [
                     {
@@ -10639,8 +10639,35 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "confirmation",
+                        "in": "query",
+                        "description": "كلمة تأكيد الحذف (delete)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "confirmation": {
+                                        "description": "تأكيد الحذف (delete)",
+                                        "type": "string",
+                                        "example": "delete"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم حذف الخزانة بنجاح ناعماً",
@@ -10669,6 +10696,97 @@
                     },
                     "404": {
                         "description": "🚫 لم يتم العثور على الخزانة"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ عدم إرسال كلمة التأكيد \"delete\""
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/trashed": {
+            "get": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🗑️ عرض الخزائن المحذوفة (سلة المهملات)",
+                "description": "استرجاع قائمة بجميع الخزائن المحذوفة ناعماً مع إمكانية الفلترة حسب الفرع أو الترقيم.",
+                "operationId": "e4c69b90ffef45cdda62b8cb1cb97719",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "available"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الخزائن المحذوفة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Trashed lockers retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "❌ غير مصرح"
@@ -10703,10 +10821,36 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع الخزانة بنجاح"
+                        "description": "✅ تم استرجاع الخزانة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Locker restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "🚫 الخزانة غير موجودة في سلة المحذوفات"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ تكرار رقم الخزانة في الفرع"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
