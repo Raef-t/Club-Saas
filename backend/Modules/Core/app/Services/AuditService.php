@@ -25,7 +25,7 @@ class AuditService
     /**
      * Get paginated audit logs with flexible filtering
      */
-    public function getPaginatedLogs(array $filters, int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedLogs(array $filters, ?int $perPage = null): LengthAwarePaginator|\Illuminate\Support\Collection
     {
         $query = Activity::query()
             ->with(['causer.person', 'user.person']);
@@ -100,6 +100,10 @@ class AuditService
 
         $sortOrder = strtolower($filters['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortOrder);
+
+        if ($perPage === null) {
+            return $query->get();
+        }
 
         return $query->paginate(min($perPage, 100));
     }

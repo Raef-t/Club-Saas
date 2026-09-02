@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Modules\ClubManager\Models\Club;
 use Modules\ClubManager\Models\Branch;
@@ -20,7 +20,7 @@ use Laravel\Sanctum\Sanctum;
 
 class SubscriptionRevenueSplitTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected $user;
     protected $branch;
@@ -31,16 +31,6 @@ class SubscriptionRevenueSplitTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        config([
-            'database.default' => 'mysql',
-            'database.connections.mysql.database' => 'club_saas',
-            'database.connections.mysql.host' => '127.0.0.1',
-            'database.connections.mysql.username' => 'root',
-            'database.connections.mysql.password' => '',
-        ]);
-        \Illuminate\Support\Facades\DB::purge('mysql');
-        \Illuminate\Support\Facades\DB::reconnect('mysql');
 
         $person = Person::create([
             'full_name' => 'Admin User',

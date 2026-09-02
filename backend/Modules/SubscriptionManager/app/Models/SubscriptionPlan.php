@@ -49,10 +49,6 @@ class SubscriptionPlan extends Model
             if (class_exists(\Modules\Sports\Models\SportSessionTemplate::class)) {
                 $plan->sessionTemplates()->delete();
             }
-
-            \Modules\SubscriptionManager\Models\PlayerSubscription::where('plan_id', $plan->id)->get()->each(function ($subscription) {
-                $subscription->delete();
-            });
         });
 
         static::restored(function ($plan) {

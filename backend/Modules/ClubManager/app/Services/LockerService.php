@@ -81,10 +81,42 @@ class LockerService
             }
         }
 
-        $lockers = $query->get();
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            $lockers = $query->get();
 
-        // Batch fetch person_contacts for all holder person IDs
-        $personIds = $lockers->pluck('holder_person_id')->filter()->unique()->values()->all();
+            // Batch fetch person_contacts for all holder person IDs
+            $personIds = $lockers->pluck('holder_person_id')->filter()->unique()->values()->all();
+
+            $contactsByPerson = [];
+            if (!empty($personIds)) {
+                $contacts = DB::table('person_contacts')
+                    ->whereIn('person_id', $personIds)
+                    ->whereNull('deleted_at')
+                    ->select('id', 'person_id', 'name', 'country_code', 'phone_number', 'relation')
+                    ->get();
+
+                foreach ($contacts as $contact) {
+                    $contactsByPerson[$contact->person_id][] = [
+                        'id'           => $contact->id,
+                        'name'         => $contact->name,
+                        'country_code' => $contact->country_code,
+                        'phone_number' => $contact->phone_number,
+                        'relation'     => $contact->relation,
+                    ];
+                }
+            }
+
+            foreach ($lockers as $locker) {
+                $locker->person_contacts = $contactsByPerson[$locker->holder_person_id] ?? [];
+            }
+
+            return $lockers;
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        $lockers = $query->paginate($perPage);
+
+        $personIds = collect($lockers->items())->pluck('holder_person_id')->filter()->unique()->values()->all();
 
         $contactsByPerson = [];
         if (!empty($personIds)) {
@@ -105,7 +137,7 @@ class LockerService
             }
         }
 
-        foreach ($lockers as $locker) {
+        foreach ($lockers->items() as $locker) {
             $locker->person_contacts = $contactsByPerson[$locker->holder_person_id] ?? [];
         }
 

@@ -20,6 +20,8 @@ class BranchHolidayController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch', in: 'path', required: true, description: 'معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع العطلات بنجاح',
@@ -32,9 +34,17 @@ class BranchHolidayController extends BaseController
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح')]
-    public function index($branchId)
+    public function index(Request $request, $branchId)
     {
-        $holidays = BranchHoliday::where('branch_id', $branchId)->get();
+        $query = BranchHoliday::where('branch_id', $branchId);
+
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $holidays = $query->paginate($perPage);
+        } else {
+            $holidays = $query->get();
+        }
+
         return $this->successResponse(
             BranchHolidayResource::collection($holidays),
             __('Holidays retrieved successfully')
@@ -241,10 +251,21 @@ class BranchHolidayController extends BaseController
         tags: ['Branch Holidays'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب العطلات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $holidays = BranchHoliday::onlyTrashed()->get();
+        $query = BranchHoliday::onlyTrashed();
+
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $holidays = $query->paginate($perPage);
+        } else {
+            $holidays = $query->get();
+        }
+
         return $this->successResponse(BranchHolidayResource::collection($holidays), __('Trashed holidays retrieved successfully'));
     }
 

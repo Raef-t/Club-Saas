@@ -10,6 +10,6 @@ interface SubscriptionPlanRepositoryInterface
     public function update(int $id, array $data);
     public function delete(int $id, array $options = []);
     public function getDeleteCheckInfo(int $id): array;
-    public function getTrashed();
+    public function getTrashed(array $filters = []);
     public function restore(int $id);
 }

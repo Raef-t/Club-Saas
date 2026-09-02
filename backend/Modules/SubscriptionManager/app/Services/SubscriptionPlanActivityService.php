@@ -12,12 +12,7 @@ class SubscriptionPlanActivityService
     }
 
     public function getAll(array $filters = []) { 
-        if (!empty($filters['branch_id'])) {
-            return \Modules\SubscriptionManager\Models\SubscriptionPlanActivity::whereHas('plan', function($q) use ($filters) {
-                $q->where('branch_id', $filters['branch_id']);
-            })->get();
-        }
-        return $this->repository->all(); 
+        return $this->repository->all($filters); 
     }
     public function getById($id) { return $this->repository->find($id); }
     public function create(array $data) { 
@@ -173,6 +168,6 @@ class SubscriptionPlanActivityService
 
 
     public function delete($id) { return $this->repository->delete($id); }
-    public function getTrashed() { return $this->repository->getTrashed(); }
+    public function getTrashed(array $filters = []) { return $this->repository->getTrashed($filters); }
     public function restore($id) { return $this->repository->restore($id); }
 }

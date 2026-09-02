@@ -151,13 +151,29 @@ class SubscriptionService
             $query->where('end_date', '<=', $filters['end_date']);
         }
 
-        $subscriptions = $query->latest()->get();
+        $query->latest();
 
-        $memberIds = $subscriptions->pluck('member_id')->filter()->unique()->toArray();
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            $subscriptions = $query->get();
+            $memberIds = $subscriptions->pluck('member_id')->filter()->unique()->toArray();
+            if (!empty($memberIds)) {
+                $members = $this->memberSharedService->getMembersByIds($memberIds);
+                $membersMap = collect($members)->keyBy('id');
+                foreach ($subscriptions as $subscription) {
+                    $subscription->member = $membersMap->get($subscription->member_id);
+                }
+            }
+            return $subscriptions;
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        $subscriptions = $query->paginate($perPage);
+
+        $memberIds = collect($subscriptions->items())->pluck('member_id')->filter()->unique()->toArray();
         if (!empty($memberIds)) {
             $members = $this->memberSharedService->getMembersByIds($memberIds);
             $membersMap = collect($members)->keyBy('id');
-            foreach ($subscriptions as $subscription) {
+            foreach ($subscriptions->items() as $subscription) {
                 $subscription->member = $membersMap->get($subscription->member_id);
             }
         }

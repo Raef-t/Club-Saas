@@ -30,6 +30,8 @@ class PayslipController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الصرف (pending, paid)', schema: new OA\Schema(type: 'string', example: 'pending'))]
     #[OA\Parameter(name: 'staff_id', in: 'query', required: false, description: 'تصفية حسب معرف الكادر', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع السجلات بنجاح',
@@ -60,7 +62,13 @@ class PayslipController extends BaseController
             });
         }
 
-        $payslips = $query->latest('id')->get();
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $payslips = $query->latest('id')->paginate($perPage);
+        } else {
+            $payslips = $query->latest('id')->get();
+        }
+
         return $this->successResponse(PayslipResource::collection($payslips), 'Retrieved successfully');
     }
 

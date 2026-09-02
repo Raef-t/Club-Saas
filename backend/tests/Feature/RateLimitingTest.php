@@ -107,7 +107,8 @@ class RateLimitingTest extends TestCase
 
     public function test_api_routes_include_rate_limiting_headers()
     {
-        $response = $this->getJson('/api/v1/auth/check-username?username=test_check_user');
+        $response = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.195'])
+            ->getJson('/api/v1/auth/check-username?username=test_check_user');
 
         $response->assertStatus(200);
         $this->assertTrue($response->headers->has('X-RateLimit-Limit'));

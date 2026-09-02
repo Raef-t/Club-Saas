@@ -129,7 +129,7 @@ class MemberCheckInDeductionTest extends TestCase
             'member_id' => $this->member->id,
             'plan_id' => $plan->id,
             'start_date' => '2026-08-01',
-            'end_date' => '2026-08-31',
+            'end_date' => '2026-10-31',
             'status' => PlayerSubscriptionStatus::ACTIVE->value,
             'total_amount' => 150,
             'paid_amount' => 150,

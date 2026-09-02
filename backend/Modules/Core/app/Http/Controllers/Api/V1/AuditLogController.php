@@ -126,7 +126,9 @@ class AuditLogController extends Controller
             'search', 'log_name', 'sort_by', 'sort_order'
         ]);
 
-        $perPage = (int) $request->input('per_page', 15);
+        $perPage = $request->has('per_page') && $request->input('per_page') !== 'all'
+            ? (int) $request->input('per_page')
+            : null;
         $logs = $this->auditService->getPaginatedLogs($filters, $perPage);
 
         return AuditLogResource::collection($logs);

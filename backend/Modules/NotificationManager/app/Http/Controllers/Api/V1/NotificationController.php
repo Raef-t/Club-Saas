@@ -86,24 +86,37 @@ class NotificationController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        $perPage = $request->input('per_page', 15);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = (int) $request->input('per_page');
+            $recipients = NotificationRecipient::with([
+                    'notification.attachments',
+                ])
+                ->where('user_id', $request->user()->id)
+                ->latest()
+                ->paginate($perPage);
+
+            return response()->json([
+                'status' => true,
+                'data'   => UserNotificationListResource::collection($recipients),
+                'meta'   => [
+                    'current_page' => $recipients->currentPage(),
+                    'last_page'    => $recipients->lastPage(),
+                    'per_page'     => $recipients->perPage(),
+                    'total'        => $recipients->total(),
+                ],
+            ]);
+        }
 
         $recipients = NotificationRecipient::with([
                 'notification.attachments',
             ])
             ->where('user_id', $request->user()->id)
             ->latest()
-            ->paginate($perPage);
+            ->get();
 
         return response()->json([
             'status' => true,
             'data'   => UserNotificationListResource::collection($recipients),
-            'meta'   => [
-                'current_page' => $recipients->currentPage(),
-                'last_page'    => $recipients->lastPage(),
-                'per_page'     => $recipients->perPage(),
-                'total'        => $recipients->total(),
-            ],
         ]);
     }
 
@@ -755,7 +768,9 @@ class NotificationController extends Controller
     )]
     public function adminIndex(AdminNotificationIndexRequest $request): JsonResponse
     {
-        $perPage = $request->input('per_page', 15);
+        $perPage = $request->has('per_page') && $request->input('per_page') !== 'all'
+            ? (int) $request->input('per_page')
+            : null;
 
         $query = Notification::withCount([
                 'recipients as recipients_count',
@@ -781,17 +796,26 @@ class NotificationController extends Controller
                 : $query->doesntHave('attachments');
         }
 
-        $notifications = $query->paginate($perPage);
+        if ($perPage !== null) {
+            $notifications = $query->paginate($perPage);
+
+            return response()->json([
+                'status' => true,
+                'data'   => AdminNotificationResource::collection($notifications),
+                'meta'   => [
+                    'current_page' => $notifications->currentPage(),
+                    'last_page'    => $notifications->lastPage(),
+                    'per_page'     => $notifications->perPage(),
+                    'total'        => $notifications->total(),
+                ],
+            ]);
+        }
+
+        $notifications = $query->get();
 
         return response()->json([
             'status' => true,
             'data'   => AdminNotificationResource::collection($notifications),
-            'meta'   => [
-                'current_page' => $notifications->currentPage(),
-                'last_page'    => $notifications->lastPage(),
-                'per_page'     => $notifications->perPage(),
-                'total'        => $notifications->total(),
-            ],
         ]);
     }
 

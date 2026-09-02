@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Modules\ClubManager\Models\Club;
 use Modules\ClubManager\Models\Branch;
@@ -15,7 +15,7 @@ use Modules\Authentication\Models\User;
 
 class SubscriptionPlanDynamicSubscribersCountTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected $user;
     protected $branch;
@@ -24,16 +24,6 @@ class SubscriptionPlanDynamicSubscribersCountTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        config([
-            'database.default' => 'mysql',
-            'database.connections.mysql.database' => (env('DB_DATABASE') === ':memory:' || empty(env('DB_DATABASE'))) ? 'club_db' : env('DB_DATABASE'),
-            'database.connections.mysql.host' => env('DB_HOST', '127.0.0.1'),
-            'database.connections.mysql.username' => env('DB_USERNAME', 'root'),
-            'database.connections.mysql.password' => env('DB_PASSWORD', ''),
-        ]);
-        \Illuminate\Support\Facades\DB::purge('mysql');
-        \Illuminate\Support\Facades\DB::reconnect('mysql');
 
         $person = Person::create(['full_name' => 'Admin User', 'gender' => 'male', 'type' => 'staff']);
         $this->user = User::create([

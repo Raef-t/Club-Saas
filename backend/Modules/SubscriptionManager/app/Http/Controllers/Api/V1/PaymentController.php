@@ -17,10 +17,20 @@ class PaymentController extends BaseController
         tags: ['Invoices & Payments'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم استرجاع الدفعات بنجاح')]
     public function index(Request $request)
     {
-        $payments = Payment::orderBy('id', 'desc')->get();
+        $query = Payment::orderBy('id', 'desc');
+
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $payments = $query->paginate($perPage);
+        } else {
+            $payments = $query->get();
+        }
+
         return $this->successResponse(PaymentResource::collection($payments), __('Payments retrieved successfully'));
     }
 
@@ -119,10 +129,20 @@ class PaymentController extends BaseController
         tags: ['Invoices & Payments'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الدفعات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $payments = Payment::onlyTrashed()->get();
+        $query = Payment::onlyTrashed();
+
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $payments = $query->paginate($perPage);
+        } else {
+            $payments = $query->get();
+        }
+
         return $this->successResponse(PaymentResource::collection($payments), __('Trashed payments retrieved successfully'));
     }
 
