@@ -586,22 +586,33 @@ class AuthController extends BaseController
         if (!empty($validated['custom_username'])) {
             $customUsername = trim($validated['custom_username']);
 
-            if (!UsernameSuggestionService::isValidFormat($customUsername) || !UsernameSuggestionService::isAvailable($customUsername, $user->id)) {
+            $isValidFormat = UsernameSuggestionService::isValidFormat($customUsername);
+            $isAvailable = $isValidFormat && UsernameSuggestionService::isAvailable($customUsername, $user->id);
+
+            if (!$isValidFormat || !$isAvailable) {
                 $suggestions = UsernameSuggestionService::generateSuggestions(
                     $customUsername,
                     $user->person?->full_name,
                     $user->id
                 );
 
+                $errorMessage = !$isValidFormat
+                    ? __('صيغة اسم المستخدم غير صالحة. يجب أن يتكون من 3-30 حرفاً (حروف، أرقام، _ . -).')
+                    : __('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.');
+
+                $fieldError = !$isValidFormat
+                    ? __('صيغة اسم المستخدم غير صالحة. إليك بعض الاقتراحات المتاحة.')
+                    : __('اسم المستخدم المخصص مُستخدَم بالفعل، إليك بعض الاقتراحات المتاحة.');
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => __('اسم المستخدم المخصص مُستخدَم بالفعل أو غير صالح، اختر اسماً آخر.'),
+                    'message' => $errorMessage,
                     'data' => [
                         'is_available' => false,
                         'suggestions'  => $suggestions,
                     ],
                     'errors' => [
-                        'custom_username' => [__('اسم المستخدم المخصص مُستخدَم بالفعل أو غير صالح، إليك بعض الاقتراحات المتاحة.')]
+                        'custom_username' => [$fieldError]
                     ]
                 ], 422);
             }
