@@ -19285,15 +19285,9 @@
                                         "example": "234567890"
                                     },
                                     "role": {
+                                        "description": "اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles",
                                         "type": "string",
-                                        "example": "receptionist",
-                                        "enum": [
-                                            "admin",
-                                            "receptionist",
-                                            "cleaner",
-                                            "manager",
-                                            "staff"
-                                        ]
+                                        "example": "reception"
                                     },
                                     "employment_type": {
                                         "type": "string",
@@ -19709,16 +19703,9 @@
                                         "example": "234567890"
                                     },
                                     "role": {
+                                        "description": "اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles",
                                         "type": "string",
-                                        "example": "receptionist",
-                                        "enum": [
-                                            "admin",
-                                            "receptionist",
-                                            "coach",
-                                            "cleaner",
-                                            "manager",
-                                            "staff"
-                                        ]
+                                        "example": "reception"
                                     },
                                     "employment_type": {
                                         "type": "string",

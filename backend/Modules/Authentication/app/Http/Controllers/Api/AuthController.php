@@ -236,6 +236,7 @@ class AuthController extends BaseController
             'photo_url' => $person->photo_url ?? null,
             'gender' => $person->gender ?? null,
             'type' => $person->type ?? null,
+            'roles' => $user->getRoleNames(),
             'branch_id' => null,
         ];
 

@@ -15,6 +15,7 @@ class UsernameGeneratorService
         'coach'        => 'tec-coach',
         'player'       => 'tec-ply',
         'member'       => 'tec-ply',
+        'reception'    => 'tec-rec',
         'receptionist' => 'tec-rec',
     ];
 

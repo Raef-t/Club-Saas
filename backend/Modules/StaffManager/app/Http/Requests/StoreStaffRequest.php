@@ -56,7 +56,7 @@ class StoreStaffRequest extends FormRequest
             'notes' => 'nullable|string',
 
             // ── Staff Details (staff table) ──────────────────────
-            'role' => 'required|in:admin,receptionist,coach,cleaner,manager,staff',
+            'role' => ['required', 'string', 'exists:roles,name'],
             'employment_type' => 'required|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
             'branch_ids' => 'required|array',

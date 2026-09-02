@@ -9,6 +9,7 @@ import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import TimePickerSmart from "@/components/forms/TimePickerSmart";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
+import { useGetRolesQuery } from "@/lib/api/usersApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { staffFormSchema, staffUpdateFormSchema } from "@/lib/validations/staffSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
@@ -54,6 +55,7 @@ export default function StaffForm({
   errorMessage = "",
 }) {
   const { selectedBranchId } = useManagementBranch();
+  const { data: rolesResponse } = useGetRolesQuery();
   const [form, setForm] = useState(() => {
     const defaults = createStaffInitialValues({ branches, selectedBranchId });
     return initialValues
@@ -82,11 +84,41 @@ export default function StaffForm({
   }, [branchSettingsResponse, initialValues]);
 
   const roleOptions = useMemo(() => {
+    const rawRoles = rolesResponse?.data?.roles || rolesResponse?.data || [];
+    if (Array.isArray(rawRoles) && rawRoles.length > 0) {
+      const filtered = rawRoles.filter((r) => r.is_visible !== false);
+      const mapped = filtered.map((r) => ({
+        value: r.name,
+        label: r.name_ar || STAFF_ROLE_LABELS[r.name] || r.name,
+      }));
+
+      if (initialValues?.role && !mapped.some((opt) => opt.value === initialValues.role)) {
+        mapped.push({
+          value: initialValues.role,
+          label: STAFF_ROLE_LABELS[initialValues.role] || initialValues.role,
+        });
+      }
+
+      return mapped;
+    }
+
     if (initialValues?.role === "coach") {
       return [...STAFF_ROLE_OPTIONS, { value: "coach", label: STAFF_ROLE_LABELS.coach }];
     }
     return STAFF_ROLE_OPTIONS;
-  }, [initialValues?.role]);
+  }, [rolesResponse, initialValues?.role]);
+
+  useEffect(() => {
+    if (initialValues) return;
+    if (roleOptions.length > 0 && !roleOptions.some((opt) => opt.value === form.role)) {
+      const preferred =
+        roleOptions.find((opt) => opt.value === "reception" || opt.value === "receptionist") ||
+        roleOptions[0];
+      if (preferred) {
+        setForm((current) => ({ ...current, role: preferred.value }));
+      }
+    }
+  }, [roleOptions, initialValues, form.role]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));

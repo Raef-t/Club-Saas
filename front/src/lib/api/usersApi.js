@@ -2,7 +2,7 @@ import { createBackendApi } from "@/lib/api/baseQuery";
 
 export const usersApi = createBackendApi({
   reducerPath: "usersApi",
-  tagTypes: ["Users"],
+  tagTypes: ["Users", "Roles"],
   endpoints: (builder) => ({
     getUsers: builder.query({
       query: (params = {}) => ({
@@ -11,7 +11,13 @@ export const usersApi = createBackendApi({
       }),
       providesTags: ["Users"],
     }),
+    getRoles: builder.query({
+      query: () => ({
+        url: "roles",
+      }),
+      providesTags: ["Roles"],
+    }),
   }),
 });
 
-export const { useGetUsersQuery } = usersApi;
+export const { useGetUsersQuery, useGetRolesQuery } = usersApi;
