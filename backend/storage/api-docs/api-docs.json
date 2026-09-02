@@ -5780,7 +5780,7 @@
                     "Roles"
                 ],
                 "summary": "📋 جلب قائمة الأدوار",
-                "description": "يجلب جميع الأدوار المتاحة في النظام مع صلاحياتها.",
+                "description": "يجلب قائمة بجميع الأدوار المتاحة في النظام.",
                 "operationId": "getRolesList",
                 "responses": {
                     "200": {
@@ -5813,9 +5813,21 @@
                                 ],
                                 "properties": {
                                     "name": {
-                                        "description": "اسم الدور",
+                                        "description": "اسم الدور بالإنجليزية أو المعرف",
                                         "type": "string",
                                         "example": "مدير الصالة"
+                                    },
+                                    "name_ar": {
+                                        "description": "اسم الدور باللغة العربية",
+                                        "type": "string",
+                                        "example": "مدير الصالة",
+                                        "nullable": true
+                                    },
+                                    "is_visible": {
+                                        "description": "هل يظهر الدور للجميع في النظام",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5894,14 +5906,23 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name"
-                                ],
                                 "properties": {
                                     "name": {
                                         "description": "الاسم الجديد للدور",
                                         "type": "string",
                                         "example": "مشرف الصالة الجديد"
+                                    },
+                                    "name_ar": {
+                                        "description": "اسم الدور باللغة العربية",
+                                        "type": "string",
+                                        "example": "مشرف الصالة الجديد",
+                                        "nullable": true
+                                    },
+                                    "is_visible": {
+                                        "description": "هل يظهر الدور للجميع في النظام",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -18212,7 +18233,6 @@
                             "type": "string",
                             "enum": [
                                 "admin",
-                                "management_admin",
                                 "manager",
                                 "coach",
                                 "receptionist",
@@ -18352,7 +18372,6 @@
                                         "example": "receptionist",
                                         "enum": [
                                             "admin",
-                                            "management_admin",
                                             "receptionist",
                                             "cleaner",
                                             "manager",
@@ -18777,7 +18796,6 @@
                                         "example": "receptionist",
                                         "enum": [
                                             "admin",
-                                            "management_admin",
                                             "receptionist",
                                             "coach",
                                             "cleaner",
