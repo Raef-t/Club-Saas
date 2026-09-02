@@ -252,6 +252,7 @@ class CheckPermissionMiddleware
 
         // ─── Lockers ──────────────────────────────────────────────────────────
         'GET:v1/lockers'                                                => 'locker.view-any',
+        'GET:v1/lockers/trashed'                                        => 'locker.view-trashed',
         'GET:v1/lockers/{id}'                                           => 'locker.view',
         'POST:v1/lockers'                                               => 'locker.create',
         'PUT:v1/lockers/{id}'                                           => 'locker.update',

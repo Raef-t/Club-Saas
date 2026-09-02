@@ -243,6 +243,7 @@ class AllSystemPermissionsSeeder extends Seeder
 
             // ─── Lockers ───────────────────────────────────────────────────
             'locker.view-any',
+            'locker.view-trashed',
             'locker.view',
             'locker.create',
             'locker.update',

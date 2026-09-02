@@ -49,19 +49,39 @@ class LockerService
         }
 
         $query = DB::table('lockers')
+            ->whereNull('lockers.deleted_at')
             ->leftJoin('locker_reservations', function($join) {
                 $join->on('lockers.id', '=', 'locker_reservations.locker_id')
-                     ->where('locker_reservations.status', '=', 'active');
+                     ->where('locker_reservations.status', '=', 'active')
+                     ->whereNull('locker_reservations.deleted_at');
             })
-            ->leftJoin('members', 'locker_reservations.member_id', '=', 'members.id')
-            ->leftJoin('people as m_person', 'members.person_id', '=', 'm_person.id')
-            ->leftJoin('staff', 'locker_reservations.staff_id', '=', 'staff.id')
-            ->leftJoin('staff as staff_by_person', 'locker_reservations.staff_id', '=', 'staff_by_person.person_id')
+            ->leftJoin('members', function($join) {
+                $join->on('locker_reservations.member_id', '=', 'members.id')
+                     ->whereNull('members.deleted_at');
+            })
+            ->leftJoin('people as m_person', function($join) {
+                $join->on('members.person_id', '=', 'm_person.id')
+                     ->whereNull('m_person.deleted_at');
+            })
+            ->leftJoin('staff', function($join) {
+                $join->on('locker_reservations.staff_id', '=', 'staff.id')
+                     ->whereNull('staff.deleted_at');
+            })
+            ->leftJoin('staff as staff_by_person', function($join) {
+                $join->on('locker_reservations.staff_id', '=', 'staff_by_person.person_id')
+                     ->whereNull('staff_by_person.deleted_at');
+            })
             ->leftJoin('people as s_person', function($join) {
-                $join->on('staff.person_id', '=', 's_person.id')
-                     ->orOn('staff_by_person.person_id', '=', 's_person.id');
+                $join->on(function($q) {
+                    $q->on('staff.person_id', '=', 's_person.id')
+                      ->orOn('staff_by_person.person_id', '=', 's_person.id');
+                })
+                ->whereNull('s_person.deleted_at');
             })
-            ->leftJoin('people as direct_person', 'locker_reservations.staff_id', '=', 'direct_person.id')
+            ->leftJoin('people as direct_person', function($join) {
+                $join->on('locker_reservations.staff_id', '=', 'direct_person.id')
+                     ->whereNull('direct_person.deleted_at');
+            })
             ->select($columns)
             ->orderBy('lockers.locker_number');
 
@@ -172,28 +192,73 @@ class LockerService
     }
 
     /**
-     * Delete a locker.
+     * Delete a locker (Soft Delete).
      *
-     * @throws \Modules\Core\Exceptions\CannotDeleteException
+     * @throws \Illuminate\Validation\ValidationException
      */
-    public function deleteLocker($id)
+    public function deleteLocker(int $id, string $confirmation = ''): void
     {
-        $locker = \Modules\ClubManager\Models\Locker::findOrFail($id);
-        
-        $activeReservationsCount = \Modules\SubscriptionManager\Models\LockerReservation::where('locker_id', $id)
-            ->where('status', 'active')
-            ->count();
-
-        if ($activeReservationsCount > 0 || in_array($locker->status, ['with_member', 'with_staff', 'with_coach'])) {
-            throw new \Modules\Core\Exceptions\CannotDeleteException(
-                "لا يمكن حذف الخزانة لأنها مستأجرة أو مسندة حالياً (يوجد حجز نشط). يُرجى إلغاء/إنهاء الحجز أولاً.",
-                ['active_reservations_count' => $activeReservationsCount]
-            );
+        if (strtolower(trim($confirmation)) !== 'delete') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'confirmation' => __('سيتم حذف هذه الخزانة وكافة الحجوزات المتعلقة بها، هل أنت متأكد؟ أرسل "delete" للتأكيد.')
+            ]);
         }
 
-        \Modules\SubscriptionManager\Models\LockerReservation::where('locker_id', $id)->delete();
+        $locker = \Modules\ClubManager\Models\Locker::findOrFail($id);
 
-        return $this->repository->delete($id);
+        DB::transaction(function () use ($locker) {
+            // 1. Soft delete associated reservations
+            \Modules\SubscriptionManager\Models\LockerReservation::where('locker_id', $locker->id)->delete();
+
+            // 2. Clear any active attendance records that have this locker assigned
+            if (class_exists(\Modules\AttendanceManager\Models\Attendance::class)) {
+                \Modules\AttendanceManager\Models\Attendance::where('locker_id', $locker->id)
+                    ->where('status', 'checked_in')
+                    ->whereNull('check_out_at')
+                    ->update(['locker_id' => null]);
+            }
+
+            // 3. Soft delete the locker itself
+            $locker->delete();
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
+            }
+        });
+    }
+
+    /**
+     * Get all soft-deleted (trashed) lockers.
+     */
+    public function getTrashed(array $filters = [])
+    {
+        return $this->repository->getTrashed($filters);
+    }
+
+    /**
+     * Restore a soft-deleted locker.
+     */
+    public function restoreLocker(int $id)
+    {
+        $locker = \Modules\ClubManager\Models\Locker::onlyTrashed()->findOrFail($id);
+
+        // Validate uniqueness within branch before restoring
+        $this->uniquenessRule->validate(
+            $locker->branch_id,
+            $locker->locker_number,
+            $locker->key_number,
+            $locker->id
+        );
+
+        DB::transaction(function () use ($locker) {
+            $locker->restore();
+
+            if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
+                \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($locker->branch_id);
+            }
+        });
+
+        return $locker;
     }
 
     // --- New Unified API Methods ---
@@ -445,7 +510,11 @@ class LockerService
     public function getLockersByHolder($holderType, $holderId)
     {
         return DB::table('lockers')
-            ->join('locker_reservations', 'lockers.id', '=', 'locker_reservations.locker_id')
+            ->whereNull('lockers.deleted_at')
+            ->join('locker_reservations', function($join) {
+                $join->on('lockers.id', '=', 'locker_reservations.locker_id')
+                     ->whereNull('locker_reservations.deleted_at');
+            })
             ->where('locker_reservations.status', '=', 'active')
             ->where(function($query) use ($holderType, $holderId) {
                 if ($holderType === 'member') {
@@ -479,13 +548,15 @@ class LockerService
      */
     public function getLockersSummary(?int $branchId = null): array
     {
-        $baseQuery = DB::table('lockers');
+        $baseQuery = DB::table('lockers')->whereNull('deleted_at');
         if ($branchId) {
             $baseQuery->where('branch_id', $branchId);
         }
 
         $rentedQuery = DB::table('locker_reservations as lr')
             ->join('lockers as l', 'l.id', '=', 'lr.locker_id')
+            ->whereNull('l.deleted_at')
+            ->whereNull('lr.deleted_at')
             ->where('lr.status', 'active')
             ->where('lr.price', '>', 0);
         if ($branchId) {
