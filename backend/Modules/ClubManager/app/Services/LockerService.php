@@ -81,7 +81,7 @@ class LockerService
             }
         }
 
-        if ((isset($filters['per_page']) && $filters['per_page'] === 'all') || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
             $lockers = $query->get();
 
             // Batch fetch person_contacts for all holder person IDs
@@ -113,7 +113,7 @@ class LockerService
             return $lockers;
         }
 
-        $perPage = isset($filters['per_page']) ? min(max((int)$filters['per_page'], 1), 100) : 15;
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
         $lockers = $query->paginate($perPage);
 
         $personIds = collect($lockers->items())->pluck('holder_person_id')->filter()->unique()->values()->all();

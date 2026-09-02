@@ -59,12 +59,12 @@ class EloquentStaffRepository implements StaffRepositoryInterface
             $query->where('role', $filters['role']);
         }
 
-        if ((isset($filters['per_page']) && $filters['per_page'] === 'all') || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all') {
             return $query->latest()->get();
         }
-
-        $perPage = isset($filters['per_page']) ? min(max((int)$filters['per_page'], 1), 100) : 15;
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
         return $query->latest()->paginate($perPage);
+
     }
 
     public function restore(int $id)

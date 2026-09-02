@@ -25103,6 +25103,26 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -26572,6 +26592,16 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد عناصر الحركات في الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
                         }
                     }
                 ],

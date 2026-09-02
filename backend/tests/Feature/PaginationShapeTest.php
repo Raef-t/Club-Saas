@@ -351,4 +351,47 @@ class PaginationShapeTest extends TestCase
         $this->assertEquals(2, $json['meta']['per_page']);
         $this->assertEquals(4, $json['meta']['total']);
     }
+
+    public function test_coaches_index_without_per_page_returns_all_unpaginated(): void
+    {
+        for ($i = 1; $i <= 20; $i++) {
+            $person = Person::create([
+                'full_name' => "Coach {$i}",
+                'gender'    => 'male',
+                'type'      => 'coach',
+            ]);
+
+            Staff::create([
+                'person_id' => $person->id,
+                'role'      => 'coach',
+                'is_active' => true,
+            ]);
+        }
+
+        // Without per_page parameter
+        $response = $this->getJson('/api/v1/coaches');
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertIsArray($json['data']);
+        $this->assertCount(20, $json['data']);
+        $this->assertArrayNotHasKey('meta', $json);
+    }
+
+    public function test_clubs_index_without_per_page_returns_all_unpaginated(): void
+    {
+        for ($i = 1; $i <= 20; $i++) {
+            Club::create(['name' => "Club Extra {$i}", 'is_active' => true]);
+        }
+
+        $response = $this->getJson('/api/v1/clubs');
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertIsArray($json['data']);
+        $this->assertCount(21, $json['data']); // 20 + 1 from setUp
+        $this->assertArrayNotHasKey('meta', $json);
+    }
 }
