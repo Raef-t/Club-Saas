@@ -27,7 +27,7 @@ class RoleController extends BaseController
     #[OA\Get(
         path: '/v1/roles',
         summary: '📋 جلب قائمة الأدوار',
-        description: 'يجلب جميع الأدوار المتاحة في النظام مع صلاحياتها.',
+        description: 'يجلب قائمة بجميع الأدوار المتاحة في النظام.',
         operationId: 'getRolesList',
         tags: ['Roles'],
         security: [['bearerAuth' => []]]
@@ -37,19 +37,14 @@ class RoleController extends BaseController
     public function index(): JsonResponse
     {
         $roles = Role::where('guard_name', 'sanctum')
-            ->with('permissions')
+            ->withCount('permissions')
             ->get()
             ->map(fn($role) => [
                 'id'                 => $role->id,
                 'name'               => $role->name,
-                'permissions_count'  => $role->permissions->count(),
-                'permissions'        => $role->permissions
-                    ->sortBy('name')
-                    ->map(fn($p) => [
-                        'id'     => $p->id,
-                        'name'   => $p->name,
-                        'module' => explode('.', $p->name)[0],
-                    ])->values(),
+                'name_ar'            => $role->name_ar,
+                'is_visible'         => (bool) ($role->is_visible ?? true),
+                'permissions_count'  => $role->permissions_count,
                 'is_protected'       => in_array($role->name, self::PROTECTED_ROLES),
             ]);
 
@@ -73,8 +68,9 @@ class RoleController extends BaseController
         content: new OA\JsonContent(
             required: ['name'],
             properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'مدير الصالة',
-                    description: 'اسم الدور'),
+                new OA\Property(property: 'name', type: 'string', example: 'مدير الصالة', description: 'اسم الدور بالإنجليزية أو المعرف'),
+                new OA\Property(property: 'name_ar', type: 'string', example: 'مدير الصالة', description: 'اسم الدور باللغة العربية', nullable: true),
+                new OA\Property(property: 'is_visible', type: 'boolean', example: true, description: 'هل يظهر الدور للجميع في النظام', nullable: true),
             ]
         )
     )]
@@ -86,18 +82,37 @@ class RoleController extends BaseController
         $role = Role::firstOrCreate([
             'name'       => $request->name,
             'guard_name' => 'sanctum',
+        ], [
+            'name_ar'    => $request->input('name_ar'),
+            'is_visible' => $request->boolean('is_visible', true),
         ]);
+
+        if ($request->has('name_ar') || $request->has('is_visible')) {
+            $updateData = [];
+            if ($request->has('name_ar')) {
+                $updateData['name_ar'] = $request->input('name_ar');
+            }
+            if ($request->has('is_visible')) {
+                $updateData['is_visible'] = $request->boolean('is_visible');
+            }
+            $role->update($updateData);
+        }
 
         // Also create for web guard to avoid issues
         Role::firstOrCreate([
             'name'       => $request->name,
             'guard_name' => 'web',
+        ], [
+            'name_ar'    => $request->input('name_ar'),
+            'is_visible' => $request->boolean('is_visible', true),
         ]);
 
         return $this->successResponse([
             'role' => [
                 'id'                => $role->id,
                 'name'              => $role->name,
+                'name_ar'           => $role->name_ar,
+                'is_visible'        => (bool) ($role->is_visible ?? true),
                 'permissions_count' => 0,
                 'permissions'       => [],
                 'is_protected'      => false,
@@ -129,6 +144,8 @@ class RoleController extends BaseController
             'role' => [
                 'id'                => $role->id,
                 'name'              => $role->name,
+                'name_ar'           => $role->name_ar,
+                'is_visible'        => (bool) ($role->is_visible ?? true),
                 'permissions_count' => $role->permissions->count(),
                 'permissions'       => $role->permissions
                     ->sortBy('name')
@@ -158,9 +175,10 @@ class RoleController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['name'],
             properties: [
                 new OA\Property(property: 'name', type: 'string', example: 'مشرف الصالة الجديد', description: 'الاسم الجديد للدور'),
+                new OA\Property(property: 'name_ar', type: 'string', example: 'مشرف الصالة الجديد', description: 'اسم الدور باللغة العربية', nullable: true),
+                new OA\Property(property: 'is_visible', type: 'boolean', example: true, description: 'هل يظهر الدور للجميع في النظام', nullable: true),
             ]
         )
     )]
@@ -172,7 +190,7 @@ class RoleController extends BaseController
     {
         $role = Role::where('guard_name', 'sanctum')->findOrFail($id);
 
-        if (in_array($role->name, self::PROTECTED_ROLES)) {
+        if ($request->filled('name') && $request->name !== $role->name && in_array($role->name, self::PROTECTED_ROLES)) {
             return $this->errorResponse(
                 'لا يمكن تعديل اسم الدور "' . $role->name . '" لأنه دور محمي في النظام.',
                 403
@@ -180,20 +198,41 @@ class RoleController extends BaseController
         }
 
         $oldName = $role->name;
-        $role->name = $request->name;
+        if ($request->filled('name')) {
+            $role->name = $request->name;
+        }
+        if ($request->has('name_ar')) {
+            $role->name_ar = $request->input('name_ar');
+        }
+        if ($request->has('is_visible')) {
+            $role->is_visible = $request->boolean('is_visible');
+        }
         $role->save();
 
         // Also update for web guard if it exists
-        Role::where('name', $oldName)->where('guard_name', 'web')->update([
-            'name' => $request->name,
-        ]);
+        $webUpdate = [];
+        if ($request->filled('name')) {
+            $webUpdate['name'] = $request->name;
+        }
+        if ($request->has('name_ar')) {
+            $webUpdate['name_ar'] = $request->input('name_ar');
+        }
+        if ($request->has('is_visible')) {
+            $webUpdate['is_visible'] = $request->boolean('is_visible');
+        }
+
+        if (!empty($webUpdate)) {
+            Role::where('name', $oldName)->where('guard_name', 'web')->update($webUpdate);
+        }
 
         return $this->successResponse([
             'role' => [
                 'id'                => $role->id,
                 'name'              => $role->name,
+                'name_ar'           => $role->name_ar,
+                'is_visible'        => (bool) ($role->is_visible ?? true),
                 'permissions_count' => $role->permissions()->count(),
-                'is_protected'      => false,
+                'is_protected'      => in_array($role->name, self::PROTECTED_ROLES),
             ],
         ], 'تم تعديل اسم الدور بنجاح');
     }

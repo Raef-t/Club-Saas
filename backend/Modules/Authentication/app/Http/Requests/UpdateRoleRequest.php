@@ -18,6 +18,7 @@ class UpdateRoleRequest extends FormRequest
 
         return [
             'name' => [
+                'sometimes',
                 'required',
                 'string',
                 'max:100',
@@ -25,6 +26,8 @@ class UpdateRoleRequest extends FormRequest
                     return $query->where('guard_name', 'sanctum');
                 })->ignore($roleId),
             ],
+            'name_ar'    => 'nullable|string|max:100',
+            'is_visible' => 'nullable|boolean',
         ];
     }
 

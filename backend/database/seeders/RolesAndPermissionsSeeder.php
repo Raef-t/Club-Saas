@@ -16,18 +16,24 @@ class RolesAndPermissionsSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $roles = [
-            'super_admin',
-            'admin',
-            'management_admin',
-            'coach',
-            'player',
-            'accountant',
-            'reception',
+            ['name' => 'super_admin', 'name_ar' => 'مدير النظام العام', 'is_visible' => false],
+            ['name' => 'admin',       'name_ar' => 'مدير النادي',       'is_visible' => true],
+            ['name' => 'coach',       'name_ar' => 'مدرب',              'is_visible' => true],
+            ['name' => 'player',      'name_ar' => 'مشترك / لاعب',     'is_visible' => true],
+            ['name' => 'accountant',  'name_ar' => 'محاسب',             'is_visible' => true],
+            ['name' => 'reception',   'name_ar' => 'موظف استقبال',      'is_visible' => true],
+            ['name' => 'cleaner',     'name_ar' => 'عامل نظافة',        'is_visible' => true],
         ];
 
-        foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
-            Role::firstOrCreate(['name' => $role, 'guard_name' => 'sanctum']);
+        foreach ($roles as $roleData) {
+            Role::updateOrCreate(
+                ['name' => $roleData['name'], 'guard_name' => 'web'],
+                ['name_ar' => $roleData['name_ar'], 'is_visible' => $roleData['is_visible']]
+            );
+            Role::updateOrCreate(
+                ['name' => $roleData['name'], 'guard_name' => 'sanctum'],
+                ['name_ar' => $roleData['name_ar'], 'is_visible' => $roleData['is_visible']]
+            );
         }
     }
 }
