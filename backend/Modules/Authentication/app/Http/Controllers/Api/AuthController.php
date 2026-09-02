@@ -381,7 +381,24 @@ class AuthController extends BaseController
                             ]
                         ),
                         new OA\Property(property: 'age', type: 'integer', nullable: true, example: 28),
-                        new OA\Property(property: 'health_status', type: 'string', nullable: true, example: 'لا توجد أمراض مزمنة')
+                        new OA\Property(property: 'health_status', type: 'string', nullable: true, example: 'لا توجد أمراض مزمنة'),
+                        new OA\Property(
+                            property: 'roles',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', example: 'super_admin')
+                        ),
+                        new OA\Property(
+                            property: 'permissions',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'name', type: 'string', example: 'user-role.view'),
+                                    new OA\Property(property: 'module', type: 'string', example: 'user-role'),
+                                ]
+                            )
+                        )
                     ]
                 )
             ]
@@ -447,6 +464,16 @@ class AuthController extends BaseController
                 $profileData['health_status'] = $personData->chronic_diseases ?: null;
             }
         }
+
+        // Roles & Permissions (compatible with /v1/users/{userId}/roles response)
+        $profileData['roles'] = $user->getRoleNames();
+        $profileData['permissions'] = $user->getAllPermissions()
+            ->sortBy('name')
+            ->map(fn($p) => [
+                'id'     => $p->id,
+                'name'   => $p->name,
+                'module' => explode('.', $p->name)[0],
+            ])->values();
 
         return $this->successResponse($profileData, __('Profile retrieved successfully'));
     }
