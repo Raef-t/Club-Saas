@@ -49,11 +49,11 @@ class ActivityController extends BaseController
             // Gender restrictions for facility are applied at the facility/session level.
         }
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $activities = $query->orderBy('id', 'desc')->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $activities = $query->orderBy('id', 'desc')->paginate($perPage);
+        } else {
+            $activities = $query->orderBy('id', 'desc')->get();
         }
 
         return $this->successResponse(ActivityResource::collection($activities), __('Activities retrieved successfully'));
@@ -322,11 +322,11 @@ class ActivityController extends BaseController
     {
         $query = Activity::onlyTrashed();
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $activities = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $activities = $query->paginate($perPage);
+        } else {
+            $activities = $query->get();
         }
 
         return $this->successResponse(ActivityResource::collection($activities), __('Trashed activities retrieved successfully'));

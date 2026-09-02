@@ -203,11 +203,11 @@ class UnifiedAttendanceController extends BaseController
             $branchId
         );
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $history = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $history = $query->paginate($perPage);
+        } else {
+            $history = $query->get();
         }
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));

@@ -47,11 +47,11 @@ class FormulaController extends BaseController
 
         $query->orderBy('name');
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $formulas = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $formulas = $query->paginate($perPage);
+        } else {
+            $formulas = $query->get();
         }
 
         return $this->successResponse($formulas, 'Formulas retrieved successfully');

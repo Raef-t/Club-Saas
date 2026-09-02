@@ -38,11 +38,11 @@ class BranchHolidayController extends BaseController
     {
         $query = BranchHoliday::where('branch_id', $branchId);
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $holidays = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $holidays = $query->paginate($perPage);
+        } else {
+            $holidays = $query->get();
         }
 
         return $this->successResponse(
@@ -259,11 +259,11 @@ class BranchHolidayController extends BaseController
     {
         $query = BranchHoliday::onlyTrashed();
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $holidays = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $holidays = $query->paginate($perPage);
+        } else {
+            $holidays = $query->get();
         }
 
         return $this->successResponse(BranchHolidayResource::collection($holidays), __('Trashed holidays retrieved successfully'));

@@ -62,11 +62,11 @@ class PayslipController extends BaseController
             });
         }
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $payslips = $query->latest('id')->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $payslips = $query->latest('id')->paginate($perPage);
+        } else {
+            $payslips = $query->latest('id')->get();
         }
 
         return $this->successResponse(PayslipResource::collection($payslips), 'Retrieved successfully');

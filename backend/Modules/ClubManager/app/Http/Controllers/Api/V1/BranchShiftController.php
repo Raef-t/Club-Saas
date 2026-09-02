@@ -44,11 +44,11 @@ class BranchShiftController extends BaseController
     {
         $query = BranchShift::where('branch_id', $branchId);
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $shifts = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $shifts = $query->paginate($perPage);
+        } else {
+            $shifts = $query->get();
         }
 
         return $this->successResponse($shifts, __('Branch shifts retrieved'));
@@ -149,11 +149,11 @@ class BranchShiftController extends BaseController
     {
         $query = BranchShift::onlyTrashed()->where('branch_id', $branchId);
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $shifts = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $shifts = $query->paginate($perPage);
+        } else {
+            $shifts = $query->get();
         }
 
         return $this->successResponse($shifts, __('Trashed branch shifts retrieved'));

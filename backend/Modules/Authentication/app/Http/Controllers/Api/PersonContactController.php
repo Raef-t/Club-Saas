@@ -37,11 +37,11 @@ class PersonContactController extends BaseController
             $query->where('person_id', $request->query('person_id'));
         }
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $contacts = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $contacts = $query->paginate($perPage);
+        } else {
+            $contacts = $query->get();
         }
 
         return $this->successResponse(PersonContactResource::collection($contacts), 'Contacts retrieved successfully');

@@ -24,11 +24,11 @@ class PaymentController extends BaseController
     {
         $query = Payment::orderBy('id', 'desc');
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $payments = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $payments = $query->paginate($perPage);
+        } else {
+            $payments = $query->get();
         }
 
         return $this->successResponse(PaymentResource::collection($payments), __('Payments retrieved successfully'));
@@ -136,11 +136,11 @@ class PaymentController extends BaseController
     {
         $query = Payment::onlyTrashed();
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $payments = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $payments = $query->paginate($perPage);
+        } else {
+            $payments = $query->get();
         }
 
         return $this->successResponse(PaymentResource::collection($payments), __('Trashed payments retrieved successfully'));

@@ -92,12 +92,12 @@ class UserController extends BaseController
             ];
         };
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $users = $query->get()->map($mapUser);
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $paginator = $query->paginate($perPage);
             $users = $paginator->through($mapUser);
+        } else {
+            $users = $query->get()->map($mapUser);
         }
 
         return $this->successResponse($users, 'تم جلب قائمة المستخدمين بنجاح.');

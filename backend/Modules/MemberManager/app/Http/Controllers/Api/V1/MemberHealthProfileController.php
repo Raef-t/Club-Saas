@@ -32,11 +32,11 @@ class MemberHealthProfileController extends BaseController
             });
         }
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $profiles = $query->latest()->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $profiles = $query->latest()->paginate($perPage);
+        } else {
+            $profiles = $query->latest()->get();
         }
 
         return $this->successResponse($profiles, __('Health profiles retrieved successfully'));

@@ -39,11 +39,11 @@ class ActivityTypeController extends BaseController
     {
         $query = ActivityType::query();
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $types = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $types = $query->paginate($perPage);
+        } else {
+            $types = $query->get();
         }
 
         return $this->successResponse(

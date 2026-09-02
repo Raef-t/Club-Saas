@@ -86,11 +86,11 @@ class SubscriptionPlanController extends BaseController
             }
         }
         
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $plans = $query->orderBy('id', 'desc')->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $plans = $query->orderBy('id', 'desc')->paginate($perPage);
+        } else {
+            $plans = $query->orderBy('id', 'desc')->get();
         }
 
         return $this->successResponse(

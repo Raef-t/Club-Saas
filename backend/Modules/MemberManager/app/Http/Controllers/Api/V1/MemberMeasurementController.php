@@ -43,15 +43,15 @@ class MemberMeasurementController extends BaseController
             });
         }
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $measurements = $query->latest()->get();
-            foreach ($measurements as $m) {
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $measurements = $query->latest()->paginate($perPage);
+            foreach ($measurements->items() as $m) {
                 $m->setAttribute('last_updated_at', $m->updated_at);
             }
         } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
-            $measurements = $query->latest()->paginate($perPage);
-            foreach ($measurements->items() as $m) {
+            $measurements = $query->latest()->get();
+            foreach ($measurements as $m) {
                 $m->setAttribute('last_updated_at', $m->updated_at);
             }
         }

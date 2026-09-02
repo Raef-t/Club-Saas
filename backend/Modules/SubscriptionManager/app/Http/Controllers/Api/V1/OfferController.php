@@ -319,11 +319,11 @@ class OfferController extends BaseController
     {
         $query = \Modules\SubscriptionManager\Models\Offer::onlyTrashed();
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $offers = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $offers = $query->paginate($perPage);
+        } else {
+            $offers = $query->get();
         }
 
         return $this->successResponse(OfferResource::collection($offers), __('Trashed offers retrieved successfully'));

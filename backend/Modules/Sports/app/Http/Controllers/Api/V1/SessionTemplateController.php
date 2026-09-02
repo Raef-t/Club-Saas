@@ -36,11 +36,11 @@ class SessionTemplateController extends BaseController
     {
         $query = SportSessionTemplate::with(['subscriptionPlan']);
 
-        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
-            $templates = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $templates = $query->paginate($perPage);
+        } else {
+            $templates = $query->get();
         }
 
         return $this->successResponse($templates, __('Templates retrieved successfully'));
