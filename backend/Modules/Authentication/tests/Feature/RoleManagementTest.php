@@ -121,4 +121,40 @@ class RoleManagementTest extends TestCase
             'is_visible' => 0,
         ]);
     }
+
+    public function test_auth_me_returns_roles_and_permissions(): void
+    {
+        $user = $this->createUser();
+        $permission = \Spatie\Permission\Models\Permission::firstOrCreate([
+            'name'       => 'test-module.view',
+            'guard_name' => 'sanctum',
+        ]);
+        $user->givePermissionTo($permission);
+
+        $response = $this->actingAs($user, 'sanctum')->getJson('/api/v1/auth/me');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.username', $user->username)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'id',
+                    'username',
+                    'is_active',
+                    'person',
+                    'roles',
+                    'permissions' => [
+                        '*' => ['id', 'name', 'module'],
+                    ],
+                ],
+            ]);
+
+        $this->assertContains('super_admin', $response->json('data.roles'));
+        $permissions = collect($response->json('data.permissions'));
+        $this->assertTrue($permissions->contains('name', 'test-module.view'));
+        $this->assertTrue($permissions->contains('module', 'test-module'));
+    }
 }
+
