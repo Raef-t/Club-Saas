@@ -3,7 +3,7 @@
                    تقرير ودليل الصلاحيات الكامل للـ Backend
 ================================================================================
 تاريخ الإصدار  : 2026-09-01
-إجمالي الصلاحيات: 269 صلاحية فريدة
+إجمالي الصلاحيات: 272 صلاحية فريدة
 عدد الموديولات : 11 موديولاً أساسياً
 الرتب المعتمدة  : 7 أدوار رئيسية
 ================================================================================
@@ -49,7 +49,7 @@
 [2] مصفوفة الأدوار والرتب المعتمدة في النظام (Roles Matrix)
 ════════════════════════════════════════════════════════════════════════════════
 • super_admin       : مالك المنظومة — تجاوز كامل لجميع فحوصات الصلاحيات.
-• admin             : مدير النظام — يمتلك كافة صلاحيات النظام (269 صلاحية).
+• admin             : مدير النظام — يمتلك كافة صلاحيات النظام (272 صلاحية).
 • accountant        : المحاسب المالي — دليل الحسابات، القيود، الصناديق، التسويات، الرواتب، وسندات الصرف.
 • reception         : موظف الاستقبال — تسجيل الأعضاء، حضور وانصراف QR، خصم الحصص، وتأجير الخزائن.
 • coach             : المدرب — استعراض الحصص والجداول التدريبية واللاعبين التابعين له.
@@ -64,19 +64,19 @@
 [03] إدارة الأعضاء واللاعبين (MemberManager)                : 23 صلاحية
 [04] الكادر، المدربون، والرواتب (StaffManager & Payroll)    : 36 صلاحية
 [05] الأنشطة والرياضات (Sports & Activities)                : 25 صلاحية
-[06] الاشتراكات والمدفوعات (SubscriptionManager & Payments) : 52 صلاحية
+[06] الاشتراكات والمدفوعات (SubscriptionManager & Payments) : 55 صلاحية
 [07] إدارة الأندية والفروع والخزائن (ClubManager)           : 45 صلاحية
 [08] المحاسبة والمالية (Accounting Module)                  : 43 صلاحية
 [09] الحضور والاستقبال (Attendance & Reception)             : 13 صلاحية
 [10] الإشعارات والتنبيهات (NotificationManager)             : 11 صلاحية
 [11] سجل التدقيق والنواة (Auditing & Core)                  : 04 صلاحيات
 --------------------------------------------------------------------------------
-الإجمالي العام                                              : 269 صلاحية
+الإجمالي العام                                              : 272 صلاحية
 ================================================================================
 
 
 ================================================================================
-[4] تفاصيل الصلاحيات الكاملة (269 صلاحية مرتبة حسب الموديول)
+[4] تفاصيل الصلاحيات الكاملة (272 صلاحية مرتبة حسب الموديول)
 ================================================================================
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -605,7 +605,7 @@
 
 
 ────────────────────────────────────────────────────────────────────────────────
-■ الموديول (6): الاشتراكات والمدفوعات (SubscriptionManager & Payments) — [52 صلاحية]
+■ الموديول (6): الاشتراكات والمدفوعات (SubscriptionManager & Payments) — [55 صلاحية]
 ────────────────────────────────────────────────────────────────────────────────
 [102] الصلاحية : subscription-plan.view-any
       الطريقة  : GET
@@ -787,82 +787,97 @@
       المسار   : /api/v1/subscription-plan-activities/{id}/restore
       الوظيفة  : استرجاع نشاط محذوف من خطة
 
-[138] الصلاحية : report.subscriptions.renewal-status
+[138] الصلاحية : player-sub-item.view-any
+      الطريقة  : GET
+      المسار   : /api/v1/player-subscription-items
+      الوظيفة  : استعراض قائمة عناصر اشتراكات اللاعبين
+
+[139] الصلاحية : player-sub-item.create
+      الطريقة  : POST
+      المسار   : /api/v1/player-subscription-items
+      الوظيفة  : إضافة وتخصيص عنصر جديد لاشتراك اللاعب
+
+[140] الصلاحية : player-sub-item.delete
+      الطريقة  : DELETE
+      المسار   : /api/v1/player-subscription-items/{id}
+      الوظيفة  : حذف عنصر من اشتراك اللاعب
+
+[141] الصلاحية : report.subscriptions.renewal-status
       الطريقة  : GET
       المسار   : /api/v1/reports/subscriptions/renewal-status
       الوظيفة  : تقرير حالة تجديد الاشتراكات
 
-[139] الصلاحية : report.subscriptions.frozen-terminated
+[142] الصلاحية : report.subscriptions.frozen-terminated
       الطريقة  : GET
       المسار   : /api/v1/reports/subscriptions/frozen-terminated
       الوظيفة  : تقرير الاشتراكات المجمدة والملغاة
 
-[140] الصلاحية : report.sessions.time-capacity
+[143] الصلاحية : report.sessions.time-capacity
       الطريقة  : GET
       المسار   : /api/v1/reports/sessions/time-capacity
       الوظيفة  : تقرير سعة الحصص والأوقات
 
-[141] الصلاحية : report.attendance.peak-hours
+[144] الصلاحية : report.attendance.peak-hours
       الطريقة  : GET
       المسار   : /api/v1/reports/attendance/peak-hours
       الوظيفة  : تقرير ساعات الذروة في الحضور
 
-[142] الصلاحية : report.shifts.attendance
+[145] الصلاحية : report.shifts.attendance
       الطريقة  : GET
       المسار   : /api/v1/reports/shifts/attendance
       الوظيفة  : تقرير حضور وانصراف شفتات العمل
 
-[143] الصلاحية : report.coaches.subscriptions
+[146] الصلاحية : report.coaches.subscriptions
       الطريقة  : GET
       المسار   : /api/v1/reports/coaches/subscriptions
       الوظيفة  : تقرير اشتراكات وتوزيع المدربين
 
-[144] الصلاحية : payment.record
+[147] الصلاحية : payment.record
       الطريقة  : POST
       المسار   : /api/v1/player-subscriptions/{id}/payment
       الوظيفة  : تسجيل دفعة لاشتراك لاعب
 
-[145] الصلاحية : payment.view-invoices
+[148] الصلاحية : payment.view-invoices
       الطريقة  : GET
       المسار   : /api/v1/my-invoices
       الوظيفة  : استعراض فواتير المشتركين
 
-[146] الصلاحية : payment.view-reports
+[149] الصلاحية : payment.view-reports
       الطريقة  : GET
       المسار   : /api/v1/reports/subscriptions
       الوظيفة  : تقرير إيرادات الاشتراكات الشامل
 
-[147] الصلاحية : payment.view-any
+[150] الصلاحية : payment.view-any
       الطريقة  : GET
       المسار   : /api/v1/payments
       الوظيفة  : استعراض قائمة سندات القبض والدفعات
 
-[148] الصلاحية : payment.view-trashed
+[151] الصلاحية : payment.view-trashed
       الطريقة  : GET
       المسار   : /api/v1/payments/trashed
       الوظيفة  : استعراض سلة محذوفات المدفوعات
 
-[149] الصلاحية : payment.create
+[152] الصلاحية : payment.create
       الطريقة  : POST
       المسار   : /api/v1/payments
       الوظيفة  : إنشاء سند قبض / دفعة مالية
 
-[150] الصلاحية : payment.view
+[153] الصلاحية : payment.view
       الطريقة  : GET
       المسار   : /api/v1/payments/{id}
       الوظيفة  : عرض تفاصيل سند القبض
 
-[151] الصلاحية : payment.update
+[154] الصلاحية : payment.update
       الطريقة  : PUT
       المسار   : /api/v1/payments/{id}
       الوظيفة  : تعديل بيانات الدفعة المالية
 
-[152] الصلاحية : payment.delete
+[155] الصلاحية : payment.delete
       الطريقة  : DELETE
       المسار   : /api/v1/payments/{id}
       الوظيفة  : إلغاء وحذف سند القبض
 
-[153] الصلاحية : payment.restore
+[156] الصلاحية : payment.restore
       الطريقة  : POST
       المسار   : /api/v1/payments/{id}/restore
       الوظيفة  : استرجاع دفعة مالية محذوفة
@@ -871,227 +886,227 @@
 ────────────────────────────────────────────────────────────────────────────────
 ■ الموديول (7): إدارة الأندية والفروع والخزائن (ClubManager) — [45 صلاحية]
 ────────────────────────────────────────────────────────────────────────────────
-[154] الصلاحية : club.view-any
+[157] الصلاحية : club.view-any
       الطريقة  : GET
       المسار   : /api/v1/clubs
       الوظيفة  : استعراض قائمة الأندية والمنشآت
 
-[155] الصلاحية : club.view-trashed
+[158] الصلاحية : club.view-trashed
       الطريقة  : GET
       المسار   : /api/v1/clubs/trashed
       الوظيفة  : استعراض سلة محذوفات الأندية
 
-[156] الصلاحية : club.view
+[159] الصلاحية : club.view
       الطريقة  : GET
       المسار   : /api/v1/clubs/{id}
       الوظيفة  : عرض بيانات وملف النادي
 
-[157] الصلاحية : club.create
+[160] الصلاحية : club.create
       الطريقة  : POST
       المسار   : /api/v1/clubs
       الوظيفة  : إنشاء نادي / منشأة جديدة بالنظام
 
-[158] الصلاحية : club.update
+[161] الصلاحية : club.update
       الطريقة  : PUT
       المسار   : /api/v1/clubs/{id}
       الوظيفة  : تعديل بيانات النادي
 
-[159] الصلاحية : club.update-logo
+[162] الصلاحية : club.update-logo
       الطريقة  : POST
       المسار   : /api/v1/clubs/{id}/logo
       الوظيفة  : رفع وتحديث شعار النادي الرسمي
 
-[160] الصلاحية : club.delete
+[163] الصلاحية : club.delete
       الطريقة  : DELETE
       المسار   : /api/v1/clubs/{id}
       الوظيفة  : حذف النادي من النظام
 
-[161] الصلاحية : club.restore
+[164] الصلاحية : club.restore
       الطريقة  : POST
       المسار   : /api/v1/clubs/{id}/restore
       الوظيفة  : استرجاع نادي محذوف من سلة المهملات
 
-[162] الصلاحية : club.settings.view
+[165] الصلاحية : club.settings.view
       الطريقة  : GET
       المسار   : /api/v1/clubs/{club}/settings
       الوظيفة  : استعراض إعدادات النادي العامة
 
-[163] الصلاحية : club.settings.update
+[166] الصلاحية : club.settings.update
       الطريقة  : PUT
       المسار   : /api/v1/clubs/{club}/settings
       الوظيفة  : تحديث وتعديل إعدادات النادي
 
-[164] الصلاحية : branch.view-any
+[167] الصلاحية : branch.view-any
       الطريقة  : GET
       المسار   : /api/v1/branches
       الوظيفة  : استعراض قائمة جميع الفروع
 
-[165] الصلاحية : branch.stats
+[168] الصلاحية : branch.stats
       الطريقة  : GET
       المسار   : /api/v1/branches/stats
       الوظيفة  : عرض لوحة إحصائيات الفروع
 
-[166] الصلاحية : branch.view-trashed
+[169] الصلاحية : branch.view-trashed
       الطريقة  : GET
       المسار   : /api/v1/branches/trashed
       الوظيفة  : استعراض سلة محذوفات الفروع
 
-[167] الصلاحية : branch.view
+[170] الصلاحية : branch.view
       الطريقة  : GET
       المسار   : /api/v1/branches/{id}
       الوظيفة  : عرض تفاصيل فرع محدد
 
-[168] الصلاحية : branch.create
+[171] الصلاحية : branch.create
       الطريقة  : POST
       المسار   : /api/v1/branches
       الوظيفة  : إنشاء فرع جديد للنادي
 
-[169] الصلاحية : branch.update
+[172] الصلاحية : branch.update
       الطريقة  : PUT
       المسار   : /api/v1/branches/{id}
       الوظيفة  : تعديل بيانات الفرع
 
-[170] الصلاحية : branch.delete
+[173] الصلاحية : branch.delete
       الطريقة  : DELETE
       المسار   : /api/v1/branches/{id}
       الوظيفة  : حذف الفرع
 
-[171] الصلاحية : branch.restore
+[174] الصلاحية : branch.restore
       الطريقة  : POST
       المسار   : /api/v1/branches/{id}/restore
       الوظيفة  : استرجاع فرع محذوف
 
-[172] الصلاحية : branch.toggle-status
+[175] الصلاحية : branch.toggle-status
       الطريقة  : PATCH
       المسار   : /api/v1/branches/{id}/toggle-status
       الوظيفة  : تفعيل / تعطيل حالة الفرع التشغيلية
 
-[173] الصلاحية : branch.settings.view
+[176] الصلاحية : branch.settings.view
       الطريقة  : GET
       المسار   : /api/v1/branches/{branch}/settings
       الوظيفة  : استعراض إعدادات الفرع
 
-[174] الصلاحية : branch.settings.update
+[177] الصلاحية : branch.settings.update
       الطريقة  : PUT
       المسار   : /api/v1/branches/{branch}/settings
       الوظيفة  : تحديث إعدادات الفرع
 
-[175] الصلاحية : branch.holiday.view-any
+[178] الصلاحية : branch.holiday.view-any
       الطريقة  : GET
       المسار   : /api/v1/branches/{branch}/holidays
       الوظيفة  : استعراض قائمة إجازات الفرع
 
-[176] الصلاحية : branch.holiday.create
+[179] الصلاحية : branch.holiday.create
       الطريقة  : POST
       المسار   : /api/v1/branches/{branch}/holidays
       الوظيفة  : إضافة عطلة / إجازة رسمية للفرع
 
-[177] الصلاحية : branch.holiday.view-trashed
+[180] الصلاحية : branch.holiday.view-trashed
       الطريقة  : GET
       المسار   : /api/v1/holidays/trashed
       الوظيفة  : استعراض سلة محذوفات الإجازات
 
-[178] الصلاحية : branch.holiday.view
+[181] الصلاحية : branch.holiday.view
       الطريقة  : GET
       المسار   : /api/v1/holidays/{id}
       الوظيفة  : عرض تفاصيل إجازة فرع محددة
 
-[179] الصلاحية : branch.holiday.update
+[182] الصلاحية : branch.holiday.update
       الطريقة  : PUT
       المسار   : /api/v1/holidays/{id}
       الوظيفة  : تعديل بيانات إجازة الفرع
 
-[180] الصلاحية : branch.holiday.delete
+[183] الصلاحية : branch.holiday.delete
       الطريقة  : DELETE
       المسار   : /api/v1/holidays/{id}
       الوظيفة  : حذف إجازة من الفرع
 
-[181] الصلاحية : branch.holiday.restore
+[184] الصلاحية : branch.holiday.restore
       الطريقة  : POST
       المسار   : /api/v1/holidays/{id}/restore
       الوظيفة  : استرجاع إجازة فرع محذوفة
 
-[182] الصلاحية : branch.shift.view-any
+[185] الصلاحية : branch.shift.view-any
       الطريقة  : GET
       المسار   : /api/v1/branches/{branch}/shifts
       الوظيفة  : استعراض شفتات عمل الفرع
 
-[183] الصلاحية : branch.shift.view-trashed
+[186] الصلاحية : branch.shift.view-trashed
       الطريقة  : GET
       المسار   : /api/v1/branches/{branch}/shifts/trashed
       الوظيفة  : استعراض سلة محذوفات شفتات الفرع
 
-[184] الصلاحية : branch.shift.create
+[187] الصلاحية : branch.shift.create
       الطريقة  : POST
       المسار   : /api/v1/branches/{branch}/shifts
       الوظيفة  : إنشاء شفت عمل للفرع
 
-[185] الصلاحية : branch.shift.update
+[188] الصلاحية : branch.shift.update
       الطريقة  : PUT
       المسار   : /api/v1/branches/{branch}/shifts/{shift}
       الوظيفة  : تعديل شفت عمل الفرع
 
-[186] الصلاحية : branch.shift.delete
+[189] الصلاحية : branch.shift.delete
       الطريقة  : DELETE
       المسار   : /api/v1/branches/{branch}/shifts/{shift}
       الوظيفة  : حذف شفت عمل الفرع
 
-[187] الصلاحية : branch.shift.restore
+[190] الصلاحية : branch.shift.restore
       الطريقة  : POST
       المسار   : /api/v1/branches/{branch}/shifts/{id}/restore
       الوظيفة  : استرجاع شفت عمل فرع محذوف
 
-[188] الصلاحية : locker.view-any
+[191] الصلاحية : locker.view-any
       الطريقة  : GET
       المسار   : /api/v1/lockers
       الوظيفة  : استعراض جميع الخزائن والصناديق
 
-[189] الصلاحية : locker.view
+[192] الصلاحية : locker.view
       الطريقة  : GET
       المسار   : /api/v1/lockers/{id}
       الوظيفة  : عرض تفاصيل خزانة محددة
 
-[190] الصلاحية : locker.create
+[193] الصلاحية : locker.create
       الطريقة  : POST
       المسار   : /api/v1/lockers
       الوظيفة  : إضافة خزانة جديدة بالنادي
 
-[191] الصلاحية : locker.update
+[194] الصلاحية : locker.update
       الطريقة  : PUT
       المسار   : /api/v1/lockers/{id}
       الوظيفة  : تعديل بيانات الخزانة
 
-[192] الصلاحية : locker.delete
+[195] الصلاحية : locker.delete
       الطريقة  : DELETE
       المسار   : /api/v1/lockers/{id}
       الوظيفة  : حذف الخزانة
 
-[193] الصلاحية : locker.restore
+[196] الصلاحية : locker.restore
       الطريقة  : POST
       المسار   : /api/v1/lockers/{id}/restore
       الوظيفة  : استرجاع خزانة محذوفة
 
-[194] الصلاحية : locker.reserve
+[197] الصلاحية : locker.reserve
       الطريقة  : POST
       المسار   : /api/v1/lockers/{locker}/reservations
       الوظيفة  : حجز وتأجير خزانة لعضو
 
-[195] الصلاحية : locker.get-by-holder
+[198] الصلاحية : locker.get-by-holder
       الطريقة  : GET
       المسار   : /api/v1/lockers/holder/active
       الوظيفة  : عرض الخزائن النشطة المحجوزة للعضو
 
-[196] الصلاحية : locker.release-reservation
+[199] الصلاحية : locker.release-reservation
       الطريقة  : DELETE
       المسار   : /api/v1/lockers/{locker}/reservations/current
       الوظيفة  : إنهاء حجز وإخلاء الخزانة
 
-[197] الصلاحية : locker.transfer-reservation
+[200] الصلاحية : locker.transfer-reservation
       الطريقة  : PATCH
       المسار   : /api/v1/locker-reservations/{reservation}/holder
       الوظيفة  : نقل ملكية حجز الخزانة لعضو آخر
 
-[198] الصلاحية : system.backup.download
+[201] الصلاحية : system.backup.download
       الطريقة  : GET
       المسار   : /api/v1/system/backup/download
       الوظيفة  : تحميل نسخة احتياطية من قاعدة البيانات
@@ -1100,217 +1115,217 @@
 ────────────────────────────────────────────────────────────────────────────────
 ■ الموديول (8): المحاسبة المالية (Accounting Module) — [43 صلاحية]
 ────────────────────────────────────────────────────────────────────────────────
-[199] الصلاحية : accounting.period.view-any
+[202] الصلاحية : accounting.period.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/periods
       الوظيفة  : استعراض جميع الفترات المحاسبية
 
-[200] الصلاحية : accounting.period.create
+[203] الصلاحية : accounting.period.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/periods
       الوظيفة  : فتح فترة محاسبية جديدة
 
-[201] الصلاحية : accounting.period.view
+[204] الصلاحية : accounting.period.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/periods/{id}
       الوظيفة  : عرض تفاصيل فترة محاسبية محددة
 
-[202] الصلاحية : accounting.period.close
+[205] الصلاحية : accounting.period.close
       الطريقة  : POST
       المسار   : /api/v1/accounting/periods/{id}/close
       الوظيفة  : إغلاق الفترة المحاسبية
 
-[203] الصلاحية : accounting.period.lock
+[206] الصلاحية : accounting.period.lock
       الطريقة  : POST
       المسار   : /api/v1/accounting/periods/{id}/lock
       الوظيفة  : قفل الفترة المحاسبية لمنع التعديل
 
-[204] الصلاحية : accounting.period.reopen
+[207] الصلاحية : accounting.period.reopen
       الطريقة  : POST
       المسار   : /api/v1/accounting/periods/{id}/reopen
       الوظيفة  : إعادة فتح فترة محاسبية مغلقة
 
-[205] الصلاحية : accounting.account.view-any
+[208] الصلاحية : accounting.account.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/accounts
       الوظيفة  : استعراض شجرة ودليل الحسابات الكامل
 
-[206] الصلاحية : accounting.account.create
+[209] الصلاحية : accounting.account.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/accounts
       الوظيفة  : إضافة حساب جديد في شجرة الحسابات
 
-[207] الصلاحية : accounting.account.view
+[210] الصلاحية : accounting.account.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/accounts/{id}
       الوظيفة  : عرض تفاصيل حساب مالي محدد
 
-[208] الصلاحية : accounting.account.update
+[211] الصلاحية : accounting.account.update
       الطريقة  : PUT
       المسار   : /api/v1/accounting/accounts/{id}
       الوظيفة  : تعديل بيانات الحساب المالي
 
-[209] الصلاحية : accounting.account.ledger
+[212] الصلاحية : accounting.account.ledger
       الطريقة  : GET
       المسار   : /api/v1/accounting/accounts/{id}/ledger
       الوظيفة  : استعراض كشف حساب الأستاذ العام (General Ledger)
 
-[210] الصلاحية : accounting.safe.view-any
+[213] الصلاحية : accounting.safe.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/safes
       الوظيفة  : استعراض الصناديق والخزائن المالية
 
-[211] الصلاحية : accounting.safe.create
+[214] الصلاحية : accounting.safe.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/safes
       الوظيفة  : إنشاء صندوق / خزينة مالية جديدة
 
-[212] الصلاحية : accounting.safe.view
+[215] الصلاحية : accounting.safe.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/safes/{id}
       الوظيفة  : عرض تفاصيل صندوق مالي ورصيده
 
-[213] الصلاحية : accounting.safe.update
+[216] الصلاحية : accounting.safe.update
       الطريقة  : PUT
       المسار   : /api/v1/accounting/safes/{id}
       الوظيفة  : تعديل بيانات الصندوق المالي
 
-[214] الصلاحية : accounting.safe.delete
+[217] الصلاحية : accounting.safe.delete
       الطريقة  : DELETE
       المسار   : /api/v1/accounting/safes/{id}
       الوظيفة  : حذف الصندوق المالي
 
-[215] الصلاحية : accounting.safe.statement
+[218] الصلاحية : accounting.safe.statement
       الطريقة  : GET
       المسار   : /api/v1/accounting/safes/{id}/statement
       الوظيفة  : استعراض كشف حركة الصندوق المالي
 
-[216] الصلاحية : accounting.partner.view-any
+[219] الصلاحية : accounting.partner.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/partners
       الوظيفة  : استعراض قائمة الشركاء والمساهمين
 
-[217] الصلاحية : accounting.partner.create
+[220] الصلاحية : accounting.partner.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/partners
       الوظيفة  : إضافة شريك / مساهم جديد
 
-[218] الصلاحية : accounting.partner.view
+[221] الصلاحية : accounting.partner.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/partners/{id}
       الوظيفة  : عرض بيانات الشريك وحصته ورصيده
 
-[219] الصلاحية : accounting.partner.update
+[222] الصلاحية : accounting.partner.update
       الطريقة  : PUT
       المسار   : /api/v1/accounting/partners/{id}
       الوظيفة  : تعديل بيانات الشريك
 
-[220] الصلاحية : accounting.partner.delete
+[223] الصلاحية : accounting.partner.delete
       الطريقة  : DELETE
       المسار   : /api/v1/accounting/partners/{id}
       الوظيفة  : حذف الشريك
 
-[221] الصلاحية : accounting.partner.statement
+[224] الصلاحية : accounting.partner.statement
       الطريقة  : GET
       المسار   : /api/v1/accounting/partners/{id}/statement
       الوظيفة  : استعراض كشف حساب الشريك وسحوباته
 
-[222] الصلاحية : accounting.counterparty.view-any
+[225] الصلاحية : accounting.counterparty.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/counterparties
       الوظيفة  : استعراض قائمة الأطراف والعملاء والموردين
 
-[223] الصلاحية : accounting.counterparty.create
+[226] الصلاحية : accounting.counterparty.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/counterparties
       الوظيفة  : إضافة طرف مالي / مورد / عميل جديد
 
-[224] الصلاحية : accounting.counterparty.view
+[227] الصلاحية : accounting.counterparty.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/counterparties/{id}
       الوظيفة  : عرض تفاصيل الطرف المالي
 
-[225] الصلاحية : accounting.counterparty.update
+[228] الصلاحية : accounting.counterparty.update
       الطريقة  : PUT
       المسار   : /api/v1/accounting/counterparties/{id}
       الوظيفة  : تعديل بيانات الطرف المالي
 
-[226] الصلاحية : accounting.journal.view-any
+[229] الصلاحية : accounting.journal.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/journals
       الوظيفة  : استعراض جميع قيود وسندات اليومية
 
-[227] الصلاحية : accounting.journal.create
+[230] الصلاحية : accounting.journal.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/journals
       الوظيفة  : إنشاء قيد يومية محاسبي جديد
 
-[228] الصلاحية : accounting.journal.view
+[231] الصلاحية : accounting.journal.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/journals/{id}
       الوظيفة  : عرض تفاصيل وبنود قيد اليومية
 
-[229] الصلاحية : accounting.journal.post
+[232] الصلاحية : accounting.journal.post
       الطريقة  : POST
       المسار   : /api/v1/accounting/journals/{id}/post
       الوظيفة  : ترحيل قيد اليومية واعتماده في الأستاذ
 
-[230] الصلاحية : accounting.journal.reverse
+[233] الصلاحية : accounting.journal.reverse
       الطريقة  : POST
       المسار   : /api/v1/accounting/journals/{id}/reverse
       الوظيفة  : عكس قيد اليومية المحاسبي بقيد عكسي
 
-[231] الصلاحية : accounting.journal.cancel
+[234] الصلاحية : accounting.journal.cancel
       الطريقة  : POST
       المسار   : /api/v1/accounting/journals/{id}/cancel
       الوظيفة  : إلغاء مسودة قيد اليومية
 
-[232] الصلاحية : accounting.report.trial-balance
+[235] الصلاحية : accounting.report.trial-balance
       الطريقة  : GET
       المسار   : /api/v1/accounting/reports/trial-balance
       الوظيفة  : توليد تقرير ميزان المراجعة (Trial Balance)
 
-[233] الصلاحية : accounting.report.income-statement
+[236] الصلاحية : accounting.report.income-statement
       الطريقة  : GET
       المسار   : /api/v1/accounting/reports/income-statement
       الوظيفة  : توليد قائمة الدخل والأرباح والخسائر (Income Statement)
 
-[234] الصلاحية : accounting.report.balance-sheet
+[237] الصلاحية : accounting.report.balance-sheet
       الطريقة  : GET
       المسار   : /api/v1/accounting/reports/balance-sheet
       الوظيفة  : توليد الميزانية العمومية والمركز المالي (Balance Sheet)
 
-[235] الصلاحية : accounting.report.dashboard
+[238] الصلاحية : accounting.report.dashboard
       الطريقة  : GET
       المسار   : /api/v1/accounting/dashboard
       الوظيفة  : لوحة المؤشرات والرسوم البيانية المالية
 
-[236] الصلاحية : accounting.reconciliation.view-any
+[239] الصلاحية : accounting.reconciliation.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/reconciliations
       الوظيفة  : استعراض قائمة تسويات الصناديق
 
-[237] الصلاحية : accounting.reconciliation.create
+[240] الصلاحية : accounting.reconciliation.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/reconciliations
       الوظيفة  : إجراء تسوية صندوق مالي
 
-[238] الصلاحية : accounting.reconciliation.view
+[241] الصلاحية : accounting.reconciliation.view
       الطريقة  : GET
       المسار   : /api/v1/accounting/reconciliations/{id}
       الوظيفة  : عرض تفاصيل تسوية صندوق مالي
 
-[239] الصلاحية : accounting.salary.view-any
+[242] الصلاحية : accounting.salary.view-any
       الطريقة  : GET
       المسار   : /api/v1/accounting/salary-payments
       الوظيفة  : استعراض سجل سندات صرف الرواتب
 
-[240] الصلاحية : accounting.salary.create
+[243] الصلاحية : accounting.salary.create
       الطريقة  : POST
       المسار   : /api/v1/accounting/salary-payments
       الوظيفة  : تسجيل وإصدار سند صرف راتب
 
-[241] الصلاحية : accounting.salary.delete
+[244] الصلاحية : accounting.salary.delete
       الطريقة  : DELETE
       المسار   : /api/v1/accounting/salary-payments/{id}
       الوظيفة  : إلغاء وحذف سند صرف الراتب
@@ -1319,67 +1334,67 @@
 ────────────────────────────────────────────────────────────────────────────────
 ■ الموديول (9): الحضور والاستقبال (Attendance & Reception) — [13 صلاحية]
 ────────────────────────────────────────────────────────────────────────────────
-[242] الصلاحية : attendance.check-in
+[245] الصلاحية : attendance.check-in
       الطريقة  : POST
       المسار   : /api/v1/attendances/check-in
       الوظيفة  : تسجيل دخول وحضور للعضو / الكادر
 
-[243] الصلاحية : attendance.check-out
+[246] الصلاحية : attendance.check-out
       الطريقة  : POST
       المسار   : /api/v1/attendances/check-out/{id}
       الوظيفة  : تسجيل انصراف وخروج
 
-[244] الصلاحية : attendance.bulk-check-out
+[247] الصلاحية : attendance.bulk-check-out
       الطريقة  : POST
       المسار   : /api/v1/attendances/bulk-check-out
       الوظيفة  : تسجيل انصراف جماعي للحاضرين
 
-[245] الصلاحية : attendance.history
+[248] الصلاحية : attendance.history
       الطريقة  : GET
       المسار   : /api/v1/attendances/history
       الوظيفة  : استعراض سجل الحضور التاريخي
 
-[246] الصلاحية : attendance.delete
+[249] الصلاحية : attendance.delete
       الطريقة  : DELETE
       المسار   : /api/v1/attendances/{id}
       الوظيفة  : حذف سجل حضور
 
-[247] الصلاحية : attendance.restore
+[250] الصلاحية : attendance.restore
       الطريقة  : POST
       المسار   : /api/v1/attendances/{id}/restore
       الوظيفة  : استرجاع سجل حضور محذوف
 
-[248] الصلاحية : attendance.dashboard
+[251] الصلاحية : attendance.dashboard
       الطريقة  : GET
       المسار   : /api/v1/attendance-manager/dashboard-stats
       الوظيفة  : لوحة إحصائيات الحضور والاستقبال الفورية
 
-[249] الصلاحية : attendance.dashboard-stream
+[252] الصلاحية : attendance.dashboard-stream
       الطريقة  : GET
       المسار   : /api/v1/attendance-manager/dashboard-stats-stream
       الوظيفة  : البث الحي اللحظي لحركات الدخول والخروج (SSE)
 
-[250] الصلاحية : attendance.qr-check-out
+[253] الصلاحية : attendance.qr-check-out
       الطريقة  : POST
       المسار   : /api/v1/qr/check-out
       الوظيفة  : تسجيل انصراف عبر مسح كود QR
 
-[251] الصلاحية : reception.view-member-subscriptions
+[254] الصلاحية : reception.view-member-subscriptions
       الطريقة  : GET
       المسار   : /api/v1/reception/members/{memberId}/subscriptions
       الوظيفة  : استعراض اشتراكات اللاعب النشطة في مكتب الاستقبال
 
-[252] الصلاحية : reception.deduct-session
+[255] الصلاحية : reception.deduct-session
       الطريقة  : POST
       المسار   : /api/v1/reception/attendances/{id}/deduct
       الوظيفة  : خصم حصة تدريبية من اشتراك محدد بعد الدخول
 
-[253] الصلاحية : reception.rollback-attendance
+[256] الصلاحية : reception.rollback-attendance
       الطريقة  : DELETE
       المسار   : /api/v1/reception/attendances/{id}/rollback
       الوظيفة  : التراجع عن تسجيل الحضور وإعادة الحصة للاشتراك
 
-[254] الصلاحية : reception.qr-check-in
+[257] الصلاحية : reception.qr-check-in
       الطريقة  : POST
       المسار   : /api/v1/qr/check-in
       الوظيفة  : تسجيل حضور سريع عبر مسح كود QR
@@ -1388,57 +1403,57 @@
 ────────────────────────────────────────────────────────────────────────────────
 ■ الموديول (10): الإشعارات والتنبيهات (NotificationManager) — [11 صلاحية]
 ────────────────────────────────────────────────────────────────────────────────
-[255] الصلاحية : notification.view-any
+[258] الصلاحية : notification.view-any
       الطريقة  : GET
       المسار   : /api/v1/notifications
       الوظيفة  : استعراض إشعارات المستخدم
 
-[256] الصلاحية : notification.unread-count
+[259] الصلاحية : notification.unread-count
       الطريقة  : GET
       المسار   : /api/v1/notifications/unread/count
       الوظيفة  : معرفة عدد الإشعارات غير المقروءة
 
-[257] الصلاحية : notification.mark-all-read
+[260] الصلاحية : notification.mark-all-read
       الطريقة  : POST
       المسار   : /api/v1/notifications/mark-all-as-read
       الوظيفة  : تحديد جميع الإشعارات كمقروءة
 
-[258] الصلاحية : notification.view
+[261] الصلاحية : notification.view
       الطريقة  : GET
       المسار   : /api/v1/notifications/{id}
       الوظيفة  : عرض تفاصيل إشعار محدد
 
-[259] الصلاحية : notification.mark-read
+[262] الصلاحية : notification.mark-read
       الطريقة  : PATCH
       المسار   : /api/v1/notifications/{id}/read
       الوظيفة  : تحديد إشعار كمقروء
 
-[260] الصلاحية : notification.delete-my
+[263] الصلاحية : notification.delete-my
       الطريقة  : DELETE
       المسار   : /api/v1/notifications/{id}
       الوظيفة  : حذف إشعار من قائمة المستخدم
 
-[261] الصلاحية : notification.admin.view-any
+[264] الصلاحية : notification.admin.view-any
       الطريقة  : GET
       المسار   : /api/v1/admin/notifications
       الوظيفة  : استعراض جميع الإشعارات الصادرة (لوحة الإدارة)
 
-[262] الصلاحية : notification.admin.view
+[265] الصلاحية : notification.admin.view
       الطريقة  : GET
       المسار   : /api/v1/admin/notifications/{id}
       الوظيفة  : عرض تفاصيل إشعار إداري وقائمة المستلمين
 
-[263] الصلاحية : notification.admin.create
+[266] الصلاحية : notification.admin.create
       الطريقة  : POST
       المسار   : /api/v1/admin/notifications
       الوظيفة  : إنشاء وإرسال إشعار عام من الإدارة
 
-[264] الصلاحية : notification.admin.send-to-users
+[267] الصلاحية : notification.admin.send-to-users
       الطريقة  : POST
       المسار   : /api/v1/admin/notifications/send-to-users
       الوظيفة  : إرسال إشعار لمجموعة مخصصة من المستخدمين
 
-[265] الصلاحية : notification.admin.delete
+[268] الصلاحية : notification.admin.delete
       الطريقة  : DELETE
       المسار   : /api/v1/admin/notifications/{id}
       الوظيفة  : حذف إشعار مرسل بالكامل من النظام
@@ -1447,22 +1462,22 @@
 ────────────────────────────────────────────────────────────────────────────────
 ■ الموديول (11): سجل التدقيق والنواة (Auditing & Core) — [4 صلاحيات]
 ────────────────────────────────────────────────────────────────────────────────
-[266] الصلاحية : audit.view-any
+[269] الصلاحية : audit.view-any
       الطريقة  : GET
       المسار   : /api/v1/audits
       الوظيفة  : استعراض سجل جميع حركات وأنشطة النظام (Audit Trail)
 
-[267] الصلاحية : audit.meta
+[270] الصلاحية : audit.meta
       الطريقة  : GET
       المسار   : /api/v1/audits/meta
       الوظيفة  : عرض البيانات الوصفية والفلاتر لسجل التدقيق
 
-[268] الصلاحية : audit.view
+[271] الصلاحية : audit.view
       الطريقة  : GET
       المسار   : /api/v1/audits/{id}
       الوظيفة  : عرض تفاصيل وتغييرات حركة تدقيق محددة
 
-[269] الصلاحية : upload.create
+[272] الصلاحية : upload.create
       الطريقة  : POST
       المسار   : /api/v1/upload
       الوظيفة  : رفع الملفات والمرفقات العامة
