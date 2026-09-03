@@ -727,38 +727,6 @@ class CoachController extends BaseController
         }
     }
 
-    #[OA\Get(
-        path: '/v1/coaches/{id}/activities',
-        summary: 'Get Coach Activities',
-        description: 'Returns all activities associated with a specific coach, including full activity details.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'List of activities retrieved successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'message', type: 'string')])),
-            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])),
-            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'error', type: 'string')]))
-        ]
-    )]
-    public function getActivities($id)
-    {
-        try {
-            $coach = $this->coachService->getSingleCoach($id);
-            $activities = $coach->activities()->get();
-            
-            return response()->json([
-                'data' => \Modules\Sports\Http\Resources\ActivityResource::collection($activities),
-                'message' => 'Activities retrieved successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Coach not found.'], 404);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
-        }
-    }
-
     #[OA\Delete(
         path: '/v1/coaches/{id}',
         summary: '🗑️ حذف مدرب (Soft Delete)',
