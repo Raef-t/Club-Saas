@@ -37,6 +37,7 @@ class NotificationUserDetailResource extends JsonResource
                 'id'     => $notification->id,
                 'title'  => $notification->title,
                 'body'   => $notification->body,
+                'target_snapshot' => $notification->target_snapshot,
 
                 'sender' => [
                     'type'         => $notification->sender_type ?? 'system',

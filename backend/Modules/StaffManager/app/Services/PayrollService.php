@@ -126,12 +126,13 @@ class PayrollService
             throw new Exception("لا يمكن حساب الراتب في الوقت الحالي. التواريخ المسموحة تبدأ من يوم {$branchSetting->payroll_end_day} من كل شهر.", 400);
         }
 
-        $periodEnd = (clone $today)->setDay($branchSetting->payroll_end_day)->endOfDay();
-        $periodStart = (clone $periodEnd)->subMonthNoOverflow()->startOfDay();
+        $calculationDay = (clone $today)->setDay($branchSetting->payroll_end_day);
+        $periodEnd = $calculationDay->copy()->subDay()->endOfDay();
+        $periodStart = $calculationDay->copy()->subMonthNoOverflow()->startOfDay();
 
         $existingRun = PayrollRun::where('branch_id', $branchId)
-            ->where('period_start', $periodStart->toDateString())
-            ->where('period_end', $periodEnd->toDateString())
+            ->whereDate('period_start', $periodStart->toDateString())
+            ->whereDate('period_end', $periodEnd->toDateString())
             ->first();
 
         if ($existingRun) {
@@ -144,8 +145,6 @@ class PayrollService
                 $q->where('branch_id', $branchId);
             })->with(['activeContract', 'person', 'coachDetail'])->get();
 
-        $commissionPeriodEnd = $periodEnd->copy()->subDay()->endOfDay();
-
         $payslipsData = [];
         $staffCount = 0;
 
@@ -154,7 +153,7 @@ class PayrollService
             if (!$contract) continue;
 
             $basePay = $this->calculateFixedSalary($contract);
-            $commissionResult = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $commissionPeriodEnd, $branchSetting, $staff);
+            $commissionResult = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting, $staff);
             $commissionPay = $commissionResult['amount'];
             $subscribersCount = $commissionResult['subscribers_count'];
 
@@ -255,7 +254,13 @@ class PayrollService
 
     public function notifyAdminsHolidayError()
     {
-        $admins = User::role('admin')->pluck('id')->toArray();
+        $admins = User::where(function ($q) {
+            $q->whereIn('role', ['admin', 'super_admin', 'super-admin'])
+              ->orWhereHas('roles', function ($rq) {
+                  $rq->whereIn('name', ['admin', 'super_admin', 'super-admin']);
+              });
+        })->pluck('id')->toArray();
+
         if (empty($admins)) return;
 
         $template = NotificationTemplate::where('system_key', 'payroll_generation_holiday_error')->first();

@@ -11,7 +11,9 @@ class StaffManagerServiceProvider extends ServiceProvider
 {
     protected string $moduleName = 'StaffManager';
 
-    protected array $commands = [];
+    protected array $commands = [
+        \Modules\StaffManager\Console\CheckPayrollDueDate::class,
+    ];
 
     public function register(): void
     {
