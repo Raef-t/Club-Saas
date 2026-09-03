@@ -4,6 +4,7 @@ namespace Modules\StaffManager\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Sports\Http\Resources\ActivityResource;
+use Modules\StaffManager\Http\Resources\CoachActivityResource;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
@@ -40,7 +41,173 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: "default_commission_rate", type: "number", format: "float", example: 15.5, description: "نسبة العمولة الثابتة (مئوية)"),
             new OA\Property(property: "private_commission_rate", type: "number", format: "float", example: 70.0, description: "نسبة الكوتش من اشتراكات أجهزة خاص (مئوية)")
         ]),
-        new OA\Property(property: "activities", type: "array", items: new OA\Items(type: "object"), description: "Assigned activities"),
+        new OA\Property(
+            property: "activities",
+            type: "array",
+            items: new OA\Items(ref: "#/components/schemas/CoachActivityResource"),
+            description: "الأنشطة المنسوبة للمدرب مع تفاصيل الشفتات أو المواعيد"
+        ),
+        new OA\Property(
+            property: "shifts",
+            type: "array",
+            items: new OA\Items(ref: "#/components/schemas/CoachActivityShiftItem"),
+            description: "شفتات المدرب المباشرة"
+        ),
+    ],
+    example: [
+        "id" => 5,
+        "person_id" => 12,
+        "qr_code" => "data:image/png;base64,iVBORw0KGgo...",
+        "branch_ids" => [1],
+        "role" => "coach",
+        "employment_type" => "hybrid",
+        "base_salary" => 4500,
+        "start_date" => "2024-01-01",
+        "end_date" => null,
+        "start_time" => "08:00",
+        "end_time" => "16:00",
+        "work_status" => "active",
+        "reason" => "تحديث بيانات الراتب والشفت",
+        "created_at" => "2024-01-01T08:00:00.000000Z",
+        "updated_at" => "2024-06-15T10:30:00.000000Z",
+        "person" => [
+            "id" => 12,
+            "full_name" => "الكابتن أحمد علي",
+            "gender" => "male",
+            "age" => 31,
+            "dob" => "1995-05-14",
+            "address" => "الرياض - حي الملز",
+            "photo_url" => "https://api.domain.com/storage/people/photos/coach_5.jpg",
+            "email" => "ahmed.coach@example.com",
+            "phone_number" => "0501234567",
+            "country_code" => "+966"
+        ],
+        "username" => "coach_ahmed",
+        "details" => [
+            "id" => 5,
+            "staff_id" => 5,
+            "bio" => "مدرب كمال أجسام ولياقة بدنية وفنون قتالية معتمد دولياً",
+            "experience_years" => 7,
+            "gym_type" => "male",
+            "work_types" => ["equipment", "activities"],
+            "working_hours_per_week" => 40,
+            "payment_type" => "hybrid",
+            "commission_type" => "percentage",
+            "default_commission_rate" => 20.0,
+            "private_commission_rate" => 70.0,
+            "created_at" => "2024-01-01T08:00:00.000000Z",
+            "updated_at" => "2024-06-15T10:30:00.000000Z"
+        ],
+        "experience_years" => 7,
+        "work_types" => ["equipment", "activities"],
+        "shifts" => [
+            [
+                "id" => 10,
+                "branch_shift_id" => 2,
+                "name" => "الشفت الصباحي",
+                "start_time" => "08:00",
+                "end_time" => "16:00"
+            ]
+        ],
+        "activities" => [
+            [
+                "id" => 1,
+                "name" => "تدريب عام وأجهزة",
+                "branch_id" => 1,
+                "activity_type" => [
+                    "id" => 1,
+                    "name" => "تدريب عام",
+                    "is_active" => true,
+                    "is_session_based" => false,
+                    "has_unlimited_subscribers" => true,
+                    "has_shifts" => true,
+                    "is_daily_entry" => false
+                ],
+                "is_unlimited_subscribers" => true,
+                "description" => "تدريب كمال الأجسام واللياقة العامة في صالة الأجهزة",
+                "is_private_equipment" => false,
+                "is_active" => true,
+                "created_at" => "2024-01-01T08:00:00.000000Z",
+                "schedule_type" => "shifts",
+                "shifts" => [
+                    [
+                        "id" => 10,
+                        "branch_shift_id" => 2,
+                        "name" => "الشفت الصباحي",
+                        "start_time" => "08:00",
+                        "end_time" => "16:00"
+                    ]
+                ],
+                "schedules" => []
+            ],
+            [
+                "id" => 2,
+                "name" => "تدريب خاص (شخصي)",
+                "branch_id" => 1,
+                "activity_type" => [
+                    "id" => 2,
+                    "name" => "تدريب خاص",
+                    "is_active" => true,
+                    "is_session_based" => false,
+                    "has_unlimited_subscribers" => true,
+                    "has_shifts" => false,
+                    "is_daily_entry" => false
+                ],
+                "is_unlimited_subscribers" => true,
+                "description" => "جلسات تدريب شخصي 1-on-1 بالاتفاق",
+                "is_private_equipment" => true,
+                "is_active" => true,
+                "created_at" => "2024-01-01T08:00:00.000000Z",
+                "schedule_type" => "none",
+                "shifts" => [],
+                "schedules" => []
+            ],
+            [
+                "id" => 3,
+                "name" => "كيك بوكسينغ",
+                "branch_id" => 1,
+                "activity_type" => [
+                    "id" => 3,
+                    "name" => "حصة جماعية",
+                    "is_active" => true,
+                    "is_session_based" => true,
+                    "has_unlimited_subscribers" => false,
+                    "has_shifts" => false,
+                    "is_daily_entry" => false
+                ],
+                "is_unlimited_subscribers" => false,
+                "description" => "حصص كيك بوكسينغ جماعية أسبوعية",
+                "is_private_equipment" => false,
+                "is_active" => true,
+                "created_at" => "2024-01-01T08:00:00.000000Z",
+                "schedule_type" => "schedule",
+                "shifts" => [],
+                "schedules" => [
+                    [
+                        "id" => 15,
+                        "plan_id" => 4,
+                        "plan_name" => "اشتراك كيك بوكسينغ شهري",
+                        "day_of_week" => 0,
+                        "day_name" => "Sunday",
+                        "day_name_ar" => "الأحد",
+                        "start_time" => "17:00",
+                        "end_time" => "18:30",
+                        "is_active" => true
+                    ],
+                    [
+                        "id" => 16,
+                        "plan_id" => 4,
+                        "plan_name" => "اشتراك كيك بوكسينغ شهري",
+                        "day_of_week" => 2,
+                        "day_name" => "Tuesday",
+                        "day_name_ar" => "الثلاثاء",
+                        "start_time" => "17:00",
+                        "end_time" => "18:30",
+                        "is_active" => true
+                    ]
+                ]
+            ]
+        ]
     ]
 )]
 class CoachResource extends JsonResource
@@ -99,7 +266,9 @@ class CoachResource extends JsonResource
                 'created_at' => $detail->created_at,
                 'updated_at' => $detail->updated_at,
             ] : null,
-            'activities'     => ActivityResource::collection($this->activities),
+            'activities'     => CoachActivityResource::collection(
+                $this->activities ? $this->activities->each(fn($act) => $act->setRelation('coach', $this->resource)) : collect()
+            ),
             'experience_years'       => $detail?->experience_years,
             'work_types'     => $detail?->work_types,
             'shifts'         => $this->shifts->map(fn($shift) => [

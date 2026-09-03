@@ -137,7 +137,17 @@ class CoachService
      */
     public function getAllCoaches(array $filters = [])
     {
-        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract', 'shifts.branchShift'])->where('role', 'coach');
+        $query = Staff::with([
+            'coachDetail',
+            'person.contacts',
+            'activities.activityType',
+            'branches',
+            'user',
+            'activeContract',
+            'shifts.branchShift',
+            'staffActivities.planActivities.plan.sessionTemplates',
+            'staffActivities.planActivities.sessionTemplate',
+        ])->where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -200,7 +210,17 @@ class CoachService
      */
     public function getSingleCoach($id)
     {
-        return Staff::with(['coachDetail', 'activities', 'person.contacts', 'user', 'branches', 'activeContract', 'shifts.branchShift'])
+        return Staff::with([
+            'coachDetail',
+            'activities.activityType',
+            'person.contacts',
+            'user',
+            'branches',
+            'activeContract',
+            'shifts.branchShift',
+            'staffActivities.planActivities.plan.sessionTemplates',
+            'staffActivities.planActivities.sessionTemplate',
+        ])
             ->where('role', 'coach')
             ->findOrFail($id);
     }
