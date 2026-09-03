@@ -26,6 +26,8 @@ class UserNotificationListResource extends JsonResource
                 'type' => $notification->sender_type,
             ],
 
+            'target_snapshot'  => $notification->target_snapshot,
+
             // حالة المستلم فقط
             'is_read'       => !is_null($this->read_at),
             'read_at'       => $this->read_at,
