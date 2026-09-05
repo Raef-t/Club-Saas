@@ -11,7 +11,7 @@ import {
 } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
 import { usePermissions } from "@/lib/PermissionContext";
-
+//test
 /**
  * Quick actions shown at the top of the sidebar.
  * Each entry may declare a `permission` (checked via can()) in addition to
