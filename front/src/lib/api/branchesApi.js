@@ -76,9 +76,10 @@ export const branchesApi = createBackendApi({
       invalidatesTags: (result, error, { branchId }) => [{ type: "BranchShifts", id: branchId }],
     }),
     deleteBranchShift: builder.mutation({
-      query: ({ branchId, shiftId }) => ({
+      query: ({ branchId, shiftId, confirmation }) => ({
         url: `branches/${branchId}/shifts/${shiftId}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: (result, error, { branchId }) => [{ type: "BranchShifts", id: branchId }],
     }),
@@ -103,9 +104,10 @@ export const branchesApi = createBackendApi({
       invalidatesTags: (result, error, { branchId }) => [{ type: "BranchHolidays", id: branchId }],
     }),
     deleteBranchHoliday: builder.mutation({
-      query: ({ branchId, holidayId }) => ({
+      query: ({ branchId, holidayId, confirmation }) => ({
         url: `holidays/${holidayId}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: (result, error, { branchId }) => [{ type: "BranchHolidays", id: branchId }],
     }),

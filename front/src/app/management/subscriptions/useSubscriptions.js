@@ -245,6 +245,7 @@ export function useSubscriptions({ initialData } = {}) {
     try {
       await deletePlayerSubscription({
         id: itemToDelete.id,
+        confirmation: deleteConfirmation,
         is_refunded: isRefunded,
         reason: deleteReason ? deleteReason.trim() : undefined,
       }).unwrap();

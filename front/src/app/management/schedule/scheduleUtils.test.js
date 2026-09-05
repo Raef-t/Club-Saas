@@ -146,6 +146,50 @@ describe("schedule utilities", () => {
     expect(result.fri.morning_1500).toBeUndefined();
   });
 
+  it("maps sessions with minute-based times into the containing schedule slot", () => {
+    const morningSlots = generateTimeSlots("10:00", "12:00", 60);
+    const result = createScheduleDataFromApi(
+      {
+        data: {
+          Sunday: [
+            {
+              start_time: "10:30:00",
+              end_time: "11:15:00",
+              plan_name: "لياقة",
+              coach_name: "سارة",
+            },
+          ],
+        },
+      },
+      morningSlots,
+      [],
+    );
+
+    expect(result.sun).toEqual({
+      morning_1000: "لياقة - سارة",
+    });
+  });
+
+  it("keeps multiple sessions that start inside the same schedule slot", () => {
+    const morningSlots = generateTimeSlots("10:00", "11:00", 60);
+    const result = createScheduleDataFromApi(
+      {
+        data: {
+          Sunday: [
+            { start_time: "10:10:00", plan_name: "لياقة" },
+            { start_time: "10:30:00", plan_name: "يوغا" },
+          ],
+        },
+      },
+      morningSlots,
+      [],
+    );
+
+    expect(result.sun).toEqual({
+      morning_1000: "لياقة\nيوغا",
+    });
+  });
+
   it("keeps only schedule sessions owned by the selected branch", () => {
     const morningSlots = generateTimeSlots("10:00", "12:00", 60);
     const result = createScheduleDataFromApi(

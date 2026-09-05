@@ -101,7 +101,10 @@ export function useActivities({ initialActivities } = {}) {
     if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
-      await deleteActivity(deleteTarget.id).unwrap();
+      await deleteActivity({
+        id: deleteTarget.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف النشاط بنجاح");
       setDeleteTarget(null);
       setDeleteConfirmation("");

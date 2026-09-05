@@ -35,9 +35,10 @@ export const activitiesApi = createBackendApi({
       invalidatesTags: (result, error, { id }) => ["Activities", { type: "Activities", id }],
     }),
     deleteActivity: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `activities/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["Activities"],
     }),

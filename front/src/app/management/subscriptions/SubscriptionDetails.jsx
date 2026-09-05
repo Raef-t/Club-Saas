@@ -8,6 +8,7 @@ import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import { formatDate } from "@/lib/utils";
 import {
   formatSubscriptionMoney,
+  getSubscriptionCreatorName,
   getSubscriptionReceiptNumber,
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
@@ -163,6 +164,10 @@ export default function SubscriptionDetails({
       </DetailSection>
 
       <DetailSection title="سجل التعديل">
+        <DetailItem
+          label="الموظف الذي أضاف الاشتراك"
+          value={getSubscriptionCreatorName(subscription)}
+        />
         <DetailItem label="سبب آخر تعديل" value={subscription.reason || "-"} />
       </DetailSection>
 

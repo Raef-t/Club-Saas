@@ -5,6 +5,7 @@ import {
   getLocalDateValue,
   getSubscriptionEndDate,
   getSubscriptionDetail,
+  getSubscriptionCreatorName,
   getSubscriptionReceiptNumber,
   getSubscriptionRows,
   isDailyEntrySubscriptionPlan,
@@ -32,6 +33,16 @@ describe("subscription utilities", () => {
   it("extracts a subscription detail safely", () => {
     expect(getSubscriptionDetail({ data: { id: 1 } })).toEqual({ id: 1 });
     expect(getSubscriptionDetail(null)).toBeNull();
+  });
+
+  it("reads the employee who created the subscription", () => {
+    expect(getSubscriptionCreatorName({ created_by: { id: 143, name: "ISS Group" } })).toBe(
+      "ISS Group",
+    );
+    expect(getSubscriptionCreatorName({ created_by: { full_name: "موظف الاستقبال" } })).toBe(
+      "موظف الاستقبال",
+    );
+    expect(getSubscriptionCreatorName({})).toBeNull();
   });
 
   it("reads the receipt number from the subscription or related payments", () => {

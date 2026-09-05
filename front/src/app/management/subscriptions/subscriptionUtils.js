@@ -128,6 +128,19 @@ export function getSubscriptionDetail(response) {
 }
 
 /**
+ * Returns the employee name attached to the subscription creator payload.
+ */
+export function getSubscriptionCreatorName(subscription) {
+  const creator = subscription?.created_by;
+
+  if (typeof creator === "string") return creator.trim() || null;
+  if (!creator || typeof creator !== "object") return null;
+
+  const name = creator.name || creator.full_name;
+  return typeof name === "string" && name.trim() ? name.trim() : null;
+}
+
+/**
  * Returns the receipt number from the subscription or its related payment data.
  */
 export function getSubscriptionReceiptNumber(subscription) {

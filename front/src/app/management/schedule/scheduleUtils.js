@@ -107,9 +107,49 @@ export function createWeeklyHolidayDayKeys(response) {
  * Converts a valid clock value into minutes from the start of the day.
  */
 function getTimeInMinutes(value) {
-  if (!VALID_TIME_PATTERN.test(value || "")) return null;
-  const [hours, minutes] = value.split(":").map(Number);
+  const normalizedValue = value ? String(value).slice(0, 5) : "";
+  if (!VALID_TIME_PATTERN.test(normalizedValue)) return null;
+  const [hours, minutes] = normalizedValue.split(":").map(Number);
   return hours * 60 + minutes;
+}
+
+/**
+ * Finds the fixed schedule slot containing a session start time.
+ * Slot bounds are treated as [from, to), including periods that cross midnight.
+ */
+function findContainingSlotKey(value, slots) {
+  const time = getTimeInMinutes(value);
+  if (time === null) return null;
+
+  for (const slot of slots) {
+    const start = getTimeInMinutes(slot.from);
+    const end = getTimeInMinutes(slot.to);
+    if (start === null || end === null) continue;
+
+    const adjustedEnd = end <= start ? end + 24 * 60 : end;
+    const adjustedTime = time < start && adjustedEnd > 24 * 60 ? time + 24 * 60 : time;
+
+    if (adjustedTime >= start && adjustedTime < adjustedEnd) {
+      return slot.key;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Adds a session to a cell without overwriting another session in the same slot.
+ */
+function addScheduleCellValue(scheduleData, dayKey, cellKey, value) {
+  if (!scheduleData[dayKey]) scheduleData[dayKey] = {};
+
+  const currentValue = scheduleData[dayKey][cellKey];
+  if (!currentValue) {
+    scheduleData[dayKey][cellKey] = value;
+    return;
+  }
+
+  scheduleData[dayKey][cellKey] = `${currentValue}\n${value}`;
 }
 
 /**
@@ -172,8 +212,6 @@ export function createScheduleDataFromApi(
   selectedBranchId = "all",
 ) {
   const payload = getSchedulePayload(response);
-  const morningKeys = new Set(morningSlots.map((slot) => slot.key));
-  const eveningKeys = new Set(eveningSlots.map((slot) => slot.key));
   const scheduleData = {};
 
   for (const [apiDay, sessions] of Object.entries(payload)) {
@@ -190,22 +228,21 @@ export function createScheduleDataFromApi(
 
       if (!belongsToSelectedBranch) continue;
 
-      const [hours, minutes] = String(session.start_time || "").split(":");
-      if (hours === undefined || minutes === undefined) continue;
+      const morningSlotKey = findContainingSlotKey(session.start_time, morningSlots);
+      const eveningSlotKey = findContainingSlotKey(session.start_time, eveningSlots);
+      if (!morningSlotKey && !eveningSlotKey) continue;
 
-      const slotKey = `${padTimePart(hours)}${padTimePart(minutes)}`;
       const planName = getDisplayName(session.plan_name || session.plan?.name);
       const coachName = getDisplayName(
         session.coach?.name || session.coach?.person?.full_name || session.coach_name,
       );
       const cellValue = [planName, coachName].filter(Boolean).join(" - ");
 
-      if (!scheduleData[localDay]) scheduleData[localDay] = {};
-      if (morningKeys.has(slotKey)) {
-        scheduleData[localDay][`morning_${slotKey}`] = cellValue;
+      if (morningSlotKey) {
+        addScheduleCellValue(scheduleData, localDay, `morning_${morningSlotKey}`, cellValue);
       }
-      if (eveningKeys.has(slotKey)) {
-        scheduleData[localDay][`evening_${slotKey}`] = cellValue;
+      if (eveningSlotKey) {
+        addScheduleCellValue(scheduleData, localDay, `evening_${eveningSlotKey}`, cellValue);
       }
     }
   }

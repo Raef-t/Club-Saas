@@ -197,9 +197,10 @@ export const subscriptionPlansApi = createBackendApi({
       ],
     }),
     deleteSubscriptionPlan: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `subscription-plans/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["SubscriptionPlans"],
     }),

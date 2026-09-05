@@ -76,7 +76,7 @@ export const playerSubscriptionsApi = createBackendApi({
     deletePlayerSubscription: builder.mutation({
       query: (arg) => {
         if (typeof arg === "object" && arg !== null) {
-          const { id, is_refunded, reason, params, body } = arg;
+          const { id, confirmation, is_refunded, reason, params, body } = arg;
           const searchParams = new URLSearchParams();
 
           if (params) {
@@ -85,6 +85,10 @@ export const playerSubscriptionsApi = createBackendApi({
                 searchParams.set(key, String(value));
               }
             });
+          }
+
+          if (confirmation !== undefined && !searchParams.has("confirmation")) {
+            searchParams.set("confirmation", String(confirmation));
           }
 
           if (is_refunded !== undefined && !searchParams.has("is_refunded")) {

@@ -313,7 +313,10 @@ export function useSubscriptionPlans({
   async function confirmDelete() {
     if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
-      await deletePlan(itemToDelete.id).unwrap();
+      await deletePlan({
+        id: itemToDelete.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف خطة الاشتراك بنجاح!");
     } catch {
       toast.error("تعذر حذف الخطة. حاول مرة أخرى.");
