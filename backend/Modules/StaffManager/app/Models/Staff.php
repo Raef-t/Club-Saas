@@ -205,6 +205,11 @@ class Staff extends Model
         )->withPivot('id');
     }
 
+    public function staffActivities()
+    {
+        return $this->hasMany(\Modules\Sports\Models\StaffActivity::class, 'staff_id');
+    }
+
     /**
      * Check if this staff member is a coach.
      */

@@ -61,7 +61,12 @@ class EloquentMemberRepository implements MemberRepositoryInterface
             $query->where('branch_id', $filters['branch_id']);
         }
 
-        return $query->latest()->get();
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all') {
+            return $query->latest()->get();
+        }
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        return $query->latest()->paginate($perPage);
+
     }
 
     public function restore(int $id)

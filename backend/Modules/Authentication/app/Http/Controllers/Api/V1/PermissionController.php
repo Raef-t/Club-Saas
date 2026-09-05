@@ -31,9 +31,45 @@ class PermissionController extends BaseController
     #[OA\Parameter(
         name: 'module',
         in: 'query',
-        description: 'فلترة حسب اسم الموديول (مثال: member, staff, subscription)',
+        description: 'فلترة حسب اسم الموديول (اختر الموديول من القائمة)',
         required: false,
-        schema: new OA\Schema(type: 'string', example: 'member')
+        schema: new OA\Schema(
+            type: 'string',
+            enum: [
+                'member',
+                'player-subscription',
+                'subscription-plan',
+                'coach',
+                'staff',
+                'staff-shift',
+                'payroll',
+                'payslip',
+                'activity',
+                'activity-type',
+                'session-template',
+                'staff-commission-rule',
+                'offer',
+                'sub-plan-activity',
+                'payment',
+                'club',
+                'branch',
+                'locker',
+                'attendance',
+                'reception',
+                'accounting',
+                'notification',
+                'user',
+                'role',
+                'permission',
+                'user-role',
+                'contact',
+                'report',
+                'audit',
+                'system',
+                'upload'
+            ],
+            example: 'member'
+        )
     )]
     #[OA\Response(
         response: 200,

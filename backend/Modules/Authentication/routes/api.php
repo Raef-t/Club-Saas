@@ -8,7 +8,7 @@ use Modules\Authentication\Http\Controllers\Api\V1\RoleController;
 use Modules\Authentication\Http\Controllers\Api\V1\UserController;
 use Modules\Authentication\Http\Controllers\Api\V1\UserRoleController;
 
-Route::prefix('v1/auth')->group(function () {
+Route::prefix('v1/auth')->middleware('throttle:api')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('check-username', [AuthController::class, 'checkUsername']);
 
@@ -37,11 +37,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'check.permission'])->group(fun
     // GET    /v1/roles                → list all roles
     // POST   /v1/roles                → create new role
     // GET    /v1/roles/{id}           → show role with permissions
+    // PUT    /v1/roles/{id}           → update role name
     // PUT    /v1/roles/{id}/permissions → sync permissions for role
     // DELETE /v1/roles/{id}           → delete role
     Route::get('roles', [RoleController::class, 'index']);
     Route::post('roles', [RoleController::class, 'store']);
     Route::get('roles/{id}', [RoleController::class, 'show']);
+    Route::put('roles/{id}', [RoleController::class, 'update']);
     Route::put('roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
     Route::delete('roles/{id}', [RoleController::class, 'destroy']);
 

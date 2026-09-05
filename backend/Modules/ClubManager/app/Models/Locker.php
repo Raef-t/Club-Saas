@@ -29,6 +29,25 @@ class Locker extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function reservations()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\LockerReservation::class, 'locker_id');
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::deleted(function ($locker) {
+            $locker->reservations()->delete();
+        });
+
+        static::restored(function ($locker) {
+            $locker->reservations()->onlyTrashed()->restore();
+        });
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     //  Status helper methods
     // ──────────────────────────────────────────────────────────────────────────

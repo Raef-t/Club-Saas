@@ -26,4 +26,9 @@ class StaffActivity extends Model
     {
         return $this->belongsTo(\Modules\StaffManager\Models\Staff::class, 'staff_id');
     }
+
+    public function planActivities()
+    {
+        return $this->hasMany(\Modules\SubscriptionManager\Models\SubscriptionPlanActivity::class, 'staff_activity_id');
+    }
 }

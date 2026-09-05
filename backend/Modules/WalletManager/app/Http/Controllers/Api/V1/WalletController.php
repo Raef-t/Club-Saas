@@ -36,7 +36,8 @@ class WalletController extends Controller
         ]
     )]
     #[OA\Parameter(name: 'person_id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    public function show($personId)
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد عناصر الحركات في الصفحة', schema: new OA\Schema(type: 'string', example: '15'))]
+    public function show(\Illuminate\Http\Request $request, $personId)
     {
         $wallet = $this->walletRepository->findByPersonId($personId);
         
@@ -44,7 +45,8 @@ class WalletController extends Controller
             $wallet = collect(['balance' => 0, 'status' => 'active']);
             $transactions = [];
         } else {
-            $transactions = $this->transactionRepository->getByWalletId($wallet->id);
+            $perPage = $request->has('per_page') && $request->input('per_page') !== 'all' ? (int) $request->input('per_page') : null;
+            $transactions = $this->transactionRepository->getByWalletId($wallet->id, $perPage);
         }
 
         return response()->json([

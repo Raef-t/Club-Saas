@@ -254,5 +254,64 @@ class UsernameValidationAndSuggestionTest extends TestCase
 
         $this->assertEquals('صقر_النادي', $currentUser->fresh()->custom_username);
     }
+
+    public function test_change_password_with_invalid_custom_username_returns_suggestions()
+    {
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10009',
+            'custom_username' => null,
+            'password' => bcrypt('oldpassword123'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'new_password' => 'newpassword123',
+            'new_password_confirmation' => 'newpassword123',
+            'custom_username' => '_invalid_format!',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'status' => 'error',
+                'data' => [
+                    'is_available' => false,
+                ]
+            ]);
+
+        $this->assertNotEmpty($response->json('data.suggestions'));
+    }
+
+    public function test_change_password_with_taken_custom_username_returns_suggestions()
+    {
+        $this->createUser([
+            'username' => 'existing_user_2026',
+            'custom_username' => 'taken_name',
+        ]);
+
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10010',
+            'custom_username' => null,
+            'password' => bcrypt('oldpassword123'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'new_password' => 'newpassword123',
+            'new_password_confirmation' => 'newpassword123',
+            'custom_username' => 'taken_name',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'status' => 'error',
+                'data' => [
+                    'is_available' => false,
+                ]
+            ]);
+
+        $this->assertNotEmpty($response->json('data.suggestions'));
+    }
 }
 

@@ -3,7 +3,7 @@ namespace Modules\Sports\Repositories;
 
 interface StaffCommissionRuleRepositoryInterface
 {
-    public function all();
+    public function all(array $filters = []);
     public function find($id);
     public function create(array $data);
     public function update($id, array $data);

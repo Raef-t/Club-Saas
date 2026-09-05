@@ -74,9 +74,20 @@ class StaffService
             'shifts.branchShift',
         ]);
 
-        $staffMembers = $query->latest()->get();
+        $query->latest();
 
-        foreach ($staffMembers as $staff) {
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            $staffMembers = $query->get();
+            foreach ($staffMembers as $staff) {
+                $this->attachSharedDTOs($staff);
+            }
+            return $staffMembers;
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        $staffMembers = $query->paginate($perPage);
+
+        foreach ($staffMembers->items() as $staff) {
             $this->attachSharedDTOs($staff);
         }
 
@@ -197,18 +208,17 @@ class StaffService
                 ? $data['username'] 
                 : \Modules\Authentication\Services\UsernameGeneratorService::generateForRole($roleName);
             $password = $data['password'] ?? '12345678';
-
             $user = \Modules\Authentication\Models\User::create([
                 'username' => $username,
                 'password' => \Illuminate\Support\Facades\Hash::make($password),
                 'person_id' => $person->id,
+                'role' => $roleName,
                 'is_active' => true,
             ]);
 
-            // Assign matching role (admin, receptionist, cleaner, manager, staff, etc.)
-            $roleName = $data['role'] ?? 'staff';
-            $spatieRoleName = $roleName === 'receptionist' ? 'reception' : $roleName;
-            $spatieRole = Role::firstOrCreate(['name' => $spatieRoleName, 'guard_name' => 'sanctum']);
+            // Assign matching role in sanctum guard
+            $spatieRole = Role::where('name', $roleName)->where('guard_name', 'sanctum')->first()
+                ?? Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'sanctum']);
             $user->assignRole($spatieRole);
 
             // Expose credentials temporarily
@@ -308,6 +318,17 @@ class StaffService
 
             // Update Staff record (fillable will ignore removed fields)
             $staff->update($data);
+
+            // Sync User role if role was updated
+            if (!empty($data['role']) && $staff->person_id) {
+                $user = \Modules\Authentication\Models\User::where('person_id', $staff->person_id)->first();
+                if ($user) {
+                    $user->update(['role' => $data['role']]);
+                    $spatieRole = Role::where('name', $data['role'])->where('guard_name', 'sanctum')->first()
+                        ?? Role::firstOrCreate(['name' => $data['role'], 'guard_name' => 'sanctum']);
+                    $user->syncRoles([$spatieRole]);
+                }
+            }
 
             // Handle Contract Updates
             $activeContract = $staff->activeContract;
@@ -430,7 +451,8 @@ class StaffService
     public function getTrashedStaff(array $filters = [])
     {
         $staffMembers = $this->staffRepository->getTrashed($filters);
-        foreach ($staffMembers as $staff) {
+        $items = $staffMembers instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $staffMembers->items() : $staffMembers;
+        foreach ($items as $staff) {
             $this->attachSharedDTOs($staff);
         }
 

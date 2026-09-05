@@ -76,7 +76,7 @@ paths:
           description: '🔥 خطأ داخلي في الخادم أثناء المعالجة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - دليل الحسابات العام'
@@ -160,7 +160,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/accounts/{id}':
     get:
       tags:
@@ -196,7 +196,7 @@ paths:
           description: '🚫 الحساب المالي المحدد غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Accounting - دليل الحسابات العام'
@@ -257,7 +257,7 @@ paths:
           description: '🚫 الحساب غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/accounts/{id}/ledger':
     get:
       tags:
@@ -363,7 +363,7 @@ paths:
           description: '🔥 خطأ في استخراج الكشف'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/counterparties:
     get:
       tags:
@@ -420,7 +420,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - الأطراف والعملاء والموردين'
@@ -507,7 +507,7 @@ paths:
           description: '❌ الحساب أو البيانات المحددة غير صالحة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/counterparties/{id}':
     get:
       tags:
@@ -544,7 +544,7 @@ paths:
           description: '🚫 الطرف المحدد غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Accounting - الأطراف والعملاء والموردين'
@@ -636,7 +636,7 @@ paths:
           description: '🚫 الطرف المحدد غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/journals:
     get:
       tags:
@@ -704,6 +704,20 @@ paths:
           schema:
             type: integer
             default: 20
+        -
+          name: account_id
+          in: query
+          description: 'معرف الحساب المالي لتصفية القيود التي تحتوي على هذا الحساب'
+          required: false
+          schema:
+            type: integer
+        -
+          name: account_type
+          in: query
+          description: 'نوع الحساب (expense, revenue, asset, liability, equity)'
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: '✅ تم استرجاع قائمة السندات بنجاح'
@@ -729,13 +743,25 @@ paths:
                       total:
                         type: integer
                         example: 120
+                      totals:
+                        properties:
+                          total_amount_usd:
+                            type: number
+                            example: 1500
+                          total_amount_syp:
+                            type: number
+                            example: 250000
+                          total_count:
+                            type: integer
+                            example: 12
+                        type: object
                     type: object
                 type: object
         401:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - القيود اليومية العامة'
@@ -842,7 +868,7 @@ paths:
           description: '❌ القيد المزدوج غير متوازن مالياً، أو المدخلات غير صحيحة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/journals/{id}':
     get:
       tags:
@@ -878,7 +904,7 @@ paths:
           description: '🚫 السند المالي غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/journals/{id}/post':
     post:
       tags:
@@ -914,7 +940,7 @@ paths:
           description: '❌ السند تم ترحيله مسبقاً أو أن الفترة المالية الخاصة به مغلقة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/journals/{id}/reverse':
     post:
       tags:
@@ -963,7 +989,58 @@ paths:
           description: '❌ السند ملغي مسبقاً، أو غير مرحل ليتم إلغاؤه'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  '/accounting/journals/{id}/cancel':
+    post:
+      tags:
+        - 'Accounting - القيود اليومية العامة'
+      summary: '❌ إلغاء سند قيد مالي'
+      description: 'يقوم بإلغاء سند القيد المالي المحدد (سواء كان مسودة أو مرحلاً عبر قيد عكسي).'
+      operationId: b3a92cf47196df1b09b20714e7d7761b
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف السند المراد إلغاؤه (ID)'
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                cancellation_reason:
+                  description: 'سبب إلغاء السند المحاسبي'
+                  type: string
+                  example: 'تم إلغاء السند لوجود خطأ في الإدخال'
+                reason:
+                  description: 'سبب بديل للإلغاء'
+                  type: string
+                  example: 'تم إلغاء السند'
+              type: object
+      responses:
+        200:
+          description: '✅ تم إلغاء السند بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'تم إلغاء السند بنجاح'
+                  data:
+                    $ref: '#/components/schemas/AccJournal'
+                type: object
+        400:
+          description: '❌ خطأ أثناء محاولة إلغاء السند'
+      security:
+        -
+          bearerAuth: []
   /accounting/partners:
     get:
       tags:
@@ -993,7 +1070,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - الشركاء وجاري الشركاء'
@@ -1065,7 +1142,7 @@ paths:
           description: '❌ الحسابات المحددة غير صالحة أو مكررة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/partners/{id}':
     get:
       tags:
@@ -1102,7 +1179,7 @@ paths:
           description: '🚫 الشريك غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Accounting - الشركاء وجاري الشركاء'
@@ -1177,7 +1254,7 @@ paths:
           description: '🚫 الشريك غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Accounting - الشركاء وجاري الشركاء'
@@ -1213,7 +1290,7 @@ paths:
           description: '🚫 الشريك غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/partners/{id}/statement':
     get:
       tags:
@@ -1273,7 +1350,7 @@ paths:
           description: '🚫 الشريك أو الفترة غير موجودين'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/periods:
     get:
       tags:
@@ -1305,7 +1382,7 @@ paths:
           description: '🔥 خطأ داخلي أثناء جلب البيانات'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - الفترات المحاسبية'
@@ -1365,7 +1442,7 @@ paths:
           description: '⚠️ خطأ في التحقق من الحقول'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/periods/{id}':
     get:
       tags:
@@ -1402,7 +1479,7 @@ paths:
           description: '🚫 الفترة المالية غير موجودة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/periods/{id}/close':
     post:
       tags:
@@ -1439,7 +1516,7 @@ paths:
           description: '❌ لا يمكن إغلاق الفترة (قد تكون مغلقة أو مقفلة مسبقاً)'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/periods/{id}/lock':
     post:
       tags:
@@ -1476,7 +1553,7 @@ paths:
           description: '❌ لا يمكن قفل الفترة (قد لا تكون مغلقة أولاً أو مقفلة بالفعل)'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/periods/{id}/reopen':
     post:
       tags:
@@ -1513,7 +1590,7 @@ paths:
           description: '❌ لا يمكن إعادة فتح الفترة (إذا كانت مقفلة نهائياً أو مفتوحة بالفعل)'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/reconciliations:
     get:
       tags:
@@ -1543,7 +1620,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - تسويات ومطابقة الصناديق'
@@ -1606,7 +1683,7 @@ paths:
           description: '❌ الصندوق أو الفترة غير نشطين أو غير موجودين'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/reconciliations/{id}':
     get:
       tags:
@@ -1643,7 +1720,7 @@ paths:
           description: '🚫 سجل التسوية المحدد غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/reports/trial-balance:
     get:
       tags:
@@ -1713,7 +1790,7 @@ paths:
           description: '❌ الفترة المحددة غير موجودة أو الحقل مطلوب'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/reports/income-statement:
     get:
       tags:
@@ -1771,7 +1848,7 @@ paths:
           description: '❌ الفترة المحاسبية مطلوبة أو غير موجودة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /accounting/reports/balance-sheet:
     get:
       tags:
@@ -1830,7 +1907,35 @@ paths:
           description: '❌ الحقول المطلوبة غير صالحة أو مفقودة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  /accounting/dashboard:
+    get:
+      tags:
+        - 'Accounting - التقارير والقوائم المالية الختامية'
+      summary: '📊 إحصائيات لوحة التحكم العامة للمحاسبة'
+      description: 'يسترجع مؤشرات وإحصائيات لوحة التحكم المحاسبية الحية (الإيرادات، المصروفات، صافي الأرباح، رصيد الصناديق، الرسوم البيانية، وآخر المعاملات) مفلترة بحسب الفرع الجغرافي المختار.'
+      operationId: d345b8f69514c41f83eef41585cb8929
+      responses:
+        200:
+          description: '✅ تم جلب إحصائيات لوحة التحكم بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'تم جلب إحصائيات لوحة التحكم بنجاح'
+                  data:
+                    type: object
+                type: object
+        500:
+          description: '❌ خطأ داخلي في الخادم'
+      security:
+        -
+          bearerAuth: []
   /accounting/safes:
     get:
       tags:
@@ -1868,7 +1973,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Accounting - الصناديق والعهد المالية'
@@ -1940,7 +2045,7 @@ paths:
           description: '❌ مدخلات غير صحيحة أو الحساب المحدد غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/accounting/safes/{id}':
     get:
       tags:
@@ -1976,7 +2081,7 @@ paths:
           description: '🚫 الصندوق غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Accounting - الصناديق والعهد المالية'
@@ -2030,7 +2135,31 @@ paths:
           description: '🚫 الصندوق غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+    delete:
+      tags:
+        - 'Accounting - الصناديق والعهد المالية'
+      summary: '🗑️ حذف صندوق مالي'
+      description: 'يحذف الصندوق المالي بشرط عدم وجود أي حركات أو قيود مالية مسجلة عليه.'
+      operationId: 8e6efba7b6c3161c606682af9bdb6f4d
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف الصندوق (ID)'
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: '✅ تم حذف الصندوق بنجاح'
+        400:
+          description: '❌ لا يمكن حذف الصندوق لوجود حركات مالية'
+        404:
+          description: '🚫 الصندوق غير موجود'
+      security:
+        -
+          bearerAuth: []
   '/accounting/safes/{id}/statement':
     get:
       tags:
@@ -2133,7 +2262,97 @@ paths:
           description: '🔥 خطأ في السيرفر أثناء المعالجة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  /accounting/salary-payments:
+    get:
+      tags:
+        - 'Accounting - رواتب الكوادر والموظفين'
+      summary: '📋 عرض قائمة مدفوعات الرواتب للكوادر'
+      description: 'يسترجع قائمة بمدفوعات الرواتب المصروفة لكوادر النادي عبر الصناديق المالية مع دعم التصفية حسب الفرع والفترة المالية والبحث.'
+      operationId: 172f073aef01484c4e0b96b862743613
+      responses:
+        200:
+          description: 'تم جلب مدفوعات الرواتب بنجاح'
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - 'Accounting - رواتب الكوادر والموظفين'
+      summary: '💵 صرف وتسجيل راتب جديد لكادر النادي'
+      description: 'يقوم بصرف راتب أو سلفة أو مكافأة لموظف أو مدرب من صندوق محدد وتوليد سند صرف (PV) وقيد محاسبي مزدوج تلقائياً وتحديث حالة القسيمة المرتبطة إلى مدفوعة.'
+      operationId: f91a290e6faa5d6fa2cc6380574203d3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - staff_id
+                - safe_id
+                - period_id
+                - amount
+                - date
+              properties:
+                staff_id:
+                  description: 'معرف الكادر'
+                  type: integer
+                  example: 5
+                safe_id:
+                  description: 'معرف الصندوق المالي المصروف منه'
+                  type: integer
+                  example: 2
+                period_id:
+                  description: 'معرف الفترة المالية'
+                  type: integer
+                  example: 1
+                payslip_id:
+                  description: 'معرف قسيمة الراتب المعتمدة إن وجدت'
+                  type: integer
+                  example: 12
+                  nullable: true
+                payment_type:
+                  description: 'نوع الدفعة: راتب مسير، سلفة، مكافأة'
+                  type: string
+                  example: salary
+                  enum:
+                    - salary
+                    - advance
+                    - bonus
+                amount:
+                  description: 'المبلغ المصروف'
+                  type: number
+                  format: float
+                  example: 500000
+                date:
+                  description: 'تاريخ الصرف'
+                  type: string
+                  format: date
+                  example: '2026-08-29'
+                notes:
+                  type: string
+                  example: 'صرف مستحقات شهر آب'
+                  nullable: true
+              type: object
+      responses:
+        201:
+          description: 'تم تسجيل وصرف المستحقات بنجاح'
+      security:
+        -
+          bearerAuth: []
+  '/accounting/salary-payments/{id}':
+    delete:
+      tags:
+        - 'Accounting - رواتب الكوادر والموظفين'
+      summary: '🗑️ إلغاء دفعة راتب وسند الصرف المرتبط بها'
+      description: 'يلغي حركة صرف الراتب ويقوم بإلغاء سند الصرف المحاسبي المولد تلقائياً.'
+      operationId: f9f32e62b460d08c12a4d81f25d1a101
+      responses:
+        200:
+          description: 'تم إلغاء دفعة الراتب بنجاح'
+      security:
+        -
+          bearerAuth: []
   /v1/attendance-manager/dashboard-stats:
     get:
       tags:
@@ -2153,12 +2372,12 @@ paths:
           description: '✅ تم استرجاع الإحصائيات بنجاح'
           content:
             application/json:
-              schema: {  }
+              schema: []
         400:
           description: '❌ خطأ في معالجة الإحصائيات'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/attendance-manager/dashboard-stats-stream:
     get:
       tags:
@@ -2178,7 +2397,7 @@ paths:
           description: '✅ stream مفتوح لتقنية SSE (text/event-stream)'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/qr/check-in:
     post:
       tags:
@@ -2266,7 +2485,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/qr/check-out:
     post:
       tags:
@@ -2356,13 +2575,13 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/reception/members/{memberId}/subscriptions':
     get:
       tags:
         - Reception
-      summary: '📋 اشتراكات اللاعب النشطة (للاستقبال)'
-      description: 'يعرض جميع اشتراكات اللاعب النشطة مع تفاصيل الجلسات المتبقية لكل بند. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب قبل تسجيل الحضور.'
+      summary: '📋 اشتراكات اللاعب النشطة المتاحة اليوم (للاستقبال)'
+      description: 'يعرض اشتراكات اللاعب النشطة التي تحتوي على جلسات مجدولة لهذا اليوم (أو اشتراكات الدخول العام/المفتوح) مع تفاصيل الجلسات المتبقية وجلسات اليوم، مع استبعاد الاشتراكات غير المبدوءة، المنتهية، المجمدة، الموقوفة، المحذوفة، أو منتهية الرصيد. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب عند تسجيل الحضور.'
       operationId: f1db92d243e3d4c288a81cc1fe3e5231
       parameters:
         -
@@ -2371,17 +2590,26 @@ paths:
           required: true
           schema:
             type: integer
+        -
+          name: date
+          in: query
+          description: 'تاريخ التحقق من الجلسات (الافتراضي: اليوم بصيغة Y-m-d)'
+          required: false
+          schema:
+            type: string
+            format: date
+            example: '2026-08-19'
       responses:
         200:
           description: '✅ تم استرجاع الاشتراكات'
           content:
             application/json:
-              schema: {  }
+              schema: []
         404:
-          description: '❌ لا توجد اشتراكات نشطة'
+          description: '❌ لا توجد اشتراكات نشطة لها جلسات اليوم'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/reception/attendances/{attendanceId}/deduct':
     post:
       tags:
@@ -2412,18 +2640,23 @@ paths:
                   example:
                     - 5
                     - 7
+                notes:
+                  description: 'سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي عند الحضور خارج وقت الجلسة)'
+                  type: string
+                  example: 'اللاعبة غيرت موعدها لظرف خاص'
+                  nullable: true
               type: object
       responses:
         200:
           description: '✅ تم خصم الجلسات بنجاح'
           content:
             application/json:
-              schema: {  }
+              schema: []
         400:
           description: '❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/reception/attendances/{attendanceId}/rollback':
     delete:
       tags:
@@ -2468,13 +2701,13 @@ paths:
           description: '❌ خطأ: الاشتراك غير موجود في سجل الخصومات أو لا يمكن إلغاء الحضور'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/attendances/check-in:
     post:
       tags:
         - Attendance
       summary: '✅ تسجيل الدخول الموحد (لكافة أنواع المستخدمين)'
-      description: 'تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type.'
+      description: 'تسجيل دخول عضو أو موظف أو كوتش باختيار نوع attendable_type مع إمكانية تمرير اشتراكات اللاعب للخصم المباشر.'
       operationId: f579e67dc0b9e62039a957a8263fb35b
       requestBody:
         required: true
@@ -2507,16 +2740,24 @@ paths:
                   type: string
                   format: date-time
                   example: '2026-08-08 14:30:00'
+                player_subscription_ids:
+                  description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم المباشر منها عند تسجيل الحضور (اختياري)'
+                  type: array
+                  items:
+                    type: integer
+                  example:
+                    - 5
+                    - 7
               type: object
       responses:
         200:
           description: '✅ تم تسجيل الدخول'
           content:
             application/json:
-              schema: {  }
+              schema: []
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/attendances/check-out/{attendanceId}':
     post:
       tags:
@@ -2547,10 +2788,10 @@ paths:
           description: '✅ تم الانصراف'
           content:
             application/json:
-              schema: {  }
+              schema: []
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/attendances/bulk-check-out:
     post:
       tags:
@@ -2628,13 +2869,13 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/attendances/history:
     get:
       tags:
         - Attendance
       summary: '📆 سجل حضور موحد'
-      description: 'يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).'
+      description: 'يجلب سجل حضور وانصراف (عضو / موظف / الكل) مع إمكانية الفلترة حسب الشخص وتاريخ البداية والنهاية والفرع. (تم إلغاء الترقيم - Pagination وجلب كافة البيانات).'
       operationId: 3076ed071799f8e5c3593d9d7b5583be
       parameters:
         -
@@ -2657,6 +2898,13 @@ paths:
           schema:
             type: integer
         -
+          name: branch_id
+          in: query
+          description: 'معرف الفرع للفلترة (اختياري)'
+          required: false
+          schema:
+            type: integer
+        -
           name: from
           in: query
           description: 'تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)'
@@ -2674,15 +2922,31 @@ paths:
             type: string
             format: date
             example: '2026-07-21'
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: ✅
           content:
             application/json:
-              schema: {  }
+              schema: []
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/attendances/{id}':
     delete:
       tags:
@@ -2706,7 +2970,7 @@ paths:
           description: '🚫 سجل الحضور غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/attendances/{id}/restore':
     post:
       tags:
@@ -2730,7 +2994,7 @@ paths:
           description: '🚫 سجل الحضور غير موجود في سلة المحذوفات'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/login:
     post:
       tags:
@@ -2967,7 +3231,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/me:
     get:
       tags:
@@ -3059,6 +3323,25 @@ paths:
                         type: string
                         example: 'لا توجد أمراض مزمنة'
                         nullable: true
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                          example: super_admin
+                      permissions:
+                        type: array
+                        items:
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            name:
+                              type: string
+                              example: user-role.view
+                            module:
+                              type: string
+                              example: user-role
+                          type: object
                     type: object
                 type: object
         401:
@@ -3086,7 +3369,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/reset-password:
     post:
       tags:
@@ -3133,7 +3416,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/change-password:
     post:
       tags:
@@ -3155,11 +3438,6 @@ paths:
                   description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)'
                   type: integer
                   example: 15
-                  nullable: true
-                current_password:
-                  description: 'كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)'
-                  type: string
-                  example: oldPassword123
                   nullable: true
                 new_password:
                   description: 'كلمة المرور الجديدة'
@@ -3217,14 +3495,9 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 'كلمة المرور الحالية غير صحيحة.'
+                    example: 'خطأ في التحقق من البيانات.'
                   errors:
                     properties:
-                      current_password:
-                        type: array
-                        items:
-                          type: string
-                          example: 'كلمة المرور الحالية غير مطابقة.'
                       new_password:
                         type: array
                         items:
@@ -3252,7 +3525,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/change-photo:
     post:
       tags:
@@ -3300,7 +3573,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/delete-photo:
     delete:
       tags:
@@ -3336,7 +3609,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/auth/set-custom-username:
     post:
       tags:
@@ -3382,18 +3655,253 @@ paths:
                     type: object
                 type: object
         422:
-          description: '⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل'
+          description: '⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل مع اقتراحات بديلة'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'
+                  data:
+                    properties:
+                      is_available:
+                        type: boolean
+                        example: false
+                      suggestions:
+                        type: array
+                        items:
+                          type: string
+                          example: ahmed_player_2026
+                    type: object
+                type: object
+      security:
+        -
+          bearerAuth: []
+  /v1/auth/check-username:
+    get:
+      tags:
+        - Authentication
+      summary: '🔍 فحص توفر اسم المستخدم وتوليد اقتراحات عند التعارض'
+      description: 'يتحقق مما إذا كان اسم المستخدم متاحاً أو محجوزاً مسبقاً، وفي حال عدم التوفر يعيد قائمة باقتراحات صالحة ومتاحة.'
+      operationId: 0a82bed7b8f114325366fab244462148
+      parameters:
+        -
+          name: username
+          in: query
+          description: 'اسم المستخدم المراد فحصه'
+          required: true
+          schema:
+            type: string
+            example: ahmed_player
+        -
+          name: user_id
+          in: query
+          description: 'معرف المستخدم لتجاهله أثناء الفحص (اختياري)'
+          required: false
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: '✅ نتيجة فحص اسم المستخدم مع الاقتراحات إن وجدت'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'اسم المستخدم متاح للاستخدام.'
+                  data:
+                    properties:
+                      username:
+                        type: string
+                        example: ahmed_player
+                      is_available:
+                        type: boolean
+                        example: true
+                      suggestions:
+                        type: array
+                        items:
+                          type: string
+                          example: ahmed_player99
+                    type: object
+                type: object
+        422:
+          description: '⚠️ لم يتم إرسال اسم المستخدم'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'يرجى إدخال اسم المستخدم المراد فحصه.'
+                type: object
+  /v1/auth/profile:
+    put:
+      tags:
+        - Authentication
+      summary: '✏️ تعديل الملف الشخصي (للمستخدم الحالي أو لمستخدم محدد عبر user_id)'
+      description: 'تعديل البيانات الشخصية الأساسية (الاسم الأول، الاسم الأخير، رقم الهاتف، تاريخ الميلاد، الجنس، العنوان، كيف سمعت بالنادي). في حال عدم تمرير user_id يتم تعديل ملف المستخدم الحالي (صاحب الـ Token). في حال تمرير user_id يتم تعديل ملف المستخدم المحدد ويتطلب ذلك صلاحية user.update-profile.'
+      operationId: 5a5a6ce00a450dbf630f69c35f089420
+      requestBody:
+        description: 'بيانات الملف الشخصي المراد تعديلها'
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                user_id:
+                  description: 'معرف المستخدم لتعديل ملفه (اختياري للمسؤولين)'
+                  type: integer
+                  example: 5
+                  nullable: true
+                first_name:
+                  description: 'الاسم الأول'
+                  type: string
+                  example: أحمد
+                  nullable: true
+                last_name:
+                  description: 'الاسم الأخير'
+                  type: string
+                  example: محمد
+                  nullable: true
+                phone_number:
+                  description: 'رقم الموبايل'
+                  type: string
+                  example: '0991234567'
+                  nullable: true
+                dob:
+                  description: 'تاريخ الميلاد (Y-m-d)'
+                  type: string
+                  format: date
+                  example: '1998-05-15'
+                  nullable: true
+                gender:
+                  description: 'الجنس (male / female)'
+                  type: string
+                  example: male
+                  nullable: true
+                  enum:
+                    - male
+                    - female
+                address:
+                  description: 'العنوان السكني'
+                  type: string
+                  example: 'دمشق - المزة'
+                  nullable: true
+                how_did_you_hear:
+                  description: 'كيف سمعت بالنادي'
+                  type: string
+                  example: 'عن طريق صديق'
+                  nullable: true
+              type: object
+      responses:
+        200:
+          description: '✅ تم تحديث الملف الشخصي بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'تم تحديث الملف الشخصي بنجاح'
+                  data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: tec-ply-75054
+                      custom_username:
+                        type: string
+                        example: ahmed99
+                        nullable: true
+                      person_id:
+                        type: integer
+                        example: 5
+                      first_name:
+                        type: string
+                        example: أحمد
+                      last_name:
+                        type: string
+                        example: محمد
+                      full_name:
+                        type: string
+                        example: 'أحمد محمد'
+                      phone_number:
+                        type: string
+                        example: '0991234567'
+                        nullable: true
+                      dob:
+                        type: string
+                        format: date
+                        example: '1998-05-15'
+                      age:
+                        type: integer
+                        example: 28
+                      gender:
+                        type: string
+                        example: male
+                      address:
+                        type: string
+                        example: 'دمشق - المزة'
+                      how_did_you_hear:
+                        type: string
+                        example: 'عن طريق صديق'
+                    type: object
+                type: object
+        401:
+          description: '❌ غير مصرح'
           content:
             application/json:
               schema:
                 properties:
                   message:
                     type: string
-                    example: 'اسم المستخدم المخصص مستخدم بالفعل.'
+                    example: Unauthenticated.
+                type: object
+        403:
+          description: '🚫 ممنوع (صلاحية غير كافية لتعديل ملف مستخدم آخر)'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'عذراً، ليس لديك الصلاحية لتعديل الملف الشخصي لمستخدم آخر.'
+                type: object
+        422:
+          description: '⚠️ خطأ في التحقق من صحة البيانات'
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: 'البيانات المدخلة غير صالحة.'
+                  errors:
+                    type: object
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/contacts:
     get:
       tags:
@@ -3408,12 +3916,28 @@ paths:
           required: false
           schema:
             type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: 'Successful operation'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Person Contacts'
@@ -3430,7 +3954,7 @@ paths:
           description: 'Contact created successfully'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/contacts/{contact}':
     get:
       tags:
@@ -3452,7 +3976,7 @@ paths:
           description: 'Contact not found'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Person Contacts'
@@ -3479,7 +4003,7 @@ paths:
           description: 'Contact not found'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Person Contacts'
@@ -3500,7 +4024,7 @@ paths:
           description: 'Contact not found'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/permissions:
     get:
       tags:
@@ -3512,11 +4036,43 @@ paths:
         -
           name: module
           in: query
-          description: 'فلترة حسب اسم الموديول (مثال: member, staff, subscription)'
+          description: 'فلترة حسب اسم الموديول (اختر الموديول من القائمة)'
           required: false
           schema:
             type: string
             example: member
+            enum:
+              - member
+              - player-subscription
+              - subscription-plan
+              - coach
+              - staff
+              - staff-shift
+              - payroll
+              - payslip
+              - activity
+              - activity-type
+              - session-template
+              - staff-commission-rule
+              - offer
+              - sub-plan-activity
+              - payment
+              - club
+              - branch
+              - locker
+              - attendance
+              - reception
+              - accounting
+              - notification
+              - user
+              - role
+              - permission
+              - user-role
+              - contact
+              - report
+              - audit
+              - system
+              - upload
       responses:
         200:
           description: '✅ تم جلب الصلاحيات بنجاح'
@@ -3524,13 +4080,13 @@ paths:
           description: '🔒 غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/roles:
     get:
       tags:
         - Roles
       summary: '📋 جلب قائمة الأدوار'
-      description: 'يجلب جميع الأدوار المتاحة في النظام مع صلاحياتها.'
+      description: 'يجلب قائمة بجميع الأدوار المتاحة في النظام.'
       operationId: getRolesList
       responses:
         200:
@@ -3539,7 +4095,7 @@ paths:
           description: '🔒 غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - Roles
@@ -3555,9 +4111,19 @@ paths:
                 - name
               properties:
                 name:
-                  description: 'اسم الدور (حروف صغيرة وشرطة سفلية فقط)'
+                  description: 'اسم الدور بالإنجليزية أو المعرف'
                   type: string
-                  example: member_manager
+                  example: 'مدير الصالة'
+                name_ar:
+                  description: 'اسم الدور باللغة العربية'
+                  type: string
+                  example: 'مدير الصالة'
+                  nullable: true
+                is_visible:
+                  description: 'هل يظهر الدور للجميع في النظام'
+                  type: boolean
+                  example: true
+                  nullable: true
               type: object
       responses:
         201:
@@ -3566,7 +4132,7 @@ paths:
           description: '❌ خطأ في البيانات'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/roles/{id}':
     get:
       tags:
@@ -3589,7 +4155,54 @@ paths:
           description: '❌ الدور غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+    put:
+      tags:
+        - Roles
+      summary: '✏️ تعديل اسم الدور'
+      description: 'يعدل اسم دور موجود في النظام. لا يمكن تعديل الأدوار المحمية (super_admin, admin).'
+      operationId: updateRole
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  description: 'الاسم الجديد للدور'
+                  type: string
+                  example: 'مشرف الصالة الجديد'
+                name_ar:
+                  description: 'اسم الدور باللغة العربية'
+                  type: string
+                  example: 'مشرف الصالة الجديد'
+                  nullable: true
+                is_visible:
+                  description: 'هل يظهر الدور للجميع في النظام'
+                  type: boolean
+                  example: true
+                  nullable: true
+              type: object
+      responses:
+        200:
+          description: '✅ تم تعديل اسم الدور بنجاح'
+        403:
+          description: '🚫 لا يمكن تعديل دور محمي'
+        404:
+          description: '❌ الدور غير موجود'
+        422:
+          description: '❌ خطأ في البيانات'
+      security:
+        -
+          bearerAuth: []
     delete:
       tags:
         - Roles
@@ -3613,7 +4226,7 @@ paths:
           description: '❌ الدور غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/roles/{id}/permissions':
     put:
       tags:
@@ -3655,7 +4268,7 @@ paths:
           description: '❌ صلاحية غير موجودة في النظام'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/users:
     get:
       tags:
@@ -3678,12 +4291,28 @@ paths:
           required: false
           schema:
             type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب قائمة المستخدمين بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/users/{userId}/roles':
     get:
       tags:
@@ -3706,7 +4335,7 @@ paths:
           description: '❌ المستخدم غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'User Roles'
@@ -3743,7 +4372,7 @@ paths:
           description: '❌ خطأ في البيانات'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'User Roles'
@@ -3777,7 +4406,7 @@ paths:
           description: '❌ المستخدم غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/branches:
     get:
       tags:
@@ -3785,6 +4414,31 @@ paths:
       summary: '🏢 عرض جميع الفروع'
       description: 'استرجاع قائمة بجميع الفروع المتاحة في النظام.'
       operationId: 958cc958d808a4d1e94e1a79bb86aeca
+      parameters:
+        -
+          name: club_id
+          in: query
+          description: 'تصفية حسب النادي'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع الفروع بنجاح'
@@ -3822,7 +4476,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Branch Management'
@@ -3875,7 +4529,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/branches/stats:
     get:
       tags:
@@ -3922,7 +4576,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{id}':
     get:
       tags:
@@ -3980,7 +4634,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Branch Management'
@@ -4055,7 +4709,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Branch Management'
@@ -4089,7 +4743,7 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/branches/trashed:
     get:
       tags:
@@ -4097,12 +4751,37 @@ paths:
       summary: '🗑️ عرض الفروع المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بالفروع التي تم حذفها.'
       operationId: 3f27c6bd9565cbca4d22914eea895c68
+      parameters:
+        -
+          name: club_id
+          in: query
+          description: 'تصفية حسب النادي'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الفروع المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{id}/restore':
     post:
       tags:
@@ -4124,7 +4803,7 @@ paths:
           description: '✅ تم استرجاع الفرع بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{id}/toggle-status':
     patch:
       tags:
@@ -4182,7 +4861,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{branch}/holidays':
     get:
       tags:
@@ -4196,6 +4875,22 @@ paths:
           in: path
           description: 'معرف الفرع'
           required: true
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
           schema:
             type: integer
             example: 1
@@ -4221,7 +4916,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Branch Holidays'
@@ -4301,7 +4996,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/holidays/{holiday}':
     get:
       tags:
@@ -4340,7 +5035,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Branch Holidays'
@@ -4420,7 +5115,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Branch Holidays'
@@ -4454,7 +5149,7 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/holidays/trashed:
     get:
       tags:
@@ -4462,12 +5157,37 @@ paths:
       summary: '🗑️ عرض العطلات المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بأيام العطل المحذوفة.'
       operationId: 9c510011d0c868b7d31fabdc9273970c
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب العطلات المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/holidays/{id}/restore':
     post:
       tags:
@@ -4489,7 +5209,7 @@ paths:
           description: '✅ تم استرجاع العطلة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{branch}/settings':
     get:
       tags:
@@ -4528,7 +5248,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Branch Settings'
@@ -4558,6 +5278,11 @@ paths:
                   type: number
                   format: float
                   example: 60
+                private_subscription_commission:
+                  description: 'نسبة عمولة النادي من الاشتراك الخاص (%) - الافتراضي 0%'
+                  type: number
+                  format: float
+                  example: 0
                 default_employee_salary:
                   type: number
                   format: float
@@ -4588,10 +5313,6 @@ paths:
                   description: 'السماح بعرض الفعاليات المختلطة في الفرع (إذا كان الفرع غير مختلط)'
                   type: boolean
                   example: false
-                payroll_start_day:
-                  description: 'يوم بداية الرواتب (1-31)'
-                  type: integer
-                  example: 1
                 payroll_end_day:
                   description: 'يوم نهاية الرواتب (1-31)'
                   type: integer
@@ -4629,7 +5350,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{branch}/shifts':
     get:
       tags:
@@ -4643,6 +5364,22 @@ paths:
           in: path
           description: 'معرف الفرع'
           required: true
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
           schema:
             type: integer
             example: 1
@@ -4695,7 +5432,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Branch Shifts'
@@ -4779,7 +5516,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{branch}/shifts/{shift}':
     put:
       tags:
@@ -4880,7 +5617,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Branch Shifts'
@@ -4922,7 +5659,7 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{branch}/shifts/trashed':
     get:
       tags:
@@ -4939,12 +5676,28 @@ paths:
           schema:
             type: integer
             example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الورديات المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/branches/{branch}/shifts/{id}/restore':
     post:
       tags:
@@ -4974,14 +5727,31 @@ paths:
           description: '✅ تم استرجاع الوردية بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/clubs:
     get:
       tags:
         - 'Club Management'
       summary: '🏢 عرض جميع الأندية'
-      description: 'استرجاع قائمة بجميع الأندية المسجلة في النظام.'
+      description: 'استرجاع قائمة بجميع الأندية المسجلة في النظام مع شعاراتها وحالاتها.'
       operationId: 366d4361fb952980b2ed09241b6e55ca
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ قائمة الأندية'
@@ -5004,7 +5774,22 @@ paths:
                           example: 1
                         name:
                           type: string
-                          example: 'نادي الأبطال'
+                          example: 'نادي الأبطال الذهبي'
+                        logo_url:
+                          type: string
+                          example: storage/clubs/logos/sample.png
+                          nullable: true
+                        is_active:
+                          type: boolean
+                          example: true
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: '2026-08-18T10:00:00.000000Z'
+                        updated_at:
+                          type: string
+                          format: date-time
+                          example: '2026-08-18T10:00:00.000000Z'
                       type: object
                 type: object
         401:
@@ -5019,24 +5804,34 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Club Management'
       summary: '➕ إنشاء نادي جديد'
-      description: 'إضافة نادي جديد إلى النظام مع تحديد المعلومات الأساسية مثل الاسم.'
+      description: 'إضافة نادي جديد إلى النظام مع إمكانية رفع صورة الشعار (الحد الأقصى 2MB).'
       operationId: 4c193b6be889318b1aef27d19f816386
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               required:
                 - name
               properties:
                 name:
+                  description: 'اسم النادي'
                   type: string
                   example: 'نادي الأبطال الذهبي'
+                logo:
+                  description: 'صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)'
+                  type: string
+                  format: binary
+                  nullable: true
+                logo_url:
+                  description: 'رابط مباشر للشعار (اختياري في حال عدم رفع ملف)'
+                  type: string
+                  nullable: true
               type: object
       responses:
         201:
@@ -5052,10 +5847,32 @@ paths:
                     type: string
                     example: 'Created successfully'
                   data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'نادي الأبطال الذهبي'
+                      logo_url:
+                        type: string
+                        example: storage/clubs/logos/sample.png
+                        nullable: true
+                      is_active:
+                        type: boolean
+                        example: true
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
                     type: object
                 type: object
         422:
-          description: '⚠️ خطأ في التحقق من صحة البيانات'
+          description: '⚠️ خطأ في التحقق من صحة البيانات (مثل تجاوز حجم الصورة 2MB أو صيغة غير مدعومة)'
           content:
             application/json:
               schema:
@@ -5078,13 +5895,13 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/clubs/{id}':
     get:
       tags:
         - 'Club Management'
       summary: '🔍 تفاصيل النادي'
-      description: 'استرجاع جميع تفاصيل نادي محدد عن طريق المعرف.'
+      description: 'استرجاع جميع تفاصيل نادي محدد عن طريق المعرف بما فيها الشعار والحالة.'
       operationId: 0f6b1b68bbafefa678b477b77062d5a9
       parameters:
         -
@@ -5109,6 +5926,28 @@ paths:
                     type: string
                     example: 'Retrieved successfully'
                   data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'نادي الأبطال الذهبي'
+                      logo_url:
+                        type: string
+                        example: storage/clubs/logos/sample.png
+                        nullable: true
+                      is_active:
+                        type: boolean
+                        example: true
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
                     type: object
                 type: object
         404:
@@ -5136,12 +5975,12 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Club Management'
-      summary: '📝 تعديل النادي'
-      description: 'تعديل تفاصيل نادي موجود في النظام.'
+      summary: '📝 تعديل بيانات النادي'
+      description: 'تعديل البيانات الأساسية للنادي (الاسم وحالة التفعيل). لتحديث الشعار استخدم المسار المنفصل: POST /v1/clubs/{id}/logo'
       operationId: 6addccb94c28c16e239447ccfed9ab5b
       parameters:
         -
@@ -5153,14 +5992,21 @@ paths:
             type: integer
             example: 1
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               properties:
                 name:
+                  description: 'اسم النادي'
                   type: string
                   example: 'نادي الأبطال الماسي'
+                  nullable: true
+                is_active:
+                  description: 'حالة تفعيل النادي'
+                  type: boolean
+                  example: true
+                  nullable: true
               type: object
       responses:
         200:
@@ -5176,6 +6022,28 @@ paths:
                     type: string
                     example: 'Updated successfully'
                   data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'نادي الأبطال الماسي'
+                      logo_url:
+                        type: string
+                        example: storage/clubs/logos/sample.png
+                        nullable: true
+                      is_active:
+                        type: boolean
+                        example: true
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
                     type: object
                 type: object
         404:
@@ -5215,7 +6083,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Club Management'
@@ -5249,7 +6117,112 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  '/v1/clubs/{id}/logo':
+    post:
+      tags:
+        - 'Club Management'
+      summary: '🖼️ تحديث شعار النادي (مسار منفصل)'
+      description: 'مسار مخصص ومستقل لرفع وتحديث شعار النادي بصيغة multipart/form-data. يتم حذف الشعار القديم واستبداله بالشعار الجديد (الحد الأقصى 2MB).'
+      operationId: 42e5baf9580216b80431c1ae893d25e6
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف النادي'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - logo
+              properties:
+                logo:
+                  description: 'ملف صورة الشعار (jpeg, png, jpg, webp, svg) - الحد الأقصى 2 ميجابايت (2MB)'
+                  type: string
+                  format: binary
+              type: object
+      responses:
+        200:
+          description: '✅ تم تحديث الشعار بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Club logo updated successfully'
+                  data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'نادي الأبطال الذهبي'
+                      logo_url:
+                        type: string
+                        example: storage/clubs/logos/new_logo.png
+                        nullable: true
+                      is_active:
+                        type: boolean
+                        example: true
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: '2026-08-18T10:00:00.000000Z'
+                    type: object
+                type: object
+        404:
+          description: '🚫 لم يتم العثور على النادي'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'Record not found.'
+                type: object
+        422:
+          description: '⚠️ خطأ في التحقق من صورة الشعار (مثل تجاوز 2MB أو نوع ملف غير صالح)'
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: 'The logo field must be an image.'
+                  errors:
+                    type: object
+                type: object
+        401:
+          description: '❌ غير مصرح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                type: object
+      security:
+        -
+          bearerAuth: []
   /v1/clubs/trashed:
     get:
       tags:
@@ -5257,12 +6230,29 @@ paths:
       summary: '🗑️ عرض الأندية المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بالأندية التي تم حذفها.'
       operationId: 8cc70a5ceb754d3ad5f7467a39748948
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الأندية المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/clubs/{id}/restore':
     post:
       tags:
@@ -5284,7 +6274,7 @@ paths:
           description: '✅ تم استرجاع النادي بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/club-settings:
     get:
       tags:
@@ -5322,7 +6312,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/clubs/{club}/settings':
     get:
       tags:
@@ -5380,7 +6370,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Club Settings'
@@ -5414,9 +6404,6 @@ paths:
                 grace_period_days:
                   type: integer
                   example: 5
-                allow_partial_payment:
-                  type: boolean
-                  example: true
                 enabled_features:
                   type: array
                   items:
@@ -5468,7 +6455,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/system/backup/download:
     get:
       tags:
@@ -5480,7 +6467,7 @@ paths:
         200:
           description: '✅ تم إنشاء الملف وتنزيله بنجاح'
           content:
-            application/zip: {  }
+            application/zip: []
         500:
           description: '❌ حدث خطأ أثناء التصدير'
           content:
@@ -5496,7 +6483,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/facilities:
     get:
       tags:
@@ -5504,6 +6491,31 @@ paths:
       summary: '🏊 عرض جميع المرافق'
       description: 'استرجاع قائمة بجميع المرافق (كالمسابح، الملاعب، الصالات الرياضية) المتاحة في النظام.'
       operationId: 3fc7578b764098b72d173a71bb07579e
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع المرافق بنجاح'
@@ -5534,7 +6546,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Facility Management'
@@ -5597,7 +6609,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/facilities/{id}':
     get:
       tags:
@@ -5655,7 +6667,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Facility Management'
@@ -5734,7 +6746,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Facility Management'
@@ -5768,7 +6780,7 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/facilities/trashed:
     get:
       tags:
@@ -5776,12 +6788,37 @@ paths:
       summary: '🗑️ عرض المرافق المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بالمرافق التي تم حذفها.'
       operationId: 0302e2ef01f032a11b0239539b7623ac
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب المرافق المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/facilities/{id}/restore':
     post:
       tags:
@@ -5803,7 +6840,7 @@ paths:
           description: '✅ تم استرجاع المرفق بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/facilities/{id}/toggle-status':
     patch:
       tags:
@@ -5861,7 +6898,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/facilities/{facility}/working-hours':
     get:
       tags:
@@ -5921,7 +6958,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Facility Working Hours'
@@ -6000,7 +7037,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/facilities/{facility}/working-hours/{working_hour}':
     delete:
       tags:
@@ -6068,7 +7105,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/lockers:
     get:
       tags:
@@ -6087,13 +7124,35 @@ paths:
         -
           name: status
           in: query
-          description: 'تصفية الخزائن حسب الحالة (متاحة أو مشغولة)'
+          description: "تصفية الخزائن حسب الحالة. الخيارات المتاحة:\n• `available`: الخزائن المتاحة فقط\n• `with_member`: الخزائن المسندة للاعبين / المشتركين فقط\n• `with_staff_or_coach`: الخزائن المسندة للموظفين أو المدربين معاً (كوتش + موظف)\n• `with_coach`: الخزائن المسندة للمدربين فقط\n• `with_staff`: الخزائن المسندة للموظفين فقط\n• `maintenance`: الخزائن المعطلة أو التي في الصيانة\n• `occupied`: جميع الخزائن غير المتاحة (مشغولة عموماً)\n💡 ملاحظة: يمكن أيضاً تمرير أكثر من حالة مفصولة بفاصلة مثل: `with_member,with_coach`"
           required: false
           schema:
             type: string
+            example: with_staff_or_coach
             enum:
               - available
+              - with_member
+              - with_staff_or_coach
+              - with_coach
+              - with_staff
+              - maintenance
               - occupied
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع الخزائن بنجاح'
@@ -6110,20 +7169,38 @@ paths:
                   data:
                     properties:
                       summary:
+                        description: 'ملخص إحصائيات الخزائن'
                         properties:
                           available_lockers_count:
+                            description: 'عدد الخزائن المتاحة'
                             type: integer
                             example: 12
                           unavailable_lockers_count:
+                            description: 'إجمالي الخزائن غير المتاحة / المشغولة'
                             type: integer
                             example: 8
                           assigned_to_member_count:
+                            description: 'الخزائن المسندة للاعبين'
                             type: integer
                             example: 5
                           assigned_to_coach_count:
+                            description: 'الخزائن المسندة للمدربين'
                             type: integer
                             example: 2
+                          assigned_to_staff_count:
+                            description: 'الخزائن المسندة للموظفين'
+                            type: integer
+                            example: 1
+                          assigned_to_staff_or_coach_count:
+                            description: 'إجمالي الخزائن المسندة لموظفين أو مدربين'
+                            type: integer
+                            example: 3
+                          maintenance_lockers_count:
+                            description: 'الخزائن المعطلة أو التي في الصيانة'
+                            type: integer
+                            example: 1
                           rented_lockers_count:
+                            description: 'الخزائن المستأجرة بمقابل مادي'
                             type: integer
                             example: 4
                         type: object
@@ -6145,12 +7222,12 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Locker Management'
       summary: '➕ إضافة خزانة جديدة'
-      description: 'إنشاء خزانة جديدة في فرع معين وتعيين رقمها.'
+      description: "إنشاء خزانة جديدة في فرع معين وتعيين رقمها وحالتها الأولية.\n\n**الحالات المتاحة للخزانة (`status`):**\n- `available`: متاحة وفارغة (الافتراضية).\n- `maintenance`: معطلة أو قيد الصيانة (خارج الخدمة).\n- `with_member`: مسندة للاعب.\n- `with_coach`: مسندة لمدرب.\n- `with_staff`: مسندة لموظف."
       operationId: 582bd0a2c4a7c33eb2fa4ffb26b6b133
       requestBody:
         required: true
@@ -6180,7 +7257,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/lockers/{id}':
     get:
       tags:
@@ -6219,7 +7296,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Locker Management'
@@ -6265,12 +7342,12 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Locker Management'
       summary: '🗑️ حذف خزانة (Soft Delete)'
-      description: 'إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.'
+      description: 'إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة حتى لو كانت محجوزة أو مسندة. يتطلب إرسال كلمة التأكيد "delete" للموافقة على الحذف.'
       operationId: 849979252fdb3ee314725226a799e838
       parameters:
         -
@@ -6281,6 +7358,25 @@ paths:
           schema:
             type: integer
             example: 1
+        -
+          name: confirmation
+          in: query
+          description: 'كلمة تأكيد الحذف (delete)'
+          required: false
+          schema:
+            type: string
+            example: ''
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                confirmation:
+                  description: 'تأكيد الحذف (delete)'
+                  type: string
+                  example: delete
+              type: object
       responses:
         200:
           description: '✅ تم حذف الخزانة بنجاح ناعماً'
@@ -6301,11 +7397,76 @@ paths:
                 type: object
         404:
           description: '🚫 لم يتم العثور على الخزانة'
+        422:
+          description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
         401:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  /v1/lockers/trashed:
+    get:
+      tags:
+        - 'Locker Management'
+      summary: '🗑️ عرض الخزائن المحذوفة (سلة المهملات)'
+      description: 'استرجاع قائمة بجميع الخزائن المحذوفة ناعماً مع إمكانية الفلترة حسب الفرع أو الترقيم.'
+      operationId: e4c69b90ffef45cdda62b8cb1cb97719
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: status
+          in: query
+          description: 'تصفية حسب الحالة'
+          required: false
+          schema:
+            type: string
+            example: available
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: '✅ تم استرجاع الخزائن المحذوفة بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Trashed lockers retrieved successfully'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                type: object
+        401:
+          description: '❌ غير مصرح'
+      security:
+        -
+          bearerAuth: []
   '/v1/lockers/{id}/restore':
     post:
       tags:
@@ -6325,11 +7486,28 @@ paths:
       responses:
         200:
           description: '✅ تم استرجاع الخزانة بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Locker restored successfully'
+                  data:
+                    type: object
+                type: object
         404:
           description: '🚫 الخزانة غير موجودة في سلة المحذوفات'
+        422:
+          description: '⚠️ خطأ تكرار رقم الخزانة في الفرع'
+        401:
+          description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/lockers/{locker}/reservations':
     post:
       tags:
@@ -6349,7 +7527,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: {  }
+            schema: []
             examples:
               rental:
                 summary: 'حالة التأجير (Rental)'
@@ -6374,18 +7552,18 @@ paths:
           description: '✅ تم تخصيص الخزانة'
           content:
             application/json:
-              schema: {  }
+              schema: []
         400:
           description: '❌ الخزانة غير متاحة أو بيانات غير صحيحة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/lockers/{locker}/reservations/current':
     delete:
       tags:
         - 'Locker Management'
       summary: '🔓 فك الحجز وإخلاء الخزانة'
-      description: 'ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available).'
+      description: 'ينهي الحجز النشط حالياً على الخزانة ويحول حالة الخزانة إلى متاحة (available). إذا كان للحجز تاريخ نهاية مستقبلي ولم ينتهِ بعد، يكون حقل reason إجبارياً لتوضيح سبب الفك المبكر.'
       operationId: 258d59fb8490e29cee2eb5e3b1761fc2
       parameters:
         -
@@ -6395,17 +7573,30 @@ paths:
           schema:
             type: integer
             example: 1
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                reason:
+                  description: 'سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)'
+                  type: string
+                  example: 'طلب المشترك إنهاء الحجز واستعادة الأمانة'
+              type: object
       responses:
         200:
           description: '✅ تم تحرير الخزانة'
           content:
             application/json:
-              schema: {  }
+              schema: []
         400:
           description: '❌ الخزانة متاحة بالفعل أو حدث خطأ'
+        422:
+          description: '⚠️ خطأ عدم إرسال سبب فك الحجز المبكر'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/locker-reservations/{reservation}/holder':
     patch:
       tags:
@@ -6448,12 +7639,12 @@ paths:
           description: '✅ تم نقل عهدة المفتاح'
           content:
             application/json:
-              schema: {  }
+              schema: []
         400:
           description: '❌ الحجز غير نشط أو حدث خطأ'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/lockers/holder/active:
     get:
       tags:
@@ -6465,13 +7656,14 @@ paths:
         -
           name: holder_type
           in: query
-          description: 'نوع الشخص (member أو staff)'
+          description: 'نوع الشخص (member أو staff أو coach)'
           required: true
           schema:
             type: string
             enum:
               - member
               - staff
+              - coach
         -
           name: holder_id
           in: query
@@ -6499,7 +7691,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/upload:
     post:
       tags:
@@ -6600,7 +7792,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/audits:
     get:
       tags:
@@ -6723,7 +7915,7 @@ paths:
           description: '🔒 غير مصرح (Unauthenticated)'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/audits/meta:
     get:
       tags:
@@ -6735,7 +7927,7 @@ paths:
           description: '✅ تم جلب الفلاتر المتاحة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/audits/{id}':
     get:
       tags:
@@ -6758,7 +7950,51 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  /v1/admin/formulas:
+    get:
+      tags:
+        - 'Formula Engine'
+      summary: '📐 عرض المعادلات الحسابية'
+      description: "GET /v1/admin/formulas\nList all formulas, optionally filtered by category."
+      operationId: af045f6bf52a86a0b986b2e7b51738fd
+      parameters:
+        -
+          name: category
+          in: query
+          description: 'تصفية حسب الفئة'
+          required: false
+          schema:
+            type: string
+        -
+          name: is_active
+          in: query
+          description: 'تصفية حسب الحالة'
+          required: false
+          schema:
+            type: boolean
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: '✅ تم الاسترجاع بنجاح'
+      security:
+        -
+          bearerAuth: []
   /v1/member/dashboard:
     get:
       tags:
@@ -6907,7 +8143,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/member/health-profiles:
     get:
       tags:
@@ -6924,12 +8160,28 @@ paths:
           schema:
             type: integer
             example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم الاسترجاع بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Member Health Profiles'
@@ -6962,7 +8214,7 @@ paths:
           description: '✅ تم إنشاء السجل الصحي بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/member/health-profiles/{id}':
     get:
       tags:
@@ -6986,7 +8238,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Member Health Profiles'
@@ -7025,7 +8277,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Member Health Profiles'
@@ -7048,7 +8300,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/member/measurements:
     get:
       tags:
@@ -7073,12 +8325,28 @@ paths:
           schema:
             type: integer
             example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم الاسترجاع بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Member Measurements'
@@ -7161,7 +8429,7 @@ paths:
           description: '✅ تم إضافة القياس بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/member/measurements/{id}':
     get:
       tags:
@@ -7185,7 +8453,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Member Measurements'
@@ -7273,7 +8541,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Member Measurements'
@@ -7296,7 +8564,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/member/measurements/report:
     get:
       tags:
@@ -7334,7 +8602,7 @@ paths:
           description: '✅ تم استخراج التقرير بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/members/register:
     post:
       tags:
@@ -7445,7 +8713,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/members/{id}':
     get:
       tags:
@@ -7482,7 +8750,7 @@ paths:
           description: '🚫 العضو غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Member Management'
@@ -7503,7 +8771,13 @@ paths:
         content:
           application/json:
             schema:
+              required:
+                - reason
               properties:
+                reason:
+                  description: 'سبب التعديل (حقل إجباري قبل الحفظ)'
+                  type: string
+                  example: 'تحديث رقم الجوال والعنوان'
                 first_name:
                   type: string
                   example: أحمد
@@ -7582,7 +8856,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Member Management'
@@ -7615,7 +8889,7 @@ paths:
           description: '🚫 العضو غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/members/{id}/photo':
     post:
       tags:
@@ -7669,7 +8943,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/members:
     get:
       tags:
@@ -7707,6 +8981,22 @@ paths:
               - active
               - inactive
               - frozen
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الأعضاء بنجاح'
@@ -7727,7 +9017,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/members/stats:
     get:
       tags:
@@ -7780,7 +9070,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/members/trashed:
     get:
       tags:
@@ -7797,12 +9087,28 @@ paths:
           schema:
             type: integer
             example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الأعضاء المحذوفين بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/members/{id}/restore':
     post:
       tags:
@@ -7826,7 +9132,7 @@ paths:
           description: '🚫 العضو غير موجود بالسلة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/notifications:
     get:
       tags:
@@ -7912,7 +9218,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/notifications/unread/count:
     get:
       tags:
@@ -7949,7 +9255,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/notifications/{reception}':
     get:
       tags:
@@ -8027,7 +9333,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Notification Management'
@@ -8082,7 +9388,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/notifications/{reception}/read':
     patch:
       tags:
@@ -8138,7 +9444,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/notifications/mark-all-as-read:
     post:
       tags:
@@ -8178,7 +9484,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/admin/notifications:
     get:
       tags:
@@ -8344,7 +9650,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Notification Management'
@@ -8481,7 +9787,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/admin/notifications/send-to-users:
     post:
       tags:
@@ -8634,7 +9940,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/admin/notifications/{notification}':
     get:
       tags:
@@ -8722,7 +10028,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Notification Management'
@@ -8784,7 +10090,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/activities:
     get:
       tags:
@@ -8800,6 +10106,22 @@ paths:
           required: false
           schema:
             type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع الأنشطة بنجاح'
@@ -8830,7 +10152,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Sports & Activities'
@@ -8907,7 +10229,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/activities/stats:
     get:
       tags:
@@ -8950,7 +10272,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/activities/{activity}':
     get:
       tags:
@@ -9008,7 +10330,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Sports & Activities'
@@ -9103,7 +10425,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Sports & Activities'
@@ -9183,7 +10505,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/activities/trashed:
     get:
       tags:
@@ -9191,12 +10513,36 @@ paths:
       summary: '🗑️ عرض الأنشطة المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بالأنشطة والرياضات التي تم حذفها لاسترجاعها أو المعاينة.'
       operationId: 9af50a6f9e148e8e0fd9a91f8e7dc438
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب معرف الفرع'
+          required: false
+          schema:
+            type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الأنشطة المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/activities/{id}/restore':
     post:
       tags:
@@ -9220,7 +10566,7 @@ paths:
           description: '🚫 النشاط غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/activity-types:
     get:
       tags:
@@ -9228,6 +10574,23 @@ paths:
       summary: '📋 عرض جميع أنواع الأنشطة'
       description: 'استرجاع قائمة بجميع أنواع الأنشطة (تُستخدم لتحديد النشاط عند إضافة وردية أو نشاط جديد).'
       operationId: d1bf4f6b012823495143265eabbc5aaf
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ قائمة أنواع الأنشطة'
@@ -9258,7 +10621,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/activity-types/{activity_type}':
     delete:
       tags:
@@ -9335,7 +10698,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/activity-types/{activity_type}/settings':
     patch:
       tags:
@@ -9366,6 +10729,9 @@ paths:
                 has_shifts:
                   type: boolean
                   example: false
+                is_daily_entry:
+                  type: boolean
+                  example: false
               type: object
       responses:
         200:
@@ -9385,7 +10751,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/session-templates:
     get:
       tags:
@@ -9393,6 +10759,23 @@ paths:
       summary: '📅 عرض قوالب الجلسات'
       description: 'استرجاع جميع قوالب الجلسات الأسبوعية.'
       operationId: 9d91c533f7c2c8f37a49b036f7356ff7
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع القوالب بنجاح'
@@ -9423,7 +10806,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Session Templates'
@@ -9498,7 +10881,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/session-templates/schedule:
     get:
       tags:
@@ -9506,6 +10889,15 @@ paths:
       summary: '🗓️ جدول الجلسات'
       description: 'استرجاع جدول دوام الجلسات الأسبوعية.'
       operationId: 22f43a5b77e7893029da2ff22365ba77
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب معرف الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع الجدول بنجاح'
@@ -9534,7 +10926,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/session-templates/{id}':
     put:
       tags:
@@ -9620,7 +11012,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Session Templates'
@@ -9692,7 +11084,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/session-templates/{id}/cancel':
     post:
       tags:
@@ -9754,7 +11146,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/staff-commission-rules:
     get:
       tags:
@@ -9762,6 +11154,23 @@ paths:
       summary: '💰 عرض قواعد عمولات الموظفين'
       description: 'استرجاع جميع القواعد الخاصة بعمولات الموظفين والمدربين.'
       operationId: 05a25f92d12607c374eb39dec1b9e0f3
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم الاسترجاع بنجاح'
@@ -9792,7 +11201,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Staff Commission Rules'
@@ -9860,7 +11269,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff-commission-rules/{staff_commission_rule}':
     get:
       tags:
@@ -9918,7 +11327,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Staff Commission Rules'
@@ -9998,7 +11407,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Staff Commission Rules'
@@ -10057,7 +11466,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/coaches:
     get:
       tags:
@@ -10100,6 +11509,22 @@ paths:
               - active
               - suspended
               - on_leave
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: 'List of coaches'
@@ -10157,7 +11582,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Coach Management'
@@ -10344,7 +11769,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/coaches/stats:
     get:
       tags:
@@ -10392,7 +11817,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/coaches/{id}':
     get:
       tags:
@@ -10472,7 +11897,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Coach Management'
@@ -10505,7 +11930,7 @@ paths:
           description: '🚫 المدرب غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     patch:
       tags:
         - 'Coach Management'
@@ -10520,11 +11945,17 @@ paths:
           schema:
             type: integer
       requestBody:
-        required: false
+        required: true
         content:
           multipart/form-data:
             schema:
+              required:
+                - reason
               properties:
+                reason:
+                  description: 'سبب التعديل (حقل إجباري قبل الحفظ)'
+                  type: string
+                  example: 'تحديث الراتب ونوع التوظيف'
                 first_name:
                   type: string
                   example: Ahmed
@@ -10697,7 +12128,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/coaches/{id}/photo':
     post:
       tags:
@@ -10782,7 +12213,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/coaches/{id}/schedule':
     post:
       tags:
@@ -10824,7 +12255,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/coaches/{id}/shifts':
     get:
       tags:
@@ -10875,7 +12306,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Coach Management'
@@ -10946,7 +12377,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/coaches/{id}/shifts/{shiftId}':
     put:
       tags:
@@ -10990,7 +12421,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Coach Management'
@@ -11022,58 +12453,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
-  '/v1/coaches/{id}/activities':
-    get:
-      tags:
-        - 'Coach Management'
-      summary: 'Get Coach Activities'
-      description: 'Returns all activities associated with a specific coach, including full activity details.'
-      operationId: e43054398edeea2bb040154003140015
-      parameters:
-        -
-          name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        200:
-          description: 'List of activities retrieved successfully'
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                  message:
-                    type: string
-                type: object
-        404:
-          description: 'Coach not found'
-          content:
-            application/json:
-              schema:
-                properties:
-                  message:
-                    type: string
-                type: object
-        500:
-          description: 'Server Error'
-          content:
-            application/json:
-              schema:
-                properties:
-                  message:
-                    type: string
-                  error:
-                    type: string
-                type: object
-      security:
-        -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/coaches/trashed:
     get:
       tags:
@@ -11089,6 +12469,22 @@ paths:
           required: false
           schema:
             type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب المدربين المحذوفين بنجاح'
@@ -11109,7 +12505,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/coaches/{id}/restore':
     post:
       tags:
@@ -11146,7 +12542,7 @@ paths:
           description: '🚫 المدرب غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/payroll-runs:
     get:
       tags:
@@ -11154,6 +12550,31 @@ paths:
       summary: '💰 عرض مسيرات الرواتب'
       description: 'استرجاع قائمة بجميع مسيرات الرواتب المُنفذة في النظام.'
       operationId: e1f0685500ef39d9d498eecefe623385
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع مسيرات الرواتب بنجاح'
@@ -11184,7 +12605,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Payroll Management'
@@ -11249,7 +12670,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/payroll-runs/{payroll_run}':
     get:
       tags:
@@ -11307,7 +12728,32 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+    delete:
+      tags:
+        - 'Payroll Management'
+      summary: '🗑️ التراجع عن مسير الرواتب وحذفه'
+      description: 'إلغاء مسير الرواتب المثبت وحذف كافة إيصالات الرواتب التابعة له للعودة إلى حالة المسودة.'
+      operationId: 87925ecbe9f22f708f3b820ad22b59c0
+      parameters:
+        -
+          name: payroll_run
+          in: path
+          description: 'معرف مسير الرواتب'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: '✅ تم التراجع عن مسير الرواتب بنجاح'
+        422:
+          description: '⚠️ لا يمكن التراجع لوجود سندات صرف مرتبطة بالمحاسبة'
+        404:
+          description: '🚫 مسير الرواتب غير موجود'
+      security:
+        -
+          bearerAuth: []
   '/v1/payroll-runs/{id}/generate-payslips':
     post:
       tags:
@@ -11365,14 +12811,55 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/payslips:
     get:
       tags:
         - Payslips
       summary: '📄 عرض سجلات الرواتب'
-      description: 'استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات.'
+      description: 'استرجاع جميع سجلات الرواتب لكل الموظفين مع تفاصيل الراتب الأساسي والعمولات والمكافآت والخصومات وحالة الصرف.'
       operationId: ad90293a6ae0700fc8ebd09b515c780e
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: status
+          in: query
+          description: 'تصفية حسب حالة الصرف (pending, paid)'
+          required: false
+          schema:
+            type: string
+            example: pending
+        -
+          name: staff_id
+          in: query
+          description: 'تصفية حسب معرف الكادر'
+          required: false
+          schema:
+            type: integer
+            example: 5
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع السجلات بنجاح'
@@ -11403,7 +12890,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/payslips/{payslip}':
     put:
       tags:
@@ -11460,7 +12947,7 @@ paths:
           description: '❌ السجل غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/payslips/generate:
     post:
       tags:
@@ -11490,7 +12977,7 @@ paths:
           description: '❌ مسير الرواتب موجود مسبقاً'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/payslips/confirm:
     post:
       tags:
@@ -11532,12 +13019,20 @@ paths:
                       staff_id:
                         type: integer
                         example: 1
+                      staff_name:
+                        type: string
+                        example: 'أحمد علي'
+                        nullable: true
                       base_pay:
                         type: number
                         example: 5000
                       commission_pay:
                         type: number
                         example: 500
+                      subscribers_count:
+                        type: integer
+                        example: 5
+                        nullable: true
                       net_pay:
                         type: number
                         example: 5500
@@ -11572,7 +13067,7 @@ paths:
           description: '❌ الرواتب مثبتة مسبقاً'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/staff:
     get:
       tags:
@@ -11597,7 +13092,6 @@ paths:
             type: string
             enum:
               - admin
-              - management_admin
               - manager
               - coach
               - receptionist
@@ -11624,6 +13118,22 @@ paths:
               - active
               - suspended
               - on_leave
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع الموظفين بنجاح'
@@ -11662,7 +13172,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Staff Management'
@@ -11695,15 +13205,9 @@ paths:
                   type: string
                   example: '234567890'
                 role:
+                  description: 'اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles'
                   type: string
-                  example: receptionist
-                  enum:
-                    - admin
-                    - management_admin
-                    - receptionist
-                    - cleaner
-                    - manager
-                    - staff
+                  example: reception
                 employment_type:
                   type: string
                   example: fixed_salary
@@ -11790,7 +13294,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff/{id}/schedule':
     post:
       tags:
@@ -11875,7 +13379,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff/{staff}':
     get:
       tags:
@@ -11941,7 +13445,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Staff Management'
@@ -11963,6 +13467,7 @@ paths:
           application/json:
             schema:
               required:
+                - reason
                 - first_name
                 - last_name
                 - phone_number
@@ -11970,6 +13475,10 @@ paths:
                 - employment_type
                 - branch_ids
               properties:
+                reason:
+                  description: 'سبب التعديل (حقل إجباري قبل الحفظ)'
+                  type: string
+                  example: 'تعديل المسمى الوظيفي والراتب'
                 first_name:
                   type: string
                   example: John
@@ -11983,16 +13492,9 @@ paths:
                   type: string
                   example: '234567890'
                 role:
+                  description: 'اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles'
                   type: string
-                  example: receptionist
-                  enum:
-                    - admin
-                    - management_admin
-                    - receptionist
-                    - coach
-                    - cleaner
-                    - manager
-                    - staff
+                  example: reception
                 employment_type:
                   type: string
                   example: fixed_salary
@@ -12087,7 +13589,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Staff Management'
@@ -12120,7 +13622,7 @@ paths:
           description: '🚫 الموظف غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff/{id}/photo':
     post:
       tags:
@@ -12203,7 +13705,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff/{id}/toggle-status':
     patch:
       tags:
@@ -12261,7 +13763,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff/{id}/sync-branches':
     post:
       tags:
@@ -12347,7 +13849,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/staff/trashed:
     get:
       tags:
@@ -12355,12 +13857,29 @@ paths:
       summary: '🗑️ عرض الموظفين المحذوفين (سلة المهملات)'
       description: 'جلب قائمة بالموظفين والمدربين المحذوفين.'
       operationId: baeeeea5cff507a9231c8a6a59a010e4
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الموظفين المحذوفين بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff/{id}/restore':
     post:
       tags:
@@ -12382,7 +13901,7 @@ paths:
           description: '✅ تم استرجاع الموظف بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/staff-shifts:
     get:
       tags:
@@ -12390,6 +13909,31 @@ paths:
       summary: '🕒 عرض مناوبات الموظفين'
       description: 'استرجاع قائمة بجميع مناوبات الموظفين في الفروع.'
       operationId: 6155013f68b13627589883958ab4aebd
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع المناوبات بنجاح'
@@ -12420,7 +13964,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Staff Shifts'
@@ -12488,7 +14032,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/staff-shifts/{staff_shift}':
     get:
       tags:
@@ -12546,7 +14090,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Staff Shifts'
@@ -12626,7 +14170,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Staff Shifts'
@@ -12685,7 +14229,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/my-invoices:
     get:
       tags:
@@ -12754,7 +14298,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/offers:
     get:
       tags:
@@ -12770,6 +14314,22 @@ paths:
           required: false
           schema:
             type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: 'Successful operation'
@@ -12827,7 +14387,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - Offers
@@ -12907,7 +14467,7 @@ paths:
           description: 'Validation Error'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/offers/{id}':
     get:
       tags:
@@ -12980,7 +14540,7 @@ paths:
           description: 'Offer not found'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - Offers
@@ -13057,7 +14617,7 @@ paths:
           description: 'Offer not found'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/offers/{offer}':
     delete:
       tags:
@@ -13092,7 +14652,7 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/offers/trashed:
     get:
       tags:
@@ -13100,12 +14660,29 @@ paths:
       summary: '🗑️ عرض العروض المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بالعروض المحذوفة.'
       operationId: 47aa749cb9a6ef5b06d46575d10cf51b
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب العروض المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/offers/{id}/restore':
     post:
       tags:
@@ -13127,7 +14704,7 @@ paths:
           description: '✅ تم استرجاع العرض بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/offers/{id}/subscribe':
     post:
       tags:
@@ -13169,6 +14746,10 @@ paths:
                     - card
                     - wallet
                     - bank_transfer
+                receipt_number:
+                  description: 'رقم إيصال الدفع (اختياري)'
+                  type: string
+                  example: REC-2026-003
                 notes:
                   description: ملاحظات
                   type: string
@@ -13204,7 +14785,7 @@ paths:
           description: 'Offer or Member not found'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/payments:
     get:
       tags:
@@ -13212,12 +14793,29 @@ paths:
       summary: '💰 عرض جميع الدفعات المالية'
       description: 'استرجاع قائمة بجميع الدفعات المالية المسجلة في النظام.'
       operationId: a0becc9fd87326d11087e5c9525d0ac5
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم استرجاع الدفعات بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/payments/{id}':
     get:
       tags:
@@ -13240,7 +14838,7 @@ paths:
           description: '🚫 الدفعة غير موجودة'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Invoices & Payments'
@@ -13260,7 +14858,13 @@ paths:
         content:
           application/json:
             schema:
+              required:
+                - reason
               properties:
+                reason:
+                  description: 'سبب التعديل (حقل إجباري قبل الحفظ)'
+                  type: string
+                  example: 'تصحيح المبلغ المدفوع وتعديل طريقة الدفع'
                 amount:
                   type: number
                   format: float
@@ -13268,13 +14872,17 @@ paths:
                 payment_method:
                   type: string
                   example: cash
+                receipt_number:
+                  description: 'رقم إيصال الدفع (اختياري)'
+                  type: string
+                  example: REC-2026-001
               type: object
       responses:
         200:
           description: '✅ تم تحديث الدفعة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Invoices & Payments'
@@ -13307,7 +14915,7 @@ paths:
           description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/payments/trashed:
     get:
       tags:
@@ -13315,12 +14923,29 @@ paths:
       summary: '🗑️ عرض الدفعات المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بالدفعات المالية المحذوفة.'
       operationId: 623718b70788f6b07ee440d4646a0618
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الدفعات المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/payments/{id}/restore':
     post:
       tags:
@@ -13341,7 +14966,7 @@ paths:
           description: '✅ تم استرجاع الدفعة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/player-subscriptions:
     get:
       tags:
@@ -13354,6 +14979,22 @@ paths:
           name: branch_id
           in: query
           description: 'تصفية الاشتراكات حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
           required: false
           schema:
             type: integer
@@ -13392,7 +15033,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Player Subscriptions'
@@ -13442,6 +15083,10 @@ paths:
                   description: 'طريقة الدفع (اختياري)'
                   type: string
                   example: cash
+                receipt_number:
+                  description: 'رقم إيصال الدفع (اختياري)'
+                  type: string
+                  example: REC-2026-001
               type: object
       responses:
         201:
@@ -13503,7 +15148,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{player_subscription}':
     get:
       tags:
@@ -13565,7 +15210,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}':
     put:
       tags:
@@ -13583,11 +15228,17 @@ paths:
             type: integer
             example: 1
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
+              required:
+                - reason
               properties:
+                reason:
+                  description: 'سبب التعديل (حقل إجباري قبل الحفظ)'
+                  type: string
+                  example: 'تعديل تاريخ بداية ونهاية الاشتراك'
                 member_id:
                   description: 'معرف العضو (اختياري)'
                   type: integer
@@ -13623,6 +15274,14 @@ paths:
                   type: number
                   format: float
                   example: 100
+                payment_method:
+                  description: 'طريقة الدفع (اختياري)'
+                  type: string
+                  example: cash
+                receipt_number:
+                  description: 'رقم إيصال الدفع (اختياري)'
+                  type: string
+                  example: REC-2026-001
                 notes:
                   description: 'ملاحظات (اختياري)'
                   type: string
@@ -13685,12 +15344,12 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Player Subscriptions'
       summary: '🗑️ حذف اشتراك متدرب (Soft Delete)'
-      description: 'حذف اشتراك المتدرب ناعماً مع إخفاء تفاصيله وتجميداته وفواتيره ودفعاته المالية ناعماً ومتتابعاً.'
+      description: 'حذف اشتراك المتدرب ناعماً. يقبل معامل is_refunded لتحديد ما إذا تمت إعادة سعر الاشتراك للاعب (إذا نعم: يُحذف سجل الكسر المالي subscription_revenue_splits، إذا لا: يبقى السجل المالي محفوظاً).'
       operationId: 397414f0216c095ed8c6a7b15c216061
       parameters:
         -
@@ -13701,14 +15360,37 @@ paths:
           schema:
             type: integer
             example: 1
+        -
+          name: is_refunded
+          in: query
+          description: 'هل تمت إعادة سعر الاشتراك للاعب؟ (true / false)'
+          required: false
+          schema:
+            type: boolean
+            example: true
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                is_refunded:
+                  description: 'هل تمت إعادة سعر الاشتراك للاعب؟ (إذا نعم يتم حذف سجل الكسر المالي، إذا لا يبقى محفوظاً)'
+                  type: boolean
+                  example: true
+                reason:
+                  description: 'سبب الحذف (اختياري)'
+                  type: string
+                  example: 'طلب اللاعب إلغاء واسترداد المبلغ'
+              type: object
       responses:
         200:
-          description: '✅ تم حذف الاشتراك وسجلاته المرفقة ناعماً بنجاح'
+          description: '✅ تم حذف الاشتراك بنجاح'
         404:
           description: '🚫 الاشتراك غير موجود'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}/freeze':
     post:
       tags:
@@ -13801,7 +15483,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}/unfreeze':
     post:
       tags:
@@ -13879,7 +15561,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}/renew':
     post:
       tags:
@@ -13906,6 +15588,27 @@ paths:
                   description: 'معرف الخطة المراد التجديد عليها (اختياري)'
                   type: integer
                   example: 1
+                paid_amount:
+                  description: 'المبلغ المدفوع (اختياري)'
+                  type: number
+                  format: float
+                  example: 50
+                payment_method:
+                  description: 'طريقة الدفع (اختياري)'
+                  type: string
+                  example: cash
+                receipt_number:
+                  description: 'رقم إيصال الدفع (اختياري)'
+                  type: string
+                  example: REC-2026-002
+                coach_id:
+                  description: 'معرف المدرب (اختياري)'
+                  type: integer
+                  example: 1
+                notes:
+                  description: 'ملاحظات (اختياري)'
+                  type: string
+                  example: 'ملاحظات التجديد'
               type: object
       responses:
         201:
@@ -13967,7 +15670,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}/cancel':
     post:
       tags:
@@ -14055,7 +15758,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}/payment':
     post:
       tags:
@@ -14081,9 +15784,18 @@ paths:
                 - amount
               properties:
                 amount:
+                  description: 'قيمة الدفعة المالية'
                   type: number
                   format: float
                   example: 150
+                payment_method:
+                  description: 'طريقة الدفع (اختياري)'
+                  type: string
+                  example: cash
+                receipt_number:
+                  description: 'رقم إيصال الدفع (اختياري)'
+                  type: string
+                  example: REC-2026-003
               type: object
       responses:
         200:
@@ -14145,13 +15857,13 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/player-subscriptions/{id}/restore':
     post:
       tags:
         - 'Player Subscriptions'
       summary: '♻️ استرجاع اشتراك محذوف'
-      description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره ودفعاته المالية تلقائياً.'
+      description: 'استرجاع اشتراك المتدرب المحذوف ناعماً وكافّة تفاصيله وفواتيره وسجل كسر الإيرادات إن وُجد تلقائياً.'
       operationId: 3705194785ed48deca2ca7dc82401a37
       parameters:
         -
@@ -14169,7 +15881,36 @@ paths:
           description: '🚫 الاشتراك غير موجود في سلة المحذوفات'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  /v1/player-subscription-items:
+    get:
+      tags:
+        - 'Player Subscriptions'
+      summary: '📦 عرض عناصر اشتراكات اللاعبين'
+      operationId: a0514eb92c2275a005fb62e0edce5220
+      parameters:
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: '✅ تم الاسترجاع بنجاح'
+      security:
+        -
+          bearerAuth: []
   /v1/subscription-plan-activities:
     get:
       tags:
@@ -14182,6 +15923,22 @@ paths:
           name: branch_id
           in: query
           description: 'تصفية الأنشطة حسب الفرع المرتبط بالخطة'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
           required: false
           schema:
             type: integer
@@ -14216,7 +15973,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Subscription Plan Activities'
@@ -14283,7 +16040,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/subscription-plan-activities/{subscription_plan_activity}':
     get:
       tags:
@@ -14341,7 +16098,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Subscription Plan Activities'
@@ -14424,7 +16181,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Subscription Plan Activities'
@@ -14483,7 +16240,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/subscription-plan-activities/trashed:
     get:
       tags:
@@ -14491,12 +16248,37 @@ paths:
       summary: '🗑️ عرض نشاطات الخطط المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بنشاطات الخطط المحذوفة.'
       operationId: 2862ab3e6ca39dc625ab168afa2cf4d9
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية الأنشطة حسب الفرع المرتبط بالخطة'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب النشاطات المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/subscription-plan-activities/{id}/restore':
     post:
       tags:
@@ -14518,7 +16300,7 @@ paths:
           description: '✅ تم استرجاع النشاط بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/subscription-plans:
     get:
       tags:
@@ -14556,6 +16338,22 @@ paths:
               - male
               - female
               - mixed
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ قائمة خطط الاشتراك'
@@ -14617,7 +16415,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     post:
       tags:
         - 'Subscription Plans'
@@ -14777,7 +16575,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/subscription-plans/registration:
     get:
       tags:
@@ -14824,7 +16622,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/subscription-plans/{subscription_plan}':
     get:
       tags:
@@ -14913,7 +16711,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     put:
       tags:
         - 'Subscription Plans'
@@ -14934,7 +16732,13 @@ paths:
         content:
           application/json:
             schema:
+              required:
+                - reason
               properties:
+                reason:
+                  description: 'سبب التعديل (حقل إجباري قبل الحفظ)'
+                  type: string
+                  example: 'تحديث السعر وعدد المشتركين'
                 name:
                   description: 'اسم الخطة'
                   type: string
@@ -15087,7 +16891,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
     delete:
       tags:
         - 'Subscription Plans'
@@ -15163,7 +16967,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/subscription-plans/{subscription_plan}/delete-check':
     get:
       tags:
@@ -15228,7 +17032,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/subscription-plans/{id}/players':
     get:
       tags:
@@ -15349,7 +17153,7 @@ paths:
                 type: object
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/subscription-plans/trashed:
     get:
       tags:
@@ -15357,12 +17161,37 @@ paths:
       summary: '🗑️ عرض باقات الاشتراك المحذوفة (سلة المهملات)'
       description: 'جلب قائمة بباقات الاشتراك المحذوفة.'
       operationId: 7f4e8ddedf546ba46f0c7e79f1a12989
+      parameters:
+        -
+          name: branch_id
+          in: query
+          description: 'تصفية حسب الفرع'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
       responses:
         200:
           description: '✅ تم جلب الباقات المحذوفة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/subscription-plans/{id}/restore':
     post:
       tags:
@@ -15384,7 +17213,217 @@ paths:
           description: '✅ تم استرجاع الباقة بنجاح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
+  '/v1/subscription-plans/{id}/suspensions/preview':
+    post:
+      tags:
+        - 'Subscription Plan Suspensions'
+      summary: '🔍 معاينة المتأثرين وتمديد الأيام قبل إيقاف الفعالية'
+      description: 'استرجاع تقرير تفصيلي باللاعبين المتأثرين، أيام التمديد المحسوبة لكل لاعب، والجلسات التي سيتم إلغاؤها.'
+      operationId: be89fb5593f1e1d24f37aa20d3f3a232
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف الفعالية (Subscription Plan ID)'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - suspend_start_date
+                - suspend_end_date
+              properties:
+                suspend_start_date:
+                  description: 'تاريخ بداية الإيقاف'
+                  type: string
+                  format: date
+                  example: '2026-08-15'
+                suspend_end_date:
+                  description: 'تاريخ نهاية الإيقاف'
+                  type: string
+                  format: date
+                  example: '2026-08-22'
+              type: object
+      responses:
+        200:
+          description: '✅ تقرير المعاينة التفصيلي'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Suspension preview generated successfully'
+                  data:
+                    type: object
+                type: object
+      security:
+        -
+          bearerAuth: []
+  '/v1/subscription-plans/{id}/suspend':
+    post:
+      tags:
+        - 'Subscription Plan Suspensions'
+      summary: '⏸️ إيقاف الفعالية مؤقتاً واعتذار الكوتش'
+      description: 'إيقاف الفعالية بين تاريخين محددين، تجميد وتمديد اشتراكات اللاعبين المتأثرين، إلغاء الحصص المجدولة، وإرسال الإشعارات.'
+      operationId: 5ae1f032d40f7f4a72d67935e63ef002
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف الفعالية (Subscription Plan ID)'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - suspend_start_date
+                - suspend_end_date
+              properties:
+                suspend_start_date:
+                  description: 'تاريخ بداية الإيقاف'
+                  type: string
+                  format: date
+                  example: '2026-08-15'
+                suspend_end_date:
+                  description: 'تاريخ نهاية الإيقاف'
+                  type: string
+                  format: date
+                  example: '2026-08-22'
+                reason:
+                  description: 'سبب الإيقاف أو الاعتذار'
+                  type: string
+                  example: 'ظرف صحي طارئ للكوتش'
+              type: object
+      responses:
+        200:
+          description: '✅ تم إيقاف الفعالية وتجميد وتمديد الاشتراكات بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Subscription plan suspended successfully'
+                  data:
+                    type: object
+                type: object
+      security:
+        -
+          bearerAuth: []
+  '/v1/subscription-plans/{id}/suspensions':
+    get:
+      tags:
+        - 'Subscription Plan Suspensions'
+      summary: '📋 عرض سجل إيقافات الفعالية'
+      description: 'جلب قائمة بكافة الإيقافات السابقة والحالية والمجدولة لهذه الفعالية.'
+      operationId: ee252947cf932ee2fcae219fe83d6014
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف الفعالية'
+          required: true
+          schema:
+            type: integer
+            example: 1
+        -
+          name: per_page
+          in: query
+          description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)'
+          required: false
+          schema:
+            type: string
+            example: '15'
+        -
+          name: page
+          in: query
+          description: 'رقم الصفحة'
+          required: false
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: '✅ تم جلب سجل الإيقافات بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Plan suspensions retrieved successfully'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                type: object
+      security:
+        -
+          bearerAuth: []
+  '/v1/subscription-plans/{id}/suspensions/{suspensionId}':
+    delete:
+      tags:
+        - 'Subscription Plan Suspensions'
+      summary: '▶️ استئناف الفعالية / إلغاء الإيقاف مبكراً'
+      description: 'رفع الإيقاف عن الفعالية مبكراً، فك تجميد اشتراكات اللاعبين، خصم الأيام غير المستخدمة والاحتفاظ بالأيام المستفادة فقط، واستعادة الجلسات المتبقية.'
+      operationId: 147a4b8fe2b31421a5094d64ebba72b8
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'معرف الفعالية'
+          required: true
+          schema:
+            type: integer
+            example: 1
+        -
+          name: suspensionId
+          in: path
+          description: 'معرف سجل الإيقاف'
+          required: true
+          schema:
+            type: integer
+            example: 5
+      responses:
+        200:
+          description: '✅ تم استئناف الفعالية وإلغاء الإيقاف بنجاح'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: 'Subscription plan suspension lifted successfully'
+                  data:
+                    type: object
+                type: object
+      security:
+        -
+          bearerAuth: []
   /v1/reports/subscriptions:
     get:
       tags:
@@ -15531,7 +17570,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/reports/subscriptions/renewal-status:
     get:
       tags:
@@ -15768,7 +17807,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/reports/sessions/time-capacity:
     get:
       tags:
@@ -15893,7 +17932,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/reports/attendance/peak-hours:
     get:
       tags:
@@ -15997,7 +18036,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/reports/subscriptions/frozen-terminated:
     get:
       tags:
@@ -16116,7 +18155,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/reports/shifts/attendance:
     get:
       tags:
@@ -16257,7 +18296,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   /v1/reports/coaches/subscriptions:
     get:
       tags:
@@ -16339,7 +18378,7 @@ paths:
           description: '❌ غير مصرح'
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/people/{person_id}/wallet':
     get:
       tags:
@@ -16353,12 +18392,20 @@ paths:
           required: true
           schema:
             type: integer
+        -
+          name: per_page
+          in: query
+          description: 'عدد عناصر الحركات في الصفحة'
+          required: false
+          schema:
+            type: string
+            example: '15'
       responses:
         200:
           description: Success
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
   '/v1/people/{person_id}/wallet/deposit':
     post:
       tags:
@@ -16389,9 +18436,83 @@ paths:
           description: Success
       security:
         -
-          bearerAuth: {  }
+          bearerAuth: []
 components:
   schemas:
+    AccSalaryPaymentResource:
+      title: 'مورد تفاصيل صرف راتب الكادر'
+      description: 'يمثل كائن إرجاع تفاصيل سند صرف راتب لموظف أو مدرب بالنادي الرياضي.'
+      properties:
+        id:
+          type: integer
+          example: 1
+        staff:
+          properties:
+            id:
+              type: integer
+              example: 5
+            first_name:
+              type: string
+              example: أحمد
+            last_name:
+              type: string
+              example: المحمد
+            role:
+              type: string
+              example: coach
+          type: object
+          nullable: true
+        safe:
+          properties:
+            id:
+              type: integer
+              example: 2
+            name:
+              type: string
+              example: 'صندوق الاستقبال الرئيسي'
+          type: object
+          nullable: true
+        period:
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: 'شهر حزيران 2026'
+          type: object
+          nullable: true
+        amount:
+          type: number
+          format: float
+          example: 500
+        currency:
+          type: string
+          example: USD
+        payment_type:
+          type: string
+          example: salary
+          enum:
+            - salary
+            - advance
+            - bonus
+        date:
+          type: string
+          format: date
+          example: '2026-07-01'
+        notes:
+          type: string
+          example: 'راتب شهر حزيران'
+          nullable: true
+        journal_id:
+          type: integer
+          example: 12
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-07-01T10:00:00Z'
+      type: object
     AccAccount:
       title: 'حساب شجرة الحسابات (دليل الحسابات)'
       description: 'يمثل حساباً مالياً فريداً ضمن شجرة الحسابات (الأصول، الخصوم، حقوق الملكية، الإيرادات، المصروفات). يمكن أن يكون حساباً رئيسياً (مجمعاً) أو فرعياً (يقبل الحركات المالية والقيود).'
@@ -16902,6 +19023,61 @@ components:
           format: date-time
           example: '2026-06-30T23:59:59Z'
       type: object
+    AccSalaryPayment:
+      title: 'سند صرف راتب للموظف / الكادر'
+      description: 'يمثل حركة صرف راتب أو مكافأة لأحد كوادر أو موظفي النادي الرياضي عبر صندوق محدد وقيد محاسبي مزدوج.'
+      properties:
+        id:
+          description: 'المعرف الفريد لحركة صرف الراتب'
+          type: integer
+          example: 1
+        staff_id:
+          description: 'معرف الموظف/الكادر في النادي'
+          type: integer
+          example: 5
+        safe_id:
+          description: 'معرف الصندوق المالي الذي تم الصرف منه'
+          type: integer
+          example: 2
+        period_id:
+          description: 'معرف الفترة المالية والمحاسبية'
+          type: integer
+          example: 1
+        amount:
+          description: 'مبلغ الراتب المصروف'
+          type: number
+          format: float
+          example: 500
+        currency:
+          description: 'العملة (USD أو SYP)'
+          type: string
+          example: USD
+        date:
+          description: 'تاريخ صرف الراتب'
+          type: string
+          format: date
+          example: '2026-07-01'
+        notes:
+          description: 'ملاحظات إضافية حول الراتب أو الدفعة'
+          type: string
+          example: 'راتب شهر حزيران'
+          nullable: true
+        journal_id:
+          description: 'معرف السند المحاسبي المولد تلقائياً'
+          type: integer
+          example: 12
+          nullable: true
+        created_at:
+          description: 'تاريخ الإنشاء'
+          type: string
+          format: date-time
+          example: '2026-07-01T10:00:00Z'
+        updated_at:
+          description: 'تاريخ التحديث'
+          type: string
+          format: date-time
+          example: '2026-07-01T10:00:00Z'
+      type: object
     UpdateLockerHolderRequest:
       title: UpdateLockerHolderRequest
       description: 'البيانات المطلوبة لتحديث حامل مفتاح الخزانة'
@@ -17065,16 +19241,20 @@ components:
         - locker_number
       properties:
         branch_id:
+          description: 'معرف الفرع التابعة له الخزانة'
           type: integer
           example: 1
         locker_number:
+          description: 'رقم الخزانة الفريد ضمن الفرع'
           type: string
           example: L-101
         key_number:
+          description: 'رقم المفتاح الفريد ضمن الفرع (اختياري)'
           type: string
           example: K-101
           nullable: true
         status:
+          description: "حالة الخزانة عند الإنشاء (افتراضياً: available):\n• `available`: متاحة وفارغة وجاهزة للاستخدام\n• `maintenance`: معطلة أو قيد الصيانة (خارج الخدمة)\n• `with_member`: مسندة لمشترك / لاعب\n• `with_coach`: مسندة لمدرب\n• `with_staff`: مسندة لموظف"
           type: string
           example: available
           enum:
@@ -17082,6 +19262,7 @@ components:
             - with_member
             - with_staff
             - with_coach
+            - maintenance
       type: object
     UpdateBranchRequest:
       title: UpdateBranchRequest
@@ -17130,6 +19311,11 @@ components:
     UpdateLockerRequest:
       title: UpdateLockerRequest
       properties:
+        reason:
+          description: 'سبب التعديل (اختياري)'
+          type: string
+          example: 'تغيير المفتاح التالف وتحديث الحالة'
+          nullable: true
         locker_number:
           type: string
           example: L-101
@@ -17138,6 +19324,7 @@ components:
           example: K-101
           nullable: true
         status:
+          description: 'حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)'
           type: string
           example: available
           enum:
@@ -17145,6 +19332,7 @@ components:
             - with_member
             - with_staff
             - with_coach
+            - maintenance
         holder_id:
           type: integer
           example: 5
@@ -17229,6 +19417,12 @@ components:
           format: float
           example: 60
           nullable: true
+        private_subscription_commission:
+          description: 'نسبة عمولة النادي من الاشتراك الخاص (%) - الافتراضي 0%'
+          type: number
+          format: float
+          example: 0
+          nullable: true
         default_employee_salary:
           type: number
           format: float
@@ -17251,10 +19445,6 @@ components:
         display_mixed_activities:
           type: boolean
           example: false
-          nullable: true
-        payroll_start_day:
-          type: integer
-          example: 1
           nullable: true
         payroll_end_day:
           type: integer
@@ -17315,6 +19505,11 @@ components:
         membership_status:
           type: string
           example: active
+        reason:
+          description: 'آخر سبب للتعديل'
+          type: string
+          example: 'تحديث رقم الجوال والعنوان'
+          nullable: true
         join_date:
           type: string
           format: date
@@ -17337,6 +19532,16 @@ components:
           type: array
           items:
             type: object
+          nullable: true
+        created_by:
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: 'أحمد علي'
+          type: object
           nullable: true
         created_at:
           type: string
@@ -17370,6 +19575,9 @@ components:
         is_private_equipment:
           type: boolean
           example: false
+        is_unlimited_subscribers:
+          type: boolean
+          example: true
         is_active:
           type: boolean
           example: true
@@ -17468,6 +19676,11 @@ components:
             - active
             - suspended
             - on_leave
+        reason:
+          description: 'آخر سبب للتعديل'
+          type: string
+          example: 'تحديث الراتب والفرع'
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -17489,6 +19702,11 @@ components:
               type: number
               format: float
               example: 15.5
+            private_commission_rate:
+              description: 'نسبة الكوتش من اشتراكات أجهزة خاص (مئوية)'
+              type: number
+              format: float
+              example: 70
           type: object
         activities:
           description: 'Assigned activities'
@@ -17569,6 +19787,9 @@ tags:
     name: 'Accounting - الصناديق والعهد المالية'
     description: 'Accounting - الصناديق والعهد المالية'
   -
+    name: 'Accounting - رواتب الكوادر والموظفين'
+    description: 'Accounting - رواتب الكوادر والموظفين'
+  -
     name: Reports
     description: Reports
   -
@@ -17616,6 +19837,9 @@ tags:
   -
     name: 'Core Utilities'
     description: 'Core Utilities'
+  -
+    name: 'Formula Engine'
+    description: 'Formula Engine'
   -
     name: 'Member Management'
     description: 'Member Management'
@@ -17667,6 +19891,9 @@ tags:
   -
     name: 'Subscription Plans'
     description: 'Subscription Plans'
+  -
+    name: 'Subscription Plan Suspensions'
+    description: 'Subscription Plan Suspensions'
   -
     name: WalletManager
     description: WalletManager

@@ -118,7 +118,7 @@ class PayrollService
         $today = now();
 
         if ($this->isHoliday($branchId, $today)) {
-            $this->notifySuperAdminsHolidayError();
+            $this->notifyAdminsHolidayError();
             throw new Exception('لا يمكن حساب الرواتب لتاريخ اليوم، نرجو إعادة المحاولة في يوم عمل آخر لأنه يوم عطلة في النادي.', 400);
         }
 
@@ -126,12 +126,13 @@ class PayrollService
             throw new Exception("لا يمكن حساب الراتب في الوقت الحالي. التواريخ المسموحة تبدأ من يوم {$branchSetting->payroll_end_day} من كل شهر.", 400);
         }
 
-        $periodEnd = (clone $today)->setDay($branchSetting->payroll_end_day)->endOfDay();
-        $periodStart = (clone $periodEnd)->subMonthNoOverflow()->startOfDay();
+        $calculationDay = (clone $today)->setDay($branchSetting->payroll_end_day);
+        $periodEnd = $calculationDay->copy()->subDay()->endOfDay();
+        $periodStart = $calculationDay->copy()->subMonthNoOverflow()->startOfDay();
 
         $existingRun = PayrollRun::where('branch_id', $branchId)
-            ->where('period_start', $periodStart->toDateString())
-            ->where('period_end', $periodEnd->toDateString())
+            ->whereDate('period_start', $periodStart->toDateString())
+            ->whereDate('period_end', $periodEnd->toDateString())
             ->first();
 
         if ($existingRun) {
@@ -144,8 +145,6 @@ class PayrollService
                 $q->where('branch_id', $branchId);
             })->with(['activeContract', 'person', 'coachDetail'])->get();
 
-        $commissionPeriodEnd = $periodEnd->copy()->subDay()->endOfDay();
-
         $payslipsData = [];
         $staffCount = 0;
 
@@ -154,7 +153,7 @@ class PayrollService
             if (!$contract) continue;
 
             $basePay = $this->calculateFixedSalary($contract);
-            $commissionResult = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $commissionPeriodEnd, $branchSetting, $staff);
+            $commissionResult = $this->calculateCommissionPay($staff->id, $contract, $periodStart, $periodEnd, $branchSetting, $staff);
             $commissionPay = $commissionResult['amount'];
             $subscribersCount = $commissionResult['subscribers_count'];
 
@@ -253,10 +252,16 @@ class PayrollService
         });
     }
 
-    public function notifySuperAdminsHolidayError()
+    public function notifyAdminsHolidayError()
     {
-        $superAdmins = User::role('super_admin')->pluck('id')->toArray();
-        if (empty($superAdmins)) return;
+        $admins = User::where(function ($q) {
+            $q->whereIn('role', ['admin', 'super_admin', 'super-admin'])
+              ->orWhereHas('roles', function ($rq) {
+                  $rq->whereIn('name', ['admin', 'super_admin', 'super-admin']);
+              });
+        })->pluck('id')->toArray();
+
+        if (empty($admins)) return;
 
         $template = NotificationTemplate::where('system_key', 'payroll_generation_holiday_error')->first();
         if ($template) {
@@ -265,40 +270,25 @@ class PayrollService
                 'body' => $template->parseBody([]),
                 'sender_id' => null,
                 'sender_type' => 'system',
-                'user_ids' => $superAdmins,
+                'user_ids' => $admins,
             ]);
         }
     }
 
-    public function notifySuperAdminsSuccess($periodStart, $periodEnd)
-    {
-        $superAdmins = User::role('super_admin')->pluck('id')->toArray();
-        if (empty($superAdmins)) return;
-
-        $template = NotificationTemplate::where('system_key', 'payroll_generation_success')->first();
-        if ($template) {
-            $body = $template->parseBody([
-                'شهر' => Carbon::parse($periodStart)->format('Y-m'),
-                'تاريخ_البداية' => $periodStart,
-                'تاريخ_النهاية' => $periodEnd,
-            ]);
-
-            app(NotificationService::class)->createNotification([
-                'title' => $template->subject ?? 'إعداد مسير الرواتب',
-                'body' => $body,
-                'sender_id' => null,
-                'sender_type' => 'system',
-                'user_ids' => $superAdmins,
-            ]);
-        }
-    }
 
     /**
      * Get all payroll runs.
      */
-    public function getAllPayrollRuns()
+    public function getAllPayrollRuns(array $filters = [])
     {
-        return PayrollRun::with('payslips')->latest()->get();
+        $query = PayrollRun::with('payslips')->latest();
+
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            return $query->get();
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        return $query->paginate($perPage);
     }
 
     /**

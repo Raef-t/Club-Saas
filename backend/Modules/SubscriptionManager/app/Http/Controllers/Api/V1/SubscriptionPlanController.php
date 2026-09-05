@@ -30,6 +30,8 @@ class SubscriptionPlanController extends BaseController
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك',
@@ -84,7 +86,13 @@ class SubscriptionPlanController extends BaseController
             }
         }
         
-        $plans = $query->orderBy('id', 'desc')->get();
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $plans = $query->orderBy('id', 'desc')->paginate($perPage);
+        } else {
+            $plans = $query->orderBy('id', 'desc')->get();
+        }
+
         return $this->successResponse(
             SubscriptionPlanResource::collection($plans),
             __('Subscription plans retrieved successfully')
@@ -582,10 +590,13 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Management'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الباقات المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $plans = $this->planRepository->getTrashed();
+        $plans = $this->planRepository->getTrashed($request->all());
         return $this->successResponse(SubscriptionPlanResource::collection($plans), __('Trashed subscription plans retrieved successfully'));
     }
 

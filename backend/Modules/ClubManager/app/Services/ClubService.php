@@ -13,7 +13,7 @@ class ClubService
         $this->repository = $repository;
     }
 
-    public function getAll() { return $this->repository->all(); }
+    public function getAll(array $filters = []) { return $this->repository->all($filters); }
     public function getById($id) { return $this->repository->find($id); }
 
     public function create(array $data)
@@ -58,9 +58,9 @@ class ClubService
         $club->delete();
     }
 
-    public function getTrashed()
+    public function getTrashed(array $filters = [])
     {
-        return $this->repository->getTrashed();
+        return $this->repository->getTrashed($filters);
     }
 
     public function restoreClub($id)

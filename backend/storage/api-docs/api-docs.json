@@ -4197,6 +4197,26 @@
                             "format": "date",
                             "example": "2026-07-21"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -4745,6 +4765,33 @@
                                                     "type": "string",
                                                     "example": "لا توجد أمراض مزمنة",
                                                     "nullable": true
+                                                },
+                                                "roles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "super_admin"
+                                                    }
+                                                },
+                                                "permissions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "user-role.view"
+                                                            },
+                                                            "module": {
+                                                                "type": "string",
+                                                                "example": "user-role"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -4895,12 +4942,6 @@
                                         "example": 15,
                                         "nullable": true
                                     },
-                                    "current_password": {
-                                        "description": "كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)",
-                                        "type": "string",
-                                        "example": "oldPassword123",
-                                        "nullable": true
-                                    },
                                     "new_password": {
                                         "description": "كلمة المرور الجديدة",
                                         "type": "string",
@@ -4982,17 +5023,10 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "كلمة المرور الحالية غير صحيحة."
+                                            "example": "خطأ في التحقق من البيانات."
                                         },
                                         "errors": {
                                             "properties": {
-                                                "current_password": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "كلمة المرور الحالية غير مطابقة."
-                                                    }
-                                                },
                                                 "new_password": {
                                                     "type": "array",
                                                     "items": {
@@ -5606,6 +5640,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -5764,11 +5818,44 @@
                     {
                         "name": "module",
                         "in": "query",
-                        "description": "فلترة حسب اسم الموديول (مثال: member, staff, subscription)",
+                        "description": "فلترة حسب اسم الموديول (اختر الموديول من القائمة)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example": "member"
+                            "example": "member",
+                            "enum": [
+                                "member",
+                                "player-subscription",
+                                "subscription-plan",
+                                "coach",
+                                "staff",
+                                "staff-shift",
+                                "payroll",
+                                "payslip",
+                                "activity",
+                                "activity-type",
+                                "session-template",
+                                "staff-commission-rule",
+                                "offer",
+                                "sub-plan-activity",
+                                "payment",
+                                "club",
+                                "branch",
+                                "locker",
+                                "attendance",
+                                "reception",
+                                "accounting",
+                                "notification",
+                                "user",
+                                "role",
+                                "permission",
+                                "user-role",
+                                "contact",
+                                "report",
+                                "audit",
+                                "system",
+                                "upload"
+                            ]
                         }
                     }
                 ],
@@ -5793,7 +5880,7 @@
                     "Roles"
                 ],
                 "summary": "📋 جلب قائمة الأدوار",
-                "description": "يجلب جميع الأدوار المتاحة في النظام مع صلاحياتها.",
+                "description": "يجلب قائمة بجميع الأدوار المتاحة في النظام.",
                 "operationId": "getRolesList",
                 "responses": {
                     "200": {
@@ -5826,9 +5913,21 @@
                                 ],
                                 "properties": {
                                     "name": {
-                                        "description": "اسم الدور (حروف صغيرة وشرطة سفلية فقط)",
+                                        "description": "اسم الدور بالإنجليزية أو المعرف",
                                         "type": "string",
-                                        "example": "member_manager"
+                                        "example": "مدير الصالة"
+                                    },
+                                    "name_ar": {
+                                        "description": "اسم الدور باللغة العربية",
+                                        "type": "string",
+                                        "example": "مدير الصالة",
+                                        "nullable": true
+                                    },
+                                    "is_visible": {
+                                        "description": "هل يظهر الدور للجميع في النظام",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -5876,6 +5975,73 @@
                     },
                     "404": {
                         "description": "❌ الدور غير موجود"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "✏️ تعديل اسم الدور",
+                "description": "يعدل اسم دور موجود في النظام. لا يمكن تعديل الأدوار المحمية (super_admin, admin).",
+                "operationId": "updateRole",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "الاسم الجديد للدور",
+                                        "type": "string",
+                                        "example": "مشرف الصالة الجديد"
+                                    },
+                                    "name_ar": {
+                                        "description": "اسم الدور باللغة العربية",
+                                        "type": "string",
+                                        "example": "مشرف الصالة الجديد",
+                                        "nullable": true
+                                    },
+                                    "is_visible": {
+                                        "description": "هل يظهر الدور للجميع في النظام",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تعديل اسم الدور بنجاح"
+                    },
+                    "403": {
+                        "description": "🚫 لا يمكن تعديل دور محمي"
+                    },
+                    "404": {
+                        "description": "❌ الدور غير موجود"
+                    },
+                    "422": {
+                        "description": "❌ خطأ في البيانات"
                     }
                 },
                 "security": [
@@ -6008,6 +6174,26 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -6171,6 +6357,38 @@
                 "summary": "🏢 عرض جميع الفروع",
                 "description": "استرجاع قائمة بجميع الفروع المتاحة في النظام.",
                 "operationId": "958cc958d808a4d1e94e1a79bb86aeca",
+                "parameters": [
+                    {
+                        "name": "club_id",
+                        "in": "query",
+                        "description": "تصفية حسب النادي",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الفروع بنجاح",
@@ -6649,6 +6867,38 @@
                 "summary": "🗑️ عرض الفروع المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالفروع التي تم حذفها.",
                 "operationId": "3f27c6bd9565cbca4d22914eea895c68",
+                "parameters": [
+                    {
+                        "name": "club_id",
+                        "in": "query",
+                        "description": "تصفية حسب النادي",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الفروع المحذوفة بنجاح"
@@ -6795,6 +7045,26 @@
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
@@ -7183,6 +7453,38 @@
                 "summary": "🗑️ عرض العطلات المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بأيام العطل المحذوفة.",
                 "operationId": "9c510011d0c868b7d31fabdc9273970c",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب العطلات المحذوفة بنجاح"
@@ -7438,6 +7740,26 @@
                         "in": "path",
                         "description": "معرف الفرع",
                         "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
@@ -7871,6 +8193,26 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -7935,6 +8277,28 @@
                 "summary": "🏢 عرض جميع الأندية",
                 "description": "استرجاع قائمة بجميع الأندية المسجلة في النظام مع شعاراتها وحالاتها.",
                 "operationId": "366d4361fb952980b2ed09241b6e55ca",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة الأندية",
@@ -8637,6 +9001,28 @@
                 "summary": "🗑️ عرض الأندية المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالأندية التي تم حذفها.",
                 "operationId": "8cc70a5ceb754d3ad5f7467a39748948",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الأندية المحذوفة بنجاح"
@@ -8868,10 +9254,6 @@
                                         "type": "integer",
                                         "example": 5
                                     },
-                                    "allow_partial_payment": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
                                     "enabled_features": {
                                         "type": "array",
                                         "items": {
@@ -9010,6 +9392,38 @@
                 "summary": "🏊 عرض جميع المرافق",
                 "description": "استرجاع قائمة بجميع المرافق (كالمسابح، الملاعب، الصالات الرياضية) المتاحة في النظام.",
                 "operationId": "3fc7578b764098b72d173a71bb07579e",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع المرافق بنجاح",
@@ -9425,6 +9839,38 @@
                 "summary": "🗑️ عرض المرافق المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالمرافق التي تم حذفها.",
                 "operationId": "0302e2ef01f032a11b0239539b7623ac",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب المرافق المحذوفة بنجاح"
@@ -9899,6 +10345,26 @@
                                 "occupied"
                             ]
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -10188,7 +10654,7 @@
                     "Locker Management"
                 ],
                 "summary": "🗑️ حذف خزانة (Soft Delete)",
-                "description": "إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة متتابعاً.",
+                "description": "إزالة خزانة محددة ناعماً من النظام مع كافّة حجوزاتها التابعة حتى لو كانت محجوزة أو مسندة. يتطلب إرسال كلمة التأكيد \"delete\" للموافقة على الحذف.",
                 "operationId": "849979252fdb3ee314725226a799e838",
                 "parameters": [
                     {
@@ -10200,8 +10666,35 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "confirmation",
+                        "in": "query",
+                        "description": "كلمة تأكيد الحذف (delete)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": ""
+                        }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "confirmation": {
+                                        "description": "تأكيد الحذف (delete)",
+                                        "type": "string",
+                                        "example": "delete"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "✅ تم حذف الخزانة بنجاح ناعماً",
@@ -10230,6 +10723,97 @@
                     },
                     "404": {
                         "description": "🚫 لم يتم العثور على الخزانة"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ عدم إرسال كلمة التأكيد \"delete\""
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/lockers/trashed": {
+            "get": {
+                "tags": [
+                    "Locker Management"
+                ],
+                "summary": "🗑️ عرض الخزائن المحذوفة (سلة المهملات)",
+                "description": "استرجاع قائمة بجميع الخزائن المحذوفة ناعماً مع إمكانية الفلترة حسب الفرع أو الترقيم.",
+                "operationId": "e4c69b90ffef45cdda62b8cb1cb97719",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "available"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع الخزائن المحذوفة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Trashed lockers retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "❌ غير مصرح"
@@ -10264,10 +10848,36 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم استرجاع الخزانة بنجاح"
+                        "description": "✅ تم استرجاع الخزانة بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Locker restored successfully"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "🚫 الخزانة غير موجودة في سلة المحذوفات"
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ تكرار رقم الخزانة في الفرع"
+                    },
+                    "401": {
+                        "description": "❌ غير مصرح"
                     }
                 },
                 "security": [
@@ -10912,6 +11522,66 @@
                 ]
             }
         },
+        "/v1/admin/formulas": {
+            "get": {
+                "tags": [
+                    "Formula Engine"
+                ],
+                "summary": "📐 عرض المعادلات الحسابية",
+                "description": "GET /v1/admin/formulas\nList all formulas, optionally filtered by category.",
+                "operationId": "af045f6bf52a86a0b986b2e7b51738fd",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "تصفية حسب الفئة",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الاسترجاع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/member/dashboard": {
             "get": {
                 "tags": [
@@ -11146,6 +11816,26 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -11357,6 +12047,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -12268,6 +12978,26 @@
                                 "frozen"
                             ]
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -12398,6 +13128,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -13871,6 +14621,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -14458,6 +15228,37 @@
                 "summary": "🗑️ عرض الأنشطة المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالأنشطة والرياضات التي تم حذفها لاسترجاعها أو المعاينة.",
                 "operationId": "9af50a6f9e148e8e0fd9a91f8e7dc438",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الأنشطة المحذوفة بنجاح"
@@ -14513,6 +15314,28 @@
                 "summary": "📋 عرض جميع أنواع الأنشطة",
                 "description": "استرجاع قائمة بجميع أنواع الأنشطة (تُستخدم لتحديد النشاط عند إضافة وردية أو نشاط جديد).",
                 "operationId": "d1bf4f6b012823495143265eabbc5aaf",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ قائمة أنواع الأنشطة",
@@ -14766,6 +15589,28 @@
                 "summary": "📅 عرض قوالب الجلسات",
                 "description": "استرجاع جميع قوالب الجلسات الأسبوعية.",
                 "operationId": "9d91c533f7c2c8f37a49b036f7356ff7",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع القوالب بنجاح",
@@ -15332,6 +16177,28 @@
                 "summary": "💰 عرض قواعد عمولات الموظفين",
                 "description": "استرجاع جميع القواعد الخاصة بعمولات الموظفين والمدربين.",
                 "operationId": "05a25f92d12607c374eb39dec1b9e0f3",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم الاسترجاع بنجاح",
@@ -15836,6 +16703,26 @@
                                 "on_leave"
                             ]
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -15845,6 +16732,14 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coaches retrieved successfully"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
@@ -15853,6 +16748,175 @@
                                         }
                                     },
                                     "type": "object"
+                                },
+                                "example": {
+                                    "status": "success",
+                                    "message": "Coaches retrieved successfully",
+                                    "data": [
+                                        {
+                                            "id": 5,
+                                            "person_id": 12,
+                                            "qr_code": "data:image/png;base64,iVBORw0KGgo...",
+                                            "branch_ids": [
+                                                1
+                                            ],
+                                            "role": "coach",
+                                            "employment_type": "hybrid",
+                                            "base_salary": 4500,
+                                            "start_date": "2024-01-01",
+                                            "end_date": null,
+                                            "start_time": "08:00",
+                                            "end_time": "16:00",
+                                            "work_status": "active",
+                                            "reason": "تحديث بيانات الراتب والشفت",
+                                            "created_at": "2024-01-01T08:00:00.000000Z",
+                                            "updated_at": "2024-06-15T10:30:00.000000Z",
+                                            "person": {
+                                                "id": 12,
+                                                "full_name": "الكابتن أحمد علي",
+                                                "gender": "male",
+                                                "age": 31,
+                                                "dob": "1995-05-14",
+                                                "address": "الرياض - حي الملز",
+                                                "photo_url": "https://api.domain.com/storage/people/photos/coach_5.jpg",
+                                                "email": "ahmed.coach@example.com",
+                                                "phone_number": "0501234567",
+                                                "country_code": "+966"
+                                            },
+                                            "username": "coach_ahmed",
+                                            "details": {
+                                                "id": 5,
+                                                "staff_id": 5,
+                                                "bio": "مدرب كمال أجسام ولياقة بدنية وفنون قتالية معتمد دولياً",
+                                                "experience_years": 7,
+                                                "gym_type": "male",
+                                                "work_types": [
+                                                    "equipment",
+                                                    "activities"
+                                                ],
+                                                "working_hours_per_week": 40,
+                                                "payment_type": "hybrid",
+                                                "commission_type": "percentage",
+                                                "default_commission_rate": 20,
+                                                "private_commission_rate": 70,
+                                                "created_at": "2024-01-01T08:00:00.000000Z",
+                                                "updated_at": "2024-06-15T10:30:00.000000Z"
+                                            },
+                                            "experience_years": 7,
+                                            "work_types": [
+                                                "equipment",
+                                                "activities"
+                                            ],
+                                            "shifts": [
+                                                {
+                                                    "id": 10,
+                                                    "branch_shift_id": 2,
+                                                    "name": "الشفت الصباحي",
+                                                    "start_time": "08:00",
+                                                    "end_time": "16:00"
+                                                }
+                                            ],
+                                            "activities": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "تدريب عام وأجهزة",
+                                                    "branch_id": 1,
+                                                    "activity_type": {
+                                                        "id": 1,
+                                                        "name": "تدريب عام",
+                                                        "is_active": true,
+                                                        "is_session_based": false,
+                                                        "has_unlimited_subscribers": true,
+                                                        "has_shifts": true,
+                                                        "is_daily_entry": false
+                                                    },
+                                                    "is_unlimited_subscribers": true,
+                                                    "description": "تدريب كمال الأجسام واللياقة العامة في صالة الأجهزة",
+                                                    "is_private_equipment": false,
+                                                    "is_active": true,
+                                                    "created_at": "2024-01-01T08:00:00.000000Z",
+                                                    "schedule_type": "shifts",
+                                                    "shifts": [
+                                                        {
+                                                            "id": 10,
+                                                            "branch_shift_id": 2,
+                                                            "name": "الشفت الصباحي",
+                                                            "start_time": "08:00",
+                                                            "end_time": "16:00"
+                                                        }
+                                                    ],
+                                                    "schedules": []
+                                                },
+                                                {
+                                                    "id": 2,
+                                                    "name": "تدريب خاص (شخصي)",
+                                                    "branch_id": 1,
+                                                    "activity_type": {
+                                                        "id": 2,
+                                                        "name": "تدريب خاص",
+                                                        "is_active": true,
+                                                        "is_session_based": false,
+                                                        "has_unlimited_subscribers": true,
+                                                        "has_shifts": false,
+                                                        "is_daily_entry": false
+                                                    },
+                                                    "is_unlimited_subscribers": true,
+                                                    "description": "جلسات تدريب شخصي 1-on-1 بالاتفاق",
+                                                    "is_private_equipment": true,
+                                                    "is_active": true,
+                                                    "created_at": "2024-01-01T08:00:00.000000Z",
+                                                    "schedule_type": "none",
+                                                    "shifts": [],
+                                                    "schedules": []
+                                                },
+                                                {
+                                                    "id": 3,
+                                                    "name": "كيك بوكسينغ",
+                                                    "branch_id": 1,
+                                                    "activity_type": {
+                                                        "id": 3,
+                                                        "name": "حصة جماعية",
+                                                        "is_active": true,
+                                                        "is_session_based": true,
+                                                        "has_unlimited_subscribers": false,
+                                                        "has_shifts": false,
+                                                        "is_daily_entry": false
+                                                    },
+                                                    "is_unlimited_subscribers": false,
+                                                    "description": "حصص كيك بوكسينغ جماعية أسبوعية",
+                                                    "is_private_equipment": false,
+                                                    "is_active": true,
+                                                    "created_at": "2024-01-01T08:00:00.000000Z",
+                                                    "schedule_type": "schedule",
+                                                    "shifts": [],
+                                                    "schedules": [
+                                                        {
+                                                            "id": 15,
+                                                            "plan_id": 4,
+                                                            "plan_name": "اشتراك كيك بوكسينغ شهري",
+                                                            "day_of_week": 0,
+                                                            "day_name": "Sunday",
+                                                            "day_name_ar": "الأحد",
+                                                            "start_time": "17:00",
+                                                            "end_time": "18:30",
+                                                            "is_active": true
+                                                        },
+                                                        {
+                                                            "id": 16,
+                                                            "plan_id": 4,
+                                                            "plan_name": "اشتراك كيك بوكسينغ شهري",
+                                                            "day_of_week": 2,
+                                                            "day_name": "Tuesday",
+                                                            "day_name_ar": "الثلاثاء",
+                                                            "start_time": "17:00",
+                                                            "end_time": "18:30",
+                                                            "is_active": true
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -16307,6 +17371,171 @@
                                         }
                                     },
                                     "type": "object"
+                                },
+                                "example": {
+                                    "data": {
+                                        "id": 5,
+                                        "person_id": 12,
+                                        "qr_code": "data:image/png;base64,iVBORw0KGgo...",
+                                        "branch_ids": [
+                                            1
+                                        ],
+                                        "role": "coach",
+                                        "employment_type": "hybrid",
+                                        "base_salary": 4500,
+                                        "start_date": "2024-01-01",
+                                        "end_date": null,
+                                        "start_time": "08:00",
+                                        "end_time": "16:00",
+                                        "work_status": "active",
+                                        "reason": "تحديث بيانات الراتب والشفت",
+                                        "created_at": "2024-01-01T08:00:00.000000Z",
+                                        "updated_at": "2024-06-15T10:30:00.000000Z",
+                                        "person": {
+                                            "id": 12,
+                                            "full_name": "الكابتن أحمد علي",
+                                            "gender": "male",
+                                            "age": 31,
+                                            "dob": "1995-05-14",
+                                            "address": "الرياض - حي الملز",
+                                            "photo_url": "https://api.domain.com/storage/people/photos/coach_5.jpg",
+                                            "email": "ahmed.coach@example.com",
+                                            "phone_number": "0501234567",
+                                            "country_code": "+966"
+                                        },
+                                        "username": "coach_ahmed",
+                                        "details": {
+                                            "id": 5,
+                                            "staff_id": 5,
+                                            "bio": "مدرب كمال أجسام ولياقة بدنية وفنون قتالية معتمد دولياً",
+                                            "experience_years": 7,
+                                            "gym_type": "male",
+                                            "work_types": [
+                                                "equipment",
+                                                "activities"
+                                            ],
+                                            "working_hours_per_week": 40,
+                                            "payment_type": "hybrid",
+                                            "commission_type": "percentage",
+                                            "default_commission_rate": 20,
+                                            "private_commission_rate": 70,
+                                            "created_at": "2024-01-01T08:00:00.000000Z",
+                                            "updated_at": "2024-06-15T10:30:00.000000Z"
+                                        },
+                                        "experience_years": 7,
+                                        "work_types": [
+                                            "equipment",
+                                            "activities"
+                                        ],
+                                        "shifts": [
+                                            {
+                                                "id": 10,
+                                                "branch_shift_id": 2,
+                                                "name": "الشفت الصباحي",
+                                                "start_time": "08:00",
+                                                "end_time": "16:00"
+                                            }
+                                        ],
+                                        "activities": [
+                                            {
+                                                "id": 1,
+                                                "name": "تدريب عام وأجهزة",
+                                                "branch_id": 1,
+                                                "activity_type": {
+                                                    "id": 1,
+                                                    "name": "تدريب عام",
+                                                    "is_active": true,
+                                                    "is_session_based": false,
+                                                    "has_unlimited_subscribers": true,
+                                                    "has_shifts": true,
+                                                    "is_daily_entry": false
+                                                },
+                                                "is_unlimited_subscribers": true,
+                                                "description": "تدريب كمال الأجسام واللياقة العامة في صالة الأجهزة",
+                                                "is_private_equipment": false,
+                                                "is_active": true,
+                                                "created_at": "2024-01-01T08:00:00.000000Z",
+                                                "schedule_type": "shifts",
+                                                "shifts": [
+                                                    {
+                                                        "id": 10,
+                                                        "branch_shift_id": 2,
+                                                        "name": "الشفت الصباحي",
+                                                        "start_time": "08:00",
+                                                        "end_time": "16:00"
+                                                    }
+                                                ],
+                                                "schedules": []
+                                            },
+                                            {
+                                                "id": 2,
+                                                "name": "تدريب خاص (شخصي)",
+                                                "branch_id": 1,
+                                                "activity_type": {
+                                                    "id": 2,
+                                                    "name": "تدريب خاص",
+                                                    "is_active": true,
+                                                    "is_session_based": false,
+                                                    "has_unlimited_subscribers": true,
+                                                    "has_shifts": false,
+                                                    "is_daily_entry": false
+                                                },
+                                                "is_unlimited_subscribers": true,
+                                                "description": "جلسات تدريب شخصي 1-on-1 بالاتفاق",
+                                                "is_private_equipment": true,
+                                                "is_active": true,
+                                                "created_at": "2024-01-01T08:00:00.000000Z",
+                                                "schedule_type": "none",
+                                                "shifts": [],
+                                                "schedules": []
+                                            },
+                                            {
+                                                "id": 3,
+                                                "name": "كيك بوكسينغ",
+                                                "branch_id": 1,
+                                                "activity_type": {
+                                                    "id": 3,
+                                                    "name": "حصة جماعية",
+                                                    "is_active": true,
+                                                    "is_session_based": true,
+                                                    "has_unlimited_subscribers": false,
+                                                    "has_shifts": false,
+                                                    "is_daily_entry": false
+                                                },
+                                                "is_unlimited_subscribers": false,
+                                                "description": "حصص كيك بوكسينغ جماعية أسبوعية",
+                                                "is_private_equipment": false,
+                                                "is_active": true,
+                                                "created_at": "2024-01-01T08:00:00.000000Z",
+                                                "schedule_type": "schedule",
+                                                "shifts": [],
+                                                "schedules": [
+                                                    {
+                                                        "id": 15,
+                                                        "plan_id": 4,
+                                                        "plan_name": "اشتراك كيك بوكسينغ شهري",
+                                                        "day_of_week": 0,
+                                                        "day_name": "Sunday",
+                                                        "day_name_ar": "الأحد",
+                                                        "start_time": "17:00",
+                                                        "end_time": "18:30",
+                                                        "is_active": true
+                                                    },
+                                                    {
+                                                        "id": 16,
+                                                        "plan_id": 4,
+                                                        "plan_name": "اشتراك كيك بوكسينغ شهري",
+                                                        "day_of_week": 2,
+                                                        "day_name": "Tuesday",
+                                                        "day_name_ar": "الثلاثاء",
+                                                        "start_time": "17:00",
+                                                        "end_time": "18:30",
+                                                        "is_active": true
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
                                 }
                             }
                         }
@@ -17240,87 +18469,6 @@
                 ]
             }
         },
-        "/v1/coaches/{id}/activities": {
-            "get": {
-                "tags": [
-                    "Coach Management"
-                ],
-                "summary": "Get Coach Activities",
-                "description": "Returns all activities associated with a specific coach, including full activity details.",
-                "operationId": "e43054398edeea2bb040154003140015",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of activities retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Coach not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "error": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/coaches/trashed": {
             "get": {
                 "tags": [
@@ -17337,6 +18485,26 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -17438,6 +18606,38 @@
                 "summary": "💰 عرض مسيرات الرواتب",
                 "description": "استرجاع قائمة بجميع مسيرات الرواتب المُنفذة في النظام.",
                 "operationId": "e1f0685500ef39d9d498eecefe623385",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع مسيرات الرواتب بنجاح",
@@ -17838,6 +19038,26 @@
                             "type": "integer",
                             "example": 5
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -18171,7 +19391,6 @@
                             "type": "string",
                             "enum": [
                                 "admin",
-                                "management_admin",
                                 "manager",
                                 "coach",
                                 "receptionist",
@@ -18205,6 +19424,26 @@
                                 "suspended",
                                 "on_leave"
                             ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -18307,16 +19546,9 @@
                                         "example": "234567890"
                                     },
                                     "role": {
+                                        "description": "اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles",
                                         "type": "string",
-                                        "example": "receptionist",
-                                        "enum": [
-                                            "admin",
-                                            "management_admin",
-                                            "receptionist",
-                                            "cleaner",
-                                            "manager",
-                                            "staff"
-                                        ]
+                                        "example": "reception"
                                     },
                                     "employment_type": {
                                         "type": "string",
@@ -18732,17 +19964,9 @@
                                         "example": "234567890"
                                     },
                                     "role": {
+                                        "description": "اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles",
                                         "type": "string",
-                                        "example": "receptionist",
-                                        "enum": [
-                                            "admin",
-                                            "management_admin",
-                                            "receptionist",
-                                            "coach",
-                                            "cleaner",
-                                            "manager",
-                                            "staff"
-                                        ]
+                                        "example": "reception"
                                     },
                                     "employment_type": {
                                         "type": "string",
@@ -19288,6 +20512,28 @@
                 "summary": "🗑️ عرض الموظفين المحذوفين (سلة المهملات)",
                 "description": "جلب قائمة بالموظفين والمدربين المحذوفين.",
                 "operationId": "baeeeea5cff507a9231c8a6a59a010e4",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الموظفين المحذوفين بنجاح"
@@ -19340,6 +20586,38 @@
                 "summary": "🕒 عرض مناوبات الموظفين",
                 "description": "استرجاع قائمة بجميع مناوبات الموظفين في الفروع.",
                 "operationId": "6155013f68b13627589883958ab4aebd",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع المناوبات بنجاح",
@@ -19907,6 +21185,26 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -20383,6 +21681,28 @@
                 "summary": "🗑️ عرض العروض المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالعروض المحذوفة.",
                 "operationId": "47aa749cb9a6ef5b06d46575d10cf51b",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب العروض المحذوفة بنجاح"
@@ -20549,6 +21869,28 @@
                 "summary": "💰 عرض جميع الدفعات المالية",
                 "description": "استرجاع قائمة بجميع الدفعات المالية المسجلة في النظام.",
                 "operationId": "a0becc9fd87326d11087e5c9525d0ac5",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع الدفعات بنجاح"
@@ -20715,6 +22057,28 @@
                 "summary": "🗑️ عرض الدفعات المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بالدفعات المالية المحذوفة.",
                 "operationId": "623718b70788f6b07ee440d4646a0618",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الدفعات المحذوفة بنجاح"
@@ -20771,6 +22135,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية الاشتراكات حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -22087,6 +23471,47 @@
                 ]
             }
         },
+        "/v1/player-subscription-items": {
+            "get": {
+                "tags": [
+                    "Player Subscriptions"
+                ],
+                "summary": "📦 عرض عناصر اشتراكات اللاعبين",
+                "operationId": "a0514eb92c2275a005fb62e0edce5220",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم الاسترجاع بنجاح"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/subscription-plan-activities": {
             "get": {
                 "tags": [
@@ -22100,6 +23525,26 @@
                         "name": "branch_id",
                         "in": "query",
                         "description": "تصفية الأنشطة حسب الفرع المرتبط بالخطة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -22570,6 +24015,38 @@
                 "summary": "🗑️ عرض نشاطات الخطط المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بنشاطات الخطط المحذوفة.",
                 "operationId": "2862ab3e6ca39dc625ab168afa2cf4d9",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية الأنشطة حسب الفرع المرتبط بالخطة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب النشاطات المحذوفة بنجاح"
@@ -22658,6 +24135,26 @@
                                 "female",
                                 "mixed"
                             ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -23813,6 +25310,38 @@
                 "summary": "🗑️ عرض باقات الاشتراك المحذوفة (سلة المهملات)",
                 "description": "جلب قائمة بباقات الاشتراك المحذوفة.",
                 "operationId": "7f4e8ddedf546ba46f0c7e79f1a12989",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "تصفية حسب الفرع",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "✅ تم جلب الباقات المحذوفة بنجاح"
@@ -24036,6 +25565,26 @@
                         "in": "path",
                         "description": "معرف الفعالية",
                         "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
@@ -25509,6 +27058,16 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد عناصر الحركات في الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
                         }
                     }
                 ],
@@ -27079,6 +28638,181 @@
                 },
                 "type": "object"
             },
+            "CoachActivityScheduleItem": {
+                "title": "Coach Activity Schedule Item",
+                "description": "موعد جلسة تدريبية أسبوعية للنشاط",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "plan_id": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "plan_name": {
+                        "type": "string",
+                        "example": "اشتراك كيك بوكسينغ شهري"
+                    },
+                    "day_of_week": {
+                        "description": "0=الأحد، 1=الإثنين، ...، 6=السبت",
+                        "type": "integer",
+                        "example": 0
+                    },
+                    "day_name": {
+                        "type": "string",
+                        "example": "Sunday"
+                    },
+                    "day_name_ar": {
+                        "type": "string",
+                        "example": "الأحد"
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "17:00"
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "18:30"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "CoachActivityShiftItem": {
+                "title": "Coach Activity Shift Item",
+                "description": "شفت عمل للكوتش في التدريب العام",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "branch_shift_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "الشفت الصباحي"
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "08:00"
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "16:00"
+                    }
+                },
+                "type": "object"
+            },
+            "CoachActivityResource": {
+                "title": "Coach Activity Resource",
+                "description": "تفاصيل النشاط المنسوب للمدرب متضمناً شفتات أو جدول المواعيد",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "كيك بوكسينغ"
+                    },
+                    "branch_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "activity_type": {
+                        "$ref": "#/components/schemas/ActivityTypeResource"
+                    },
+                    "is_unlimited_subscribers": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "is_private_equipment": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-07-16T12:00:00Z"
+                    },
+                    "schedule_type": {
+                        "description": "نوع الجدولة: shifts للتدريب العام، schedule للحصص، none للتدريب الخاص",
+                        "type": "string",
+                        "example": "schedule",
+                        "enum": [
+                            "shifts",
+                            "schedule",
+                            "none"
+                        ]
+                    },
+                    "shifts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CoachActivityShiftItem"
+                        }
+                    },
+                    "schedules": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CoachActivityScheduleItem"
+                        }
+                    }
+                },
+                "type": "object",
+                "example": {
+                    "id": 3,
+                    "name": "كيك بوكسينغ",
+                    "branch_id": 1,
+                    "activity_type": {
+                        "id": 3,
+                        "name": "حصة جماعية",
+                        "is_active": true,
+                        "is_session_based": true,
+                        "has_unlimited_subscribers": false,
+                        "has_shifts": false,
+                        "is_daily_entry": false
+                    },
+                    "is_unlimited_subscribers": false,
+                    "description": "حصص كيك بوكسينغ جماعية أسبوعية",
+                    "is_private_equipment": false,
+                    "is_active": true,
+                    "created_at": "2026-07-16T12:00:00Z",
+                    "schedule_type": "schedule",
+                    "shifts": [],
+                    "schedules": [
+                        {
+                            "id": 15,
+                            "plan_id": 4,
+                            "plan_name": "اشتراك كيك بوكسينغ شهري",
+                            "day_of_week": 0,
+                            "day_name": "Sunday",
+                            "day_name_ar": "الأحد",
+                            "start_time": "17:00",
+                            "end_time": "18:30",
+                            "is_active": true
+                        }
+                    ]
+                }
+            },
             "CoachResource": {
                 "title": "Coach Resource",
                 "description": "Coach resource representation",
@@ -27197,14 +28931,184 @@
                         "type": "object"
                     },
                     "activities": {
-                        "description": "Assigned activities",
+                        "description": "الأنشطة المنسوبة للمدرب مع تفاصيل الشفتات أو المواعيد",
                         "type": "array",
                         "items": {
-                            "type": "object"
+                            "$ref": "#/components/schemas/CoachActivityResource"
+                        }
+                    },
+                    "shifts": {
+                        "description": "شفتات المدرب المباشرة",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CoachActivityShiftItem"
                         }
                     }
                 },
-                "type": "object"
+                "type": "object",
+                "example": {
+                    "id": 5,
+                    "person_id": 12,
+                    "qr_code": "data:image/png;base64,iVBORw0KGgo...",
+                    "branch_ids": [
+                        1
+                    ],
+                    "role": "coach",
+                    "employment_type": "hybrid",
+                    "base_salary": 4500,
+                    "start_date": "2024-01-01",
+                    "end_date": null,
+                    "start_time": "08:00",
+                    "end_time": "16:00",
+                    "work_status": "active",
+                    "reason": "تحديث بيانات الراتب والشفت",
+                    "created_at": "2024-01-01T08:00:00.000000Z",
+                    "updated_at": "2024-06-15T10:30:00.000000Z",
+                    "person": {
+                        "id": 12,
+                        "full_name": "الكابتن أحمد علي",
+                        "gender": "male",
+                        "age": 31,
+                        "dob": "1995-05-14",
+                        "address": "الرياض - حي الملز",
+                        "photo_url": "https://api.domain.com/storage/people/photos/coach_5.jpg",
+                        "email": "ahmed.coach@example.com",
+                        "phone_number": "0501234567",
+                        "country_code": "+966"
+                    },
+                    "username": "coach_ahmed",
+                    "details": {
+                        "id": 5,
+                        "staff_id": 5,
+                        "bio": "مدرب كمال أجسام ولياقة بدنية وفنون قتالية معتمد دولياً",
+                        "experience_years": 7,
+                        "gym_type": "male",
+                        "work_types": [
+                            "equipment",
+                            "activities"
+                        ],
+                        "working_hours_per_week": 40,
+                        "payment_type": "hybrid",
+                        "commission_type": "percentage",
+                        "default_commission_rate": 20,
+                        "private_commission_rate": 70,
+                        "created_at": "2024-01-01T08:00:00.000000Z",
+                        "updated_at": "2024-06-15T10:30:00.000000Z"
+                    },
+                    "experience_years": 7,
+                    "work_types": [
+                        "equipment",
+                        "activities"
+                    ],
+                    "shifts": [
+                        {
+                            "id": 10,
+                            "branch_shift_id": 2,
+                            "name": "الشفت الصباحي",
+                            "start_time": "08:00",
+                            "end_time": "16:00"
+                        }
+                    ],
+                    "activities": [
+                        {
+                            "id": 1,
+                            "name": "تدريب عام وأجهزة",
+                            "branch_id": 1,
+                            "activity_type": {
+                                "id": 1,
+                                "name": "تدريب عام",
+                                "is_active": true,
+                                "is_session_based": false,
+                                "has_unlimited_subscribers": true,
+                                "has_shifts": true,
+                                "is_daily_entry": false
+                            },
+                            "is_unlimited_subscribers": true,
+                            "description": "تدريب كمال الأجسام واللياقة العامة في صالة الأجهزة",
+                            "is_private_equipment": false,
+                            "is_active": true,
+                            "created_at": "2024-01-01T08:00:00.000000Z",
+                            "schedule_type": "shifts",
+                            "shifts": [
+                                {
+                                    "id": 10,
+                                    "branch_shift_id": 2,
+                                    "name": "الشفت الصباحي",
+                                    "start_time": "08:00",
+                                    "end_time": "16:00"
+                                }
+                            ],
+                            "schedules": []
+                        },
+                        {
+                            "id": 2,
+                            "name": "تدريب خاص (شخصي)",
+                            "branch_id": 1,
+                            "activity_type": {
+                                "id": 2,
+                                "name": "تدريب خاص",
+                                "is_active": true,
+                                "is_session_based": false,
+                                "has_unlimited_subscribers": true,
+                                "has_shifts": false,
+                                "is_daily_entry": false
+                            },
+                            "is_unlimited_subscribers": true,
+                            "description": "جلسات تدريب شخصي 1-on-1 بالاتفاق",
+                            "is_private_equipment": true,
+                            "is_active": true,
+                            "created_at": "2024-01-01T08:00:00.000000Z",
+                            "schedule_type": "none",
+                            "shifts": [],
+                            "schedules": []
+                        },
+                        {
+                            "id": 3,
+                            "name": "كيك بوكسينغ",
+                            "branch_id": 1,
+                            "activity_type": {
+                                "id": 3,
+                                "name": "حصة جماعية",
+                                "is_active": true,
+                                "is_session_based": true,
+                                "has_unlimited_subscribers": false,
+                                "has_shifts": false,
+                                "is_daily_entry": false
+                            },
+                            "is_unlimited_subscribers": false,
+                            "description": "حصص كيك بوكسينغ جماعية أسبوعية",
+                            "is_private_equipment": false,
+                            "is_active": true,
+                            "created_at": "2024-01-01T08:00:00.000000Z",
+                            "schedule_type": "schedule",
+                            "shifts": [],
+                            "schedules": [
+                                {
+                                    "id": 15,
+                                    "plan_id": 4,
+                                    "plan_name": "اشتراك كيك بوكسينغ شهري",
+                                    "day_of_week": 0,
+                                    "day_name": "Sunday",
+                                    "day_name_ar": "الأحد",
+                                    "start_time": "17:00",
+                                    "end_time": "18:30",
+                                    "is_active": true
+                                },
+                                {
+                                    "id": 16,
+                                    "plan_id": 4,
+                                    "plan_name": "اشتراك كيك بوكسينغ شهري",
+                                    "day_of_week": 2,
+                                    "day_name": "Tuesday",
+                                    "day_name_ar": "الثلاثاء",
+                                    "start_time": "17:00",
+                                    "end_time": "18:30",
+                                    "is_active": true
+                                }
+                            ]
+                        }
+                    ]
+                }
             },
             "ApiResponse": {
                 "properties": {
@@ -27373,6 +29277,10 @@
         {
             "name": "Core Utilities",
             "description": "Core Utilities"
+        },
+        {
+            "name": "Formula Engine",
+            "description": "Formula Engine"
         },
         {
             "name": "Member Management",

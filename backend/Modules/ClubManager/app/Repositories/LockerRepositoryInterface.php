@@ -10,4 +10,6 @@ interface LockerRepositoryInterface
     public function update($id, array $data);
     public function delete($id);
     public function getByBranch($branchId);
+    public function getTrashed(array $filters = []);
+    public function restore($id);
 }

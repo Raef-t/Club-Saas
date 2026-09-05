@@ -16,8 +16,17 @@ class PlayerSubscriptionItemController extends BaseController
         $this->service = $service;
     }
 
-    public function index() {
-        return $this->successResponse(PlayerSubscriptionItemResource::collection($this->service->getAll()), 'Retrieved successfully');
+    #[OA\Get(
+        path: '/v1/player-subscription-items',
+        summary: '📦 عرض عناصر اشتراكات اللاعبين',
+        tags: ['Player Subscriptions'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
+    public function index(\Illuminate\Http\Request $request) {
+        return $this->successResponse(PlayerSubscriptionItemResource::collection($this->service->getAll($request->all())), 'Retrieved successfully');
     }
 
     public function store(StorePlayerSubscriptionItemRequest $request) {

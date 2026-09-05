@@ -177,6 +177,8 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'معرف الفرع للفلترة (اختياري)')]
     #[OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'), description: 'تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-21'), description: 'تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅', content: new OA\JsonContent())]
     public function history(Request $request)
     {
@@ -201,8 +203,12 @@ class UnifiedAttendanceController extends BaseController
             $branchId
         );
 
-        // إزالة Pagination وجلب جميع السجلات بناءً على الفلترة
-        $history = $query->get();
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $history = $query->paginate($perPage);
+        } else {
+            $history = $query->get();
+        }
 
         return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
     }

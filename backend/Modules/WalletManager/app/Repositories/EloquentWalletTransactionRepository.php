@@ -11,11 +11,16 @@ class EloquentWalletTransactionRepository implements WalletTransactionRepository
         return WalletTransaction::create($data);
     }
 
-    public function getByWalletId(int $walletId, int $perPage = 15)
+    public function getByWalletId(int $walletId, ?int $perPage = null)
     {
-        return WalletTransaction::where('wallet_id', $walletId)
+        $query = WalletTransaction::where('wallet_id', $walletId)
             ->with(['reference', 'createdBy'])
-            ->latest()
-            ->paginate($perPage);
+            ->latest();
+
+        if ($perPage === null) {
+            return $query->get();
+        }
+
+        return $query->paginate($perPage);
     }
 }

@@ -14,7 +14,9 @@ class StoreRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:100|unique:roles,name|regex:/^[a-z_]+$/',
+            'name'       => 'required|string|max:100|unique:roles,name',
+            'name_ar'    => 'nullable|string|max:100',
+            'is_visible' => 'nullable|boolean',
         ];
     }
 
@@ -23,7 +25,6 @@ class StoreRoleRequest extends FormRequest
         return [
             'name.required' => 'اسم الدور مطلوب.',
             'name.unique'   => 'هذا الدور موجود مسبقاً في النظام.',
-            'name.regex'    => 'يجب أن يحتوي اسم الدور على حروف صغيرة وشرطة سفلية فقط (مثال: member_manager).',
         ];
     }
 }

@@ -151,13 +151,29 @@ class SubscriptionService
             $query->where('end_date', '<=', $filters['end_date']);
         }
 
-        $subscriptions = $query->latest()->get();
+        $query->latest();
 
-        $memberIds = $subscriptions->pluck('member_id')->filter()->unique()->toArray();
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            $subscriptions = $query->get();
+            $memberIds = $subscriptions->pluck('member_id')->filter()->unique()->toArray();
+            if (!empty($memberIds)) {
+                $members = $this->memberSharedService->getMembersByIds($memberIds);
+                $membersMap = collect($members)->keyBy('id');
+                foreach ($subscriptions as $subscription) {
+                    $subscription->member = $membersMap->get($subscription->member_id);
+                }
+            }
+            return $subscriptions;
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        $subscriptions = $query->paginate($perPage);
+
+        $memberIds = collect($subscriptions->items())->pluck('member_id')->filter()->unique()->toArray();
         if (!empty($memberIds)) {
             $members = $this->memberSharedService->getMembersByIds($memberIds);
             $membersMap = collect($members)->keyBy('id');
-            foreach ($subscriptions as $subscription) {
+            foreach ($subscriptions->items() as $subscription) {
                 $subscription->member = $membersMap->get($subscription->member_id);
             }
         }
@@ -223,15 +239,9 @@ class SubscriptionService
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
 
             if ($paidAmount < $totalAmount) {
-                $branch = \Modules\ClubManager\Models\Branch::find($branchId);
-                if (!$branch) {
-                    throw new Exception(__('Branch not found.'));
-                }
-                $clubId = $branch->club_id;
-
-                $clubSetting = \Modules\ClubManager\Models\ClubSetting::where('club_id', $clubId)->first();
-                if ($clubSetting && !$clubSetting->allow_partial_payment) {
-                    throw new Exception(__('Partial payments are not allowed for this club. Please pay the full amount.'));
+                $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
+                if ($branchSetting && !$branchSetting->allow_installments) {
+                    throw new Exception(__('Installments/partial payments are not allowed for this branch. Please pay the full amount.'));
                 }
             }
 

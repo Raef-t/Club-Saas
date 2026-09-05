@@ -2,7 +2,7 @@ import { createBackendApi } from "@/lib/api/baseQuery";
 
 export const usersApi = createBackendApi({
   reducerPath: "usersApi",
-  tagTypes: ["Users", "UserRoles"],
+  tagTypes: ["Users", "Roles"],
   endpoints: (builder) => ({
     getUsers: builder.query({
       query: (params = {}) => ({
@@ -11,22 +11,13 @@ export const usersApi = createBackendApi({
       }),
       providesTags: ["Users"],
     }),
-    getUserRoles: builder.query({
-      query: (userId) => `users/${userId}/roles`,
-      providesTags: (result, error, userId) => [{ type: "UserRoles", id: userId }],
-    }),
-    assignUserRole: builder.mutation({
-      query: ({ userId, roles }) => ({
-        url: `users/${userId}/roles`,
-        method: "POST",
-        body: { roles },
+    getRoles: builder.query({
+      query: () => ({
+        url: "roles",
       }),
-      invalidatesTags: (result, error, { userId }) => [
-        "Users",
-        { type: "UserRoles", id: userId },
-      ],
+      providesTags: ["Roles"],
     }),
   }),
 });
 
-export const { useGetUsersQuery, useGetUserRolesQuery, useAssignUserRoleMutation } = usersApi;
+export const { useGetUsersQuery, useGetRolesQuery } = usersApi;

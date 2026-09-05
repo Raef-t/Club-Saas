@@ -137,7 +137,17 @@ class CoachService
      */
     public function getAllCoaches(array $filters = [])
     {
-        $query = Staff::with(['coachDetail', 'person.contacts', 'activities', 'branches', 'user', 'activeContract', 'shifts.branchShift'])->where('role', 'coach');
+        $query = Staff::with([
+            'coachDetail',
+            'person.contacts',
+            'activities.activityType',
+            'branches',
+            'user',
+            'activeContract',
+            'shifts.branchShift',
+            'staffActivities.planActivities.plan.sessionTemplates',
+            'staffActivities.planActivities.sessionTemplate',
+        ])->where('role', 'coach');
 
         if (!empty($filters['branch_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
@@ -165,7 +175,12 @@ class CoachService
 
         $query->orderBy('id', 'desc');
 
-        return $query->get();
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            return $query->get();
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        return $query->paginate($perPage);
     }
 
     /**
@@ -195,7 +210,17 @@ class CoachService
      */
     public function getSingleCoach($id)
     {
-        return Staff::with(['coachDetail', 'activities', 'person.contacts', 'user', 'branches', 'activeContract', 'shifts.branchShift'])
+        return Staff::with([
+            'coachDetail',
+            'activities.activityType',
+            'person.contacts',
+            'user',
+            'branches',
+            'activeContract',
+            'shifts.branchShift',
+            'staffActivities.planActivities.plan.sessionTemplates',
+            'staffActivities.planActivities.sessionTemplate',
+        ])
             ->where('role', 'coach')
             ->findOrFail($id);
     }
@@ -395,7 +420,14 @@ class CoachService
             });
         }
 
-        return $query->latest()->get();
+        $query->latest();
+
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            return $query->get();
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        return $query->paginate($perPage);
     }
 
     /**

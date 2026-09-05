@@ -22,7 +22,9 @@ class PersonContactController extends BaseController
         tags: ["Person Contacts"],
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: "person_id", in: "query", required: false, description: "Filter contacts by Person ID", schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: "person_id", in: "query", required: false, description: "Filter contacts by Person ID", schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "per_page", in: "query", required: false, description: "عدد العناصر في الصفحة (أو all لجلب الكل بدون ترقيم)", schema: new OA\Schema(type: "string", example: "15")),
+            new OA\Parameter(name: "page", in: "query", required: false, description: "رقم الصفحة", schema: new OA\Schema(type: "integer", example: 1))
         ],
         responses: [
             new OA\Response(response: 200, description: "Successful operation")
@@ -34,7 +36,14 @@ class PersonContactController extends BaseController
         if ($request->has('person_id')) {
             $query->where('person_id', $request->query('person_id'));
         }
-        $contacts = $query->get();
+
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $contacts = $query->paginate($perPage);
+        } else {
+            $contacts = $query->get();
+        }
+
         return $this->successResponse(PersonContactResource::collection($contacts), 'Contacts retrieved successfully');
     }
 

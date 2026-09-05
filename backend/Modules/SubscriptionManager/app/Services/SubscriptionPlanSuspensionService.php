@@ -319,12 +319,18 @@ class SubscriptionPlanSuspensionService
     /**
      * Get list of suspensions for a given SubscriptionPlan.
      */
-    public function getSuspensions(int $planId)
+    public function getSuspensions(int $planId, array $filters = [])
     {
-        return SubscriptionPlanSuspension::where('plan_id', $planId)
+        $query = SubscriptionPlanSuspension::where('plan_id', $planId)
             ->with(['coach.person', 'creator'])
-            ->orderByDesc('id')
-            ->paginate(15);
+            ->orderByDesc('id');
+
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            return $query->get();
+        }
+
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        return $query->paginate($perPage);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

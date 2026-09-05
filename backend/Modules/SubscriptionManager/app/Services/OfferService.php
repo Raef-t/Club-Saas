@@ -26,20 +26,27 @@ class OfferService
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
         }
 
-        $offers = $query->latest()->get();
+        $query->latest();
 
-        if (isset($filters['available_only']) && filter_var($filters['available_only'], FILTER_VALIDATE_BOOLEAN)) {
-            $offers = $offers->filter(function ($offer) {
-                foreach ($offer->plans as $plan) {
-                    if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                        return false;
+        if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
+            $offers = $query->get();
+
+            if (isset($filters['available_only']) && filter_var($filters['available_only'], FILTER_VALIDATE_BOOLEAN)) {
+                $offers = $offers->filter(function ($offer) {
+                    foreach ($offer->plans as $plan) {
+                        if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
+                            return false;
+                        }
                     }
-                }
-                return true;
-            });
+                    return true;
+                });
+            }
+
+            return $offers;
         }
 
-        return $offers;
+        $perPage = min(max((int)$filters['per_page'], 1), 100);
+        return $query->paginate($perPage);
     }
 
     /**

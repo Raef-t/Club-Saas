@@ -236,6 +236,7 @@ class AuthController extends BaseController
             'photo_url' => $person->photo_url ?? null,
             'gender' => $person->gender ?? null,
             'type' => $person->type ?? null,
+            'roles' => $user->getRoleNames(),
             'branch_id' => null,
         ];
 
@@ -381,7 +382,24 @@ class AuthController extends BaseController
                             ]
                         ),
                         new OA\Property(property: 'age', type: 'integer', nullable: true, example: 28),
-                        new OA\Property(property: 'health_status', type: 'string', nullable: true, example: 'لا توجد أمراض مزمنة')
+                        new OA\Property(property: 'health_status', type: 'string', nullable: true, example: 'لا توجد أمراض مزمنة'),
+                        new OA\Property(
+                            property: 'roles',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', example: 'super_admin')
+                        ),
+                        new OA\Property(
+                            property: 'permissions',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'name', type: 'string', example: 'user-role.view'),
+                                    new OA\Property(property: 'module', type: 'string', example: 'user-role'),
+                                ]
+                            )
+                        )
                     ]
                 )
             ]
@@ -447,6 +465,16 @@ class AuthController extends BaseController
                 $profileData['health_status'] = $personData->chronic_diseases ?: null;
             }
         }
+
+        // Roles & Permissions (compatible with /v1/users/{userId}/roles response)
+        $profileData['roles'] = $user->getRoleNames();
+        $profileData['permissions'] = $user->getAllPermissions()
+            ->sortBy('name')
+            ->map(fn($p) => [
+                'id'     => $p->id,
+                'name'   => $p->name,
+                'module' => explode('.', $p->name)[0],
+            ])->values();
 
         return $this->successResponse($profileData, __('Profile retrieved successfully'));
     }
@@ -521,7 +549,6 @@ class AuthController extends BaseController
             required: ['new_password', 'new_password_confirmation'],
             properties: [
                 new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)', example: 15, nullable: true),
-                new OA\Property(property: 'current_password', type: 'string', description: 'كلمة المرور الحالية (مطلوبة فقط إذا لم يتم تمرير user_id)', example: 'oldPassword123', nullable: true),
                 new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: '12345678'),
                 new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: '12345678'),
                 new OA\Property(property: 'custom_username', type: 'string', description: 'اسم المستخدم المخصص الفريد (اختياري)', example: 'ahmed_player99', nullable: true),
@@ -560,12 +587,11 @@ class AuthController extends BaseController
         description: '⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'كلمة المرور الحالية غير صحيحة.'),
+                new OA\Property(property: 'message', type: 'string', example: 'خطأ في التحقق من البيانات.'),
                 new OA\Property(
                     property: 'errors',
                     type: 'object',
                     properties: [
-                        new OA\Property(property: 'current_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الحالية غير مطابقة.')),
                         new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف.')),
                         new OA\Property(property: 'custom_username', type: 'array', items: new OA\Items(type: 'string', example: 'اسم المستخدم المخصص مُستخدَم بالفعل.'))
                     ]
@@ -582,31 +608,39 @@ class AuthController extends BaseController
             $user = User::findOrFail($validated['user_id']);
         } else {
             $user = $request->user();
-            if (!Hash::check($validated['current_password'], $user->password)) {
-                return $this->errorResponse(__('Current password is incorrect'), 422);
-            }
         }
 
         // فحص وتحديث custom_username في حال إرساله في نفس الطلب
         if (!empty($validated['custom_username'])) {
             $customUsername = trim($validated['custom_username']);
 
-            if (!UsernameSuggestionService::isValidFormat($customUsername) || !UsernameSuggestionService::isAvailable($customUsername, $user->id)) {
+            $isValidFormat = UsernameSuggestionService::isValidFormat($customUsername);
+            $isAvailable = $isValidFormat && UsernameSuggestionService::isAvailable($customUsername, $user->id);
+
+            if (!$isValidFormat || !$isAvailable) {
                 $suggestions = UsernameSuggestionService::generateSuggestions(
                     $customUsername,
                     $user->person?->full_name,
                     $user->id
                 );
 
+                $errorMessage = !$isValidFormat
+                    ? __('صيغة اسم المستخدم غير صالحة. يجب أن يتكون من 3-30 حرفاً (حروف، أرقام، _ . -).')
+                    : __('اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.');
+
+                $fieldError = !$isValidFormat
+                    ? __('صيغة اسم المستخدم غير صالحة. إليك بعض الاقتراحات المتاحة.')
+                    : __('اسم المستخدم المخصص مُستخدَم بالفعل، إليك بعض الاقتراحات المتاحة.');
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => __('اسم المستخدم المخصص مُستخدَم بالفعل أو غير صالح، اختر اسماً آخر.'),
+                    'message' => $errorMessage,
                     'data' => [
                         'is_available' => false,
                         'suggestions'  => $suggestions,
                     ],
                     'errors' => [
-                        'custom_username' => [__('اسم المستخدم المخصص مُستخدَم بالفعل أو غير صالح، إليك بعض الاقتراحات المتاحة.')]
+                        'custom_username' => [$fieldError]
                     ]
                 ], 422);
             }

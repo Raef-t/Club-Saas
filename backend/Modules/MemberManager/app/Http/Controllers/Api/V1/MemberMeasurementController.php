@@ -26,6 +26,8 @@ class MemberMeasurementController extends BaseController
     )]
     #[OA\Parameter(name: 'member_id', in: 'query', required: false, description: 'معرف العضو (ID) لعرض قياساته فقط', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
     public function index(Request $request)
     {
@@ -41,9 +43,17 @@ class MemberMeasurementController extends BaseController
             });
         }
 
-        $measurements = $query->get();
-        foreach ($measurements as $m) {
-            $m->setAttribute('last_updated_at', $m->updated_at);
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $measurements = $query->latest()->paginate($perPage);
+            foreach ($measurements->items() as $m) {
+                $m->setAttribute('last_updated_at', $m->updated_at);
+            }
+        } else {
+            $measurements = $query->latest()->get();
+            foreach ($measurements as $m) {
+                $m->setAttribute('last_updated_at', $m->updated_at);
+            }
         }
         
         return $this->successResponse($measurements, __('Measurements retrieved successfully'));

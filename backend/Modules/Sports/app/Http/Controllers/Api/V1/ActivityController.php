@@ -21,6 +21,8 @@ class ActivityController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الأنشطة بنجاح',
@@ -47,7 +49,13 @@ class ActivityController extends BaseController
             // Gender restrictions for facility are applied at the facility/session level.
         }
 
-        $activities = $query->orderBy('id', 'desc')->get();
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $activities = $query->orderBy('id', 'desc')->paginate($perPage);
+        } else {
+            $activities = $query->orderBy('id', 'desc')->get();
+        }
+
         return $this->successResponse(ActivityResource::collection($activities), __('Activities retrieved successfully'));
     }
 
@@ -306,10 +314,21 @@ class ActivityController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب الأنشطة المحذوفة بنجاح')]
     public function trashed(Request $request)
     {
-        $activities = Activity::onlyTrashed()->get();
+        $query = Activity::onlyTrashed();
+
+        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
+            $perPage = min(max((int) $request->input('per_page'), 1), 100);
+            $activities = $query->paginate($perPage);
+        } else {
+            $activities = $query->get();
+        }
+
         return $this->successResponse(ActivityResource::collection($activities), __('Trashed activities retrieved successfully'));
     }
 

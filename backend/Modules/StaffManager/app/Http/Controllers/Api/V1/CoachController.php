@@ -2,7 +2,7 @@
 
 namespace Modules\StaffManager\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
+use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Modules\StaffManager\Services\CoachService;
 use Modules\StaffManager\Http\Requests\StoreCoachRequest;
@@ -20,7 +20,7 @@ use Illuminate\Database\QueryException;
 use Exception;
 
 #[OA\Tag(name: 'Coach Management', description: 'API Endpoints for managing coaches')]
-class CoachController extends Controller
+class CoachController extends BaseController
 {
     protected CoachService $coachService;
     protected StaffService $staffService;
@@ -165,18 +165,185 @@ class CoachController extends Controller
             new OA\Parameter(name: 'activity_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed'])),
             new OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave'])),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
                 response: 200, 
                 description: 'List of coaches',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(
-                        property: 'data', 
-                        type: 'array', 
-                        items: new OA\Items(ref: '#/components/schemas/CoachResource')
-                    )
-                ])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', example: 'success'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Coaches retrieved successfully'),
+                        new OA\Property(
+                            property: 'data', 
+                            type: 'array', 
+                            items: new OA\Items(ref: '#/components/schemas/CoachResource')
+                        )
+                    ],
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Coaches retrieved successfully',
+                        'data' => [
+                            [
+                                'id' => 5,
+                                'person_id' => 12,
+                                'qr_code' => 'data:image/png;base64,iVBORw0KGgo...',
+                                'branch_ids' => [1],
+                                'role' => 'coach',
+                                'employment_type' => 'hybrid',
+                                'base_salary' => 4500,
+                                'start_date' => '2024-01-01',
+                                'end_date' => null,
+                                'start_time' => '08:00',
+                                'end_time' => '16:00',
+                                'work_status' => 'active',
+                                'reason' => 'تحديث بيانات الراتب والشفت',
+                                'created_at' => '2024-01-01T08:00:00.000000Z',
+                                'updated_at' => '2024-06-15T10:30:00.000000Z',
+                                'person' => [
+                                    'id' => 12,
+                                    'full_name' => 'الكابتن أحمد علي',
+                                    'gender' => 'male',
+                                    'age' => 31,
+                                    'dob' => '1995-05-14',
+                                    'address' => 'الرياض - حي الملز',
+                                    'photo_url' => 'https://api.domain.com/storage/people/photos/coach_5.jpg',
+                                    'email' => 'ahmed.coach@example.com',
+                                    'phone_number' => '0501234567',
+                                    'country_code' => '+966'
+                                ],
+                                'username' => 'coach_ahmed',
+                                'details' => [
+                                    'id' => 5,
+                                    'staff_id' => 5,
+                                    'bio' => 'مدرب كمال أجسام ولياقة بدنية وفنون قتالية معتمد دولياً',
+                                    'experience_years' => 7,
+                                    'gym_type' => 'male',
+                                    'work_types' => ['equipment', 'activities'],
+                                    'working_hours_per_week' => 40,
+                                    'payment_type' => 'hybrid',
+                                    'commission_type' => 'percentage',
+                                    'default_commission_rate' => 20.0,
+                                    'private_commission_rate' => 70.0,
+                                    'created_at' => '2024-01-01T08:00:00.000000Z',
+                                    'updated_at' => '2024-06-15T10:30:00.000000Z'
+                                ],
+                                'experience_years' => 7,
+                                'work_types' => ['equipment', 'activities'],
+                                'shifts' => [
+                                    [
+                                        'id' => 10,
+                                        'branch_shift_id' => 2,
+                                        'name' => 'الشفت الصباحي',
+                                        'start_time' => '08:00',
+                                        'end_time' => '16:00'
+                                    ]
+                                ],
+                                'activities' => [
+                                    [
+                                        'id' => 1,
+                                        'name' => 'تدريب عام وأجهزة',
+                                        'branch_id' => 1,
+                                        'activity_type' => [
+                                            'id' => 1,
+                                            'name' => 'تدريب عام',
+                                            'is_active' => true,
+                                            'is_session_based' => false,
+                                            'has_unlimited_subscribers' => true,
+                                            'has_shifts' => true,
+                                            'is_daily_entry' => false
+                                        ],
+                                        'is_unlimited_subscribers' => true,
+                                        'description' => 'تدريب كمال الأجسام واللياقة العامة في صالة الأجهزة',
+                                        'is_private_equipment' => false,
+                                        'is_active' => true,
+                                        'created_at' => '2024-01-01T08:00:00.000000Z',
+                                        'schedule_type' => 'shifts',
+                                        'shifts' => [
+                                            [
+                                                'id' => 10,
+                                                'branch_shift_id' => 2,
+                                                'name' => 'الشفت الصباحي',
+                                                'start_time' => '08:00',
+                                                'end_time' => '16:00'
+                                            ]
+                                        ],
+                                        'schedules' => []
+                                    ],
+                                    [
+                                        'id' => 2,
+                                        'name' => 'تدريب خاص (شخصي)',
+                                        'branch_id' => 1,
+                                        'activity_type' => [
+                                            'id' => 2,
+                                            'name' => 'تدريب خاص',
+                                            'is_active' => true,
+                                            'is_session_based' => false,
+                                            'has_unlimited_subscribers' => true,
+                                            'has_shifts' => false,
+                                            'is_daily_entry' => false
+                                        ],
+                                        'is_unlimited_subscribers' => true,
+                                        'description' => 'جلسات تدريب شخصي 1-on-1 بالاتفاق',
+                                        'is_private_equipment' => true,
+                                        'is_active' => true,
+                                        'created_at' => '2024-01-01T08:00:00.000000Z',
+                                        'schedule_type' => 'none',
+                                        'shifts' => [],
+                                        'schedules' => []
+                                    ],
+                                    [
+                                        'id' => 3,
+                                        'name' => 'كيك بوكسينغ',
+                                        'branch_id' => 1,
+                                        'activity_type' => [
+                                            'id' => 3,
+                                            'name' => 'حصة جماعية',
+                                            'is_active' => true,
+                                            'is_session_based' => true,
+                                            'has_unlimited_subscribers' => false,
+                                            'has_shifts' => false,
+                                            'is_daily_entry' => false
+                                        ],
+                                        'is_unlimited_subscribers' => false,
+                                        'description' => 'حصص كيك بوكسينغ جماعية أسبوعية',
+                                        'is_private_equipment' => false,
+                                        'is_active' => true,
+                                        'created_at' => '2024-01-01T08:00:00.000000Z',
+                                        'schedule_type' => 'schedule',
+                                        'shifts' => [],
+                                        'schedules' => [
+                                            [
+                                                'id' => 15,
+                                                'plan_id' => 4,
+                                                'plan_name' => 'اشتراك كيك بوكسينغ شهري',
+                                                'day_of_week' => 0,
+                                                'day_name' => 'Sunday',
+                                                'day_name_ar' => 'الأحد',
+                                                'start_time' => '17:00',
+                                                'end_time' => '18:30',
+                                                'is_active' => true
+                                            ],
+                                            [
+                                                'id' => 16,
+                                                'plan_id' => 4,
+                                                'plan_name' => 'اشتراك كيك بوكسينغ شهري',
+                                                'day_of_week' => 2,
+                                                'day_name' => 'Tuesday',
+                                                'day_name_ar' => 'الثلاثاء',
+                                                'start_time' => '17:00',
+                                                'end_time' => '18:30',
+                                                'is_active' => true
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                )
             ),
             new OA\Response(
                 response: 400, 
@@ -212,10 +379,10 @@ class CoachController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['branch_id', 'activity_id', 'gender']);
+            $filters = $request->all();
             $coaches = $this->coachService->getAllCoaches($filters);
 
-            return CoachResource::collection($coaches);
+            return $this->successResponse(CoachResource::collection($coaches), __('Coaches retrieved successfully'));
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while retrieving coaches.',
@@ -286,9 +453,168 @@ class CoachController extends Controller
             new OA\Response(
                 response: 200, 
                 description: 'Coach details',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource')
-                ])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 5,
+                            'person_id' => 12,
+                            'qr_code' => 'data:image/png;base64,iVBORw0KGgo...',
+                            'branch_ids' => [1],
+                            'role' => 'coach',
+                            'employment_type' => 'hybrid',
+                            'base_salary' => 4500,
+                            'start_date' => '2024-01-01',
+                            'end_date' => null,
+                            'start_time' => '08:00',
+                            'end_time' => '16:00',
+                            'work_status' => 'active',
+                            'reason' => 'تحديث بيانات الراتب والشفت',
+                            'created_at' => '2024-01-01T08:00:00.000000Z',
+                            'updated_at' => '2024-06-15T10:30:00.000000Z',
+                            'person' => [
+                                'id' => 12,
+                                'full_name' => 'الكابتن أحمد علي',
+                                'gender' => 'male',
+                                'age' => 31,
+                                'dob' => '1995-05-14',
+                                'address' => 'الرياض - حي الملز',
+                                'photo_url' => 'https://api.domain.com/storage/people/photos/coach_5.jpg',
+                                'email' => 'ahmed.coach@example.com',
+                                'phone_number' => '0501234567',
+                                'country_code' => '+966'
+                            ],
+                            'username' => 'coach_ahmed',
+                            'details' => [
+                                'id' => 5,
+                                'staff_id' => 5,
+                                'bio' => 'مدرب كمال أجسام ولياقة بدنية وفنون قتالية معتمد دولياً',
+                                'experience_years' => 7,
+                                'gym_type' => 'male',
+                                'work_types' => ['equipment', 'activities'],
+                                'working_hours_per_week' => 40,
+                                'payment_type' => 'hybrid',
+                                'commission_type' => 'percentage',
+                                'default_commission_rate' => 20.0,
+                                'private_commission_rate' => 70.0,
+                                'created_at' => '2024-01-01T08:00:00.000000Z',
+                                'updated_at' => '2024-06-15T10:30:00.000000Z'
+                            ],
+                            'experience_years' => 7,
+                            'work_types' => ['equipment', 'activities'],
+                            'shifts' => [
+                                [
+                                    'id' => 10,
+                                    'branch_shift_id' => 2,
+                                    'name' => 'الشفت الصباحي',
+                                    'start_time' => '08:00',
+                                    'end_time' => '16:00'
+                                ]
+                            ],
+                            'activities' => [
+                                [
+                                    'id' => 1,
+                                    'name' => 'تدريب عام وأجهزة',
+                                    'branch_id' => 1,
+                                    'activity_type' => [
+                                        'id' => 1,
+                                        'name' => 'تدريب عام',
+                                        'is_active' => true,
+                                        'is_session_based' => false,
+                                        'has_unlimited_subscribers' => true,
+                                        'has_shifts' => true,
+                                        'is_daily_entry' => false
+                                    ],
+                                    'is_unlimited_subscribers' => true,
+                                    'description' => 'تدريب كمال الأجسام واللياقة العامة في صالة الأجهزة',
+                                    'is_private_equipment' => false,
+                                    'is_active' => true,
+                                    'created_at' => '2024-01-01T08:00:00.000000Z',
+                                    'schedule_type' => 'shifts',
+                                    'shifts' => [
+                                        [
+                                            'id' => 10,
+                                            'branch_shift_id' => 2,
+                                            'name' => 'الشفت الصباحي',
+                                            'start_time' => '08:00',
+                                            'end_time' => '16:00'
+                                        ]
+                                    ],
+                                    'schedules' => []
+                                ],
+                                [
+                                    'id' => 2,
+                                    'name' => 'تدريب خاص (شخصي)',
+                                    'branch_id' => 1,
+                                    'activity_type' => [
+                                        'id' => 2,
+                                        'name' => 'تدريب خاص',
+                                        'is_active' => true,
+                                        'is_session_based' => false,
+                                        'has_unlimited_subscribers' => true,
+                                        'has_shifts' => false,
+                                        'is_daily_entry' => false
+                                    ],
+                                    'is_unlimited_subscribers' => true,
+                                    'description' => 'جلسات تدريب شخصي 1-on-1 بالاتفاق',
+                                    'is_private_equipment' => true,
+                                    'is_active' => true,
+                                    'created_at' => '2024-01-01T08:00:00.000000Z',
+                                    'schedule_type' => 'none',
+                                    'shifts' => [],
+                                    'schedules' => []
+                                ],
+                                [
+                                    'id' => 3,
+                                    'name' => 'كيك بوكسينغ',
+                                    'branch_id' => 1,
+                                    'activity_type' => [
+                                        'id' => 3,
+                                        'name' => 'حصة جماعية',
+                                        'is_active' => true,
+                                        'is_session_based' => true,
+                                        'has_unlimited_subscribers' => false,
+                                        'has_shifts' => false,
+                                        'is_daily_entry' => false
+                                    ],
+                                    'is_unlimited_subscribers' => false,
+                                    'description' => 'حصص كيك بوكسينغ جماعية أسبوعية',
+                                    'is_private_equipment' => false,
+                                    'is_active' => true,
+                                    'created_at' => '2024-01-01T08:00:00.000000Z',
+                                    'schedule_type' => 'schedule',
+                                    'shifts' => [],
+                                    'schedules' => [
+                                        [
+                                            'id' => 15,
+                                            'plan_id' => 4,
+                                            'plan_name' => 'اشتراك كيك بوكسينغ شهري',
+                                            'day_of_week' => 0,
+                                            'day_name' => 'Sunday',
+                                            'day_name_ar' => 'الأحد',
+                                            'start_time' => '17:00',
+                                            'end_time' => '18:30',
+                                            'is_active' => true
+                                        ],
+                                        [
+                                            'id' => 16,
+                                            'plan_id' => 4,
+                                            'plan_name' => 'اشتراك كيك بوكسينغ شهري',
+                                            'day_of_week' => 2,
+                                            'day_name' => 'Tuesday',
+                                            'day_name_ar' => 'الثلاثاء',
+                                            'start_time' => '17:00',
+                                            'end_time' => '18:30',
+                                            'is_active' => true
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                )
             ),
             new OA\Response(
                 response: 400, 
@@ -725,38 +1051,6 @@ class CoachController extends Controller
         }
     }
 
-    #[OA\Get(
-        path: '/v1/coaches/{id}/activities',
-        summary: 'Get Coach Activities',
-        description: 'Returns all activities associated with a specific coach, including full activity details.',
-        tags: ['Coach Management'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'List of activities retrieved successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'message', type: 'string')])),
-            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])),
-            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'error', type: 'string')]))
-        ]
-    )]
-    public function getActivities($id)
-    {
-        try {
-            $coach = $this->coachService->getSingleCoach($id);
-            $activities = $coach->activities()->get();
-            
-            return response()->json([
-                'data' => \Modules\Sports\Http\Resources\ActivityResource::collection($activities),
-                'message' => 'Activities retrieved successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Coach not found.'], 404);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred.', 'error' => $e->getMessage()], 500);
-        }
-    }
-
     #[OA\Delete(
         path: '/v1/coaches/{id}',
         summary: '🗑️ حذف مدرب (Soft Delete)',
@@ -788,6 +1082,8 @@ class CoachController extends Controller
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200, 
         description: '✅ تم جلب المدربين المحذوفين بنجاح',
@@ -800,11 +1096,7 @@ class CoachController extends Controller
     public function trashed(Request $request)
     {
         $coaches = $this->coachService->getTrashedCoaches($request->all());
-        return response()->json([
-            'status' => 'success',
-            'data' => CoachResource::collection($coaches),
-            'message' => __('Trashed coaches retrieved successfully')
-        ], 200);
+        return $this->successResponse(CoachResource::collection($coaches), __('Trashed coaches retrieved successfully'));
     }
 
     #[OA\Post(

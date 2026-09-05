@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('subscriptions:check-status')->hourly();
-Schedule::command('staff:check-payroll-due')->cron('0 10,11,12 * * *');
+Schedule::command('payroll:check-due-date')->dailyAt('08:00');
