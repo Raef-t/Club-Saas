@@ -19474,6 +19474,30 @@
                                                         "type": "string",
                                                         "example": "staff_1_abcd",
                                                         "nullable": true
+                                                    },
+                                                    "person": {
+                                                        "properties": {
+                                                            "full_name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "gender": {
+                                                                "description": "الجنس",
+                                                                "type": "string",
+                                                                "example": "male",
+                                                                "nullable": true,
+                                                                "enum": [
+                                                                    "male",
+                                                                    "female"
+                                                                ]
+                                                            },
+                                                            "phone_number": {
+                                                                "type": "string",
+                                                                "example": "234567890"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
                                                     }
                                                 },
                                                 "type": "object"
@@ -19544,6 +19568,16 @@
                                     "phone_number": {
                                         "type": "string",
                                         "example": "234567890"
+                                    },
+                                    "gender": {
+                                        "description": "الجنس (male: ذكر، female: أنثى)",
+                                        "type": "string",
+                                        "example": "male",
+                                        "nullable": true,
+                                        "enum": [
+                                            "male",
+                                            "female"
+                                        ]
                                     },
                                     "role": {
                                         "description": "اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles",
@@ -19855,6 +19889,30 @@
                                                     "type": "string",
                                                     "example": "staff_1_abcd",
                                                     "nullable": true
+                                                },
+                                                "person": {
+                                                    "properties": {
+                                                        "full_name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "gender": {
+                                                            "description": "الجنس",
+                                                            "type": "string",
+                                                            "example": "male",
+                                                            "nullable": true,
+                                                            "enum": [
+                                                                "male",
+                                                                "female"
+                                                            ]
+                                                        },
+                                                        "phone_number": {
+                                                            "type": "string",
+                                                            "example": "234567890"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
                                                 }
                                             },
                                             "type": "object"
@@ -19962,6 +20020,16 @@
                                     "phone_number": {
                                         "type": "string",
                                         "example": "234567890"
+                                    },
+                                    "gender": {
+                                        "description": "الجنس (male: ذكر، female: أنثى)",
+                                        "type": "string",
+                                        "example": "male",
+                                        "nullable": true,
+                                        "enum": [
+                                            "male",
+                                            "female"
+                                        ]
                                     },
                                     "role": {
                                         "description": "اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles",
