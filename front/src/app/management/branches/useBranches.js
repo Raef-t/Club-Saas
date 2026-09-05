@@ -15,6 +15,7 @@ import {
   getBranchCollection,
   getBranchRecord,
 } from "./branchUtils";
+import { getPaginationMeta, useServerPagination } from "@/lib/pagination";
 
 /**
  * Coordinates branch list filters, details, status changes, and deletion.
@@ -27,13 +28,19 @@ export function useBranches({ initialBranches } = {}) {
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const paginationFilterKey = [selectedBranchId, genderFilter, search].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
+  const needsAllBranches =
+    selectedBranchId !== "all" || genderFilter !== "all" || Boolean(search.trim());
   const {
     currentData: branchesResponse,
     error,
     isLoading,
     isFetching,
     refetch,
-  } = useGetBranchesQuery();
+  } = useGetBranchesQuery(
+    needsAllBranches ? { per_page: "all" } : { page, per_page: perPage },
+  );
   const {
     currentData: detailsResponse,
     error: detailsError,
@@ -43,9 +50,12 @@ export function useBranches({ initialBranches } = {}) {
   });
   const [deleteBranch, { isLoading: isDeleting }] = useDeleteBranchMutation();
   const [toggleBranchStatus, { isLoading: isToggling }] = useToggleBranchStatusMutation();
-  const allBranches = useMemo(
-    () => getBranchCollection(branchesResponse || initialBranches),
-    [branchesResponse, initialBranches],
+  const canUseInitialBranches = !needsAllBranches && page === 1 && perPage === 15;
+  const listResponse = branchesResponse || (canUseInitialBranches ? initialBranches : null);
+  const allBranches = useMemo(() => getBranchCollection(listResponse), [listResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(listResponse, { page, perPage }),
+    [listResponse, page, perPage],
   );
   const branchScope = useMemo(
     () => filterEntitiesByBranch(allBranches, selectedBranchId, (branch) => [branch.id]),
@@ -59,6 +69,7 @@ export function useBranches({ initialBranches } = {}) {
       }),
     [branchScope, genderFilter, search],
   );
+  const totalResults = needsAllBranches ? branches.length : pagination.total;
   const stats = useMemo(() => createBranchStats(branchScope), [branchScope]);
   const detailsBranch = getBranchRecord(detailsResponse) || selectedBranch;
 
@@ -121,6 +132,8 @@ export function useBranches({ initialBranches } = {}) {
     genderFilter,
     setGenderFilter,
     branches,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     isLoading: isLoading && allBranches.length === 0,
     isFetching,

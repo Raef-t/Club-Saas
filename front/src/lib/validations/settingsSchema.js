@@ -57,12 +57,12 @@ export const branchSettingsSchema = z
     if (
       data.workingHoursStart &&
       data.workingHoursEnd &&
-      data.workingHoursEnd <= data.workingHoursStart
+      data.workingHoursEnd === data.workingHoursStart
     ) {
       context.addIssue({
         code: "custom",
         path: ["workingHoursEnd"],
-        message: "يجب أن يكون وقت النهاية بعد وقت البداية",
+        message: "يجب أن يختلف وقت النهاية عن وقت البداية",
       });
     }
   });

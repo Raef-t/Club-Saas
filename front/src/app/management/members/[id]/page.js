@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import MemberProfileClient from "./MemberProfileClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 import { getBranchesArray } from "@/lib/utils";
 import { getMemberProfileRecord } from "../memberProfileUtils";
@@ -13,19 +13,21 @@ export default async function MemberProfilePage({ params }) {
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
 
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/members");
   let memberResponse;
-  let branchesResponse;
 
   try {
-    [memberResponse, branchesResponse] = await Promise.all([
-      requestBackend(`members/${id}`, { token }),
-      requestBackend("branches", { token }),
-    ]);
+    memberResponse = await requestBackend(`members/${id}`, { token });
   } catch (error) {
     if (error?.status === 404) notFound();
     throw error;
   }
+
+  const branchesResponse = await safeRequestBackend(
+    "branches",
+    { token, params: { per_page: "all" } },
+    [],
+  );
 
   const member = getMemberProfileRecord(memberResponse);
   if (!member?.id) notFound();

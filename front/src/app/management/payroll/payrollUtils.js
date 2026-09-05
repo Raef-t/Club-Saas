@@ -37,16 +37,43 @@ export function normalizePayslip(payslip) {
         reason: adjustment.reason || "",
       }))
     : [];
+  const adjustmentTotals = calculateAdjustmentTotals(adjustments);
+  const reportedBonuses = numberFromAliases(payslip, ["bonuses", "bonus_total"]);
+  const reportedDeductions = numberFromAliases(payslip, [
+    "deductions",
+    "deduction_total",
+    "total_deductions",
+  ]);
+  const explicitSystemBonuses = numberFromAliases(payslip, ["system_bonuses", "automatic_bonuses"]);
+  const explicitSystemDeductions = numberFromAliases(payslip, [
+    "system_deductions",
+    "automatic_deductions",
+    "advance_deductions",
+    "advances_deducted",
+    "salary_advance_deductions",
+  ]);
+  const systemBonuses =
+    explicitSystemBonuses ??
+    Math.max(0, (reportedBonuses ?? adjustmentTotals.bonuses) - adjustmentTotals.bonuses);
+  const systemDeductions =
+    explicitSystemDeductions ??
+    Math.max(0, (reportedDeductions ?? adjustmentTotals.deductions) - adjustmentTotals.deductions);
   const calculated = calculatePayslipTotals({
     base_pay: basePay,
     commission_pay: commissionPay,
     adjustments,
+    system_bonuses: systemBonuses,
+    system_deductions: systemDeductions,
   });
 
-  const branchId = payslip?.branch_id ?? payslip?.branch_ids?.[0] ?? payslip?.staff?.branch_id ?? null;
-  const branchIds = Array.isArray(payslip?.branch_ids) && payslip.branch_ids.length > 0
-    ? payslip.branch_ids
-    : (branchId != null ? [branchId] : []);
+  const branchId =
+    payslip?.branch_id ?? payslip?.branch_ids?.[0] ?? payslip?.staff?.branch_id ?? null;
+  const branchIds =
+    Array.isArray(payslip?.branch_ids) && payslip.branch_ids.length > 0
+      ? payslip.branch_ids
+      : branchId != null
+        ? [branchId]
+        : [];
 
   return {
     ...payslip,
@@ -57,6 +84,8 @@ export function normalizePayslip(payslip) {
     salary_payments: payslip?.salary_payments || [],
     base_pay: basePay,
     commission_pay: commissionPay,
+    system_bonuses: systemBonuses,
+    system_deductions: systemDeductions,
     subscribers_count:
       Number(
         payslip?.subscribers_count ??
@@ -65,27 +94,49 @@ export function normalizePayslip(payslip) {
           payslip?.subscribers?.length,
       ) || 0,
     adjustments,
-    bonuses: payslip?.bonuses == null ? calculated.bonuses : Number(payslip.bonuses) || 0,
-    deductions:
-      payslip?.deductions == null ? calculated.deductions : Number(payslip.deductions) || 0,
-    net_pay: payslip?.net_pay == null ? calculated.netPay : Number(payslip.net_pay) || 0,
+    bonuses: calculated.bonuses,
+    deductions: calculated.deductions,
+    net_pay: calculated.netPay,
   };
 }
 
 export function calculatePayslipTotals(payslip) {
   const adjustments = Array.isArray(payslip?.adjustments) ? payslip.adjustments : [];
-  const bonuses = adjustments
-    .filter((item) => item.type === "bonus")
-    .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const deductions = adjustments
-    .filter((item) => item.type === "deduction")
-    .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const adjustmentTotals = calculateAdjustmentTotals(adjustments);
+  const bonuses = (Number(payslip?.system_bonuses) || 0) + adjustmentTotals.bonuses;
+  const deductions = (Number(payslip?.system_deductions) || 0) + adjustmentTotals.deductions;
 
   return {
     bonuses,
     deductions,
-    netPay: (Number(payslip?.base_pay) || 0) + (Number(payslip?.commission_pay) || 0) + bonuses - deductions,
+    netPay:
+      (Number(payslip?.base_pay) || 0) +
+      (Number(payslip?.commission_pay) || 0) +
+      bonuses -
+      deductions,
   };
+}
+
+function calculateAdjustmentTotals(adjustments) {
+  return adjustments.reduce(
+    (totals, item) => {
+      const amount = Number(item?.amount) || 0;
+      if (item?.type === "deduction") totals.deductions += amount;
+      if (item?.type === "bonus") totals.bonuses += amount;
+      return totals;
+    },
+    { bonuses: 0, deductions: 0 },
+  );
+}
+
+function numberFromAliases(record, aliases) {
+  for (const alias of aliases) {
+    if (record?.[alias] !== null && record?.[alias] !== undefined && record?.[alias] !== "") {
+      const value = Number(record[alias]);
+      if (Number.isFinite(value)) return value;
+    }
+  }
+  return null;
 }
 
 export function updateDraftPayslip(payslip, changes) {
@@ -121,6 +172,27 @@ export function createConfirmPayload(branchId, draft) {
       ...createUpdatePayload(payslip),
       net_pay: Number(payslip.net_pay) || 0,
     })),
+  };
+}
+
+export function createPayrollAction(searchParams = {}) {
+  const action = Array.isArray(searchParams.payroll_action)
+    ? searchParams.payroll_action[0]
+    : searchParams.payroll_action;
+  const rawBranchId = Array.isArray(searchParams.branch_id)
+    ? searchParams.branch_id[0]
+    : searchParams.branch_id;
+  const branchId = Number(rawBranchId);
+
+  if (action !== "generate" || !Number.isInteger(branchId) || branchId <= 0) return null;
+
+  return {
+    type: "generate",
+    branchId: String(branchId),
+    notificationId:
+      searchParams.notification_id == null ? null : String(searchParams.notification_id),
+    periodStart: typeof searchParams.period_start === "string" ? searchParams.period_start : "",
+    periodEnd: typeof searchParams.period_end === "string" ? searchParams.period_end : "",
   };
 }
 

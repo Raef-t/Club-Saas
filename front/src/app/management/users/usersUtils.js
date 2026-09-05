@@ -13,6 +13,8 @@ export const USER_ROLE_LABELS = {
   cleaner: "نظافة",
   gym_staff: "موظف نادي",
   player: "لاعب",
+  nursery_staff: "موظفة حضانة",
+  member_manager: "مدير شؤون الأعضاء",
 };
 
 const USER_ROLE_TAB_LABELS = {
@@ -30,6 +32,8 @@ const USER_ROLE_TAB_LABELS = {
   cleaner: "موظفو النظافة",
   gym_staff: "موظفو النادي",
   player: "اللاعبون",
+  nursery_staff: "موظفات الحضانة",
+  member_manager: "مديرو شؤون الأعضاء",
 };
 
 export function getUsersCollection(response) {

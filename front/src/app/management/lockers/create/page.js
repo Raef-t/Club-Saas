@@ -1,6 +1,6 @@
 import LockersCreateClient from "./LockersCreateClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "إضافة خزانة | نظام إدارة النادي",
@@ -8,8 +8,15 @@ export const metadata = {
 };
 
 export default async function LockersCreatePage() {
-  const { token } = await verifySession();
-  const branches = await requestBackend("branches", { token });
+  const { token } = await verifyPageAccess("/management/lockers/create");
+  const branches = await safeRequestBackend(
+    "branches",
+    {
+      token,
+      params: { per_page: "all" },
+    },
+    [],
+  );
 
   return <LockersCreateClient initialBranches={branches} />;
 }

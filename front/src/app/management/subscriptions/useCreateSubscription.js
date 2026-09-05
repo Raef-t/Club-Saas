@@ -10,6 +10,7 @@ import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { withAllItems } from "@/lib/pagination";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { getSubscriptionDetail } from "./subscriptionUtils";
@@ -29,10 +30,10 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
   const { selectedBranchId } = useManagementBranch();
   const [formError, setFormError] = useState("");
   const branchQueryParams = selectedBranchId === "all" ? {} : { branch_id: selectedBranchId };
-  const { data: membersData } = useGetMembersQuery(branchQueryParams);
-  const { data: plansData } = useGetSubscriptionPlansQuery(branchQueryParams);
-  const { data: activitiesData } = useGetActivitiesQuery(branchQueryParams);
-  const { data: coachesData } = useGetCoachesQuery(branchQueryParams);
+  const { data: membersData } = useGetMembersQuery(withAllItems(branchQueryParams));
+  const { data: plansData } = useGetSubscriptionPlansQuery(withAllItems(branchQueryParams));
+  const { data: activitiesData } = useGetActivitiesQuery(withAllItems(branchQueryParams));
+  const { data: coachesData } = useGetCoachesQuery(withAllItems(branchQueryParams));
   const {
     data: subscriptionDetailResponse,
     error: subscriptionDetailError,

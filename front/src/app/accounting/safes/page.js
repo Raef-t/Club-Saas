@@ -1,5 +1,5 @@
 import SafesClient from "./SafesClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function SafesPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/accounting/safes");
   let initialSafes = [];
   let initialAccounts = [];
 

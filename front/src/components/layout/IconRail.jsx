@@ -14,23 +14,53 @@ import {
 } from "@/components/icons/Icons";
 import { useLogoutMutation } from "@/lib/api/authApi";
 import { clearAuthStorage } from "@/lib/authStorage";
+import { usePermissions } from "@/lib/PermissionContext";
 
 const systems = [
   {
     id: "management",
     href: "/management",
+    accessPaths: [
+      "/management",
+      "/management/members",
+      "/management/subscriptions",
+      "/management/coaches",
+      "/management/staff",
+      "/management/activities",
+      "/management/subscription-plans",
+      "/management/attendance",
+      "/management/schedule",
+      "/management/lockers",
+      "/management/users",
+      "/management/roles",
+      "/management/settings",
+      "/management/clubs",
+      "/management/branches",
+    ],
     icon: FolderPlusIcon,
     title: "إدارة النادي",
   },
   {
     id: "reports",
     href: "/reports",
+    accessPaths: ["/reports"],
     icon: TrendUpIcon,
     title: "نظام التقارير",
   },
   {
     id: "accounting",
     href: "/accounting",
+    accessPaths: [
+      "/accounting",
+      "/accounting/safes",
+      "/accounting/accounts",
+      "/accounting/journals",
+      "/accounting/revenues",
+      "/accounting/expenses",
+      "/accounting/salaries",
+      "/accounting/periods",
+      "/accounting/reports",
+    ],
     icon: TipJarIcon,
     title: "نظام المحاسبة",
   },
@@ -42,6 +72,13 @@ export default function IconRail({ className, isMobile = false }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const { canAccess } = usePermissions();
+  const visibleSystems = systems
+    .map((system) => ({
+      ...system,
+      href: system.accessPaths.find((path) => canAccess(path)),
+    }))
+    .filter((system) => Boolean(system.href));
 
   useEffect(() => {
     setMounted(true);
@@ -65,11 +102,18 @@ export default function IconRail({ className, isMobile = false }) {
   }
 
   return (
-    <aside className={className || "app-panel sticky top-6 hidden h-[calc(100vh-3rem)] overflow-hidden rounded-2xl px-2 py-4 lg:flex lg:flex-col lg:items-center"}>
-      <div className={`${isMobile ? "mt-4" : "mt-10"} flex flex-1 flex-col items-center justify-center gap-3`}>
-        {systems.map((sys) => {
+    <aside
+      className={
+        className ||
+        "app-panel sticky top-6 hidden h-[calc(100vh-3rem)] overflow-hidden rounded-2xl px-2 py-4 lg:flex lg:flex-col lg:items-center"
+      }
+    >
+      <div
+        className={`${isMobile ? "mt-4" : "mt-10"} flex flex-1 flex-col items-center justify-center gap-3`}
+      >
+        {visibleSystems.map((sys) => {
           const Icon = sys.icon;
-          const active = isActive(sys.href);
+          const active = isActive(`/${sys.id}`);
 
           return (
             <Link

@@ -30,7 +30,10 @@ function getScopedCollection(currentData, fallbackData, selectedBranchId) {
 export function useOperationalReports({ initialData = {} } = {}) {
   const { selectedBranchId, selectedBranch } = useManagementBranch();
   const queryParams = useMemo(
-    () => (selectedBranchId === "all" ? {} : { branch_id: selectedBranchId }),
+    () => ({
+      ...(selectedBranchId === "all" ? {} : { branch_id: selectedBranchId }),
+      per_page: "all",
+    }),
     [selectedBranchId],
   );
   const membersQuery = useGetMembersQuery(queryParams);

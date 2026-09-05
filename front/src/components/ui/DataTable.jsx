@@ -168,6 +168,7 @@ export default function DataTable({
   pagination = true,
   pageSize = 10,
   pageSizeOptions = [5, 10, 20, 50],
+  onPageSizeChange,
   totalItems,
   emptyMessage = "لا توجد بيانات",
   headerClassName = "",
@@ -228,6 +229,7 @@ export default function DataTable({
 
   const hasControlledPagination =
     typeof onPageChange === "function" && Number.isFinite(totalPages) && totalPages > 0;
+  const activeRowsPerPage = hasControlledPagination ? pageSize : rowsPerPage;
 
   const sortedRows = useMemo(() => {
     if (
@@ -337,20 +339,27 @@ export default function DataTable({
     .map((row, index) => getRowKey?.(row, index) ?? row.id ?? row.key ?? index)
     .join("|");
   const previousRowsSignature = useRef(rowsSignature);
-  const internalTotalPages = Math.max(1, Math.ceil(sortedRows.length / Math.max(rowsPerPage, 1)));
+  const internalTotalPages = Math.max(
+    1,
+    Math.ceil(sortedRows.length / Math.max(activeRowsPerPage, 1)),
+  );
   const resolvedTotalPages = hasControlledPagination ? totalPages : internalTotalPages;
   const resolvedCurrentPage = hasControlledPagination
     ? Math.min(Math.max(currentPage || 1, 1), resolvedTotalPages)
     : Math.min(internalPage, resolvedTotalPages);
   const displayedRows = hasControlledPagination
     ? sortedRows
-    : sortedRows.slice((resolvedCurrentPage - 1) * rowsPerPage, resolvedCurrentPage * rowsPerPage);
+    : sortedRows.slice(
+        (resolvedCurrentPage - 1) * activeRowsPerPage,
+        resolvedCurrentPage * activeRowsPerPage,
+      );
   const hasKnownTotalItems = !hasControlledPagination || Number.isFinite(totalItems);
   const resolvedTotalItems = totalItems ?? sortedRows.length;
-  const firstVisibleItem = resolvedTotalItems > 0 ? (resolvedCurrentPage - 1) * rowsPerPage + 1 : 0;
+  const firstVisibleItem =
+    resolvedTotalItems > 0 ? (resolvedCurrentPage - 1) * activeRowsPerPage + 1 : 0;
   const lastVisibleItem = hasControlledPagination
     ? Math.min(firstVisibleItem + Math.max(displayedRows.length - 1, 0), resolvedTotalItems)
-    : Math.min(resolvedCurrentPage * rowsPerPage, resolvedTotalItems);
+    : Math.min(resolvedCurrentPage * activeRowsPerPage, resolvedTotalItems);
 
   useEffect(() => {
     if (!hasControlledPagination) {
@@ -507,7 +516,7 @@ export default function DataTable({
             blocks={[
               {
                 type: "list",
-                count: Math.min(loadingRows, rowsPerPage),
+                count: Math.min(loadingRows, activeRowsPerPage),
                 itemClassName: "h-44 rounded-xl",
               },
             ]}
@@ -582,14 +591,19 @@ export default function DataTable({
                 ? `عرض ${firstVisibleItem}–${lastVisibleItem} من ${resolvedTotalItems}`
                 : `الصفحة ${resolvedCurrentPage} من ${resolvedTotalPages}`}
             </span>
-            {!hasControlledPagination && pageSizeOptions.length > 0 && (
+            {pageSizeOptions.length > 0 && (!hasControlledPagination || onPageSizeChange) && (
               <div className="inline-flex items-center gap-2">
                 <span>صفوف الصفحة</span>
                 <Dropdown
-                  value={rowsPerPage}
+                  value={activeRowsPerPage}
                   onChange={(val) => {
-                    setRowsPerPage(Number(val));
-                    setInternalPage(1);
+                    const nextPageSize = Number(val);
+                    if (hasControlledPagination) {
+                      onPageSizeChange?.(nextPageSize);
+                    } else {
+                      setRowsPerPage(nextPageSize);
+                      setInternalPage(1);
+                    }
                   }}
                   options={dropdownOptions}
                   className="w-16 text-app-text"

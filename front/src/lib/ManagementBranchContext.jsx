@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useGetClubsQuery } from "@/lib/api/clubsApi";
+import { withAllItems } from "@/lib/pagination";
 import { getBrandClubs, resolveClubLogoUrl, selectBrandClub } from "@/lib/clubBranding";
 import { getBranchesArray } from "@/lib/utils";
 import {
@@ -20,39 +21,50 @@ export function ManagementBranchProvider({
   children,
   initialBranches,
   initialSelectedBranchId,
+  canSelectAllBranches = true,
   cookieName = MANAGEMENT_BRANCH_COOKIE,
   cookiePath = "/management",
 }) {
-  const { currentData: branchesResponse, isLoading, isFetching } = useGetBranchesQuery();
-  const { currentData: clubsResponse, isFetching: isFetchingClubs } = useGetClubsQuery();
+  const { currentData: branchesResponse, isLoading, isFetching } =
+    useGetBranchesQuery(withAllItems(), { skip: !canSelectAllBranches });
+  const { currentData: clubsResponse, isFetching: isFetchingClubs } =
+    useGetClubsQuery(withAllItems());
   const branches = useMemo(
-    () => getBranchesArray(branchesResponse || initialBranches),
-    [branchesResponse, initialBranches],
+    () =>
+      canSelectAllBranches
+        ? getBranchesArray(branchesResponse || initialBranches)
+        : getBranchesArray(initialBranches),
+    [branchesResponse, canSelectAllBranches, initialBranches],
   );
   const [selectedBranchId, setSelectedBranchIdState] = useState(() =>
-    normalizeSelectedBranchId(initialSelectedBranchId, initialBranches),
+    normalizeSelectedBranchId(initialSelectedBranchId, branches, {
+      fallbackToFirst: !canSelectAllBranches,
+    }),
   );
 
   useEffect(() => {
-    const normalizedSelection = normalizeSelectedBranchId(selectedBranchId, branches);
+    const normalizedSelection = normalizeSelectedBranchId(selectedBranchId, branches, {
+      fallbackToFirst: !canSelectAllBranches,
+    });
 
     if (normalizedSelection !== selectedBranchId) {
       setSelectedBranchIdState(normalizedSelection);
     }
-  }, [branches, selectedBranchId]);
+  }, [branches, canSelectAllBranches, selectedBranchId]);
 
   /**
    * Updates the global branch and persists it for subsequent requests.
    */
   const setSelectedBranchId = useCallback(
     (branchId) => {
+      if (!canSelectAllBranches) return;
       const normalizedSelection = normalizeSelectedBranchId(branchId, branches);
       setSelectedBranchIdState(normalizedSelection);
       document.cookie = `${cookieName}=${encodeURIComponent(
         normalizedSelection,
       )}; Path=${cookiePath}; Max-Age=31536000; SameSite=Lax`;
     },
-    [branches, cookieName, cookiePath],
+    [branches, canSelectAllBranches, cookieName, cookiePath],
   );
 
   const selectedBranch = useMemo(
@@ -74,14 +86,16 @@ export function ManagementBranchProvider({
       selectedClubId: selectedClubId == null ? null : String(selectedClubId),
       selectedClub,
       brandLogoUrl,
-      isAllBranches: selectedBranchId === ALL_BRANCHES_VALUE,
-      isLoading: isLoading && branches.length === 0,
-      isFetching: isFetching || isFetchingClubs,
+      canSelectBranches: Boolean(canSelectAllBranches),
+      isAllBranches: canSelectAllBranches && selectedBranchId === ALL_BRANCHES_VALUE,
+      isLoading: canSelectAllBranches && isLoading && branches.length === 0,
+      isFetching: (canSelectAllBranches && isFetching) || isFetchingClubs,
       setSelectedBranchId,
     }),
     [
       brandLogoUrl,
       branches,
+      canSelectAllBranches,
       isFetching,
       isFetchingClubs,
       isLoading,

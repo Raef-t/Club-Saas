@@ -1,7 +1,7 @@
 import LockersEditClient from "./LockersEditClient";
 import { notFound } from "next/navigation";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 import { getLockerRecord } from "../../lockerUtils";
 
 export const metadata = {
@@ -12,23 +12,21 @@ export default async function EditLockerPage({ params }) {
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
 
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/lockers");
   let locker;
-  let members;
-  let coaches;
-  let staff;
 
   try {
-    [locker, members, coaches, staff] = await Promise.all([
-      requestBackend(`lockers/${id}`, { token }),
-      requestBackend("members", { token }),
-      requestBackend("coaches", { token }),
-      requestBackend("staff", { token }),
-    ]);
+    locker = await requestBackend(`lockers/${id}`, { token });
   } catch (error) {
     if (error?.status === 404) notFound();
     throw error;
   }
+
+  const [members, coaches, staff] = await Promise.all([
+    safeRequestBackend("members", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("coaches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("staff", { token, params: { per_page: "all" } }, []),
+  ]);
 
   const lockerRecord = getLockerRecord(locker);
   if (!lockerRecord?.id) notFound();

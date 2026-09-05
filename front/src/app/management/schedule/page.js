@@ -1,6 +1,6 @@
 import ScheduleClient from "@/app/management/schedule/ScheduleClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "جدول الدوام | TechnoGYM",
@@ -8,10 +8,14 @@ export const metadata = {
 };
 
 export default async function SchedulePage() {
-  const { token } = await verifySession();
-  const schedule = await requestBackend("session-templates/schedule", {
-    token,
-  });
+  const { token } = await verifyPageAccess("/management/schedule");
+  const schedule = await safeRequestBackend(
+    "session-templates/schedule",
+    {
+      token,
+    },
+    null,
+  );
 
   return <ScheduleClient initialSchedule={schedule} />;
 }

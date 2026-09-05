@@ -38,9 +38,10 @@ export const lockersApi = createBackendApi({
       invalidatesTags: ["Lockers"],
     }),
     deleteLocker: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `lockers/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["Lockers"],
     }),

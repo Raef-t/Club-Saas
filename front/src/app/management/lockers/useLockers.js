@@ -24,10 +24,20 @@ export function useLockers({ initialLockers } = {}) {
   const toast = useToast();
   const searchParams = useSearchParams();
   const urlStatus = searchParams?.get("status") || searchParams?.get("reservation_type");
-  const initialStatus =
-    urlStatus === "free" || urlStatus === "assign" || urlStatus === "assigned_free"
-      ? "assigned_free"
-      : urlStatus || "all";
+  const legacyStatusAliases = {
+    assigned_free: "with_member",
+    assign: "with_member",
+    disabled: "maintenance",
+    free: "with_member",
+    unavailable: "maintenance",
+    with_coach: "with_staff_or_coach",
+    with_staff: "with_staff_or_coach",
+  };
+  const supportedStatuses = ["available", "with_member", "with_staff_or_coach", "maintenance"];
+  const normalizedUrlStatus = legacyStatusAliases[urlStatus] || urlStatus;
+  const initialStatus = supportedStatuses.includes(normalizedUrlStatus)
+    ? normalizedUrlStatus
+    : "all";
 
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
@@ -40,7 +50,7 @@ export function useLockers({ initialLockers } = {}) {
   const [reserveError, setReserveError] = useState("");
 
   const queryParams = useMemo(
-    () => createLockerQueryParams(branchFilter, statusFilter),
+    () => ({ ...createLockerQueryParams(branchFilter, statusFilter), per_page: "all" }),
     [branchFilter, statusFilter],
   );
   const {
@@ -131,7 +141,10 @@ export function useLockers({ initialLockers } = {}) {
     if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
-      await deleteLocker(deleteTarget.id).unwrap();
+      await deleteLocker({
+        id: deleteTarget.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف الخزانة بنجاح!");
       setDeleteTarget(null);
       setDeleteConfirmation("");

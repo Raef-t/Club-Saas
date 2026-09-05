@@ -8,6 +8,7 @@ describe("staff form payload", () => {
       last_name: "صباغ",
       phone_number: "999999999",
       country_code: "+963",
+      gender: "female",
       role: "receptionist",
       employment_type: "fixed_salary",
       base_salary: 1000,
@@ -24,6 +25,7 @@ describe("staff form payload", () => {
     expect(body.get("start_time")).toBe("08:30");
     expect(body.get("end_time")).toBe("16:45");
     expect(body.get("work_status")).toBe("suspended");
+    expect(body.get("gender")).toBe("female");
     expect(body.has("shifts[]")).toBe(false);
   });
 });

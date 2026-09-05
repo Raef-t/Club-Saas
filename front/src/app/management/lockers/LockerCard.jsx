@@ -2,8 +2,19 @@
 
 import RowActions from "@/components/ui/RowActions";
 import { CalendarIcon, LockerIcon, XIcon } from "@/components/icons/Icons";
-import { LOCKER_STATUS_CLASSES, LOCKER_STATUS_LABELS } from "./lockerConstants";
-import { getLockerBranchName, getLockerHolderLabel, isLockerOccupied } from "./lockerUtils";
+import {
+  LOCKER_PAGE_STATE_CLASSES,
+  LOCKER_PAGE_STATE_LABELS,
+  LOCKER_STATUS_CLASSES,
+  LOCKER_STATUS_LABELS,
+} from "./lockerConstants";
+import {
+  getLockerBranchName,
+  getLockerHolderLabel,
+  getLockerPageState,
+  isLockerOccupied,
+} from "./lockerUtils";
+import { usePermissions } from "@/lib/PermissionContext";
 
 /**
  * Renders one locker with its status, holder, and available actions.
@@ -19,7 +30,16 @@ export default function LockerCard({
   onRelease,
   onDelete,
 }) {
-  const statusClass = LOCKER_STATUS_CLASSES[locker.status] || LOCKER_STATUS_CLASSES.disabled;
+  const { can } = usePermissions();
+  const canReserve = can("locker.reserve");
+  const canRelease = can("locker.release-reservation");
+  const canUpdate = can("locker.update");
+  const canDelete = can("locker.delete");
+  const pageState = getLockerPageState(locker);
+  const statusClass =
+    LOCKER_PAGE_STATE_CLASSES[pageState] ||
+    LOCKER_STATUS_CLASSES[locker.status] ||
+    LOCKER_STATUS_CLASSES.disabled;
   const holderLabel = getLockerHolderLabel(locker, memberOptions, coachOptions, staffOptions);
   const occupied = isLockerOccupied(locker);
 
@@ -42,13 +62,16 @@ export default function LockerCard({
 
       <div className="mt-5 flex w-full flex-col items-center gap-2">
         <span className={`rounded-full border px-3 py-1 text-[11px] font-medium ${statusClass}`}>
-          {LOCKER_STATUS_LABELS[locker.status] || locker.status || "-"}
+          {LOCKER_PAGE_STATE_LABELS[pageState] ||
+            LOCKER_STATUS_LABELS[locker.status] ||
+            locker.status ||
+            "-"}
         </span>
         {holderLabel && <p className="max-w-full truncate text-xs text-app-text">{holderLabel}</p>}
       </div>
 
       <div className="mt-5 flex items-center justify-center gap-2 border-t border-app-line pt-3">
-        {locker.status === "available" && !occupied && (
+        {canReserve && onReserve && locker.status === "available" && !occupied && (
           <button
             type="button"
             onClick={() => onReserve(locker)}
@@ -61,7 +84,7 @@ export default function LockerCard({
           </button>
         )}
 
-        {occupied && (
+        {canRelease && onRelease && occupied && (
           <button
             type="button"
             onClick={() => onRelease(locker)}
@@ -75,9 +98,9 @@ export default function LockerCard({
         )}
 
         <RowActions
-          editHref={`/management/lockers/${locker.id}/edit`}
+          editHref={canUpdate ? `/management/lockers/${locker.id}/edit` : undefined}
           editTitle="تعديل الخزانة"
-          onDelete={() => onDelete(locker)}
+          onDelete={canDelete && onDelete ? () => onDelete(locker) : undefined}
           deleteTitle="حذف الخزانة"
           disabled={actionsDisabled}
         />

@@ -7,6 +7,45 @@ describe("lockers API", () => {
     vi.unstubAllGlobals();
   });
 
+  it("sends the required confirmation when deleting a locker", async () => {
+    let request;
+    const NativeRequest = globalThis.Request;
+    vi.stubGlobal(
+      "Request",
+      class extends NativeRequest {
+        constructor(input, init) {
+          super(typeof input === "string" ? new URL(input, "http://localhost") : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input) => {
+        request = input;
+        return new Response(JSON.stringify({ status: "success" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const store = configureStore({
+      reducer: { [lockersApi.reducerPath]: lockersApi.reducer },
+      middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(lockersApi.middleware),
+    });
+
+    await store
+      .dispatch(
+        lockersApi.endpoints.deleteLocker.initiate({ id: 55, confirmation: "delete" }),
+      )
+      .unwrap();
+
+    const url = new URL(request.url);
+    expect(request.method).toBe("DELETE");
+    expect(url.pathname).toBe("/api/backend/lockers/55");
+    expect(url.searchParams.get("confirmation")).toBe("delete");
+  });
+
   it("sends the early-release reason in the DELETE request body", async () => {
     let request;
     const NativeRequest = globalThis.Request;

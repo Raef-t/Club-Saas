@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyDateMask, formatDateDisplay, parseDateInput } from "./datePickerUtils";
 import { applyTimeMask, padTimeSegment, parseTimeInput } from "./timePickerUtils";
+import { MONTHS } from "./DatePickerSmart";
 
 describe("date picker utilities", () => {
   it("formats and parses supported date formats", () => {
@@ -12,6 +13,13 @@ describe("date picker utilities", () => {
   it("rejects impossible dates", () => {
     expect(parseDateInput("31/02/2026")).toBeNull();
   });
+
+  it("uses Levantine Arabic month names", () => {
+    expect(MONTHS[8]).toBe("أيلول"); // September
+    expect(MONTHS[0]).toBe("كانون الثاني"); // January
+    expect(MONTHS[9]).toBe("تشرين الأول"); // October
+    expect(MONTHS.length).toBe(12);
+  });
 });
 
 describe("time picker utilities", () => {
@@ -22,3 +30,4 @@ describe("time picker utilities", () => {
     expect(parseTimeInput("24:00")).toBeNull();
   });
 });
+

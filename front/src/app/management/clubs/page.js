@@ -1,5 +1,5 @@
 import ClubsClient from "./ClubsClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -11,7 +11,7 @@ export const metadata = {
  * Loads the club workspace data on the server.
  */
 export default async function ClubsPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/clubs");
   const clubs = await requestBackend("clubs", { token });
 
   return <ClubsClient initialData={{ clubs }} />;

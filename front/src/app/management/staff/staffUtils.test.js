@@ -3,10 +3,12 @@ import {
   buildStaffQueryParams,
   createStaffInitialValues,
   createStaffProfileUpdateBody,
+  getPersonPhoneNumber,
   getStaffCollection,
   getStaffEditHref,
   getStaffWorkStatusMeta,
   isManagerStaffRole,
+  resolveStaffPhotoUrl,
 } from "./staffUtils";
 
 describe("staff utilities", () => {
@@ -67,6 +69,7 @@ describe("staff utilities", () => {
         shifts: [{ branch_shift_id: 12, branch_shift: { id: 12, branch_id: 5 } }],
         person: {
           full_name: "يمان عبدالله",
+          gender: "female",
           country_code: "+963",
           phone_number: "981642443",
           address: "الرياض",
@@ -77,6 +80,7 @@ describe("staff utilities", () => {
     expect(values).toMatchObject({
       first_name: "يمان",
       last_name: "عبدالله",
+      gender: "female",
       branch_ids: [5],
       start_time: "08:30",
       end_time: "16:45",
@@ -84,6 +88,29 @@ describe("staff utilities", () => {
       work_status: "suspended",
     });
     expect(values).not.toHaveProperty("shifts");
+  });
+
+  it("reads the profile phone number from the personal contact", () => {
+    expect(
+      getPersonPhoneNumber({
+        contacts: [
+          { relation: "emergency", phone_number: "111" },
+          { relation: "self", phone_number: "0500000001" },
+        ],
+      }),
+    ).toBe("0500000001");
+
+    expect(getPersonPhoneNumber({ phone_number: "0999999999", contacts: [] })).toBe("0999999999");
+  });
+
+  it("routes backend profile photos through the authenticated asset endpoint", () => {
+    expect(resolveStaffPhotoUrl("storage/people/photos/profile.jpg")).toBe(
+      "/api/assets/storage/people/photos/profile.jpg",
+    );
+    expect(resolveStaffPhotoUrl("https://api.example.com/storage/profile.jpg?v=2")).toBe(
+      "/api/assets/storage/profile.jpg?v=2",
+    );
+    expect(resolveStaffPhotoUrl("/img/local-profile.png")).toBe("/img/local-profile.png");
   });
 
   it("labels a suspended staff member as inactive without changing the API value", () => {

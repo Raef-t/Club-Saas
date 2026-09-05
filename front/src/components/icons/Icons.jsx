@@ -567,6 +567,25 @@ export function MenuIcon({ className = "size-5" }) {
   );
 }
 
+export function BellIcon({ className = "size-5" }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M14.857 17.082A23.848 23.848 0 0 0 18 16.5c-1.343-1.57-2.25-3.548-2.25-5.75V9a3.75 3.75 0 1 0-7.5 0v1.75C8.25 12.952 7.343 14.93 6 16.5c1.02.27 2.07.465 3.143.582m5.714 0a3 3 0 0 1-5.714 0m5.714 0a24.255 24.255 0 0 1-5.714 0"
+      />
+    </svg>
+  );
+}
+
 export function SettingsIcon({ className = "size-5" }) {
   return (
     <svg
@@ -693,5 +712,3 @@ export function CheckCircleIcon({ className = "size-5" }) {
     </svg>
   );
 }
-
-

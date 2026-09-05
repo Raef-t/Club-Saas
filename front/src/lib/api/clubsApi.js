@@ -5,7 +5,7 @@ export const clubsApi = createBackendApi({
   tagTypes: ["Clubs"],
   endpoints: (builder) => ({
     getClubs: builder.query({
-      query: () => "clubs",
+      query: (params = {}) => ({ url: "clubs", params }),
       providesTags: ["Clubs"],
     }),
     getClub: builder.query({

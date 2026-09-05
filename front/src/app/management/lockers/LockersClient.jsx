@@ -23,11 +23,17 @@ import {
   createLockerStaffOptions,
   getLockerCollection,
 } from "./lockerUtils";
+import { usePermissions } from "@/lib/PermissionContext";
 
 /**
  * Composes locker filters, cards, reservations, and destructive confirmations.
  */
 export default function LockersClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("locker.create");
+  const canReserve = can("locker.reserve");
+  const canRelease = can("locker.release-reservation");
+  const canDelete = can("locker.delete");
   const { selectedBranchId } = useManagementBranch();
   const lockerState = useLockers({
     initialLockers: initialData?.lockers,
@@ -46,7 +52,10 @@ export default function LockersClient({ initialData }) {
   );
   const memberOptions = useMemo(() => createLockerMemberOptions(branchMembers), [branchMembers]);
   const peopleQueryParams = useMemo(
-    () => (selectedBranchId === "all" ? {} : { branch_id: Number(selectedBranchId) }),
+    () => ({
+      ...(selectedBranchId === "all" ? {} : { branch_id: Number(selectedBranchId) }),
+      per_page: "all",
+    }),
     [selectedBranchId],
   );
   const { currentData: coachesResponse } = useGetCoachesQuery(peopleQueryParams);
@@ -75,8 +84,12 @@ export default function LockersClient({ initialData }) {
       unavailable_lockers_count = 0,
       assigned_to_member_count = 0,
       assigned_to_coach_count = 0,
-      rented_lockers_count = 0,
+      assigned_to_staff_count = 0,
+      assigned_to_staff_or_coach_count,
     } = lockerState.lockerSummary;
+    const staffOrCoachCount =
+      assigned_to_staff_or_coach_count ??
+      Number(assigned_to_coach_count) + Number(assigned_to_staff_count);
 
     return [
       {
@@ -90,19 +103,10 @@ export default function LockersClient({ initialData }) {
         active: lockerState.statusFilter === "available",
       },
       {
-        title: "مؤجرة",
-        value: rented_lockers_count,
-        iconKey: "subscriptions",
-        tone: "blue",
-        onClick: () =>
-          lockerState.setStatusFilter(lockerState.statusFilter === "rented" ? "all" : "rented"),
-        active: lockerState.statusFilter === "rented",
-      },
-      {
-        title: "مع الأعضاء",
+        title: "مع لاعب",
         value: assigned_to_member_count,
         iconKey: "members",
-        tone: "cyan",
+        tone: "blue",
         onClick: () =>
           lockerState.setStatusFilter(
             lockerState.statusFilter === "with_member" ? "all" : "with_member",
@@ -110,32 +114,25 @@ export default function LockersClient({ initialData }) {
         active: lockerState.statusFilter === "with_member",
       },
       {
-        title: "مع المدربين",
-        value: assigned_to_coach_count,
+        title: "مع كوتش أو موظف",
+        value: staffOrCoachCount,
         iconKey: "coaches",
         tone: "purple",
         onClick: () =>
           lockerState.setStatusFilter(
-            lockerState.statusFilter === "with_coach" ? "all" : "with_coach",
+            lockerState.statusFilter === "with_staff_or_coach" ? "all" : "with_staff_or_coach",
           ),
-        active: lockerState.statusFilter === "with_coach",
+        active: lockerState.statusFilter === "with_staff_or_coach",
       },
       {
-        title: "غير متاحة",
+        title: "معطلة أو صيانة",
         value: unavailable_lockers_count,
         tone: "orange",
         onClick: () =>
           lockerState.setStatusFilter(
-            lockerState.statusFilter === "maintenance" ||
-              lockerState.statusFilter === "disabled" ||
-              lockerState.statusFilter === "unavailable"
-              ? "all"
-              : "unavailable",
+            lockerState.statusFilter === "maintenance" ? "all" : "maintenance",
           ),
-        active:
-          lockerState.statusFilter === "maintenance" ||
-          lockerState.statusFilter === "disabled" ||
-          lockerState.statusFilter === "unavailable",
+        active: lockerState.statusFilter === "maintenance",
       },
     ];
   }, [lockerState]);
@@ -148,13 +145,15 @@ export default function LockersClient({ initialData }) {
         subtitle="إدارة الخزائن المتاحة، الحجوزات، والمستفيدين الحاليين."
         icon={LockerIcon}
         action={
-          <Button
-            href="/management/lockers/create"
-            icon={<PlusIcon className="size-4 text-black" />}
-            className="!text-black"
-          >
-            إضافة خزانة
-          </Button>
+          canCreate ? (
+            <Button
+              href="/management/lockers/create"
+              icon={<PlusIcon className="size-4 text-black" />}
+              className="!text-black"
+            >
+              إضافة خزانة
+            </Button>
+          ) : null
         }
       />
 
@@ -196,13 +195,13 @@ export default function LockersClient({ initialData }) {
         staffOptions={staffOptions}
         isLoading={lockerState.isLoading || lockerState.isFetching}
         actionsDisabled={lockerState.actionsDisabled}
-        onReserve={lockerState.openReserve}
-        onRelease={lockerState.setReleaseTarget}
-        onDelete={lockerState.setDeleteTarget}
+        onReserve={canReserve ? lockerState.openReserve : undefined}
+        onRelease={canRelease ? lockerState.setReleaseTarget : undefined}
+        onDelete={canDelete ? lockerState.setDeleteTarget : undefined}
       />
 
       <ConfirmDialog
-        open={Boolean(lockerState.deleteTarget)}
+        open={canDelete && Boolean(lockerState.deleteTarget)}
         onClose={() => lockerState.setDeleteTarget(null)}
         onConfirm={lockerState.confirmDelete}
         title="حذف الخزانة"
@@ -215,14 +214,14 @@ export default function LockersClient({ initialData }) {
       />
 
       <LockerReleaseDialog
-        locker={lockerState.releaseTarget}
+        locker={canRelease ? lockerState.releaseTarget : null}
         onClose={() => lockerState.setReleaseTarget(null)}
         onConfirm={lockerState.confirmRelease}
         isLoading={lockerState.isReleasing}
       />
 
       <Drawer
-        open={Boolean(lockerState.reserveTarget)}
+        open={canReserve && Boolean(lockerState.reserveTarget)}
         onClose={lockerState.closeReserve}
         title="حجز خزانة"
         subtitle={`حجز الخزانة ${lockerState.reserveTarget?.locker_number || ""}`}

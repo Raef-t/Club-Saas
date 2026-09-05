@@ -19,19 +19,19 @@ import {
   toIsoDate as toISO,
 } from "@/components/forms/datePickerUtils";
 
-const MONTHS = [
-  "يناير",
-  "فبراير",
-  "مارس",
-  "أبريل",
-  "مايو",
-  "يونيو",
-  "يوليو",
-  "أغسطس",
-  "سبتمبر",
-  "أكتوبر",
-  "نوفمبر",
-  "ديسمبر",
+export const MONTHS = [
+  "كانون الثاني",
+  "شباط",
+  "آذار",
+  "نيسان",
+  "أيار",
+  "حزيران",
+  "تموز",
+  "آب",
+  "أيلول",
+  "تشرين الأول",
+  "تشرين الثاني",
+  "كانون الأول",
 ];
 
 const WEEKDAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -48,6 +48,8 @@ export default function DatePickerSmart({
   autoDefault = false,
   compact = false,
   error,
+  minYear = 1940,
+  maxYear = 2050,
 }) {
   const inputWrapRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -62,7 +64,7 @@ export default function DatePickerSmart({
   const [pos, setPos] = useState({
     top: 0,
     left: 0,
-    width: 280,
+    width: 295,
     placement: "bottom",
   });
 
@@ -112,10 +114,10 @@ export default function DatePickerSmart({
     const rect = inputWrapRef.current.getBoundingClientRect();
     const margin = 10;
 
-    const desiredW = 280;
+    const desiredW = 295;
     const width = Math.min(desiredW, window.innerWidth - margin * 2);
 
-    const estimatedH = dropdownRef.current?.offsetHeight || 315;
+    const estimatedH = dropdownRef.current?.offsetHeight || 330;
 
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -266,15 +268,14 @@ export default function DatePickerSmart({
 
   const placeholderText = placeholder || (format === "MM/DD/YYYY" ? "mm/dd/yyyy" : "dd/mm/yyyy");
 
-  // ===== Years list =====
+  // ===== Years list bounded by minYear and maxYear =====
   const years = useMemo(() => {
-    const center = view.getFullYear();
-    const start = center - 60;
-    const end = center + 60;
+    const start = Math.min(Number(minYear) || 1940, Number(maxYear) || 2050);
+    const end = Math.max(Number(minYear) || 1940, Number(maxYear) || 2050);
     const arr = [];
     for (let y = start; y <= end; y++) arr.push(y);
     return arr;
-  }, [view]);
+  }, [minYear, maxYear]);
 
   useEffect(() => {
     if (!open) return;
@@ -287,7 +288,10 @@ export default function DatePickerSmart({
     requestAnimationFrame(() => {
       const el = yearListRef.current;
       if (!el) return;
-      el.scrollTop = Math.max(0, idx * 34 - 120);
+      const row = Math.floor(idx / 4);
+      // Row height is ~36px (h-9) + 8px (gap-2) = 44px
+      const targetScroll = Math.max(0, row * 44 - 88);
+      el.scrollTop = targetScroll;
     });
   }, [mode, open, view, years]);
 
@@ -402,55 +406,85 @@ export default function DatePickerSmart({
               className="z-[9999]"
               onMouseDown={(e) => e.preventDefault()}
             >
-              <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-4 text-app-text">
+              <div className="bg-app-card border border-app-line rounded-2xl shadow-xl p-3.5 text-app-text">
                 {/* Header */}
-                <div className="flex items-center justify-between" dir="rtl">
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center justify-between px-1 pb-2.5 border-b border-app-line" dir="rtl">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => setMode((m) => (m === "month" ? "day" : "month"))}
-                      className="text-sm font-bold text-app-text hover:text-app-yellow transition px-2 py-1 rounded-md hover:bg-app-card-soft"
+                      className={`text-sm font-semibold transition px-2.5 py-1 rounded-lg flex items-center gap-1 ${
+                        mode === "month"
+                          ? "bg-app-yellow text-app-bg font-bold shadow-sm"
+                          : "text-app-text hover:text-app-yellow hover:bg-app-card-soft"
+                      }`}
                       title="اختر الشهر"
                     >
-                      {MONTHS[view.getMonth()]}
+                      <span>{MONTHS[view.getMonth()]}</span>
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${mode === "month" ? "rotate-180" : ""}`}
+                      />
                     </button>
                     <button
                       type="button"
                       onClick={() => setMode((m) => (m === "year" ? "day" : "year"))}
-                      className="text-sm font-bold text-app-text hover:text-app-yellow transition px-2 py-1 rounded-md hover:bg-app-card-soft"
+                      className={`text-sm font-semibold transition px-2.5 py-1 rounded-lg flex items-center gap-1 ${
+                        mode === "year"
+                          ? "bg-app-yellow text-app-bg font-bold shadow-sm"
+                          : "text-app-text hover:text-app-yellow hover:bg-app-card-soft"
+                      }`}
                       title="اختر السنة"
                     >
-                      {view.getFullYear()}
+                      <span>{view.getFullYear()}</span>
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${mode === "year" ? "rotate-180" : ""}`}
+                      />
                     </button>
                   </div>
 
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={goPrevMonth}
-                      className="p-1.5 rounded-full hover:bg-app-card-soft transition"
-                      title="الشهر السابق"
+                      onClick={() => {
+                        if (mode === "year") {
+                          setView((v) => new Date(Math.max(years[0] || 1940, v.getFullYear() - 10), v.getMonth(), 1));
+                        } else if (mode === "month") {
+                          setView((v) => new Date(v.getFullYear() - 1, v.getMonth(), 1));
+                        } else {
+                          goPrevMonth();
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-app-muted-light hover:text-app-text hover:bg-app-card-soft transition"
+                      title="السابق"
                     >
-                      <ChevronRight size={18} className="text-app-muted-light" />
+                      <ChevronRight size={18} />
                     </button>
                     <button
                       type="button"
-                      onClick={goNextMonth}
-                      className="p-1.5 rounded-full hover:bg-app-card-soft transition"
-                      title="الشهر التالي"
+                      onClick={() => {
+                        if (mode === "year") {
+                          setView((v) => new Date(Math.min(years[years.length - 1] || 2050, v.getFullYear() + 10), v.getMonth(), 1));
+                        } else if (mode === "month") {
+                          setView((v) => new Date(v.getFullYear() + 1, v.getMonth(), 1));
+                        } else {
+                          goNextMonth();
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-app-muted-light hover:text-app-text hover:bg-app-card-soft transition"
+                      title="التالي"
                     >
-                      <ChevronLeft size={18} className="text-app-muted-light" />
+                      <ChevronLeft size={18} />
                     </button>
                   </div>
                 </div>
-
-                <div className="mt-3 mb-3 h-px w-full bg-app-line/50" />
 
                 {/* BODY */}
                 {mode === "year" ? (
                   <div
                     ref={yearListRef}
-                    className="max-h-[220px] overflow-auto pr-1 scrollbar-hidden"
+                    className="max-h-[220px] overflow-y-auto py-2 pr-1 scrollbar-hidden"
                   >
                     <div className="grid grid-cols-4 gap-2" dir="ltr">
                       {years.map((y) => {
@@ -461,10 +495,10 @@ export default function DatePickerSmart({
                             type="button"
                             onClick={() => selectYear(y)}
                             className={[
-                              "h-8 rounded-lg text-xs transition",
+                              "h-9 rounded-lg text-xs font-semibold transition-all flex items-center justify-center text-center",
                               isCurrent
-                                ? "bg-app-yellow text-app-bg font-bold"
-                                : "text-app-text hover:bg-app-card-soft border border-app-line",
+                                ? "bg-app-yellow text-app-bg font-bold shadow-md ring-2 ring-app-yellow/30"
+                                : "text-app-text hover:text-app-yellow hover:bg-app-card-soft border border-app-line hover:border-app-yellow/40",
                             ].join(" ")}
                           >
                             {y}
@@ -486,10 +520,10 @@ export default function DatePickerSmart({
                             setMode("day");
                           }}
                           className={[
-                            "h-10 rounded-lg text-sm transition",
+                            "h-11 rounded-xl text-xs font-semibold transition-all flex items-center justify-center text-center px-1.5 leading-snug",
                             isCurrent
-                              ? "bg-app-yellow text-app-bg font-bold"
-                              : "text-app-text hover:bg-app-card-soft border border-app-line",
+                              ? "bg-app-yellow text-app-bg font-bold shadow-md ring-2 ring-app-yellow/30"
+                              : "text-app-text hover:text-app-yellow hover:bg-app-card-soft border border-app-line hover:border-app-yellow/40",
                           ].join(" ")}
                         >
                           {m}
@@ -500,13 +534,13 @@ export default function DatePickerSmart({
                 ) : (
                   <>
                     {/* Weekdays */}
-                    <div className="grid grid-cols-7 gap-0 mb-1" dir="rtl">
+                    <div className="grid grid-cols-7 gap-1 mb-1 pt-2" dir="rtl">
                       {WEEKDAYS.map((d) => (
                         <div
                           key={d}
-                          className="text-[10px] text-app-muted font-medium text-center py-1"
+                          className="text-[11px] text-app-muted-light font-medium text-center py-1 select-none"
                         >
-                          {d}
+                          {d.slice(0, 3)}
                         </div>
                       ))}
                     </div>
@@ -515,7 +549,7 @@ export default function DatePickerSmart({
                     <div className="space-y-1" dir="rtl">
                       {weeks.map((week, wIdx) => {
                         return (
-                          <div key={wIdx} className="grid grid-cols-7 gap-0">
+                          <div key={wIdx} className="grid grid-cols-7 gap-1">
                             {week.map((cell, i) => {
                               const inMonth = !!cell?.inMonth && !!cell?.date;
                               if (!inMonth) {
@@ -524,6 +558,7 @@ export default function DatePickerSmart({
 
                               const iso = toISO(cell.date);
                               const isActive = iso === activeISO;
+                              const isToday = iso === todayISO;
 
                               return (
                                 <div
@@ -534,10 +569,12 @@ export default function DatePickerSmart({
                                     type="button"
                                     onClick={() => pickDate(cell.date)}
                                     className={[
-                                      "w-7 h-7 rounded-full flex items-center justify-center text-xs transition",
+                                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all",
                                       isActive
-                                        ? "bg-app-yellow text-app-bg font-bold shadow-sm"
-                                        : "text-app-text hover:bg-app-card-soft",
+                                        ? "bg-app-yellow text-app-bg font-bold shadow-md ring-2 ring-app-yellow/30"
+                                        : isToday
+                                          ? "border border-app-yellow text-app-yellow hover:bg-app-card-soft font-semibold"
+                                          : "text-app-text hover:bg-app-card-soft hover:text-app-yellow",
                                     ].join(" ")}
                                     title={iso}
                                   >
@@ -549,6 +586,30 @@ export default function DatePickerSmart({
                           </div>
                         );
                       })}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-3 pt-2.5 border-t border-app-line flex items-center justify-between" dir="rtl">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const today = new Date();
+                          setView(today);
+                          pickDate(today);
+                        }}
+                        className="text-xs text-app-yellow hover:underline font-medium px-1 py-0.5"
+                      >
+                        اليوم
+                      </button>
+                      {allowClear && !!value && (
+                        <button
+                          type="button"
+                          onClick={clear}
+                          className="text-xs text-app-muted-light hover:text-app-red transition px-1 py-0.5"
+                        >
+                          مسح
+                        </button>
+                      )}
                     </div>
                   </>
                 )}

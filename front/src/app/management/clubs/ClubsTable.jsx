@@ -7,11 +7,17 @@ import { formatDate } from "@/lib/utils";
 import { CLUB_TABLE_COLUMNS } from "./clubConstants";
 import { getClubName } from "./clubUtils";
 import { ClubLogo, ClubStatusBadge } from "./ClubVisuals";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 /**
  * Renders the searchable clubs table and its row actions.
  */
 export default function ClubsTable({ state }) {
+  const { can } = usePermissions();
+  const canView = can("club.view");
+  const canUpdate = can("club.update");
+  const canDelete = can("club.delete");
   const columns = useMemo(
     () => [
       {
@@ -60,13 +66,13 @@ export default function ClubsTable({ state }) {
         render: (_, club) => (
           <RowActions
             disabled={state.isDeleting}
-            editHref={`/management/clubs/create?mode=edit&id=${club.id}`}
-            onDelete={() => state.requestDelete(club)}
+            editHref={canUpdate ? `/management/clubs/create?mode=edit&id=${club.id}` : undefined}
+            onDelete={canDelete ? () => state.requestDelete(club) : undefined}
           />
         ),
       },
     ],
-    [state],
+    [canDelete, canUpdate, state],
   );
 
   return (
@@ -96,7 +102,14 @@ export default function ClubsTable({ state }) {
       }
       rowClassName="gap-2 px-3 py-4"
       headerClassName="gap-2 px-3"
-      onRowClick={state.openDetails}
+      currentPage={state.pagination.currentPage}
+      totalPages={state.pagination.lastPage}
+      totalItems={state.pagination.total}
+      pageSize={state.pagination.perPage}
+      pageSizeOptions={PAGE_SIZE_OPTIONS}
+      onPageChange={state.pagination.setPage}
+      onPageSizeChange={state.pagination.setPerPage}
+      onRowClick={canView ? state.openDetails : undefined}
       getRowKey={(club) => club.id}
       toolbarActions={
         <SearchInput
@@ -110,7 +123,7 @@ export default function ClubsTable({ state }) {
         <p className="text-sm text-app-muted-light">
           النتائج:{" "}
           <span className="font-medium text-app-text">
-            {state.clubs.length.toLocaleString("ar")}
+            {state.totalResults.toLocaleString("ar")}
           </span>
         </p>
       }

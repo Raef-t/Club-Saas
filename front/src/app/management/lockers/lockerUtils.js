@@ -147,8 +147,10 @@ export function isLockerOccupied(locker) {
 export function matchesLockerStatus(locker, status) {
   if (!status || status === "all") return true;
   if (status === "occupied") return isLockerOccupied(locker);
-  if (status === "available") return locker.status === "available";
-  if (status === "unavailable") return locker.status !== "available";
+  if (status === "available") return locker.status === "available" && !isLockerOccupied(locker);
+  if (status === "maintenance" || status === "unavailable") {
+    return locker.status === "maintenance" || locker.status === "disabled";
+  }
 
   const reservation = getLockerCurrentReservation(locker) || {};
   const holder = getLockerHolder(locker);
@@ -191,7 +193,36 @@ export function matchesLockerStatus(locker, status) {
     );
   }
 
+  if (status === "with_staff") {
+    return (
+      holder.type === "staff" ||
+      locker.status === "with_staff" ||
+      reservation.holder_type === "staff" ||
+      Boolean(locker.staff || locker.staff_id)
+    );
+  }
+
+  if (status === "with_staff_or_coach") {
+    return (
+      locker.status === "with_staff_or_coach" ||
+      matchesLockerStatus(locker, "with_coach") ||
+      matchesLockerStatus(locker, "with_staff")
+    );
+  }
+
   return locker.status === status;
+}
+
+/**
+ * Collapses backend reservation details into the four states shown on the list.
+ */
+export function getLockerPageState(locker) {
+  if (matchesLockerStatus(locker, "maintenance")) return "maintenance";
+  if (matchesLockerStatus(locker, "with_member")) return "with_member";
+  if (matchesLockerStatus(locker, "with_staff_or_coach")) return "with_staff_or_coach";
+  if (matchesLockerStatus(locker, "available")) return "available";
+
+  return locker?.status || "maintenance";
 }
 
 /**
@@ -217,10 +248,10 @@ export function filterLockers(lockers, { search = "", branch = "all", status = "
  * Creates the exact query params supported by the locker list endpoint.
  */
 export function createLockerQueryParams(branchFilter, statusFilter) {
-  const standardStatuses = ["available", "assigned", "maintenance", "disabled"];
+  const supportedPageStatuses = ["available", "with_member", "with_staff_or_coach", "maintenance"];
   return {
     branch_id: branchFilter !== "all" ? String(branchFilter) : undefined,
-    status: standardStatuses.includes(statusFilter) ? statusFilter : undefined,
+    status: supportedPageStatuses.includes(statusFilter) ? statusFilter : undefined,
   };
 }
 

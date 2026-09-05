@@ -84,7 +84,7 @@ export default function GeneralSettingsTab({
 function SettingsFieldsSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {Array.from({ length: 9 }, (_, index) => (
+      {Array.from({ length: 8 }, (_, index) => (
         <Skeleton key={index} className="h-[70px] w-full" />
       ))}
     </div>
@@ -147,18 +147,6 @@ function BranchSettingsFields({ form, errors, onFieldChange }) {
           onChange={(event) => onFieldChange("defaultEmployeeSalary", event.target.value)}
           placeholder="3500"
           error={errors.defaultEmployeeSalary}
-        />
-        <Field
-          label="يوم إقفال وحساب الرواتب الشهري (من 1 إلى 31)"
-          type="number"
-          required
-          min="1"
-          max="31"
-          step="1"
-          value={form.payrollEndDay}
-          onChange={(event) => onFieldChange("payrollEndDay", event.target.value)}
-          placeholder="28"
-          error={errors.payrollEndDay}
         />
       </div>
 

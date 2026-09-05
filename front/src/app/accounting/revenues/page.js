@@ -1,5 +1,5 @@
 import RevenuesClient from "./RevenuesClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function RevenuesPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/accounting/revenues");
   let initialJournals = [];
   let initialAccounts = [];
   let initialSafes = [];

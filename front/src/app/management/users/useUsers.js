@@ -3,56 +3,57 @@ import { useSearchParams } from "next/navigation";
 import { useGetUsersQuery } from "@/lib/api/usersApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { buildUserRoleTabs, createUserStats, filterUsers, getUsersCollection } from "./usersUtils";
+import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 export function useUsers({ initialUsers } = {}) {
   const searchParams = useSearchParams();
   const urlRole = searchParams?.get("role");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState(urlRole || "all");
+  const paginationFilterKey = [roleFilter, search].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
+  const needsAllUsers = Boolean(search.trim());
   const {
     currentData: allUsersResponse,
     error: allUsersError,
     isLoading: isLoadingAllUsers,
     isFetching: isFetchingAllUsers,
     refetch: refetchAllUsers,
-  } = useGetUsersQuery({});
+  } = useGetUsersQuery(withAllItems());
   const {
-    currentData: roleUsersResponse,
-    error: roleUsersError,
-    isLoading: isLoadingRoleUsers,
-    isFetching: isFetchingRoleUsers,
-    refetch: refetchRoleUsers,
-  } = useGetUsersQuery(
-    { role: roleFilter },
-    {
-      skip: roleFilter === "all",
-    },
-  );
+    currentData: listUsersResponse,
+    error: listUsersError,
+    isLoading: isLoadingListUsers,
+    isFetching: isFetchingListUsers,
+    refetch: refetchListUsers,
+  } = useGetUsersQuery({
+    ...(roleFilter !== "all" ? { role: roleFilter } : {}),
+    ...(needsAllUsers ? { per_page: "all" } : { page, per_page: perPage }),
+  });
 
   const allUsers = useMemo(
     () => getUsersCollection(allUsersResponse || initialUsers),
     [allUsersResponse, initialUsers],
   );
-  const roleUsers = useMemo(
-    () => (roleFilter === "all" ? allUsers : getUsersCollection(roleUsersResponse)),
-    [allUsers, roleFilter, roleUsersResponse],
+  const canUseInitialUsers =
+    !needsAllUsers && page === 1 && perPage === 15 && roleFilter === "all";
+  const listResponse = listUsersResponse || (canUseInitialUsers ? initialUsers : null);
+  const pageUsers = useMemo(() => getUsersCollection(listResponse), [listResponse]);
+  const users = useMemo(() => filterUsers(pageUsers, search), [pageUsers, search]);
+  const pagination = useMemo(
+    () => getPaginationMeta(listResponse, { page, perPage }),
+    [listResponse, page, perPage],
   );
-  const users = useMemo(() => filterUsers(roleUsers, search), [roleUsers, search]);
   const stats = useMemo(
     () => createUserStats(allUsers, { roleFilter, setRoleFilter }),
     [allUsers, roleFilter],
   );
   const roleOptions = useMemo(() => buildUserRoleTabs(allUsers), [allUsers]);
-  const isRoleFiltered = roleFilter !== "all";
-  const activeError = isRoleFiltered ? roleUsersError : allUsersError;
-  const hasVisibleSource = isRoleFiltered ? Boolean(roleUsersResponse) : allUsers.length > 0;
+  const activeError = listUsersError || allUsersError;
+  const hasVisibleSource = Boolean(listResponse);
 
   function retry() {
-    if (isRoleFiltered) {
-      refetchRoleUsers();
-      return;
-    }
-
+    refetchListUsers();
     refetchAllUsers();
   }
 
@@ -64,13 +65,11 @@ export function useUsers({ initialUsers } = {}) {
     users,
     stats,
     roleOptions,
-    totalResults: users.length,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults: needsAllUsers ? users.length : pagination.total,
     isLoading:
-      !hasVisibleSource &&
-      (isRoleFiltered
-        ? isLoadingRoleUsers || isFetchingRoleUsers
-        : isLoadingAllUsers || isFetchingAllUsers),
-    isRefreshing: isRoleFiltered ? isFetchingRoleUsers : isFetchingAllUsers,
+      !hasVisibleSource && (isLoadingListUsers || isFetchingListUsers || isLoadingAllUsers),
+    isRefreshing: isFetchingListUsers || isFetchingAllUsers,
     errorMessage: activeError
       ? getApiErrorMessage(activeError, "تعذر تحميل قائمة حسابات المستخدمين.")
       : "",

@@ -19,6 +19,7 @@ import {
   getSubscriptionRows,
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
+import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 function isExpiringSoon(subscription) {
   if (subscription.status !== "active") return false;
@@ -53,12 +54,18 @@ export function useSubscriptions({ initialData } = {}) {
   const [isRefunded, setIsRefunded] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const paginationFilterKey = [branchFilter, status, search].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
+  const needsAllSubscriptions = status !== "all" || Boolean(search.trim());
 
   const queryParams = useMemo(() => {
-    return branchFilter !== "all" ? { branch_id: branchFilter } : {};
-  }, [branchFilter]);
+    return {
+      ...(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
+      ...(needsAllSubscriptions ? { per_page: "all" } : { page, per_page: perPage }),
+    };
+  }, [branchFilter, needsAllSubscriptions, page, perPage]);
 
-  const { data, error, isFetching, isLoading, refetch } =
+  const { currentData: data, error, isFetching, isLoading, refetch } =
     useGetPlayerSubscriptionsQuery(queryParams);
 
   const {
@@ -71,16 +78,21 @@ export function useSubscriptions({ initialData } = {}) {
     skip: !selectedSubscriptionId,
   });
 
-  const { data: branchesData } = useGetBranchesQuery();
+  const { data: branchesData } = useGetBranchesQuery(withAllItems());
   const [freezeSubscription, { isLoading: isFreezing }] = useFreezeSubscriptionMutation();
   const [unfreezeSubscription, { isLoading: isUnfreezing }] = useUnfreezeSubscriptionMutation();
   const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
   const [deletePlayerSubscription, { isLoading: isDeleting }] =
     useDeletePlayerSubscriptionMutation();
 
-  const subscriptions = useMemo(
-    () => getSubscriptionRows(data || initialData?.subscriptions),
-    [data, initialData?.subscriptions],
+  const canUseInitialSubscriptions =
+    !needsAllSubscriptions && page === 1 && perPage === 15 && branchFilter === "all";
+  const listResponse =
+    data || (canUseInitialSubscriptions ? initialData?.subscriptions : null);
+  const subscriptions = useMemo(() => getSubscriptionRows(listResponse), [listResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(listResponse, { page, perPage }),
+    [listResponse, page, perPage],
   );
   const branchSubscriptions = useMemo(
     () => filterEntitiesByBranch(subscriptions, branchFilter),
@@ -118,6 +130,7 @@ export function useSubscriptions({ initialData } = {}) {
       return matchesStatus && matchesSearch;
     });
   }, [branchSubscriptions, search, status]);
+  const totalResults = needsAllSubscriptions ? filteredSubscriptions.length : pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = branchSubscriptions.filter((item) => item.status === "active").length;
@@ -258,7 +271,7 @@ export function useSubscriptions({ initialData } = {}) {
     setSelectedSubscriptionId,
     error,
     isFetching,
-    isLoading,
+    isLoading: isLoading || (isFetching && !listResponse),
     refetch,
     subscriptionDetailError,
     isSubscriptionDetailFetching,
@@ -267,6 +280,8 @@ export function useSubscriptions({ initialData } = {}) {
     subscriptions,
     selectedSubscription,
     filteredSubscriptions,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     errorMessage,
     branches,

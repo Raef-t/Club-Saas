@@ -1,5 +1,5 @@
 import ReportsDashboard from "./dashboard/ReportsDashboard";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -21,7 +21,7 @@ async function loadReportResource(path, token) {
  * Loads current operational data and renders the reports route.
  */
 export default async function ReportsPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/reports");
   const [members, coaches, subscriptions, activities, attendances] = await Promise.all([
     loadReportResource("members", token),
     loadReportResource("coaches", token),

@@ -45,6 +45,8 @@ import {
   getCoachActivityPlanKey,
   getUnassignedActivities,
 } from "@/app/management/coaches/coachDetailsUtils";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 /**
  * Activity badge with hover tooltip showing related subscription plans.
@@ -122,6 +124,11 @@ function ActivityBadgeWithTooltip({ activity, plans = [] }) {
 }
 
 export default function CoachesClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("coach.create");
+  const canView = can("coach.view");
+  const canUpdate = can("coach.update");
+  const canDelete = can("coach.delete");
   const {
     search,
     setSearch,
@@ -143,6 +150,8 @@ export default function CoachesClient({ initialData }) {
     error,
     refetch,
     filteredCoaches,
+    pagination,
+    totalResults,
     stats,
     selectedCoach,
     detailsCoach,
@@ -313,13 +322,13 @@ export default function CoachesClient({ initialData }) {
         render: (_, coach) => (
           <RowActions
             disabled={isDeleting}
-            editHref={`/management/coaches/create?mode=edit&id=${coach.id}`}
-            onDelete={() => handleDelete(coach)}
+            editHref={canUpdate ? `/management/coaches/create?mode=edit&id=${coach.id}` : undefined}
+            onDelete={canDelete ? () => handleDelete(coach) : undefined}
           />
         ),
       },
     ],
-    [isDeleting, handleDelete, setFormError, setSelectedCoachId, setDrawerMode],
+    [canDelete, canUpdate, handleDelete, isDeleting],
   );
 
   const editInitialValues = useMemo(() => {
@@ -354,13 +363,15 @@ export default function CoachesClient({ initialData }) {
         title="إدارة المدربين"
         subtitle="عرض قائمة الكوادر التدريبية، إحصاءات الأجور، تعيين المهام والرياضات لكل كوتش."
         action={
-          <Button
-            href="/management/coaches/create"
-            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
-            style={{ color: "#000000" }}
-          >
-            إضافة مدرب
-          </Button>
+          canCreate ? (
+            <Button
+              href="/management/coaches/create"
+              icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+              style={{ color: "#000000" }}
+            >
+              إضافة مدرب
+            </Button>
+          ) : null
         }
       />
 
@@ -392,11 +403,21 @@ export default function CoachesClient({ initialData }) {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        totalPages={0}
-        onRowClick={(coach) => {
-          setSelectedCoachId(coach.id);
-          setDrawerMode("details");
-        }}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.lastPage}
+        totalItems={pagination.total}
+        pageSize={pagination.perPage}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPerPage}
+        onRowClick={
+          canView
+            ? (coach) => {
+                setSelectedCoachId(coach.id);
+                setDrawerMode("details");
+              }
+            : undefined
+        }
         getRowKey={(coach) => coach.id}
         toolbarActions={
           <div className="flex w-full flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center xl:flex-nowrap">
@@ -440,7 +461,7 @@ export default function CoachesClient({ initialData }) {
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
             <span className="font-medium text-app-text">
-              {filteredCoaches.length.toLocaleString("ar")}
+              {totalResults.toLocaleString("ar")}
             </span>
           </p>
         }
@@ -461,7 +482,7 @@ export default function CoachesClient({ initialData }) {
       </Drawer>
 
       <ConfirmDialog
-        open={deleteConfirmOpen}
+        open={canDelete && deleteConfirmOpen}
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف المدرب"

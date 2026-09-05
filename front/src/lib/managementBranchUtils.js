@@ -78,26 +78,37 @@ export function getPreferredBranchId({
 /**
  * Creates the options rendered by the global management branch selector.
  */
-export function createManagementBranchOptions(branches) {
-  return [
-    { value: ALL_BRANCHES_VALUE, label: "كل الفروع" },
-    ...getBranchesArray(branches).map((branch) => ({
-      value: String(branch.id),
-      label: formatLocalizedName(branch.name),
-    })),
-  ];
+export function createManagementBranchOptions(branches, { includeAll = true } = {}) {
+  const branchOptions = getBranchesArray(branches).map((branch) => ({
+    value: String(branch.id),
+    label: formatLocalizedName(branch.name),
+  }));
+
+  return includeAll
+    ? [{ value: ALL_BRANCHES_VALUE, label: "كل الفروع" }, ...branchOptions]
+    : branchOptions;
 }
 
 /**
  * Validates a persisted branch selection against the available branches.
  */
-export function normalizeSelectedBranchId(selectedBranchId, branches) {
+export function normalizeSelectedBranchId(
+  selectedBranchId,
+  branches,
+  { fallbackToFirst = false } = {},
+) {
+  const branchList = getBranchesArray(branches);
   if (!selectedBranchId || selectedBranchId === ALL_BRANCHES_VALUE) {
-    return ALL_BRANCHES_VALUE;
+    return fallbackToFirst && branchList.length > 0
+      ? String(branchList[0].id)
+      : ALL_BRANCHES_VALUE;
   }
 
-  return getBranchesArray(branches).some((branch) => String(branch.id) === String(selectedBranchId))
-    ? String(selectedBranchId)
+  const exists = branchList.some((branch) => String(branch.id) === String(selectedBranchId));
+  if (exists) return String(selectedBranchId);
+
+  return fallbackToFirst && branchList.length > 0
+    ? String(branchList[0].id)
     : ALL_BRANCHES_VALUE;
 }
 

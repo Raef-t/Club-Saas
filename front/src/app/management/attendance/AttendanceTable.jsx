@@ -8,6 +8,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import { ATTENDANCE_STATUS_FILTER_OPTIONS, ATTENDANCE_TABLE_COLUMNS } from "./attendanceConstants";
 import AttendanceStatusBadge from "./AttendanceStatusBadge";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 const TYPE_OPTIONS = [
   { value: "all", label: "كل الأنواع" },
@@ -38,6 +39,8 @@ function AttendanceConsumptions({ consumptions }) {
  */
 export default function AttendanceTable({
   rows,
+  pagination,
+  totalResults,
   isLoading,
   errorMessage,
   onRetry,
@@ -182,7 +185,13 @@ export default function AttendanceTable({
         showSearch={false}
         showFilter={false}
         showExport={false}
-        totalPages={0}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.lastPage}
+        totalItems={pagination.total}
+        pageSize={pagination.perPage}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPerPage}
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
         getRowKey={(row) => row.id}
@@ -245,7 +254,7 @@ export default function AttendanceTable({
           <p className="text-sm text-app-muted-light">
             الإجمالي:{" "}
             <span className="font-medium text-app-text">
-              {rows.length.toLocaleString("ar")} حركة
+              {totalResults.toLocaleString("ar")} حركة
             </span>
           </p>
         }

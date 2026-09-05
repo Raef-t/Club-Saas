@@ -1,5 +1,5 @@
 import FinancialReportsClient from "./FinancialReportsClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function FinancialReportsPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/accounting/reports");
   let initialPeriods = [];
 
   try {

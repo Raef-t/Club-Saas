@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
-import { loginSchema } from "@/lib/validations/authSchema";
 
 const DEFAULT_FCM_TOKEN = "fcm_token_string_here";
 
@@ -25,36 +24,16 @@ export default function LoginForm() {
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    setErrorMessage("");
     if (fieldErrors[field]) {
       setFieldErrors((prev) => ({ ...prev, [field]: "" }));
     }
   }
 
-  function validateForm() {
-    const result = loginSchema.safeParse(form);
-    if (!result.success) {
-      const errors = {};
-      result.error.issues.forEach((issue) => {
-        const fieldName = issue.path[0];
-        if (fieldName && !errors[fieldName]) {
-          errors[fieldName] = issue.message;
-        }
-      });
-      setFieldErrors(errors);
-      return false;
-    }
-
-    setFieldErrors({});
-    return true;
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage("");
-
-    if (!validateForm()) {
-      return;
-    }
+    setFieldErrors({});
 
     setIsLoading(true);
     try {
@@ -68,7 +47,7 @@ export default function LoginForm() {
           "X-Remember-Me": form.remember ? "true" : "false",
         },
         body: JSON.stringify({
-          username: form.username.trim(),
+          username: form.username,
           password: form.password,
           fcm_token: DEFAULT_FCM_TOKEN,
         }),
@@ -76,10 +55,20 @@ export default function LoginForm() {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
+        const backendErrors = payload?.errors || {};
+        setFieldErrors(
+          Object.fromEntries(
+            Object.entries(backendErrors).map(([field, messages]) => [
+              field,
+              Array.isArray(messages) ? String(messages[0] || "") : String(messages || ""),
+            ]),
+          ),
+        );
         throw new Error(payload?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.");
       }
 
-      router.replace("/management");
+      const destination = payload?.data?.requires_account_setup ? "/account-setup" : "/";
+      router.replace(destination);
       router.refresh();
     } catch (error) {
       setForm((current) => ({ ...current, password: "" }));
@@ -115,9 +104,6 @@ export default function LoginForm() {
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
-            minLength={3}
-            maxLength={50}
-            required
             onChange={(event) => updateField("username", event.target.value)}
             className={`mt-2 h-12 w-full rounded-xl border bg-app-card-soft px-4 text-right text-white outline-none transition focus:border-app-yellow ${
               fieldErrors.username ? "border-app-red" : "border-app-line"
@@ -143,9 +129,6 @@ export default function LoginForm() {
               type={showPassword ? "text" : "password"}
               dir="ltr"
               autoComplete="current-password"
-              minLength={6}
-              maxLength={100}
-              required
               onChange={(event) => updateField("password", event.target.value)}
               className={`login-password-input h-12 w-full rounded-xl border bg-app-card-soft ps-4 pe-12 text-right text-white outline-none transition focus:border-app-yellow ${
                 fieldErrors.password ? "border-app-red" : "border-app-line"
@@ -170,7 +153,10 @@ export default function LoginForm() {
       </div>
 
       {errorMessage && (
-        <p className="mt-4 rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red">
+        <p
+          role="alert"
+          className="mt-4 rounded-xl border border-app-red/30 bg-app-red/10 p-3 text-center text-xs text-app-red"
+        >
           {errorMessage}
         </p>
       )}

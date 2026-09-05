@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
+import { withAllItems } from "@/lib/pagination";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getBranchesArray } from "@/lib/utils";
@@ -19,7 +20,7 @@ export function useSettingsBranches(initialBranches) {
     isLoading,
     isFetching,
     refetch,
-  } = useGetBranchesQuery();
+  } = useGetBranchesQuery(withAllItems());
   const branches = useMemo(
     () => getBranchesArray(branchesResponse || initialBranches),
     [branchesResponse, initialBranches],

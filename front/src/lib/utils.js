@@ -13,7 +13,7 @@ export function formatDate(value) {
   const date = new Date(value);
   if (isNaN(date.getTime())) return "-";
 
-  return new Intl.DateTimeFormat("ar", {
+  return new Intl.DateTimeFormat("ar-SY", {
     year: "numeric",
     month: "short",
     day: "numeric",

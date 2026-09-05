@@ -1,5 +1,5 @@
 import PartnersClient from "./PartnersClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function PartnersPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/accounting/partners");
   let initialPartners = [];
   let initialSafes = [];
 
@@ -23,10 +23,5 @@ export default async function PartnersPage() {
     initialSafes = [];
   }
 
-  return (
-    <PartnersClient
-      initialPartners={initialPartners}
-      initialSafes={initialSafes}
-    />
-  );
+  return <PartnersClient initialPartners={initialPartners} initialSafes={initialSafes} />;
 }

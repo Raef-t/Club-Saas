@@ -1,20 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import CopyableUsername from "@/components/ui/CopyableUsername";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
 import StatsGrid from "@/components/ui/StatsGrid";
+import RowActions from "@/components/ui/RowActions";
 import { SearchIcon } from "@/components/icons/Icons";
 import { useUsers } from "./useUsers";
 import UserRoleTabs from "./UserRoleTabs";
+import UserPermissionsDrawer from "./UserPermissionsDrawer";
+import { useResetPasswordMutation } from "@/lib/api/authApi";
+import { useToast } from "@/components/ui/Toast";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { getPasswordStatus, getUserRoleLabel, getUserRoles } from "./usersUtils";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
+import { usePermissions } from "@/lib/PermissionContext";
 
 const USER_TABLE_GRID =
-  "60px minmax(220px,1.6fr) minmax(150px,1fr) minmax(150px,1fr) minmax(170px,1fr)";
+  "60px minmax(220px,1.6fr) minmax(150px,1fr) minmax(150px,1fr) minmax(170px,1fr) 120px 80px";
 
 export default function UsersClient({ initialUsers }) {
+  const { can } = usePermissions();
+  const canViewUserRoles = can("user-role.view") || can("user.view-any");
+  const canAssignRoles = can("user-role.assign") || can("user-role.sync");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userToResetPassword, setUserToResetPassword] = useState(null);
+  const toast = useToast();
+  const [resetPassword, { isLoading: isResettingPassword }] = useResetPasswordMutation();
   const {
     search,
     setSearch,
@@ -24,11 +38,26 @@ export default function UsersClient({ initialUsers }) {
     stats,
     roleOptions,
     totalResults,
+    pagination,
     isLoading,
     isRefreshing,
     errorMessage,
     retry,
   } = useUsers({ initialUsers });
+
+  const handleResetPassword = async () => {
+    if (!userToResetPassword) return;
+
+    try {
+      await resetPassword({ user_id: userToResetPassword.id }).unwrap();
+      toast.success(
+        `تم إعادة تعيين كلمة المرور للمستخدم ${userToResetPassword.name || userToResetPassword.username || ""} بنجاح إلى 12345678`
+      );
+      setUserToResetPassword(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "تعذر إعادة تعيين كلمة المرور. حاول مرة أخرى.");
+    }
+  };
 
   const columns = useMemo(
     () => [
@@ -114,8 +143,40 @@ export default function UsersClient({ initialUsers }) {
           );
         },
       },
+      {
+        key: "reset_password",
+        label: "تغيير المرور",
+        align: "center",
+        sortable: false,
+        render: (_, user) => (
+          <Button
+            type="button"
+            tone="outline"
+            className="h-8 px-3 text-[11px] whitespace-nowrap"
+            onClick={() => setUserToResetPassword(user)}
+          >
+            إعادة تعيين
+          </Button>
+        ),
+      },
+      ...(canViewUserRoles
+        ? [
+            {
+              key: "actions",
+              label: "إجراءات",
+              align: "center",
+              sortable: false,
+              render: (_, user) => (
+                <RowActions
+                  onEdit={() => setSelectedUser(user)}
+                  editTitle="عرض الصلاحيات"
+                />
+              ),
+            },
+          ]
+        : []),
     ],
-    [],
+    [canViewUserRoles],
   );
 
   return (
@@ -159,8 +220,13 @@ export default function UsersClient({ initialUsers }) {
             showFilter={false}
             showExport={false}
             isLoading={isLoading}
-            pageSize={10}
-            pageSizeOptions={[10, 20, 50]}
+            currentPage={pagination?.currentPage || 1}
+            totalPages={pagination?.lastPage || 1}
+            totalItems={pagination?.total ?? totalResults}
+            pageSize={pagination?.perPage || 10}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageChange={pagination?.setPage}
+            onPageSizeChange={pagination?.setPerPage}
             getRowKey={(user) => user.id}
             rowClassName="gap-2 px-3 py-3"
             headerClassName="gap-2 px-3"
@@ -205,6 +271,27 @@ export default function UsersClient({ initialUsers }) {
           />
         </div>
       </div>
+
+      <UserPermissionsDrawer
+        open={Boolean(selectedUser)}
+        user={selectedUser}
+        onClose={() => setSelectedUser(null)}
+        canAssignRoles={canAssignRoles}
+      />
+
+      <ConfirmDialog
+        open={Boolean(userToResetPassword)}
+        onClose={() => setUserToResetPassword(null)}
+        onConfirm={handleResetPassword}
+        title="إعادة تعيين كلمة المرور"
+        message={`هل أنت متأكد من رغبتك في إعادة تعيين كلمة المرور للمستخدم (${
+          userToResetPassword?.name || userToResetPassword?.username || ""
+        }) إلى "12345678"؟`}
+        confirmLabel="إعادة تعيين"
+        cancelLabel="إلغاء"
+        tone="danger"
+        isLoading={isResettingPassword}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import BranchesClient from "./BranchesClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "إدارة الفروع | TechnoGYM",
@@ -11,10 +11,10 @@ export const metadata = {
  * Loads the branch workspace data on the server.
  */
 export default async function BranchesPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/branches");
   const [branches, clubs] = await Promise.all([
     requestBackend("branches", { token }),
-    requestBackend("clubs", { token }),
+    safeRequestBackend("clubs", { token, params: { per_page: "all" } }, []),
   ]);
 
   return <BranchesClient initialData={{ branches, clubs }} />;

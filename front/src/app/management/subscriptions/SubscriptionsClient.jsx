@@ -16,6 +16,8 @@ import { useSubscriptions } from "./useSubscriptions";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { formatSubscriptionMoney } from "./subscriptionUtils";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) minmax(160px,1fr) 88px 128px 88px 90px";
 
@@ -23,6 +25,14 @@ const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) minmax(160px,1fr) 88px 128px 88
  * Renders the subscription list, filters, statistics, and detail drawer.
  */
 export default function SubscriptionsClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("player-subscription.create");
+  const canView = can("player-subscription.view");
+  const canUpdate = can("player-subscription.update");
+  const canDelete = can("player-subscription.delete");
+  const canFreeze = can("player-subscription.freeze");
+  const canUnfreeze = can("player-subscription.unfreeze");
+  const canCancel = can("player-subscription.cancel");
   const {
     search,
     setSearch,
@@ -42,6 +52,8 @@ export default function SubscriptionsClient({ initialData }) {
     refetchSubscriptionDetail,
     selectedSubscription,
     filteredSubscriptions,
+    pagination,
+    totalResults,
     stats,
     errorMessage,
     branches,
@@ -152,14 +164,18 @@ export default function SubscriptionsClient({ initialData }) {
         render: (_, subscription) => (
           <RowActions
             disabled={isDeleting}
-            editHref={`/management/subscriptions/create?mode=edit&id=${subscription.id}`}
+            editHref={
+              canUpdate
+                ? `/management/subscriptions/create?mode=edit&id=${subscription.id}`
+                : undefined
+            }
             editTitle="تعديل الاشتراك"
-            onDelete={() => handleDelete(subscription)}
+            onDelete={canDelete ? () => handleDelete(subscription) : undefined}
           />
         ),
       },
     ],
-    [handleDelete, isDeleting],
+    [canDelete, canUpdate, handleDelete, isDeleting],
   );
 
   const branchOptions = useMemo(
@@ -181,13 +197,15 @@ export default function SubscriptionsClient({ initialData }) {
             <Button tone="outline" className="h-10 px-4" onClick={refetch} disabled={isFetching}>
               {isFetching ? "جاري التحديث" : "تحديث البيانات"}
             </Button>
-            <Button
-              href="/management/subscriptions/create"
-              icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
-              style={{ color: "#000000" }}
-            >
-              تسجيل اشتراك
-            </Button>
+            {canCreate && (
+              <Button
+                href="/management/subscriptions/create"
+                icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+                style={{ color: "#000000" }}
+              >
+                تسجيل اشتراك
+              </Button>
+            )}
           </div>
         }
       />
@@ -221,9 +239,17 @@ export default function SubscriptionsClient({ initialData }) {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        onRowClick={(subscription) => setSelectedSubscriptionId(subscription.id)}
+        onRowClick={
+          canView ? (subscription) => setSelectedSubscriptionId(subscription.id) : undefined
+        }
         getRowKey={(subscription) => subscription.id}
-        totalPages={0}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.lastPage}
+        totalItems={pagination.total}
+        pageSize={pagination.perPage}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPerPage}
         toolbarActions={
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
             <label className="relative block w-full sm:w-80 md:w-96">
@@ -244,15 +270,13 @@ export default function SubscriptionsClient({ initialData }) {
               options={SUBSCRIPTION_STATUS_OPTIONS}
               onChange={setStatus}
             />
-
-
           </div>
         }
         toolbarMeta={
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
             <span className="font-medium text-app-text">
-              {filteredSubscriptions.length.toLocaleString("ar")}
+              {totalResults.toLocaleString("ar")}
             </span>
           </p>
         }
@@ -272,9 +296,9 @@ export default function SubscriptionsClient({ initialData }) {
           error={subscriptionDetailError}
           isLoading={isSubscriptionDetailLoading || isSubscriptionDetailFetching}
           onRetry={refetchSubscriptionDetail}
-          onFreeze={handleFreeze}
-          onUnfreeze={handleUnfreeze}
-          onCancel={handleCancel}
+          onFreeze={canFreeze ? handleFreeze : undefined}
+          onUnfreeze={canUnfreeze ? handleUnfreeze : undefined}
+          onCancel={canCancel ? handleCancel : undefined}
           isFreezing={isFreezing}
           isUnfreezing={isUnfreezing}
           isCancelling={isCancelling}
@@ -282,12 +306,13 @@ export default function SubscriptionsClient({ initialData }) {
       </Drawer>
 
       <ConfirmDialog
-        open={deleteConfirmOpen}
+        open={canDelete && deleteConfirmOpen}
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف الاشتراك"
-        message={`هل أنت متأكد من رغبتك في حذف اشتراك "${selectedSubscription?.plan?.name || "هذا اللاعب"
-          }"؟`}
+        message={`هل أنت متأكد من رغبتك في حذف اشتراك "${
+          selectedSubscription?.plan?.name || "هذا اللاعب"
+        }"؟`}
         requiredConfirmation="delete"
         confirmationValue={deleteConfirmation}
         onConfirmationChange={setDeleteConfirmation}

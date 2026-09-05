@@ -54,6 +54,11 @@ export const STAFF_GENDER_LABELS = {
   mixed: "مختلط",
 };
 
+export const STAFF_GENDER_OPTIONS = [
+  { value: "male", label: STAFF_GENDER_LABELS.male },
+  { value: "female", label: STAFF_GENDER_LABELS.female },
+];
+
 export const SHIFT_GENDER_LABELS = {
   male: "ذكور",
   female: "إناث",

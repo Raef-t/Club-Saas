@@ -1,6 +1,6 @@
 import ActivitiesClient from "./ActivitiesClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "الأنشطة والرياضات | TechnoGYM",
@@ -11,11 +11,11 @@ export const metadata = {
  * Loads the activity workspace data on the server.
  */
 export default async function ActivitiesPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/activities");
   const [activities, branches, activityTypes] = await Promise.all([
     requestBackend("activities", { token }),
-    requestBackend("branches", { token }),
-    requestBackend("activity-types", { token }),
+    safeRequestBackend("branches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("activity-types", { token }, []),
   ]);
 
   return <ActivitiesClient initialData={{ activities, branches, activityTypes }} />;

@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { AUTH_SESSION_COOKIE, getAuthCookieOptions } from "@/lib/authSession";
+import {
+  AUTH_SESSION_COOKIE,
+  AUTH_SETUP_COOKIE,
+  AUTH_USER_META_COOKIE,
+  getAuthCookieOptions,
+} from "@/lib/authSession";
+import { MANAGEMENT_BRANCH_COOKIE } from "@/lib/managementBranchUtils";
 import { getBackendBaseUrl } from "@/lib/server/backendUrl";
 
 export const dynamic = "force-dynamic";
@@ -37,12 +43,31 @@ function clearAuthCookie(response, secure = false) {
     ...getAuthCookieOptions(false, secure),
     maxAge: 0,
   });
+  response.cookies.set(AUTH_SETUP_COOKIE, "", {
+    ...getAuthCookieOptions(false, secure),
+    maxAge: 0,
+  });
+  response.cookies.set(AUTH_USER_META_COOKIE, "", {
+    ...getAuthCookieOptions(false, secure),
+    maxAge: 0,
+  });
 
   return response;
 }
 
 function getFirstHeaderValue(request, name) {
   return request.headers.get(name)?.split(",", 1)[0]?.trim();
+}
+
+function isAccountSetupPasswordChange(body) {
+  if (!body) return false;
+
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(body));
+    return Boolean(payload?.user_id && payload?.new_password);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -139,6 +164,7 @@ async function proxyBackendRequest(request, context) {
     redirect: "manual",
     signal: request.signal,
   };
+  let requestBody = null;
 
   if (METHODS_WITH_BODY.has(request.method)) {
     const contentType = request.headers.get("content-type");
@@ -146,7 +172,8 @@ async function proxyBackendRequest(request, context) {
       headers.set("Content-Type", contentType);
     }
 
-    init.body = await request.arrayBuffer();
+    requestBody = await request.arrayBuffer();
+    init.body = requestBody;
   }
 
   try {
@@ -178,23 +205,41 @@ async function proxyBackendRequest(request, context) {
       normalizedResponseContentType.includes("pdf");
     let body = isBinaryResponse ? await response.arrayBuffer() : await response.text();
     let sessionToken = null;
+    let requiresAccountSetup = false;
+    let userMeta = null;
 
     if (pathName === "auth/login" && response.ok) {
       try {
         const payload = JSON.parse(body);
-        sessionToken = payload?.data?.access_token;
+        // Backend could return the token as `token` or `access_token`
+        sessionToken = payload?.data?.token || payload?.data?.access_token;
 
         if (!sessionToken) {
           return jsonError("Login response does not include an access token.", 502);
+        }
+
+        const user = payload?.data?.user;
+        requiresAccountSetup = Boolean(user?.must_change_password || !user?.custom_username);
+
+        if (user) {
+          userMeta = {
+            branch_id: user?.branch_id ?? null,
+            staff_id: user?.staff_id ?? null,
+            custom_username: user?.custom_username ?? null,
+            full_name: user?.full_name ?? null,
+          };
         }
 
         const clientPayload = {
           ...payload,
           data: {
             ...payload.data,
+            requires_account_setup: requiresAccountSetup,
           },
         };
 
+        // Remove tokens from the client response to enforce security
+        delete clientPayload.data.token;
         delete clientPayload.data.access_token;
         delete clientPayload.data.token_type;
         body = JSON.stringify(clientPayload);
@@ -219,12 +264,41 @@ async function proxyBackendRequest(request, context) {
 
     if (sessionToken) {
       const remember = request.headers.get("x-remember-me")?.toLowerCase() === "true";
+      const cookieOptions = getAuthCookieOptions(remember, secureCookie);
 
-      nextResponse.cookies.set(
-        AUTH_SESSION_COOKIE,
-        sessionToken,
-        getAuthCookieOptions(remember, secureCookie),
-      );
+      nextResponse.cookies.set(AUTH_SESSION_COOKIE, sessionToken, cookieOptions);
+
+      if (userMeta) {
+        nextResponse.cookies.set(AUTH_USER_META_COOKIE, JSON.stringify(userMeta), cookieOptions);
+        if (userMeta.branch_id) {
+          nextResponse.cookies.set(MANAGEMENT_BRANCH_COOKIE, String(userMeta.branch_id), {
+            path: "/",
+            sameSite: "lax",
+            secure: secureCookie,
+            maxAge: 31536000,
+          });
+        }
+      }
+
+      if (requiresAccountSetup) {
+        nextResponse.cookies.set(AUTH_SETUP_COOKIE, "required", cookieOptions);
+      } else {
+        nextResponse.cookies.set(AUTH_SETUP_COOKIE, "", {
+          ...getAuthCookieOptions(false, secureCookie),
+          maxAge: 0,
+        });
+      }
+    }
+
+    if (
+      pathName === "auth/change-password" &&
+      response.ok &&
+      isAccountSetupPasswordChange(requestBody)
+    ) {
+      nextResponse.cookies.set(AUTH_SETUP_COOKIE, "", {
+        ...getAuthCookieOptions(false, secureCookie),
+        maxAge: 0,
+      });
     }
 
     if (pathName === "auth/logout" || response.status === 401) {

@@ -10,12 +10,45 @@ import {
   CalendarIcon,
 } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
+import { usePermissions } from "@/lib/PermissionContext";
 
+/**
+ * Quick actions shown at the top of the sidebar.
+ * Each entry may declare a `permission` (checked via can()) in addition to
+ * the route-level `canAccess()` check — this lets actions that require a
+ * specific write permission disappear even when the landing page itself is
+ * still accessible (e.g. member.create vs /management/members).
+ */
 const quickActions = [
-  { label: "إضافة لاعب", href: "/management/members/create", icon: PlusIcon },
-  { label: "إضافة حضور", href: "/management/attendance", icon: CheckCircleIcon },
-  { label: "إضافة اشتراك الى لاعب", href: "/management/subscriptions/create", icon: TagIcon },
-  { label: "برنامج الدوام", href: "/management/schedule", icon: CalendarIcon },
+  {
+    label: "إضافة لاعب",
+    href: "/management/members/create",
+    icon: PlusIcon,
+    any: ["member.create"],
+  },
+  {
+    label: "إضافة حضور",
+    href: "/management/attendance",
+    icon: CheckCircleIcon,
+    any: [
+      "attendance.check-in",
+      "attendance.check-out",
+      "attendance.dashboard",
+      "reception.qr-check-in",
+    ],
+  },
+  {
+    label: "إضافة اشتراك الى لاعب",
+    href: "/management/subscriptions/create",
+    icon: TagIcon,
+    any: ["player-subscription.create", "player-subscription.update", "player-subscription.renew"],
+  },
+  {
+    label: "برنامج الدوام",
+    href: "/management/schedule",
+    icon: CalendarIcon,
+    any: ["session-template.schedule"],
+  },
 ];
 
 const navGroups = [
@@ -39,6 +72,7 @@ const navGroups = [
     title: "لوحة التحكم",
     items: [
       { title: "حسابات المستخدمين", href: "/management/users" },
+      { title: "الأدوار والصلاحيات", href: "/management/roles" },
       { title: "الإعدادات", href: "/management/settings" },
       { title: "إدارة النادي", href: "/management/clubs" },
       { title: "الفروع", href: "/management/branches" },
@@ -53,6 +87,23 @@ function isActive(pathname, href) {
 
 export default function ManagementSidebar({ className }) {
   const pathname = usePathname() || "";
+  const { canAccess, canAny, isSuperAdmin } = usePermissions();
+
+  const visibleQuickActions = quickActions.filter((action) => {
+    // Super admins always see all actions
+    if (isSuperAdmin) return true;
+    // If the action declares specific permissions, check them
+    if (action.any) return canAny(action.any);
+    // Fall back to route-level access check
+    return canAccess(action.href);
+  });
+
+  const visibleNavGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccess(item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <aside
@@ -67,7 +118,7 @@ export default function ManagementSidebar({ className }) {
 
       <h3 className="mt-6 text-center text-base font-medium text-app-text">إجراءات سريعة</h3>
       <div className="mt-5 grid grid-cols-4 gap-1.5 px-1 max-w-full">
-        {quickActions.map((action) => {
+        {visibleQuickActions.map((action) => {
           const Icon = action.icon;
           const actionActive = pathname === action.href;
           return (
@@ -88,7 +139,7 @@ export default function ManagementSidebar({ className }) {
       </div>
 
       <nav className="mx-auto mt-8 flex w-full max-w-[250px] flex-col gap-6 px-1">
-        {navGroups.map((group) => (
+        {visibleNavGroups.map((group) => (
           <div key={group.title} className="flex flex-col gap-2">
             <h4 className="px-5 text-[11px] font-bold uppercase tracking-wider text-app-muted-light/80 text-right">
               {group.title}

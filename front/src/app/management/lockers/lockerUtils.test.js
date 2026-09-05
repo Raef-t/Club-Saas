@@ -7,6 +7,7 @@ import {
   doesLockerReleaseRequireReason,
   filterLockers,
   getLockerHolderLabel,
+  getLockerPageState,
   getLockerRecord,
   getLockerReservationEndDate,
   isLockerEarlyRelease,
@@ -102,10 +103,55 @@ describe("locker utilities", () => {
     ]);
   });
 
+  it("keeps player and staff-or-coach page states separate", () => {
+    const stateLockers = [
+      lockers[1],
+      { id: 3, status: "with_coach", holder_type: "coach", holder_id: 12 },
+      { id: 4, status: "assigned", holder_type: "staff", holder_id: 18 },
+    ];
+
+    expect(filterLockers(stateLockers, { status: "with_member" })).toEqual([lockers[1]]);
+    expect(filterLockers(stateLockers, { status: "with_staff_or_coach" })).toEqual([
+      stateLockers[1],
+      stateLockers[2],
+    ]);
+    expect(getLockerPageState(stateLockers[0])).toBe("with_member");
+    expect(getLockerPageState(stateLockers[1])).toBe("with_staff_or_coach");
+    expect(getLockerPageState(stateLockers[2])).toBe("with_staff_or_coach");
+  });
+
+  it("groups disabled and maintenance lockers into one page state", () => {
+    const unavailableLockers = [
+      { id: 5, status: "maintenance" },
+      { id: 6, status: "disabled" },
+      { id: 7, status: "available" },
+    ];
+
+    expect(filterLockers(unavailableLockers, { status: "maintenance" })).toEqual(
+      unavailableLockers.slice(0, 2),
+    );
+    expect(getLockerPageState(unavailableLockers[1])).toBe("maintenance");
+  });
+
   it("does not send the aggregate occupied status to the backend", () => {
     expect(createLockerQueryParams("2", "occupied")).toEqual({
       branch_id: "2",
       status: undefined,
+    });
+  });
+
+  it("sends each supported page state to the backend", () => {
+    expect(createLockerQueryParams("all", "with_member")).toEqual({
+      branch_id: undefined,
+      status: "with_member",
+    });
+    expect(createLockerQueryParams("all", "with_staff_or_coach")).toEqual({
+      branch_id: undefined,
+      status: "with_staff_or_coach",
+    });
+    expect(createLockerQueryParams("all", "maintenance")).toEqual({
+      branch_id: undefined,
+      status: "maintenance",
     });
   });
 

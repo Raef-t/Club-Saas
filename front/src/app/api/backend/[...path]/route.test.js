@@ -69,6 +69,77 @@ describe("backend proxy streaming", () => {
     expect(fetchMock.mock.calls[0][1].redirect).toBe("manual");
   });
 
+  it("marks accounts with temporary credentials for required setup", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        status: "success",
+        data: {
+          access_token: "private-access-token",
+          token_type: "Bearer",
+          user: {
+            id: 15,
+            username: "tec-ply-75054",
+            custom_username: null,
+            must_change_password: true,
+          },
+        },
+      }),
+    );
+    const request = new NextRequest("http://localhost/api/backend/auth/login", {
+      method: "POST",
+      headers: {
+        Origin: "http://localhost",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username: "tec-ply-75054", password: "12345678" }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ path: ["auth", "login"] }),
+    });
+    const payload = await response.json();
+    const cookies = response.headers.getSetCookie().join(";");
+
+    expect(payload.data).toMatchObject({ requires_account_setup: true });
+    expect(payload.data).not.toHaveProperty("access_token");
+    expect(payload.data).not.toHaveProperty("token_type");
+    expect(cookies).toContain("techno_gym_session=private-access-token");
+    expect(cookies).toContain("techno_gym_account_setup=required");
+    expect(cookies).toContain("HttpOnly");
+  });
+
+  it("clears required setup after a successful password change", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        status: "success",
+        message: "تم تغيير كلمة المرور والتأكيدات بنجاح",
+      }),
+    );
+    const request = new NextRequest("http://localhost/api/backend/auth/change-password", {
+      method: "POST",
+      headers: {
+        Origin: "http://localhost",
+        Authorization: "Bearer test-token",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: 15,
+        new_password: "GymSecure2026",
+        new_password_confirmation: "GymSecure2026",
+        custom_username: "ahmed.player",
+      }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ path: ["auth", "change-password"] }),
+    });
+    const cookies = response.headers.getSetCookie().join(";");
+
+    expect(response.status).toBe(200);
+    expect(cookies).toContain("techno_gym_account_setup=");
+    expect(cookies).toContain("Max-Age=0");
+  });
+
   it("forwards SSE responses without buffering them", async () => {
     const event =
       'event: dashboard_updated\ndata: {"status":"success","data":{"total_active_subscribed_members":10}}\n\n';
