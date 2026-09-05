@@ -39,6 +39,7 @@ import {
   isAttendanceNoteRequiredMessage,
   toggleRequiredSubscription,
 } from "./attendanceUtils";
+import { getPaginationMeta, useServerPagination } from "@/lib/pagination";
 
 /**
  * Coordinates QR scanning, member data, subscription selection, and attendance mutations.
@@ -85,6 +86,19 @@ export function useAttendance({ initialBranches } = {}) {
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState(initialStatus);
   const [attendanceFromDate, setAttendanceFromDate] = useState("");
   const [attendanceToDate, setAttendanceToDate] = useState("");
+  const attendancePaginationKey = [
+    branchId,
+    attendanceTypeFilter,
+    attendanceStatusFilter,
+    attendanceFromDate,
+    attendanceToDate,
+  ].join("|");
+  const {
+    page: attendancePage,
+    perPage: attendancePerPage,
+    setPage: setAttendancePage,
+    setPerPage: setAttendancePerPage,
+  } = useServerPagination(attendancePaginationKey);
 
   const [qrCheckIn, { isLoading: isCheckingIn }] = useQrCheckInMutation();
   const [qrCheckOut, { isLoading: isCheckingOut }] = useQrCheckOutMutation();
@@ -97,11 +111,14 @@ export function useAttendance({ initialBranches } = {}) {
   const [reserveLocker, { isLoading: isAssigningLocker }] = useReserveLockerMutation();
   const [releaseLockerReservation, { isLoading: isReleasingLocker }] =
     useReleaseLockerReservationMutation();
-  const peopleQueryParams = branchId ? { branch_id: branchId } : {};
+  const peopleQueryParams = {
+    ...(branchId ? { branch_id: branchId } : {}),
+    per_page: "all",
+  };
   const { currentData: attendanceMembersResponse } = useGetMembersQuery(peopleQueryParams);
   const { currentData: attendanceStaffResponse } = useGetStaffQuery(peopleQueryParams);
   const availableLockersParams = useMemo(
-    () => ({ branch_id: branchId, status: "available" }),
+    () => ({ branch_id: branchId, status: "available", per_page: "all" }),
     [branchId],
   );
   const {
@@ -114,15 +131,27 @@ export function useAttendance({ initialBranches } = {}) {
     skip: !branchId || !scannedMemberId,
   });
   const { currentData: branchLockersResponse, refetch: refetchBranchLockers } = useGetLockersQuery(
-    branchId ? { branch_id: branchId } : {},
+    { ...(branchId ? { branch_id: branchId } : {}), per_page: "all" },
   );
   const attendanceHistoryParams = useMemo(
     () => ({
       attendable_type: attendanceTypeFilter,
+      ...(branchId ? { branch_id: branchId } : {}),
       ...(attendanceFromDate ? { from: attendanceFromDate } : {}),
       ...(attendanceToDate ? { to: attendanceToDate } : {}),
+      ...(attendanceStatusFilter !== "all"
+        ? { per_page: "all" }
+        : { page: attendancePage, per_page: attendancePerPage }),
     }),
-    [attendanceFromDate, attendanceToDate, attendanceTypeFilter],
+    [
+      attendanceFromDate,
+      attendancePage,
+      attendancePerPage,
+      attendanceStatusFilter,
+      attendanceToDate,
+      attendanceTypeFilter,
+      branchId,
+    ],
   );
   const {
     currentData: attendanceHistoryResponse,
@@ -186,6 +215,16 @@ export function useAttendance({ initialBranches } = {}) {
     branchLockersResponse,
     pendingAttendanceIds,
   ]);
+  const attendancePagination = useMemo(
+    () =>
+      getPaginationMeta(attendanceHistoryResponse, {
+        page: attendancePage,
+        perPage: attendancePerPage,
+      }),
+    [attendanceHistoryResponse, attendancePage, attendancePerPage],
+  );
+  const attendanceTotalResults =
+    attendanceStatusFilter !== "all" ? attendanceRows.length : attendancePagination.total;
   const playerSubscriptions = useMemo(
     () => createAttendanceSubscriptions(memberSubscriptionsResponse),
     [memberSubscriptionsResponse],
@@ -377,6 +416,7 @@ export function useAttendance({ initialBranches } = {}) {
       try {
         const lockersResponse = await loadBranchLockers({
           branch_id: attendanceRecord?.branchId || branchId,
+          per_page: "all",
         }).unwrap();
         lockerId = findAttendanceLockerId(lockersResponse, lockerNumber);
       } catch (error) {
@@ -691,6 +731,12 @@ export function useAttendance({ initialBranches } = {}) {
   return {
     activeMember,
     attendanceRows,
+    attendancePagination: {
+      ...attendancePagination,
+      setPage: setAttendancePage,
+      setPerPage: setAttendancePerPage,
+    },
+    attendanceTotalResults,
     playerSubscriptions,
     selectedSubscription,
     selectedActivity,

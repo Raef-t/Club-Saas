@@ -29,7 +29,10 @@ export default function ManualAttendanceForm({ attendance }) {
   const [checkOutAttendableId, setCheckOutAttendableId] = useState("");
   const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
   const [bulkResult, setBulkResult] = useState(null);
-  const peopleQueryParams = attendance.branchId ? { branch_id: attendance.branchId } : {};
+  const peopleQueryParams = {
+    ...(attendance.branchId ? { branch_id: attendance.branchId } : {}),
+    per_page: "all",
+  };
   const { currentData: membersResponse, isFetching: isLoadingMembers } = useGetMembersQuery(
     peopleQueryParams,
     { skip: !attendance.branchId },
@@ -39,7 +42,7 @@ export default function ManualAttendanceForm({ attendance }) {
     { skip: !attendance.branchId },
   );
   const { currentData: plansResponse, isFetching: isLoadingPlans } = useGetSubscriptionPlansQuery(
-    { branch_id: attendance.branchId },
+    { branch_id: attendance.branchId, per_page: "all" },
     { skip: !attendance.branchId },
   );
   const planOptions = useMemo(

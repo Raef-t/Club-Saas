@@ -6,6 +6,8 @@ import React from "react";
 import IconRail from "@/components/layout/IconRail";
 import Navbar from "@/components/layout/Navbar";
 import { XIcon } from "@/components/icons/Icons";
+import { PermissionProvider } from "@/lib/PermissionContext";
+import RouteAccessBoundary from "@/components/auth/RouteAccessBoundary";
 
 export default function AppShell({ children, sidebar, currentUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,7 +27,7 @@ export default function AppShell({ children, sidebar, currentUser }) {
     : null;
 
   return (
-    <>
+    <PermissionProvider user={currentUser}>
       <div className="dashboard-bg min-h-screen p-3 text-app-text sm:p-4 md:p-6">
         {/* Mobile Sidebar Off-canvas Drawer */}
         {sidebarOpen && (
@@ -73,7 +75,9 @@ export default function AppShell({ children, sidebar, currentUser }) {
           {sidebar}
           <main className="flex min-h-[calc(100vh-3rem)] min-w-0 flex-col overflow-hidden lg:overflow-visible">
             <Navbar onMenuClick={() => setSidebarOpen(true)} initialUser={currentUser} />
-            <div className="mt-5 min-w-0 flex-1 sm:mt-7">{children}</div>
+            <div className="mt-5 min-w-0 flex-1 sm:mt-7">
+              <RouteAccessBoundary>{children}</RouteAccessBoundary>
+            </div>
 
             <footer className="mt-10 py-4 text-center text-xs text-app-muted-light" dir="ltr">
               &copy; {new Date().getFullYear()}{" "}
@@ -82,6 +86,6 @@ export default function AppShell({ children, sidebar, currentUser }) {
           </main>
         </div>
       </div>
-    </>
+    </PermissionProvider>
   );
 }

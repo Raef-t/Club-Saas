@@ -19,6 +19,8 @@ import PhoneField from "@/components/forms/PhoneField";
 import { formatLocalizedName } from "@/lib/utils";
 import { getMemberDisplayName } from "./memberDisplayName";
 import { useMembers } from "./useMembers";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
 
@@ -69,7 +71,7 @@ function formatDate(value) {
   const date = new Date(value);
   if (isNaN(date.getTime())) return "-";
 
-  return new Intl.DateTimeFormat("ar", {
+  return new Intl.DateTimeFormat("ar-SY", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -95,6 +97,11 @@ function DetailItem({ label, value, tone = "default" }) {
 }
 
 export default function MembersClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("member.create");
+  const canView = can("member.view");
+  const canUpdate = can("member.update");
+  const canDelete = can("member.delete");
   const router = useRouter();
   const {
     search,
@@ -113,6 +120,8 @@ export default function MembersClient({ initialData }) {
     error,
     refetch,
     filteredMembers,
+    pagination,
+    totalResults,
     stats,
     selectedMember,
     isCreating,
@@ -232,8 +241,9 @@ export default function MembersClient({ initialData }) {
         sortValue: (member) => (member.is_active !== false ? "نشط" : "غير نشط"),
         render: (value) => (
           <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${value !== false ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-              }`}
+            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              value !== false ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
+            }`}
           >
             {value !== false ? "نشط" : "غير نشط"}
           </span>
@@ -247,13 +257,15 @@ export default function MembersClient({ initialData }) {
         render: (_, member) => (
           <RowActions
             disabled={isDeleting}
-            editHref={`/management/members/create?mode=edit&id=${member.id}`}
-            onDelete={() => handleDelete(member)}
+            editHref={
+              canUpdate ? `/management/members/create?mode=edit&id=${member.id}` : undefined
+            }
+            onDelete={canDelete ? () => handleDelete(member) : undefined}
           />
         ),
       },
     ],
-    [branches, isDeleting, handleDelete],
+    [branches, canDelete, canUpdate, handleDelete, isDeleting],
   );
 
   const editInitialValues = useMemo(() => {
@@ -281,13 +293,15 @@ export default function MembersClient({ initialData }) {
         title="إدارة الأعضاء واللاعبين"
         subtitle="تسجيل الأعضاء، وتحديث البيانات الشخصية، وربط جهات اتصال الطوارئ وتفاصيل العضوية."
         action={
-          <Button
-            href="/management/members/create"
-            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
-            style={{ color: "#000000" }}
-          >
-            إضافة لاعب
-          </Button>
+          canCreate ? (
+            <Button
+              href="/management/members/create"
+              icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+              style={{ color: "#000000" }}
+            >
+              إضافة لاعب
+            </Button>
+          ) : null
         }
       />
 
@@ -319,9 +333,20 @@ export default function MembersClient({ initialData }) {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        onRowClick={(member) => {
-          router.push(`/management/members/${member.id}`);
-        }}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.lastPage}
+        totalItems={pagination.total}
+        pageSize={pagination.perPage}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPerPage}
+        onRowClick={
+          canView
+            ? (member) => {
+                router.push(`/management/members/${member.id}`);
+              }
+            : undefined
+        }
         getRowKey={(member) => member.id}
         toolbarActions={
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
@@ -336,8 +361,6 @@ export default function MembersClient({ initialData }) {
               />
             </label>
 
-
-
             <Dropdown
               className="min-w-48 bg-app-card-soft border-app-line text-white"
               icon={FilterIcon}
@@ -351,7 +374,7 @@ export default function MembersClient({ initialData }) {
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
             <span className="font-medium text-app-text">
-              {filteredMembers.length.toLocaleString("ar")}
+              {totalResults.toLocaleString("ar")}
             </span>
           </p>
         }
@@ -378,7 +401,7 @@ export default function MembersClient({ initialData }) {
       </Drawer>
 
       <ConfirmDialog
-        open={deleteConfirmOpen}
+        open={canDelete && deleteConfirmOpen}
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف العضو"

@@ -1,19 +1,19 @@
 import { Suspense } from "react";
 import SubscriptionPlansClient from "@/app/management/subscription-plans/SubscriptionPlansClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "خطط الاشتراك | TechnoGYM",
 };
 
 export default async function SubscriptionPlansPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/subscription-plans");
   const [plans, branches, activities, coaches] = await Promise.all([
     requestBackend("subscription-plans", { token }),
-    requestBackend("branches", { token }),
-    requestBackend("activities", { token }),
-    requestBackend("coaches", { token }),
+    safeRequestBackend("branches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("activities", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("coaches", { token, params: { per_page: "all" } }, []),
   ]);
 
   return (

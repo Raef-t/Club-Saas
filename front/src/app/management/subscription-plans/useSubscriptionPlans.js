@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { getBranchesArray } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 import { CURRENCY_SYMBOL, formatMoney as baseFormatMoney, formatLocalizedName } from "@/lib/utils";
 import {
@@ -60,8 +61,24 @@ export function useSubscriptionPlans({
   const [selectedPlanId, setSelectedPlanId] = useState(initialSelectedPlanId);
   const [formError, setFormError] = useState("");
 
-  const branchQueryParams = selectedBranchId === "all" ? {} : { branch_id: selectedBranchId };
-  const { data, error, isLoading, refetch } = useGetSubscriptionPlansQuery(branchQueryParams);
+  const branchQueryParams = useMemo(
+    () => (selectedBranchId === "all" ? {} : { branch_id: selectedBranchId }),
+    [selectedBranchId],
+  );
+  const paginationFilterKey = [selectedBranchId, statusFilter, search].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
+  const needsAllPlans =
+    Boolean(search.trim()) || !["all", "active"].includes(statusFilter);
+  const listQueryParams = useMemo(
+    () => ({
+      ...branchQueryParams,
+      ...(statusFilter === "active" ? { status: "active" } : {}),
+      ...(needsAllPlans ? { per_page: "all" } : { page, per_page: perPage }),
+    }),
+    [branchQueryParams, needsAllPlans, page, perPage, statusFilter],
+  );
+  const { currentData: data, error, isLoading, isFetching, refetch } =
+    useGetSubscriptionPlansQuery(listQueryParams);
   const {
     data: detailsData,
     error: detailsError,
@@ -81,13 +98,13 @@ export function useSubscriptionPlans({
     refetchOnMountOrArgChange: true,
   });
 
-  const { data: branchesData, error: branchesError } = useGetBranchesQuery();
+  const { data: branchesData, error: branchesError } = useGetBranchesQuery(withAllItems());
   const branches = useMemo(
     () => getBranchesArray(branchesData || initialData?.branches),
     [branchesData, initialData?.branches],
   );
 
-  const { data: activitiesData } = useGetActivitiesQuery(branchQueryParams);
+  const { data: activitiesData } = useGetActivitiesQuery(withAllItems(branchQueryParams));
   const allActivities = useMemo(() => {
     const response = activitiesData || initialData?.activities;
     return Array.isArray(response?.data) ? response.data : [];
@@ -97,7 +114,7 @@ export function useSubscriptionPlans({
     [allActivities, selectedBranchId],
   );
 
-  const { data: coachesData } = useGetCoachesQuery(branchQueryParams);
+  const { data: coachesData } = useGetCoachesQuery(withAllItems(branchQueryParams));
   const allCoaches = useMemo(() => {
     const response = coachesData || initialData?.coaches;
     return Array.isArray(response?.data) ? response.data : [];
@@ -134,7 +151,18 @@ export function useSubscriptionPlans({
   const [suspendPlan, { isLoading: isSuspending }] = useSuspendSubscriptionPlanMutation();
   const [resumePlan, { isLoading: isResuming }] = useResumeSubscriptionPlanMutation();
 
-  const allPlans = useMemo(() => getPlans(data || initialData?.plans), [data, initialData?.plans]);
+  const canUseInitialPlans =
+    !needsAllPlans &&
+    page === 1 &&
+    perPage === 15 &&
+    selectedBranchId === "all" &&
+    statusFilter === "all";
+  const listResponse = data || (canUseInitialPlans ? initialData?.plans : null);
+  const allPlans = useMemo(() => getPlans(listResponse), [listResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(listResponse, { page, perPage }),
+    [listResponse, page, perPage],
+  );
   const plans = useMemo(
     () => filterEntitiesByBranch(allPlans, selectedBranchId),
     [allPlans, selectedBranchId],
@@ -163,6 +191,7 @@ export function useSubscriptionPlans({
       return matchesStatus && matchesSearch;
     });
   }, [plans, search, statusFilter]);
+  const totalResults = needsAllPlans ? filteredPlans.length : pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = plans.filter(isSubscriptionPlanActive).length;
@@ -401,10 +430,12 @@ export function useSubscriptionPlans({
     setSelectedPlanId,
     formError,
     setFormError,
-    isLoading,
+    isLoading: isLoading || (isFetching && !listResponse),
     error,
     refetch,
     filteredPlans,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     selectedPlan,
     detailsPlan,

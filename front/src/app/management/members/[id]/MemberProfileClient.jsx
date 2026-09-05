@@ -40,7 +40,7 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
     isLoading: subscriptionsLoading,
     isFetching: subscriptionsFetching,
     refetch: refetchSubscriptions,
-  } = useGetPlayerSubscriptionsQuery({ member_id: memberId });
+  } = useGetPlayerSubscriptionsQuery({ member_id: memberId, per_page: "all" });
   const subscriptions = useMemo(
     () => getMemberProfileSubscriptions(subscriptionsResponse, memberId),
     [memberId, subscriptionsResponse],
@@ -98,7 +98,10 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
     isLoading: lockersLoading,
     isFetching: lockersFetching,
     refetch: refetchLockers,
-  } = useGetLockersQuery({ branch_id: initialMember?.branch_id || undefined });
+  } = useGetLockersQuery({
+    branch_id: initialMember?.branch_id || undefined,
+    per_page: "all",
+  });
   const lockers = useMemo(
     () => getMemberProfileLockers(lockersResponse, memberId),
     [lockersResponse, memberId],

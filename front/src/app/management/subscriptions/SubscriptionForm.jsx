@@ -237,11 +237,6 @@ export function SubscriptionCreateForm({
             allowClear={!isDailyEntryPlan}
             error={errors && errors.start_date}
           />
-          {errors && errors.start_date && (
-            <span className="mt-1.5 block text-xs text-app-red" role="alert">
-              {errors.start_date}
-            </span>
-          )}
         </div>
 
         <div>
@@ -254,11 +249,6 @@ export function SubscriptionCreateForm({
             allowClear={!isDailyEntryPlan}
             error={errors && errors.end_date}
           />
-          {errors && errors.end_date && (
-            <span className="mt-1.5 block text-xs text-app-red" role="alert">
-              {errors.end_date}
-            </span>
-          )}
         </div>
       </div>
 

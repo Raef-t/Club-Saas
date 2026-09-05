@@ -1,6 +1,6 @@
 import ActivitiesCreateClient from "./ActivitiesCreateClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 import { getActivityRecord } from "../activityUtils";
 
 export const metadata = {
@@ -16,15 +16,15 @@ export default async function CreateActivityPage({ searchParams }) {
   const rawId = Array.isArray(query.id) ? query.id[0] : query.id;
   const activityId = /^\d+$/.test(rawId || "") ? Number(rawId) : null;
   const mode = query.mode === "edit" && activityId ? "edit" : "create";
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/activities/create");
   const [branches, activityTypes, activity] = await Promise.all([
-    requestBackend("branches", { token }),
-    requestBackend("activity-types", { token }),
-    mode === "edit" ? requestBackend(`activities/${activityId}`, { token }) : null,
+    safeRequestBackend("branches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("activity-types", { token }, []),
+    mode === "edit" ? safeRequestBackend(`activities/${activityId}`, { token }, null) : null,
   ]);
   const activityRecord = getActivityRecord(activity);
   const branchId = activityRecord?.branch_id || activityRecord?.branch?.id || null;
-  const shifts = branchId ? await requestBackend(`branches/${branchId}/shifts`, { token }) : [];
+  const shifts = branchId ? await safeRequestBackend(`branches/${branchId}/shifts`, { token }, []) : [];
 
   return (
     <ActivitiesCreateClient

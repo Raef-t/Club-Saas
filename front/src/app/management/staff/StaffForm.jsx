@@ -15,6 +15,7 @@ import { staffFormSchema, staffUpdateFormSchema } from "@/lib/validations/staffS
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import {
   STAFF_EMPLOYMENT_OPTIONS,
+  STAFF_GENDER_OPTIONS,
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
   STAFF_WORK_STATUS_OPTIONS,
@@ -182,6 +183,19 @@ export default function StaffForm({
         className="w-full text-right"
         error={errors.phone_number || errors.country_code}
       />
+
+      <label className="block text-right text-sm text-app-muted-light">
+        الجنس *
+        <Dropdown
+          className="mt-2 text-app-text"
+          buttonClassName="h-11 bg-app-card-soft"
+          value={form.gender}
+          onChange={(value) => updateField("gender", value)}
+          options={STAFF_GENDER_OPTIONS}
+          placeholder="اختر الجنس"
+          error={errors.gender}
+        />
+      </label>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block text-right text-sm text-app-muted-light">

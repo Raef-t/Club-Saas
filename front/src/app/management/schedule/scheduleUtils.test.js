@@ -52,6 +52,12 @@ describe("schedule utilities", () => {
         data: { working_hours_start: "07:30:00", working_hours_end: "22:30:00" },
       }),
     ).toMatchObject({ morningStart: "07:30", eveningEnd: "22:30" });
+
+    expect(
+      createScheduleSettingsFromApi({
+        data: { working_hours_start: "08:00:00", working_hours_end: "01:00:00" },
+      }),
+    ).toMatchObject({ morningStart: "08:00", eveningEnd: "01:00" });
   });
 
   it("keeps periods inside branches with early or late working hours", () => {

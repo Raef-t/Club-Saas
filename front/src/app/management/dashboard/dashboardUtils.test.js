@@ -171,7 +171,7 @@ describe("management dashboard utilities", () => {
       "/management/subscriptions?status=active",
       "/management/attendance?status=checked_in",
       "/management/subscriptions?status=expiring_soon",
-      "/management/lockers?status=assigned_free",
+      "/management/lockers?status=with_member",
       "/management/schedule",
     ]);
   });

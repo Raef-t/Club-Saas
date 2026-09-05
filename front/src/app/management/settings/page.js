@@ -1,6 +1,6 @@
 import SettingsClient from "./SettingsClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 import { getBranchesArray } from "@/lib/utils";
 
 export const metadata = {
@@ -12,15 +12,22 @@ export const metadata = {
  * Loads the first branch settings on the server before rendering the workspace.
  */
 export default async function SettingsPage() {
-  const { token } = await verifySession();
-  const branches = await requestBackend("branches", { token });
+  const { token } = await verifyPageAccess("/management/settings");
+  const branches = await safeRequestBackend(
+    "branches",
+    {
+      token,
+      params: { per_page: "all" },
+    },
+    [],
+  );
   const selectedBranchId = getBranchesArray(branches)[0]?.id;
 
   const [settings, shifts, holidays] = selectedBranchId
     ? await Promise.all([
-        requestBackend(`branches/${selectedBranchId}/settings`, { token }),
-        requestBackend(`branches/${selectedBranchId}/shifts`, { token }),
-        requestBackend(`branches/${selectedBranchId}/holidays`, { token }),
+        safeRequestBackend(`branches/${selectedBranchId}/settings`, { token }, null),
+        safeRequestBackend(`branches/${selectedBranchId}/shifts`, { token }, []),
+        safeRequestBackend(`branches/${selectedBranchId}/holidays`, { token }, []),
       ])
     : [null, [], []];
 

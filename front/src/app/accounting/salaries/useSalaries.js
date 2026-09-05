@@ -62,7 +62,9 @@ export function useSalaries({
 
   const { data: paymentsResponse, isLoading, isFetching, refetch } = useGetSalaryPaymentsQuery(queryParams);
   const { data: staffResponse } = useGetStaffQuery(
-    selectedBranchId && selectedBranchId !== "all" ? { branch_id: selectedBranchId } : {}
+    selectedBranchId && selectedBranchId !== "all"
+      ? { branch_id: selectedBranchId, per_page: "all" }
+      : { per_page: "all" }
   );
   const { data: safesResponse } = useGetSafesQuery(
     selectedBranchId && selectedBranchId !== "all" ? { branch_id: selectedBranchId } : {}

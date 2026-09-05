@@ -16,6 +16,8 @@ import {
 describe("settings utilities", () => {
   it("normalizes backend time values", () => {
     expect(formatTimeForApi("08:30:00")).toBe("08:30");
+    expect(formatTimeForApi("00:00:00")).toBe("00:00");
+    expect(formatTimeForApi("01:00:00")).toBe("01:00");
     expect(formatTimeForApi("")).toBeNull();
   });
 

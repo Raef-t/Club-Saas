@@ -21,12 +21,14 @@ import {
   getStaffCollection,
   getStaffRecord,
 } from "./staffUtils";
+import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 export function createStaffFormData(values, { includePhoto = false } = {}) {
   const formData = new FormData();
   formData.append("first_name", values.first_name.trim());
   formData.append("last_name", values.last_name.trim());
   formData.append("phone_number", values.phone_number.trim());
+  formData.append("gender", values.gender);
   formData.append("role", values.role);
   formData.append("employment_type", values.employment_type);
   formData.append("base_salary", String(Number(values.base_salary) || 0));
@@ -72,16 +74,27 @@ export function useStaff({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const paginationFilterKey = [
+    branchFilter,
+    roleFilter,
+    genderFilter,
+    workStatusFilter,
+    search,
+  ].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
 
   const queryParams = useMemo(
-    () =>
-      buildStaffQueryParams({
+    () => ({
+      ...buildStaffQueryParams({
         branchId: branchFilter,
         role: roleFilter,
         gender: genderFilter,
         workStatus: workStatusFilter,
       }),
-    [branchFilter, genderFilter, roleFilter, workStatusFilter],
+      page,
+      per_page: perPage,
+    }),
+    [branchFilter, genderFilter, page, perPage, roleFilter, workStatusFilter],
   );
 
   const {
@@ -91,7 +104,7 @@ export function useStaff({
     isFetching,
     refetch,
   } = useGetStaffQuery(queryParams);
-  const { currentData: branchesResponse } = useGetBranchesQuery();
+  const { currentData: branchesResponse } = useGetBranchesQuery(withAllItems());
   const {
     currentData: detailsResponse,
     error: detailsError,
@@ -104,10 +117,18 @@ export function useStaff({
   const [updateStaffMember, { isLoading: isUpdating }] = useUpdateStaffMemberMutation();
   const [deleteStaffMember, { isLoading: isDeleting }] = useDeleteStaffMemberMutation();
 
-  const canUseInitialStaff = Object.keys(queryParams).length === 0;
-  const staff = useMemo(
-    () => getStaffCollection(staffResponse || (canUseInitialStaff ? initialData?.staff : null)),
-    [canUseInitialStaff, initialData?.staff, staffResponse],
+  const canUseInitialStaff =
+    page === 1 &&
+    perPage === 15 &&
+    branchFilter === "all" &&
+    roleFilter === "all" &&
+    genderFilter === "all" &&
+    workStatusFilter === "all";
+  const listResponse = staffResponse || (canUseInitialStaff ? initialData?.staff : null);
+  const staff = useMemo(() => getStaffCollection(listResponse), [listResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(listResponse, { page, perPage }),
+    [listResponse, page, perPage],
   );
   const branches = useMemo(
     () => getBranchesArray(branchesResponse || initialData?.branches),
@@ -134,6 +155,7 @@ export function useStaff({
       return values.filter(Boolean).some((value) => String(value).toLowerCase().includes(term));
     });
   }, [search, staff]);
+  const totalResults = search.trim() ? filteredStaff.length : pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = staff.filter((item) => resolveWorkStatus(item) === "active").length;
@@ -279,10 +301,12 @@ export function useStaff({
     setSelectedStaffId,
     formError,
     setFormError,
-    isLoading: isLoading || (isFetching && !staffResponse),
+    isLoading: isLoading || (isFetching && !listResponse),
     error,
     refetch,
     filteredStaff,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     selectedStaff,
     detailsStaff,

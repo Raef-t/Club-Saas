@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
@@ -9,9 +9,15 @@ import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import StatsGrid from "@/components/ui/StatsGrid";
 import { useToast } from "@/components/ui/Toast";
-import { CalendarIcon, CheckIcon, HandCoinsIcon, PencilIcon } from "@/components/icons/Icons";
+import {
+  CalendarIcon,
+  CheckIcon,
+  HandCoinsIcon,
+  PencilIcon,
+  PlusIcon,
+} from "@/components/icons/Icons";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
+import { useGetBranchSettingsQuery, useUpdateBranchSettingsMutation } from "@/lib/api/branchesApi";
 import {
   useConfirmPayslipsMutation,
   useGeneratePayslipsMutation,
@@ -20,6 +26,11 @@ import {
 } from "@/lib/api/payslipsApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { formatDate, formatMoney } from "@/lib/utils";
+import {
+  createBranchSettingsForm,
+  createBranchSettingsPayload,
+  getSettingsRecord,
+} from "@/app/management/settings/settingsUtils";
 import PayslipEditorModal from "./PayslipEditorModal";
 import {
   createConfirmPayload,
@@ -35,18 +46,26 @@ import {
 } from "./payrollUtils";
 
 const DRAFT_PAYROLL_TABLE_GRID =
-  "48px minmax(130px,1.4fr) minmax(84px,.85fr) minmax(84px,.85fr) minmax(60px,.6fr) minmax(80px,.75fr) minmax(80px,.75fr) minmax(96px,.9fr) 72px";
+  "48px minmax(130px,1.3fr) minmax(110px,.9fr) minmax(84px,.75fr) minmax(60px,.55fr) minmax(80px,.7fr) minmax(80px,.7fr) minmax(96px,.85fr) 154px";
 const SAVED_PAYROLL_TABLE_GRID =
   "48px minmax(130px,1.3fr) minmax(80px,.8fr) minmax(80px,.8fr) minmax(60px,.6fr) minmax(75px,.7fr) minmax(75px,.7fr) minmax(90px,.85fr) 110px 105px";
+const PAYROLL_DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => ({
+  value: String(index + 1),
+  label: `اليوم ${index + 1}`,
+}));
 
-export default function PayrollClient() {
+export default function PayrollClient({ initialAction = null }) {
   const toast = useToast();
-  const { selectedBranchId, selectedBranch, isAllBranches } = useManagementBranch();
+  const { branches, selectedBranchId, selectedBranch, isAllBranches, setSelectedBranchId } =
+    useManagementBranch();
   const [activeTab, setActiveTab] = useState("draft");
   const [draft, setDraft] = useState(null);
   const [editing, setEditing] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedPayrollDay, setSelectedPayrollDay] = useState("");
+  const [generationRequest, setGenerationRequest] = useState(null);
+  const generationSequenceRef = useRef(0);
+  const processedActionRef = useRef(null);
   const branchId = isAllBranches ? "" : selectedBranchId;
 
   const {
@@ -64,20 +83,12 @@ export default function PayrollClient() {
     refetch: refetchSaved,
   } = useGetPayslipsQuery(branchId ? { branch_id: branchId } : undefined);
   const [generatePayslips, { isLoading: isGenerating }] = useGeneratePayslipsMutation();
+  const [updateBranchSettings, { isLoading: isSavingPayrollDay }] =
+    useUpdateBranchSettingsMutation();
   const [updatePayslip, { isLoading: isUpdating }] = useUpdatePayslipMutation();
   const [confirmPayslips, { isLoading: isConfirming }] = useConfirmPayslipsMutation();
 
   const payrollEndDay = getPayrollEndDay(settingsResponse);
-  const payrollDayOptions = useMemo(
-    () =>
-      payrollEndDay
-        ? Array.from({ length: payrollEndDay }, (_, index) => ({
-            value: String(index + 1),
-            label: `اليوم ${index + 1}`,
-          }))
-        : [],
-    [payrollEndDay],
-  );
   const savedPayslips = useMemo(
     () =>
       filterPayslipsByBranch(getPayslips(savedResponse).map(normalizePayslip), selectedBranchId),
@@ -85,7 +96,9 @@ export default function PayrollClient() {
   );
 
   useEffect(() => {
+    generationSequenceRef.current += 1;
     setDraft(null);
+    setGenerationRequest(null);
     setEditing(null);
     setConfirmOpen(false);
   }, [selectedBranchId]);
@@ -93,6 +106,41 @@ export default function PayrollClient() {
   useEffect(() => {
     setSelectedPayrollDay(payrollEndDay ? String(payrollEndDay) : "");
   }, [payrollEndDay]);
+
+  const actionKey = initialAction
+    ? [
+        initialAction.type,
+        initialAction.branchId,
+        initialAction.notificationId,
+        initialAction.periodStart,
+        initialAction.periodEnd,
+      ].join(":")
+    : "";
+
+  useEffect(() => {
+    if (!initialAction || processedActionRef.current === actionKey || branches.length === 0) return;
+
+    const actionBranchExists = branches.some(
+      (branch) => String(branch.id) === String(initialAction.branchId),
+    );
+    if (!actionBranchExists) {
+      processedActionRef.current = actionKey;
+      toast.error("الفرع المرتبط بإشعار الرواتب غير متاح لهذا الحساب.");
+      return;
+    }
+
+    if (String(selectedBranchId) !== String(initialAction.branchId)) {
+      setSelectedBranchId(initialAction.branchId);
+      return;
+    }
+
+    processedActionRef.current = actionKey;
+    void loadDraft(initialAction.branchId, {
+      source: "notification",
+      periodStart: initialAction.periodStart,
+      periodEnd: initialAction.periodEnd,
+    });
+  }, [actionKey, branches, initialAction, selectedBranchId, setSelectedBranchId, toast]);
 
   const displayedPayslips = activeTab === "draft" ? draft?.payslips || [] : savedPayslips;
   const totals = useMemo(
@@ -108,24 +156,68 @@ export default function PayrollClient() {
     [displayedPayslips],
   );
 
-  async function handleGenerate() {
+  async function handlePayrollDayChange(day) {
+    setSelectedPayrollDay(day);
+    setDraft(null);
+
     if (!branchId) {
       toast.warning("اختر فرعاً محدداً لتوليد مسودة الرواتب.");
       return;
     }
-    if (!payrollEndDay) {
-      toast.error("لم يتم العثور على يوم إقفال الرواتب في إعدادات الفرع.");
+
+    const dayNumber = Number(day);
+    if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 31) {
+      toast.error("اختر يوماً صحيحاً من 1 إلى 31.");
       return;
     }
 
     try {
-      const response = await generatePayslips({ branch_id: Number(branchId) }).unwrap();
+      const settingsRecord = getSettingsRecord(settingsResponse);
+      const settingsPayload = createBranchSettingsPayload(createBranchSettingsForm(settingsRecord));
+
+      await updateBranchSettings({
+        branchId,
+        body: {
+          ...settingsPayload,
+          payroll_end_day: dayNumber,
+        },
+      }).unwrap();
+
+      toast.success("تم حفظ يوم إقفال الرواتب.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "تعذر حفظ يوم إقفال الرواتب."));
+    }
+  }
+
+  async function loadDraft(targetBranchId, context = { source: "manual" }) {
+    const numericBranchId = Number(targetBranchId);
+    if (!Number.isInteger(numericBranchId) || numericBranchId <= 0) {
+      toast.warning("اختر فرعاً محدداً لتوليد مسودة الرواتب.");
+      return;
+    }
+
+    const generationSequence = generationSequenceRef.current + 1;
+    generationSequenceRef.current = generationSequence;
+    setActiveTab("draft");
+    setDraft(null);
+    setGenerationRequest({ branchId: String(targetBranchId), ...context });
+
+    try {
+      const response = await generatePayslips({ branch_id: numericBranchId }).unwrap();
+      if (generationSequence !== generationSequenceRef.current) return;
+
       const nextDraft = getPayrollDraft(response);
       if (!nextDraft) throw new Error("لم تُرجع الخدمة مسودة رواتب صالحة.");
+
       setDraft(nextDraft);
-      setActiveTab("draft");
-      toast.success(response?.message || "تم حساب مسودة الرواتب بنجاح");
+      toast.success(
+        context.source === "notification"
+          ? "تم جلب مسودة الرواتب من الإشعار وهي جاهزة للمراجعة."
+          : "تم توليد مسودة الرواتب وهي جاهزة للمراجعة.",
+      );
     } catch (error) {
+      if (generationSequence !== generationSequenceRef.current) return;
+      setGenerationRequest(null);
       toast.error(getApiErrorMessage(error, error?.message || "تعذر توليد مسودة الرواتب."));
     }
   }
@@ -171,10 +263,11 @@ export default function PayrollClient() {
       const response = await confirmPayslips(createConfirmPayload(branchId, draft)).unwrap();
       setConfirmOpen(false);
       setDraft(null);
+      setGenerationRequest(null);
       setActiveTab("saved");
-      toast.success(response?.message || "تم تثبيت وحفظ الرواتب بنجاح.");
+      toast.success(response?.message || "تم تثبيت واعتماد الرواتب بنجاح.");
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "تعذر تثبيت وحفظ الرواتب."));
+      toast.error(getApiErrorMessage(error, "تعذر تثبيت واعتماد الرواتب."));
     }
   }
 
@@ -200,7 +293,29 @@ export default function PayrollClient() {
           label: "الراتب الأساسي",
           align: "center",
           render: (value, payslip) =>
-            isCommissionBased(payslip) ? <EmptyMoney /> : <Money value={value} />,
+            activeTab === "draft" && !isCommissionBased(payslip) ? (
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="app-input mx-auto h-9 w-24 px-2 text-center text-xs text-app-text"
+                value={value}
+                onChange={(event) => {
+                  const nextBasePay = event.target.value;
+                  setDraft((current) => ({
+                    ...current,
+                    payslips: current.payslips.map((item) =>
+                      item === payslip ? updateDraftPayslip(item, { base_pay: nextBasePay }) : item,
+                    ),
+                  }));
+                }}
+                aria-label={`الراتب الأساسي لـ ${getPayslipStaffName(payslip)}`}
+              />
+            ) : isCommissionBased(payslip) ? (
+              <EmptyMoney />
+            ) : (
+              <Money value={value} />
+            ),
         },
         {
           key: "commission_pay",
@@ -256,9 +371,7 @@ export default function PayrollClient() {
                   {isPaid ? "مدفوع" : "بانتظار الصرف"}
                 </span>
                 {isPaid && journalId && (
-                  <span className="text-[10px] text-app-muted-light">
-                    سند #{journalId}
-                  </span>
+                  <span className="text-[10px] text-app-muted-light">سند #{journalId}</span>
                 )}
               </div>
             );
@@ -272,14 +385,32 @@ export default function PayrollClient() {
           render: (_, payslip) => {
             if (activeTab === "draft") {
               return (
-                <button
-                  type="button"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-app-line bg-app-card px-2.5 text-xs text-app-muted-light transition hover:border-app-yellow/60 hover:text-app-yellow"
-                  onClick={() => setEditing({ source: activeTab, payslip })}
-                >
-                  <PencilIcon className="size-3.5" />
-                  تعديل
-                </button>
+                <div className="flex items-center justify-center gap-1">
+                  <DraftActionButton
+                    label="تعديل التفاصيل"
+                    onClick={() => setEditing({ source: activeTab, payslip })}
+                  >
+                    <PencilIcon className="size-3.5" />
+                  </DraftActionButton>
+                  <DraftActionButton
+                    label="إضافة مكافأة"
+                    tone="green"
+                    onClick={() =>
+                      setEditing({ source: activeTab, payslip, initialAdjustmentType: "bonus" })
+                    }
+                  >
+                    <PlusIcon className="size-3.5" />
+                  </DraftActionButton>
+                  <DraftActionButton
+                    label="إضافة خصم"
+                    tone="red"
+                    onClick={() =>
+                      setEditing({ source: activeTab, payslip, initialAdjustmentType: "deduction" })
+                    }
+                  >
+                    <MinusIcon className="size-3.5" />
+                  </DraftActionButton>
+                </div>
               );
             }
 
@@ -337,52 +468,79 @@ export default function PayrollClient() {
               <p className="mb-2 text-xs font-medium text-app-muted-light">يوم إقفال الرواتب</p>
               <Dropdown
                 value={selectedPayrollDay}
-                options={payrollDayOptions}
-                onChange={setSelectedPayrollDay}
+                options={PAYROLL_DAY_OPTIONS}
+                onChange={handlePayrollDayChange}
                 icon={CalendarIcon}
-                disabled={!branchId || isLoadingSettings || isFetchingSettings || !payrollEndDay}
+                disabled={
+                  !branchId ||
+                  isLoadingSettings ||
+                  isFetchingSettings ||
+                  Boolean(settingsError) ||
+                  isGenerating ||
+                  isSavingPayrollDay
+                }
                 placeholder={
                   !branchId
                     ? "اختر فرعاً أولاً"
                     : isLoadingSettings || isFetchingSettings
                       ? "جاري تحميل الإعدادات..."
-                      : "غير محدد في إعدادات الفرع"
+                      : "اختر يوم الإقفال"
                 }
                 className="text-app-text"
                 buttonClassName="h-11 border border-app-line bg-app-card-soft"
               />
-              {settingsError && (
+              {(isSavingPayrollDay || isGenerating) && (
+                <p className="mt-2 text-xs text-app-yellow" role="status">
+                  {isSavingPayrollDay ? "جاري حفظ يوم الإقفال..." : "جاري توليد الرواتب..."}
+                </p>
+              )}
+              {settingsError && !isLoadingSettings && (
                 <button
                   type="button"
                   className="mt-2 text-xs text-app-red underline underline-offset-2"
                   onClick={refetchSettings}
                 >
-                  تعذر تحميل الإعدادات — إعادة المحاولة
+                  تعذر تحميل إعدادات الفرع — إعادة المحاولة
                 </button>
               )}
             </div>
           </div>
-
-          <Button
-            className="h-11 min-w-44"
-            onClick={handleGenerate}
-            loading={isGenerating}
-            loadingLabel="جاري توليد المسودة"
-            disabled={!branchId || !payrollEndDay || !selectedPayrollDay}
-          >
-            توليد مسودة الرواتب
-          </Button>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-app-line pt-4 text-xs text-app-muted-light">
           <span className="rounded-full bg-app-yellow-soft px-3 py-1 text-app-yellow">
-            اليوم المختار: {selectedPayrollDay || "-"} من {payrollEndDay || "-"}
+            اليوم المختار: {selectedPayrollDay || "-"} من 31
           </span>
           <span>
             الفترة الحالية: {getPayrollPeriodLabel(draft?.period_start, draft?.period_end)}
           </span>
         </div>
       </section>
+
+      {generationRequest?.source === "notification" && (isGenerating || draft) && (
+        <section
+          className="flex flex-col gap-3 rounded-2xl border border-app-yellow/30 bg-app-yellow/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          role="status"
+        >
+          <div>
+            <p className="text-sm font-medium text-app-yellow">
+              {isGenerating
+                ? "جاري جلب مسودة الرواتب من الإشعار..."
+                : "تم فتح مسودة استحقاق الرواتب"}
+            </p>
+            <p className="mt-1 text-xs text-app-muted-light">
+              {generationRequest.periodStart && generationRequest.periodEnd
+                ? `الفترة الواردة في الإشعار: ${formatDate(generationRequest.periodStart)} إلى ${formatDate(generationRequest.periodEnd)}`
+                : "راجع القيم أدناه وعدّلها قبل التثبيت والاعتماد."}
+            </p>
+          </div>
+          {draft && (
+            <span className="w-fit rounded-full border border-app-green/30 bg-app-green/10 px-3 py-1 text-xs text-app-green">
+              جاهزة للمراجعة
+            </span>
+          )}
+        </section>
+      )}
 
       <div className="flex w-fit rounded-xl border border-app-line bg-app-panel p-1">
         <TabButton active={activeTab === "draft"} onClick={() => setActiveTab("draft")}>
@@ -435,7 +593,7 @@ export default function PayrollClient() {
           activeTab === "draft"
             ? draft
               ? `فترة الرواتب: ${formatDate(draft.period_start)} إلى ${formatDate(draft.period_end)}`
-              : "ولّد المسودة لمراجعة رواتب الموظفين قبل التثبيت."
+              : "اختر يوم الإقفال، ثم افتح المسودة من إشعار التوليد."
             : "الرواتب التي تم تثبيتها وحفظها في قاعدة البيانات."
         }
         columns={columns}
@@ -453,7 +611,11 @@ export default function PayrollClient() {
         getRowKey={(payslip, index) => payslip.id || `${payslip.staff_id}-${index}`}
         emptyMessage={
           activeTab === "draft" ? (
-            "لا توجد مسودة حالياً. اختر فرعاً ثم اضغط «توليد مسودة الرواتب»."
+            isGenerating ? (
+              "جاري جلب مسودة الرواتب وحساب العمولات والسلف..."
+            ) : (
+              "لا توجد مسودة معروضة حالياً. افتح إشعار استحقاق الرواتب لتوليدها ومراجعتها."
+            )
           ) : savedError ? (
             <div className="space-y-3 text-center">
               <p className="text-app-red">تعذر تحميل الرواتب المثبتة.</p>
@@ -472,7 +634,7 @@ export default function PayrollClient() {
               icon={<CheckIcon className="size-4" />}
               className="h-10"
             >
-              تثبيت وحفظ الرواتب
+              تثبيت واعتماد الرواتب
             </Button>
           ) : activeTab === "saved" && isFetchingSaved && !isLoadingSaved ? (
             <span className="text-xs text-app-yellow">جاري تحديث السجلات...</span>
@@ -485,15 +647,16 @@ export default function PayrollClient() {
         onClose={() => setEditing(null)}
         onSave={handleSaveEdit}
         isSaving={isUpdating}
+        initialAdjustmentType={editing?.initialAdjustmentType}
       />
 
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleConfirm}
-        title="تثبيت وحفظ الرواتب"
-        message={`سيتم تثبيت ${draft?.payslips?.length || 0} سجل راتب للفترة المحددة، وبعدها ستظهر ضمن الرواتب المثبتة.`}
-        confirmLabel="تثبيت وحفظ"
+        title="تثبيت واعتماد الرواتب"
+        message={`سيتم اعتماد ${draft?.payslips?.length || 0} سجل راتب بصافي إجمالي ${formatMoney(totals.net)}. بعد التثبيت ستظهر السجلات ضمن الرواتب المثبتة.`}
+        confirmLabel="تثبيت واعتماد"
         tone="primary"
         isLoading={isConfirming}
       />
@@ -546,5 +709,40 @@ function Count({ value }) {
     <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">
       {Number(value).toLocaleString("ar")}
     </span>
+  );
+}
+
+function DraftActionButton({ label, tone = "default", onClick, children }) {
+  const toneClass = {
+    default:
+      "border-app-line text-app-muted-light hover:border-app-yellow/60 hover:text-app-yellow",
+    green: "border-app-green/25 bg-app-green/10 text-app-green hover:border-app-green/60",
+    red: "border-app-red/25 bg-app-red/10 text-app-red hover:border-app-red/60",
+  }[tone];
+
+  return (
+    <button
+      type="button"
+      className={`grid size-8 place-items-center rounded-lg border transition ${toneClass}`}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MinusIcon({ className = "size-4" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M5 12h14" strokeLinecap="round" />
+    </svg>
   );
 }

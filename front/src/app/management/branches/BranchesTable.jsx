@@ -9,11 +9,18 @@ import { FilterIcon } from "@/components/icons/Icons";
 import { genderLabels } from "@/lib/constants";
 import { BRANCH_GENDER_FILTER_OPTIONS, BRANCH_TABLE_COLUMNS } from "./branchConstants";
 import { getBranchDisplayName } from "./branchUtils";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 /**
  * Renders the searchable and filterable branches table.
  */
 export default function BranchesTable({ state }) {
+  const { can } = usePermissions();
+  const canView = can("branch.view");
+  const canUpdate = can("branch.update");
+  const canDelete = can("branch.delete");
+  const canToggleStatus = can("branch.toggle-status");
   const columns = useMemo(
     () => [
       {
@@ -29,7 +36,8 @@ export default function BranchesTable({ state }) {
         key: "gender_restriction",
         label: "التقييد الجنسي",
         align: "center",
-        sortValue: (branch) => genderLabels[branch.gender_restriction] || branch.gender_restriction || "",
+        sortValue: (branch) =>
+          genderLabels[branch.gender_restriction] || branch.gender_restriction || "",
         render: (value) => (
           <span className="text-xs text-app-muted-light">{genderLabels[value] || value}</span>
         ),
@@ -48,7 +56,8 @@ export default function BranchesTable({ state }) {
         key: "phone",
         label: "الهاتف",
         align: "center",
-        sortValue: (branch) => (branch.phone ? `${branch.country_code || ""} ${branch.phone}`.trim() : ""),
+        sortValue: (branch) =>
+          branch.phone ? `${branch.country_code || ""} ${branch.phone}`.trim() : "",
         render: (_, branch) => (
           <span className="text-xs text-app-muted-light" dir="ltr">
             {branch.phone ? `${branch.country_code || ""} ${branch.phone}` : "-"}
@@ -64,8 +73,8 @@ export default function BranchesTable({ state }) {
           <div className="flex justify-center" onClick={(event) => event.stopPropagation()}>
             <ToggleSwitch
               checked={value}
-              onChange={() => state.toggleStatus(branch)}
-              disabled={state.isToggling}
+              onChange={canToggleStatus ? () => state.toggleStatus(branch) : undefined}
+              disabled={!canToggleStatus || state.isToggling}
               size="sm"
             />
           </div>
@@ -79,13 +88,15 @@ export default function BranchesTable({ state }) {
         render: (_, branch) => (
           <RowActions
             disabled={state.isDeleting || state.isToggling}
-            editHref={`/management/branches/create?mode=edit&id=${branch.id}`}
-            onDelete={() => state.requestDelete(branch)}
+            editHref={
+              canUpdate ? `/management/branches/create?mode=edit&id=${branch.id}` : undefined
+            }
+            onDelete={canDelete ? () => state.requestDelete(branch) : undefined}
           />
         ),
       },
     ],
-    [state],
+    [canDelete, canToggleStatus, canUpdate, state],
   );
 
   return (
@@ -115,8 +126,14 @@ export default function BranchesTable({ state }) {
       }
       rowClassName="gap-2 px-3 py-4"
       headerClassName="gap-2 px-3"
-      totalPages={0}
-      onRowClick={state.openDetails}
+      currentPage={state.pagination.currentPage}
+      totalPages={state.pagination.lastPage}
+      totalItems={state.pagination.total}
+      pageSize={state.pagination.perPage}
+      pageSizeOptions={PAGE_SIZE_OPTIONS}
+      onPageChange={state.pagination.setPage}
+      onPageSizeChange={state.pagination.setPerPage}
+      onRowClick={canView ? state.openDetails : undefined}
       getRowKey={(branch) => branch.id}
       toolbarActions={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -138,7 +155,7 @@ export default function BranchesTable({ state }) {
         <p className="text-sm text-app-muted-light">
           النتائج:{" "}
           <span className="font-medium text-app-text">
-            {state.branches.length.toLocaleString("ar")}
+            {state.totalResults.toLocaleString("ar")}
           </span>
         </p>
       }

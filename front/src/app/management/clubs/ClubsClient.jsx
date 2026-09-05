@@ -10,11 +10,15 @@ import ClubDetails from "./ClubDetails";
 import ClubsTable from "./ClubsTable";
 import { getClubName } from "./clubUtils";
 import { useClubs } from "./useClubs";
+import { usePermissions } from "@/lib/PermissionContext";
 
 /**
  * Composes the club overview, details drawer, and deletion confirmation.
  */
 export default function ClubsClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("club.create");
+  const canDelete = can("club.delete");
   const state = useClubs({ initialClubs: initialData?.clubs });
 
   return (
@@ -24,13 +28,15 @@ export default function ClubsClient({ initialData }) {
         title="إدارة النوادي"
         subtitle="عرض النوادي المسجلة في النظام، وتعديل بياناتها أو إضافة نوادٍ جديدة."
         action={
-          <Button
-            href="/management/clubs/create"
-            icon={<PlusIcon className="size-4 text-black" />}
-            className="!text-black font-semibold"
-          >
-            إضافة نادي
-          </Button>
+          canCreate ? (
+            <Button
+              href="/management/clubs/create"
+              icon={<PlusIcon className="size-4 text-black" />}
+              className="!text-black font-semibold"
+            >
+              إضافة نادي
+            </Button>
+          ) : null
         }
       />
 
@@ -51,7 +57,7 @@ export default function ClubsClient({ initialData }) {
       </Drawer>
 
       <ConfirmDialog
-        open={Boolean(state.deleteTarget)}
+        open={canDelete && Boolean(state.deleteTarget)}
         onClose={() => state.setDeleteTarget(null)}
         onConfirm={state.confirmDelete}
         title="تأكيد حذف النادي"

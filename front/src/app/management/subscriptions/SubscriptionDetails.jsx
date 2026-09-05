@@ -196,29 +196,33 @@ export default function SubscriptionDetails({
       )}
 
       {/* يقيّد الإجراءات بحسب حالة الاشتراك الحالية. */}
-      {showActions && (
+      {showActions && (onFreeze || onUnfreeze || onCancel) && (
         <div className="border-t border-app-line pt-4 space-y-3">
           {subscription.status === "active" && (
             <>
               {!showFreezeForm ? (
                 <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    tone="warning"
-                    className="flex-1 h-10 text-sm font-semibold"
-                    onClick={() => setShowFreezeForm(true)}
-                  >
-                    تجميد الاشتراك
-                  </Button>
-                  <Button
-                    type="button"
-                    tone="danger"
-                    className="flex-1 h-10 text-sm font-semibold"
-                    onClick={() => onCancel(subscription.id)}
-                    loading={isCancelling}
-                  >
-                    إلغاء الاشتراك
-                  </Button>
+                  {onFreeze && (
+                    <Button
+                      type="button"
+                      tone="warning"
+                      className="flex-1 h-10 text-sm font-semibold"
+                      onClick={() => setShowFreezeForm(true)}
+                    >
+                      تجميد الاشتراك
+                    </Button>
+                  )}
+                  {onCancel && (
+                    <Button
+                      type="button"
+                      tone="danger"
+                      className="flex-1 h-10 text-sm font-semibold"
+                      onClick={() => onCancel(subscription.id)}
+                      loading={isCancelling}
+                    >
+                      إلغاء الاشتراك
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-xl border border-app-line bg-app-card-soft p-4 space-y-3 text-right">
@@ -271,7 +275,7 @@ export default function SubscriptionDetails({
             </>
           )}
 
-          {subscription.status === "frozen" && (
+          {subscription.status === "frozen" && onUnfreeze && (
             <Button
               type="button"
               className="w-full h-10 text-sm font-semibold"

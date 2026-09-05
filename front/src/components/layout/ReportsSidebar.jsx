@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
+import { usePermissions } from "@/lib/PermissionContext";
 
 const navItems = [{ title: "التقارير التشغيلية", href: "/reports" }];
 
@@ -14,6 +15,8 @@ function isActive(pathname, href) {
 
 export default function ReportsSidebar({ className }) {
   const pathname = usePathname() || "";
+  const { canAccess } = usePermissions();
+  const visibleNavItems = navItems.filter((item) => canAccess(item.href));
 
   return (
     <aside
@@ -29,7 +32,7 @@ export default function ReportsSidebar({ className }) {
       <h3 className="mt-6 text-center text-base font-medium text-app-text">نظام التقارير</h3>
 
       <nav className="mx-auto mt-10 flex w-full max-w-[250px] flex-col gap-2 px-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const active = isActive(pathname, item.href);
           const hasSubItems = Boolean(
             (item.children && item.children.length > 0) ||

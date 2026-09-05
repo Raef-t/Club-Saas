@@ -243,7 +243,7 @@ export function createDashboardStats({ sseStats }) {
       tone: "green",
       iconKey: "subscriptions",
       compact: true,
-      href: "/management/lockers?status=assigned_free",
+      href: "/management/lockers?status=with_member",
     },
     {
       title: "الفعاليات الجارية الآن",

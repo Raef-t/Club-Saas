@@ -58,6 +58,8 @@ export function Field({
         allowClear={true}
         compact={compact}
         error={error}
+        minYear={props.minYear}
+        maxYear={props.maxYear}
       />
     );
   }

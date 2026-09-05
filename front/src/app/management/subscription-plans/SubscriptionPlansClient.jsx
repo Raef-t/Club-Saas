@@ -44,12 +44,15 @@ import {
   isGeneralEquipmentActivity,
   isPrivateEquipmentActivity,
 } from "./subscriptionPlanFormUtils";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 function CoachDropdown({ branchId, activityId, value, onChange, error, optional = false }) {
   const { data, isLoading } = useGetCoachesQuery(
     {
       branch_id: branchId || undefined,
       activity_id: activityId || undefined,
+      per_page: "all",
     },
     {
       skip: !branchId && !activityId,
@@ -242,11 +245,12 @@ function PlayIcon({ className = "size-4" }) {
 
 function PlanSuspensionAction({ plan, disabled, onSuspend, onResume }) {
   const suspended = isSubscriptionPlanSuspended(plan);
+  const hasAction = suspended ? Boolean(onResume) : Boolean(onSuspend);
   const planStatus = getSubscriptionPlanStatusMeta(plan).status;
   const canSuspend =
     planStatus === SUBSCRIPTION_PLAN_STATUS.ACTIVE ||
     planStatus === SUBSCRIPTION_PLAN_STATUS.COMPLETED;
-  const actionDisabled = disabled || (!suspended && !canSuspend);
+  const actionDisabled = disabled || !hasAction || (!suspended && !canSuspend);
   const title = suspended
     ? "استئناف الفعالية"
     : actionDisabled
@@ -261,13 +265,14 @@ function PlanSuspensionAction({ plan, disabled, onSuspend, onResume }) {
       disabled={actionDisabled}
       onClick={(event) => {
         event.stopPropagation();
-        if (suspended) onResume(plan);
-        else onSuspend(plan);
+        if (suspended) onResume?.(plan);
+        else onSuspend?.(plan);
       }}
-      className={`grid size-8 place-items-center rounded-lg border bg-app-card-soft transition disabled:cursor-not-allowed disabled:opacity-50 ${suspended
+      className={`grid size-8 place-items-center rounded-lg border bg-app-card-soft transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        suspended
           ? "border-app-green/40 text-app-green hover:bg-app-green/10"
           : "border-app-yellow/40 text-app-yellow hover:bg-app-yellow-soft"
-        }`}
+      }`}
     >
       {suspended ? <PlayIcon /> : <PauseIcon />}
     </button>
@@ -665,10 +670,10 @@ export function PlanForm({
       session_templates: isEquipmentOnlyPlan
         ? []
         : form.session_templates?.map((s) => ({
-          day_of_week: Number(s.day_of_week),
-          start_time: s.start_time,
-          end_time: s.end_time,
-        })) || [],
+            day_of_week: Number(s.day_of_week),
+            start_time: s.start_time,
+            end_time: s.end_time,
+          })) || [],
       ...(mode === "edit" ? { reason: form.reason } : {}),
     };
 
@@ -1025,6 +1030,14 @@ function CommissionAmountCard({ label, amount, percentage }) {
 }
 
 export default function SubscriptionPlansClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("subscription-plan.create");
+  const canView = can("subscription-plan.view");
+  const canViewPlayers = can("subscription-plan.view-players");
+  const canUpdate = can("subscription-plan.update");
+  const canDelete = can("subscription-plan.delete");
+  const canSuspend = can("subscription-plan.suspend");
+  const canResume = can("subscription-plan.delete-suspension");
   const {
     search,
     setSearch,
@@ -1038,6 +1051,8 @@ export default function SubscriptionPlansClient({ initialData }) {
     error,
     refetch,
     filteredPlans,
+    pagination,
+    totalResults,
     stats,
     selectedPlan,
     detailsPlan,
@@ -1142,20 +1157,35 @@ export default function SubscriptionPlansClient({ initialData }) {
             <PlanSuspensionAction
               plan={plan}
               disabled={isDeleting || isSuspending || isResuming}
-              onSuspend={handleSuspend}
-              onResume={handleResume}
+              onSuspend={canSuspend ? handleSuspend : undefined}
+              onResume={canResume ? handleResume : undefined}
             />
             <RowActions
               disabled={isDeleting || isSuspending || isResuming}
-              editHref={`/management/subscription-plans/create?mode=edit&id=${plan.id}`}
-              onDelete={() => handleDelete(plan)}
+              editHref={
+                canUpdate
+                  ? `/management/subscription-plans/create?mode=edit&id=${plan.id}`
+                  : undefined
+              }
+              onDelete={canDelete ? () => handleDelete(plan) : undefined}
               className="gap-2"
             />
           </div>
         ),
       },
     ],
-    [isDeleting, isResuming, isSuspending, handleDelete, handleResume, handleSuspend],
+    [
+      canDelete,
+      canResume,
+      canSuspend,
+      canUpdate,
+      handleDelete,
+      handleResume,
+      handleSuspend,
+      isDeleting,
+      isResuming,
+      isSuspending,
+    ],
   );
 
   return (
@@ -1165,13 +1195,15 @@ export default function SubscriptionPlansClient({ initialData }) {
         title="الفعاليات"
         subtitle="إنشاء وتعديل الفعاليات وربطها مع مدة الفعالية والسعر وعدد الجلسات."
         action={
-          <Button
-            href="/management/subscription-plans/create"
-            icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
-            style={{ color: "#000000" }}
-          >
-            إنشاء فعالية
-          </Button>
+          canCreate ? (
+            <Button
+              href="/management/subscription-plans/create"
+              icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+              style={{ color: "#000000" }}
+            >
+              إنشاء فعالية
+            </Button>
+          ) : null
         }
       />
 
@@ -1203,11 +1235,21 @@ export default function SubscriptionPlansClient({ initialData }) {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        totalPages={0}
-        onRowClick={(plan) => {
-          setSelectedPlanId(plan.id);
-          setDrawerMode("details");
-        }}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.lastPage}
+        totalItems={pagination.total}
+        pageSize={pagination.perPage}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPerPage}
+        onRowClick={
+          canView && canViewPlayers
+            ? (plan) => {
+                setSelectedPlanId(plan.id);
+                setDrawerMode("details");
+              }
+            : undefined
+        }
         getRowKey={(plan) => plan.id}
         toolbarActions={
           <SearchInput
@@ -1221,7 +1263,7 @@ export default function SubscriptionPlansClient({ initialData }) {
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
             <span className="font-medium text-app-text">
-              {filteredPlans.length.toLocaleString("ar")}
+              {totalResults.toLocaleString("ar")}
             </span>
           </p>
         }
@@ -1263,7 +1305,7 @@ export default function SubscriptionPlansClient({ initialData }) {
       </Drawer>
 
       <ConfirmDialog
-        open={deleteConfirmOpen}
+        open={canDelete && deleteConfirmOpen}
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف الفعالية"
@@ -1276,7 +1318,7 @@ export default function SubscriptionPlansClient({ initialData }) {
       />
 
       <SuspensionDialog
-        open={suspensionModalOpen}
+        open={canSuspend && suspensionModalOpen}
         plan={itemToSuspend}
         isLoading={isSuspending}
         onClose={closeSuspensionModal}
@@ -1284,7 +1326,7 @@ export default function SubscriptionPlansClient({ initialData }) {
       />
 
       <ConfirmDialog
-        open={resumeConfirmOpen}
+        open={canResume && resumeConfirmOpen}
         onClose={closeResumeConfirm}
         onConfirm={confirmResume}
         title="تأكيد استئناف الفعالية"

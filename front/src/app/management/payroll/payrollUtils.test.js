@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculatePayslipTotals,
   createConfirmPayload,
+  createPayrollAction,
   getPayrollDraft,
   getPayrollEndDay,
   getPayslips,
@@ -80,5 +81,37 @@ describe("payroll utils", () => {
     });
 
     expect(draft.payslips[0].subscribers_count).toBe(7);
+  });
+
+  it("preserves automatic deductions while recalculating manual adjustments", () => {
+    const draft = getPayrollDraft({
+      data: {
+        payslips: [{ staff_id: 1, base_pay: 1000, deductions: 200, adjustments: [] }],
+      },
+    });
+
+    const updated = updateDraftPayslip(draft.payslips[0], {
+      adjustments: [{ type: "bonus", amount: 50, reason: "تميز" }],
+    });
+
+    expect(updated).toMatchObject({ bonuses: 50, deductions: 200, net_pay: 850 });
+  });
+
+  it("accepts only a valid generate action from the query", () => {
+    expect(
+      createPayrollAction({
+        payroll_action: "generate",
+        branch_id: "11",
+        notification_id: "400",
+        period_start: "2026-08-03",
+      }),
+    ).toEqual({
+      type: "generate",
+      branchId: "11",
+      notificationId: "400",
+      periodStart: "2026-08-03",
+      periodEnd: "",
+    });
+    expect(createPayrollAction({ payroll_action: "generate", branch_id: "bad" })).toBeNull();
   });
 });

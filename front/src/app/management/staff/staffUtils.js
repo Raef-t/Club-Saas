@@ -79,6 +79,24 @@ export function splitStaffName(person = {}) {
   };
 }
 
+/**
+ * Reads a person's phone from both the current flat response and the contacts
+ * collection used by the profile endpoint.
+ */
+export function getPersonPhoneNumber(person = {}) {
+  const contacts = Array.isArray(person.contacts) ? person.contacts : [];
+  const personalContact = contacts.find((contact) => contact?.relation === "self");
+
+  return (
+    person.phone_number ||
+    person.phone ||
+    person.mobile ||
+    personalContact?.phone_number ||
+    contacts[0]?.phone_number ||
+    ""
+  );
+}
+
 export function getStaffBranchNames(staff, branches = []) {
   if (Array.isArray(staff?.branch_name) && staff.branch_name.length) {
     return staff.branch_name.map(formatLocalizedName).filter(Boolean);
@@ -134,6 +152,7 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
       last_name: "",
       country_code: "+963",
       phone_number: "",
+      gender: "",
       role: "receptionist",
       employment_type: "fixed_salary",
       base_salary: "0",
@@ -154,7 +173,8 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
     first_name: firstName,
     last_name: lastName,
     country_code: staff.person?.country_code || "+963",
-    phone_number: staff.person?.phone_number || "",
+    phone_number: getPersonPhoneNumber(staff.person),
+    gender: staff.person?.gender || "",
     role: staff.role || "staff",
     employment_type: staff.employment_type || "fixed_salary",
     base_salary: String(Number(staff.base_salary) || 0),
@@ -201,6 +221,23 @@ export function createStaffProfileUpdateBody(staff, values) {
 
 export function resolveStaffPhotoUrl(value) {
   if (!value || typeof value !== "string") return "";
-  if (value.startsWith("http") || value.startsWith("blob:")) return value;
-  return `/${value.replace(/^\//, "")}`;
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return "";
+  if (trimmedValue.startsWith("data:") || trimmedValue.startsWith("blob:")) {
+    return trimmedValue;
+  }
+  if (trimmedValue.startsWith("/img/") || trimmedValue.startsWith("/api/")) {
+    return trimmedValue;
+  }
+
+  let assetPath = trimmedValue;
+  try {
+    const remoteUrl = new URL(trimmedValue);
+    assetPath = `${remoteUrl.pathname}${remoteUrl.search}`;
+  } catch {
+    // Relative backend paths are handled below.
+  }
+
+  const normalizedPath = assetPath.replace(/^\/+/, "");
+  return normalizedPath ? `/api/assets/${normalizedPath}` : "";
 }

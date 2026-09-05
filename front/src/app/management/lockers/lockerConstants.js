@@ -1,4 +1,12 @@
-export const LOCKER_OCCUPIED_STATUSES = ["assigned", "with_member", "with_coach", "with_staff"];
+export const LOCKER_OCCUPIED_STATUSES = [
+  "assigned",
+  "occupied",
+  "rented",
+  "with_member",
+  "with_staff_or_coach",
+  "with_coach",
+  "with_staff",
+];
 
 export const LOCKER_STATUS_LABELS = {
   available: "متاح",
@@ -20,16 +28,34 @@ export const LOCKER_STATUS_CLASSES = {
   disabled: "border-app-muted/30 bg-app-muted/20 text-app-muted-light",
 };
 
+/**
+ * Product-facing states used by the locker list. The API exposes more detailed
+ * reservation states, but the page intentionally groups them into these four
+ * operational states.
+ */
+export const LOCKER_PAGE_STATE_LABELS = {
+  with_member: "مع لاعب",
+  with_staff_or_coach: "مع كوتش أو موظف",
+  available: "متاحة",
+  maintenance: "معطلة أو صيانة",
+};
+
+export const LOCKER_PAGE_STATE_CLASSES = {
+  with_member: "border-app-blue/30 bg-app-blue/20 text-app-blue",
+  with_staff_or_coach: "border-app-purple/30 bg-app-purple/20 text-app-purple",
+  available: "border-app-green/30 bg-app-green/20 text-app-green",
+  maintenance: "border-app-orange/30 bg-app-orange/20 text-app-orange",
+};
+
 export const LOCKER_FILTER_OPTIONS = [
   { value: "all", label: "كل الحالات" },
-  { value: "available", label: "متاحة" },
-  { value: "assigned_free", label: "إسناد مجاني" },
-  { value: "rented", label: "مؤجرة" },
-  { value: "with_member", label: "مع الأعضاء" },
-  { value: "with_coach", label: "مع المدربين" },
-  { value: "occupied", label: "مشغولة" },
-  { value: "maintenance", label: "صيانة" },
-  { value: "disabled", label: "معطلة" },
+  { value: "with_member", label: LOCKER_PAGE_STATE_LABELS.with_member },
+  {
+    value: "with_staff_or_coach",
+    label: LOCKER_PAGE_STATE_LABELS.with_staff_or_coach,
+  },
+  { value: "available", label: LOCKER_PAGE_STATE_LABELS.available },
+  { value: "maintenance", label: LOCKER_PAGE_STATE_LABELS.maintenance },
 ];
 
 export const LOCKER_STATUS_OPTIONS = Object.entries(LOCKER_STATUS_LABELS).map(([value, label]) => ({

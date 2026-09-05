@@ -1,5 +1,5 @@
 import ManagementDashboard from "./dashboard/ManagementDashboard";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -21,7 +21,7 @@ async function loadDashboardResource(path, token) {
  * Loads and renders the management statistics route.
  */
 export default async function ManagementPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management");
   const schedule = await loadDashboardResource("session-templates/schedule", token);
 
   return (

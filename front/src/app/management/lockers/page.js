@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import LockersClient from "./LockersClient";
-import { verifySession } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { verifyPageAccess } from "@/lib/server/auth";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "الخزائن | نظام إدارة النادي",
@@ -9,13 +9,13 @@ export const metadata = {
 };
 
 export default async function LockersPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/management/lockers");
   const [lockers, branches, members, coaches, staff] = await Promise.all([
-    requestBackend("lockers", { token }),
-    requestBackend("branches", { token }),
-    requestBackend("members", { token }),
-    requestBackend("coaches", { token }),
-    requestBackend("staff", { token }),
+    requestBackend("lockers", { token, params: { per_page: "all" } }),
+    safeRequestBackend("branches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("members", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("coaches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("staff", { token, params: { per_page: "all" } }, []),
   ]);
 
   return (

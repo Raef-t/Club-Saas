@@ -6,11 +6,17 @@ import SearchInput from "@/components/ui/SearchInput";
 import { formatLocalizedName } from "@/lib/utils";
 import { ACTIVITY_TABLE_COLUMNS } from "./activityConstants";
 import { getActivityName } from "./activityUtils";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 /**
  * Renders the searchable activity table and its row actions.
  */
 export default function ActivitiesTable({ state }) {
+  const { can } = usePermissions();
+  const canView = can("activity.view");
+  const canUpdate = can("activity.update");
+  const canDelete = can("activity.delete");
   const columns = useMemo(
     () => [
       {
@@ -67,13 +73,15 @@ export default function ActivitiesTable({ state }) {
         render: (_, activity) => (
           <RowActions
             disabled={state.isDeleting}
-            editHref={`/management/activities/create?mode=edit&id=${activity.id}`}
-            onDelete={() => state.requestDelete(activity)}
+            editHref={
+              canUpdate ? `/management/activities/create?mode=edit&id=${activity.id}` : undefined
+            }
+            onDelete={canDelete ? () => state.requestDelete(activity) : undefined}
           />
         ),
       },
     ],
-    [state],
+    [canDelete, canUpdate, state],
   );
 
   return (
@@ -103,8 +111,14 @@ export default function ActivitiesTable({ state }) {
       }
       rowClassName="gap-2 px-3 py-4"
       headerClassName="gap-2 px-3"
-      totalPages={0}
-      onRowClick={state.openDetails}
+      currentPage={state.pagination.currentPage}
+      totalPages={state.pagination.lastPage}
+      totalItems={state.pagination.total}
+      pageSize={state.pagination.perPage}
+      pageSizeOptions={PAGE_SIZE_OPTIONS}
+      onPageChange={state.pagination.setPage}
+      onPageSizeChange={state.pagination.setPerPage}
+      onRowClick={canView ? state.openDetails : undefined}
       getRowKey={(activity) => activity.id}
       toolbarActions={
         <SearchInput
@@ -118,7 +132,7 @@ export default function ActivitiesTable({ state }) {
         <p className="text-sm text-app-muted-light">
           النتائج:{" "}
           <span className="font-medium text-app-text">
-            {state.activities.length.toLocaleString("ar")}
+            {state.totalResults.toLocaleString("ar")}
           </span>
         </p>
       }

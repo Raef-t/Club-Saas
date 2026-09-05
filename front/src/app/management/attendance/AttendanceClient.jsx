@@ -92,6 +92,8 @@ export default function AttendanceClient({ initialBranches }) {
 
       <AttendanceTable
         rows={attendance.attendanceRows}
+        pagination={attendance.attendancePagination}
+        totalResults={attendance.attendanceTotalResults}
         isLoading={attendance.isAttendancesLoading}
         errorMessage={attendance.attendancesErrorMessage}
         onRetry={attendance.retryAttendances}

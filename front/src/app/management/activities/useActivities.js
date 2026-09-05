@@ -14,6 +14,7 @@ import {
   getActivityCollection,
   getActivityRecord,
 } from "./activityUtils";
+import { getPaginationMeta, useServerPagination } from "@/lib/pagination";
 
 /**
  * Coordinates the activity list, search, details, and deletion lifecycle.
@@ -25,13 +26,23 @@ export function useActivities({ initialActivities } = {}) {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const paginationFilterKey = [selectedBranchId, search].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
+  const queryParams = useMemo(
+    () => ({
+      ...(selectedBranchId === "all" ? {} : { branch_id: selectedBranchId }),
+      page,
+      per_page: perPage,
+    }),
+    [page, perPage, selectedBranchId],
+  );
   const {
     currentData: activitiesResponse,
     error,
     isLoading,
     isFetching,
     refetch,
-  } = useGetActivitiesQuery(selectedBranchId === "all" ? {} : { branch_id: selectedBranchId });
+  } = useGetActivitiesQuery(queryParams);
   const {
     currentData: detailsResponse,
     error: detailsError,
@@ -40,9 +51,14 @@ export function useActivities({ initialActivities } = {}) {
     skip: !selectedActivity,
   });
   const [deleteActivity, { isLoading: isDeleting }] = useDeleteActivityMutation();
-  const allActivities = useMemo(
-    () => getActivityCollection(activitiesResponse || initialActivities),
-    [activitiesResponse, initialActivities],
+  const canUseInitialActivities =
+    page === 1 && perPage === 15 && selectedBranchId === "all";
+  const listResponse =
+    activitiesResponse || (canUseInitialActivities ? initialActivities : null);
+  const allActivities = useMemo(() => getActivityCollection(listResponse), [listResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(listResponse, { page, perPage }),
+    [listResponse, page, perPage],
   );
   const branchActivities = useMemo(
     () => filterEntitiesByBranch(allActivities, selectedBranchId),
@@ -52,6 +68,7 @@ export function useActivities({ initialActivities } = {}) {
     () => filterActivities(branchActivities, search),
     [branchActivities, search],
   );
+  const totalResults = search.trim() ? activities.length : pagination.total;
   const stats = useMemo(() => createActivityStats(branchActivities), [branchActivities]);
   const detailsActivity = getActivityRecord(detailsResponse) || selectedActivity;
 
@@ -97,6 +114,8 @@ export function useActivities({ initialActivities } = {}) {
     search,
     setSearch,
     activities,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     isLoading: isLoading && allActivities.length === 0,
     isFetching,

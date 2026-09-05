@@ -27,8 +27,15 @@ import {
   resolveStaffPhotoUrl,
 } from "./staffUtils";
 import { useStaff } from "./useStaff";
+import { usePermissions } from "@/lib/PermissionContext";
+import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 export default function StaffClient({ initialData }) {
+  const { can } = usePermissions();
+  const canCreate = can("staff.create");
+  const canView = can("staff.view");
+  const canUpdate = can("staff.update");
+  const canDelete = can("staff.delete");
   const {
     search,
     setSearch,
@@ -47,6 +54,8 @@ export default function StaffClient({ initialData }) {
     error,
     refetch,
     filteredStaff,
+    pagination,
+    totalResults,
     stats,
     selectedStaff,
     detailsStaff,
@@ -164,13 +173,13 @@ export default function StaffClient({ initialData }) {
         render: (_, staff) => (
           <RowActions
             disabled={isDeleting}
-            editHref={getStaffEditHref(staff)}
-            onDelete={() => handleDelete(staff)}
+            editHref={canUpdate ? getStaffEditHref(staff) : undefined}
+            onDelete={canDelete ? () => handleDelete(staff) : undefined}
           />
         ),
       },
     ],
-    [branches, handleDelete, isDeleting],
+    [branches, canDelete, canUpdate, handleDelete, isDeleting],
   );
 
   const branchOptions = useMemo(
@@ -207,14 +216,16 @@ export default function StaffClient({ initialData }) {
         title="إدارة الموظفين"
         subtitle="إضافة الموظفين وإدارة بياناتهم الوظيفية والفروع ومواعيد الدوام وحالة العمل."
         action={
-          <Button
-            href="/management/staff/create"
-            icon={<PlusIcon className="size-4 text-black" style={{ color: "#000000" }} />}
-            className="text-black"
-            style={{ color: "#000000" }}
-          >
-            إضافة موظف
-          </Button>
+          canCreate ? (
+            <Button
+              href="/management/staff/create"
+              icon={<PlusIcon className="size-4 text-black" style={{ color: "#000000" }} />}
+              className="text-black"
+              style={{ color: "#000000" }}
+            >
+              إضافة موظف
+            </Button>
+          ) : null
         }
       />
 
@@ -246,11 +257,21 @@ export default function StaffClient({ initialData }) {
         }
         rowClassName="gap-2 px-3 py-4"
         headerClassName="gap-2 px-3"
-        totalPages={0}
-        onRowClick={(staff) => {
-          setSelectedStaffId(staff.id);
-          setDrawerMode("details");
-        }}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.lastPage}
+        totalItems={pagination.total}
+        pageSize={pagination.perPage}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPerPage}
+        onRowClick={
+          canView
+            ? (staff) => {
+                setSelectedStaffId(staff.id);
+                setDrawerMode("details");
+              }
+            : undefined
+        }
         getRowKey={(staff) => staff.id}
         toolbarActions={
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -293,7 +314,7 @@ export default function StaffClient({ initialData }) {
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
             <span className="font-medium text-app-text">
-              {filteredStaff.length.toLocaleString("ar")}
+              {totalResults.toLocaleString("ar")}
             </span>
           </p>
         }
@@ -314,7 +335,7 @@ export default function StaffClient({ initialData }) {
       </Drawer>
 
       <ConfirmDialog
-        open={deleteConfirmOpen}
+        open={canDelete && deleteConfirmOpen}
         onClose={closeDeleteConfirm}
         onConfirm={confirmDelete}
         title="تأكيد حذف الموظف"

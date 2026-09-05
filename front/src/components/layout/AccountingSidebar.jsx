@@ -10,22 +10,26 @@ import {
   HandCoinsIcon,
 } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
+import { usePermissions } from "@/lib/PermissionContext";
 
 const quickActions = [
   {
     label: "إضافة مصروف",
     href: "/accounting/expenses",
     icon: FileDownIcon,
+    permission: "accounting.journal.create",
   },
   {
     label: "إضافة إيراد",
     href: "/accounting/revenues",
     icon: FileUpIcon,
+    permission: "accounting.journal.create",
   },
   {
     label: "إضافة قيد",
     href: "/accounting/journals",
     icon: FolderPlusIcon,
+    permission: "accounting.journal.create",
   },
 ];
 
@@ -48,6 +52,11 @@ function isActive(pathname, href) {
 
 export default function AccountingSidebar({ className }) {
   const pathname = usePathname();
+  const { can, canAccess } = usePermissions();
+  const visibleQuickActions = quickActions.filter(
+    (action) => can(action.permission) && canAccess(action.href),
+  );
+  const visibleNavItems = navItems.filter((item) => canAccess(item.href));
 
   return (
     <aside
@@ -62,7 +71,7 @@ export default function AccountingSidebar({ className }) {
 
       <h3 className="mt-6 text-center text-base font-medium text-app-text">إجراءات سريعة</h3>
       <div className="mt-5 grid grid-cols-4 gap-1.5 px-1 max-w-full">
-        {quickActions.map((action) => {
+        {visibleQuickActions.map((action) => {
           const Icon = action.icon;
           const actionActive = pathname === action.href;
           return (
@@ -83,7 +92,7 @@ export default function AccountingSidebar({ className }) {
       </div>
 
       <nav className="mx-auto mt-14 flex w-full max-w-[250px] flex-col gap-2 px-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const active =
             isActive(pathname, item.href) ||
             (pathname.includes("/safes") && item.href === "/accounting/safes") ||

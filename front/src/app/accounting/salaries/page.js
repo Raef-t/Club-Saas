@@ -1,5 +1,5 @@
 import SalariesClient from "./SalariesClient";
-import { verifySession } from "@/lib/server/auth";
+import { verifyPageAccess } from "@/lib/server/auth";
 import { requestBackend } from "@/lib/server/backend";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function SalariesPage() {
-  const { token } = await verifySession();
+  const { token } = await verifyPageAccess("/accounting/salaries");
   let initialPayments = [];
   let initialStaff = [];
   let initialSafes = [];
@@ -16,7 +16,7 @@ export default async function SalariesPage() {
   try {
     const [paymentsRes, staffRes, safesRes, periodsRes] = await Promise.all([
       requestBackend("accounting/salary-payments", { token }),
-      requestBackend("staff", { token }),
+      requestBackend("staff", { token, params: { per_page: "all" } }),
       requestBackend("accounting/safes", { token }),
       requestBackend("accounting/periods", { token }),
     ]);

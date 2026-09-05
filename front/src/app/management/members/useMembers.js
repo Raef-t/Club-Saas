@@ -12,6 +12,7 @@ import { useCreatePlayerSubscriptionMutation } from "@/lib/api/playerSubscriptio
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 function getMembersArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -48,23 +49,42 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const paginationFilterKey = [branchFilter, genderFilter, statusFilter, search].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
 
   const queryParams = useMemo(() => {
-    return branchFilter !== "all" ? { branch_id: branchFilter } : {};
-  }, [branchFilter]);
+    return {
+      ...(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
+      ...(genderFilter !== "all" ? { gender: genderFilter } : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      page,
+      per_page: perPage,
+    };
+  }, [branchFilter, genderFilter, page, perPage, statusFilter]);
 
-  const { data, error, isLoading, refetch } = useGetMembersQuery(queryParams);
-  const { data: branchesData } = useGetBranchesQuery();
-  const { data: plansData } = useGetSubscriptionPlansQuery(queryParams);
+  const { currentData: data, error, isLoading, isFetching, refetch } =
+    useGetMembersQuery(queryParams);
+  const { data: branchesData } = useGetBranchesQuery(withAllItems());
+  const { data: plansData } = useGetSubscriptionPlansQuery(
+    withAllItems(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
+  );
 
   const [createPlayer, { isLoading: isCreating }] = useCreatePlayerMutation();
   const [updatePlayer, { isLoading: isUpdating }] = useUpdatePlayerMutation();
   const [deleteMember, { isLoading: isDeleting }] = useDeleteMemberMutation();
   const [createPlayerSubscription] = useCreatePlayerSubscriptionMutation();
 
-  const members = useMemo(
-    () => getMembersArray(data || initialData?.members),
-    [data, initialData?.members],
+  const canUseInitialMembers =
+    page === 1 &&
+    perPage === 15 &&
+    branchFilter === "all" &&
+    genderFilter === "all" &&
+    statusFilter === "all";
+  const membersResponse = data || (canUseInitialMembers ? initialData?.members : null);
+  const members = useMemo(() => getMembersArray(membersResponse), [membersResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(membersResponse, { page, perPage }),
+    [membersResponse, page, perPage],
   );
   const branches = useMemo(
     () => getBranchesArray(branchesData || initialData?.branches),
@@ -117,6 +137,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       return matchesGender && matchesStatus && matchesSearch;
     });
   }, [branchMembers, genderFilter, search, statusFilter]);
+  const totalResults = search.trim() ? filteredMembers.length : pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = branchMembers.filter((m) => m.is_active !== false).length;
@@ -297,10 +318,12 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     setSelectedMemberId,
     formError,
     setFormError,
-    isLoading,
+    isLoading: isLoading || (isFetching && !membersResponse),
     error,
     refetch,
     filteredMembers,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     selectedMember,
     isCreating,

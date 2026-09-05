@@ -16,6 +16,7 @@ import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { resolveWorkStatus } from "@/lib/workStatus";
 import { createCoachActivityPlansMap } from "./coachDetailsUtils";
 import { createCoachEditInitialValues } from "./coachFormUtils";
+import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 function getCoachesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -51,19 +52,28 @@ export function useCoaches(params = {}) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const paginationFilterKey = [
+    branchFilter,
+    activityFilter,
+    workStatusFilter,
+    employmentFilter,
+    search,
+  ].join("|");
+  const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
 
   const queryParams = useMemo(() => {
-    const params = {};
+    const params = { page, per_page: perPage };
     if (branchFilter !== "all") params.branch_id = Number(branchFilter);
     if (activityFilter !== "all") params.activity_id = Number(activityFilter);
     if (workStatusFilter !== "all") params.work_status = workStatusFilter;
     return params;
-  }, [activityFilter, branchFilter, workStatusFilter]);
+  }, [activityFilter, branchFilter, page, perPage, workStatusFilter]);
 
-  const { data, error, isLoading, refetch } = useGetCoachesQuery(queryParams);
-  const { data: branchesData } = useGetBranchesQuery();
+  const { currentData: data, error, isLoading, isFetching, refetch } =
+    useGetCoachesQuery(queryParams);
+  const { data: branchesData } = useGetBranchesQuery(withAllItems());
   const { data: activitiesData } = useGetActivitiesQuery(
-    branchFilter === "all" ? {} : { branch_id: branchFilter },
+    withAllItems(branchFilter === "all" ? {} : { branch_id: branchFilter }),
   );
 
   const {
@@ -79,9 +89,17 @@ export function useCoaches(params = {}) {
   const [updateCoachPhoto] = useUpdateCoachPhotoMutation();
   const [deleteCoach, { isLoading: isDeleting }] = useDeleteCoachMutation();
 
-  const coaches = useMemo(
-    () => getCoachesArray(data || initialData?.coaches),
-    [data, initialData?.coaches],
+  const canUseInitialCoaches =
+    page === 1 &&
+    perPage === 15 &&
+    branchFilter === "all" &&
+    activityFilter === "all" &&
+    workStatusFilter === "all";
+  const coachesResponse = data || (canUseInitialCoaches ? initialData?.coaches : null);
+  const coaches = useMemo(() => getCoachesArray(coachesResponse), [coachesResponse]);
+  const pagination = useMemo(
+    () => getPaginationMeta(coachesResponse, { page, perPage }),
+    [coachesResponse, page, perPage],
   );
   const branches = useMemo(
     () => getBranchesArray(branchesData || initialData?.branches),
@@ -97,7 +115,7 @@ export function useCoaches(params = {}) {
   );
 
   const { data: plansData } = useGetSubscriptionPlansQuery(
-    branchFilter === "all" ? {} : { branch_id: branchFilter },
+    withAllItems(branchFilter === "all" ? {} : { branch_id: branchFilter }),
   );
 
   const coachActivityPlansMap = useMemo(() => {
@@ -149,6 +167,8 @@ export function useCoaches(params = {}) {
       return matchesActivity && matchesEmployment && matchesWorkStatus && matchesSearch;
     });
   }, [activityFilter, branchCoaches, employmentFilter, search, workStatusFilter]);
+  const hasLocalFilters = Boolean(search.trim()) || employmentFilter !== "all";
+  const totalResults = hasLocalFilters ? filteredCoaches.length : pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = branchCoaches.filter(
@@ -387,10 +407,12 @@ export function useCoaches(params = {}) {
     setSelectedCoachId,
     formError,
     setFormError,
-    isLoading,
+    isLoading: isLoading || (isFetching && !coachesResponse),
     error,
     refetch,
     filteredCoaches,
+    pagination: { ...pagination, setPage, setPerPage },
+    totalResults,
     stats,
     selectedCoach,
     detailsCoach,

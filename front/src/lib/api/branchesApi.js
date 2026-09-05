@@ -5,7 +5,7 @@ export const branchesApi = createBackendApi({
   tagTypes: ["Branches", "BranchSettings", "BranchShifts", "BranchHolidays"],
   endpoints: (builder) => ({
     getBranches: builder.query({
-      query: () => "branches",
+      query: (params = {}) => ({ url: "branches", params }),
       providesTags: ["Branches"],
     }),
     getBranch: builder.query({

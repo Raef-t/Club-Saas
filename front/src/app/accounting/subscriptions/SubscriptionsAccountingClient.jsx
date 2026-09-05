@@ -15,6 +15,7 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
   const queryParams = useMemo(() => {
     const params = {};
     if (selectedBranchId && selectedBranchId !== "all") params.branch_id = selectedBranchId;
+    params.per_page = "all";
     return params;
   }, [selectedBranchId]);
 

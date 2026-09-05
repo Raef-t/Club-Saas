@@ -22,21 +22,32 @@ function createAdjustment() {
   };
 }
 
-export default function PayslipEditorModal({ payslip, onClose, onSave, isSaving }) {
+export default function PayslipEditorModal({
+  payslip,
+  onClose,
+  onSave,
+  isSaving,
+  initialAdjustmentType,
+}) {
   const [form, setForm] = useState({ base_pay: "", commission_pay: "", adjustments: [] });
 
   useEffect(() => {
     if (!payslip) return;
+    const adjustments = (payslip.adjustments || []).map((adjustment, index) => ({
+      ...adjustment,
+      key: adjustment.id || `${index}-${adjustment.type}-${adjustment.amount}`,
+      amount: String(adjustment.amount ?? ""),
+    }));
+    if (initialAdjustmentType === "bonus" || initialAdjustmentType === "deduction") {
+      adjustments.push({ ...createAdjustment(), type: initialAdjustmentType });
+    }
+
     setForm({
       base_pay: String(payslip.base_pay ?? 0),
       commission_pay: String(payslip.commission_pay ?? 0),
-      adjustments: (payslip.adjustments || []).map((adjustment, index) => ({
-        ...adjustment,
-        key: adjustment.id || `${index}-${adjustment.type}-${adjustment.amount}`,
-        amount: String(adjustment.amount ?? ""),
-      })),
+      adjustments,
     });
-  }, [payslip]);
+  }, [initialAdjustmentType, payslip]);
 
   const totals = useMemo(
     () =>
@@ -44,8 +55,10 @@ export default function PayslipEditorModal({ payslip, onClose, onSave, isSaving 
         base_pay: form.base_pay,
         commission_pay: form.commission_pay,
         adjustments: form.adjustments,
+        system_bonuses: payslip?.system_bonuses,
+        system_deductions: payslip?.system_deductions,
       }),
-    [form],
+    [form, payslip],
   );
 
   function setAdjustment(key, field, value) {
@@ -184,6 +197,13 @@ export default function PayslipEditorModal({ payslip, onClose, onSave, isSaving 
           <TotalCard label="الخصومات" value={totals.deductions} tone="red" />
           <TotalCard label="صافي الراتب" value={totals.netPay} tone="yellow" />
         </div>
+
+        {Number(payslip?.system_deductions) > 0 && (
+          <p className="rounded-lg border border-app-orange/20 bg-app-orange/10 px-3 py-2 text-xs text-app-orange">
+            تشمل الخصومات {formatMoney(payslip.system_deductions)} محسوبة آلياً (مثل السلف)، ولا
+            يمكن حذفها من هذه المسودة.
+          </p>
+        )}
 
         <div className="flex justify-end gap-3 border-t border-app-line pt-5">
           <Button type="button" tone="outline" onClick={onClose} disabled={isSaving}>

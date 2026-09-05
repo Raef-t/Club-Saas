@@ -6,8 +6,10 @@ import { pageMeta } from "@/data/mockData";
 import Breadcrumb from "@/components/common/Breadcrumb";
 import { CalendarIcon, ClockIcon, MenuIcon } from "@/components/icons/Icons";
 import { useGetProfileQuery } from "@/lib/api/authApi";
+import { resolveStaffPhotoUrl } from "@/app/management/staff/staffUtils";
 import ManagementBranchDropdown from "./ManagementBranchDropdown";
 import ProfileDrawer from "./ProfileDrawer";
+import NotificationCenter from "./NotificationCenter";
 
 /**
  * Renders a compact informational value in the secondary navigation row.
@@ -44,6 +46,7 @@ export default function Navbar({ onMenuClick, initialUser }) {
   const user = profileData?.data || initialUser || {};
   const fullName = user.person?.full_name || user.username || "";
   const avatarLetter = fullName ? fullName.charAt(0).toUpperCase() : "U";
+  const photoUrl = resolveStaffPhotoUrl(user.person?.photo_url);
 
   useEffect(() => {
     /**
@@ -94,31 +97,30 @@ export default function Navbar({ onMenuClick, initialUser }) {
           <ManagementBranchDropdown />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setProfileOpen(true)}
-          className="flex shrink-0 items-center gap-3 rounded-xl border border-app-line/20 bg-app-card-soft/80 p-1.5 ps-1.5 pe-3 transition duration-300 hover:border-app-yellow/50"
-          aria-label="فتح الملف الشخصي"
-        >
-          <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-app-yellow text-sm font-bold uppercase text-app-bg shadow-inner ring-1 ring-app-line/40">
-            {user.person?.photo_url ? (
-              <img
-                src={
-                  user.person.photo_url.startsWith("http")
-                    ? user.person.photo_url
-                    : `/${user.person.photo_url.replace(/^\//, "")}`
-                }
-                className="absolute inset-0 size-full rounded-full object-cover object-center"
-                alt={`صورة ${fullName || "المستخدم"}`}
-              />
-            ) : (
-              avatarLetter
-            )}
-          </span>
-          <span className="me-1 hidden text-xs font-medium text-app-muted-light sm:inline">
-            {fullName || "الملف الشخصي"}
-          </span>
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <NotificationCenter />
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className="flex shrink-0 items-center gap-3 rounded-xl border border-app-line/20 bg-app-card-soft/80 p-1.5 ps-1.5 pe-3 transition duration-300 hover:border-app-yellow/50"
+            aria-label="فتح الملف الشخصي"
+          >
+            <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-app-yellow text-sm font-bold uppercase text-app-bg shadow-inner ring-1 ring-app-line/40">
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  className="absolute inset-0 size-full rounded-full object-cover object-center"
+                  alt={`صورة ${fullName || "المستخدم"}`}
+                />
+              ) : (
+                avatarLetter
+              )}
+            </span>
+            <span className="me-1 hidden text-xs font-medium text-app-muted-light sm:inline">
+              {fullName || "الملف الشخصي"}
+            </span>
+          </button>
+        </div>
       </header>
 
       <div className="relative z-10 mt-3 flex flex-wrap items-start justify-between gap-4">
