@@ -52,7 +52,17 @@ class StaffController extends BaseController
                         type: 'object',
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd')
+                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd'),
+                            new OA\Property(
+                                property: 'person',
+                                type: 'object',
+                                nullable: true,
+                                properties: [
+                                    new OA\Property(property: 'full_name', type: 'string', example: 'John Doe'),
+                                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', nullable: true, description: 'الجنس'),
+                                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890')
+                                ]
+                            )
                         ]
                     )
                 )
@@ -87,6 +97,7 @@ class StaffController extends BaseController
                     new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
                     new OA\Property(property: 'country_code', type: 'string', example: '+1'),
                     new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', description: 'الجنس (male: ذكر، female: أنثى)', nullable: true),
                     new OA\Property(property: 'role', type: 'string', example: 'reception', description: 'اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles'),
                     new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                     new OA\Property(property: 'base_salary', type: 'number', example: 5000),
@@ -180,7 +191,17 @@ class StaffController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd')
+                        new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd'),
+                        new OA\Property(
+                            property: 'person',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'full_name', type: 'string', example: 'John Doe'),
+                                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', nullable: true, description: 'الجنس'),
+                                new OA\Property(property: 'phone_number', type: 'string', example: '234567890')
+                            ]
+                        )
                     ]
                 )
             ]
@@ -212,6 +233,7 @@ class StaffController extends BaseController
                 new OA\Property(property: 'last_name', type: 'string', example: 'Doe'),
                 new OA\Property(property: 'country_code', type: 'string', example: '+1'),
                 new OA\Property(property: 'phone_number', type: 'string', example: '234567890'),
+                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', description: 'الجنس (male: ذكر، female: أنثى)', nullable: true),
                 new OA\Property(property: 'role', type: 'string', example: 'reception', description: 'اسم الدور (Role) المسجل في النظام، يتم جلبه من GET /v1/roles'),
                 new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary'),
                 new OA\Property(property: 'base_salary', type: 'number', example: 5000),
