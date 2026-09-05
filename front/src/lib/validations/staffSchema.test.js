@@ -20,7 +20,10 @@ const validStaff = {
 
 describe("staff form gender", () => {
   it("accepts a supported gender", () => {
-    expect(staffFormSchema.safeParse(validStaff).success).toBe(true);
+    const result = staffFormSchema.safeParse(validStaff);
+
+    expect(result.success).toBe(true);
+    expect(result.data.gender).toBe("female");
   });
 
   it("requires gender instead of saving a null value", () => {

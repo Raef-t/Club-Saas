@@ -58,7 +58,7 @@ const navGroups = [
       { title: "الإحصائيات", href: "/management" },
       { title: "المدربين", href: "/management/coaches" },
       { title: "الموظفين", href: "/management/staff" },
-      { title: "الرواتب", href: "/management/payroll" },
+
       { title: "الأنشطة الرياضية", href: "/management/activities" },
       { title: "الفعاليات", href: "/management/subscription-plans" },
       { title: "المشتركين", href: "/management/members" },
@@ -73,6 +73,7 @@ const navGroups = [
     items: [
       { title: "حسابات المستخدمين", href: "/management/users" },
       { title: "الأدوار والصلاحيات", href: "/management/roles" },
+      { title: "الرواتب", href: "/management/payroll" },
       { title: "الإعدادات", href: "/management/settings" },
       { title: "إدارة النادي", href: "/management/clubs" },
       { title: "الفروع", href: "/management/branches" },
