@@ -54,11 +54,12 @@ export const staffApi = createBackendApi({
       ],
     }),
     deleteStaffMember: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `staff/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: (result, error, { id }) => [
         { type: "Staff", id },
         { type: "Staff", id: "LIST" },
       ],

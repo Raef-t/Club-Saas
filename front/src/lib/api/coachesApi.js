@@ -56,9 +56,10 @@ export const coachesApi = createBackendApi({
       invalidatesTags: (result, error, { id }) => ["Coaches", { type: "Coaches", id }],
     }),
     deleteCoach: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `coaches/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["Coaches"],
     }),

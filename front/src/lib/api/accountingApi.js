@@ -211,9 +211,10 @@ export const accountingApi = createBackendApi({
       ],
     }),
     deletePartner: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `accounting/partners/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["AccPartners", "AccAccounts"],
     }),
@@ -376,9 +377,10 @@ export const accountingApi = createBackendApi({
       ],
     }),
     deleteSalaryPayment: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `accounting/salary-payments/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: [
         "AccSalaryPayments",

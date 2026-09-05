@@ -135,7 +135,10 @@ export function usePartners({ initialPartners = [], initialSafes = [] } = {}) {
   const handleDeletePartner = async () => {
     if (!deleteConfirmPartner?.id || deleteConfirmation !== "delete") return;
     try {
-      await deletePartnerMutation(deleteConfirmPartner.id).unwrap();
+      await deletePartnerMutation({
+        id: deleteConfirmPartner.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف الشريك وحساباته المالية بنجاح");
       setDeleteConfirmPartner(null);
       setDeleteConfirmation("");

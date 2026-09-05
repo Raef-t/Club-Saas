@@ -148,6 +148,7 @@ export function useBranchShifts({
       await deleteShift({
         branchId,
         shiftId: deleteTarget.id,
+        confirmation: deleteConfirmation,
       }).unwrap();
       toast.success("تم حذف الوردية بنجاح");
       setDeleteTarget(null);

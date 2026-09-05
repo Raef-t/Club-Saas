@@ -15,11 +15,12 @@ import { FilterIcon, SearchIcon, PlusIcon } from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
-import { formatSubscriptionMoney } from "./subscriptionUtils";
+import { formatSubscriptionMoney, getSubscriptionCreatorName } from "./subscriptionUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) minmax(160px,1fr) 88px 128px 88px 90px";
+const TABLE_GRID_COLUMNS =
+  "minmax(180px,1.25fr) minmax(160px,1fr) minmax(120px,.8fr) 88px 128px 88px 90px";
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -129,6 +130,17 @@ export default function SubscriptionsClient({ initialData }) {
         },
       },
       {
+        key: "created_by",
+        label: "الموظف المُضيف",
+        align: "center",
+        sortValue: (subscription) => getSubscriptionCreatorName(subscription) || "",
+        render: (_, subscription) => (
+          <span className="truncate font-medium text-app-text">
+            {getSubscriptionCreatorName(subscription) || "-"}
+          </span>
+        ),
+      },
+      {
         key: "remaining_amount",
         label: "المتبقي",
         align: "center",
@@ -216,7 +228,7 @@ export default function SubscriptionsClient({ initialData }) {
         title="قائمة اشتراكات الأعضاء"
         columns={subscriptionColumns}
         rows={filteredSubscriptions}
-        minWidth="930px"
+        minWidth="1080px"
         tableColumns={TABLE_GRID_COLUMNS}
         showAdd={false}
         showSearch={false}
@@ -275,9 +287,7 @@ export default function SubscriptionsClient({ initialData }) {
         toolbarMeta={
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
-            <span className="font-medium text-app-text">
-              {totalResults.toLocaleString("ar")}
-            </span>
+            <span className="font-medium text-app-text">{totalResults.toLocaleString("ar")}</span>
           </p>
         }
       />

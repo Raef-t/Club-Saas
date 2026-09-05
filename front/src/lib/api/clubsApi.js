@@ -48,9 +48,10 @@ export const clubsApi = createBackendApi({
       invalidatesTags: (result, error, { id }) => ["Clubs", { type: "Clubs", id }],
     }),
     deleteClub: builder.mutation({
-      query: (id) => ({
+      query: ({ id, confirmation }) => ({
         url: `clubs/${id}`,
         method: "DELETE",
+        params: { confirmation },
       }),
       invalidatesTags: ["Clubs"],
     }),

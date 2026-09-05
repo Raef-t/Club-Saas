@@ -275,7 +275,10 @@ export function useStaff({
   async function confirmDelete() {
     if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
-      const response = await deleteStaffMember(itemToDelete.id).unwrap();
+      const response = await deleteStaffMember({
+        id: itemToDelete.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success(response?.message || "تم حذف الموظف بنجاح.");
       if (Number(selectedStaffId) === Number(itemToDelete.id)) closeDrawer();
       closeDeleteConfirm();

@@ -76,7 +76,10 @@ export function useClubs({ initialClubs } = {}) {
     if (!deleteTarget || deleteConfirmation !== "delete") return;
 
     try {
-      await deleteClub(deleteTarget.id).unwrap();
+      await deleteClub({
+        id: deleteTarget.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف النادي بنجاح");
       setDeleteTarget(null);
       setDeleteConfirmation("");

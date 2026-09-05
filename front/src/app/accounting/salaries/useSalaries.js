@@ -145,7 +145,10 @@ export function useSalaries({
   const handleDeletePayment = async () => {
     if (!deletePayment?.id || deleteConfirmation !== "delete") return;
     try {
-      await deletePaymentMutation(deletePayment.id).unwrap();
+      await deletePaymentMutation({
+        id: deletePayment.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
       toast.success("تم حذف سجل صرف الراتب بنجاح");
       setDeletePayment(null);
       setDeleteConfirmation("");

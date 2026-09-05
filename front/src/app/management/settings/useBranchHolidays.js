@@ -134,6 +134,7 @@ export function useBranchHolidays({ branchId, initialBranchId, initialHolidays }
       await deleteHoliday({
         branchId,
         holidayId: deleteTarget.id,
+        confirmation: deleteConfirmation,
       }).unwrap();
       toast.success("تم حذف الإجازة بنجاح");
       setDeleteTarget(null);

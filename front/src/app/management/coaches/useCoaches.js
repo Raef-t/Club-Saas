@@ -382,7 +382,10 @@ export function useCoaches(params = {}) {
   async function confirmDelete() {
     if (!itemToDelete || deleteConfirmation !== "delete") return;
     try {
-      await deleteCoach(itemToDelete.id).unwrap();
+      await deleteCoach({
+        id: itemToDelete.id,
+        confirmation: deleteConfirmation,
+      }).unwrap();
     } catch {
       window.alert("تعذر حذف المدرب. حاول مرة أخرى.");
     } finally {
