@@ -29,7 +29,20 @@ class ActivityTypeController extends BaseController
                 new OA\Property(
                     property: 'data', 
                     type: 'array', 
-                    items: new OA\Items(ref: '#/components/schemas/ActivityTypeResource')
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'name', type: 'string', example: 'أنشطة لياقة وكمال أجسام'),
+                            new OA\Property(property: 'description', type: 'string', nullable: true, example: 'جميع التمارين الرياضية واللياقة البدنية'),
+                            new OA\Property(property: 'is_session_based', type: 'boolean', example: false),
+                            new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: true),
+                            new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+                            new OA\Property(property: 'is_daily_entry', type: 'boolean', example: true),
+                            new OA\Property(property: 'created_at', type: 'string', example: '2026-01-15T10:00:00.000000Z'),
+                            new OA\Property(property: 'updated_at', type: 'string', example: '2026-01-15T10:00:00.000000Z')
+                        ]
+                    )
                 )
             ]
         )
@@ -52,6 +65,54 @@ class ActivityTypeController extends BaseController
         );
     }
 
+    #[OA\Post(
+        path: '/v1/activity-types',
+        summary: '➕ إضافة نوع نشاط جديد',
+        description: 'إنشاء نوع نشاط رياضي جديد وتحديد إعداداته التشغيلية.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['name'],
+            properties: [
+                new OA\Property(property: 'name', type: 'string', description: 'اسم نوع النشاط (مطلوب)', example: 'سباحة وألعاب مائية'),
+                new OA\Property(property: 'description', type: 'string', nullable: true, description: 'وصف نوع النشاط', example: 'تمارين وتدريبات السباحة بجميع أنواعها'),
+                new OA\Property(property: 'is_session_based', type: 'boolean', description: 'هل يعتمد على حصص/جلسات محددة', example: true),
+                new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', description: 'هل عدد المشتركين غير محدود', example: false),
+                new OA\Property(property: 'has_shifts', type: 'boolean', description: 'هل يعتمد على ورديات', example: true),
+                new OA\Property(property: 'is_daily_entry', type: 'boolean', description: 'هل يسمح بالدخول اليومي', example: false)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: '✅ تم إنشاء نوع النشاط بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity type created successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 2),
+                        new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية'),
+                        new OA\Property(property: 'description', type: 'string', example: 'تمارين وتدريبات السباحة بجميع أنواعها'),
+                        new OA\Property(property: 'is_session_based', type: 'boolean', example: true),
+                        new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'has_shifts', type: 'boolean', example: true),
+                        new OA\Property(property: 'is_daily_entry', type: 'boolean', example: false),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:00:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:00:00.000000Z')
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(ActivityTypeRequest $request)
     {
         $type = ActivityType::create($request->validated());
@@ -62,6 +123,41 @@ class ActivityTypeController extends BaseController
         );
     }
 
+    #[OA\Get(
+        path: '/v1/activity-types/{activity_type}',
+        summary: '🔍 تفاصيل نوع النشاط',
+        description: 'استرجاع تفاصيل نوع نشاط رياضي محدد.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'activity_type', in: 'path', required: true, description: 'معرف نوع النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تفاصيل نوع النشاط',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity type retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'name', type: 'string', example: 'أنشطة لياقة وكمال أجسام'),
+                        new OA\Property(property: 'description', type: 'string', example: 'جميع التمارين الرياضية واللياقة البدنية'),
+                        new OA\Property(property: 'is_session_based', type: 'boolean', example: false),
+                        new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: true),
+                        new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+                        new OA\Property(property: 'is_daily_entry', type: 'boolean', example: true),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-01-15T10:00:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-01-15T10:00:00.000000Z')
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 نوع النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show(ActivityType $activity_type)
     {
         return $this->successResponse(
@@ -70,6 +166,55 @@ class ActivityTypeController extends BaseController
         );
     }
 
+    #[OA\Put(
+        path: '/v1/activity-types/{activity_type}',
+        summary: '✏️ تعديل نوع النشاط',
+        description: 'تحديث بيانات وإعدادات نوع نشاط موجود.',
+        tags: ['Sports & Activities'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\Parameter(name: 'activity_type', in: 'path', required: true, description: 'معرف نوع النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'name', type: 'string', example: 'أنشطة اللياقة البدنية والكمال الجسماني'),
+                new OA\Property(property: 'description', type: 'string', nullable: true, example: 'تمارين وتدريبات حديد وصالة رياضية'),
+                new OA\Property(property: 'is_session_based', type: 'boolean', example: false),
+                new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: true),
+                new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+                new OA\Property(property: 'is_daily_entry', type: 'boolean', example: true)
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث نوع النشاط بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity type updated successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'name', type: 'string', example: 'أنشطة اللياقة البدنية والكمال الجسماني'),
+                        new OA\Property(property: 'description', type: 'string', example: 'تمارين وتدريبات حديد وصالة رياضية'),
+                        new OA\Property(property: 'is_session_based', type: 'boolean', example: false),
+                        new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: true),
+                        new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+                        new OA\Property(property: 'is_daily_entry', type: 'boolean', example: true),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-01-15T10:00:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:15:00.000000Z')
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 نوع النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(ActivityTypeRequest $request, ActivityType $activity_type)
     {
         $activity_type->update($request->validated());
@@ -82,29 +227,30 @@ class ActivityTypeController extends BaseController
     #[OA\Delete(
         path: '/v1/activity-types/{activity_type}',
         summary: '🗑️ حذف نوع نشاط',
-        description: 'حذف نوع نشاط من النظام. لا يمكن حذفه إذا كان هناك أنشطة تابعة له.',
+        description: 'حذف نوع نشاط من النظام. يلزم تأكيد الحذف بطلب "delete" في حال وجود اشتراكات سابقة أو أنشطة تابعة.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'activity_type', in: 'path', required: true, description: 'معرف نوع النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (delete)', schema: new OA\Schema(type: 'string', example: ''))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (delete) لإتمام عملية الحذف', schema: new OA\Schema(type: 'string', example: 'delete'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف نوع النشاط بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Activity type deleted successfully')
+                new OA\Property(property: 'message', type: 'string', example: 'Activity type deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
             ]
         )
     )]
     #[OA\Response(
-        response: 409, 
-        description: '🚫 لا يمكن الحذف — نوع النشاط مرتبط بأنشطة أخرى', 
+        response: 422, 
+        description: '⚠️ يتطلب تأكيد الحذف بإرسال كلمة delete', 
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'error'), 
-                new OA\Property(property: 'message', type: 'string', example: 'لا يمكن حذف نوع النشاط لوجود 5 أنشطة تندرج تحته. يمكنك تعطيله بدلاً من حذفه.')
+                new OA\Property(property: 'message', type: 'string', example: 'تنبيه: يوجد 3 اشتراك(ات) نشطة حالية للأنشطة التي تندرج تحت نوع النشاط هذا. هل أنت متأكد؟ أرسل "delete" للتأكيد.')
             ]
         )
     )]
@@ -142,16 +288,15 @@ class ActivityTypeController extends BaseController
         $activity_type->delete();
         return $this->successResponse(null, __('Activity type deleted successfully'));
     }
+
     #[OA\Patch(
         path: '/v1/activity-types/{activity_type}/settings',
         summary: '⚙️ تحديث إعدادات نوع النشاط',
         description: 'تحديث الحقول الخاصة بإعدادات نوع النشاط (يعتمد على جلسات، عدد المشتركين لا نهائي، أو نظام الورديات) فقط.',
         tags: ['Sports & Activities'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'activity_type', description: 'ID of the activity type', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
-        ]
+        security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'activity_type', description: 'معرف نوع النشاط', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
@@ -159,7 +304,7 @@ class ActivityTypeController extends BaseController
                 new OA\Property(property: 'is_session_based', type: 'boolean', example: true),
                 new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: false),
                 new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
-                new OA\Property(property: 'is_daily_entry', type: 'boolean', example: false),
+                new OA\Property(property: 'is_daily_entry', type: 'boolean', example: false)
             ]
         )
     )]
@@ -170,10 +315,26 @@ class ActivityTypeController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity type settings updated successfully'),
-                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityTypeResource')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'name', type: 'string', example: 'أنشطة لياقة وكمال أجسام'),
+                        new OA\Property(property: 'description', type: 'string', example: 'جميع التمارين الرياضية واللياقة البدنية'),
+                        new OA\Property(property: 'is_session_based', type: 'boolean', example: true),
+                        new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: false),
+                        new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
+                        new OA\Property(property: 'is_daily_entry', type: 'boolean', example: false),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-01-15T10:00:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:20:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
+    #[OA\Response(response: 404, description: '🚫 نوع النشاط غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function updateSettings(\Modules\Sports\Http\Requests\UpdateActivityTypeSettingsRequest $request, ActivityType $activity_type)
     {
         $activity_type->update($request->validated());

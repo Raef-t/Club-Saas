@@ -52,20 +52,74 @@ class StaffController extends BaseController
                         type: 'object',
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
-                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd'),
+                            new OA\Property(property: 'person_id', type: 'integer', example: 10),
+                            new OA\Property(property: 'qr_code', type: 'string', nullable: true, example: 'QR-STF-001'),
+                            new OA\Property(property: 'role', type: 'string', example: 'reception', description: 'اسم الدور المعين للموظف في النظام'),
+                            new OA\Property(property: 'employment_type', type: 'string', enum: ['fixed_salary', 'commission_based', 'hybrid'], example: 'fixed_salary', description: 'نوع التوظيف'),
+                            new OA\Property(property: 'base_salary', type: 'number', format: 'float', example: 5000.00, description: 'الراتب الأساسي'),
+                            new OA\Property(property: 'work_status', type: 'string', enum: ['active', 'suspended', 'on_leave'], example: 'active', description: 'حالة العمل'),
+                            new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', nullable: true, description: 'الجنس'),
+                            new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-16', description: 'تاريخ بداية العمل'),
+                            new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: null, description: 'تاريخ نهاية العمل'),
+                            new OA\Property(property: 'start_time', type: 'string', example: '08:00', nullable: true, description: 'وقت بداية الدوام'),
+                            new OA\Property(property: 'end_time', type: 'string', example: '16:00', nullable: true, description: 'وقت نهاية الدوام'),
+                            new OA\Property(property: 'reason', type: 'string', nullable: true, example: null),
+                            new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_john'),
+                            new OA\Property(property: 'branch_name', type: 'string', nullable: true, example: 'الفرع الرئيسي'),
                             new OA\Property(
                                 property: 'person',
                                 type: 'object',
                                 nullable: true,
                                 properties: [
                                     new OA\Property(property: 'full_name', type: 'string', example: 'John Doe'),
-                                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', nullable: true, description: 'الجنس'),
-                                    new OA\Property(property: 'phone_number', type: 'string', example: '234567890')
+                                    new OA\Property(property: 'country_code', type: 'string', example: '+966'),
+                                    new OA\Property(property: 'phone_number', type: 'string', example: '599123456'),
+                                    new OA\Property(property: 'email', type: 'string', example: 'john@example.com'),
+                                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male'),
+                                    new OA\Property(property: 'age', type: 'integer', example: 28),
+                                    new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1998-05-15'),
+                                    new OA\Property(property: 'national_id', type: 'string', nullable: true, example: '1098765432'),
+                                    new OA\Property(property: 'address', type: 'string', nullable: true, example: 'الرياض - حي الرياض'),
+                                    new OA\Property(property: 'photo_url', type: 'string', nullable: true, example: 'storage/photos/john.jpg')
                                 ]
                             )
                         ]
                     )
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 1,
+                        'person_id' => 10,
+                        'qr_code' => 'QR-STF-001',
+                        'role' => 'reception',
+                        'employment_type' => 'fixed_salary',
+                        'base_salary' => 5000.00,
+                        'work_status' => 'active',
+                        'gender' => 'male',
+                        'start_date' => '2026-07-16',
+                        'end_date' => null,
+                        'start_time' => '08:00',
+                        'end_time' => '16:00',
+                        'username' => 'staff_john',
+                        'branch_name' => 'الفرع الرئيسي',
+                        'person' => [
+                            'full_name' => 'John Doe',
+                            'country_code' => '+966',
+                            'phone_number' => '599123456',
+                            'email' => 'john@example.com',
+                            'gender' => 'male',
+                            'age' => 28,
+                            'dob' => '1998-05-15',
+                            'national_id' => '1098765432',
+                            'address' => 'الرياض',
+                            'photo_url' => 'storage/photos/john.jpg'
+                        ]
+                    ]
+                ]
             ]
         )
     )]
@@ -119,7 +173,45 @@ class StaffController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff onboarded successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'role', type: 'string', example: 'reception'),
+                        new OA\Property(property: 'employment_type', type: 'string', example: 'fixed_salary'),
+                        new OA\Property(property: 'base_salary', type: 'number', example: 5000.00),
+                        new OA\Property(property: 'work_status', type: 'string', example: 'active'),
+                        new OA\Property(property: 'generated_username', type: 'string', example: 'john_rec_2026'),
+                        new OA\Property(property: 'generated_password', type: 'string', example: 'P@ssw0rd123'),
+                        new OA\Property(
+                            property: 'person',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'full_name', type: 'string', example: 'John Doe'),
+                                new OA\Property(property: 'phone_number', type: 'string', example: '599123456')
+                            ]
+                        )
+                    ]
+                )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff onboarded successfully',
+                'data' => [
+                    'id' => 1,
+                    'role' => 'reception',
+                    'employment_type' => 'fixed_salary',
+                    'base_salary' => 5000.00,
+                    'work_status' => 'active',
+                    'generated_username' => 'john_rec_2026',
+                    'generated_password' => 'P@ssw0rd123',
+                    'person' => [
+                        'full_name' => 'John Doe',
+                        'gender' => 'male',
+                        'phone_number' => '599123456'
+                    ]
+                ]
             ]
         )
     )]
@@ -156,6 +248,16 @@ class StaffController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Schedule updated successfully'),
                 new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Schedule updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'shifts' => [
+                        ['id' => 1, 'shift_name' => 'الوردية الصباحية', 'start_time' => '08:00', 'end_time' => '16:00']
+                    ]
+                ]
             ]
         )
     )]
@@ -191,19 +293,57 @@ class StaffController extends BaseController
                     type: 'object',
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'username', type: 'string', nullable: true, example: 'staff_1_abcd'),
+                        new OA\Property(property: 'person_id', type: 'integer', example: 10),
+                        new OA\Property(property: 'qr_code', type: 'string', example: 'QR-STF-001'),
+                        new OA\Property(property: 'role', type: 'string', example: 'reception'),
+                        new OA\Property(property: 'employment_type', type: 'string', example: 'fixed_salary'),
+                        new OA\Property(property: 'base_salary', type: 'number', example: 5000.00),
+                        new OA\Property(property: 'work_status', type: 'string', example: 'active'),
+                        new OA\Property(property: 'start_date', type: 'string', example: '2026-07-16'),
+                        new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                        new OA\Property(property: 'end_time', type: 'string', example: '16:00'),
                         new OA\Property(
                             property: 'person',
                             type: 'object',
-                            nullable: true,
                             properties: [
                                 new OA\Property(property: 'full_name', type: 'string', example: 'John Doe'),
-                                new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female'], example: 'male', nullable: true, description: 'الجنس'),
-                                new OA\Property(property: 'phone_number', type: 'string', example: '234567890')
+                                new OA\Property(property: 'country_code', type: 'string', example: '+966'),
+                                new OA\Property(property: 'phone_number', type: 'string', example: '599123456'),
+                                new OA\Property(property: 'email', type: 'string', example: 'john@example.com'),
+                                new OA\Property(property: 'gender', type: 'string', example: 'male'),
+                                new OA\Property(property: 'age', type: 'integer', example: 28),
+                                new OA\Property(property: 'dob', type: 'string', example: '1998-05-15'),
+                                new OA\Property(property: 'photo_url', type: 'string', example: 'storage/photos/john.jpg')
                             ]
                         )
                     ]
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff retrieved successfully',
+                'data' => [
+                    'id' => 1,
+                    'person_id' => 10,
+                    'qr_code' => 'QR-STF-001',
+                    'role' => 'reception',
+                    'employment_type' => 'fixed_salary',
+                    'base_salary' => 5000.00,
+                    'work_status' => 'active',
+                    'start_date' => '2026-07-16',
+                    'start_time' => '08:00',
+                    'end_time' => '16:00',
+                    'person' => [
+                        'full_name' => 'John Doe',
+                        'country_code' => '+966',
+                        'phone_number' => '599123456',
+                        'email' => 'john@example.com',
+                        'gender' => 'male',
+                        'age' => 28,
+                        'dob' => '1998-05-15',
+                        'photo_url' => 'storage/photos/john.jpg'
+                    ]
+                ]
             ]
         )
     )]
@@ -253,7 +393,28 @@ class StaffController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Staff updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'role', type: 'string', example: 'reception'),
+                        new OA\Property(property: 'base_salary', type: 'number', example: 5500.00),
+                        new OA\Property(property: 'work_status', type: 'string', example: 'active'),
+                        new OA\Property(property: 'reason', type: 'string', example: 'تعديل المسمى الوظيفي والراتب')
+                    ]
+                )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'role' => 'reception',
+                    'base_salary' => 5500.00,
+                    'work_status' => 'active',
+                    'reason' => 'تعديل المسمى الوظيفي والراتب'
+                ]
             ]
         )
     )]
@@ -288,7 +449,25 @@ class StaffController extends BaseController
             )
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم تحديث الصورة بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Staff photo updated successfully'), new OA\Property(property: 'data', type: 'object')]))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحديث الصورة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff photo updated successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff photo updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'photo_url' => 'storage/photos/staff_1.jpg'
+                ]
+            ]
+        )
+    )]
     #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
@@ -314,6 +493,14 @@ class StaffController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Status toggled successfully'),
                 new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Status toggled successfully',
+                'data' => [
+                    'id' => 1,
+                    'work_status' => 'suspended'
+                ]
             ]
         )
     )]
@@ -350,6 +537,11 @@ class StaffController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Branches synced successfully'),
                 new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Branches synced successfully',
+                'data' => null
             ]
         )
     )]
@@ -389,9 +581,25 @@ class StaffController extends BaseController
     )]
     #[OA\Parameter(name: 'staff', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
-    #[OA\Response(response: 200, description: '✅ تم حذف الموظف بنجاح')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
-    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم حذف الموظف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff deleted successfully',
+                'data' => null
+            ]
+        )
+    )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Deletion confirmation failed.')]))]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(Request $request, $id)
     {
         $confirmation = $request->input('confirmation', '');
@@ -408,7 +616,30 @@ class StaffController extends BaseController
     )]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب الموظفين المحذوفين بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب الموظفين المحذوفين بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Trashed staff retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Trashed staff retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 5,
+                        'username' => 'deleted_staff',
+                        'role' => 'reception',
+                        'deleted_at' => '2026-08-01 12:00:00'
+                    ]
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function trashed(Request $request)
     {
         $staff = $this->staffService->getTrashedStaff($request->all());
@@ -426,7 +657,28 @@ class StaffController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الموظف بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الموظف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Staff restored successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Staff restored successfully',
+                'data' => [
+                    'id' => 5,
+                    'username' => 'restored_staff',
+                    'work_status' => 'active'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 الموظف غير موجود في المهملات', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function restore($id)
     {
         $staff = $this->staffService->restoreStaff((int) $id);

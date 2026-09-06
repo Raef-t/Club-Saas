@@ -28,8 +28,9 @@ class SubscriptionPlanController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
-    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
+    #[OA\Parameter(name: 'available', in: 'query', required: false, description: 'تصفية الخطط المتاحة للتسجيل فقط (true/false)', schema: new OA\Schema(type: 'boolean', example: true))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
@@ -47,15 +48,35 @@ class SubscriptionPlanController extends BaseController
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 1),
                             new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
+                            new OA\Property(property: 'name', type: 'string', example: 'الاشتراك الذهبي'),
+                            new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
                             new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
                             new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
                             new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
                             new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
-                            new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active'),
+                            new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], example: 'active'),
                             new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription plans retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 1,
+                        'subscription_number' => '25487965',
+                        'name' => 'الاشتراك الذهبي',
+                        'base_price' => 350.00,
+                        'max_subscribers' => 50,
+                        'current_subscribers' => 10,
+                        'is_unlimited_subscribers' => false,
+                        'gender_restriction' => 'mixed',
+                        'status' => 'active',
+                        'activities' => []
+                    ]
+                ]
             ]
         )
     )]
@@ -110,15 +131,39 @@ class SubscriptionPlanController extends BaseController
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
         response: 200,
-        description: '✅ قائمة خطط الاشتراك المتاحة',
+        description: '✅ قائمة خطط الاشتراك المتاحة للتسجيل',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Registration plans retrieved successfully'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Registration plans retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 1,
+                        'name' => 'الاشتراك الذهبي',
+                        'base_price' => 350.00,
+                        'max_subscribers' => 50,
+                        'current_subscribers' => 10,
+                        'is_unlimited_subscribers' => false,
+                        'gender_restriction' => 'mixed',
+                        'status' => 'active',
+                        'activities' => [
+                            [
+                                'id' => 1,
+                                'activity_name' => 'كرة القدم',
+                                'coach_name' => 'كابتن أحمد'
+                            ]
+                        ]
+                    ]
+                ]
             ]
         )
     )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function registrationPlans(\Illuminate\Http\Request $request)
     {
         // Get active plans that have available capacity, and eager load their activities
@@ -205,22 +250,26 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan created successfully'),
-                new OA\Property(
-                    property: 'data', 
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
-                        new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
-                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
-                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active')
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription plan created successfully',
+                'data' => [
+                    'id' => 1,
+                    'subscription_number' => '25487965',
+                    'name' => 'الاشتراك الذهبي',
+                    'base_price' => 350.00,
+                    'max_subscribers' => 50,
+                    'current_subscribers' => 0,
+                    'is_unlimited_subscribers' => false,
+                    'gender_restriction' => 'mixed',
+                    'status' => 'active'
+                ]
             ]
         )
     )]
+    #[OA\Response(response: 400, description: '❌ خطأ في عملية الإنشاء', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Subscription plan creation failed.')]))]
     #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreSubscriptionPlanRequest $request)
@@ -248,20 +297,23 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan retrieved successfully'),
-                new OA\Property(
-                    property: 'data', 
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
-                        new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
-                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
-                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active'),
-                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription plan retrieved successfully',
+                'data' => [
+                    'id' => 1,
+                    'subscription_number' => '25487965',
+                    'name' => 'الاشتراك الذهبي',
+                    'base_price' => 350.00,
+                    'max_subscribers' => 50,
+                    'current_subscribers' => 10,
+                    'is_unlimited_subscribers' => false,
+                    'gender_restriction' => 'mixed',
+                    'status' => 'active',
+                    'activities' => []
+                ]
             ]
         )
     )]
@@ -335,19 +387,18 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan updated successfully'),
-                new OA\Property(
-                    property: 'data', 
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'subscription_number', type: 'string', example: '25487965'),
-                        new OA\Property(property: 'max_subscribers', type: 'integer', example: 50),
-                        new OA\Property(property: 'current_subscribers', type: 'integer', example: 10),
-                        new OA\Property(property: 'is_unlimited_subscribers', type: 'boolean', example: false),
-                        new OA\Property(property: 'gender_restriction', type: 'string', example: 'mixed'),
-                        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'completed'], description: 'حالة الخطة: active (نشطة), inactive (غير نشطة), completed (مكتملة)', example: 'active')
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription plan updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'subscription_number' => '25487965',
+                    'name' => 'الاشتراك الماسي',
+                    'base_price' => 400.00,
+                    'status' => 'active'
+                ]
             ]
         )
     )]
@@ -404,6 +455,8 @@ class SubscriptionPlanController extends BaseController
             ]
         )
     )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function deleteCheck($id)
     {
         $info = $this->planRepository->getDeleteCheckInfo($id);
@@ -440,6 +493,11 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan deleted successfully'),
                 new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription plan deleted successfully',
+                'data' => null
             ]
         )
     )]
@@ -473,48 +531,46 @@ class SubscriptionPlanController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Plan active players retrieved successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'plan_name', type: 'string', example: 'الاشتراك الذهبي'),
-                        new OA\Property(property: 'total_active_subscribers', type: 'integer', example: 5),
-                        new OA\Property(
-                            property: 'players',
-                            type: 'array',
-                            items: new OA\Items(
-                                type: 'object',
-                                properties: [
-                                    new OA\Property(property: 'subscription_id', type: 'integer', example: 105),
-                                    new OA\Property(property: 'subscription_status', type: 'string', example: 'active'),
-                                    new OA\Property(property: 'start_date', type: 'string', example: '2026-08-01'),
-                                    new OA\Property(property: 'end_date', type: 'string', example: '2026-09-01'),
-                                    new OA\Property(property: 'total_amount', type: 'number', example: 350.00),
-                                    new OA\Property(property: 'paid_amount', type: 'number', example: 350.00),
-                                    new OA\Property(property: 'remaining_amount', type: 'number', example: 0.00),
-                                    new OA\Property(property: 'is_fully_paid', type: 'boolean', example: true),
-                                    new OA\Property(property: 'member_id', type: 'integer', example: 12),
-                                    new OA\Property(property: 'member_number', type: 'string', example: 'MEM-2026-0012'),
-                                    new OA\Property(property: 'membership_status', type: 'string', example: 'active'),
-                                    new OA\Property(property: 'person_id', type: 'integer', example: 45),
-                                    new OA\Property(property: 'full_name', type: 'string', example: 'أحمد علي'),
-                                    new OA\Property(property: 'username', type: 'string', example: 'ahmed_ali99'),
-                                    new OA\Property(property: 'email', type: 'string', example: 'ahmed@example.com'),
-                                    new OA\Property(property: 'phone', type: 'string', example: '0599123456'),
-                                    new OA\Property(property: 'gender', type: 'string', example: 'male'),
-                                    new OA\Property(property: 'age', type: 'integer', example: 25),
-                                    new OA\Property(property: 'dob', type: 'string', example: '2001-05-15', description: 'تاريخ الميلاد'),
-                                    new OA\Property(property: 'photo_url', type: 'string', example: 'storage/photos/ahmed.jpg'),
-                                    new OA\Property(property: 'today_qr_code', type: 'string', example: 'QR-A1B2C3D4E5F678901234567890ABCDEF')
-                                ]
-                            )
-                        )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Plan active players retrieved successfully',
+                'data' => [
+                    'plan_id' => 1,
+                    'plan_name' => 'الاشتراك الذهبي',
+                    'total_active_subscribers' => 1,
+                    'players' => [
+                        [
+                            'subscription_id' => 105,
+                            'subscription_status' => 'active',
+                            'start_date' => '2026-08-01',
+                            'end_date' => '2026-09-01',
+                            'total_amount' => 350.00,
+                            'paid_amount' => 350.00,
+                            'remaining_amount' => 0.00,
+                            'is_fully_paid' => true,
+                            'member_id' => 12,
+                            'member_number' => 'MEM-2026-0012',
+                            'membership_status' => 'active',
+                            'person_id' => 45,
+                            'full_name' => 'أحمد علي',
+                            'username' => 'ahmed_ali99',
+                            'email' => 'ahmed@example.com',
+                            'phone' => '0599123456',
+                            'gender' => 'male',
+                            'age' => 25,
+                            'dob' => '2001-05-15',
+                            'photo_url' => 'storage/photos/ahmed.jpg',
+                            'today_qr_code' => 'QR-A1B2C3D4E5F67890'
+                        ]
                     ]
-                )
+                ]
             ]
         )
     )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخطة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function players(\Illuminate\Http\Request $request, $id)
     {
         $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::findOrFail($id);
@@ -591,13 +647,35 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/trashed',
         summary: '🗑️ عرض باقات الاشتراك المحذوفة (سلة المهملات)',
         description: 'جلب قائمة بباقات الاشتراك المحذوفة.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب الباقات المحذوفة بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب الباقات المحذوفة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Trashed subscription plans retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Trashed subscription plans retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 2,
+                        'name' => 'الاشتراك الفضي',
+                        'deleted_at' => '2026-08-15 10:00:00'
+                    ]
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function trashed(Request $request)
     {
         $plans = $this->planRepository->getTrashed($request->all());
@@ -608,11 +686,32 @@ class SubscriptionPlanController extends BaseController
         path: '/v1/subscription-plans/{id}/restore',
         summary: '♻️ استرجاع باقة اشتراك محذوفة',
         description: 'استرجاع باقة الاشتراك وكافة الاشتراكات التابعة لها من سلة المهملات.',
-        tags: ['Subscription Management'],
+        tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الباقة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الباقة بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع الباقة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Subscription plan restored successfully'),
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription plan restored successfully',
+                'data' => [
+                    'id' => 2,
+                    'name' => 'الاشتراك الفضي',
+                    'status' => 'active'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الباقة في المهملات', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function restore($id)
     {
         $plan = $this->planRepository->restore((int) $id);

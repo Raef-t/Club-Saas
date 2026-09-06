@@ -13,36 +13,56 @@ class InvoiceController extends BaseController
 {
     #[OA\Get(
         path: '/v1/my-invoices',
-        summary: '💳 فواتيري',
-        description: 'استرجاع جميع فواتير العضو المصادق عليه مع تفاصيل المدفوعات الإجمالية والتفصيلية.',
+        summary: '💳 عرض فواتير العضو المصادق عليه',
+        description: 'استرجاع جميع فواتير العضو المصادق عليه متضمنة التفاصيل الإجمالية (إجمالي المدفوع، المتبقي، وإجمالي الفواتير).',
         tags: ['Invoices & Payments'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ تم استرجاع الفواتير بنجاح',
+        description: '✅ تم استرجاع قائمة فواتير العضو بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Invoices retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object', properties: [
-                    new OA\Property(property: 'total_paid', type: 'number', format: 'float', example: 1000.00),
-                    new OA\Property(property: 'total_remaining', type: 'number', format: 'float', example: 500.00),
-                    new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 1500.00),
-                    new OA\Property(property: 'invoices', type: 'array', items: new OA\Items(type: 'object', properties: [
-                        new OA\Property(property: 'code', type: 'string', example: 'INV_123456789'),
-                        new OA\Property(property: 'created_at', type: 'string', example: '2026-06-30'),
-                        new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 500.00),
-                        new OA\Property(property: 'subscription_name', type: 'string', example: 'Gold Plan'),
-                        new OA\Property(property: 'total', type: 'number', format: 'float', example: 1000.00),
-                        new OA\Property(property: 'remaining_amount', type: 'number', format: 'float', example: 500.00)
-                    ]))
-                ])
+            example: [
+                'status' => 'success',
+                'message' => 'Invoices retrieved successfully',
+                'data' => [
+                    'total_paid' => 1000.00,
+                    'total_remaining' => 500.00,
+                    'total_amount' => 1500.00,
+                    'invoices' => [
+                        [
+                            'code' => 'INV_123456789',
+                            'created_at' => '2026-06-30',
+                            'paid_amount' => 500.00,
+                            'subscription_name' => 'الاشتراك الذهبي - Gold Plan',
+                            'total' => 1000.00,
+                            'remaining_amount' => 500.00
+                        ]
+                    ]
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 403, description: '🚫 الملف الشخصي غير موجود')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(
+        response: 403,
+        description: '🚫 الملف الشخصي للعضو غير موجود',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Member profile not found.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح - رمز المرور مفقود أو غير صالح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
+            ]
+        )
+    )]
     public function myInvoices(Request $request)
     {
         $user = $request->user();

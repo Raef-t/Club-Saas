@@ -32,10 +32,98 @@ class ReceptionAttendanceController extends BaseController
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'memberId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\Parameter(name: 'date', in: 'query', required: false, description: 'تاريخ التحقق من الجلسات (الافتراضي: اليوم بصيغة Y-m-d)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-08-19'))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الاشتراكات', content: new OA\JsonContent())]
-    #[OA\Response(response: 404, description: '❌ لا توجد اشتراكات نشطة لها جلسات اليوم')]
+    #[OA\Parameter(
+        name: 'memberId',
+        in: 'path',
+        required: true,
+        description: 'المعرف الرقمي للاعب / العضو',
+        schema: new OA\Schema(type: 'integer', example: 10)
+    )]
+    #[OA\Parameter(
+        name: 'date',
+        in: 'query',
+        required: false,
+        description: 'تاريخ التحقق من الجلسات (الافتراضي: اليوم بصيغة Y-m-d)',
+        schema: new OA\Schema(type: 'string', format: 'date', example: '2026-08-19')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع قائمة الاشتراكات المتاحة بنجاح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'success',
+                'message' => 'Subscriptions retrieved successfully',
+                'data' => [
+                    [
+                        'player_subscription_id' => 5,
+                        'member_id' => 10,
+                        'plan_id' => 2,
+                        'plan_name' => 'اشتراك سباحة وجيم ثلاثي الأشهر',
+                        'start_date' => '2026-06-01',
+                        'end_date' => '2026-09-01',
+                        'status' => 'active',
+                        'total_amount' => 1200.0,
+                        'paid_amount' => 1200.0,
+                        'remaining_amount' => 0.0,
+                        'notes' => null,
+                        'items' => [
+                            [
+                                'id' => 12,
+                                'sessions_allocated' => 24,
+                                'sessions_consumed' => 8,
+                                'is_unlimited' => false,
+                                'sessions_remaining' => 16,
+                                'activity_id' => 1,
+                                'activity_name' => 'سباحة',
+                                'coach' => [
+                                    'id' => 3,
+                                    'name' => 'الكابتن علي حسين',
+                                    'role' => 'coach'
+                                ]
+                            ]
+                        ],
+                        'total_sessions_allocated' => 24,
+                        'total_sessions_consumed' => 8,
+                        'total_sessions_remaining' => 16,
+                        'today_sessions' => [
+                            [
+                                'session_template_id' => 101,
+                                'day_of_week' => 3,
+                                'start_time' => '16:00:00',
+                                'end_time' => '17:30:00',
+                                'facility_id' => 2,
+                                'facility_name' => 'المسبح الأولمبي'
+                            ]
+                        ],
+                        'has_scheduled_sessions' => true,
+                        'is_on_schedule' => true,
+                        'requires_override_reason' => false,
+                        'active_lockers' => [
+                            [
+                                'reservation_id' => 1,
+                                'locker_id' => 15,
+                                'locker_number' => 'L-105',
+                                'branch_id' => 1,
+                                'start_date' => '2026-06-01',
+                                'end_date' => '2026-09-01',
+                                'price' => 50.0
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: '❌ لا توجد اشتراكات نشطة أو لا توجد جلسات مجدولة اليوم',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'لا توجد جلسات مجدولة لهذا المشترك اليوم.'
+            ]
+        )
+    )]
     public function memberSubscriptions(Request $request, int $memberId)
     {
         try {
@@ -338,28 +426,70 @@ class ReceptionAttendanceController extends BaseController
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-    #[OA\RequestBody(required: true, content: new OA\JsonContent(
-        required: ['player_subscription_ids'],
-        properties: [
-            new OA\Property(
-                property: 'player_subscription_ids',
-                type: 'array',
-                items: new OA\Items(type: 'integer'),
-                example: [5, 7],
-                description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم منها (يمكن إرسال اشتراك واحد أو أكثر)'
-            ),
-            new OA\Property(
-                property: 'notes',
-                type: 'string',
-                nullable: true,
-                example: 'اللاعبة غيرت موعدها لظرف خاص',
-                description: 'سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي عند الحضور خارج وقت الجلسة)'
-            ),
-        ]
-    ))]
-    #[OA\Response(response: 200, description: '✅ تم خصم الجلسات بنجاح', content: new OA\JsonContent())]
-    #[OA\Response(response: 400, description: '❌ لا يمكن خصم الجلسة (ديون، لا يوجد جلسات متبقية، تم الخصم مسبقاً)')]
+    #[OA\Parameter(
+        name: 'attendanceId',
+        in: 'path',
+        required: true,
+        description: 'المعرف الرقمي لسجل الحضور (الذي يكون في حالة معلق الخصم pending)',
+        schema: new OA\Schema(type: 'integer', example: 105)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: 'اشتراكات اللاعب المراد خصم الجلسات منها وسبب تجاوز الموعد إن وجد',
+        content: new OA\JsonContent(
+            required: ['player_subscription_ids'],
+            properties: [
+                new OA\Property(
+                    property: 'player_subscription_ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer'),
+                    example: [5, 7],
+                    description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم منها (يمكن إرسال اشتراك واحد أو أكثر)'
+                ),
+                new OA\Property(
+                    property: 'notes',
+                    type: 'string',
+                    nullable: true,
+                    example: 'اللاعبة غيرت موعدها لظرف خاص',
+                    description: 'سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي عند الحضور خارج وقت الجلسة)'
+                ),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم خصم الجلسات بنجاح وتأكيد الحضور',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'success',
+                'message' => 'Sessions deducted successfully.',
+                'data' => [
+                    'id' => 105,
+                    'member_id' => 10,
+                    'check_in' => '2026-08-19 16:10:00',
+                    'status' => 'deducted',
+                    'deducted_subscriptions' => [
+                        [
+                            'player_subscription_id' => 5,
+                            'plan_name' => 'اشتراك سباحة وجيم ثلاثي الأشهر',
+                            'sessions_deducted' => 1,
+                            'sessions_remaining_after' => 15
+                        ]
+                    ]
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: '❌ لا يمكن خصم الجلسة (وجود ديون، عدم توفر جلسات متبقية، أو تم الخصم مسبقاً)',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'عذراً، لا توجد جلسات متبقية للاخصم في هذا الاشتراك.'
+            ]
+        )
+    )]
     public function deductSession(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
         $rawIds = $request->input('player_subscription_ids') 
@@ -416,9 +546,16 @@ DESC,
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'attendanceId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(
+        name: 'attendanceId',
+        in: 'path',
+        required: true,
+        description: 'المعرف الرقمي لسجل الحضور المراد إلغاؤه أو التراجع عن خصم جلساته',
+        schema: new OA\Schema(type: 'integer', example: 105)
+    )]
     #[OA\RequestBody(
         required: false,
+        description: 'اختياري: معرفات الاشتراكات المراد إرجاع خصمها فقط (في حال التراجع الجزئي)',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(
@@ -438,14 +575,25 @@ DESC
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ تم إرجاع الخصم بنجاح',
+        description: '✅ تم إرجاع الخصم وإلغاء الحضور بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'Attendance rolled back and session returned successfully.'),
+            example: [
+                'status' => 'success',
+                'message' => 'Attendance rolled back and session returned successfully.',
+                'data' => null
             ]
         )
     )]
-    #[OA\Response(response: 400, description: '❌ خطأ: الاشتراك غير موجود في سجل الخصومات أو لا يمكن إلغاء الحضور')]
+    #[OA\Response(
+        response: 400,
+        description: '❌ خطأ: الاشتراك غير موجود في سجل الخصومات أو تعذر إلغاء الحضور',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Specified subscription deduction not found in this attendance record.'
+            ]
+        )
+    )]
     public function rollbackAttendance(int $attendanceId, Request $request, \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService)
     {
         $request->validate([

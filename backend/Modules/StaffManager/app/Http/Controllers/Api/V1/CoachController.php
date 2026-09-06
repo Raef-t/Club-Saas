@@ -76,10 +76,64 @@ class CoachController extends BaseController
             new OA\Response(
                 response: 201, 
                 description: 'Coach created successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach created successfully')
-                ])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Coach created successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 5,
+                            'person_id' => 12,
+                            'qr_code' => 'data:image/png;base64,iVBORw0KGgo...',
+                            'branch_ids' => [1],
+                            'role' => 'coach',
+                            'employment_type' => 'fixed_salary',
+                            'base_salary' => 5000,
+                            'start_date' => '2026-07-16',
+                            'end_date' => null,
+                            'start_time' => null,
+                            'end_time' => null,
+                            'work_status' => 'active',
+                            'reason' => null,
+                            'created_at' => '2026-07-16T10:00:00.000000Z',
+                            'updated_at' => '2026-07-16T10:00:00.000000Z',
+                            'person' => [
+                                'id' => 12,
+                                'full_name' => 'Ahmed Ali',
+                                'gender' => 'male',
+                                'age' => 30,
+                                'dob' => '1990-01-01',
+                                'address' => 'شارع الملك فهد، الرياض',
+                                'photo_url' => null,
+                                'email' => 'ahmed.ali@example.com',
+                                'phone_number' => '500000000',
+                                'country_code' => '+966'
+                            ],
+                            'username' => 'coach_ahmed',
+                            'details' => [
+                                'id' => 5,
+                                'staff_id' => 5,
+                                'bio' => null,
+                                'experience_years' => 5,
+                                'gym_type' => 'male',
+                                'work_types' => ['equipment'],
+                                'working_hours_per_week' => 40,
+                                'payment_type' => 'fixed_salary',
+                                'commission_type' => 'percentage',
+                                'default_commission_rate' => 20.5,
+                                'private_commission_rate' => null,
+                                'created_at' => '2026-07-16T10:00:00.000000Z',
+                                'updated_at' => '2026-07-16T10:00:00.000000Z'
+                            ],
+                            'experience_years' => 5,
+                            'work_types' => ['equipment'],
+                            'shifts' => [],
+                            'activities' => []
+                        ],
+                        'message' => 'Coach created successfully'
+                    ]
+                )
             ),
             new OA\Response(
                 response: 400, 
@@ -404,15 +458,26 @@ class CoachController extends BaseController
             new OA\Response(
                 response: 200, 
                 description: 'Coaches statistics',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', type: 'object', properties: [
-                        new OA\Property(property: 'total_coaches', type: 'integer'),
-                        new OA\Property(property: 'active_coaches', type: 'integer'),
-                        new OA\Property(property: 'fixed_salary_coaches', type: 'integer'),
-                        new OA\Property(property: 'commission_based_coaches', type: 'integer'),
-                        new OA\Property(property: 'hybrid_coaches', type: 'integer'),
-                    ])
-                ])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object', properties: [
+                            new OA\Property(property: 'total_coaches', type: 'integer', example: 15),
+                            new OA\Property(property: 'active_coaches', type: 'integer', example: 12),
+                            new OA\Property(property: 'fixed_salary_coaches', type: 'integer', example: 5),
+                            new OA\Property(property: 'commission_based_coaches', type: 'integer', example: 4),
+                            new OA\Property(property: 'hybrid_coaches', type: 'integer', example: 3),
+                        ])
+                    ],
+                    example: [
+                        'data' => [
+                            'total_coaches' => 15,
+                            'active_coaches' => 12,
+                            'fixed_salary_coaches' => 5,
+                            'commission_based_coaches' => 4,
+                            'hybrid_coaches' => 3
+                        ]
+                    ]
+                )
             ),
             new OA\Response(
                 response: 500, 
@@ -713,10 +778,37 @@ class CoachController extends BaseController
             new OA\Response(
                 response: 200, 
                 description: 'Coach updated successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach updated successfully')
-                ])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Coach updated successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 5,
+                            'person_id' => 12,
+                            'qr_code' => 'data:image/png;base64,iVBORw0KGgo...',
+                            'branch_ids' => [1],
+                            'role' => 'coach',
+                            'employment_type' => 'hybrid',
+                            'base_salary' => 6000,
+                            'start_date' => '2026-07-16',
+                            'end_date' => null,
+                            'work_status' => 'active',
+                            'reason' => 'تحديث الراتب ونوع التوظيف',
+                            'updated_at' => '2026-07-16T11:00:00.000000Z',
+                            'person' => [
+                                'id' => 12,
+                                'full_name' => 'Ahmed Ali',
+                                'gender' => 'male',
+                                'age' => 30,
+                                'phone_number' => '500000000',
+                                'country_code' => '+966'
+                            ]
+                        ],
+                        'message' => 'Coach updated successfully'
+                    ]
+                )
             ),
             new OA\Response(
                 response: 400, 
@@ -822,10 +914,23 @@ class CoachController extends BaseController
             new OA\Response(
                 response: 200,
                 description: 'Photo updated successfully',
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
-                    new OA\Property(property: 'message', type: 'string', example: 'Coach photo updated successfully')
-                ])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Coach photo updated successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 5,
+                            'person' => [
+                                'id' => 12,
+                                'full_name' => 'Ahmed Ali',
+                                'photo_url' => 'https://api.domain.com/storage/people/photos/coach_5.jpg'
+                            ]
+                        ],
+                        'message' => 'Coach photo updated successfully'
+                    ]
+                )
             ),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')])),
             new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')])),
@@ -874,7 +979,33 @@ class CoachController extends BaseController
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Schedule updated successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+            new OA\Response(
+                response: 200, 
+                description: 'Schedule updated successfully', 
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Schedule updated successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 5,
+                            'full_name' => 'Ahmed Ali',
+                            'shifts' => [
+                                [
+                                    'id' => 1,
+                                    'name' => 'الشفت الصباحي',
+                                    'start_time' => '08:00',
+                                    'end_time' => '16:00'
+                                ]
+                            ]
+                        ],
+                        'message' => 'Schedule updated successfully'
+                    ]
+                )
+            ),
+            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')])),
+            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'An error occurred.')]))
         ]
     )]
     public function setSchedule(SetStaffScheduleRequest $request, $id)
@@ -916,7 +1047,22 @@ class CoachController extends BaseController
             new OA\Response(
                 response: 201, 
                 description: 'Shift created successfully', 
-                content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Shift created successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 10,
+                            'staff_id' => 5,
+                            'branch_shift_id' => 1,
+                            'date' => '2026-11-01',
+                            'shift_name' => 'الشفت الصباحي'
+                        ],
+                        'message' => 'Shift created successfully'
+                    ]
+                )
             ),
             new OA\Response(
                 response: 422, 
@@ -974,7 +1120,25 @@ class CoachController extends BaseController
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Shift updated successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+            new OA\Response(
+                response: 200, 
+                description: 'Shift updated successfully', 
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'object'),
+                        new OA\Property(property: 'message', type: 'string', example: 'Shift updated successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            'id' => 10,
+                            'staff_id' => 5,
+                            'branch_shift_id' => 1,
+                            'date' => '2026-11-02'
+                        ],
+                        'message' => 'Shift updated successfully'
+                    ]
+                )
+            )
         ]
     )]
     public function updateShift(Request $request, $id, $shiftId)
@@ -1005,7 +1169,18 @@ class CoachController extends BaseController
             new OA\Parameter(name: 'shiftId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Shift deleted successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))
+            new OA\Response(
+                response: 200, 
+                description: 'Shift deleted successfully', 
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Shift deleted successfully')
+                    ],
+                    example: [
+                        'message' => 'Shift deleted successfully'
+                    ]
+                )
+            )
         ]
     )]
     public function removeShift($id, $shiftId)
@@ -1030,9 +1205,35 @@ class CoachController extends BaseController
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of shifts retrieved successfully', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'message', type: 'string')])),
-            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')])),
-            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'error', type: 'string')]))
+            new OA\Response(
+                response: 200, 
+                description: 'List of shifts retrieved successfully', 
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), 
+                        new OA\Property(property: 'message', type: 'string', example: 'Shifts retrieved successfully')
+                    ],
+                    example: [
+                        'data' => [
+                            [
+                                'id' => 10,
+                                'staff_id' => 5,
+                                'branch_shift_id' => 2,
+                                'date' => '2026-07-16',
+                                'branch_shift' => [
+                                    'id' => 2,
+                                    'name' => 'الشفت الصباحي',
+                                    'start_time' => '08:00',
+                                    'end_time' => '16:00'
+                                ]
+                            ]
+                        ],
+                        'message' => 'Shifts retrieved successfully'
+                    ]
+                )
+            ),
+            new OA\Response(response: 404, description: 'Coach not found', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')])),
+            new OA\Response(response: 500, description: 'Server Error', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'An error occurred.')]))
         ]
     )]
     public function getShifts($id)
@@ -1060,9 +1261,41 @@ class CoachController extends BaseController
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف المدرب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
-    #[OA\Response(response: 200, description: '✅ تم حذف المدرب بنجاح')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
-    #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم حذف المدرب بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Coach deleted successfully')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Coach deleted successfully'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422, 
+        description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'يجب كتابة كلمة التأكيد "delete" لإتمام الحذف.')
+            ],
+            example: [
+                'message' => 'يجب كتابة كلمة التأكيد "delete" لإتمام الحذف.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404, 
+        description: '🚫 المدرب غير موجود',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Coach not found.')
+            ]
+        )
+    )]
 
     public function destroy(Request $request, $id)
     {
@@ -1110,11 +1343,27 @@ class CoachController extends BaseController
     #[OA\Response(
         response: 200, 
         description: '✅ تم استرجاع المدرب بنجاح',
-        content: new OA\JsonContent(properties: [
-            new OA\Property(property: 'status', type: 'string', example: 'success'),
-            new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
-            new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
-        ])
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
+                new OA\Property(property: 'message', type: 'string', example: 'Coach restored successfully')
+            ],
+            example: [
+                'status' => 'success',
+                'data' => [
+                    'id' => 5,
+                    'person_id' => 12,
+                    'role' => 'coach',
+                    'work_status' => 'active',
+                    'person' => [
+                        'id' => 12,
+                        'full_name' => 'Ahmed Ali'
+                    ]
+                ],
+                'message' => 'Coach restored successfully'
+            ]
+        )
     )]
     #[OA\Response(response: 404, description: '🚫 المدرب غير موجود')]
     public function restore($id)

@@ -18,7 +18,7 @@ class SubscriptionPlanSuspensionController extends BaseController
     #[OA\Post(
         path: '/v1/subscription-plans/{id}/suspensions/preview',
         summary: '🔍 معاينة المتأثرين وتمديد الأيام قبل إيقاف الفعالية',
-        description: 'استرجاع تقرير تفصيلي باللاعبين المتأثرين، أيام التمديد المحسوبة لكل لاعب، والجلسات التي سيتم إلغاؤها.',
+        description: 'استرجاع تقرير تفصيلي باللاعبين المتأثرين، أيام التمديد المحسوبة لكل لاعب، والجلسات التي سيتم إلغاؤها قبل اعتماد الإيقاف.',
         tags: ['Subscription Plan Suspensions'],
         security: [['bearerAuth' => []]]
     )]
@@ -40,10 +40,37 @@ class SubscriptionPlanSuspensionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Suspension preview generated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك السباحة للأطفال'),
+                        new OA\Property(property: 'suspend_start_date', type: 'string', example: '2026-08-15'),
+                        new OA\Property(property: 'suspend_end_date', type: 'string', example: '2026-08-22'),
+                        new OA\Property(property: 'total_affected_members', type: 'integer', example: 12),
+                        new OA\Property(
+                            property: 'affected_members',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'member_id', type: 'integer', example: 5),
+                                    new OA\Property(property: 'member_name', type: 'string', example: 'عبد الله السالم'),
+                                    new OA\Property(property: 'current_end_date', type: 'string', example: '2026-09-01'),
+                                    new OA\Property(property: 'new_end_date', type: 'string', example: '2026-09-08'),
+                                    new OA\Property(property: 'extended_days', type: 'integer', example: 7)
+                                ]
+                            )
+                        )
+                    ]
+                )
             ]
         )
     )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة التواريخ', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
+    #[OA\Response(response: 404, description: '🚫 الفعالية غير موجودة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function preview(PreviewPlanSuspensionRequest $request, int $id)
     {
         $validated = $request->validated();
@@ -82,10 +109,26 @@ class SubscriptionPlanSuspensionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan suspended successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 10),
+                        new OA\Property(property: 'subscription_plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'suspend_start_date', type: 'string', example: '2026-08-15'),
+                        new OA\Property(property: 'suspend_end_date', type: 'string', example: '2026-08-22'),
+                        new OA\Property(property: 'reason', type: 'string', example: 'ظرف صحي طارئ للكوتش'),
+                        new OA\Property(property: 'created_by', type: 'integer', example: 3),
+                        new OA\Property(property: 'status', type: 'string', example: 'active'),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:35:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في البيانات المدخلة', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
+    #[OA\Response(response: 404, description: '🚫 الفعالية غير موجودة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function suspend(SuspendPlanRequest $request, int $id)
     {
         $userId = auth('sanctum')->id();
@@ -111,10 +154,26 @@ class SubscriptionPlanSuspensionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Plan suspensions retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 10),
+                            new OA\Property(property: 'subscription_plan_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'suspend_start_date', type: 'string', example: '2026-08-15'),
+                            new OA\Property(property: 'suspend_end_date', type: 'string', example: '2026-08-22'),
+                            new OA\Property(property: 'reason', type: 'string', example: 'ظرف صحي طارئ للكوتش'),
+                            new OA\Property(property: 'status', type: 'string', example: 'active'),
+                            new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:35:00.000000Z')
+                        ]
+                    )
+                )
             ]
         )
     )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request, int $id)
     {
         $suspensions = $this->suspensionService->getSuspensions($id, $request->all());
@@ -129,7 +188,7 @@ class SubscriptionPlanSuspensionController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الفعالية', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'suspensionId', in: 'path', required: true, description: 'معرف سجل الإيقاف', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Parameter(name: 'suspensionId', in: 'path', required: true, description: 'معرف سجل الإيقاف', schema: new OA\Schema(type: 'integer', example: 10))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استئناف الفعالية وإلغاء الإيقاف بنجاح',
@@ -137,10 +196,21 @@ class SubscriptionPlanSuspensionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription plan suspension lifted successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 10),
+                        new OA\Property(property: 'subscription_plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'status', type: 'string', example: 'lifted_early'),
+                        new OA\Property(property: 'lifted_at', type: 'string', example: '2026-09-06T12:35:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
+    #[OA\Response(response: 404, description: '🚫 سجل الإيقاف غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(int $id, int $suspensionId)
     {
         $suspension = $this->suspensionService->liftSuspension($id, $suspensionId);

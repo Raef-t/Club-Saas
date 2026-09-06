@@ -24,7 +24,31 @@ class PlayerSubscriptionItemController extends BaseController
     )]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم الاسترجاع بنجاح')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم الاسترجاع بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 1,
+                        'player_subscription_id' => 1,
+                        'activity_id' => 2,
+                        'total_sessions' => 12,
+                        'remaining_sessions' => 10,
+                        'is_unlimited' => false
+                    ]
+                ]
+            ]
+        )
+    )]
     public function index(\Illuminate\Http\Request $request) {
         return $this->successResponse(PlayerSubscriptionItemResource::collection($this->service->getAll($request->all())), 'Retrieved successfully');
     }

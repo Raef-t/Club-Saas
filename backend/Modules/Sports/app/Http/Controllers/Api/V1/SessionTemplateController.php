@@ -14,7 +14,7 @@ class SessionTemplateController extends BaseController
     #[OA\Get(
         path: '/v1/session-templates',
         summary: '📅 عرض قوالب الجلسات',
-        description: 'استرجاع جميع قوالب الجلسات الأسبوعية.',
+        description: 'استرجاع جميع قوالب الجلسات الأسبوعية مع إمكانية الترقيم أو جلب الكل (per_page=all).',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
@@ -27,7 +27,24 @@ class SessionTemplateController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Templates retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                            new OA\Property(property: 'plan_id', type: 'integer', example: 2),
+                            new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
+                            new OA\Property(property: 'day_of_week', type: 'integer', description: '0=الأحد، 1=الإثنين، 2=الثلاثاء، 3=الأربعاء، 4=الخميس، 5=الجمعة، 6=السبت', example: 0),
+                            new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                            new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
+                            new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                            new OA\Property(property: 'created_at', type: 'string', example: '2026-01-10T10:00:00.000000Z'),
+                            new OA\Property(property: 'updated_at', type: 'string', example: '2026-01-10T10:00:00.000000Z')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -48,8 +65,8 @@ class SessionTemplateController extends BaseController
 
     #[OA\Get(
         path: '/v1/session-templates/schedule',
-        summary: '🗓️ جدول الجلسات',
-        description: 'استرجاع جدول دوام الجلسات الأسبوعية.',
+        summary: '🗓️ جدول الجلسات الأسبوعي',
+        description: 'استرجاع جدول دوام الجلسات الأسبوعية مقسم حسب أيام الأسبوع (Sunday, Monday, ..., Saturday) شاملاً تفاصيل المرفق والكوتش والنشاط.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
@@ -61,7 +78,56 @@ class SessionTemplateController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Session schedule retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    description: 'جدول الجلسات مقسم حسب اسم اليوم بالإنجليزية (Sunday, Monday, ...)',
+                    properties: [
+                        new OA\Property(
+                            property: 'Sunday',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'plan_id', type: 'integer', example: 2),
+                                    new OA\Property(property: 'activity_id', type: 'integer', nullable: true, example: 5),
+                                    new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 3),
+                                    new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                                    new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
+                                    new OA\Property(property: 'plan_name', type: 'string', example: 'اشتراك السباحة المتقدمة'),
+                                    new OA\Property(
+                                        property: 'facility',
+                                        type: 'object',
+                                        nullable: true,
+                                        properties: [
+                                            new OA\Property(property: 'id', type: 'integer', example: 1),
+                                            new OA\Property(property: 'name', type: 'string', example: 'المسبح الأولمبي')
+                                        ]
+                                    ),
+                                    new OA\Property(
+                                        property: 'coach',
+                                        type: 'object',
+                                        nullable: true,
+                                        properties: [
+                                            new OA\Property(property: 'id', type: 'integer', example: 3),
+                                            new OA\Property(property: 'name', type: 'string', example: 'كابتن أحمد علي')
+                                        ]
+                                    ),
+                                    new OA\Property(
+                                        property: 'activity',
+                                        type: 'object',
+                                        nullable: true,
+                                        properties: [
+                                            new OA\Property(property: 'id', type: 'integer', example: 5),
+                                            new OA\Property(property: 'name', type: 'string', example: 'سباحة حرّة')
+                                        ]
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
             ]
         )
     )]
@@ -135,8 +201,8 @@ class SessionTemplateController extends BaseController
 
     #[OA\Post(
         path: '/v1/session-templates',
-        summary: '➕ إنشاء قالب جلسة',
-        description: 'إضافة قالب جلسة رياضية أسبوعية.',
+        summary: '➕ إنشاء قالب جلسة أسبوعي',
+        description: 'إضافة قالب جلسة أسبوعية جديدة وفحص التعارض في المرفق (القاعة) أوتوماتيكياً.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
@@ -145,11 +211,11 @@ class SessionTemplateController extends BaseController
         content: new OA\JsonContent(
             required: ['plan_id', 'day_of_week', 'start_time', 'end_time'],
             properties: [
-                new OA\Property(property: 'plan_id', type: 'integer', example: 1),
-                new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
-                new OA\Property(property: 'day_of_week', type: 'integer', description: '0=Sunday, 1=Monday, ..., 6=Saturday', example: 0),
-                new OA\Property(property: 'start_time', type: 'string', format: 'time', example: '08:00'),
-                new OA\Property(property: 'end_time', type: 'string', format: 'time', example: '09:00')
+                new OA\Property(property: 'plan_id', description: '(مطلوب) معرف خطة الاشتراك', type: 'integer', example: 1),
+                new OA\Property(property: 'facility_id', description: '(اختياري) معرف المرفق/القاعة', type: 'integer', nullable: true, example: 1),
+                new OA\Property(property: 'day_of_week', description: '(مطلوب) اليوم من الأسبوع: 0=الأحد، 1=الإثنين، 2=الثلاثاء، 3=الأربعاء، 4=الخميس، 5=الجمعة، 6=السبت', type: 'integer', example: 0),
+                new OA\Property(property: 'start_time', description: '(مطلوب) وقت بدء الجلسة (HH:mm)', type: 'string', format: 'time', example: '08:00'),
+                new OA\Property(property: 'end_time', description: '(مطلوب) وقت نهاية الجلسة (HH:mm)', type: 'string', format: 'time', example: '09:00')
             ]
         )
     )]
@@ -160,11 +226,43 @@ class SessionTemplateController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Template created successfully'),
-                new OA\Property(property: 'data', type: 'object'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 5),
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'facility_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'day_of_week', type: 'integer', example: 0),
+                        new OA\Property(property: 'start_time', type: 'string', example: '08:00'),
+                        new OA\Property(property: 'end_time', type: 'string', example: '09:00'),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:30:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:30:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ خطأ في التحقق من البيانات أو وجود تعارض في وقت المرفق',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.'),
+                new OA\Property(
+                    property: 'errors',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'start_time',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', example: 'يوجد تعارض في الوقت مع جلسة أخرى في نفس المرفق (القاعة).')
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(Request $request)
     {
@@ -197,8 +295,8 @@ class SessionTemplateController extends BaseController
 
     #[OA\Put(
         path: '/v1/session-templates/{id}',
-        summary: '✏️ تعديل قالب جلسة',
-        description: 'تحديث قالب جلسة رياضية أسبوعية.',
+        summary: '✏️ تعديل قالب جلسة أسبوعي',
+        description: 'تحديث بيانات ومواعيد قالب جلسة قائمة، مع إمكانية تحديث المدرب والنشاط التابع له.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
@@ -207,19 +305,43 @@ class SessionTemplateController extends BaseController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'plan_id', type: 'integer', nullable: true, example: 2),
-                new OA\Property(property: 'facility_id', type: 'integer', nullable: true, example: 1),
-                new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
-                new OA\Property(property: 'start_time', type: 'string', example: '10:00'),
-                new OA\Property(property: 'end_time', type: 'string', example: '11:00'),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                new OA\Property(property: 'activity_id', type: 'integer', nullable: true, example: 10),
-                new OA\Property(property: 'coach_id', type: 'integer', nullable: true, example: 5)
+                new OA\Property(property: 'plan_id', description: '(اختياري) معرف خطة الاشتراك', type: 'integer', nullable: true, example: 2),
+                new OA\Property(property: 'facility_id', description: '(اختياري) معرف المرفق', type: 'integer', nullable: true, example: 1),
+                new OA\Property(property: 'day_of_week', description: '(اختياري) اليوم 0-6', type: 'integer', example: 1),
+                new OA\Property(property: 'start_time', description: '(اختياري) وقت البدء (HH:mm)', type: 'string', example: '10:00'),
+                new OA\Property(property: 'end_time', description: '(اختياري) وقت النهاية (HH:mm)', type: 'string', example: '11:00'),
+                new OA\Property(property: 'is_active', description: '(اختياري) حالة التفعيل', type: 'boolean', example: true),
+                new OA\Property(property: 'activity_id', description: '(اختياري) معرف النشاط التابع له', type: 'integer', nullable: true, example: 10),
+                new OA\Property(property: 'coach_id', description: '(اختياري) معرف المدرب التابع له', type: 'integer', nullable: true, example: 5)
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم التعديل بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'data', type: 'object')]))]
-    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم التعديل بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Template updated successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'plan_id', type: 'integer', example: 2),
+                        new OA\Property(property: 'facility_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'day_of_week', type: 'integer', example: 1),
+                        new OA\Property(property: 'start_time', type: 'string', example: '10:00'),
+                        new OA\Property(property: 'end_time', type: 'string', example: '11:00'),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:30:00.000000Z')
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من البيانات أو تعارض الوقت', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(Request $request, int $id)
     {
@@ -292,14 +414,24 @@ class SessionTemplateController extends BaseController
 
     #[OA\Delete(
         path: '/v1/session-templates/{id}',
-        summary: '🗑️ حذف قالب جلسة',
-        description: 'حذف قالب جلسة رياضية أسبوعية. لا يمكن حذفه إذا كان مرتبطاً باستثناءات أو إعفاءات مسجلة.',
+        summary: '🗑️ حذف قالب جلسة أسبوعي',
+        description: 'حذف قالب جلسة رياضية أسبوعية. يلزم إرسال confirm=delete لتأكيد الحذف.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف القالب', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'confirm', in: 'query', required: true, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: 'delete'))]
-    #[OA\Response(response: 200, description: '✅ تم الحذف بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Template deleted successfully')]))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم الحذف بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Template deleted successfully'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ]
+        )
+    )]
     #[OA\Response(
         response: 409, 
         description: '🚫 لا يمكن الحذف — القالب مرتبط ببيانات أخرى', 
@@ -310,7 +442,17 @@ class SessionTemplateController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string')]))]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ لم يتم تأكيد الحذف بالشكل الصحيح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'error'),
+                new OA\Property(property: 'message', type: 'string', example: 'يرجى تأكيد الحذف بإرسال كلمة "delete" في حقل التأكيد (confirm).')
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(Request $request, int $id)
     {
@@ -330,8 +472,8 @@ class SessionTemplateController extends BaseController
 
     #[OA\Post(
         path: '/v1/session-templates/{id}/cancel',
-        summary: '🚫 إلغاء جلسة',
-        description: 'إلغاء جلسة معينة في تاريخ محدد.',
+        summary: '🚫 إلغاء جلسة تمرين بتاريخ محدد',
+        description: 'إلغاء جلسة تمرين في تاريخ معين وتوليد إشعار تلقائي لجميع المشتركين النشطين بالخطة.',
         tags: ['Session Templates'],
         security: [['bearerAuth' => []]]
     )]
@@ -339,10 +481,10 @@ class SessionTemplateController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['date'],
+            required: ['date', 'reason'],
             properties: [
-                new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-07-20'),
-                new OA\Property(property: 'reason', type: 'string', nullable: true, example: 'اعتذار الكوتش'),
+                new OA\Property(property: 'date', type: 'string', format: 'date', description: 'تاريخ الجلسة المراد إلغاؤها (YYYY-MM-DD)', example: '2026-07-20'),
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب الإلغاء أو اعتذار الكوتش', example: 'اعتذار الكوتش عن الحضور بدواعي سفر طارئ')
             ]
         )
     )]
@@ -352,11 +494,25 @@ class SessionTemplateController extends BaseController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'Session canceled successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(property: 'message', type: 'string', example: 'Session canceled successfully for the specified date.'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 10),
+                        new OA\Property(property: 'sport_session_template_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'coach_id', type: 'integer', example: 3),
+                        new OA\Property(property: 'date', type: 'string', example: '2026-07-20'),
+                        new OA\Property(property: 'reason', type: 'string', example: 'اعتذار الكوتش عن الحضور بدواعي سفر طارئ'),
+                        new OA\Property(property: 'status', type: 'string', example: 'canceled'),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:30:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
+    #[OA\Response(response: 404, description: '🚫 القالب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function cancelSession(Request $request, int $id)
     {

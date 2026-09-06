@@ -51,20 +51,35 @@ class NotificationController extends Controller
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(
+                        type: 'object',
                         properties: [
-                            new OA\Property(property: 'reception_id', type: 'integer', example: 10),
-                            new OA\Property(property: 'title', type: 'string', example: 'تنبيه جديد'),
-                            new OA\Property(property: 'body', type: 'string', example: 'محتوى الإشعار...'),
+                            new OA\Property(property: 'recipient_id', type: 'integer', example: 10),
+                            new OA\Property(property: 'notification_id', type: 'integer', example: 101),
+                            new OA\Property(property: 'title', type: 'string', example: 'تنبيه صيانة النادي'),
+                            new OA\Property(property: 'preview', type: 'string', example: 'سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة...'),
+                            new OA\Property(
+                                property: 'sender',
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'type', type: 'string', example: 'admin')
+                                ]
+                            ),
+                            new OA\Property(property: 'target_snapshot', type: 'object'),
                             new OA\Property(property: 'is_read', type: 'boolean', example: false),
                             new OA\Property(property: 'read_at', type: 'string', format: 'date-time', nullable: true, example: null),
                             new OA\Property(property: 'delivered_at', type: 'string', format: 'date-time', nullable: true, example: '2026-07-25T09:00:00Z'),
-                            new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-07-25T08:30:00Z')
+                            new OA\Property(property: 'has_attachments', type: 'boolean', example: true),
+                            new OA\Property(property: 'attachments_count', type: 'integer', example: 1),
+                            new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-07-25T08:30:00Z'),
+                            new OA\Property(property: 'created_at_human', type: 'string', example: 'منذ ساعتين')
                         ]
                     )
                 ),
                 new OA\Property(
                     property: 'meta',
                     type: 'object',
+                    nullable: true,
                     properties: [
                         new OA\Property(property: 'current_page', type: 'integer', example: 1),
                         new OA\Property(property: 'last_page', type: 'integer', example: 5),
@@ -72,6 +87,32 @@ class NotificationController extends Controller
                         new OA\Property(property: 'total', type: 'integer', example: 72)
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'data' => [
+                    [
+                        'recipient_id' => 10,
+                        'notification_id' => 101,
+                        'title' => 'تنبيه صيانة النادي',
+                        'preview' => 'سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة...',
+                        'sender' => ['id' => 1, 'type' => 'admin'],
+                        'target_snapshot' => ['type' => 'all'],
+                        'is_read' => false,
+                        'read_at' => null,
+                        'delivered_at' => '2026-07-25T09:00:00Z',
+                        'has_attachments' => true,
+                        'attachments_count' => 1,
+                        'created_at' => '2026-07-25T08:30:00Z',
+                        'created_at_human' => 'منذ ساعتين'
+                    ]
+                ],
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 5,
+                    'per_page' => 15,
+                    'total' => 72
+                ]
             ]
         )
     )]
@@ -140,6 +181,10 @@ class NotificationController extends Controller
                         new OA\Property(property: 'unread_count', type: 'integer', example: 5)
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'data' => ['unread_count' => 5]
             ]
         )
     )]
@@ -186,14 +231,72 @@ class NotificationController extends Controller
                     property: 'data',
                     type: 'object',
                     properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 10),
-                        new OA\Property(property: 'title', type: 'string', example: 'تنبيه جديد'),
-                        new OA\Property(property: 'body', type: 'string', example: 'تفاصيل الإشعار...'),
-                        new OA\Property(property: 'delivered_at', type: 'string', format: 'date-time', example: '2026-07-25T09:30:00Z'),
-                        new OA\Property(property: 'read_at', type: 'string', format: 'date-time', nullable: true, example: null),
-                        new OA\Property(property: 'attachments', type: 'array', items: new OA\Items(type: 'object'))
+                        new OA\Property(
+                            property: 'recipient',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 10),
+                                new OA\Property(property: 'notification_id', type: 'integer', example: 101),
+                                new OA\Property(property: 'received_at', type: 'string', example: '2026-07-25 08:30:00'),
+                                new OA\Property(property: 'received_at_human', type: 'string', example: 'منذ ساعتين'),
+                                new OA\Property(property: 'read_at', type: 'string', nullable: true, example: null),
+                                new OA\Property(property: 'delivered_at', type: 'string', example: '2026-07-25 09:30:00'),
+                                new OA\Property(property: 'is_read', type: 'boolean', example: false),
+                                new OA\Property(property: 'status', type: 'string', example: 'delivered')
+                            ]
+                        ),
+                        new OA\Property(
+                            property: 'notification',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 101),
+                                new OA\Property(property: 'title', type: 'string', example: 'تنبيه صيانة النادي'),
+                                new OA\Property(property: 'body', type: 'string', example: 'سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة.'),
+                                new OA\Property(
+                                    property: 'sender',
+                                    type: 'object',
+                                    properties: [
+                                        new OA\Property(property: 'type', type: 'string', example: 'admin'),
+                                        new OA\Property(property: 'display_name', type: 'string', example: 'الإدارة')
+                                    ]
+                                ),
+                                new OA\Property(property: 'attachments', type: 'array', items: new OA\Items(type: 'object'))
+                            ]
+                        )
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'data' => [
+                    'recipient' => [
+                        'id' => 10,
+                        'notification_id' => 101,
+                        'received_at' => '2026-07-25 08:30:00',
+                        'received_at_human' => 'منذ ساعتين',
+                        'read_at' => null,
+                        'delivered_at' => '2026-07-25 09:30:00',
+                        'is_read' => false,
+                        'status' => 'delivered'
+                    ],
+                    'notification' => [
+                        'id' => 101,
+                        'title' => 'تنبيه صيانة النادي',
+                        'body' => 'سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة.',
+                        'sender' => ['type' => 'admin', 'display_name' => 'الإدارة'],
+                        'attachments' => [
+                            [
+                                'id' => 1,
+                                'name' => 'schedule.pdf',
+                                'url' => '/storage/notifications/schedule.pdf',
+                                'mime_type' => 'application/pdf',
+                                'size' => 204800,
+                                'size_formatted' => '200 KB',
+                                'is_image' => false
+                            ]
+                        ]
+                    ]
+                ]
             ]
         )
     )]
@@ -263,6 +366,10 @@ class NotificationController extends Controller
             properties: [
                 new OA\Property(property: 'status', type: 'boolean', example: true),
                 new OA\Property(property: 'message', type: 'string', example: 'تم تعليم الإشعار كمقروء.')
+            ],
+            example: [
+                'status' => true,
+                'message' => 'تم تعليم الإشعار كمقروء.'
             ]
         )
     )]
@@ -323,6 +430,11 @@ class NotificationController extends Controller
                         new OA\Property(property: 'updated_count', type: 'integer', example: 5)
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'message' => 'تم تعليم 5 إشعار كمقروء.',
+                'data' => ['updated_count' => 5]
             ]
         )
     )]
@@ -367,6 +479,10 @@ class NotificationController extends Controller
             properties: [
                 new OA\Property(property: 'status', type: 'boolean', example: true),
                 new OA\Property(property: 'message', type: 'string', example: 'تم حذف الإشعار من قائمتك.')
+            ],
+            example: [
+                'status' => true,
+                'message' => 'تم حذف الإشعار من قائمتك.'
             ]
         )
     )]
@@ -463,6 +579,15 @@ class NotificationController extends Controller
                         new OA\Property(property: 'recipients_count', type: 'integer', example: 15)
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'message' => 'تم إنشاء الإشعار وإرساله بنجاح.',
+                'data' => [
+                    'id' => 101,
+                    'title' => 'تنبيه صيانة النادي',
+                    'recipients_count' => 15
+                ]
             ]
         )
     )]
@@ -608,6 +733,16 @@ class NotificationController extends Controller
                         )
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'message' => 'تم إرسال الإشعار إلى المستخدمين بنجاح.',
+                'data' => [
+                    'notification_id' => 105,
+                    'title' => 'تنبيه خاص للمستخدمين',
+                    'recipients_count' => 2,
+                    'target_user_ids' => [4, 5]
+                ]
             ]
         )
     )]
@@ -708,20 +843,40 @@ class NotificationController extends Controller
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(
+                        type: 'object',
                         properties: [
                             new OA\Property(property: 'id', type: 'integer', example: 101),
                             new OA\Property(property: 'title', type: 'string', example: 'تنبيه صيانة النادي'),
-                            new OA\Property(property: 'sender_type', type: 'string', example: 'admin'),
-                            new OA\Property(property: 'recipients_count', type: 'integer', example: 50),
-                            new OA\Property(property: 'read_count', type: 'integer', example: 35),
-                            new OA\Property(property: 'delivered_count', type: 'integer', example: 48),
-                            new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-07-25T08:00:00Z')
+                            new OA\Property(property: 'body', type: 'string', example: 'سيتم إغلاق الصالة غداً...'),
+                            new OA\Property(
+                                property: 'sender',
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'type', type: 'string', example: 'admin'),
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'display_name', type: 'string', example: 'الإدارة')
+                                ]
+                            ),
+                            new OA\Property(
+                                property: 'distribution',
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'total_recipients', type: 'integer', example: 50),
+                                    new OA\Property(property: 'read_count', type: 'integer', example: 35),
+                                    new OA\Property(property: 'delivered_count', type: 'integer', example: 48),
+                                    new OA\Property(property: 'read_percentage', type: 'number', example: 70.0),
+                                    new OA\Property(property: 'delivered_percentage', type: 'number', example: 96.0)
+                                ]
+                            ),
+                            new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-07-25 08:00:00'),
+                            new OA\Property(property: 'created_at_human', type: 'string', example: 'منذ ساعتين')
                         ]
                     )
                 ),
                 new OA\Property(
                     property: 'meta',
                     type: 'object',
+                    nullable: true,
                     properties: [
                         new OA\Property(property: 'current_page', type: 'integer', example: 1),
                         new OA\Property(property: 'last_page', type: 'integer', example: 3),
@@ -729,6 +884,32 @@ class NotificationController extends Controller
                         new OA\Property(property: 'total', type: 'integer', example: 45)
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'data' => [
+                    [
+                        'id' => 101,
+                        'title' => 'تنبيه صيانة النادي',
+                        'body' => 'سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة.',
+                        'sender' => ['type' => 'admin', 'id' => 1, 'display_name' => 'الإدارة'],
+                        'distribution' => [
+                            'total_recipients' => 50,
+                            'read_count' => 35,
+                            'delivered_count' => 48,
+                            'read_percentage' => 70.0,
+                            'delivered_percentage' => 96.0
+                        ],
+                        'created_at' => '2026-07-25 08:00:00',
+                        'created_at_human' => 'منذ ساعتين'
+                    ]
+                ],
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 3,
+                    'per_page' => 15,
+                    'total' => 45
+                ]
             ]
         )
     )]
@@ -853,6 +1034,19 @@ class NotificationController extends Controller
                         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2026-07-25T08:00:00Z')
                     ]
                 )
+            ],
+            example: [
+                'status' => true,
+                'data' => [
+                    'id' => 101,
+                    'title' => 'تنبيه صيانة النادي',
+                    'body' => 'سيتم إغلاق الصالة غداً لغرض الصيانة الدوريّة.',
+                    'sender_type' => 'admin',
+                    'target_snapshot' => ['type' => 'all'],
+                    'recipients_count' => 50,
+                    'attachments' => [],
+                    'created_at' => '2026-07-25T08:00:00Z'
+                ]
             ]
         )
     )]
@@ -933,6 +1127,10 @@ class NotificationController extends Controller
             properties: [
                 new OA\Property(property: 'status', type: 'boolean', example: true),
                 new OA\Property(property: 'message', type: 'string', example: 'تم حذف الإشعار من النظام بالكامل.')
+            ],
+            example: [
+                'status' => true,
+                'message' => 'تم حذف الإشعار من النظام بالكامل.'
             ]
         )
     )]

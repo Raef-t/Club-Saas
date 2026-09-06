@@ -85,9 +85,61 @@ class LockerController extends BaseController
                                 new OA\Property(property: 'rented_lockers_count', type: 'integer', example: 4, description: 'الخزائن المستأجرة بمقابل مادي'),
                             ]
                         ),
-                        new OA\Property(property: 'lockers', type: 'array', items: new OA\Items(type: 'object'))
+                        new OA\Property(
+                            property: 'lockers',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'locker_number', type: 'string', example: 'L-101'),
+                                    new OA\Property(property: 'key_number', type: 'string', nullable: true, example: 'K-101'),
+                                    new OA\Property(property: 'status', type: 'string', enum: ['available', 'with_member', 'with_staff', 'with_coach', 'maintenance'], example: 'with_member'),
+                                    new OA\Property(property: 'reason', type: 'string', nullable: true, example: null),
+                                    new OA\Property(property: 'holder_id', type: 'integer', nullable: true, example: 120),
+                                    new OA\Property(property: 'holder_type', type: 'string', nullable: true, enum: ['member', 'staff', 'coach'], example: 'member'),
+                                    new OA\Property(property: 'holder_name', type: 'string', nullable: true, example: 'أحمد علي'),
+                                    new OA\Property(property: 'assigned_at', type: 'string', format: 'date-time', nullable: true, example: '2026-07-13T08:00:00+03:00'),
+                                    new OA\Property(property: 'contact_person', type: 'array', items: new OA\Items(type: 'object')),
+                                    new OA\Property(property: 'created_at', type: 'string', example: '2026-07-01 10:00:00')
+                                ]
+                            )
+                        )
                     ]
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Lockers retrieved successfully',
+                'data' => [
+                    'summary' => [
+                        'available_lockers_count' => 12,
+                        'unavailable_lockers_count' => 8,
+                        'assigned_to_member_count' => 5,
+                        'assigned_to_coach_count' => 2,
+                        'assigned_to_staff_count' => 1,
+                        'assigned_to_staff_or_coach_count' => 3,
+                        'maintenance_lockers_count' => 1,
+                        'rented_lockers_count' => 4
+                    ],
+                    'lockers' => [
+                        [
+                            'id' => 1,
+                            'branch_id' => 1,
+                            'locker_number' => 'L-101',
+                            'key_number' => 'K-101',
+                            'status' => 'with_member',
+                            'reason' => null,
+                            'holder_id' => 120,
+                            'holder_type' => 'member',
+                            'holder_name' => 'أحمد علي',
+                            'assigned_at' => '2026-07-13T08:00:00+03:00',
+                            'contact_person' => [],
+                            'created_at' => '2026-07-01 10:00:00'
+                        ]
+                    ]
+                ]
             ]
         )
     )]
@@ -152,12 +204,33 @@ class LockerController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Locker created successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'locker_number', type: 'string', example: 'L-101'),
+                        new OA\Property(property: 'key_number', type: 'string', example: 'K-101'),
+                        new OA\Property(property: 'status', type: 'string', example: 'available')
+                    ]
+                )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker created successfully',
+                'data' => [
+                    'id' => 1,
+                    'branch_id' => 1,
+                    'locker_number' => 'L-101',
+                    'key_number' => 'K-101',
+                    'status' => 'available'
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات (مثل تكرار رقم الخزانة في الفرع)', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function store(StoreLockerRequest $request)
     {
         $locker = $this->lockerService->createLocker($request->validated());
@@ -179,12 +252,33 @@ class LockerController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Locker retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'locker_number', type: 'string', example: 'L-101'),
+                        new OA\Property(property: 'key_number', type: 'string', example: 'K-101'),
+                        new OA\Property(property: 'status', type: 'string', example: 'available')
+                    ]
+                )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker retrieved successfully',
+                'data' => [
+                    'id' => 1,
+                    'branch_id' => 1,
+                    'locker_number' => 'L-101',
+                    'key_number' => 'K-101',
+                    'status' => 'available'
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function show($id)
     {
         $locker = $this->lockerService->getLockerById($id);
@@ -210,13 +304,30 @@ class LockerController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Locker updated successfully'),
-                new OA\Property(property: 'data', type: 'object')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'locker_number', type: 'string', example: 'L-101-A'),
+                        new OA\Property(property: 'status', type: 'string', example: 'maintenance')
+                    ]
+                )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'locker_number' => 'L-101-A',
+                    'status' => 'maintenance'
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(UpdateLockerRequest $request, $id)
     {
         $locker = $this->lockerService->updateLocker($id, $request->validated());
@@ -248,12 +359,17 @@ class LockerController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Locker deleted successfully'),
                 new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker deleted successfully',
+                'data' => null
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 404, description: '🚫 لم يتم العثور على الخزانة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Deletion confirmation failed.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function destroy(Request $request, $id)
     {
         $confirmation = $request->input('confirm') ?? $request->input('confirmation') ?? $request->input('confirm_text') ?? '';
@@ -280,10 +396,21 @@ class LockerController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Trashed lockers retrieved successfully'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Trashed lockers retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 3,
+                        'locker_number' => 'L-103',
+                        'deleted_at' => '2026-08-10 14:00:00'
+                    ]
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function trashed(Request $request)
     {
         $lockers = $this->lockerService->getTrashed($request->all());
@@ -324,12 +451,21 @@ class LockerController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Locker restored successfully'),
                 new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker restored successfully',
+                'data' => [
+                    'id' => 3,
+                    'locker_number' => 'L-103',
+                    'status' => 'available'
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 الخزانة غير موجودة في سلة المحذوفات')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ تكرار رقم الخزانة في الفرع')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 404, description: '🚫 الخزانة غير موجودة في سلة المحذوفات', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ تكرار رقم الخزانة في الفرع', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Locker number already exists in this branch.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function restore($id)
     {
         try {
@@ -382,8 +518,35 @@ class LockerController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم تخصيص الخزانة', content: new OA\JsonContent())]
-    #[OA\Response(response: 400, description: '❌ الخزانة غير متاحة أو بيانات غير صحيحة')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تخصيص الخزانة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Locker reserved successfully.'),
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker reserved successfully.',
+                'data' => [
+                    'id' => 10,
+                    'locker_id' => 1,
+                    'reservation_type' => 'rental',
+                    'holder_type' => 'member',
+                    'holder_id' => 120,
+                    'price' => 300.00,
+                    'start_date' => '2026-07-13',
+                    'end_date' => '2026-08-13',
+                    'status' => 'active'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ الخزانة غير متاحة أو بيانات غير صحيحة', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Locker is already occupied.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function reserve(int $locker, ReserveLockerRequest $request)
     {
         try {
@@ -410,9 +573,25 @@ class LockerController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم تحرير الخزانة', content: new OA\JsonContent())]
-    #[OA\Response(response: 400, description: '❌ الخزانة متاحة بالفعل أو حدث خطأ')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال سبب فك الحجز المبكر')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تحرير الخزانة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Locker released successfully.'),
+                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker released successfully.',
+                'data' => null
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ الخزانة متاحة بالفعل أو حدث خطأ', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Locker has no active reservation.')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال سبب فك الحجز المبكر', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Reason is required for early release.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function releaseCurrentReservation(int $locker, Request $request)
     {
         try {
@@ -448,8 +627,29 @@ class LockerController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم نقل عهدة المفتاح', content: new OA\JsonContent())]
-    #[OA\Response(response: 400, description: '❌ الحجز غير نشط أو حدث خطأ')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم نقل عهدة المفتاح بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Locker holder transferred successfully.'),
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Locker holder transferred successfully.',
+                'data' => [
+                    'id' => 5,
+                    'holder_type' => 'coach',
+                    'holder_id' => 120,
+                    'holder_name' => 'الكابتن أحمد'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: '❌ الحجز غير نشط أو حدث خطأ', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Reservation is not active.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function transferReservationHolder(int $reservation, TransferLockerReservationRequest $request)
     {
         try {
@@ -477,9 +677,24 @@ class LockerController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Lockers retrieved successfully'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Lockers retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 1,
+                        'locker_number' => 'L-101',
+                        'status' => 'with_member',
+                        'holder_type' => 'member',
+                        'holder_id' => 120
+                    ]
+                ]
             ]
         )
     )]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The selected holder type is invalid.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function getByHolder(Request $request)
     {
         $request->validate([

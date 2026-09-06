@@ -16,11 +16,12 @@ class ActivityController extends BaseController
     #[OA\Get(
         path: '/v1/activities',
         summary: '🏋️ عرض جميع الأنشطة الرياضية',
-        description: 'استرجاع قائمة بجميع الأنشطة (مثال: سباحة، حديد، يوجا).',
+        description: 'استرجاع قائمة بجميع الأنشطة الرياضية المسجلة (مثال: سباحة، حديد، يوجا).',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'facility_id', in: 'query', required: false, description: 'تصفية حسب معرف المرفق', schema: new OA\Schema(type: 'integer', example: 5))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
@@ -30,7 +31,33 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activities retrieved successfully'),
-                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ActivityResource'))
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 10),
+                            new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
+                            new OA\Property(property: 'name', type: 'string', example: 'سباحة مبتدئين'),
+                            new OA\Property(property: 'description', type: 'string', nullable: true, example: 'دورة تعليم مبادئ السباحة للأطفال والناشئين'),
+                            new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                            new OA\Property(
+                                property: 'activity_type',
+                                type: 'object',
+                                nullable: true,
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 2),
+                                    new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية'),
+                                    new OA\Property(property: 'is_session_based', type: 'boolean', example: true)
+                                ]
+                            ),
+                            new OA\Property(property: 'created_at', type: 'string', example: '2026-02-01T10:00:00.000000Z'),
+                            new OA\Property(property: 'updated_at', type: 'string', example: '2026-02-01T10:00:00.000000Z')
+                        ]
+                    )
+                )
             ]
         )
     )]
@@ -41,7 +68,6 @@ class ActivityController extends BaseController
 
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
-
         }
 
         if ($request->has('facility_id')) {
@@ -62,11 +88,11 @@ class ActivityController extends BaseController
     #[OA\Get(
         path: '/v1/activities/stats',
         summary: '📊 إحصائيات الأنشطة',
-        description: 'استرجاع إحصائيات الأنشطة (العدد الكلي والأنشطة المجمعة حسب النوع).',
+        description: 'استرجاع إحصائيات الأنشطة (العدد الكلي والأنشطة المجمعة حسب نوع النشاط).',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
         response: 200,
         description: '✅ تم استرجاع الإحصائيات بنجاح',
@@ -74,14 +100,29 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity statistics retrieved successfully'),
-                new OA\Property(property: 'data', type: 'object', properties: [
-                    new OA\Property(property: 'total_activities', type: 'integer'),
-                    new OA\Property(property: 'activities_by_type', type: 'array', items: new OA\Items(type: 'object'))
-                ])
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'total_activities', type: 'integer', example: 15),
+                        new OA\Property(
+                            property: 'activities_by_type',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'activity_type_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'activity_type_name', type: 'string', example: 'أنشطة لياقة وكمال أجسام'),
+                                    new OA\Property(property: 'count', type: 'integer', example: 8)
+                                ]
+                            )
+                        )
+                    ]
+                )
             ]
         )
     )]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function stats(Request $request)
     {
         $query = Activity::query();
@@ -116,7 +157,7 @@ class ActivityController extends BaseController
     #[OA\Post(
         path: '/v1/activities',
         summary: '➕ إضافة نشاط رياضي',
-        description: 'إنشاء نشاط رياضي جديد.',
+        description: 'إنشاء نشاط رياضي جديد وربطه بنوع النشاط وبالفرع.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
@@ -126,10 +167,10 @@ class ActivityController extends BaseController
             required: ['name', 'activity_type_id', 'branch_id'],
             properties: [
                 new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 1),
-                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط (مطلوب)', example: 'يوغا'),
-                new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
-                new OA\Property(property: 'activity_type_id', description: '(مطلوب) معرف نوع النشاط', type: 'integer', example: 1),
-                new OA\Property(property: 'is_active', type: 'boolean', example: true)
+                new OA\Property(property: 'activity_type_id', description: '(مطلوب) معرف نوع النشاط', type: 'integer', example: 2),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط (مطلوب)', example: 'كاراتيه أطفال'),
+                new OA\Property(property: 'description', type: 'string', nullable: true, description: '(اختياري) وصف النشاط', example: 'تدريب كاراتيه مبتدئين للأطفال'),
+                new OA\Property(property: 'is_active', type: 'boolean', description: 'حالة التفعيل', example: true)
             ]
         )
     )]
@@ -140,7 +181,29 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity created successfully'),
-                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 12),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
+                        new OA\Property(property: 'name', type: 'string', example: 'كاراتيه أطفال'),
+                        new OA\Property(property: 'description', type: 'string', example: 'تدريب كاراتيه مبتدئين للأطفال'),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'activity_type',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 2),
+                                new OA\Property(property: 'name', type: 'string', example: 'فنون قتالية')
+                            ]
+                        ),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:25:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:25:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
@@ -158,11 +221,11 @@ class ActivityController extends BaseController
     #[OA\Get(
         path: '/v1/activities/{activity}',
         summary: '🔍 تفاصيل النشاط',
-        description: 'استرجاع تفاصيل نشاط رياضي محدد.',
+        description: 'استرجاع تفاصيل نشاط رياضي محدد مع بيانات نوع النشاط.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 10))]
     #[OA\Response(
         response: 200,
         description: '✅ تفاصيل النشاط',
@@ -170,7 +233,29 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity retrieved successfully'),
-                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 10),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
+                        new OA\Property(property: 'name', type: 'string', example: 'سباحة مبتدئين'),
+                        new OA\Property(property: 'description', type: 'string', example: 'دورة تعليم مبادئ السباحة للأطفال والناشئين'),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'activity_type',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 2),
+                                new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية')
+                            ]
+                        ),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-02-01T10:00:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-02-01T10:00:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
@@ -189,15 +274,15 @@ class ActivityController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 10))]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 2),
-                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط', example: 'اجهزة عام'),
-                new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'جلسة يوغا للمبتدئين'),
-                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 4),
+                new OA\Property(property: 'branch_id', description: '(اختياري) معرف الفرع', type: 'integer', example: 1),
+                new OA\Property(property: 'name', type: 'string', description: 'اسم النشاط', example: 'سباحة متقدمين'),
+                new OA\Property(property: 'description', type: 'string', description: '(اختياري) وصف النشاط', example: 'تدريبات السباحة الحرة والتنافسية'),
+                new OA\Property(property: 'activity_type_id', description: '(اختياري) معرف نوع النشاط', type: 'integer', example: 2),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true)
             ]
         )
@@ -209,7 +294,29 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity updated successfully'),
-                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 10),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
+                        new OA\Property(property: 'name', type: 'string', example: 'سباحة متقدمين'),
+                        new OA\Property(property: 'description', type: 'string', example: 'تدريبات السباحة الحرة والتنافسية'),
+                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'activity_type',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer', example: 2),
+                                new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية')
+                            ]
+                        ),
+                        new OA\Property(property: 'created_at', type: 'string', example: '2026-02-01T10:00:00.000000Z'),
+                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:28:00.000000Z')
+                    ]
+                )
             ]
         )
     )]
@@ -229,12 +336,12 @@ class ActivityController extends BaseController
     #[OA\Delete(
         path: '/v1/activities/{activity}',
         summary: '🗑️ حذف النشاط',
-        description: 'إزالة نشاط رياضي من النظام. يقتضي تأكيد الحذف بإرسال كلمة "delete".',
+        description: 'إزالة نشاط رياضي من النظام بحذف ناعم. يقتضي تأكيد الحذف بإرسال كلمة "delete" في حال وجود اشتراكات مرتبطة.',
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (يجب أن تكون "delete")', schema: new OA\Schema(type: 'string', example: ''))]
+    #[OA\Parameter(name: 'activity', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 10))]
+    #[OA\Parameter(name: 'confirm', in: 'query', required: false, description: 'كلمة التأكيد (يجب أن تكون "delete")', schema: new OA\Schema(type: 'string', example: 'delete'))]
     #[OA\Response(
         response: 200,
         description: '✅ تم حذف النشاط بنجاح ناعماً',
@@ -314,10 +421,34 @@ class ActivityController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب الأنشطة المحذوفة بنجاح')]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم جلب الأنشطة المحذوفة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Trashed activities retrieved successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 8),
+                            new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                            new OA\Property(property: 'activity_type_id', type: 'integer', example: 3),
+                            new OA\Property(property: 'name', type: 'string', example: 'زومبا للسيدات'),
+                            new OA\Property(property: 'deleted_at', type: 'string', example: '2026-03-01T15:00:00.000000Z')
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function trashed(Request $request)
     {
         $query = Activity::onlyTrashed();
@@ -339,9 +470,30 @@ class ActivityController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
-    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع النشاط بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف النشاط', schema: new OA\Schema(type: 'integer', example: 8))]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم استرجاع النشاط بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Activity restored successfully'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 8),
+                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 3),
+                        new OA\Property(property: 'name', type: 'string', example: 'زومبا للسيدات'),
+                        new OA\Property(property: 'deleted_at', type: 'string', nullable: true, example: null)
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 النشاط غير موجود في سلة المهملات', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'Record not found.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function restore(Request $request, int $id)
     {
         $activity = Activity::onlyTrashed()->findOrFail($id);
