@@ -10,6 +10,7 @@ use Modules\AttendanceManager\Http\Requests\UnifiedCheckInRequest;
 use Modules\AttendanceManager\Http\Requests\BulkCheckOutRequest;
 use Modules\AttendanceManager\Http\Resources\AttendanceResource;
 use OpenApi\Attributes as OA;
+use Carbon\Carbon;
 
 class UnifiedAttendanceController extends BaseController
 {
@@ -177,6 +178,7 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'معرف الفرع للفلترة (اختياري)')]
     #[OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-01'), description: 'تاريخ بداية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-21'), description: 'تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
+    #[OA\Parameter(name: 'period', in: 'query', required: false, description: 'فترة الفلترة: daily, weekly, monthly', schema: new OA\Schema(type: 'string', enum: ['daily','weekly','monthly']))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅', content: new OA\JsonContent())]
@@ -189,7 +191,30 @@ class UnifiedAttendanceController extends BaseController
             'branch'          => 'nullable|integer',
             'from'            => 'nullable|date_format:Y-m-d',
             'to'              => 'nullable|date_format:Y-m-d',
+            'period'          => 'nullable|string|in:daily,weekly,monthly',
         ]);
+
+        // Determine date range based on period if not explicitly provided
+        $period = $request->input('period');
+        $from = $request->input('from');
+        $to   = $request->input('to');
+        if (!$from && !$to && $period) {
+            $now = Carbon::now();
+            switch ($period) {
+                case 'daily':
+                    $from = $to = $now->format('Y-m-d');
+                    break;
+                case 'weekly':
+                    $from = $now->startOfWeek()->format('Y-m-d');
+                    $to   = $now->endOfWeek()->format('Y-m-d');
+                    break;
+                case 'monthly':
+                    $from = $now->firstOfMonth()->format('Y-m-d');
+                    $to   = $now->lastOfMonth()->format('Y-m-d');
+                    break;
+            }
+        }
+
 
         $type = $request->input('attendable_type', 'all');
         $entityId = $request->filled('attendable_id') ? (int) $request->input('attendable_id') : null;
@@ -198,8 +223,8 @@ class UnifiedAttendanceController extends BaseController
         $query = $this->attendanceService->getHistory(
             $type,
             $entityId,
-            $request->input('from'),
-            $request->input('to'),
+            $from,
+            $to,
             $branchId
         );
 

@@ -3,6 +3,7 @@
 namespace Modules\AttendanceManager\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Modules\Core\Traits\CascadeSoftDeletes;
@@ -92,4 +93,47 @@ class Attendance extends Model
 
         return implode(' و ', $parts);
     }
+    /**
+    * Get monthly attendance percentage for this member.
+    * Returns null for non-member.
+    */
+    public function monthlyAttendancePercentage(): ?float
+    {
+        if ($this->attendable_type !== 'member') {
+            return null;
+        }
+        $now = Carbon::now();
+        $start = $now->copy()->firstOfMonth();
+        $end = $now->copy()->lastOfMonth();
+        $attendances = self::where('attendable_type', 'member')
+            ->where('attendable_id', $this->attendable_id)
+            ->whereBetween('check_in_at', [$start, $end])
+            ->get();
+        $daysAttended = $attendances->pluck('check_in_at')->map(function ($date) {
+            return Carbon::parse($date)->format('Y-m-d');
+        })->unique()->count();
+        $daysInMonth = $now->daysInMonth;
+        return $daysInMonth > 0 ? round(($daysAttended / $daysInMonth) * 100, 2) : null;
+    }
+
+    /**
+    * Get monthly training hours for this member.
+    * Returns null for non-member.
+    */
+    public function monthlyTrainingHours(): ?float
+    {
+        if ($this->attendable_type !== 'member') {
+            return null;
+        }
+        $now = Carbon::now();
+        $start = $now->copy()->firstOfMonth();
+        $end = $now->copy()->lastOfMonth();
+        $totalMinutes = self::where('attendable_type', 'member')
+            ->where('attendable_id', $this->attendable_id)
+            ->whereBetween('check_in_at', [$start, $end])
+            ->sum('duration_minutes');
+        return $totalMinutes ? round($totalMinutes / 60, 2) : null;
+    }
+
 }
+
