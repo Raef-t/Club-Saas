@@ -4,17 +4,6 @@ function getLocalizedName(name) {
   return String(name.ar || name.en || "").trim();
 }
 
-function normalizeArabicText(value) {
-  return String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u064B-\u065F\u0670]/g, "")
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ـ/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
 export function getSubscriptionPlanActivityName(activity) {
   return getLocalizedName(activity?.name);
 }
@@ -28,26 +17,35 @@ export function getSubscriptionPlanCoachName(coach) {
 
 /** Only the general equipment activity is allowed to omit a coach. */
 export function isGeneralEquipmentActivity(activity) {
-  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
-  return normalizedName.includes("اجهزة عام");
+  const activityType = activity?.activity_type;
+  return Boolean(
+    activityType &&
+    activityType.is_private_equipment === false &&
+    activityType.is_session_based === false &&
+    activityType.is_daily_entry !== true &&
+    activityType.has_unlimited_subscribers === true,
+  );
 }
 
 /** General and private equipment plans do not use scheduled session times. */
 export function isEquipmentActivity(activity) {
-  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
-  return normalizedName.includes("اجهزة عام") || normalizedName.includes("اجهزة خاص");
+  const activityType = activity?.activity_type;
+  return Boolean(
+    activityType &&
+    activityType.is_session_based === false &&
+    activityType.is_daily_entry !== true &&
+    activityType.has_unlimited_subscribers === true,
+  );
 }
 
-/** Identifies private-equipment activities that use the selected coach's commission. */
+/** Identifies private-equipment activities from the explicit backend type flag. */
 export function isPrivateEquipmentActivity(activity) {
-  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
-  return normalizedName.includes("اجهزة خاص");
+  return activity?.activity_type?.is_private_equipment === true;
 }
 
 /** Private equipment and private training plans both use coach/branch prices. */
 export function isPrivateSubscriptionActivity(activity) {
-  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
-  return normalizedName.includes("اجهزة خاص") || normalizedName.includes("تدريب خاص");
+  return isPrivateEquipmentActivity(activity);
 }
 
 /** Adds the two private-plan prices without allowing invalid values into the payload. */

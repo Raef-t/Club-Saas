@@ -24,7 +24,11 @@ import {
   subscriptionPlanUpdateSchema,
 } from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
+import {
+  getEntityBranchIds,
+  getPreferredBranchId,
+  getGenderForBranchId,
+} from "@/lib/managementBranchUtils";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
 import { getSubscriptionPlanStatusMeta, SUBSCRIPTION_PLAN_STATUS } from "./subscriptionPlanStatus";
@@ -557,18 +561,26 @@ export function PlanForm({
   const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(
     () => mode === "edit" || Boolean(initialValues.name?.trim()),
   );
+  const branchActivities = useMemo(() => {
+    if (!form.branch_id) return activities;
+
+    return activities.filter((activity) => {
+      const branchIds = getEntityBranchIds(activity);
+      return branchIds.length === 0 || branchIds.includes(String(form.branch_id));
+    });
+  }, [activities, form.branch_id]);
   const suggestedName = useMemo(
-    () => createSuggestedSubscriptionPlanName(form.activities, activities, coaches),
-    [activities, coaches, form.activities],
+    () => createSuggestedSubscriptionPlanName(form.activities, branchActivities, coaches),
+    [branchActivities, coaches, form.activities],
   );
   const selectedActivityRecords = useMemo(
     () =>
       (form.activities || [])
         .map((item) =>
-          activities.find((activity) => String(activity.id) === String(item.activity_id)),
+          branchActivities.find((activity) => String(activity.id) === String(item.activity_id)),
         )
         .filter(Boolean),
-    [activities, form.activities],
+    [branchActivities, form.activities],
   );
   const isEquipmentOnlyPlan =
     selectedActivityRecords.length > 0 && selectedActivityRecords.every(isEquipmentActivity);
@@ -605,20 +617,19 @@ export function PlanForm({
   useEffect(() => {
     let shouldBeUnlimited = false;
     form.activities?.forEach((item) => {
-      const act = activities.find((a) => String(a.id) === String(item.activity_id));
-      if (act) {
-        const actName =
-          typeof act.name === "string" ? act.name : act.name?.ar || act.name?.en || "";
-        if (actName.includes("تدريب عام") || actName.includes("تدريب خاص")) {
-          shouldBeUnlimited = true;
-        }
+      const act = branchActivities.find((a) => String(a.id) === String(item.activity_id));
+      if (
+        act?.is_unlimited_subscribers === true ||
+        act?.activity_type?.has_unlimited_subscribers === true
+      ) {
+        shouldBeUnlimited = true;
       }
     });
 
     if (shouldBeUnlimited && !form.is_unlimited_subscribers) {
       updateField("is_unlimited_subscribers", true);
     }
-  }, [form.activities, activities]);
+  }, [form.activities, branchActivities]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -639,8 +650,17 @@ export function PlanForm({
   }
 
   function updateBranch(branchId) {
-    setForm((current) => ({ ...current, branch_id: branchId }));
-    setErrors((current) => ({ ...current, branch_id: null }));
+    setForm((current) => ({
+      ...current,
+      branch_id: branchId,
+      activities: [{ activity_id: "", coach_id: "" }],
+      session_templates: [],
+      coach_price: "",
+      branch_price: "",
+      price: "",
+    }));
+    setIsNameManuallyEdited(false);
+    setErrors({});
   }
 
   function handleSubmit(event) {
@@ -666,7 +686,7 @@ export function PlanForm({
       is_unlimited_subscribers: !!form.is_unlimited_subscribers,
       activities:
         form.activities?.map((item) => {
-          const activity = activities.find(
+          const activity = branchActivities.find(
             (activityItem) => String(activityItem.id) === String(item.activity_id),
           );
 
@@ -723,7 +743,7 @@ export function PlanForm({
 
       <PlanActivitiesFields
         items={form.activities}
-        activities={activities}
+        activities={branchActivities}
         branchId={form.branch_id}
         errors={errors}
         onChange={(items) => updateField("activities", items)}
@@ -828,7 +848,7 @@ export function PlanForm({
 
       {(() => {
         const shouldShowMaxSubscribers = form.activities?.some((item) => {
-          const act = activities.find((a) => String(a.id) === String(item.activity_id));
+          const act = branchActivities.find((a) => String(a.id) === String(item.activity_id));
           return act?.activity_type?.is_session_based === true;
         });
 
@@ -875,20 +895,10 @@ export function PlanForm({
                   const hasAutoSequenceActivity =
                     form.activities?.length > 0 &&
                     form.activities.some((item) => {
-                      const act = activities.find((a) => String(a.id) === String(item.activity_id));
-                      if (act) {
-                        const actName =
-                          typeof act.name === "string"
-                            ? act.name
-                            : act.name?.ar || act.name?.en || "";
-                        const isGeneralOrPrivate =
-                          actName.includes("أجهزة عام") ||
-                          actName.includes("أجهزة خاص") ||
-                          actName.includes("تدريب عام") ||
-                          actName.includes("تدريب خاص");
-                        return !isGeneralOrPrivate;
-                      }
-                      return false;
+                      const act = branchActivities.find(
+                        (a) => String(a.id) === String(item.activity_id),
+                      );
+                      return act ? !isEquipmentActivity(act) : false;
                     });
 
                   if (hasAutoSequenceActivity) {
@@ -1098,6 +1108,8 @@ export default function SubscriptionPlansClient({ initialData }) {
     closeResumeConfirm,
     confirmResume,
     branches,
+    activities,
+    coaches,
   } = useSubscriptionPlans({ initialData });
 
   const columns = useMemo(
@@ -1289,6 +1301,8 @@ export default function SubscriptionPlansClient({ initialData }) {
           isLoading={isUpdating}
           errorMessage={formError}
           branches={branches}
+          activities={activities}
+          coaches={coaches}
         />
       </Drawer>
 

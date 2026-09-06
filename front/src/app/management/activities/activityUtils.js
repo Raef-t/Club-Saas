@@ -150,3 +150,12 @@ export function createActivityOptions(items) {
     label: formatLocalizedName(item.name),
   }));
 }
+
+/** Reads shift support from the selected activity type returned by the backend. */
+export function activityTypeHasShifts(activityTypes, activityTypeId) {
+  const selectedType = activityTypes.find(
+    (activityType) => String(activityType.id) === String(activityTypeId),
+  );
+
+  return selectedType?.has_shifts === true;
+}

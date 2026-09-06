@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activityTypeHasShifts,
   createActivityFormValues,
   createActivityPayload,
   createActivityStats,
@@ -50,6 +51,16 @@ describe("activity utilities", () => {
       description: null,
       shifts: [7],
     });
+  });
+
+  it("uses the backend activity-type flag to decide whether shifts are available", () => {
+    const activityTypes = [
+      { id: 4, name: "نوع بدون ورديات", has_shifts: false },
+      { id: 99, name: "نوع مخصص مع ورديات", has_shifts: true },
+    ];
+
+    expect(activityTypeHasShifts(activityTypes, "99")).toBe(true);
+    expect(activityTypeHasShifts(activityTypes, "4")).toBe(false);
   });
 
   it("includes a trimmed modification reason only in update payloads", () => {
