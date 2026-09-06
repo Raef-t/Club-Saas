@@ -3,6 +3,8 @@
 namespace Modules\ClubManager\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\ClubManager\Models\Locker;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
@@ -32,14 +34,44 @@ class UpdateLockerRequest extends FormRequest
 
     public function rules(): array
     {
+        $lockerParam = $this->route('locker') ?? $this->route('id');
+        $lockerId = is_object($lockerParam) ? $lockerParam->id : $lockerParam;
+
+        $branchId = $this->branch_id;
+        if (!$branchId && $lockerId) {
+            $branchId = Locker::where('id', $lockerId)->value('branch_id');
+        }
+
         return [
             'reason'        => ['nullable', 'string', 'max:500'],
-            'locker_number' => 'sometimes|string|max:50',
-            'key_number'    => 'nullable|string|max:50',
+            'locker_number' => [
+                'sometimes',
+                'string',
+                'max:50',
+                Rule::unique('lockers', 'locker_number')
+                    ->where(fn ($query) => $query->where('branch_id', $branchId)->whereNull('deleted_at'))
+                    ->ignore($lockerId),
+            ],
+            'key_number'    => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('lockers', 'key_number')
+                    ->where(fn ($query) => $query->where('branch_id', $branchId)->whereNull('deleted_at'))
+                    ->ignore($lockerId),
+            ],
             'status'        => 'sometimes|in:available,with_member,with_staff,with_coach,maintenance',
             'holder_id'     => 'nullable|integer',
             'holder_type'   => 'nullable|in:member,staff,coach',
             'holder_name'   => 'nullable|string|max:255',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'locker_number.unique' => __('Locker number :num already exists in this branch.', ['num' => $this->locker_number]),
+            'key_number.unique'    => __('Key number :num already exists in this branch.', ['num' => $this->key_number]),
         ];
     }
 }

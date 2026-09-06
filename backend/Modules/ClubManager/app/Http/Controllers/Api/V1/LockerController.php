@@ -335,6 +335,8 @@ class LockerController extends BaseController
         try {
             $locker = $this->lockerService->restoreLocker((int) $id);
             return $this->successResponse(new LockerResource($locker), __('Locker restored successfully'));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }
