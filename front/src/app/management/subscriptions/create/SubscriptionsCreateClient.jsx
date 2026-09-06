@@ -6,6 +6,7 @@ import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import { FormCard } from "@/components/forms/FormControls";
 import Button from "@/components/ui/Button";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import { usePermissions } from "@/lib/PermissionContext";
 import { SubscriptionCreateForm, SubscriptionEditForm } from "../SubscriptionForm";
 import { useCreateSubscription } from "../useCreateSubscription";
 
@@ -21,6 +22,8 @@ export default function SubscriptionsCreateClient({ initialData }) {
   const editId = Number(searchParams.get("id"));
   const isEdit = searchParams.get("mode") === "edit" && Number.isFinite(editId) && editId > 0;
   const { selectedBranchId } = useManagementBranch();
+  const { roles, isSuperAdmin } = usePermissions();
+  const canEditPaidAmount = isSuperAdmin || roles.includes("admin");
 
   const [resetKey, setResetKey] = useState(0);
   const [currentMemberId, setCurrentMemberId] = useState(initialMemberId);
@@ -113,6 +116,7 @@ export default function SubscriptionsCreateClient({ initialData }) {
               onCancel={() => router.push("/management/subscriptions")}
               isLoading={isUpdating}
               errorMessage={formError}
+              canEditPaidAmount={canEditPaidAmount}
             />
           ) : null
         ) : (

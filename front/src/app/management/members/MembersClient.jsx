@@ -22,7 +22,7 @@ import { useMembers } from "./useMembers";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
+const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 100px 90px";
 
 const genderLabels = {
   male: "ذكر",
@@ -221,20 +221,6 @@ export default function MembersClient({ initialData }) {
         },
       },
       {
-        key: "branch_id",
-        label: "الفرع",
-        align: "center",
-        sortValue: (member) => {
-          const branch = branches.find((b) => b.id === member.branch_id);
-          return formatLocalizedName(branch?.name) || "";
-        },
-        render: (value) => {
-          const branchName =
-            formatLocalizedName(branches.find((b) => b.id === value)?.name) || `فرع #${value}`;
-          return <span className="text-xs text-app-muted-light">{branchName}</span>;
-        },
-      },
-      {
         key: "is_active",
         label: "الحالة",
         align: "center",
@@ -265,7 +251,7 @@ export default function MembersClient({ initialData }) {
         ),
       },
     ],
-    [branches, canDelete, canUpdate, handleDelete, isDeleting],
+    [canDelete, canUpdate, handleDelete, isDeleting],
   );
 
   const editInitialValues = useMemo(() => {
@@ -373,9 +359,7 @@ export default function MembersClient({ initialData }) {
         toolbarMeta={
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
-            <span className="font-medium text-app-text">
-              {totalResults.toLocaleString("ar")}
-            </span>
+            <span className="font-medium text-app-text">{totalResults.toLocaleString("ar")}</span>
           </p>
         }
       />

@@ -9,6 +9,7 @@ import { CURRENCY_SYMBOL, formatLocalizedName, formatMoney } from "@/lib/utils";
 import { subscriptionEditSchema, subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
 import {
   getLocalDateValue,
+  getSubscriptionReceiptNumbers,
   getSubscriptionEndDate,
   isDailyEntrySubscriptionPlan,
   isPrivateSubscriptionPlan,
@@ -242,72 +243,74 @@ export function SubscriptionCreateForm({
       </label>
 
       {isPrivatePlan ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-right text-sm text-app-muted-light">
-            رقم إيصال الكوتش *
-            <span className="ms-1 text-xs text-app-yellow">
-              ({formatMoney(selectedPlanObj.coach_price)})
-            </span>
-            <input
-              type="text"
-              value={form.coach_receipt_number}
-              onChange={(event) => updateField("coach_receipt_number", event.target.value)}
-              aria-invalid={Boolean(errors && errors.coach_receipt_number)}
-              aria-describedby={
-                errors && errors.coach_receipt_number ? "coach-receipt-number-error" : undefined
-              }
-              className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
-                errors && errors.coach_receipt_number
-                  ? "border border-app-red focus:border-app-red"
-                  : "focus:border-app-yellow/70"
-              }`}
-              placeholder="أدخل رقم إيصال الكوتش"
-              maxLength={100}
-              required
-            />
-            {errors && errors.coach_receipt_number && (
-              <span
-                id="coach-receipt-number-error"
-                className="mt-1.5 block text-xs text-app-red"
-                role="alert"
-              >
-                {errors.coach_receipt_number}
+        <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-right text-sm text-app-muted-light">
+              رقم إيصال الكوتش *
+              <span className="ms-1 text-xs text-app-yellow">
+                ({formatMoney(selectedPlanObj.coach_price)})
               </span>
-            )}
-          </label>
+              <input
+                type="text"
+                value={form.coach_receipt_number}
+                onChange={(event) => updateField("coach_receipt_number", event.target.value)}
+                aria-invalid={Boolean(errors && errors.coach_receipt_number)}
+                aria-describedby={
+                  errors && errors.coach_receipt_number ? "coach-receipt-number-error" : undefined
+                }
+                className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+                  errors && errors.coach_receipt_number
+                    ? "border border-app-red focus:border-app-red"
+                    : "focus:border-app-yellow/70"
+                }`}
+                placeholder="أدخل رقم إيصال الكوتش"
+                maxLength={100}
+                required
+              />
+              {errors && errors.coach_receipt_number && (
+                <span
+                  id="coach-receipt-number-error"
+                  className="mt-1.5 block text-xs text-app-red"
+                  role="alert"
+                >
+                  {errors.coach_receipt_number}
+                </span>
+              )}
+            </label>
 
-          <label className="block text-right text-sm text-app-muted-light">
-            رقم إيصال النادي *
-            <span className="ms-1 text-xs text-app-yellow">
-              ({formatMoney(selectedPlanObj.branch_price)})
-            </span>
-            <input
-              type="text"
-              value={form.branch_receipt_number}
-              onChange={(event) => updateField("branch_receipt_number", event.target.value)}
-              aria-invalid={Boolean(errors && errors.branch_receipt_number)}
-              aria-describedby={
-                errors && errors.branch_receipt_number ? "branch-receipt-number-error" : undefined
-              }
-              className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
-                errors && errors.branch_receipt_number
-                  ? "border border-app-red focus:border-app-red"
-                  : "focus:border-app-yellow/70"
-              }`}
-              placeholder="أدخل رقم إيصال النادي"
-              maxLength={100}
-              required
-            />
-            {errors && errors.branch_receipt_number && (
-              <span
-                id="branch-receipt-number-error"
-                className="mt-1.5 block text-xs text-app-red"
-                role="alert"
-              >
-                {errors.branch_receipt_number}
+            <label className="block text-right text-sm text-app-muted-light">
+              رقم إيصال النادي *
+              <span className="ms-1 text-xs text-app-yellow">
+                ({formatMoney(selectedPlanObj.branch_price)})
               </span>
-            )}
-          </label>
+              <input
+                type="text"
+                value={form.branch_receipt_number}
+                onChange={(event) => updateField("branch_receipt_number", event.target.value)}
+                aria-invalid={Boolean(errors && errors.branch_receipt_number)}
+                aria-describedby={
+                  errors && errors.branch_receipt_number ? "branch-receipt-number-error" : undefined
+                }
+                className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+                  errors && errors.branch_receipt_number
+                    ? "border border-app-red focus:border-app-red"
+                    : "focus:border-app-yellow/70"
+                }`}
+                placeholder="أدخل رقم إيصال النادي"
+                maxLength={100}
+                required
+              />
+              {errors && errors.branch_receipt_number && (
+                <span
+                  id="branch-receipt-number-error"
+                  className="mt-1.5 block text-xs text-app-red"
+                  role="alert"
+                >
+                  {errors.branch_receipt_number}
+                </span>
+              )}
+            </label>
+          </div>
         </div>
       ) : (
         <label className="block text-right text-sm text-app-muted-light">
@@ -416,7 +419,9 @@ export function SubscriptionEditForm({
   onCancel,
   isLoading = false,
   errorMessage = "",
+  canEditPaidAmount = false,
 }) {
+  const initialReceiptNumbers = getSubscriptionReceiptNumbers(subscription);
   const [form, setForm] = useState(() => ({
     member_id: String(subscription?.member_id || subscription?.member?.id || ""),
     plan_id: String(subscription?.plan_id || subscription?.plan?.id || ""),
@@ -426,12 +431,17 @@ export function SubscriptionEditForm({
     end_date: String(subscription?.end_date || "").split("T")[0],
     status: subscription?.status || "active",
     paid_amount: String(subscription?.paid_amount ?? 0),
+    receipt_number: String(initialReceiptNumbers.receiptNumber ?? ""),
+    coach_receipt_number: String(initialReceiptNumbers.coachReceiptNumber ?? ""),
+    branch_receipt_number: String(initialReceiptNumbers.branchReceiptNumber ?? ""),
     notes: subscription?.notes || "",
     reason: "",
   }));
   const [errors, setErrors] = useState({});
   const selectedPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
-  const isDailyEntryPlan = isDailyEntrySubscriptionPlan(selectedPlan || subscription?.plan);
+  const resolvedPlan = selectedPlan || subscription?.plan;
+  const isDailyEntryPlan = isDailyEntrySubscriptionPlan(resolvedPlan);
+  const isPrivatePlan = isPrivateSubscriptionPlan(resolvedPlan);
 
   function updateField(field, value) {
     setForm((current) => {
@@ -454,10 +464,21 @@ export function SubscriptionEditForm({
     setForm((current) => ({
       ...current,
       plan_id: planId,
+      receipt_number: "",
+      coach_receipt_number: "",
+      branch_receipt_number: "",
       start_date: nextIsDailyEntry ? today : current.start_date,
       end_date: nextIsDailyEntry ? today : current.end_date,
     }));
-    setErrors((current) => ({ ...current, plan_id: null, start_date: null, end_date: null }));
+    setErrors((current) => ({
+      ...current,
+      plan_id: null,
+      receipt_number: null,
+      coach_receipt_number: null,
+      branch_receipt_number: null,
+      start_date: null,
+      end_date: null,
+    }));
   }
 
   function handleSubmit(event) {
@@ -470,7 +491,14 @@ export function SubscriptionEditForm({
       start_date: form.start_date,
       end_date: form.end_date,
       status: form.status,
-      paid_amount: form.paid_amount,
+      paid_amount: canEditPaidAmount ? form.paid_amount : (subscription?.paid_amount ?? 0),
+      payment_method: "cash",
+      ...(isPrivatePlan
+        ? {
+            coach_receipt_number: form.coach_receipt_number,
+            branch_receipt_number: form.branch_receipt_number,
+          }
+        : { receipt_number: form.receipt_number }),
       notes: form.notes.trim(),
       reason: form.reason,
     };
@@ -552,6 +580,87 @@ export function SubscriptionEditForm({
         </label>
       </div>
 
+      {isPrivatePlan ? (
+        <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-right text-sm text-app-muted-light">
+              رقم إيصال الكوتش *
+              <span className="ms-1 text-xs text-app-yellow">
+                ({formatMoney(resolvedPlan?.coach_price)})
+              </span>
+              <input
+                type="text"
+                value={form.coach_receipt_number}
+                onChange={(event) => updateField("coach_receipt_number", event.target.value)}
+                aria-invalid={Boolean(errors.coach_receipt_number)}
+                className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+                  errors.coach_receipt_number
+                    ? "border border-app-red focus:border-app-red"
+                    : "focus:border-app-yellow/70"
+                }`}
+                placeholder="أدخل رقم إيصال الكوتش"
+                maxLength={100}
+                required
+              />
+              {errors.coach_receipt_number && (
+                <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                  {errors.coach_receipt_number}
+                </span>
+              )}
+            </label>
+
+            <label className="block text-right text-sm text-app-muted-light">
+              رقم إيصال النادي *
+              <span className="ms-1 text-xs text-app-yellow">
+                ({formatMoney(resolvedPlan?.branch_price)})
+              </span>
+              <input
+                type="text"
+                value={form.branch_receipt_number}
+                onChange={(event) => updateField("branch_receipt_number", event.target.value)}
+                aria-invalid={Boolean(errors.branch_receipt_number)}
+                className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+                  errors.branch_receipt_number
+                    ? "border border-app-red focus:border-app-red"
+                    : "focus:border-app-yellow/70"
+                }`}
+                placeholder="أدخل رقم إيصال النادي"
+                maxLength={100}
+                required
+              />
+              {errors.branch_receipt_number && (
+                <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                  {errors.branch_receipt_number}
+                </span>
+              )}
+            </label>
+          </div>
+        </div>
+      ) : (
+        <label className="block text-right text-sm text-app-muted-light">
+          رقم الإيصال *
+          <input
+            type="text"
+            value={form.receipt_number}
+            onChange={(event) => updateField("receipt_number", event.target.value)}
+            aria-invalid={Boolean(errors.receipt_number)}
+            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+              errors.receipt_number
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
+            placeholder="أدخل رقم الإيصال"
+            maxLength={100}
+            required
+          />
+          {errors.receipt_number && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.receipt_number}
+            </span>
+          )}
+        </label>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <DatePickerSmart
           label="تاريخ البداية *"
@@ -592,10 +701,17 @@ export function SubscriptionEditForm({
             step="0.01"
             value={form.paid_amount}
             onChange={(event) => updateField("paid_amount", event.target.value)}
-            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${errors.paid_amount ? "border-app-red" : "focus:border-app-yellow/70"}`}
+            disabled={!canEditPaidAmount}
+            title={!canEditPaidAmount ? "تعديل المبلغ متاح للأدمن فقط" : undefined}
+            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.paid_amount ? "border-app-red" : "focus:border-app-yellow/70"}`}
           />
           {errors.paid_amount && (
             <span className="mt-1 block text-xs text-app-red">{errors.paid_amount}</span>
+          )}
+          {!canEditPaidAmount && (
+            <span className="mt-1.5 block text-xs text-app-muted-light">
+              تعديل المبلغ متاح للأدمن فقط.
+            </span>
           )}
         </label>
       </div>

@@ -65,6 +65,8 @@ describe("subscription edit validation", () => {
       end_date: "2026-09-01",
       status: "active",
       paid_amount: "100",
+      payment_method: "cash",
+      receipt_number: "  REC-2026-001  ",
       notes: "ملاحظات معدلة",
       reason: "  تصحيح مدة الاشتراك  ",
     });
@@ -78,6 +80,8 @@ describe("subscription edit validation", () => {
       end_date: "2026-09-01",
       status: "active",
       paid_amount: 100,
+      payment_method: "cash",
+      receipt_number: "REC-2026-001",
       notes: "ملاحظات معدلة",
       reason: "تصحيح مدة الاشتراك",
     });
@@ -93,6 +97,7 @@ describe("subscription edit validation", () => {
       end_date: "2026-08-01",
       status: "active",
       paid_amount: 100,
+      payment_method: "cash",
       notes: "",
       reason: "تصحيح التواريخ",
     });
@@ -110,6 +115,7 @@ describe("subscription edit validation", () => {
       end_date: "2026-09-01",
       status: "active",
       paid_amount: 100,
+      payment_method: "cash",
       reason: "   ",
     });
 

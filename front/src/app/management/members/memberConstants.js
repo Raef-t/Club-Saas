@@ -1,4 +1,4 @@
-export const MEMBER_TABLE_GRID = "minmax(180px,1.2fr) 140px 100px 120px 140px 100px 90px";
+export const MEMBER_TABLE_GRID = "minmax(180px,1.2fr) 140px 100px 120px 100px 90px";
 
 export const MEMBER_GENDER_LABELS = {
   male: "ذكر",

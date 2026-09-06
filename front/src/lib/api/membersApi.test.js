@@ -7,6 +7,39 @@ describe("members API", () => {
     vi.unstubAllGlobals();
   });
 
+  it("gets the full member record by id for the edit form", async () => {
+    let request;
+    const NativeRequest = globalThis.Request;
+    vi.stubGlobal(
+      "Request",
+      class extends NativeRequest {
+        constructor(input, init) {
+          super(typeof input === "string" ? new URL(input, "http://localhost") : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input) => {
+        request = input;
+        return new Response(JSON.stringify({ status: "success", data: { id: 66 } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const store = configureStore({
+      reducer: { [membersApi.reducerPath]: membersApi.reducer },
+      middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(membersApi.middleware),
+    });
+
+    await store.dispatch(membersApi.endpoints.getMember.initiate(66)).unwrap();
+
+    expect(request.method).toBe("GET");
+    expect(new URL(request.url).pathname).toBe("/api/backend/members/66");
+  });
+
   it("sends the required confirmation when deleting a member", async () => {
     let request;
     const NativeRequest = globalThis.Request;
