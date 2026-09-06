@@ -7,8 +7,10 @@ import {
   getSubscriptionDetail,
   getSubscriptionCreatorName,
   getSubscriptionReceiptNumber,
+  getSubscriptionReceiptNumbers,
   getSubscriptionRows,
   isDailyEntrySubscriptionPlan,
+  isPrivateSubscriptionPlan,
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
 
@@ -57,6 +59,24 @@ describe("subscription utilities", () => {
       "INV-12",
     );
     expect(getSubscriptionReceiptNumber(null)).toBeNull();
+  });
+
+  it("reads private-plan receipts from the subscription and revenue split", () => {
+    expect(
+      getSubscriptionReceiptNumbers({
+        coach_receipt_number: "REC-COACH-001",
+        revenue_split: { branch_receipt_number: "REC-CLUB-001" },
+      }),
+    ).toEqual({
+      receiptNumber: null,
+      coachReceiptNumber: "REC-COACH-001",
+      branchReceiptNumber: "REC-CLUB-001",
+    });
+  });
+
+  it("detects private plans from their two component prices", () => {
+    expect(isPrivateSubscriptionPlan({ coach_price: "200.00", branch_price: "150.00" })).toBe(true);
+    expect(isPrivateSubscriptionPlan({ coach_price: null, branch_price: "150.00" })).toBe(false);
   });
 
   it("formats a local date for subscription fields", () => {

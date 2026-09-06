@@ -5,11 +5,11 @@ import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import Button from "@/components/ui/Button";
 import SkeletonPage from "@/components/ui/Skeleton";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
+import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
 import { formatDate } from "@/lib/utils";
 import {
   formatSubscriptionMoney,
   getSubscriptionCreatorName,
-  getSubscriptionReceiptNumber,
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
 
@@ -102,6 +102,7 @@ export default function SubscriptionDetails({
     [...new Set(items.map((item) => item.coach?.name).filter(Boolean))].join("، ") || "-";
   const activityNames =
     [...new Set(items.map((item) => item.activity?.name).filter(Boolean))].join("، ") || "-";
+  const revenueSplit = subscription.revenue_split;
 
   return (
     <div className="space-y-6">
@@ -159,9 +160,54 @@ export default function SubscriptionDetails({
           value={formatSubscriptionMoney(subscription.remaining_amount)}
           tone={parseSubscriptionAmount(subscription.remaining_amount) > 0 ? "red" : "green"}
         />
-        <DetailItem label="رقم الإيصال" value={getSubscriptionReceiptNumber(subscription)} />
         <DetailItem label="المدرب المسؤول" value={coachNames} />
       </DetailSection>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium text-app-yellow">الإيصالات</h3>
+        <div className="rounded-lg border border-app-line bg-app-card-soft/70 p-3">
+          <SubscriptionReceiptBadges
+            subscription={subscription}
+            className="items-start sm:flex-row sm:flex-wrap"
+          />
+        </div>
+      </section>
+
+      {revenueSplit && (
+        <DetailSection title="التوزيع المالي">
+          <DetailItem
+            label="إجمالي المبلغ"
+            value={formatSubscriptionMoney(revenueSplit.total_amount)}
+            tone="yellow"
+          />
+          <DetailItem
+            label="حصة الكوتش"
+            value={formatSubscriptionMoney(revenueSplit.coach_amount)}
+            tone="green"
+          />
+          <DetailItem
+            label="نسبة الكوتش"
+            value={
+              revenueSplit.coach_percentage != null
+                ? `${Number(revenueSplit.coach_percentage)}%`
+                : "-"
+            }
+          />
+          <DetailItem
+            label="حصة النادي"
+            value={formatSubscriptionMoney(revenueSplit.club_amount)}
+            tone="green"
+          />
+          <DetailItem
+            label="نسبة النادي"
+            value={
+              revenueSplit.club_percentage != null
+                ? `${Number(revenueSplit.club_percentage)}%`
+                : "-"
+            }
+          />
+        </DetailSection>
+      )}
 
       <DetailSection title="سجل التعديل">
         <DetailItem

@@ -44,9 +44,37 @@ export function isPrivateEquipmentActivity(activity) {
   return normalizedName.includes("اجهزة خاص");
 }
 
-/** Reads and validates the commission percentage stored on a coach record. */
+/** Private equipment and private training plans both use coach/branch prices. */
+export function isPrivateSubscriptionActivity(activity) {
+  const normalizedName = normalizeArabicText(getSubscriptionPlanActivityName(activity));
+  return normalizedName.includes("اجهزة خاص") || normalizedName.includes("تدريب خاص");
+}
+
+/** Adds the two private-plan prices without allowing invalid values into the payload. */
+export function calculatePrivatePlanBasePrice(coachPrice, branchPrice) {
+  const coachAmount = Number(coachPrice);
+  const branchAmount = Number(branchPrice);
+
+  if (
+    !Number.isFinite(coachAmount) ||
+    !Number.isFinite(branchAmount) ||
+    coachAmount < 0 ||
+    branchAmount < 0
+  ) {
+    return 0;
+  }
+
+  return Number((coachAmount + branchAmount).toFixed(2));
+}
+
+/** Reads and validates the private-training commission stored on a coach record. */
 export function getSubscriptionPlanCoachCommission(coach) {
-  const value = coach?.default_commission_rate ?? coach?.details?.default_commission_rate;
+  const value =
+    coach?.details?.private_commission_rate ??
+    coach?.private_commission_rate ??
+    // Keep older coach records working when they predate the dedicated private rate.
+    coach?.details?.default_commission_rate ??
+    coach?.default_commission_rate;
   if (value === null || value === undefined || String(value).trim() === "") return null;
 
   const percentage = Number(value);

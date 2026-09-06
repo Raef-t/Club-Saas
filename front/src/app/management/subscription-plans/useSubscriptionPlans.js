@@ -67,8 +67,7 @@ export function useSubscriptionPlans({
   );
   const paginationFilterKey = [selectedBranchId, statusFilter, search].join("|");
   const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
-  const needsAllPlans =
-    Boolean(search.trim()) || !["all", "active"].includes(statusFilter);
+  const needsAllPlans = Boolean(search.trim()) || !["all", "active"].includes(statusFilter);
   const listQueryParams = useMemo(
     () => ({
       ...branchQueryParams,
@@ -77,8 +76,13 @@ export function useSubscriptionPlans({
     }),
     [branchQueryParams, needsAllPlans, page, perPage, statusFilter],
   );
-  const { currentData: data, error, isLoading, isFetching, refetch } =
-    useGetSubscriptionPlansQuery(listQueryParams);
+  const {
+    currentData: data,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetSubscriptionPlansQuery(listQueryParams);
   const {
     data: detailsData,
     error: detailsError,
@@ -402,6 +406,12 @@ export function useSubscriptionPlans({
       sessions_per_week: plan.sessions_per_week ? String(plan.sessions_per_week) : "",
       session_count: plan.session_count ? String(plan.session_count) : "",
       price: String(parseAmount(plan.base_price || "")),
+      coach_price:
+        plan.coach_price === null || plan.coach_price === undefined ? "" : String(plan.coach_price),
+      branch_price:
+        plan.branch_price === null || plan.branch_price === undefined
+          ? ""
+          : String(plan.branch_price),
       max_subscribers: String(plan.max_subscribers ?? "0"),
       is_active: status === SUBSCRIPTION_PLAN_STATUS.ACTIVE,
       status,

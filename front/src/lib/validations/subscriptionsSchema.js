@@ -2,36 +2,70 @@ import { z } from "zod";
 import "./zodErrorMap";
 import { modificationReasonSchema } from "./modificationReasonSchema";
 
-export const subscriptionSchema = z.object({
-  member_id: z
-    .number({ invalid_type_error: "يرجى اختيار العضو" })
-    .positive("يرجى اختيار العضو")
-    .or(z.string().min(1, "يرجى اختيار العضو").transform(Number)),
+const optionalReceiptSchema = z
+  .string()
+  .trim()
+  .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف")
+  .optional();
 
-  plan_id: z
-    .number({ invalid_type_error: "يرجى اختيار الخطة" })
-    .positive("يرجى اختيار الخطة")
-    .or(z.string().min(1, "يرجى اختيار الخطة").transform(Number)),
+export const subscriptionSchema = z
+  .object({
+    member_id: z
+      .number({ invalid_type_error: "يرجى اختيار العضو" })
+      .positive("يرجى اختيار العضو")
+      .or(z.string().min(1, "يرجى اختيار العضو").transform(Number)),
 
-  paid_amount: z
-    .number()
-    .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر")
-    .or(z.string().min(1, "المبلغ المدفوع مطلوب").transform(Number)),
+    plan_id: z
+      .number({ invalid_type_error: "يرجى اختيار الخطة" })
+      .positive("يرجى اختيار الخطة")
+      .or(z.string().min(1, "يرجى اختيار الخطة").transform(Number)),
 
-  receipt_number: z
-    .string({ required_error: "رقم الإيصال مطلوب" })
-    .trim()
-    .min(1, "رقم الإيصال مطلوب")
-    .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف"),
+    paid_amount: z
+      .number()
+      .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر")
+      .or(z.string().min(1, "المبلغ المدفوع مطلوب").transform(Number)),
 
-  start_date: z
-    .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
-    .min(1, "تاريخ بداية الاشتراك مطلوب"),
+    months_count: z.coerce.number().int().positive("عدد الأشهر يجب أن يكون واحداً أو أكثر"),
 
-  end_date: z
-    .string({ required_error: "تاريخ نهاية الاشتراك مطلوب" })
-    .min(1, "تاريخ نهاية الاشتراك مطلوب"),
-});
+    receipt_number: optionalReceiptSchema,
+    coach_receipt_number: optionalReceiptSchema,
+    branch_receipt_number: optionalReceiptSchema,
+    is_private_plan: z.boolean().optional().default(false),
+
+    start_date: z
+      .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
+      .min(1, "تاريخ بداية الاشتراك مطلوب"),
+
+    end_date: z
+      .string({ required_error: "تاريخ نهاية الاشتراك مطلوب" })
+      .min(1, "تاريخ نهاية الاشتراك مطلوب"),
+  })
+  .superRefine((data, ctx) => {
+    const requiredReceipts = data.is_private_plan
+      ? [
+          ["coach_receipt_number", data.coach_receipt_number, "رقم إيصال الكوتش مطلوب"],
+          ["branch_receipt_number", data.branch_receipt_number, "رقم إيصال النادي مطلوب"],
+        ]
+      : [["receipt_number", data.receipt_number, "رقم الإيصال مطلوب"]];
+
+    requiredReceipts.forEach(([field, value, message]) => {
+      if (!value) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+      }
+    });
+  })
+  .transform(({ is_private_plan, ...data }) => {
+    const normalizedData = { ...data };
+
+    if (is_private_plan) {
+      delete normalizedData.receipt_number;
+    } else {
+      delete normalizedData.coach_receipt_number;
+      delete normalizedData.branch_receipt_number;
+    }
+
+    return normalizedData;
+  });
 
 export const subscriptionEditSchema = z
   .object({

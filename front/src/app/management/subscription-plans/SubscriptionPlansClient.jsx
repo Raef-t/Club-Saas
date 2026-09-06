@@ -25,7 +25,7 @@ import {
 } from "@/lib/validations/subscriptionPlansSchema";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
-import { useGetCoachesQuery, useGetCoachQuery } from "@/lib/api/coachesApi";
+import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { addMinutesToTime } from "./subscriptionPlanTimeUtils";
 import { getSubscriptionPlanStatusMeta, SUBSCRIPTION_PLAN_STATUS } from "./subscriptionPlanStatus";
 import {
@@ -36,13 +36,12 @@ import { subscriptionPlanSuspensionSchema } from "@/lib/validations/subscription
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { toIsoDate } from "@/components/forms/datePickerUtils";
 import {
-  calculateCommissionAmount,
+  calculatePrivatePlanBasePrice,
   createSuggestedSubscriptionPlanName,
-  getSubscriptionPlanCoachCommission,
   getSubscriptionPlanActivityName,
   isEquipmentActivity,
   isGeneralEquipmentActivity,
-  isPrivateEquipmentActivity,
+  isPrivateSubscriptionActivity,
 } from "./subscriptionPlanFormUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
@@ -189,6 +188,8 @@ const initialForm = {
   sessions_per_week: "",
   session_count: "",
   price: "",
+  coach_price: "",
+  branch_price: "",
   max_subscribers: "50",
   is_active: true,
   status: SUBSCRIPTION_PLAN_STATUS.ACTIVE,
@@ -492,6 +493,12 @@ function PlanDetails({
 
       <section className="grid gap-3 sm:grid-cols-2">
         <DetailItem label="السعر" value={formatMoney(plan.base_price)} tone="yellow" />
+        {plan.coach_price != null && (
+          <DetailItem label="سعر الكوتش" value={formatMoney(plan.coach_price)} tone="green" />
+        )}
+        {plan.branch_price != null && (
+          <DetailItem label="سعر النادي" value={formatMoney(plan.branch_price)} />
+        )}
         <DetailItem label="الجلسات أسبوعياً" value={plan.sessions_per_week || "-"} />
         <DetailItem label="عدد الجلسات الإجمالي" value={plan.session_count || "-"} />
         <DetailItem label="سبب آخر تعديل" value={plan.reason || "-"} />
@@ -565,22 +572,8 @@ export function PlanForm({
   );
   const isEquipmentOnlyPlan =
     selectedActivityRecords.length > 0 && selectedActivityRecords.every(isEquipmentActivity);
-  const privateEquipmentItem = (form.activities || []).find((item) => {
-    const activity = activities.find(
-      (activityRecord) => String(activityRecord.id) === String(item.activity_id),
-    );
-    return isPrivateEquipmentActivity(activity);
-  });
-  const privateCoachId = privateEquipmentItem?.coach_id || null;
-  const selectedPrivateCoach = coaches.find((coach) => String(coach.id) === String(privateCoachId));
-  const { currentData: privateCoachResponse, isFetching: isFetchingPrivateCoach } =
-    useGetCoachQuery(privateCoachId, { skip: !privateCoachId });
-  const privateCoach = privateCoachResponse?.data || selectedPrivateCoach;
-  const coachCommissionPercentage = getSubscriptionPlanCoachCommission(privateCoach);
-  const clubCommissionPercentage =
-    coachCommissionPercentage === null ? null : 100 - coachCommissionPercentage;
-  const coachCommissionAmount = calculateCommissionAmount(form.price, coachCommissionPercentage);
-  const clubCommissionAmount = calculateCommissionAmount(form.price, clubCommissionPercentage);
+  const isPrivatePlan = selectedActivityRecords.some(isPrivateSubscriptionActivity);
+  const privatePlanBasePrice = calculatePrivatePlanBasePrice(form.coach_price, form.branch_price);
 
   useEffect(() => {
     if (!isEquipmentOnlyPlan || !form.session_templates?.length) return;
@@ -632,6 +625,19 @@ export function PlanForm({
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
+  function updatePrivatePrice(field, value) {
+    setForm((current) => {
+      const nextState = { ...current, [field]: value };
+      nextState.price = String(
+        calculatePrivatePlanBasePrice(nextState.coach_price, nextState.branch_price),
+      );
+      return nextState;
+    });
+    if (errors[field] || errors.price) {
+      setErrors((current) => ({ ...current, [field]: null, price: null }));
+    }
+  }
+
   function updateBranch(branchId) {
     setForm((current) => ({ ...current, branch_id: branchId }));
     setErrors((current) => ({ ...current, branch_id: null }));
@@ -645,7 +651,10 @@ export function PlanForm({
       gender_restriction: form.gender_restriction,
       sessions_per_week: form.sessions_per_week,
       session_count: form.session_count,
-      price: form.price,
+      price: isPrivatePlan ? privatePlanBasePrice : form.price,
+      coach_price: isPrivatePlan ? form.coach_price : undefined,
+      branch_price: isPrivatePlan ? form.branch_price : undefined,
+      is_private_plan: isPrivatePlan,
       max_subscribers: form.is_unlimited_subscribers ? null : form.max_subscribers,
       is_active: !!form.is_active,
       status:
@@ -689,7 +698,9 @@ export function PlanForm({
     }
 
     setErrors({});
-    onSubmit(result.data);
+    const validatedData = { ...result.data };
+    delete validatedData.is_private_plan;
+    onSubmit(validatedData);
   }
 
   return (
@@ -767,40 +778,52 @@ export function PlanForm({
         error={errors.session_count}
       />
 
-      <Field
-        label="السعر"
-        value={form.price}
-        onChange={(event) => updateField("price", event.target.value)}
-        type="number"
-        min="0"
-        step="0.01"
-        placeholder="350"
-        required
-        error={errors.price}
-      />
-
-      {privateCoachId && (
+      {isPrivatePlan ? (
         <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <CommissionAmountCard
-              label="المبلغ الذي يحصل عليه المدرب"
-              amount={coachCommissionAmount}
-              percentage={coachCommissionPercentage}
+            <Field
+              label="سعر الكوتش"
+              value={form.coach_price}
+              onChange={(event) => updatePrivatePrice("coach_price", event.target.value)}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="200"
+              required
+              error={errors.coach_price}
             />
-            <CommissionAmountCard
-              label="المبلغ الذي يحصل عليه النادي"
-              amount={clubCommissionAmount}
-              percentage={clubCommissionPercentage}
+            <Field
+              label="سعر النادي"
+              value={form.branch_price}
+              onChange={(event) => updatePrivatePrice("branch_price", event.target.value)}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="150"
+              required
+              error={errors.branch_price}
             />
           </div>
-          <p className="mt-3 text-xs text-app-muted-light">
-            {isFetchingPrivateCoach
-              ? "جاري تحميل نسبة المدرب..."
-              : coachCommissionPercentage === null
-                ? "لم يتم تحديد نسبة لهذا المدرب. يمكنك إضافتها من صفحة المدربين."
-                : "تم احتساب المبلغين تلقائياً من سعر الفعالية ونسبة المدرب المحددة في صفحة المدربين."}
+          <div className="mt-3 flex items-center justify-between rounded-lg border border-app-line bg-black/20 px-3 py-2.5 text-sm">
+            <span className="text-app-muted-light">السعر الإجمالي</span>
+            <strong className="text-app-yellow">{formatMoney(privatePlanBasePrice)}</strong>
+          </div>
+          <p className="mt-2 text-xs text-app-muted-light">
+            يُحسب السعر الإجمالي تلقائياً من سعر الكوتش + سعر النادي.
           </p>
         </div>
+      ) : (
+        <Field
+          label="السعر"
+          value={form.price}
+          onChange={(event) => updateField("price", event.target.value)}
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="350"
+          required
+          error={errors.price}
+        />
       )}
 
       {(() => {
@@ -1010,22 +1033,6 @@ export function PlanForm({
         </Button>
       </div>
     </form>
-  );
-}
-
-function CommissionAmountCard({ label, amount, percentage }) {
-  return (
-    <div className="rounded-xl border border-app-line bg-black/20 p-4">
-      <p className="text-sm text-app-muted-light">{label}</p>
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <strong className="text-lg text-white">
-          {amount === null ? "—" : formatMoney(amount)}
-        </strong>
-        <span className="text-sm font-medium text-yellow-300">
-          {percentage === null ? "—" : `${Number(percentage.toFixed(2))}%`}
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -1262,9 +1269,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         toolbarMeta={
           <p className="text-sm text-app-muted-light">
             النتائج:{" "}
-            <span className="font-medium text-app-text">
-              {totalResults.toLocaleString("ar")}
-            </span>
+            <span className="font-medium text-app-text">{totalResults.toLocaleString("ar")}</span>
           </p>
         }
       />

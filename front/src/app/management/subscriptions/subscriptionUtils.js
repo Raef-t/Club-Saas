@@ -112,6 +112,14 @@ export function formatSubscriptionMoney(value) {
 }
 
 /**
+ * Identifies plans whose price is split between the coach service and the branch.
+ * API amounts are commonly returned as non-empty decimal strings.
+ */
+export function isPrivateSubscriptionPlan(plan) {
+  return Boolean(plan?.coach_price && plan?.branch_price);
+}
+
+/**
  * Extracts the subscription list from the supported backend response shapes.
  */
 export function getSubscriptionRows(response) {
@@ -163,6 +171,21 @@ export function getSubscriptionReceiptNumber(subscription) {
     candidates.find((value) => value !== null && value !== undefined && String(value).trim()) ??
     null
   );
+}
+
+/**
+ * Normalizes the three receipt fields exposed by subscription detail responses.
+ */
+export function getSubscriptionReceiptNumbers(subscription) {
+  const revenueSplit = subscription?.revenue_split;
+
+  return {
+    receiptNumber: getSubscriptionReceiptNumber(subscription),
+    coachReceiptNumber:
+      subscription?.coach_receipt_number ?? revenueSplit?.coach_receipt_number ?? null,
+    branchReceiptNumber:
+      subscription?.branch_receipt_number ?? revenueSplit?.branch_receipt_number ?? null,
+  };
 }
 
 function getSubscriptionMemberId(subscription) {
