@@ -6,6 +6,7 @@ describe("subscription create validation", () => {
     member_id: 1,
     plan_id: 2,
     paid_amount: 300,
+    months_count: 1,
     receipt_number: "  REC-0007  ",
     start_date: "2026-08-01",
     end_date: "2026-08-31",
@@ -21,6 +22,35 @@ describe("subscription create validation", () => {
 
     expect(result.success).toBe(false);
     expect(result.error.issues.some((issue) => issue.path[0] === "receipt_number")).toBe(true);
+  });
+
+  it("uses two receipt numbers for a private plan and omits the general receipt", () => {
+    const result = subscriptionSchema.parse({
+      ...validSubscription,
+      is_private_plan: true,
+      receipt_number: "",
+      coach_receipt_number: "  REC-COACH-001  ",
+      branch_receipt_number: "  REC-CLUB-001  ",
+    });
+
+    expect(result).toMatchObject({
+      coach_receipt_number: "REC-COACH-001",
+      branch_receipt_number: "REC-CLUB-001",
+    });
+    expect(result).not.toHaveProperty("receipt_number");
+    expect(result).not.toHaveProperty("is_private_plan");
+  });
+
+  it("requires both private-plan receipt numbers", () => {
+    const result = subscriptionSchema.safeParse({
+      ...validSubscription,
+      is_private_plan: true,
+      coach_receipt_number: "REC-COACH-001",
+      branch_receipt_number: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.issues[0].path).toEqual(["branch_receipt_number"]);
   });
 });
 

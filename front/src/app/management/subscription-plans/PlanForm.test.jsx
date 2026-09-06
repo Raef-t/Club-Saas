@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlanForm } from "./SubscriptionPlansClient";
 
@@ -6,16 +6,15 @@ const { coach } = vi.hoisted(() => ({
   coach: {
     id: 44,
     person: { full_name: "كابتن دانية" },
-    details: { default_commission_rate: "50.00" },
+    details: {
+      default_commission_rate: "0.00",
+      private_commission_rate: "100.00",
+    },
   },
 }));
 
 vi.mock("@/lib/api/coachesApi", () => ({
   useGetCoachesQuery: () => ({ data: { data: [coach] }, isLoading: false }),
-  useGetCoachQuery: () => ({
-    currentData: { data: coach },
-    isFetching: false,
-  }),
 }));
 
 vi.mock("@/lib/ManagementBranchContext", () => ({
@@ -23,8 +22,9 @@ vi.mock("@/lib/ManagementBranchContext", () => ({
 }));
 
 describe("private-equipment activity amounts", () => {
-  it("shows and updates the coach and club amounts under the activity price", () => {
-    render(
+  it("collects the coach and club prices and derives the base price", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
       <PlanForm
         mode="create"
         initialValues={{
@@ -33,6 +33,8 @@ describe("private-equipment activity amounts", () => {
           sessions_per_week: "",
           session_count: "",
           price: "300",
+          coach_price: "200",
+          branch_price: "100",
           max_subscribers: "50",
           is_active: true,
           status: "active",
@@ -45,22 +47,20 @@ describe("private-equipment activity amounts", () => {
         branches={[{ id: 5, name: "الفرع الرئيسي" }]}
         activities={[{ id: 8, name: "أجهزة خاص" }]}
         coaches={[coach]}
-        onSubmit={vi.fn()}
+        onSubmit={onSubmit}
         onCancel={vi.fn()}
       />,
     );
 
-    const coachCard = screen.getByText("المبلغ الذي يحصل عليه المدرب").parentElement;
-    const clubCard = screen.getByText("المبلغ الذي يحصل عليه النادي").parentElement;
+    expect(screen.getByText("300 ل.س")).toBeInTheDocument();
 
-    expect(within(coachCard).getByText("150 ل.س")).toBeInTheDocument();
-    expect(within(coachCard).getByText("50%")).toBeInTheDocument();
-    expect(within(clubCard).getByText("150 ل.س")).toBeInTheDocument();
-    expect(within(clubCard).getByText("50%")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/سعر الكوتش/), { target: { value: "250" } });
 
-    fireEvent.change(screen.getByLabelText(/السعر/), { target: { value: "400" } });
+    expect(screen.getByText("350 ل.س")).toBeInTheDocument();
+    fireEvent.submit(container.querySelector("form"));
 
-    expect(within(coachCard).getByText("200 ل.س")).toBeInTheDocument();
-    expect(within(clubCard).getByText("200 ل.س")).toBeInTheDocument();
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ price: 350, coach_price: 250, branch_price: 100 }),
+    );
   });
 });

@@ -2,6 +2,7 @@
 
 import SubscriptionDetails from "./SubscriptionDetails";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
+import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
 import { useMemo } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
@@ -20,7 +21,7 @@ import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 const TABLE_GRID_COLUMNS =
-  "minmax(180px,1.25fr) minmax(160px,1fr) minmax(120px,.8fr) 88px 128px 88px 90px";
+  "minmax(150px,1.35fr) minmax(130px,1.15fr) minmax(120px,1fr) minmax(80px,.65fr) minmax(150px,1.2fr) minmax(105px,.9fr) 76px 80px";
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -150,6 +151,13 @@ export default function SubscriptionsClient({ initialData }) {
         ),
       },
       {
+        key: "receipts",
+        label: "الإيصالات",
+        align: "center",
+        sortable: false,
+        render: (_, subscription) => <SubscriptionReceiptBadges subscription={subscription} />,
+      },
+      {
         key: "dates",
         label: "تاريخ الصلاحية",
         align: "center",
@@ -230,6 +238,7 @@ export default function SubscriptionsClient({ initialData }) {
         rows={filteredSubscriptions}
         minWidth="1080px"
         tableColumns={TABLE_GRID_COLUMNS}
+        desktopScrollable
         showAdd={false}
         showSearch={false}
         showFilter={false}

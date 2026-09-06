@@ -19,59 +19,88 @@ const subscriptionPlanActivitySchema = z
   })
   .transform(({ coach_optional, ...activity }) => activity);
 
-export const subscriptionPlanSchema = z.object({
-  branch_id: z
-    .string({ required_error: "الفرع مطلوب" })
-    .min(1, "الفرع مطلوب")
-    .or(z.number().transform(String)),
+const optionalPlanPriceSchema = z.preprocess(
+  (value) => (value === "" || value === null || value === undefined ? undefined : value),
+  z.coerce.number().nonnegative("لا يمكن أن يكون السعر سالباً").optional(),
+);
 
-  name: z
-    .string({ required_error: "اسم الخطة مطلوب" })
-    .trim()
-    .min(2, "اسم الخطة يجب أن يكون حرفين على الأقل")
-    .max(100, "اسم الخطة طويل جداً"),
+export const subscriptionPlanSchema = z
+  .object({
+    branch_id: z
+      .string({ required_error: "الفرع مطلوب" })
+      .min(1, "الفرع مطلوب")
+      .or(z.number().transform(String)),
 
-  sessions_per_week: z
-    .union([z.number(), z.string().transform((val) => (val === "" ? undefined : Number(val)))])
-    .optional()
-    .nullable(),
+    name: z
+      .string({ required_error: "اسم الخطة مطلوب" })
+      .trim()
+      .min(2, "اسم الخطة يجب أن يكون حرفين على الأقل")
+      .max(100, "اسم الخطة طويل جداً"),
 
-  session_count: z
-    .union([z.number(), z.string().transform((val) => (val === "" ? undefined : Number(val)))])
-    .optional()
-    .nullable(),
+    sessions_per_week: z
+      .union([z.number(), z.string().transform((val) => (val === "" ? undefined : Number(val)))])
+      .optional()
+      .nullable(),
 
-  price: z
-    .number({ invalid_type_error: "السعر مطلوب" })
-    .nonnegative("لا يمكن أن يكون السعر سالباً")
-    .or(z.string().min(1, "السعر مطلوب").transform(Number)),
+    session_count: z
+      .union([z.number(), z.string().transform((val) => (val === "" ? undefined : Number(val)))])
+      .optional()
+      .nullable(),
 
-  max_subscribers: z
-    .number({ invalid_type_error: "الحد الأقصى للمشتركين مطلوب" })
-    .nonnegative("لا يمكن أن يكون الحد الأقصى للمشتركين سالباً")
-    .or(z.string().min(1, "الحد الأقصى للمشتركين مطلوب").transform(Number))
-    .nullable()
-    .optional(),
+    price: z
+      .number({ invalid_type_error: "السعر مطلوب" })
+      .nonnegative("لا يمكن أن يكون السعر سالباً")
+      .or(z.string().min(1, "السعر مطلوب").transform(Number)),
 
-  is_unlimited_subscribers: z.boolean().optional(),
+    coach_price: optionalPlanPriceSchema,
+    branch_price: optionalPlanPriceSchema,
+    is_private_plan: z.boolean().optional().default(false),
 
-  gender_restriction: z.enum(["mixed", "male", "female"]).optional(),
+    max_subscribers: z
+      .number({ invalid_type_error: "الحد الأقصى للمشتركين مطلوب" })
+      .nonnegative("لا يمكن أن يكون الحد الأقصى للمشتركين سالباً")
+      .or(z.string().min(1, "الحد الأقصى للمشتركين مطلوب").transform(Number))
+      .nullable()
+      .optional(),
 
-  activities: z.array(subscriptionPlanActivitySchema).min(1, "يرجى إضافة نشاط واحد على الأقل"),
+    is_unlimited_subscribers: z.boolean().optional(),
 
-  session_templates: z
-    .array(
-      z.object({
-        day_of_week: z.number().min(0).max(6, "يوم الأسبوع غير صالح"),
-        start_time: z.string().min(1, "وقت البدء مطلوب"),
-        end_time: z.string().min(1, "وقت الانتهاء مطلوب"),
-      }),
-    )
-    .optional(),
+    gender_restriction: z.enum(["mixed", "male", "female"]).optional(),
 
-  is_active: z.boolean().optional(),
-  status: z.enum(["active", "inactive", "completed"]).optional(),
-});
+    activities: z.array(subscriptionPlanActivitySchema).min(1, "يرجى إضافة نشاط واحد على الأقل"),
+
+    session_templates: z
+      .array(
+        z.object({
+          day_of_week: z.number().min(0).max(6, "يوم الأسبوع غير صالح"),
+          start_time: z.string().min(1, "وقت البدء مطلوب"),
+          end_time: z.string().min(1, "وقت الانتهاء مطلوب"),
+        }),
+      )
+      .optional(),
+
+    is_active: z.boolean().optional(),
+    status: z.enum(["active", "inactive", "completed"]).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.is_private_plan) return;
+
+    if (data.coach_price === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["coach_price"],
+        message: "سعر الكوتش مطلوب للخطة الخاصة",
+      });
+    }
+
+    if (data.branch_price === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["branch_price"],
+        message: "سعر النادي مطلوب للخطة الخاصة",
+      });
+    }
+  });
 
 export const subscriptionPlanUpdateSchema = subscriptionPlanSchema.and(
   modificationReasonObjectSchema,

@@ -51,6 +51,9 @@ export function CoachCreateForm({
     return values;
   });
   const lastBaseSalaryRef = useRef(form.base_salary);
+  const shouldSyncPrivateCommissionFromSettingsRef = useRef(
+    String(form.private_club_commission_rate ?? "").trim() === "",
+  );
 
   const calculatedAge = calculateAge(form.dob);
   const selectedActivities = useMemo(
@@ -156,7 +159,7 @@ export function CoachCreateForm({
 
       if (activityRules.hasPrivateTraining) {
         if (
-          String(clubCommission ?? "").trim() === "" &&
+          shouldSyncPrivateCommissionFromSettingsRef.current &&
           branchSettings?.private_subscription_commission !== undefined
         ) {
           clubCommission = String(branchSettings.private_subscription_commission);
@@ -215,6 +218,7 @@ export function CoachCreateForm({
     setForm((current) => {
       const updated = { ...current, [field]: value };
       if (field === "branch_ids" || field === "activity_ids") {
+        shouldSyncPrivateCommissionFromSettingsRef.current = true;
         updated.shifts = [];
         updated.private_club_commission_rate = "";
         updated.private_commission_rate = "0";
@@ -228,6 +232,7 @@ export function CoachCreateForm({
   }
 
   function updatePrivateClubCommission(value) {
+    shouldSyncPrivateCommissionFromSettingsRef.current = false;
     setForm((current) => ({
       ...current,
       private_club_commission_rate: value,

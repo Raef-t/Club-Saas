@@ -1,11 +1,11 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CoachCreateForm } from "./CoachForm";
 
 afterEach(cleanup);
 
-vi.mock("@/lib/api/branchesApi", () => {
-  const settingsQuery = {
+const { settingsQuery } = vi.hoisted(() => ({
+  settingsQuery: {
     currentData: {
       data: {
         private_subscription_commission: "15.5",
@@ -15,12 +15,25 @@ vi.mock("@/lib/api/branchesApi", () => {
     },
     isFetching: false,
     error: null,
-  };
+  },
+}));
+
+vi.mock("@/lib/api/branchesApi", () => {
   const shiftsQuery = { currentData: { data: [] }, isFetching: false };
 
   return {
     useGetBranchSettingsQuery: () => settingsQuery,
     useGetBranchShiftsQuery: () => shiftsQuery,
+  };
+});
+
+beforeEach(() => {
+  settingsQuery.currentData = {
+    data: {
+      private_subscription_commission: "15.5",
+      default_coach_commission_percentage: "35",
+      default_employee_salary: "10000",
+    },
   };
 });
 
@@ -33,6 +46,45 @@ vi.mock("@/lib/TimeFormatContext", () => ({
 }));
 
 describe("coach private-training commissions", () => {
+  it("replaces a cached club share when the latest branch settings arrive", async () => {
+    settingsQuery.currentData = {
+      data: {
+        private_subscription_commission: "0",
+        default_coach_commission_percentage: "35",
+        default_employee_salary: "10000",
+      },
+    };
+    const props = {
+      formId: "coach-form",
+      branches: [{ id: 5, name: "الفرع الرئيسي" }],
+      activities: [{ id: 8, name: "أجهزة خاص" }],
+      onSubmit: vi.fn(),
+      onCancel: vi.fn(),
+    };
+    const { getByRole, rerender } = render(<CoachCreateForm {...props} />);
+
+    fireEvent.click(getByRole("button", { name: /اختر نشاطاً لإضافته/ }));
+    fireEvent.click(await screen.findByRole("option", { name: "أجهزة خاص" }));
+
+    const clubInput = await screen.findByLabelText(/نسبة النادي من التدريب الخاص/);
+    const coachInput = screen.getByLabelText(/نسبة المدرب من التدريب الخاص/);
+    await waitFor(() => expect(clubInput).toHaveValue(0));
+
+    settingsQuery.currentData = {
+      data: {
+        private_subscription_commission: "25",
+        default_coach_commission_percentage: "35",
+        default_employee_salary: "10000",
+      },
+    };
+    rerender(<CoachCreateForm {...props} />);
+
+    await waitFor(() => {
+      expect(clubInput).toHaveValue(25);
+      expect(coachInput).toHaveValue(75);
+    });
+  });
+
   it("loads the club share from branch settings and calculates the coach share", async () => {
     render(
       <CoachCreateForm

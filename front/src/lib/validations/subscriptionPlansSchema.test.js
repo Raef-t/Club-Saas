@@ -43,6 +43,26 @@ describe("subscription plan activity validation", () => {
     expect(result.activities).toEqual([{ activity_id: 7, coach_id: 44 }]);
   });
 
+  it("requires and normalizes both prices for a private plan", () => {
+    const result = subscriptionPlanSchema.parse({
+      ...createPlan([{ activity_id: 7, coach_id: 44 }]),
+      is_private_plan: true,
+      coach_price: "200",
+      branch_price: "150",
+    });
+
+    expect(result.coach_price).toBe(200);
+    expect(result.branch_price).toBe(150);
+
+    const missingBranchPrice = subscriptionPlanSchema.safeParse({
+      ...createPlan([{ activity_id: 7, coach_id: 44 }]),
+      is_private_plan: true,
+      coach_price: "200",
+    });
+    expect(missingBranchPrice.success).toBe(false);
+    expect(missingBranchPrice.error.issues[0].path).toEqual(["branch_price"]);
+  });
+
   it("does not persist legacy commission fields on the subscription plan", () => {
     const result = subscriptionPlanSchema.parse({
       ...createPlan([{ activity_id: 7, coach_id: 44 }]),
