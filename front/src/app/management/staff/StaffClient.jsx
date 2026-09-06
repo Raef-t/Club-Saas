@@ -29,6 +29,7 @@ import {
 import { useStaff } from "./useStaff";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
+import { useGetRolesQuery } from "@/lib/api/usersApi";
 
 export default function StaffClient({ initialData }) {
   const { can } = usePermissions();
@@ -36,6 +37,7 @@ export default function StaffClient({ initialData }) {
   const canView = can("staff.view");
   const canUpdate = can("staff.update");
   const canDelete = can("staff.delete");
+  const { data: rolesResponse } = useGetRolesQuery();
   const {
     search,
     setSearch,
@@ -193,10 +195,28 @@ export default function StaffClient({ initialData }) {
     [branches],
   );
 
-  const roleOptions = useMemo(
-    () => [{ value: "all", label: "كل الأدوار" }, ...STAFF_FILTER_ROLE_OPTIONS],
-    [],
-  );
+  const roleOptions = useMemo(() => {
+    const rawRoles = rolesResponse?.data?.roles || rolesResponse?.data || [];
+    if (Array.isArray(rawRoles) && rawRoles.length > 0) {
+      const visible = rawRoles.filter((r) => Boolean(r.is_visible));
+      const seen = new Set();
+      const dynamicOptions = [];
+
+      for (const r of visible) {
+        if (!seen.has(r.name)) {
+          seen.add(r.name);
+          dynamicOptions.push({
+            value: r.name,
+            label: r.name_ar || STAFF_ROLE_LABELS[r.name] || r.name,
+          });
+        }
+      }
+
+      return [{ value: "all", label: "كل الأدوار" }, ...dynamicOptions];
+    }
+
+    return [{ value: "all", label: "كل الأدوار" }, ...STAFF_FILTER_ROLE_OPTIONS];
+  }, [rolesResponse]);
   const genderOptions = useMemo(
     () => [
       { value: "all", label: "كل الأجناس" },

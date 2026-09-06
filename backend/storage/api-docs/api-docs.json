@@ -19385,17 +19385,11 @@
                     {
                         "name": "role",
                         "in": "query",
-                        "description": "تصفية حسب الدور",
+                        "description": "تصفية حسب الدور (اسم أي دور مسجل في النظام مثل reception, accountant, member_manager, admin...)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "admin",
-                                "manager",
-                                "coach",
-                                "receptionist",
-                                "cleaner"
-                            ]
+                            "example": "reception"
                         }
                     },
                     {
