@@ -3,7 +3,7 @@
 namespace Modules\ClubManager\Domain\Rules;
 
 use Modules\ClubManager\Repositories\LockerRepositoryInterface;
-use Exception;
+use Illuminate\Validation\ValidationException;
 
 class LockerUniquenessRule
 {
@@ -16,6 +16,8 @@ class LockerUniquenessRule
 
     /**
      * Rule: Locker number and key number must be unique within a single branch.
+     *
+     * @throws ValidationException
      */
     public function validate($branchId, $lockerNumber, $keyNumber = null, $ignoreLockerId = null)
     {
@@ -28,7 +30,9 @@ class LockerUniquenessRule
             });
 
             if ($existingLocker) {
-                throw new Exception(__('Locker number :num already exists in this branch.', ['num' => $lockerNumber]));
+                throw ValidationException::withMessages([
+                    'locker_number' => [__('Locker number :num already exists in this branch.', ['num' => $lockerNumber])],
+                ]);
             }
         }
 
@@ -39,7 +43,9 @@ class LockerUniquenessRule
             });
 
             if ($existingKey) {
-                throw new Exception(__('Key number :num already exists in this branch.', ['num' => $keyNumber]));
+                throw ValidationException::withMessages([
+                    'key_number' => [__('Key number :num already exists in this branch.', ['num' => $keyNumber])],
+                ]);
             }
         }
     }

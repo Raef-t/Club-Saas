@@ -209,8 +209,112 @@ class LockerSoftDeleteAndRestoreTest extends TestCase
 
         // Attempt to restore locker1 -> should fail because number 107 is occupied
         $restoreResponse = $this->postJson("/api/v1/lockers/{$locker1->id}/restore");
-        $restoreResponse->assertStatus(422);
+        $restoreResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['locker_number']);
 
         $this->assertSoftDeleted('lockers', ['id' => $locker1->id]);
+    }
+
+    public function test_store_locker_fails_with_422_when_locker_number_already_exists_in_same_branch(): void
+    {
+        Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '1',
+            'key_number' => '1',
+            'status' => 'available',
+        ]);
+
+        $response = $this->postJson('/api/v1/lockers', [
+            'branch_id' => $this->branch->id,
+            'locker_number' => '1',
+            'key_number' => '2',
+            'status' => 'available',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['locker_number']);
+    }
+
+    public function test_store_locker_fails_with_422_when_key_number_already_exists_in_same_branch(): void
+    {
+        Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '1',
+            'key_number' => '1',
+            'status' => 'available',
+        ]);
+
+        $response = $this->postJson('/api/v1/lockers', [
+            'branch_id' => $this->branch->id,
+            'locker_number' => '2',
+            'key_number' => '1',
+            'status' => 'available',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['key_number']);
+    }
+
+    public function test_store_locker_succeeds_with_same_number_in_different_branch(): void
+    {
+        Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '1',
+            'key_number' => '1',
+            'status' => 'available',
+        ]);
+
+        $branch2 = Branch::create(['club_id' => $this->club->id, 'name' => 'Second Branch', 'is_active' => true]);
+
+        $response = $this->postJson('/api/v1/lockers', [
+            'branch_id' => $branch2->id,
+            'locker_number' => '1',
+            'key_number' => '1',
+            'status' => 'available',
+        ]);
+
+        $response->assertStatus(201);
+    }
+
+    public function test_update_locker_fails_with_422_when_number_is_taken_by_another_locker(): void
+    {
+        $locker1 = Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '10',
+            'key_number' => '10',
+            'status' => 'available',
+        ]);
+
+        $locker2 = Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '20',
+            'key_number' => '20',
+            'status' => 'available',
+        ]);
+
+        // Trying to update locker2's number to locker1's number ('10')
+        $response = $this->putJson("/api/v1/lockers/{$locker2->id}", [
+            'locker_number' => '10',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['locker_number']);
+    }
+
+    public function test_update_locker_succeeds_when_keeping_its_own_number(): void
+    {
+        $locker = Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '30',
+            'key_number' => '30',
+            'status' => 'available',
+        ]);
+
+        $response = $this->putJson("/api/v1/lockers/{$locker->id}", [
+            'locker_number' => '30',
+            'reason' => 'Routine check',
+        ]);
+
+        $response->assertStatus(200);
     }
 }

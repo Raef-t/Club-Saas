@@ -3,6 +3,7 @@
 namespace Modules\ClubManager\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
@@ -37,9 +38,29 @@ class StoreLockerRequest extends FormRequest
     {
         return [
             'branch_id'     => 'required|exists:branches,id',
-            'locker_number' => 'required|string|max:50',
-            'key_number'    => 'nullable|string|max:50',
+            'locker_number' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('lockers', 'locker_number')
+                    ->where(fn ($query) => $query->where('branch_id', $this->branch_id)->whereNull('deleted_at')),
+            ],
+            'key_number'    => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('lockers', 'key_number')
+                    ->where(fn ($query) => $query->where('branch_id', $this->branch_id)->whereNull('deleted_at')),
+            ],
             'status'        => 'sometimes|in:available,with_member,with_staff,with_coach,maintenance',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'locker_number.unique' => __('Locker number :num already exists in this branch.', ['num' => $this->locker_number]),
+            'key_number.unique'    => __('Key number :num already exists in this branch.', ['num' => $this->key_number]),
         ];
     }
 }
