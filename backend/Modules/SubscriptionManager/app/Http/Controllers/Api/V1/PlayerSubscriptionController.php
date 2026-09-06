@@ -48,13 +48,26 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(
                     property: 'data',
                     type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1)
-                        ]
-                    )
+                    items: new OA\Items(type: 'object')
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscriptions retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 1,
+                        'subscription_number' => 'SUB-2026-001',
+                        'member_id' => 12,
+                        'plan_id' => 1,
+                        'status' => 'active',
+                        'start_date' => '2026-07-01',
+                        'end_date' => '2026-08-01',
+                        'total_amount' => 150.00,
+                        'paid_amount' => 150.00,
+                        'remaining_amount' => 0.00
+                    ]
+                ]
             ]
         )
     )]
@@ -99,13 +112,24 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member subscribed successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Member subscribed successfully',
+                'data' => [
+                    'id' => 1,
+                    'subscription_number' => 'SUB-2026-001',
+                    'member_id' => 12,
+                    'plan_id' => 1,
+                    'status' => 'active',
+                    'start_date' => '2026-07-01',
+                    'end_date' => '2026-08-01',
+                    'total_amount' => 150.00,
+                    'paid_amount' => 50.00,
+                    'remaining_amount' => 100.00,
+                    'notes' => 'ملاحظات إضافية'
+                ]
             ]
         )
     )]
@@ -148,13 +172,25 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription retrieved successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription retrieved successfully',
+                'data' => [
+                    'id' => 1,
+                    'subscription_number' => 'SUB-2026-001',
+                    'member_id' => 12,
+                    'plan_id' => 1,
+                    'status' => 'active',
+                    'start_date' => '2026-07-01',
+                    'end_date' => '2026-08-01',
+                    'total_amount' => 150.00,
+                    'paid_amount' => 150.00,
+                    'remaining_amount' => 0.00,
+                    'freezes' => [],
+                    'payments' => []
+                ]
             ]
         )
     )]
@@ -209,13 +245,19 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription updated successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'subscription_number' => 'SUB-2026-001',
+                    'start_date' => '2026-08-01',
+                    'end_date' => '2026-09-01',
+                    'status' => 'active',
+                    'reason' => 'تعديل تاريخ بداية ونهاية الاشتراك'
+                ]
             ]
         )
     )]
@@ -262,13 +304,16 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription frozen successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription frozen successfully',
+                'data' => [
+                    'id' => 1,
+                    'status' => 'frozen',
+                    'freeze_start_date' => '2026-11-01'
+                ]
             ]
         )
     )]
@@ -309,13 +354,15 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription unfrozen successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription unfrozen successfully',
+                'data' => [
+                    'id' => 1,
+                    'status' => 'active'
+                ]
             ]
         )
     )]
@@ -363,13 +410,22 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription renewed successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription renewed successfully',
+                'data' => [
+                    'id' => 2,
+                    'subscription_number' => 'SUB-2026-002',
+                    'member_id' => 12,
+                    'plan_id' => 1,
+                    'status' => 'active',
+                    'start_date' => '2026-08-01',
+                    'end_date' => '2026-09-01',
+                    'total_amount' => 150.00,
+                    'paid_amount' => 50.00
+                ]
             ]
         )
     )]
@@ -415,13 +471,15 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Subscription cancelled successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Subscription cancelled successfully',
+                'data' => [
+                    'id' => 1,
+                    'status' => 'cancelled'
+                ]
             ]
         )
     )]
@@ -469,13 +527,17 @@ class PlayerSubscriptionController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Payment recorded successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1)
-                    ]
-                )
+                new OA\Property(property: 'data', type: 'object')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Payment recorded successfully',
+                'data' => [
+                    'id' => 1,
+                    'total_amount' => 150.00,
+                    'paid_amount' => 150.00,
+                    'remaining_amount' => 0.00
+                ]
             ]
         )
     )]
@@ -515,8 +577,29 @@ class PlayerSubscriptionController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم حذف الاشتراك بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم حذف الاشتراك بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Player subscription deleted successfully and revenue split record preserved.')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Player subscription deleted successfully and revenue split record preserved.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404, 
+        description: '🚫 الاشتراك غير موجود',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Record not found.')
+            ]
+        )
+    )]
     public function destroy(Request $request, int $id)
     {
         $isRefunded = filter_var($request->input('is_refunded', $request->input('refunded', false)), FILTER_VALIDATE_BOOLEAN);
@@ -539,8 +622,29 @@ class PlayerSubscriptionController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع الاشتراك وكافة سجلاته المالية المرفقة بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 الاشتراك غير موجود في سلة المحذوفات')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم استرجاع الاشتراك وكافة سجلاته المالية المرفقة بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Player subscription restored successfully')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Player subscription restored successfully'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404, 
+        description: '🚫 الاشتراك غير موجود في سلة المحذوفات',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Record not found.')
+            ]
+        )
+    )]
     public function restore(int $id)
     {
         $this->subscriptionService->restoreSubscription($id);

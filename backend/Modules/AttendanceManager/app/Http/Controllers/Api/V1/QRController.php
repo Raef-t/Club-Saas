@@ -44,7 +44,20 @@ class QRController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Check-in successful.'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'attendance_id', type: 'integer', example: 45),
+                    new OA\Property(property: 'type', type: 'string', example: 'member'),
+                    new OA\Property(property: 'member_id', type: 'integer', example: 12, nullable: true)
+                ])
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Check-in successful.',
+                'data' => [
+                    'attendance_id' => 45,
+                    'type' => 'member',
+                    'member_id' => 12
+                ]
             ]
         )
     )]
@@ -150,6 +163,13 @@ class QRController extends BaseController
                 new OA\Property(property: 'data', type: 'object', properties: [
                     new OA\Property(property: 'duration_minutes', type: 'integer', example: 120)
                 ])
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Check-out successful.',
+                'data' => [
+                    'duration_minutes' => 120
+                ]
             ]
         )
     )]

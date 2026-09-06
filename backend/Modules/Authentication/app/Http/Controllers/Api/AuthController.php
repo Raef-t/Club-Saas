@@ -52,35 +52,33 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تسجيل الدخول بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تسجيل الدخول بنجاح'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'access_token', type: 'string', example: '1|abc123token...'),
-                        new OA\Property(property: 'token_type', type: 'string', example: 'Bearer'),
-                        new OA\Property(
-                            property: 'user',
-                            type: 'object',
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 1),
-                                new OA\Property(property: 'user_id', type: 'integer', example: 1),
-                                new OA\Property(property: 'person_id', type: 'integer', nullable: true, example: 5),
-                                new OA\Property(property: 'member_id', type: 'integer', nullable: true, example: 10),
-                                new OA\Property(property: 'staff_id', type: 'integer', nullable: true, example: 3),
-                                new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
-                                new OA\Property(property: 'custom_username', type: 'string', nullable: true, example: 'ahmed_player'),
-                                new OA\Property(property: 'must_change_password', type: 'boolean', example: true),
-                                new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
-                                new OA\Property(property: 'photo_url', type: 'string', nullable: true, example: 'https://example.com/photo.jpg'),
-                                new OA\Property(property: 'gender', type: 'string', nullable: true, example: 'male'),
-                                new OA\Property(property: 'type', type: 'string', nullable: true, example: 'player'),
-                            ]
-                        )
+            example: [
+                'status' => 'success',
+                'message' => 'Logged in successfully',
+                'data' => [
+                    'access_token' => '1|abc123token...',
+                    'token_type' => 'Bearer',
+                    'user' => [
+                        'id' => 1,
+                        'user_id' => 1,
+                        'person_id' => 5,
+                        'member_id' => 10,
+                        'staff_id' => 3,
+                        'username' => 'tec-ply-75054',
+                        'custom_username' => 'ahmed_player',
+                        'must_change_password' => false,
+                        'full_name' => 'أحمد محمد',
+                        'photo_url' => 'http://localhost:8000/storage/photos/photo.jpg',
+                        'gender' => 'male',
+                        'type' => 'player',
+                        'roles' => ['player'],
+                        'branch_id' => 1,
+                        'qr_codes' => [
+                            ['day' => 0, 'code' => 'QR-SUNDAY-CODE-123'],
+                            ['day' => 1, 'code' => 'QR-MONDAY-CODE-123']
+                        ]
                     ]
-                )
+                ]
             ]
         )
     )]
@@ -88,9 +86,9 @@ class AuthController extends BaseController
         response: 401,
         description: '❌ بيانات الدخول غير صحيحة',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'),
-                new OA\Property(property: 'message', type: 'string', example: 'بيانات الدخول غير صحيحة'),
+            example: [
+                'status' => 'error',
+                'message' => 'Invalid credentials'
             ]
         )
     )]
@@ -98,9 +96,9 @@ class AuthController extends BaseController
         response: 403,
         description: '🚫 الحساب غير مفعل',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'),
-                new OA\Property(property: 'message', type: 'string', example: 'حساب المستخدم غير مفعل'),
+            example: [
+                'status' => 'error',
+                'message' => 'User account is inactive'
             ]
         )
     )]
@@ -108,20 +106,26 @@ class AuthController extends BaseController
         response: 422,
         description: '⚠️ خطأ في التحقق من صحة البيانات',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'),
-                new OA\Property(
-                    property: 'errors',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'username', type: 'array', items: new OA\Items(type: 'string', example: 'حقل اسم المستخدم مطلوب.')),
-                        new OA\Property(property: 'password', type: 'array', items: new OA\Items(type: 'string', example: 'حقل كلمة المرور مطلوب.'))
-                    ]
-                )
+            example: [
+                'status' => 'error',
+                'message' => 'The given data was invalid.',
+                'errors' => [
+                    'username' => ['The username field is required.'],
+                    'password' => ['The password field is required.']
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
+    #[OA\Response(
+        response: 500,
+        description: '🔥 خطأ في الخادم',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Internal server error'
+            ]
+        )
+    )]
     public function login(LoginRequest $request)
     {
         $validated = $request->validated();
@@ -287,7 +291,7 @@ class AuthController extends BaseController
     )]
     #[OA\RequestBody(
         required: false,
-        description: 'رمز الـ FCM',
+        description: 'رمز الـ FCM المراد إلغاء ربطه مع الجهاز',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'fcm_token', type: 'string', description: 'رمز الجهاز لإشعارات Firebase', example: 'fcm_token_string_here'),
@@ -298,10 +302,10 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تسجيل الخروج بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تسجيل الخروج بنجاح'),
-                new OA\Property(property: 'data', type: 'object', nullable: true, example: null)
+            example: [
+                'status' => 'success',
+                'message' => 'Logged out successfully',
+                'data' => null
             ]
         )
     )]
@@ -309,12 +313,12 @@ class AuthController extends BaseController
         response: 401,
         description: '❌ غير مصرح (Unauthenticated)',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
             ]
         )
     )]
-    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function logout(Request $request)
     {
         $user = $request->user();
@@ -331,7 +335,7 @@ class AuthController extends BaseController
     #[OA\Get(
         path: '/v1/auth/me',
         summary: '👤 الحصول على الملف الشخصي للمستخدم',
-        description: 'إرجاع بيانات المستخدم المصادق عليه مع ملفاته الشخصية المرتبطة (لاعب / موظف).',
+        description: 'إرجاع بيانات المستخدم المصادق عليه مع ملفاته الشخصية المرتبطة (لاعب / موظف والقياسات والحالة الصحية والأدوار والصلاحيات).',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
@@ -339,69 +343,47 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم استرجاع الملف الشخصي بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم استرجاع الملف الشخصي بنجاح'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'username', type: 'string', example: 'admin'),
-                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'person',
-                            type: 'object',
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 5),
-                                new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
-                                new OA\Property(property: 'type', type: 'string', example: 'player'),
-                                new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-08-20')
-                            ]
-                        ),
-                        new OA\Property(
-                            property: 'member',
-                            type: 'object',
-                            nullable: true,
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 10),
-                                new OA\Property(property: 'member_number', type: 'string', example: 'MEM-10023'),
-                                new OA\Property(property: 'membership_status', type: 'string', example: 'active'),
-                                new OA\Property(property: 'is_vip', type: 'boolean', example: true)
-                            ]
-                        ),
-                        new OA\Property(
-                            property: 'measurements',
-                            type: 'object',
-                            nullable: true,
-                            properties: [
-                                new OA\Property(property: 'weight', type: 'number', format: 'float', example: 75.5),
-                                new OA\Property(property: 'height', type: 'number', format: 'float', example: 180.0),
-                                new OA\Property(property: 'bmi', type: 'number', format: 'float', example: 23.3),
-                                new OA\Property(property: 'measured_at', type: 'string', format: 'date-time', example: '2023-10-01 10:00:00')
-                            ]
-                        ),
-                        new OA\Property(property: 'age', type: 'integer', nullable: true, example: 28),
-                        new OA\Property(property: 'health_status', type: 'string', nullable: true, example: 'لا توجد أمراض مزمنة'),
-                        new OA\Property(
-                            property: 'roles',
-                            type: 'array',
-                            items: new OA\Items(type: 'string', example: 'super_admin')
-                        ),
-                        new OA\Property(
-                            property: 'permissions',
-                            type: 'array',
-                            items: new OA\Items(
-                                type: 'object',
-                                properties: [
-                                    new OA\Property(property: 'id', type: 'integer', example: 1),
-                                    new OA\Property(property: 'name', type: 'string', example: 'user-role.view'),
-                                    new OA\Property(property: 'module', type: 'string', example: 'user-role'),
-                                ]
-                            )
-                        )
+            example: [
+                'status' => 'success',
+                'message' => 'Profile retrieved successfully',
+                'data' => [
+                    'id' => 1,
+                    'username' => 'tec-ply-75054',
+                    'is_active' => true,
+                    'person' => [
+                        'id' => 5,
+                        'full_name' => 'أحمد محمد',
+                        'type' => 'player',
+                        'dob' => '1995-08-20'
+                    ],
+                    'member' => [
+                        'id' => 10,
+                        'member_number' => 'MEM-10023',
+                        'membership_status' => 'active',
+                        'is_vip' => true
+                    ],
+                    'measurements' => [
+                        'weight' => 75.5,
+                        'height' => 180.0,
+                        'bmi' => 23.3,
+                        'measured_at' => '2026-01-15'
+                    ],
+                    'health_profile' => [
+                        'id' => 1,
+                        'allergies' => 'حساسية بنسلين',
+                        'blood_type' => 'O+'
+                    ],
+                    'age' => 28,
+                    'health_status' => 'سليم',
+                    'roles' => ['player'],
+                    'permissions' => [
+                        [
+                            'id' => 1,
+                            'name' => 'user-role.view',
+                            'module' => 'user-role'
+                        ]
                     ]
-                )
+                ]
             ]
         )
     )]
@@ -409,12 +391,12 @@ class AuthController extends BaseController
         response: 401,
         description: '❌ غير مصرح (Unauthenticated)',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
             ]
         )
     )]
-    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function me(Request $request)
     {
         $user = clone $request->user();
@@ -482,7 +464,7 @@ class AuthController extends BaseController
     #[OA\Post(
         path: '/v1/auth/reset-password',
         summary: '🔄 تصفير كلمة المرور لمستخدم إلى 12345678',
-        description: 'يقوم بتصفير كلمة السر لأي مستخدم (عضو / موظف / مدرب) بتمرير user_id لتصبح تلقائياً 12345678.',
+        description: 'يقوم بتصفير كلمة السر لأي مستخدم (عضو / موظف / مدرب) بتمرير user_id لتصبح تلقائياً 12345678 مع إنهاء جلساته الفعالة.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
@@ -500,17 +482,36 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تصفير كلمة المرور بنجاح إلى 12345678',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم إعادة تعيين كلمة المرور بنجاح إلى 12345678'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'user_id', type: 'integer', example: 15),
-                        new OA\Property(property: 'username', type: 'string', example: 'coach_15'),
-                    ]
-                )
+            example: [
+                'status' => 'success',
+                'message' => 'تم إعادة تعيين كلمة المرور بنجاح إلى 12345678',
+                'data' => [
+                    'user_id' => 15,
+                    'username' => 'coach_15'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ خطأ في معرف المستخدم (غير موجود أو غير رقمي)',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'The given data was invalid.',
+                'errors' => [
+                    'user_id' => ['The selected user id is invalid.']
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
             ]
         )
     )]
@@ -559,17 +560,13 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تغيير كلمة المرور بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تغيير كلمة المرور والتأكيدات بنجاح'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
-                        new OA\Property(property: 'custom_username', type: 'string', nullable: true, example: 'ahmed_player99')
-                    ]
-                )
+            example: [
+                'status' => 'success',
+                'message' => 'Password changed successfully',
+                'data' => [
+                    'username' => 'tec-ply-75054',
+                    'custom_username' => 'ahmed_player99'
+                ]
             ]
         )
     )]
@@ -577,29 +574,29 @@ class AuthController extends BaseController
         response: 401,
         description: '❌ غير مصرح (Unauthenticated)',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.'),
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
             ]
         )
     )]
     #[OA\Response(
         response: 422,
-        description: '⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً',
+        description: '⚠️ خطأ في التحقق من صحة البيانات أو اسم المستخدم المخصص مُستخدَم مسبقاً مع إرجاع اقتراحات بديلة',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'message', type: 'string', example: 'خطأ في التحقق من البيانات.'),
-                new OA\Property(
-                    property: 'errors',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'new_password', type: 'array', items: new OA\Items(type: 'string', example: 'كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف.')),
-                        new OA\Property(property: 'custom_username', type: 'array', items: new OA\Items(type: 'string', example: 'اسم المستخدم المخصص مُستخدَم بالفعل.'))
-                    ]
-                )
+            example: [
+                'status' => 'error',
+                'message' => 'اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.',
+                'data' => [
+                    'is_available' => false,
+                    'suggestions' => ['ahmed_player99_1', 'ahmed_player99_2026']
+                ],
+                'errors' => [
+                    'custom_username' => ['اسم المستخدم المخصص مُستخدَم بالفعل، إليك بعض الاقتراحات المتاحة.']
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 500, description: '🔥 خطأ في الخادم', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'حدث خطأ داخلي في الخادم.')]))]
     public function changePassword(ChangePasswordRequest $request)
     {
         $validated = $request->validated();
@@ -699,16 +696,42 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تغيير الصورة بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تحديث الصورة الشخصية بنجاح'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'photo_url', type: 'string', example: 'photos/xyz123.jpg')
-                    ]
-                )
+            example: [
+                'status' => 'success',
+                'message' => 'تم تحديث الصورة الشخصية بنجاح',
+                'data' => [
+                    'photo_url' => 'storage/photos/xyz123.jpg'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: '❌ لم يتم إرفاق صورة',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'لم يتم إرفاق صورة'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: '🚫 المستخدم ليس لديه ملف شخصي',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'User does not have a profile'
             ]
         )
     )]
@@ -772,9 +795,30 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم حذف الصورة بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم حذف الصورة الشخصية بنجاح')
+            example: [
+                'status' => 'success',
+                'message' => 'تم حذف الصورة الشخصية بنجاح',
+                'data' => null
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: '🚫 المستخدم ليس لديه ملف شخصي',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'User does not have a profile'
             ]
         )
     )]
@@ -827,17 +871,13 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تحديث اسم المستخدم المخصص بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تحديث اسم المستخدم المخصص بنجاح'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
-                        new OA\Property(property: 'custom_username', type: 'string', example: 'ahmed_player99')
-                    ]
-                )
+            example: [
+                'status' => 'success',
+                'message' => 'Custom username set successfully',
+                'data' => [
+                    'username' => 'tec-ply-75054',
+                    'custom_username' => 'ahmed_player99'
+                ]
             ]
         )
     )]
@@ -845,21 +885,26 @@ class AuthController extends BaseController
         response: 422,
         description: '⚠️ اسم المستخدم غير صالح أو مُستخْدَم من قبل مع اقتراحات بديلة',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'),
-                new OA\Property(property: 'message', type: 'string', example: 'اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'is_available', type: 'boolean', example: false),
-                        new OA\Property(
-                            property: 'suggestions',
-                            type: 'array',
-                            items: new OA\Items(type: 'string', example: 'ahmed_player_2026')
-                        )
-                    ]
-                )
+            example: [
+                'status' => 'error',
+                'message' => 'اسم المستخدم المخصص مُستخدَم بالفعل، اختر اسماً آخر.',
+                'data' => [
+                    'is_available' => false,
+                    'suggestions' => ['ahmed_player99_1', 'ahmed_player99_2026']
+                ],
+                'errors' => [
+                    'custom_username' => ['اسم المستخدم المخصص مُستخدَم بالفعل، إليك بعض الاقتراحات المتاحة.']
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
             ]
         )
     )]
@@ -953,22 +998,14 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ نتيجة فحص اسم المستخدم مع الاقتراحات إن وجدت',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'اسم المستخدم متاح للاستخدام.'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'username', type: 'string', example: 'ahmed_player'),
-                        new OA\Property(property: 'is_available', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'suggestions',
-                            type: 'array',
-                            items: new OA\Items(type: 'string', example: 'ahmed_player99')
-                        )
-                    ]
-                )
+            example: [
+                'status' => 'success',
+                'message' => 'اسم المستخدم متاح للاستخدام.',
+                'data' => [
+                    'username' => 'ahmed_player',
+                    'is_available' => true,
+                    'suggestions' => []
+                ]
             ]
         )
     )]
@@ -976,9 +1013,9 @@ class AuthController extends BaseController
         response: 422,
         description: '⚠️ لم يتم إرسال اسم المستخدم',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'error'),
-                new OA\Property(property: 'message', type: 'string', example: 'يرجى إدخال اسم المستخدم المراد فحصه.')
+            example: [
+                'status' => 'error',
+                'message' => 'يرجى إدخال اسم المستخدم المراد فحصه.'
             ]
         )
     )]
@@ -1049,34 +1086,60 @@ class AuthController extends BaseController
         response: 200,
         description: '✅ تم تحديث الملف الشخصي بنجاح',
         content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'status', type: 'string', example: 'success'),
-                new OA\Property(property: 'message', type: 'string', example: 'تم تحديث الملف الشخصي بنجاح'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 1),
-                        new OA\Property(property: 'username', type: 'string', example: 'tec-ply-75054'),
-                        new OA\Property(property: 'custom_username', type: 'string', nullable: true, example: 'ahmed99'),
-                        new OA\Property(property: 'person_id', type: 'integer', example: 5),
-                        new OA\Property(property: 'first_name', type: 'string', example: 'أحمد'),
-                        new OA\Property(property: 'last_name', type: 'string', example: 'محمد'),
-                        new OA\Property(property: 'full_name', type: 'string', example: 'أحمد محمد'),
-                        new OA\Property(property: 'phone_number', type: 'string', nullable: true, example: '0991234567'),
-                        new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1998-05-15'),
-                        new OA\Property(property: 'age', type: 'integer', example: 28),
-                        new OA\Property(property: 'gender', type: 'string', example: 'male'),
-                        new OA\Property(property: 'address', type: 'string', example: 'دمشق - المزة'),
-                        new OA\Property(property: 'how_did_you_hear', type: 'string', example: 'عن طريق صديق'),
-                    ]
-                )
+            example: [
+                'status' => 'success',
+                'message' => 'Profile updated successfully',
+                'data' => [
+                    'id' => 1,
+                    'username' => 'tec-ply-75054',
+                    'custom_username' => 'ahmed99',
+                    'person_id' => 5,
+                    'first_name' => 'أحمد',
+                    'last_name' => 'محمد',
+                    'full_name' => 'أحمد محمد',
+                    'phone_number' => '0991234567',
+                    'dob' => '1998-05-15',
+                    'age' => 28,
+                    'gender' => 'male',
+                    'address' => 'دمشق - المزة',
+                    'how_did_you_hear' => 'عن طريق صديق'
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
-    #[OA\Response(response: 403, description: '🚫 ممنوع (صلاحية غير كافية لتعديل ملف مستخدم آخر)', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'error'), new OA\Property(property: 'message', type: 'string', example: 'عذراً، ليس لديك الصلاحية لتعديل الملف الشخصي لمستخدم آخر.')]))]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'البيانات المدخلة غير صالحة.'), new OA\Property(property: 'errors', type: 'object')]))]
+    #[OA\Response(
+        response: 401,
+        description: '❌ غير مصرح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'Unauthenticated.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 403,
+        description: '🚫 ممنوع (صلاحية غير كافية لتعديل ملف مستخدم آخر)',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'عذراً، ليس لديك الصلاحية لتعديل الملف الشخصي لمستخدم آخر.'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: '⚠️ خطأ في التحقق من صحة البيانات',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'error',
+                'message' => 'The given data was invalid.',
+                'errors' => [
+                    'gender' => ['The selected gender is invalid.']
+                ]
+            ]
+        )
+    )]
     public function updateProfile(UpdateProfileRequest $request)
     {
         $currentUser = $request->user();
@@ -1099,5 +1162,3 @@ class AuthController extends BaseController
         return $this->successResponse($data, __('Profile updated successfully'));
     }
 }
-
-

@@ -68,6 +68,40 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Player registered successfully'),
                 new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Player registered successfully',
+                'data' => [
+                    'id' => 12,
+                    'person_id' => 25,
+                    'member_number' => 'MEM-10023',
+                    'qr_code' => 'data:image/png;base64,iVBORw0KGgo...',
+                    'branch_id' => 1,
+                    'status' => 'active',
+                    'created_at' => '2026-08-10T12:00:00.000000Z',
+                    'updated_at' => '2026-08-10T12:00:00.000000Z',
+                    'person' => [
+                        'id' => 25,
+                        'full_name' => 'أحمد محمد',
+                        'gender' => 'male',
+                        'age' => 25,
+                        'dob' => '1995-10-25',
+                        'address' => 'شارع الملك فهد، الرياض',
+                        'photo_url' => null,
+                        'phone_number' => '0501234567',
+                        'country_code' => '+963'
+                    ],
+                    'additional_contacts' => [
+                        [
+                            'id' => 1,
+                            'name' => 'والد اللاعب',
+                            'phone_number' => '0509876543',
+                            'country_code' => '+963',
+                            'relation' => 'Father'
+                        ]
+                    ]
+                ]
             ]
         )
     )]
@@ -78,10 +112,24 @@ class PlayerRegistrationController extends BaseController
             properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'لا يمكن إضافة هذا اللاعب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.'),
                 new OA\Property(property: 'errors', type: 'object')
+            ],
+            example: [
+                'message' => 'لا يمكن إضافة هذا اللاعب/ة في هذا الفرع بسبب قيود الجنس الخاصة بالفرع.',
+                'errors' => [
+                    'gender' => ['جنس اللاعب غير مطابق لقيود الفرع المحدد.']
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(
+        response: 401, 
+        description: '❌ غير مصرح', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')
+            ]
+        )
+    )]
     public function register(PlayerRegistrationRequest $request)
     {
         $result = $this->registrationService->registerPlayer($request->validated());
@@ -141,12 +189,30 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Player updated successfully'),
                 new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Player updated successfully',
+                'data' => [
+                    'id' => 12,
+                    'person_id' => 25,
+                    'member_number' => 'MEM-10023',
+                    'branch_id' => 1,
+                    'status' => 'active',
+                    'updated_at' => '2026-08-10T13:00:00.000000Z',
+                    'person' => [
+                        'id' => 25,
+                        'full_name' => 'أحمد محمد علي',
+                        'phone_number' => '0501234567',
+                        'address' => 'شارع العليا، الرياض'
+                    ]
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
-    #[OA\Response(response: 404, description: '🚫 اللاعب غير موجود')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
+    #[OA\Response(response: 404, description: '🚫 اللاعب غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Member not found')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function update(\Modules\MemberManager\Http\Requests\UpdatePlayerRequest $request, $id)
     {
         $result = $this->registrationService->updatePlayer($id, $request->validated());
@@ -178,10 +244,32 @@ class PlayerRegistrationController extends BaseController
             )
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم تحديث الصورة بنجاح', content: new OA\JsonContent(properties: [new OA\Property(property: 'status', type: 'string', example: 'success'), new OA\Property(property: 'message', type: 'string', example: 'Member photo updated successfully'), new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')]))]
-    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات')]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم تحديث الصورة بنجاح', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'), 
+                new OA\Property(property: 'message', type: 'string', example: 'Member photo updated successfully'), 
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Member photo updated successfully',
+                'data' => [
+                    'id' => 12,
+                    'person' => [
+                        'id' => 25,
+                        'full_name' => 'أحمد محمد',
+                        'photo_url' => 'https://club-saas.com/storage/people/photos/member_12.jpg'
+                    ]
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Member not found')]))]
+    #[OA\Response(response: 422, description: '⚠️ خطأ في التحقق من صحة البيانات', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'The given data was invalid.')]))]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function updatePhoto(\Modules\MemberManager\Http\Requests\UpdateMemberPhotoRequest $request, $id)
     {
         $result = $this->registrationService->updateMemberPhoto($id, $request->file('photo'));
@@ -217,6 +305,25 @@ class PlayerRegistrationController extends BaseController
                     type: 'array',
                     items: new OA\Items(ref: '#/components/schemas/MemberResource')
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Members retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 12,
+                        'person_id' => 25,
+                        'member_number' => 'MEM-10023',
+                        'branch_id' => 1,
+                        'status' => 'active',
+                        'person' => [
+                            'id' => 25,
+                            'full_name' => 'أحمد محمد',
+                            'gender' => 'male',
+                            'phone_number' => '0501234567'
+                        ]
+                    ]
+                ]
             ]
         )
     )]
@@ -243,19 +350,33 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member statistics retrieved successfully'),
                 new OA\Property(property: 'data', type: 'object', properties: [
-                    new OA\Property(property: 'total_members', type: 'integer'),
-                    new OA\Property(property: 'active_members', type: 'integer'),
-                    new OA\Property(property: 'total_subscribed_members', type: 'integer'),
-                    new OA\Property(property: 'new_members_this_month', type: 'integer'),
-                    new OA\Property(property: 'renewed_members_this_month', type: 'integer'),
-                    new OA\Property(property: 'expired_not_renewed_members', type: 'integer'),
-                    new OA\Property(property: 'male_members', type: 'integer'),
-                    new OA\Property(property: 'female_members', type: 'integer'),
+                    new OA\Property(property: 'total_members', type: 'integer', example: 120),
+                    new OA\Property(property: 'active_members', type: 'integer', example: 95),
+                    new OA\Property(property: 'total_subscribed_members', type: 'integer', example: 88),
+                    new OA\Property(property: 'new_members_this_month', type: 'integer', example: 14),
+                    new OA\Property(property: 'renewed_members_this_month', type: 'integer', example: 22),
+                    new OA\Property(property: 'expired_not_renewed_members', type: 'integer', example: 12),
+                    new OA\Property(property: 'male_members', type: 'integer', example: 70),
+                    new OA\Property(property: 'female_members', type: 'integer', example: 50),
                 ])
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Member statistics retrieved successfully',
+                'data' => [
+                    'total_members' => 120,
+                    'active_members' => 95,
+                    'total_subscribed_members' => 88,
+                    'new_members_this_month' => 14,
+                    'renewed_members_this_month' => 22,
+                    'expired_not_renewed_members' => 12,
+                    'male_members' => 70,
+                    'female_members' => 50
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 401, description: '❌ غير مصرح')]
+    #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function stats(\Illuminate\Http\Request $request)
     {
         $filters = $request->only(['branch_id']);
@@ -279,10 +400,29 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Member retrieved successfully'),
                 new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Member retrieved successfully',
+                'data' => [
+                    'id' => 12,
+                    'person_id' => 25,
+                    'member_number' => 'MEM-10023',
+                    'qr_code' => 'data:image/png;base64,iVBORw0KGgo...',
+                    'branch_id' => 1,
+                    'status' => 'active',
+                    'person' => [
+                        'id' => 25,
+                        'full_name' => 'أحمد محمد',
+                        'gender' => 'male',
+                        'age' => 25,
+                        'phone_number' => '0501234567'
+                    ]
+                ]
             ]
         )
     )]
-    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Member not found')]))]
     public function show($id)
     {
         $member = $this->memberService->getMemberById($id);
@@ -301,9 +441,38 @@ class PlayerRegistrationController extends BaseController
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'confirmation', in: 'query', required: false, description: 'كلمة تأكيد الحذف (delete)', schema: new OA\Schema(type: 'string', example: ''))]
-    #[OA\Response(response: 200, description: '✅ تم حذف العضو بنجاح')]
-    #[OA\Response(response: 422, description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"')]
-    #[OA\Response(response: 404, description: '🚫 العضو غير موجود')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم حذف العضو بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Member deleted successfully')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Member deleted successfully'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422, 
+        description: '⚠️ خطأ عدم إرسال كلمة التأكيد "delete"',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'يجب كتابة كلمة التأكيد "delete" لإتمام الحذف.')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404, 
+        description: '🚫 العضو غير موجود',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Member not found')
+            ]
+        )
+    )]
     public function destroy(\Illuminate\Http\Request $request, $id)
     {
         $confirmation = $request->input('confirmation', '');
@@ -321,7 +490,30 @@ class PlayerRegistrationController extends BaseController
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم جلب الأعضاء المحذوفين بنجاح')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم جلب الأعضاء المحذوفين بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Trashed members retrieved successfully'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MemberResource'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Trashed members retrieved successfully',
+                'data' => [
+                    [
+                        'id' => 12,
+                        'member_number' => 'MEM-10023',
+                        'person' => [
+                            'full_name' => 'أحمد محمد'
+                        ]
+                    ]
+                ]
+            ]
+        )
+    )]
     public function trashed(\Illuminate\Http\Request $request)
     {
         $filters = $request->all();
@@ -337,8 +529,27 @@ class PlayerRegistrationController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف العضو المحذوف', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع العضو بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 العضو غير موجود بالسلة')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم استرجاع العضو بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Member restored successfully'),
+                new OA\Property(property: 'data', ref: '#/components/schemas/MemberResource')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Member restored successfully',
+                'data' => [
+                    'id' => 12,
+                    'member_number' => 'MEM-10023',
+                    'status' => 'active'
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: '🚫 العضو غير موجود بالسلة', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Member not found in trash.')]))]
     public function restore($id)
     {
         $member = $this->memberService->restoreMember((int) $id);

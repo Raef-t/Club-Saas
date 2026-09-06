@@ -38,11 +38,50 @@ class UnifiedAttendanceController extends BaseController
                     items: new OA\Items(type: 'integer'),
                     example: [5, 7],
                     description: 'مصفوفة معرفات اشتراكات اللاعب المراد الخصم المباشر منها عند تسجيل الحضور (اختياري)'
-                )
+                ),
+                new OA\Property(property: 'locker_id', type: 'integer', example: 7, description: 'معرف الخزانة المخصصة (اختياري)'),
+                new OA\Property(property: 'notes', type: 'string', example: 'تسجيل دخول عادي مع إسناد خزانة', description: 'ملاحظات أو سبب التجاوز (اختياري)')
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم تسجيل الدخول', content: new OA\JsonContent())]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم تسجيل الدخول بنجاح', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Checked in successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 45),
+                    new OA\Property(property: 'attendable_type', type: 'string', example: 'Modules\\MemberManager\\Models\\Member'),
+                    new OA\Property(property: 'attendable_id', type: 'integer', example: 12),
+                    new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'check_in_at', type: 'string', example: '2026-08-08 14:30:00'),
+                    new OA\Property(property: 'check_out_at', type: 'string', nullable: true, example: null),
+                    new OA\Property(property: 'duration_minutes', type: 'integer', nullable: true, example: null),
+                    new OA\Property(property: 'locker_id', type: 'integer', nullable: true, example: 7),
+                    new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'تسجيل دخول عادي'),
+                    new OA\Property(property: 'created_at', type: 'string', example: '2026-08-08T14:30:00.000000Z')
+                ])
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Checked in successfully',
+                'data' => [
+                    'id' => 45,
+                    'attendable_type' => 'Modules\\MemberManager\\Models\\Member',
+                    'attendable_id' => 12,
+                    'branch_id' => 1,
+                    'check_in_at' => '2026-08-08 14:30:00',
+                    'check_out_at' => null,
+                    'duration_minutes' => null,
+                    'locker_id' => 7,
+                    'notes' => 'تسجيل دخول عادي',
+                    'created_at' => '2026-08-08T14:30:00.000000Z'
+                ]
+            ]
+        )
+    )]
     public function checkIn(UnifiedCheckInRequest $request)
     {
         try {
@@ -88,7 +127,32 @@ class UnifiedAttendanceController extends BaseController
             ]
         )
     )]
-    #[OA\Response(response: 200, description: '✅ تم الانصراف', content: new OA\JsonContent())]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم الانصراف بنجاح', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Checked out successfully'),
+                new OA\Property(property: 'data', type: 'object', properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 45),
+                    new OA\Property(property: 'check_in_at', type: 'string', example: '2026-08-08 14:30:00'),
+                    new OA\Property(property: 'check_out_at', type: 'string', example: '2026-08-08 16:30:00'),
+                    new OA\Property(property: 'duration_minutes', type: 'integer', example: 120)
+                ])
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Checked out successfully',
+                'data' => [
+                    'id' => 45,
+                    'check_in_at' => '2026-08-08 14:30:00',
+                    'check_out_at' => '2026-08-08 16:30:00',
+                    'duration_minutes' => 120
+                ]
+            ]
+        )
+    )]
     public function checkOut(Request $request, $attendanceId)
     {
         try {
@@ -122,7 +186,7 @@ class UnifiedAttendanceController extends BaseController
         description: '✅ تم تنفيذ الانصراف الجماعي بنجاح',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Bulk check-out process completed'),
                 new OA\Property(
                     property: 'data',
@@ -135,6 +199,25 @@ class UnifiedAttendanceController extends BaseController
                         new OA\Property(property: 'failed', type: 'array', items: new OA\Items(type: 'object'))
                     ]
                 )
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Bulk check-out process completed',
+                'data' => [
+                    'total_processed' => 3,
+                    'success_count' => 3,
+                    'failed_count' => 0,
+                    'successful' => [
+                        [
+                            'id' => 45,
+                            'attendable_type' => 'Modules\\MemberManager\\Models\\Member',
+                            'attendable_id' => 12,
+                            'check_out_at' => '2026-08-08 16:30:00',
+                            'duration_minutes' => 120
+                        ]
+                    ],
+                    'failed' => []
+                ]
             ]
         )
     )]
@@ -143,9 +226,14 @@ class UnifiedAttendanceController extends BaseController
         description: '❌ خطأ: لا يوجد أي شخص مسجل حضور حالياً لهذه الخطة في هذا الفرع',
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'success', type: 'boolean', example: false),
+                new OA\Property(property: 'status', type: 'string', example: 'error'),
                 new OA\Property(property: 'message', type: 'string', example: 'No active check-ins found for this subscription plan in the selected branch.'),
                 new OA\Property(property: 'data', type: 'null', example: null)
+            ],
+            example: [
+                'status' => 'error',
+                'message' => 'No active check-ins found for this subscription plan in the selected branch.',
+                'data' => null
             ]
         )
     )]
@@ -179,7 +267,32 @@ class UnifiedAttendanceController extends BaseController
     #[OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-07-21'), description: 'تاريخ نهاية الفلترة بصيغة YYYY-MM-DD (اختياري)')]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅', content: new OA\JsonContent())]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم استرجاع سجل الحضور بنجاح', 
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Attendance history retrieved'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Attendance history retrieved',
+                'data' => [
+                    [
+                        'id' => 45,
+                        'attendable_type' => 'Modules\\MemberManager\\Models\\Member',
+                        'attendable_id' => 12,
+                        'branch_id' => 1,
+                        'check_in_at' => '2026-08-08 14:30:00',
+                        'check_out_at' => '2026-08-08 16:30:00',
+                        'duration_minutes' => 120
+                    ]
+                ]
+            ]
+        )
+    )]
     public function history(Request $request)
     {
         $request->validate([
@@ -221,8 +334,29 @@ class UnifiedAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل الحضور', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم حذف سجل الحضور ناعماً بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 سجل الحضور غير موجود')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم حذف سجل الحضور ناعماً بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Attendance deleted successfully')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Attendance deleted successfully'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404, 
+        description: '🚫 سجل الحضور غير موجود',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'No query results for model [Modules\\AttendanceManager\\Models\\Attendance].')
+            ]
+        )
+    )]
     public function destroy(int $id)
     {
         $attendance = \Modules\AttendanceManager\Models\Attendance::findOrFail($id);
@@ -238,8 +372,29 @@ class UnifiedAttendanceController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف سجل الحضور', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Response(response: 200, description: '✅ تم استرجاع سجل الحضور بنجاح')]
-    #[OA\Response(response: 404, description: '🚫 سجل الحضور غير موجود في سلة المحذوفات')]
+    #[OA\Response(
+        response: 200, 
+        description: '✅ تم استرجاع سجل الحضور بنجاح',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'status', type: 'string', example: 'success'),
+                new OA\Property(property: 'message', type: 'string', example: 'Attendance restored successfully')
+            ],
+            example: [
+                'status' => 'success',
+                'message' => 'Attendance restored successfully'
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404, 
+        description: '🚫 سجل الحضور غير موجود في سلة المحذوفات',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'No query results for model [Modules\\AttendanceManager\\Models\\Attendance].')
+            ]
+        )
+    )]
     public function restore(int $id)
     {
         $attendance = \Modules\AttendanceManager\Models\Attendance::onlyTrashed()->findOrFail($id);
