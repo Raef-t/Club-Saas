@@ -20,6 +20,7 @@ class ActivityType extends Model
         'has_unlimited_subscribers',
         'has_shifts',
         'is_daily_entry',
+        'is_private_equipment',
     ];
 
     /**
@@ -31,6 +32,7 @@ class ActivityType extends Model
         'has_unlimited_subscribers' => 'boolean',
         'has_shifts' => 'boolean',
         'is_daily_entry' => 'boolean',
+        'is_private_equipment' => 'boolean',
     ];
 
     protected static function booted()

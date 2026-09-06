@@ -18523,6 +18523,10 @@
                                                         "type": "boolean",
                                                         "example": true
                                                     },
+                                                    "is_private_equipment": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
                                                     "created_at": {
                                                         "type": "string",
                                                         "example": "2026-01-15T10:00:00.000000Z"
@@ -18610,6 +18614,11 @@
                                         "description": "هل يسمح بالدخول اليومي",
                                         "type": "boolean",
                                         "example": false
+                                    },
+                                    "is_private_equipment": {
+                                        "description": "هل المعدات خاصة بالنشاط",
+                                        "type": "boolean",
+                                        "example": true
                                     }
                                 },
                                 "type": "object"
@@ -18661,6 +18670,10 @@
                                                 "is_daily_entry": {
                                                     "type": "boolean",
                                                     "example": false
+                                                },
+                                                "is_private_equipment": {
+                                                    "type": "boolean",
+                                                    "example": true
                                                 },
                                                 "created_at": {
                                                     "type": "string",
@@ -18787,6 +18800,10 @@
                                                     "type": "boolean",
                                                     "example": true
                                                 },
+                                                "is_private_equipment": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
                                                 "created_at": {
                                                     "type": "string",
                                                     "example": "2026-01-15T10:00:00.000000Z"
@@ -18896,6 +18913,10 @@
                                     "is_daily_entry": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "is_private_equipment": {
+                                        "type": "boolean",
+                                        "example": true
                                     }
                                 },
                                 "type": "object"
@@ -18945,6 +18966,10 @@
                                                     "example": false
                                                 },
                                                 "is_daily_entry": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "is_private_equipment": {
                                                     "type": "boolean",
                                                     "example": true
                                                 },
@@ -19184,6 +19209,10 @@
                                     "is_daily_entry": {
                                         "type": "boolean",
                                         "example": false
+                                    },
+                                    "is_private_equipment": {
+                                        "type": "boolean",
+                                        "example": true
                                     }
                                 },
                                 "type": "object"
@@ -19235,6 +19264,10 @@
                                                 "is_daily_entry": {
                                                     "type": "boolean",
                                                     "example": false
+                                                },
+                                                "is_private_equipment": {
+                                                    "type": "boolean",
+                                                    "example": true
                                                 },
                                                 "created_at": {
                                                     "type": "string",
@@ -35231,6 +35264,10 @@
                     "is_daily_entry": {
                         "type": "boolean",
                         "example": false
+                    },
+                    "is_private_equipment": {
+                        "type": "boolean",
+                        "example": true
                     }
                 },
                 "type": "object"
