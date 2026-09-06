@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import MemberProfileClient from "./MemberProfileClient";
 import { verifyPageAccess } from "@/lib/server/auth";
-import { requestBackend } from "@/lib/server/backend";
+import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
 import { getBranchesArray } from "@/lib/utils";
 import { getMemberProfileRecord } from "../memberProfileUtils";
 
