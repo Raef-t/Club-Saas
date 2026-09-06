@@ -11,10 +11,7 @@ use OpenApi\Attributes as OA;
     description: "Activity Type resource representation",
     properties: [
         new OA\Property(property: "id", type: "integer", example: 1),
-        new OA\Property(property: "name", type: "object", properties: [
-            new OA\Property(property: "ar", type: "string", example: "صالة مفتوحة"),
-            new OA\Property(property: "en", type: "string", example: "open_gym")
-        ]),
+        new OA\Property(property: "name", type: "string", example: "حصة جماعية"),
         new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "is_session_based", type: "boolean", example: true),
         new OA\Property(property: "has_unlimited_subscribers", type: "boolean", example: false),

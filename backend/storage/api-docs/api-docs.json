@@ -17420,60 +17420,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 10
-                                                    },
-                                                    "branch_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "activity_type_id": {
-                                                        "type": "integer",
-                                                        "example": 2
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "سباحة مبتدئين"
-                                                    },
-                                                    "description": {
-                                                        "type": "string",
-                                                        "example": "دورة تعليم مبادئ السباحة للأطفال والناشئين",
-                                                        "nullable": true
-                                                    },
-                                                    "is_active": {
-                                                        "type": "boolean",
-                                                        "example": true
-                                                    },
-                                                    "activity_type": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 2
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "سباحة وألعاب مائية"
-                                                            },
-                                                            "is_session_based": {
-                                                                "type": "boolean",
-                                                                "example": true
-                                                            }
-                                                        },
-                                                        "type": "object",
-                                                        "nullable": true
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "example": "2026-02-01T10:00:00.000000Z"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "example": "2026-02-01T10:00:00.000000Z"
-                                                    }
-                                                },
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ActivityResource"
                                             }
                                         }
                                     },
@@ -17571,55 +17518,7 @@
                                             "example": "Activity created successfully"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 12
-                                                },
-                                                "branch_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "activity_type_id": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "كاراتيه أطفال"
-                                                },
-                                                "description": {
-                                                    "type": "string",
-                                                    "example": "تدريب كاراتيه مبتدئين للأطفال"
-                                                },
-                                                "is_active": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                },
-                                                "activity_type": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "فنون قتالية"
-                                                        }
-                                                    },
-                                                    "type": "object",
-                                                    "nullable": true
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "example": "2026-09-06T12:25:00.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "example": "2026-09-06T12:25:00.000000Z"
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -17800,55 +17699,7 @@
                                             "example": "Activity retrieved successfully"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                },
-                                                "branch_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "activity_type_id": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "سباحة مبتدئين"
-                                                },
-                                                "description": {
-                                                    "type": "string",
-                                                    "example": "دورة تعليم مبادئ السباحة للأطفال والناشئين"
-                                                },
-                                                "is_active": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                },
-                                                "activity_type": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "سباحة وألعاب مائية"
-                                                        }
-                                                    },
-                                                    "type": "object",
-                                                    "nullable": true
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "example": "2026-02-01T10:00:00.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "example": "2026-02-01T10:00:00.000000Z"
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -17970,55 +17821,7 @@
                                             "example": "Activity updated successfully"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                },
-                                                "branch_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "activity_type_id": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "سباحة متقدمين"
-                                                },
-                                                "description": {
-                                                    "type": "string",
-                                                    "example": "تدريبات السباحة الحرة والتنافسية"
-                                                },
-                                                "is_active": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                },
-                                                "activity_type": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "سباحة وألعاب مائية"
-                                                        }
-                                                    },
-                                                    "type": "object",
-                                                    "nullable": true
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "example": "2026-02-01T10:00:00.000000Z"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "example": "2026-09-06T12:28:00.000000Z"
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -18265,29 +18068,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 8
-                                                    },
-                                                    "branch_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "activity_type_id": {
-                                                        "type": "integer",
-                                                        "example": 3
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "example": "زومبا للسيدات"
-                                                    },
-                                                    "deleted_at": {
-                                                        "type": "string",
-                                                        "example": "2026-03-01T15:00:00.000000Z"
-                                                    }
-                                                },
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ActivityResource"
                                             }
                                         }
                                     },
@@ -18356,30 +18137,7 @@
                                             "example": "Activity restored successfully"
                                         },
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 8
-                                                },
-                                                "branch_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "activity_type_id": {
-                                                    "type": "integer",
-                                                    "example": 3
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "زومبا للسيدات"
-                                                },
-                                                "deleted_at": {
-                                                    "type": "string",
-                                                    "example": null,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/ActivityResource"
                                         }
                                     },
                                     "type": "object"
@@ -35119,40 +34877,27 @@
                 "properties": {
                     "id": {
                         "type": "integer",
-                        "example": 1
+                        "example": 10
                     },
                     "name": {
-                        "properties": {
-                            "ar": {
-                                "type": "string",
-                                "example": "سباحة"
-                            },
-                            "en": {
-                                "type": "string",
-                                "example": "Swimming"
-                            }
-                        },
-                        "type": "object"
+                        "type": "string",
+                        "example": "سباحة مبتدئين"
                     },
                     "branch_id": {
                         "type": "integer",
                         "example": 1
                     },
                     "activity_type": {
-                        "description": "Activity type details",
-                        "type": "object"
-                    },
-                    "description": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "is_private_equipment": {
-                        "type": "boolean",
-                        "example": false
+                        "$ref": "#/components/schemas/ActivityTypeResource"
                     },
                     "is_unlimited_subscribers": {
                         "type": "boolean",
-                        "example": true
+                        "example": false
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "تشمل دمج بين التمارين الهوائية والحديد",
+                        "nullable": true
                     },
                     "is_active": {
                         "type": "boolean",
@@ -35160,7 +34905,8 @@
                     },
                     "created_at": {
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "example": "2026-08-01T17:22:24+03:00"
                     }
                 },
                 "type": "object"
@@ -35174,17 +34920,8 @@
                         "example": 1
                     },
                     "name": {
-                        "properties": {
-                            "ar": {
-                                "type": "string",
-                                "example": "صالة مفتوحة"
-                            },
-                            "en": {
-                                "type": "string",
-                                "example": "open_gym"
-                            }
-                        },
-                        "type": "object"
+                        "type": "string",
+                        "example": "حصة جماعية"
                     },
                     "is_active": {
                         "type": "boolean",
