@@ -4494,6 +4494,20 @@
                         }
                     },
                     {
+                        "name": "period",
+                        "in": "query",
+                        "description": "فترة الفلترة: daily, weekly, monthly",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "daily",
+                                "weekly",
+                                "monthly"
+                            ]
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
