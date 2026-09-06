@@ -39,6 +39,17 @@ class StoreSubscriptionPlanRequest extends FormRequest
             $merge['is_unlimited_subscribers'] = true;
         }
 
+        if ($this->filled('coach_price') || $this->filled('branch_price')) {
+            $coachPrice = (float) $this->input('coach_price', 0);
+            $branchPrice = (float) $this->input('branch_price', 0);
+            if (!$this->filled('base_price') && !$this->filled('price')) {
+                $merge['base_price'] = $coachPrice + $branchPrice;
+            }
+        }
+        if ($this->filled('price') && !$this->filled('base_price')) {
+            $merge['base_price'] = $this->input('price');
+        }
+
         if (!empty($merge)) {
             $this->merge($merge);
         }
@@ -47,13 +58,16 @@ class StoreSubscriptionPlanRequest extends FormRequest
     public function rules(): array
     {
         $isUpdate = $this->isMethod('put') || $this->isMethod('patch');
+        $hasSplitPricing = $this->filled('coach_price') || $this->filled('branch_price');
 
         return [
             'branch_id' => $isUpdate ? 'nullable|exists:branches,id' : 'required|exists:branches,id',
             'name' => ($isUpdate ? 'sometimes|' : '') . 'required|string|max:150',
             'session_count' => 'nullable|integer|min:1',
             'sessions_per_week' => 'nullable|integer|min:1',
-            'base_price' => ($isUpdate ? 'sometimes|' : '') . 'required|numeric|min:0',
+            'base_price' => ($isUpdate ? 'sometimes|' : '') . ($hasSplitPricing ? 'nullable|' : 'required|') . 'numeric|min:0',
+            'coach_price' => 'nullable|numeric|min:0',
+            'branch_price' => 'nullable|numeric|min:0',
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',
             'gender_restriction' => 'nullable|in:male,female,mixed',

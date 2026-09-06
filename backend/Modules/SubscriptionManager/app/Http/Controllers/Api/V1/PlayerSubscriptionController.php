@@ -87,8 +87,11 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01', description: 'تاريخ بداية الاشتراك (مطلوب)'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-08-01', description: 'تاريخ نهاية الاشتراك (اختياري، في حال عدم تمريره يتم حسابه تلقائياً من عدد الأشهر)'),
                 new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات إضافية', description: 'ملاحظات (اختياري)'),
-                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
-                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-001', description: 'رقم إيصال الدفع (اختياري)')
+                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-001', description: 'رقم إيصال الدفع العام / النادي (اختياري)'),
+                new OA\Property(property: 'coach_receipt_number', type: 'string', example: 'REC-COACH-001', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'branch_receipt_number', type: 'string', example: 'REC-CLUB-001', description: 'رقم إيصال دفعة النادي للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'coach_paid_amount', type: 'number', format: 'float', example: 200.00, description: 'مبلغ دفعة الكوتش (اختياري)'),
+                new OA\Property(property: 'branch_paid_amount', type: 'number', format: 'float', example: 100.00, description: 'مبلغ دفعة النادي (اختياري)')
             ]
         )
     )]
@@ -124,7 +127,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments'])),
+                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit'])),
                 __('Member subscribed successfully'),
                 201
             );
@@ -164,7 +167,7 @@ class PlayerSubscriptionController extends BaseController
     {
         try {
             $subscription = $this->subscriptionService->getSubscriptionById($id);
-            $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments']);
+            $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),
                 __('Subscription retrieved successfully')

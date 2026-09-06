@@ -248,6 +248,9 @@ class SubscriptionService
             $remainingAmount = max(0, $totalAmount - $paidAmount);
 
             // 4. Create Subscription
+            $coachReceiptNumber = $options['coach_receipt_number'] ?? null;
+            $branchReceiptNumber = $options['branch_receipt_number'] ?? ($options['receipt_number'] ?? null);
+
             $subscription = $this->subscriptionRepository->create([
                 'member_id' => $memberId,
                 'plan_id' => $plan->id,
@@ -259,6 +262,8 @@ class SubscriptionService
                 'end_date' => $endDate ? $endDate->toDateString() : null,
                 'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
                 'notes' => $options['notes'] ?? null,
+                'coach_receipt_number' => $coachReceiptNumber,
+                'branch_receipt_number' => $branchReceiptNumber,
             ]);
 
             // 5. Create Subscription Items (one item per plan activity)
@@ -281,29 +286,59 @@ class SubscriptionService
                 ]);
             }
 
-            // 5b. Create Revenue Split snapshot (for private subscriptions — أجهزة خاص حصراً)
+            // 5b. Create Revenue Split snapshot (for private subscriptions — أجهزة خاص حصراً or plans with coach_price & branch_price)
             $firstActivity = $plan->planActivities->first();
             $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
             $isPrivateEquipment = $plan->isPrivateEquipmentPlan();
+            $hasExplicitSplit = $plan->coach_price !== null && $plan->branch_price !== null;
 
-            // Settle financial snapshot ONLY for private equipment subscriptions
-            if ($isPrivateEquipment && $coachId) {
+            $coachAmount = null;
+            $clubAmount = null;
+
+            if (($isPrivateEquipment || $hasExplicitSplit) && $coachId) {
+                // 1. Determine commission rate for coach
                 $coachContract = \Modules\StaffManager\Models\StaffContract::where('staff_id', $coachId)
                     ->where('is_active', true)
                     ->first();
 
-                // For private equipment plans, strictly use private_commission_rate from contract, or fallback to branch setting
+                // Determine commission rates: contract private_commission_rate -> contract commission_rate -> branch private_subscription_commission -> branch default percentages -> 100% coach
                 if ($coachContract && $coachContract->private_commission_rate !== null && (float) $coachContract->private_commission_rate > 0) {
-                    $coachPct = (float) $coachContract->private_commission_rate;
-                    $clubPct  = max(0.00, 100.00 - $coachPct);
+                    $coachCommissionRate = (float) $coachContract->private_commission_rate;
+                    $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
+                } elseif ($coachContract && $coachContract->commission_rate !== null && (float) $coachContract->commission_rate > 0) {
+                    $coachCommissionRate = (float) $coachContract->commission_rate;
+                    $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
                 } else {
                     $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
-                    $clubPct  = (float) ($branchSetting?->private_subscription_commission ?? 0.00);
-                    $coachPct = max(0.00, 100.00 - $clubPct);
+                    if ($branchSetting && $branchSetting->private_subscription_commission !== null && (float) $branchSetting->private_subscription_commission > 0) {
+                        $clubCommissionRate  = (float) $branchSetting->private_subscription_commission;
+                        $coachCommissionRate = max(0.00, 100.00 - $clubCommissionRate);
+                    } elseif ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
+                        $coachCommissionRate = (float) ($branchSetting->default_coach_commission_percentage ?? 0);
+                        $clubCommissionRate  = (float) ($branchSetting->default_club_commission_percentage ?? max(0.00, 100.00 - $coachCommissionRate));
+                    } else {
+                        $coachCommissionRate = 100.00;
+                        $clubCommissionRate  = 0.00;
+                    }
                 }
 
-                $coachAmount = round((float) $totalAmount * ($coachPct / 100), 2);
-                $clubAmount  = round((float) $totalAmount - $coachAmount, 2); // باقي المبلغ للنادي لتفادي الفواصل
+                if ($hasExplicitSplit) {
+                    // نسبة الكوتش ونسبة النادي تؤخذ من coach_price، بينما branch_price يذهب للنادي كاملاً
+                    $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
+                    $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+
+                    $coachAmount = round($totalCoachPrice * ($coachCommissionRate / 100), 2);
+                    $clubCutFromCoach = round($totalCoachPrice - $coachAmount, 2);
+                    $clubAmount  = round($totalBranchPrice + $clubCutFromCoach, 2);
+
+                    $coachPct = $coachCommissionRate;
+                    $clubPct  = $clubCommissionRate;
+                } else {
+                    $coachPct = $coachCommissionRate;
+                    $clubPct  = $clubCommissionRate;
+                    $coachAmount = round((float) $totalAmount * ($coachPct / 100), 2);
+                    $clubAmount  = round((float) $totalAmount - $coachAmount, 2); // باقي المبلغ للنادي لتفادي الفواصل
+                }
 
                 \Modules\SubscriptionManager\Models\SubscriptionRevenueSplit::create([
                     'player_subscription_id' => $subscription->id,
@@ -314,6 +349,8 @@ class SubscriptionService
                     'coach_percentage'       => $coachPct,
                     'club_amount'            => $clubAmount,
                     'coach_amount'           => $coachAmount,
+                    'coach_receipt_number'   => $coachReceiptNumber,
+                    'branch_receipt_number'  => $branchReceiptNumber,
                 ]);
             }
 
@@ -328,6 +365,8 @@ class SubscriptionService
 
             // 7. Create Payment if paid_amount > 0
             if ($paidAmount > 0) {
+                $isDualPayment = !empty($coachReceiptNumber) || (isset($options['coach_paid_amount']) && isset($options['branch_paid_amount']));
+
                 if (($options['payment_method'] ?? 'cash') === 'wallet') {
                     // Pay via wallet
                     $walletService = app(\Modules\WalletManager\Services\WalletService::class);
@@ -338,15 +377,7 @@ class SubscriptionService
                         \Modules\SubscriptionManager\Models\Invoice::class,
                         $invoice->id
                     );
-
-                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'receipt_number' => $options['receipt_number'] ?? null,
-                        'invoice_id' => $invoice->id,
-                        'safe_id' => null, // No safe involved since money is taken from wallet
-                        'amount' => $paidAmount,
-                        'payment_method' => 'wallet',
-                        'status' => 'completed',
-                    ]);
+                    $safeId = null;
                 } else {
                     $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
                         ->where('branch_id', $branchId)
@@ -361,9 +392,58 @@ class SubscriptionService
                                 ->where('branch_id', $branchId)
                                 ->value('id');
                     }
+                }
 
-                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'receipt_number' => $options['receipt_number'] ?? null,
+                if ($isDualPayment) {
+                    if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount'])) {
+                        $coachPaid = (float) ($options['coach_paid_amount'] ?? 0);
+                        $branchPaid = (float) ($options['branch_paid_amount'] ?? 0);
+                    } elseif ($hasExplicitSplit) {
+                        $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
+                        $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                        if ($paidAmount >= ($totalCoachPrice + $totalBranchPrice)) {
+                            $coachPaid = $totalCoachPrice;
+                            $branchPaid = $paidAmount - $coachPaid;
+                        } else {
+                            $ratio = ($totalCoachPrice + $totalBranchPrice) > 0 ? ($totalCoachPrice / ($totalCoachPrice + $totalBranchPrice)) : 0.5;
+                            $coachPaid = round($paidAmount * $ratio, 2);
+                            $branchPaid = round($paidAmount - $coachPaid, 2);
+                        }
+                    } elseif ($coachAmount !== null && $clubAmount !== null) {
+                        $ratio = $totalAmount > 0 ? ($coachAmount / $totalAmount) : 0.5;
+                        $coachPaid = round($paidAmount * $ratio, 2);
+                        $branchPaid = round($paidAmount - $coachPaid, 2);
+                    } else {
+                        $coachPaid = round($paidAmount / 2, 2);
+                        $branchPaid = round($paidAmount - $coachPaid, 2);
+                    }
+
+                    if ($coachPaid > 0) {
+                        \Modules\SubscriptionManager\Models\Payment::create([
+                            'receipt_number' => $coachReceiptNumber,
+                            'invoice_id' => $invoice->id,
+                            'safe_id' => $safeId,
+                            'amount' => $coachPaid,
+                            'payment_method' => $options['payment_method'] ?? 'cash',
+                            'status' => 'completed',
+                            'reason' => 'دفعة اشتراك المدرب',
+                        ]);
+                    }
+
+                    if ($branchPaid > 0) {
+                        \Modules\SubscriptionManager\Models\Payment::create([
+                            'receipt_number' => $branchReceiptNumber,
+                            'invoice_id' => $invoice->id,
+                            'safe_id' => $safeId,
+                            'amount' => $branchPaid,
+                            'payment_method' => $options['payment_method'] ?? 'cash',
+                            'status' => 'completed',
+                            'reason' => 'دفعة اشتراك النادي',
+                        ]);
+                    }
+                } else {
+                    \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $branchReceiptNumber,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $paidAmount,
@@ -371,8 +451,6 @@ class SubscriptionService
                         'status' => 'completed',
                     ]);
                 }
-
-                event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
             }
 
 

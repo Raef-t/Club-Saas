@@ -32,6 +32,10 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
                 $data['max_subscribers'] = 0;
             }
 
+            if ((isset($data['coach_price']) || isset($data['branch_price'])) && !isset($data['base_price'])) {
+                $data['base_price'] = (float)($data['coach_price'] ?? 0) + (float)($data['branch_price'] ?? 0);
+            }
+
             $plan = SubscriptionPlan::create($data);
             if (isset($data['activities']) && is_array($data['activities'])) {
                 $activities = $this->prepareActivities($data['activities']);
@@ -66,6 +70,12 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
 
             if (!empty($activityIds) && \Modules\Sports\Models\Activity::hasAnyEquipmentActivity($activityIds)) {
                 $data['max_subscribers'] = 0;
+            }
+
+            if ((isset($data['coach_price']) || isset($data['branch_price'])) && !isset($data['base_price'])) {
+                $coach = isset($data['coach_price']) ? (float)$data['coach_price'] : (float)$plan->coach_price;
+                $branch = isset($data['branch_price']) ? (float)$data['branch_price'] : (float)$plan->branch_price;
+                $data['base_price'] = $coach + $branch;
             }
 
             $plan->update($data);

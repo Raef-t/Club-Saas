@@ -18,6 +18,8 @@ class SubscriptionPlan extends Model
         'session_count',
         'sessions_per_week',
         'base_price',
+        'coach_price',
+        'branch_price',
         'status',
         'max_subscribers',
         'current_subscribers',
@@ -76,6 +78,8 @@ class SubscriptionPlan extends Model
     protected $casts = [
         'status' => SubscriptionPlanStatus::class,
         'base_price' => 'decimal:2',
+        'coach_price' => 'decimal:2',
+        'branch_price' => 'decimal:2',
         'max_subscribers' => 'integer',
         'current_subscribers' => 'integer',
         'sessions_per_week' => 'integer',

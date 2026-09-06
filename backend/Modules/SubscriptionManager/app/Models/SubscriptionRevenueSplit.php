@@ -20,6 +20,8 @@ class SubscriptionRevenueSplit extends Model
         'coach_percentage',
         'club_amount',
         'coach_amount',
+        'coach_receipt_number',
+        'branch_receipt_number',
     ];
 
     protected $casts = [
