@@ -34,29 +34,7 @@ class ActivityController extends BaseController
                 new OA\Property(
                     property: 'data',
                     type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 10),
-                            new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                            new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
-                            new OA\Property(property: 'name', type: 'string', example: 'سباحة مبتدئين'),
-                            new OA\Property(property: 'description', type: 'string', nullable: true, example: 'دورة تعليم مبادئ السباحة للأطفال والناشئين'),
-                            new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                            new OA\Property(
-                                property: 'activity_type',
-                                type: 'object',
-                                nullable: true,
-                                properties: [
-                                    new OA\Property(property: 'id', type: 'integer', example: 2),
-                                    new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية'),
-                                    new OA\Property(property: 'is_session_based', type: 'boolean', example: true)
-                                ]
-                            ),
-                            new OA\Property(property: 'created_at', type: 'string', example: '2026-02-01T10:00:00.000000Z'),
-                            new OA\Property(property: 'updated_at', type: 'string', example: '2026-02-01T10:00:00.000000Z')
-                        ]
-                    )
+                    items: new OA\Items(ref: '#/components/schemas/ActivityResource')
                 )
             ]
         )
@@ -181,29 +159,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity created successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 12),
-                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
-                        new OA\Property(property: 'name', type: 'string', example: 'كاراتيه أطفال'),
-                        new OA\Property(property: 'description', type: 'string', example: 'تدريب كاراتيه مبتدئين للأطفال'),
-                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'activity_type',
-                            type: 'object',
-                            nullable: true,
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 2),
-                                new OA\Property(property: 'name', type: 'string', example: 'فنون قتالية')
-                            ]
-                        ),
-                        new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:25:00.000000Z'),
-                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:25:00.000000Z')
-                    ]
-                )
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -233,29 +189,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity retrieved successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 10),
-                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
-                        new OA\Property(property: 'name', type: 'string', example: 'سباحة مبتدئين'),
-                        new OA\Property(property: 'description', type: 'string', example: 'دورة تعليم مبادئ السباحة للأطفال والناشئين'),
-                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'activity_type',
-                            type: 'object',
-                            nullable: true,
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 2),
-                                new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية')
-                            ]
-                        ),
-                        new OA\Property(property: 'created_at', type: 'string', example: '2026-02-01T10:00:00.000000Z'),
-                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-02-01T10:00:00.000000Z')
-                    ]
-                )
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -294,29 +228,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity updated successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 10),
-                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 2),
-                        new OA\Property(property: 'name', type: 'string', example: 'سباحة متقدمين'),
-                        new OA\Property(property: 'description', type: 'string', example: 'تدريبات السباحة الحرة والتنافسية'),
-                        new OA\Property(property: 'is_active', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'activity_type',
-                            type: 'object',
-                            nullable: true,
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer', example: 2),
-                                new OA\Property(property: 'name', type: 'string', example: 'سباحة وألعاب مائية')
-                            ]
-                        ),
-                        new OA\Property(property: 'created_at', type: 'string', example: '2026-02-01T10:00:00.000000Z'),
-                        new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:28:00.000000Z')
-                    ]
-                )
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
@@ -434,16 +346,7 @@ class ActivityController extends BaseController
                 new OA\Property(
                     property: 'data',
                     type: 'array',
-                    items: new OA\Items(
-                        type: 'object',
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 8),
-                            new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                            new OA\Property(property: 'activity_type_id', type: 'integer', example: 3),
-                            new OA\Property(property: 'name', type: 'string', example: 'زومبا للسيدات'),
-                            new OA\Property(property: 'deleted_at', type: 'string', example: '2026-03-01T15:00:00.000000Z')
-                        ]
-                    )
+                    items: new OA\Items(ref: '#/components/schemas/ActivityResource')
                 )
             ]
         )
@@ -478,17 +381,7 @@ class ActivityController extends BaseController
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
                 new OA\Property(property: 'message', type: 'string', example: 'Activity restored successfully'),
-                new OA\Property(
-                    property: 'data',
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'id', type: 'integer', example: 8),
-                        new OA\Property(property: 'branch_id', type: 'integer', example: 1),
-                        new OA\Property(property: 'activity_type_id', type: 'integer', example: 3),
-                        new OA\Property(property: 'name', type: 'string', example: 'زومبا للسيدات'),
-                        new OA\Property(property: 'deleted_at', type: 'string', nullable: true, example: null)
-                    ]
-                )
+                new OA\Property(property: 'data', ref: '#/components/schemas/ActivityResource')
             ]
         )
     )]
