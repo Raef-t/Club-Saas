@@ -35,6 +35,12 @@ describe("ProfileIdentityCard", () => {
     expect(screen.getByText("QR غير متوفر")).toBeInTheDocument();
   });
 
+  it("does not render an undefined username row", () => {
+    render(<ProfileIdentityCard name="هديل لبابيدي" status={{ label: "نشط" }} />);
+
+    expect(screen.queryByText("غير محدد")).not.toBeInTheDocument();
+  });
+
   it("downloads the QR image and copies the value on click", async () => {
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, {

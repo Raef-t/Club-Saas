@@ -158,9 +158,11 @@ export default function ProfileIdentityCard({ name, username, qrCode, status }) 
     >
       <div className="min-w-0 text-right">
         <h3 className="truncate text-lg font-semibold text-app-text sm:text-xl">{displayName}</h3>
-        <div className="mt-1.5 min-w-0">
-          <CopyableUsername username={username} className="max-w-full" />
-        </div>
+        {username && (
+          <div className="mt-1.5 min-w-0">
+            <CopyableUsername username={username} className="max-w-full" />
+          </div>
+        )}
         {status?.label && (
           <span
             className={`mt-3 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${status.className || "bg-app-card-hover text-app-muted-light"}`}

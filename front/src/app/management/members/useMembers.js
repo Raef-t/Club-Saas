@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   useGetMembersQuery,
+  useGetMemberQuery,
   useCreatePlayerMutation,
   useUpdatePlayerMutation,
   useDeleteMemberMutation,
@@ -13,6 +14,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
+import { getMemberEditInitialValues } from "./memberFormUtils";
 
 function getMembersArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -62,8 +64,17 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     };
   }, [branchFilter, genderFilter, page, perPage, statusFilter]);
 
-  const { currentData: data, error, isLoading, isFetching, refetch } =
-    useGetMembersQuery(queryParams);
+  const {
+    currentData: data,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetMembersQuery(queryParams);
+  const { currentData: selectedMemberResponse, error: selectedMemberError } = useGetMemberQuery(
+    selectedMemberId,
+    { skip: !selectedMemberId },
+  );
   const { data: branchesData } = useGetBranchesQuery(withAllItems());
   const { data: plansData } = useGetSubscriptionPlansQuery(
     withAllItems(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
@@ -99,10 +110,18 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     [allPlans, branchFilter],
   );
 
-  const selectedMember = useMemo(
-    () => members.find((m) => m.id === selectedMemberId) || null,
-    [members, selectedMemberId],
-  );
+  const selectedMember = useMemo(() => {
+    if (!selectedMemberId) return null;
+
+    const payload =
+      selectedMemberResponse?.data?.data || selectedMemberResponse?.data || selectedMemberResponse;
+    const detailedMember = payload?.member || payload;
+    if (detailedMember?.id) return detailedMember;
+
+    return selectedMemberError
+      ? members.find((member) => String(member.id) === String(selectedMemberId)) || null
+      : null;
+  }, [members, selectedMemberError, selectedMemberId, selectedMemberResponse]);
 
   const branchMembers = useMemo(
     () => filterEntitiesByBranch(members, branchFilter),
@@ -269,38 +288,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
   }
 
   function getEditInitialValues() {
-    if (!selectedMember) return null;
-
-    const person = selectedMember.person || {};
-    const fullName = person.full_name || "";
-    const nameParts = fullName.trim().split(/\s+/);
-    const firstName = person.first_name || selectedMember.first_name || nameParts[0] || "";
-    const lastName =
-      person.last_name || selectedMember.last_name || nameParts.slice(1).join(" ") || "";
-    const gender = person.gender || selectedMember.gender || "male";
-    const dob = person.dob || selectedMember.dob || "";
-    const mobile = person.phone || person.mobile || selectedMember.mobile || "";
-    const mobileCountryCode =
-      person.mobile_country_code || selectedMember.mobile_country_code || "+963";
-    const age = person.age || selectedMember.age || "";
-
-    const contact = selectedMember.additional_contacts?.[0] || null;
-
-    return {
-      first_name: firstName,
-      last_name: lastName,
-      mobile_country_code: mobileCountryCode,
-      mobile: mobile,
-      gender: gender,
-      dob: dob ? dob.split("T")[0] : "",
-      age: age,
-      branch_id: String(selectedMember.branch_id || ""),
-      emergency_name: contact?.name || "",
-      emergency_relation: contact?.relation || "Father",
-      emergency_country_code: contact?.country_code || "+963",
-      emergency_phone: contact?.phone_number || "",
-      reason: "",
-    };
+    return getMemberEditInitialValues(selectedMember);
   }
 
   return {

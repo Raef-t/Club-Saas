@@ -17,6 +17,10 @@ export const membersApi = createBackendApi({
       },
       providesTags: ["Members"],
     }),
+    getMember: builder.query({
+      query: (id) => `members/${id}`,
+      providesTags: (_result, _error, id) => [{ type: "Members", id }],
+    }),
     createPlayer: builder.mutation({
       query: (body) => ({
         url: "members/register",
@@ -46,6 +50,7 @@ export const membersApi = createBackendApi({
 
 export const {
   useGetMembersQuery,
+  useGetMemberQuery,
   useCreatePlayerMutation,
   useUpdatePlayerMutation,
   useDeleteMemberMutation,

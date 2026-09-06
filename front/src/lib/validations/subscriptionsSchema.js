@@ -79,6 +79,10 @@ export const subscriptionEditSchema = z
       message: "حالة الاشتراك غير صالحة",
     }),
     paid_amount: z.coerce.number().nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
+    payment_method: z.literal("cash"),
+    receipt_number: optionalReceiptSchema,
+    coach_receipt_number: optionalReceiptSchema,
+    branch_receipt_number: optionalReceiptSchema,
     notes: z.string().max(1000, "الملاحظات يجب ألا تتجاوز 1000 حرف").optional(),
     reason: modificationReasonSchema,
   })
