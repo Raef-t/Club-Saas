@@ -10,30 +10,51 @@ import {
   isPrivateSubscriptionActivity,
 } from "./subscriptionPlanFormUtils";
 
+const generalTrainingType = {
+  is_private_equipment: false,
+  is_session_based: false,
+  is_daily_entry: false,
+  has_unlimited_subscribers: true,
+};
+const privateTrainingType = { ...generalTrainingType, is_private_equipment: true };
+const groupClassType = {
+  is_private_equipment: false,
+  is_session_based: true,
+  is_daily_entry: false,
+  has_unlimited_subscribers: false,
+};
 const activities = [
-  { id: 3, name: "أجهزة عام" },
-  { id: 7, name: { ar: "زومبا", en: "Zumba" } },
+  { id: 3, name: "أجهزة عام", activity_type: generalTrainingType },
+  { id: 7, name: { ar: "زومبا", en: "Zumba" }, activity_type: groupClassType },
 ];
 const coaches = [{ id: 44, person: { full_name: "كابتن دانية" } }];
 
 describe("subscription plan form utilities", () => {
   it("recognizes only the general equipment activity", () => {
     expect(isGeneralEquipmentActivity(activities[0])).toBe(true);
-    expect(isGeneralEquipmentActivity({ name: "اجهزة عام داخل الصالة" })).toBe(true);
-    expect(isGeneralEquipmentActivity({ name: "أجهزة خاص" })).toBe(false);
-    expect(isGeneralEquipmentActivity({ name: "تدريب عام" })).toBe(false);
+    expect(
+      isGeneralEquipmentActivity({ name: "اسم مخصص", activity_type: generalTrainingType }),
+    ).toBe(true);
+    expect(
+      isGeneralEquipmentActivity({ name: "أجهزة عام", activity_type: privateTrainingType }),
+    ).toBe(false);
+    expect(isGeneralEquipmentActivity(activities[1])).toBe(false);
   });
 
   it("recognizes general and private equipment as activities without times", () => {
-    expect(isEquipmentActivity({ name: "أجهزة عام" })).toBe(true);
-    expect(isEquipmentActivity({ name: "اجهزة خاص" })).toBe(true);
-    expect(isEquipmentActivity({ name: "تدريب عام" })).toBe(false);
-    expect(isEquipmentActivity({ name: "زومبا" })).toBe(false);
+    expect(isEquipmentActivity({ activity_type: generalTrainingType })).toBe(true);
+    expect(isEquipmentActivity({ activity_type: privateTrainingType })).toBe(true);
+    expect(isEquipmentActivity({ activity_type: groupClassType })).toBe(false);
+    expect(
+      isEquipmentActivity({
+        activity_type: { ...generalTrainingType, is_daily_entry: true },
+      }),
+    ).toBe(false);
   });
 
   it("recognizes private equipment and calculates amounts from the private-training commission", () => {
-    expect(isPrivateEquipmentActivity({ name: "أجهزة خاص" })).toBe(true);
-    expect(isPrivateEquipmentActivity({ name: "أجهزة عام" })).toBe(false);
+    expect(isPrivateEquipmentActivity({ activity_type: privateTrainingType })).toBe(true);
+    expect(isPrivateEquipmentActivity({ activity_type: generalTrainingType })).toBe(false);
 
     const coachPercentage = getSubscriptionPlanCoachCommission({
       details: {
@@ -48,9 +69,18 @@ describe("subscription plan form utilities", () => {
   });
 
   it("recognizes private plans and adds their coach and branch prices", () => {
-    expect(isPrivateSubscriptionActivity({ name: "أجهزة خاص" })).toBe(true);
-    expect(isPrivateSubscriptionActivity({ name: "تدريب خاص" })).toBe(true);
-    expect(isPrivateSubscriptionActivity({ name: "تدريب عام" })).toBe(false);
+    expect(
+      isPrivateSubscriptionActivity({
+        name: "أي اسم للنشاط",
+        activity_type: privateTrainingType,
+      }),
+    ).toBe(true);
+    expect(
+      isPrivateSubscriptionActivity({
+        name: "أجهزة خاص",
+        activity_type: generalTrainingType,
+      }),
+    ).toBe(false);
     expect(calculatePrivatePlanBasePrice("200", "150")).toBe(350);
   });
 

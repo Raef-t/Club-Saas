@@ -108,25 +108,21 @@ export function useSubscriptionPlans({
     [branchesData, initialData?.branches],
   );
 
-  const { data: activitiesData } = useGetActivitiesQuery(withAllItems(branchQueryParams));
+  // Creation/editing may switch to a branch other than the global page filter,
+  // so the form needs the complete reference lists.
+  const { data: activitiesData } = useGetActivitiesQuery(withAllItems());
   const allActivities = useMemo(() => {
     const response = activitiesData || initialData?.activities;
     return Array.isArray(response?.data) ? response.data : [];
   }, [activitiesData, initialData?.activities]);
-  const activities = useMemo(
-    () => filterEntitiesByBranch(allActivities, selectedBranchId),
-    [allActivities, selectedBranchId],
-  );
+  const activities = allActivities;
 
-  const { data: coachesData } = useGetCoachesQuery(withAllItems(branchQueryParams));
+  const { data: coachesData } = useGetCoachesQuery(withAllItems());
   const allCoaches = useMemo(() => {
     const response = coachesData || initialData?.coaches;
     return Array.isArray(response?.data) ? response.data : [];
   }, [coachesData, initialData?.coaches]);
-  const coaches = useMemo(
-    () => filterEntitiesByBranch(allCoaches, selectedBranchId),
-    [allCoaches, selectedBranchId],
-  );
+  const coaches = allCoaches;
 
   useEffect(() => {
     if (error) {

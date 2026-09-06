@@ -15,5 +15,3 @@ export const DAYS_OF_WEEK = {
   5: "الجمعة",
   6: "السبت",
 };
-
-export const SHIFT_ACTIVITY_TYPE_IDS = new Set([4, 5]);

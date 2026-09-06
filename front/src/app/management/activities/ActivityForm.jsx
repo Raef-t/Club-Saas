@@ -13,8 +13,9 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { activitySchema, activityUpdateSchema } from "@/lib/validations/activitiesSchema";
-import { DAYS_OF_WEEK, GENDER_OPTIONS, SHIFT_ACTIVITY_TYPE_IDS } from "./activityConstants";
+import { DAYS_OF_WEEK, GENDER_OPTIONS } from "./activityConstants";
 import {
+  activityTypeHasShifts,
   createActivityFormValues,
   createActivityOptions,
   createActivityPayload,
@@ -76,7 +77,7 @@ export default function ActivityForm({
       ),
     [branchId, initialBranchId, initialShifts, shiftsResponse],
   );
-  const showShifts = SHIFT_ACTIVITY_TYPE_IDS.has(Number(form.activity_type_id));
+  const showShifts = activityTypeHasShifts(activityTypes, form.activity_type_id);
   const branchOptions = useMemo(() => createActivityOptions(branches), [branches]);
   const typeOptions = useMemo(() => createActivityOptions(activityTypes), [activityTypes]);
 
