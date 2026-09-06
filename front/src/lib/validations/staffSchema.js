@@ -7,8 +7,12 @@ const staffRoles = [
   "management_admin",
   "manager",
   "coach",
+  "reception",
   "receptionist",
+  "accountant",
   "cleaner",
+  "member_manager",
+  "nursery_staff",
   "staff",
 ];
 

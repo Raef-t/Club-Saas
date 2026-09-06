@@ -6,24 +6,32 @@ export const STAFF_ROLE_LABELS = {
   management_admin: "مدير الإدارة",
   manager: "مدير",
   coach: "مدرب",
+  reception: "موظف استقبال",
   receptionist: "موظف استقبال",
   cleaner: "عامل نظافة",
   staff: "موظف",
+  accountant: "محاسب",
+  member_manager: "مدير شؤون الأعضاء",
+  nursery_staff: "موظفة حضانة",
 };
 
 export const STAFF_ROLE_OPTIONS = [
   { value: "admin", label: STAFF_ROLE_LABELS.admin },
-  { value: "management_admin", label: STAFF_ROLE_LABELS.management_admin },
-  { value: "manager", label: STAFF_ROLE_LABELS.manager },
-  { value: "receptionist", label: STAFF_ROLE_LABELS.receptionist },
+  { value: "accountant", label: STAFF_ROLE_LABELS.accountant },
+  { value: "reception", label: STAFF_ROLE_LABELS.reception },
   { value: "cleaner", label: STAFF_ROLE_LABELS.cleaner },
-  { value: "staff", label: STAFF_ROLE_LABELS.staff },
+  { value: "member_manager", label: STAFF_ROLE_LABELS.member_manager },
+  { value: "nursery_staff", label: STAFF_ROLE_LABELS.nursery_staff },
 ];
 
 export const STAFF_FILTER_ROLE_OPTIONS = [
-  ...STAFF_ROLE_OPTIONS.slice(0, 3),
+  { value: "admin", label: STAFF_ROLE_LABELS.admin },
   { value: "coach", label: STAFF_ROLE_LABELS.coach },
-  ...STAFF_ROLE_OPTIONS.slice(3),
+  { value: "accountant", label: STAFF_ROLE_LABELS.accountant },
+  { value: "reception", label: STAFF_ROLE_LABELS.reception },
+  { value: "cleaner", label: STAFF_ROLE_LABELS.cleaner },
+  { value: "member_manager", label: STAFF_ROLE_LABELS.member_manager },
+  { value: "nursery_staff", label: STAFF_ROLE_LABELS.nursery_staff },
 ];
 
 export const STAFF_EMPLOYMENT_LABELS = {

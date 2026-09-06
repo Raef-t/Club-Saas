@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createStaffFormData } from "./useStaff";
+import { createStaffFormData, createStaffUpdatePayload } from "./useStaff";
 
 describe("staff form payload", () => {
   it("sends attendance times and does not assign coach-style shifts", () => {
@@ -27,5 +27,44 @@ describe("staff form payload", () => {
     expect(body.get("work_status")).toBe("suspended");
     expect(body.get("gender")).toBe("female");
     expect(body.has("shifts[]")).toBe(false);
+  });
+
+  it("creates a clean JSON object for PUT updates with proper gender string", () => {
+    const payload = createStaffUpdatePayload({
+      reason: "test reason",
+      first_name: "  ريم ",
+      last_name: "  تجربة ",
+      phone_number: " 999999999 ",
+      country_code: "+963",
+      gender: "female",
+      role: "reception",
+      employment_type: "fixed_salary",
+      base_salary: "3500",
+      work_status: "active",
+      start_date: "2026-09-01",
+      start_time: "08:00",
+      end_time: "16:20",
+      address: "",
+      branch_ids: [8],
+    });
+
+    expect(payload).toEqual({
+      reason: "test reason",
+      first_name: "ريم",
+      last_name: "تجربة",
+      country_code: "+963",
+      phone_number: "999999999",
+      gender: "female",
+      role: "reception",
+      employment_type: "fixed_salary",
+      base_salary: 3500,
+      work_status: "active",
+      is_active: true,
+      start_date: "2026-09-01",
+      start_time: "08:00",
+      end_time: "16:20",
+      address: null,
+      branch_ids: [8],
+    });
   });
 });

@@ -51,6 +51,27 @@ export function createStaffFormData(values, { includePhoto = false } = {}) {
   return formData;
 }
 
+export function createStaffUpdatePayload(values) {
+  return {
+    reason: values.reason?.trim() || "",
+    first_name: values.first_name.trim(),
+    last_name: values.last_name.trim(),
+    country_code: values.country_code?.trim() || "+963",
+    phone_number: values.phone_number.trim(),
+    gender: values.gender || null,
+    role: values.role,
+    employment_type: values.employment_type,
+    base_salary: Number(values.base_salary) || 0,
+    work_status: values.work_status,
+    is_active: values.work_status === "active",
+    start_date: values.start_date || null,
+    start_time: values.start_time || null,
+    end_time: values.end_time || null,
+    address: values.address?.trim() || null,
+    branch_ids: Array.isArray(values.branch_ids) ? values.branch_ids.map(Number) : [],
+  };
+}
+
 export function useStaff({
   selectedStaffId: initialSelectedId,
   fetchDetails = false,
@@ -240,7 +261,7 @@ export function useStaff({
     try {
       const response = await updateStaffMember({
         id: selectedStaffId,
-        body: createStaffFormData(values),
+        body: createStaffUpdatePayload(values),
       }).unwrap();
       toast.success(response?.message || "تم تعديل بيانات الموظف بنجاح.");
       return response;

@@ -93,10 +93,13 @@ export default function StaffForm({
         label: r.name_ar || STAFF_ROLE_LABELS[r.name] || r.name,
       }));
 
-      if (initialValues?.role && !mapped.some((opt) => opt.value === initialValues.role)) {
+      const normalizedRole =
+        initialValues?.role === "receptionist" ? "reception" : initialValues?.role;
+
+      if (normalizedRole && !mapped.some((opt) => opt.value === normalizedRole)) {
         mapped.push({
-          value: initialValues.role,
-          label: STAFF_ROLE_LABELS[initialValues.role] || initialValues.role,
+          value: normalizedRole,
+          label: STAFF_ROLE_LABELS[normalizedRole] || normalizedRole,
         });
       }
 
@@ -113,7 +116,7 @@ export default function StaffForm({
     if (initialValues) return;
     if (roleOptions.length > 0 && !roleOptions.some((opt) => opt.value === form.role)) {
       const preferred =
-        roleOptions.find((opt) => opt.value === "reception" || opt.value === "receptionist") ||
+        roleOptions.find((opt) => opt.value === "reception") ||
         roleOptions[0];
       if (preferred) {
         setForm((current) => ({ ...current, role: preferred.value }));
