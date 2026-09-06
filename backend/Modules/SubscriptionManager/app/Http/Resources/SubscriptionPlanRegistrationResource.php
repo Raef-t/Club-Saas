@@ -14,6 +14,8 @@ class SubscriptionPlanRegistrationResource extends JsonResource
             'session_count' => $this->session_count,
             'sessions_per_week' => $this->sessions_per_week,
             'base_price' => $this->base_price,
+            'coach_price' => $this->coach_price,
+            'branch_price' => $this->branch_price,
             'max_subscribers' => $this->max_subscribers,
             'current_subscribers' => method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers,
             'is_unlimited_subscribers' => (bool) ($this->is_unlimited_subscribers ?? ($this->max_subscribers == 0)),

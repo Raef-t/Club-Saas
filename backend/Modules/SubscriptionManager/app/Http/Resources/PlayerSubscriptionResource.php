@@ -36,9 +36,11 @@ class PlayerSubscriptionResource extends JsonResource
                 'id' => $this->created_by,
                 'name' => $this->creator?->person?->full_name ?? $this->creator?->username ?? null,
             ] : null,
-            'receipt_number' => $this->relationLoaded('payments')
+            'receipt_number' => $this->relationLoaded('payments') && $this->payments->isNotEmpty()
                 ? $this->payments->sortByDesc('id')->first()?->receipt_number
-                : null,
+                : ($this->branch_receipt_number ?? null),
+            'coach_receipt_number' => $this->coach_receipt_number ?? ($this->relationLoaded('revenueSplit') ? $this->revenueSplit?->coach_receipt_number : null),
+            'branch_receipt_number' => $this->branch_receipt_number ?? ($this->relationLoaded('revenueSplit') ? $this->revenueSplit?->branch_receipt_number : null),
             'payments' => PaymentResource::collection($this->whenLoaded('payments')),
             'invoices' => InvoiceResource::collection($this->whenLoaded('invoices')),
             'items' => $this->whenLoaded('items', function () {
@@ -79,6 +81,8 @@ class PlayerSubscriptionResource extends JsonResource
                 'coach_percentage' => $this->revenueSplit->coach_percentage,
                 'club_amount' => $this->revenueSplit->club_amount,
                 'coach_amount' => $this->revenueSplit->coach_amount,
+                'coach_receipt_number' => $this->revenueSplit->coach_receipt_number,
+                'branch_receipt_number' => $this->revenueSplit->branch_receipt_number,
             ] : null,
         ];
     }

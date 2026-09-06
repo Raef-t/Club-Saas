@@ -20,6 +20,8 @@ class PlayerSubscription extends Model
         'end_date',
         'status',
         'notes',
+        'coach_receipt_number',
+        'branch_receipt_number',
         'offer_id',
         'reason',
     ];

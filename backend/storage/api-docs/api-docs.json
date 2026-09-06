@@ -22334,15 +22334,32 @@
                                         "type": "string",
                                         "example": "ملاحظات إضافية"
                                     },
-                                    "payment_method": {
-                                        "description": "طريقة الدفع (اختياري)",
-                                        "type": "string",
-                                        "example": "cash"
-                                    },
                                     "receipt_number": {
-                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "description": "رقم إيصال الدفع العام / النادي (اختياري)",
                                         "type": "string",
                                         "example": "REC-2026-001"
+                                    },
+                                    "coach_receipt_number": {
+                                        "description": "رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-COACH-001"
+                                    },
+                                    "branch_receipt_number": {
+                                        "description": "رقم إيصال دفعة النادي للاشتراك الخاص (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-CLUB-001"
+                                    },
+                                    "coach_paid_amount": {
+                                        "description": "مبلغ دفعة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200
+                                    },
+                                    "branch_paid_amount": {
+                                        "description": "مبلغ دفعة النادي (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
                                     }
                                 },
                                 "type": "object"
@@ -24355,6 +24372,20 @@
                                         "format": "float",
                                         "example": 350
                                     },
+                                    "coach_price": {
+                                        "description": "سعر الكوتش للاشتراك الخاص",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200,
+                                        "nullable": true
+                                    },
+                                    "branch_price": {
+                                        "description": "سعر الفرع للاشتراك الخاص",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150,
+                                        "nullable": true
+                                    },
                                     "max_subscribers": {
                                         "type": "integer",
                                         "example": 50,
@@ -24786,6 +24817,20 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 400
+                                    },
+                                    "coach_price": {
+                                        "description": "سعر الكوتش للاشتراك الخاص",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 250,
+                                        "nullable": true
+                                    },
+                                    "branch_price": {
+                                        "description": "سعر الفرع للاشتراك الخاص",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150,
+                                        "nullable": true
                                     },
                                     "max_subscribers": {
                                         "type": "integer",

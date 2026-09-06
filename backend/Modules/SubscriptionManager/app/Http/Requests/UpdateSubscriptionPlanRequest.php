@@ -33,6 +33,8 @@ class UpdateSubscriptionPlanRequest extends FormRequest
             'session_count' => 'nullable|integer|min:1',
             'sessions_per_week' => 'nullable|integer|min:1',
             'base_price' => 'nullable|numeric|min:0',
+            'coach_price' => 'nullable|numeric|min:0',
+            'branch_price' => 'nullable|numeric|min:0',
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',
             'gender_restriction' => 'nullable|in:male,female,mixed',
