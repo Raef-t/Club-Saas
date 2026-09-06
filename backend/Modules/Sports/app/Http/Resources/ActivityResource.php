@@ -35,7 +35,7 @@ class ActivityResource extends JsonResource
             'activity_type' => new ActivityTypeResource($this->activityType),
             'is_unlimited_subscribers' => (bool) ($this->activityType?->has_unlimited_subscribers ?? $this->hasUnlimitedSubscribers()),
             'description' => $this->description,
-            'is_private_equipment' => $this->is_private_equipment,
+            'is_private_equipment' => (bool) ($this->activityType?->is_private_equipment ?? $this->is_private_equipment),
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),
         ];

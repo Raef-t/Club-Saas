@@ -18,6 +18,7 @@ class UpdateActivityTypeSettingsRequest extends FormRequest
             'has_unlimited_subscribers' => 'boolean',
             'has_shifts' => 'boolean',
             'is_daily_entry' => 'boolean',
+            'is_private_equipment' => 'boolean',
         ];
     }
 }
