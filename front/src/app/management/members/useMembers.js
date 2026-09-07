@@ -151,6 +151,9 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
           .includes(normalizedSearch) ||
         String(m.generated_username || m.username || "")
           .toLowerCase()
+          .includes(normalizedSearch) ||
+        String(m.custom_username || "")
+          .toLowerCase()
           .includes(normalizedSearch);
 
       return matchesGender && matchesStatus && matchesSearch;

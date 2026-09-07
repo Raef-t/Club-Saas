@@ -69,8 +69,13 @@ export function useCoaches(params = {}) {
     return params;
   }, [activityFilter, branchFilter, page, perPage, workStatusFilter]);
 
-  const { currentData: data, error, isLoading, isFetching, refetch } =
-    useGetCoachesQuery(queryParams);
+  const {
+    currentData: data,
+    error,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetCoachesQuery(queryParams);
   const { data: branchesData } = useGetBranchesQuery(withAllItems());
   const { data: activitiesData } = useGetActivitiesQuery(
     withAllItems(branchFilter === "all" ? {} : { branch_id: branchFilter }),

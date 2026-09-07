@@ -184,7 +184,7 @@ function PlanActivitiesFields({ items, activities, branchId, errors, onChange })
   );
 }
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.25fr) 78px 82px 94px 90px 112px 86px 128px";
+const TABLE_GRID_COLUMNS = "minmax(220px,1fr) 118px 100px 96px 112px 96px 136px";
 
 const initialForm = {
   branch_id: "",
@@ -1232,7 +1232,7 @@ export default function SubscriptionPlansClient({ initialData }) {
         title="قائمة الفعاليات"
         columns={columns}
         rows={filteredPlans}
-        minWidth="900px"
+        minWidth="930px"
         tableColumns={TABLE_GRID_COLUMNS}
         showAdd={false}
         showSearch={false}

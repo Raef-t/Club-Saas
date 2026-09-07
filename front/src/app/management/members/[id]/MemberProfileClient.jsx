@@ -186,6 +186,7 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
       >
         <SubscriptionDetails
           subscription={selectedSubscription}
+          memberFallback={initialMember}
           error={selectedSubscriptionError}
           isLoading={selectedSubscriptionLoading || selectedSubscriptionFetching}
           onRetry={refetchSelectedSubscription}

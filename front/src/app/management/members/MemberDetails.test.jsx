@@ -41,7 +41,8 @@ describe("member comprehensive profile", () => {
           id: 7,
           member_number: "MEM-0007",
           branch_id: 2,
-          username: "player-7",
+          generated_username: "tec-ply-10007",
+          custom_username: "dania.player",
           membership_status: "active",
           created_by: { id: 1, name: "John Doe" },
           person: {
@@ -85,11 +86,19 @@ describe("member comprehensive profile", () => {
     );
 
     expect(screen.getByText("دانية مولوي")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "نسخ اسم المستخدم tec-ply-10007" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("dania.player")).toBeInTheDocument();
+    expect(screen.getByText("اسم المستخدم المخصص")).toBeInTheDocument();
     expect(screen.getAllByText("لياقة شهرية").length).toBeGreaterThan(0);
     expect(screen.getByText("أيروبيك")).toBeInTheDocument();
     expect(screen.getByText("خزانة L-12")).toBeInTheDocument();
     expect(screen.getByText("والدة دانية")).toBeInTheDocument();
     expect(screen.getByText("John Doe")).toBeInTheDocument();
+    const paidAmountCard = screen.getByText("المبلغ المدفوع").closest("div.rounded-xl");
+    expect(paidAmountCard).toHaveTextContent("250 ل.س");
+    expect(paidAmountCard).not.toHaveTextContent("المبلغ المتبقي");
     expect(screen.getByText("اشتراكات اللاعب")).toBeInTheDocument();
     expect(screen.getByText("الاشتراكات السابقة")).toBeInTheDocument();
     expect(screen.queryByText("سجل الاشتراكات")).not.toBeInTheDocument();

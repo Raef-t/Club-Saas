@@ -52,6 +52,7 @@ function DetailSection({ title, children }) {
  */
 export default function SubscriptionDetails({
   subscription,
+  memberFallback,
   error,
   isLoading,
   onRetry,
@@ -100,8 +101,18 @@ export default function SubscriptionDetails({
     );
   }
 
-  const member = subscription.member || {};
+  const subscriptionMember = subscription.member || {};
+  const member = {
+    ...(memberFallback || {}),
+    ...subscriptionMember,
+    person: {
+      ...(memberFallback?.person || {}),
+      ...(subscriptionMember.person || {}),
+    },
+  };
   const person = member.person || {};
+  const generatedUsername =
+    member.generated_username || subscription.generated_username || member.username;
   const plan = subscription.plan || {};
   const planName =
     typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "-";
@@ -124,7 +135,7 @@ export default function SubscriptionDetails({
               {person.full_name || "-"}
             </h3>
             <p className="mt-1 text-xs text-app-muted-light" dir="ltr">
-              {member.member_number || "-"}
+              {generatedUsername || "-"}
             </p>
           </div>
           <SubscriptionStatusBadge status={subscription.status} />
@@ -133,6 +144,7 @@ export default function SubscriptionDetails({
 
       <DetailSection title="بيانات العضو">
         <DetailItem label="الاسم" value={person.full_name} />
+        <DetailItem label="اسم المستخدم المولّد" value={generatedUsername} />
         <DetailItem label="رقم العضوية" value={member.member_number} />
         <DetailItem label="الهاتف" value={person.phone} />
       </DetailSection>
@@ -243,7 +255,8 @@ export default function SubscriptionDetails({
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-white">سجل تجميد الاشتراك</h4>
             <span className="text-[11px] text-app-muted-light">
-              {subscription.freezes.length} {subscription.freezes.length === 1 ? "عملية تجميد" : "عمليات تجميد"}
+              {subscription.freezes.length}{" "}
+              {subscription.freezes.length === 1 ? "عملية تجميد" : "عمليات تجميد"}
             </span>
           </div>
           <div className="space-y-2">
@@ -280,9 +293,7 @@ export default function SubscriptionDetails({
                         : "bg-app-yellow/10 text-app-yellow border-app-yellow/25"
                     }`}
                   >
-                    {isOngoing
-                      ? `مجمّد (${displayDays} يوم) ❄️`
-                      : `${displayDays} يوم`}
+                    {isOngoing ? `مجمّد (${displayDays} يوم) ❄️` : `${displayDays} يوم`}
                   </span>
                 </div>
               );
@@ -323,7 +334,9 @@ export default function SubscriptionDetails({
               ) : (
                 <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-b from-cyan-950/20 to-app-card-soft p-4 space-y-3.5 text-right shadow-lg">
                   <div className="flex items-center justify-between border-b border-app-line/60 pb-2">
-                    <span className="text-[11px] text-cyan-400 font-medium">إيقاف مؤقت للاشتراك</span>
+                    <span className="text-[11px] text-cyan-400 font-medium">
+                      إيقاف مؤقت للاشتراك
+                    </span>
                     <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span>❄️</span>
                       <span>تجميد الاشتراك الحالي</span>
@@ -347,7 +360,8 @@ export default function SubscriptionDetails({
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-app-muted-light">
-                          عدد الأيام <span className="text-[10px] text-app-muted font-normal">(اختياري)</span>
+                          عدد الأيام{" "}
+                          <span className="text-[10px] text-app-muted font-normal">(اختياري)</span>
                           <input
                             type="number"
                             min="1"
@@ -377,7 +391,11 @@ export default function SubscriptionDetails({
                         تاريخ نهاية التجميد
                         <input
                           type="text"
-                          value={calculatedFreezeEndDate ? formatDateDisplay(calculatedFreezeEndDate, "DD/MM/YYYY") : ""}
+                          value={
+                            calculatedFreezeEndDate
+                              ? formatDateDisplay(calculatedFreezeEndDate, "DD/MM/YYYY")
+                              : ""
+                          }
                           placeholder="DD/MM/YYYY"
                           readOnly
                           disabled
@@ -401,7 +419,9 @@ export default function SubscriptionDetails({
                           placeholder="أدخل سبب التجميد بالتفصيل..."
                           maxLength={500}
                           className={`app-input mt-1.5 w-full p-2.5 text-right bg-black/40 text-white placeholder:text-app-muted text-xs rounded-lg border transition-colors ${
-                            reasonError ? "border-red-500 focus:border-red-500" : "border-app-line focus:border-cyan-500"
+                            reasonError
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-app-line focus:border-cyan-500"
                           }`}
                         />
                       </label>
@@ -414,7 +434,9 @@ export default function SubscriptionDetails({
                   </div>
 
                   <div className="rounded-lg bg-cyan-950/30 border border-cyan-500/20 p-2.5 text-[11px] text-cyan-200/90 leading-relaxed">
-                    💡 <strong>ملاحظة:</strong> سيبقى الاشتراك مجمداً وموقوفاً عن تسجيل الحضور حتى تضغط على زر <strong>&quot;إلغاء التجميد&quot;</strong>، وعندها سيقوم النظام تلقائياً بتمديد تاريخ نهاية الاشتراك بعدد أيام التجميد الفعلية.
+                    💡 <strong>ملاحظة:</strong> سيبقى الاشتراك مجمداً وموقوفاً عن تسجيل الحضور حتى
+                    تضغط على زر <strong>&quot;إلغاء التجميد&quot;</strong>، وعندها سيقوم النظام
+                    تلقائياً بتمديد تاريخ نهاية الاشتراك بعدد أيام التجميد الفعلية.
                   </div>
 
                   <div className="flex gap-2 pt-1">
@@ -443,11 +465,15 @@ export default function SubscriptionDetails({
                           return;
                         }
                         if (subscription?.start_date && freezeStartDate < subscription.start_date) {
-                          setStartDateError(`لا يمكن أن يكون تاريخ بدء التجميد قبل بداية الاشتراك (${subscription.start_date}).`);
+                          setStartDateError(
+                            `لا يمكن أن يكون تاريخ بدء التجميد قبل بداية الاشتراك (${subscription.start_date}).`,
+                          );
                           return;
                         }
                         if (subscription?.end_date && freezeStartDate > subscription.end_date) {
-                          setStartDateError(`لا يمكن تجميد اشتراك بعد تاريخ انتهائه (${subscription.end_date}).`);
+                          setStartDateError(
+                            `لا يمكن تجميد اشتراك بعد تاريخ انتهائه (${subscription.end_date}).`,
+                          );
                           return;
                         }
                         if (!freezeReason.trim()) {
