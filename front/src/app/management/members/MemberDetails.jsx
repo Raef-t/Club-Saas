@@ -405,6 +405,7 @@ export default function MemberDetails({
     <div className="space-y-5">
       <ProfileIdentityCard
         name={fullName}
+        username={member.generated_username || member.username}
         qrCode={member.today_qr_code || member.qr_code}
         status={status}
       />
@@ -427,10 +428,9 @@ export default function MemberDetails({
         />
         <MetricCard
           icon={<CalendarIcon className="size-4" />}
-          label="المبلغ المتبقي"
-          value={formatSubscriptionMoney(summary?.remainingAmount || 0)}
-          helper={`مدفوع ${formatSubscriptionMoney(summary?.paidAmount || 0)}`}
-          tone={(summary?.remainingAmount || 0) > 0 ? "red" : "green"}
+          label="المبلغ المدفوع"
+          value={formatSubscriptionMoney(summary?.paidAmount || 0)}
+          tone="green"
         />
         <MetricCard
           icon={<LockerIcon className="size-4" />}
@@ -466,6 +466,7 @@ export default function MemberDetails({
         <div className="space-y-5">
           <Section title="بيانات اللاعب">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <DetailItem label="اسم المستخدم المخصص" value={member.custom_username || "-"} />
               <DetailItem label="الفرع" value={branchName} tone="yellow" />
               <DetailItem label="الجنس" value={genderLabels[gender] || gender} />
               <DetailItem label="الهاتف" value={mobile ? `${countryCode} ${mobile}`.trim() : "-"} />

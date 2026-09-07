@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
+import CopyableUsername from "@/components/ui/CopyableUsername";
 import Drawer from "@/components/ui/Drawer";
 import RowActions from "@/components/ui/RowActions";
 import SkeletonPage from "@/components/ui/Skeleton";
@@ -22,7 +23,7 @@ import { useMembers } from "./useMembers";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 140px 100px 120px 100px 90px";
+const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 170px 140px 100px 120px 100px 90px";
 
 const genderLabels = {
   male: "ذكر",
@@ -153,6 +154,15 @@ export default function MembersClient({ initialData }) {
           <span className="text-sm font-medium text-white">
             {getMemberDisplayName(member) || "-"}
           </span>
+        ),
+      },
+      {
+        key: "custom_username",
+        label: "اسم المستخدم المخصص",
+        align: "center",
+        sortValue: (member) => member.custom_username || "",
+        render: (_, member) => (
+          <CopyableUsername username={member.custom_username} align="center" />
         ),
       },
       {
@@ -297,7 +307,7 @@ export default function MembersClient({ initialData }) {
         title="قائمة اللاعبين"
         columns={columns}
         rows={filteredMembers}
-        minWidth="850px"
+        minWidth="1020px"
         tableColumns={TABLE_GRID_COLUMNS}
         showAdd={false}
         showSearch={false}
@@ -342,7 +352,7 @@ export default function MembersClient({ initialData }) {
                 className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="البحث باسم اللاعب أو الهاتف..."
+                placeholder="البحث بالاسم أو الهاتف أو اسم المستخدم..."
                 type="search"
               />
             </label>
