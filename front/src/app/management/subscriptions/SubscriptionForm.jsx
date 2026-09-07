@@ -165,13 +165,18 @@ export function SubscriptionCreateForm({
         <label className="block text-right text-sm text-app-muted-light">
           اللاعب العضو
           <Dropdown
+            searchable
+            searchPlaceholder="ابحث عن اللاعب بالاسم..."
             className="mt-2 text-white"
             buttonClassName="bg-app-card-soft h-11"
             value={form.member_id}
             onChange={(val) => updateField("member_id", val)}
             options={members.map((m) => ({
               value: String(m.id),
-              label: `${m.person?.full_name || `${m.first_name || ""} ${m.last_name || ""}`} (رقم العضوية: #${m.id})`,
+              label:
+                m.person?.full_name ||
+                `${m.first_name || ""} ${m.last_name || ""}`.trim() ||
+                "عضو بدون اسم",
             }))}
             placeholder="اختر اللاعب"
             error={errors && errors.member_id}

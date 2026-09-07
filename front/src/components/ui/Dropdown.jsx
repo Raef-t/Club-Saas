@@ -17,6 +17,7 @@ export default function Dropdown({
   disabled = false,
   error,
   searchable = false,
+  searchPlaceholder = "ابحث...",
 }) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -175,8 +176,9 @@ export default function Dropdown({
                 <input
                   ref={searchInputRef}
                   type="text"
+                  aria-label={searchPlaceholder}
                   className="h-9 w-full rounded-lg border border-app-line bg-app-card-soft px-3 text-right text-sm text-app-text outline-none placeholder-app-muted transition focus:border-app-yellow"
-                  placeholder="ابحث..."
+                  placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   onClick={(event) => event.stopPropagation()}

@@ -5,6 +5,30 @@ import { SubscriptionCreateForm, SubscriptionEditForm } from "./SubscriptionForm
 afterEach(cleanup);
 
 describe("subscription create validation", () => {
+  it("searches for a player by name without displaying membership numbers", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[
+          { id: 1, member_number: "501", person: { full_name: "أحمد خالد" } },
+          { id: 2, member_number: "762", person: { full_name: "لينا محمود" } },
+        ]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "اللاعب العضو" }));
+
+    const searchInput = screen.getByRole("textbox", {
+      name: "ابحث عن اللاعب بالاسم...",
+    });
+    fireEvent.change(searchInput, { target: { value: "لينا" } });
+    expect(screen.getByRole("option", { name: /لينا محمود/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /أحمد خالد/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/501|762|رقم العضوية/)).not.toBeInTheDocument();
+  });
+
   it("renders each date validation message only once", () => {
     const { container } = render(
       <SubscriptionCreateForm
