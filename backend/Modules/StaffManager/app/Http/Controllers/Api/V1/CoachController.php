@@ -873,13 +873,18 @@ class CoachController extends BaseController
                 'data' => new CoachResource($coach),
                 'message' => 'Coach updated successfully'
             ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->validator->errors()->first() ?: $e->getMessage(),
+                'errors'  => $e->errors()
+            ], 422);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'message' => 'Coach not found.'
             ], 404);
         } catch (QueryException $e) {
             return response()->json([
-                'message' => 'Conflict occurred while updating coach.'
+                'message' => 'تعذر تعديل بيانات المدرب لوجود تعارض في البيانات المرتبطة.'
             ], 409);
         } catch (Exception $e) {
             return response()->json([
