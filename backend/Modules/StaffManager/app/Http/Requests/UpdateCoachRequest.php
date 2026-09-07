@@ -114,8 +114,11 @@ class UpdateCoachRequest extends FormRequest
                         $removedPivotIds = $removedActivities->pluck('pivot.id')->filter()->values();
 
                         $conflictingPivotIds = \Illuminate\Support\Facades\DB::table('plan_activities')
-                            ->whereIn('staff_activity_id', $removedPivotIds)
-                            ->pluck('staff_activity_id')
+                            ->join('subscription_plans', 'subscription_plans.id', '=', 'plan_activities.plan_id')
+                            ->whereIn('plan_activities.staff_activity_id', $removedPivotIds)
+                            ->whereNull('plan_activities.deleted_at')
+                            ->whereNull('subscription_plans.deleted_at')
+                            ->pluck('plan_activities.staff_activity_id')
                             ->unique()
                             ->all();
 

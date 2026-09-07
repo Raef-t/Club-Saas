@@ -202,7 +202,7 @@ class Staff extends Model
             'staff_activities',
             'staff_id',
             'activity_id'
-        )->withPivot('id');
+        )->wherePivotNull('deleted_at')->withPivot('id');
     }
 
     public function staffActivities()
