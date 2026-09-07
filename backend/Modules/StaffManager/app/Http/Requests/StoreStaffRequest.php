@@ -3,6 +3,7 @@
 namespace Modules\StaffManager\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreStaffRequest extends FormRequest
 {
@@ -56,7 +57,13 @@ class StoreStaffRequest extends FormRequest
             'notes' => 'nullable|string',
 
             // ── Staff Details (staff table) ──────────────────────
-            'role' => ['required', 'string', 'exists:roles,name'],
+            'role' => [
+                'required',
+                'string',
+                Rule::exists('roles', 'name')->where(function ($query) {
+                    $query->where('is_visible', true);
+                }),
+            ],
             'employment_type' => 'required|in:fixed_salary,commission_based,hybrid',
             'base_salary' => 'nullable|numeric|min:0',
             'branch_ids' => 'required|array',

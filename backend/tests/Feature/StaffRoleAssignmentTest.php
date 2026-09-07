@@ -170,4 +170,56 @@ class StaffRoleAssignmentTest extends TestCase
         $this->assertFalse($user->hasRole('reception', 'sanctum'));
         $this->assertTrue($user->hasRole('accountant', 'sanctum'));
     }
+
+    public function test_cannot_onboard_staff_with_invisible_role()
+    {
+        $payload = [
+            'first_name'      => 'Hacker',
+            'last_name'       => 'User',
+            'phone_number'    => '966500000005',
+            'role'            => 'super_admin', // super_admin has is_visible = false
+            'employment_type' => 'fixed_salary',
+            'branch_ids'      => [$this->branch->id],
+        ];
+
+        $response = $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/staff', $payload);
+
+        $response->assertStatus(422)
+                 ->assertJsonValidationErrors(['role']);
+    }
+
+    public function test_cannot_update_staff_with_invisible_role()
+    {
+        $payload = [
+            'first_name'      => 'Tariq',
+            'last_name'       => 'Mansour',
+            'phone_number'    => '966500000006',
+            'country_code'    => '+966',
+            'role'            => 'reception',
+            'employment_type' => 'fixed_salary',
+            'base_salary'     => 4000,
+            'branch_ids'      => [$this->branch->id],
+        ];
+
+        $createResponse = $this->actingAs($this->admin, 'sanctum')->postJson('/api/v1/staff', $payload);
+        $createResponse->assertStatus(201);
+        $staff = Staff::latest('id')->first();
+
+        $updatePayload = [
+            'reason'          => 'محاولة ترقية غير مصرح بها',
+            'first_name'      => 'Tariq',
+            'last_name'       => 'Mansour',
+            'phone_number'    => '966500000006',
+            'country_code'    => '+966',
+            'role'            => 'super_admin',
+            'employment_type' => 'fixed_salary',
+            'base_salary'     => 5500,
+            'branch_ids'      => [$this->branch->id],
+        ];
+
+        $updateResponse = $this->actingAs($this->admin, 'sanctum')->putJson("/api/v1/staff/{$staff->id}", $updatePayload);
+
+        $updateResponse->assertStatus(422)
+                       ->assertJsonValidationErrors(['role']);
+    }
 }
