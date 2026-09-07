@@ -284,7 +284,7 @@ class MemberService
     protected function attachSharedDTOs(?\Modules\MemberManager\Models\Member $member)
     {
         if ($member) {
-            $member->loadMissing(['creator.person', 'person.contacts', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
+            $member->loadMissing(['creator.person', 'person.contacts', 'person.user', 'branch', 'subscriptions.plan.planActivities.staffActivity.activity', 'subscriptions.items', 'healthProfile', 'measurements']);
         }
         return $member;
     }

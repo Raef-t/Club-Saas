@@ -426,9 +426,9 @@ class LockerService
         });
     }
 
-    public function releaseLocker(int $lockerId, ?string $reason = null)
+    public function releaseLocker(int $lockerId, ?string $reason = null, bool $isRefund = false, ?float $refundAmount = null)
     {
-        return DB::transaction(function () use ($lockerId, $reason) {
+        return DB::transaction(function () use ($lockerId, $reason, $isRefund, $refundAmount) {
             $locker = \Modules\ClubManager\Models\Locker::where('id', $lockerId)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -456,6 +456,34 @@ class LockerService
                     ]);
                 }
 
+                $calculatedRefundAmount = null;
+                if ($isRefund) {
+                    if ($refundAmount !== null && $refundAmount !== '') {
+                        $calculatedRefundAmount = floatval($refundAmount);
+                    } else {
+                        $firstRes = $activeReservations->first();
+                        $paidTotal = 0;
+
+                        if (!empty($firstRes->invoice_id)) {
+                            // Sum of completed payments on this invoice
+                            $paidTotal = DB::table('payments')
+                                ->where('invoice_id', $firstRes->invoice_id)
+                                ->where('status', 'completed')
+                                ->whereNull('deleted_at')
+                                ->sum('amount');
+
+                            // If no payments found, fallback to invoice total
+                            if ($paidTotal <= 0) {
+                                $paidTotal = DB::table('invoices')
+                                    ->where('id', $firstRes->invoice_id)
+                                    ->value('total') ?? 0;
+                            }
+                        }
+
+                        $calculatedRefundAmount = $paidTotal > 0 ? floatval($paidTotal) : floatval($firstRes->price ?? 0);
+                    }
+                }
+
                 $todayDate = now()->toDateString();
                 DB::table('locker_reservations')
                     ->where('locker_id', $lockerId)
@@ -464,6 +492,8 @@ class LockerService
                     ->update([
                         'status' => 'expired',
                         'reason' => $reason,
+                        'is_refund' => $isRefund,
+                        'refund_amount' => $calculatedRefundAmount,
                         'end_date' => DB::raw("COALESCE(end_date, '{$todayDate}')"),
                         'updated_at' => now(),
                     ]);
