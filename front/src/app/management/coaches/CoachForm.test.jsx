@@ -238,6 +238,61 @@ describe("coach private-training commissions", () => {
     await waitFor(() => expect(screen.getByLabelText(/الراتب الأساسي/)).toHaveValue(10000));
   });
 
+  it("preserves both commission splits when an unrelated activity is removed", async () => {
+    render(
+      <CoachCreateForm
+        formId="coach-form"
+        branches={[{ id: 5, name: "الفرع الرئيسي" }]}
+        activities={[
+          {
+            id: 7,
+            name: "أجهزة عام",
+            activity_type: { code: "general_training" },
+          },
+          {
+            id: 8,
+            name: "أجهزة خاص",
+            activity_type: { code: "private_training" },
+          },
+          {
+            id: 9,
+            name: "زومبا",
+            activity_type: { code: "group_class" },
+          },
+        ]}
+        initialValues={{
+          first_name: "أحمد",
+          last_name: "محمد",
+          branch_ids: [5],
+          activity_ids: [7, 8, 9],
+          employment_type: "hybrid",
+          work_types: ["equipment", "activities"],
+          base_salary: "10000",
+          default_commission_rate: "40",
+          private_commission_rate: "100",
+          private_club_commission_rate: "0",
+        }}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/نسبة النادي من التدريب الخاص/)).toHaveValue(0);
+    expect(screen.getByLabelText(/نسبة المدرب من التدريب الخاص/)).toHaveValue(100);
+    expect(screen.getByLabelText(/نسبة النادي من الفعالية/)).toHaveValue(60);
+    expect(screen.getByLabelText(/نسبة المدرب من الفعالية/)).toHaveValue(40);
+
+    fireEvent.click(screen.getByText("أجهزة عام").closest("div").querySelector("button"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("أجهزة عام")).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/نسبة النادي من التدريب الخاص/)).toHaveValue(0);
+      expect(screen.getByLabelText(/نسبة المدرب من التدريب الخاص/)).toHaveValue(100);
+      expect(screen.getByLabelText(/نسبة النادي من الفعالية/)).toHaveValue(60);
+      expect(screen.getByLabelText(/نسبة المدرب من الفعالية/)).toHaveValue(40);
+    });
+  });
+
   it("shows the highlighted commission card for a percentage-based activity", async () => {
     const { getByRole } = render(
       <CoachCreateForm
