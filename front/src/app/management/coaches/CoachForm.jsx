@@ -217,7 +217,7 @@ export function CoachCreateForm({
   function updateField(field, value) {
     setForm((current) => {
       const updated = { ...current, [field]: value };
-      if (field === "branch_ids" || field === "activity_ids") {
+      if (field === "branch_ids") {
         shouldSyncPrivateCommissionFromSettingsRef.current = true;
         updated.shifts = [];
         updated.private_club_commission_rate = "";
@@ -228,6 +228,38 @@ export function CoachCreateForm({
     });
     if (errors && errors[field]) {
       setErrors((current) => ({ ...current, [field]: null }));
+    }
+  }
+
+  function updateActivityIds(activityIds) {
+    setForm((current) => {
+      const getRules = (ids) =>
+        getCoachRulesForActivities(
+          activities.filter((activity) => ids.some((id) => Number(id) === Number(activity.id))),
+        );
+      const currentRules = getRules(current.activity_ids);
+      const nextRules = getRules(activityIds);
+      const privateTrainingChanged =
+        currentRules.hasPrivateTraining !== nextRules.hasPrivateTraining;
+      const groupClassRemoved = currentRules.hasGroupClass && !nextRules.hasGroupClass;
+
+      if (privateTrainingChanged) {
+        shouldSyncPrivateCommissionFromSettingsRef.current = true;
+      }
+
+      return {
+        ...current,
+        activity_ids: activityIds,
+        shifts: nextRules.allowsShifts ? current.shifts : [],
+        private_club_commission_rate: privateTrainingChanged
+          ? ""
+          : current.private_club_commission_rate,
+        private_commission_rate: privateTrainingChanged ? "0" : current.private_commission_rate,
+        default_commission_rate: groupClassRemoved ? "0" : current.default_commission_rate,
+      };
+    });
+    if (errors?.activity_ids) {
+      setErrors((current) => ({ ...current, activity_ids: null }));
     }
   }
 
@@ -429,7 +461,7 @@ export function CoachCreateForm({
             onChange={(val) => {
               const id = Number(val);
               if (id && !form.activity_ids.includes(id)) {
-                updateField("activity_ids", [...form.activity_ids, id]);
+                updateActivityIds([...form.activity_ids, id]);
               }
             }}
             placeholder="اختر نشاطاً لإضافته..."
@@ -452,12 +484,7 @@ export function CoachCreateForm({
                     <span className="text-xs text-white">{actName}</span>
                     <button
                       type="button"
-                      onClick={() =>
-                        updateField(
-                          "activity_ids",
-                          form.activity_ids.filter((x) => x !== id),
-                        )
-                      }
+                      onClick={() => updateActivityIds(form.activity_ids.filter((x) => x !== id))}
                       className="text-app-muted hover:text-app-red transition-colors"
                       title="إزالة"
                     >
