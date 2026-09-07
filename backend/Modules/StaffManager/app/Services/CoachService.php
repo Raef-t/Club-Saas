@@ -328,6 +328,37 @@ class CoachService
 
             // Update Activities if provided
             if (isset($data['activity_ids']) && is_array($data['activity_ids'])) {
+                $newActivityIds = array_map('intval', $data['activity_ids']);
+                $currentActivities = $staff->activities()->get();
+                $removedActivities = $currentActivities->whereNotIn('id', $newActivityIds);
+
+                if ($removedActivities->isNotEmpty()) {
+                    $removedPivotIds = $removedActivities->pluck('pivot.id')->filter()->values();
+
+                    $conflictingPivotIds = DB::table('plan_activities')
+                        ->whereIn('staff_activity_id', $removedPivotIds)
+                        ->pluck('staff_activity_id')
+                        ->unique()
+                        ->all();
+
+                    if (!empty($conflictingPivotIds)) {
+                        $conflictNames = $removedActivities
+                            ->whereIn('pivot.id', $conflictingPivotIds)
+                            ->pluck('name')
+                            ->unique()
+                            ->values()
+                            ->all();
+
+                        $namesString = implode('، ', $conflictNames);
+
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'activity_ids' => [
+                                "لا يمكن فك ارتباط الأنشطة التالية: ({$namesString}) بهذا المدرب، نظراً لوجود فعاليات مرتبطة بها مسبقاً."
+                            ]
+                        ]);
+                    }
+                }
+
                 $staff->activities()->sync($data['activity_ids']);
             }
 

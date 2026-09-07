@@ -101,9 +101,43 @@ class UpdateCoachRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if ($this->has('shifts') && !empty($this->shifts)) {
-                $coachId = $this->route('id') ?? $this->route('coach');
+            $coachId = $this->route('id') ?? $this->route('coach');
 
+            if ($this->has('activity_ids') && is_array($this->activity_ids) && $coachId) {
+                $coach = \Modules\StaffManager\Models\Staff::find($coachId);
+                if ($coach) {
+                    $newActivityIds = array_map('intval', $this->activity_ids);
+                    $currentActivities = $coach->activities()->get();
+                    $removedActivities = $currentActivities->whereNotIn('id', $newActivityIds);
+
+                    if ($removedActivities->isNotEmpty()) {
+                        $removedPivotIds = $removedActivities->pluck('pivot.id')->filter()->values();
+
+                        $conflictingPivotIds = \Illuminate\Support\Facades\DB::table('plan_activities')
+                            ->whereIn('staff_activity_id', $removedPivotIds)
+                            ->pluck('staff_activity_id')
+                            ->unique()
+                            ->all();
+
+                        if (!empty($conflictingPivotIds)) {
+                            $conflictNames = $removedActivities
+                                ->whereIn('pivot.id', $conflictingPivotIds)
+                                ->pluck('name')
+                                ->unique()
+                                ->values()
+                                ->all();
+
+                            $namesString = implode('، ', $conflictNames);
+                            $validator->errors()->add(
+                                'activity_ids',
+                                "لا يمكن فك ارتباط الأنشطة التالية: ({$namesString}) بهذا المدرب، نظراً لوجود فعاليات مرتبطة بها مسبقاً."
+                            );
+                        }
+                    }
+                }
+            }
+
+            if ($this->has('shifts') && !empty($this->shifts)) {
                 if ($this->has('activity_ids')) {
                     $activityIds = $this->activity_ids;
                 } else {
