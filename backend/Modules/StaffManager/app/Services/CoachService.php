@@ -336,8 +336,11 @@ class CoachService
                     $removedPivotIds = $removedActivities->pluck('pivot.id')->filter()->values();
 
                     $conflictingPivotIds = DB::table('plan_activities')
-                        ->whereIn('staff_activity_id', $removedPivotIds)
-                        ->pluck('staff_activity_id')
+                        ->join('subscription_plans', 'subscription_plans.id', '=', 'plan_activities.plan_id')
+                        ->whereIn('plan_activities.staff_activity_id', $removedPivotIds)
+                        ->whereNull('plan_activities.deleted_at')
+                        ->whereNull('subscription_plans.deleted_at')
+                        ->pluck('plan_activities.staff_activity_id')
                         ->unique()
                         ->all();
 
@@ -359,7 +362,32 @@ class CoachService
                     }
                 }
 
-                $staff->activities()->sync($data['activity_ids']);
+                if ($removedActivities->isNotEmpty()) {
+                    DB::table('staff_activities')
+                        ->where('staff_id', $staff->id)
+                        ->whereIn('activity_id', $removedActivities->pluck('id')->all())
+                        ->update(['deleted_at' => now()]);
+                }
+
+                foreach ($newActivityIds as $actId) {
+                    $existing = DB::table('staff_activities')
+                        ->where('staff_id', $staff->id)
+                        ->where('activity_id', $actId)
+                        ->first();
+
+                    if ($existing) {
+                        if ($existing->deleted_at !== null) {
+                            DB::table('staff_activities')->where('id', $existing->id)->update(['deleted_at' => null]);
+                        }
+                    } else {
+                        DB::table('staff_activities')->insert([
+                            'staff_id'    => $staff->id,
+                            'activity_id'  => $actId,
+                            'created_at'   => now(),
+                            'updated_at'   => now(),
+                        ]);
+                    }
+                }
             }
 
             // Update Shifts if provided
