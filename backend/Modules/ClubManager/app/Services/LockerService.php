@@ -48,12 +48,19 @@ class LockerService
             $columns[] = 'lockers.reason';
         }
 
+        $latestActiveReservationSubquery = DB::table('locker_reservations')
+            ->select('locker_id', DB::raw('MAX(id) as max_reservation_id'))
+            ->where('status', 'active')
+            ->whereNull('deleted_at')
+            ->groupBy('locker_id');
+
         $query = DB::table('lockers')
             ->whereNull('lockers.deleted_at')
+            ->leftJoinSub($latestActiveReservationSubquery, 'latest_res', function($join) {
+                $join->on('lockers.id', '=', 'latest_res.locker_id');
+            })
             ->leftJoin('locker_reservations', function($join) {
-                $join->on('lockers.id', '=', 'locker_reservations.locker_id')
-                     ->where('locker_reservations.status', '=', 'active')
-                     ->whereNull('locker_reservations.deleted_at');
+                $join->on('latest_res.max_reservation_id', '=', 'locker_reservations.id');
             })
             ->leftJoin('members', function($join) {
                 $join->on('locker_reservations.member_id', '=', 'members.id')
@@ -270,7 +277,13 @@ class LockerService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($locker->status !== 'available') {
+            $hasActiveReservation = DB::table('locker_reservations')
+                ->where('locker_id', $lockerId)
+                ->where('status', 'active')
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if ($locker->status !== 'available' || $hasActiveReservation) {
                 throw new Exception(__('Locker is already occupied.'));
             }
 
@@ -424,28 +437,34 @@ class LockerService
                 throw new Exception(__('Locker is already available.'));
             }
 
-            // Find active reservation
-            $activeReservation = DB::table('locker_reservations')
+            // Find active reservations
+            $activeReservations = DB::table('locker_reservations')
                 ->where('locker_id', $lockerId)
                 ->where('status', 'active')
-                ->first();
+                ->whereNull('deleted_at')
+                ->get();
 
-            if ($activeReservation) {
+            if ($activeReservations->isNotEmpty()) {
                 $today = now()->toDateString();
-                $isEarlyRelease = !empty($activeReservation->end_date) && $activeReservation->end_date > $today;
+                $hasEarlyRelease = $activeReservations->contains(function ($res) use ($today) {
+                    return !empty($res->end_date) && $res->end_date > $today;
+                });
 
-                if ($isEarlyRelease && empty(trim((string) $reason))) {
+                if ($hasEarlyRelease && empty(trim((string) $reason))) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'reason' => ['حقل سبب فك الحجز إجباري لأن فترة الحجز لم تنتهِ بعد وتاريخ النهاية مستقبلي.']
                     ]);
                 }
 
+                $todayDate = now()->toDateString();
                 DB::table('locker_reservations')
-                    ->where('id', $activeReservation->id)
+                    ->where('locker_id', $lockerId)
+                    ->where('status', 'active')
+                    ->whereNull('deleted_at')
                     ->update([
                         'status' => 'expired',
                         'reason' => $reason,
-                        'end_date' => DB::raw('COALESCE(end_date, NOW())'),
+                        'end_date' => DB::raw("COALESCE(end_date, '{$todayDate}')"),
                         'updated_at' => now(),
                     ]);
             }
@@ -509,19 +528,26 @@ class LockerService
 
     public function getLockersByHolder($holderType, $holderId)
     {
-        return DB::table('lockers')
-            ->whereNull('lockers.deleted_at')
-            ->join('locker_reservations', function($join) {
-                $join->on('lockers.id', '=', 'locker_reservations.locker_id')
-                     ->whereNull('locker_reservations.deleted_at');
-            })
-            ->where('locker_reservations.status', '=', 'active')
+        $latestActiveReservationSubquery = DB::table('locker_reservations')
+            ->select('locker_id', DB::raw('MAX(id) as max_reservation_id'))
+            ->where('status', 'active')
+            ->whereNull('deleted_at')
             ->where(function($query) use ($holderType, $holderId) {
                 if ($holderType === 'member') {
-                    $query->where('locker_reservations.member_id', $holderId);
+                    $query->where('member_id', $holderId);
                 } elseif ($holderType === 'staff' || $holderType === 'coach') {
-                    $query->where('locker_reservations.staff_id', $holderId);
+                    $query->where('staff_id', $holderId);
                 }
+            })
+            ->groupBy('locker_id');
+
+        return DB::table('lockers')
+            ->whereNull('lockers.deleted_at')
+            ->joinSub($latestActiveReservationSubquery, 'latest_res', function($join) {
+                $join->on('lockers.id', '=', 'latest_res.locker_id');
+            })
+            ->join('locker_reservations', function($join) {
+                $join->on('latest_res.max_reservation_id', '=', 'locker_reservations.id');
             })
             ->select(
                 'lockers.id',
