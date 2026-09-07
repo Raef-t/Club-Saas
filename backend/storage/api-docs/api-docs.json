@@ -12216,6 +12216,18 @@
                                         "description": "سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)",
                                         "type": "string",
                                         "example": "طلب المشترك إنهاء الحجز واستعادة الأمانة"
+                                    },
+                                    "is_refund": {
+                                        "description": "هل تم طلب استرجاع المبلغ للمشترك؟",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "refund_amount": {
+                                        "description": "مبلغ الاسترجاع (اختياري - إذا لم يُرسل يحتسب كامل المبلغ المدفوع من الفاتورة)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 35,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -34921,6 +34933,11 @@
                     },
                     "generated_username": {
                         "type": "string",
+                        "nullable": true
+                    },
+                    "custom_username": {
+                        "type": "string",
+                        "example": "ahmed_player",
                         "nullable": true
                     },
                     "generated_password": {

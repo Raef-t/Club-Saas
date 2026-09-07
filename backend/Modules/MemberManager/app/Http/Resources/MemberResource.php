@@ -18,6 +18,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "join_date", type: "string", format: "date", example: "2023-01-01"),
         new OA\Property(property: "person", type: "object"),
         new OA\Property(property: "generated_username", type: "string", nullable: true),
+        new OA\Property(property: "custom_username", type: "string", nullable: true, example: "ahmed_player"),
         new OA\Property(property: "generated_password", type: "string", nullable: true),
         new OA\Property(property: "branch", type: "object", nullable: true),
         new OA\Property(property: "health_profile", type: "object", nullable: true),
@@ -70,6 +71,7 @@ class MemberResource extends JsonResource
                 }),
             ] : null,
             'generated_username' => $this->generated_username ?? $this->person?->user?->username ?? null,
+            'custom_username' => $this->person?->user?->custom_username ?? null,
             'generated_password' => $this->generated_password ?? null,
             'branch' => $this->branch ? [
                 'id' => $this->branch->id,

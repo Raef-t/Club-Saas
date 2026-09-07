@@ -19,12 +19,16 @@ class LockerReservation extends Model
         'price',
         'status',
         'reason',
+        'is_refund',
+        'refund_amount',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'price' => 'decimal:2',
+        'is_refund' => 'boolean',
+        'refund_amount' => 'decimal:2',
     ];
 
     // Assuming member relation

@@ -569,7 +569,9 @@ class LockerController extends BaseController
         required: false,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'reason', type: 'string', description: 'سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)', example: 'طلب المشترك إنهاء الحجز واستعادة الأمانة')
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)', example: 'طلب المشترك إنهاء الحجز واستعادة الأمانة'),
+                new OA\Property(property: 'is_refund', type: 'boolean', description: 'هل تم طلب استرجاع المبلغ للمشترك؟', example: true),
+                new OA\Property(property: 'refund_amount', type: 'number', format: 'float', nullable: true, description: 'مبلغ الاسترجاع (اختياري - إذا لم يُرسل يحتسب كامل المبلغ المدفوع من الفاتورة)', example: 35.00)
             ]
         )
     )]
@@ -595,7 +597,16 @@ class LockerController extends BaseController
     public function releaseCurrentReservation(int $locker, Request $request)
     {
         try {
-            $this->lockerService->releaseLocker($locker, $request->input('reason'));
+            $isRefund = $request->boolean('is_refund');
+            $refundAmount = $request->input('refund_amount');
+            $reason = $request->input('reason');
+
+            $this->lockerService->releaseLocker(
+                $locker,
+                $reason,
+                $isRefund,
+                $refundAmount !== null && $refundAmount !== '' ? floatval($refundAmount) : null
+            );
             return $this->successResponse(null, __('Locker released successfully.'));
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
