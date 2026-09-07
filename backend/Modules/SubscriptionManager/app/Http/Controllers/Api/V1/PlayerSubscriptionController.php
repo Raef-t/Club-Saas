@@ -191,7 +191,17 @@ class PlayerSubscriptionController extends BaseController
                     'total_amount' => 150.00,
                     'paid_amount' => 150.00,
                     'remaining_amount' => 0.00,
-                    'freezes' => [],
+                    'freezes' => [
+                        [
+                            'id' => 1,
+                            'player_subscription_id' => 1,
+                            'freeze_start_date' => '2026-09-02',
+                            'freeze_end_date' => '2026-09-09',
+                            'actual_end_date' => '2026-09-07',
+                            'reason' => 'إجازة وسفر',
+                            'freeze_days' => 5
+                        ]
+                    ],
                     'payments' => []
                 ]
             ]
@@ -293,10 +303,12 @@ class PlayerSubscriptionController extends BaseController
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ['freeze_start_date'],
+            required: ['freeze_start_date', 'reason'],
             properties: [
-                new OA\Property(property: 'freeze_start_date', type: 'string', format: 'date', example: '2023-11-01'),
-                new OA\Property(property: 'reason', type: 'string', example: 'السفر')
+                new OA\Property(property: 'freeze_start_date', type: 'string', format: 'date', example: '2026-09-07', description: 'تاريخ بدء التجميد (YYYY-MM-DD)'),
+                new OA\Property(property: 'freeze_end_date', type: 'string', format: 'date', nullable: true, example: '2026-09-14', description: 'تاريخ نهاية التجميد المتوقع (اختياري - YYYY-MM-DD)'),
+                new OA\Property(property: 'days_count', type: 'integer', nullable: true, example: 7, description: 'عدد أيام التجميد (اختياري، لحساب تاريخ النهاية تلقائياً)'),
+                new OA\Property(property: 'reason', type: 'string', maxLength: 500, example: 'إجازة وسفر لمدة أسبوع', description: 'سبب التجميد (إجباري)')
             ]
         )
     )]
@@ -315,7 +327,13 @@ class PlayerSubscriptionController extends BaseController
                 'data' => [
                     'id' => 1,
                     'status' => 'frozen',
-                    'freeze_start_date' => '2026-11-01'
+                    'status_label' => 'مجمّد',
+                    'start_date' => '2026-09-01',
+                    'end_date' => '2026-10-08',
+                    'plan' => [
+                        'id' => 1,
+                        'name' => 'اشتراك فتنس شهري'
+                    ]
                 ]
             ]
         )
@@ -330,7 +348,8 @@ class PlayerSubscriptionController extends BaseController
             $subscription = $this->subscriptionService->freezeSubscription(
                 $id,
                 $data['freeze_start_date'],
-                $data['reason'] ?? null
+                $data['reason'],
+                $data['freeze_end_date'] ?? null
             );
 
             return $this->successResponse(

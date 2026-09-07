@@ -500,11 +500,11 @@ class SubscriptionService
     /**
      * Freeze a subscription.
      */
-    public function freezeSubscription(int $subscriptionId, string $startDate, ?string $reason = null)
+    public function freezeSubscription(int $subscriptionId, string $startDate, ?string $reason = null, ?string $endDate = null)
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        return DB::transaction(function () use ($subscription, $startDate, $reason) {
+        return DB::transaction(function () use ($subscription, $startDate, $reason, $endDate) {
             $memberModel = \Modules\MemberManager\Models\Member::with(['branch.settings', 'person.user'])->find($subscription->member_id);
             $allowFreeze = $memberModel?->branch?->settings?->allow_freeze ?? false;
 
@@ -517,9 +517,25 @@ class SubscriptionService
                 throw new Exception(__('Subscription is already frozen.'));
             }
 
+            $startCarbon = \Carbon\Carbon::parse($startDate)->startOfDay();
+
+            if ($subscription->start_date) {
+                $subStartCarbon = \Carbon\Carbon::parse($subscription->start_date)->startOfDay();
+                if ($startCarbon->lt($subStartCarbon)) {
+                    throw new Exception(__('لا يمكن أن يكون تاريخ بدء التجميد قبل تاريخ بداية الاشتراك (' . $subStartCarbon->format('Y-m-d') . ').'));
+                }
+            }
+
+            if ($subscription->end_date) {
+                $subEndCarbon = \Carbon\Carbon::parse($subscription->end_date)->startOfDay();
+                if ($startCarbon->gt($subEndCarbon)) {
+                    throw new Exception(__('لا يمكن تجميد اشتراك بعد تاريخ انتهائه (' . $subEndCarbon->format('Y-m-d') . ').'));
+                }
+            }
+
             $subscription->freezes()->create([
                 'freeze_start_date' => $startDate,
-                'freeze_end_date' => null,
+                'freeze_end_date' => $endDate,
                 'reason' => $reason,
             ]);
 

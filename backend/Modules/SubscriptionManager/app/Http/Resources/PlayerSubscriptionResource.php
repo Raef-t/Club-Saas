@@ -72,7 +72,20 @@ class PlayerSubscriptionResource extends JsonResource
                     ];
                 });
             }),
-            'freezes' => $this->whenLoaded('freezes'),
+            'freezes' => $this->whenLoaded('freezes', function () {
+                return $this->freezes->map(function ($freeze) {
+                    return [
+                        'id' => $freeze->id,
+                        'player_subscription_id' => $freeze->player_subscription_id,
+                        'subscription_plan_suspension_id' => $freeze->subscription_plan_suspension_id,
+                        'freeze_start_date' => $freeze->freeze_start_date ? \Illuminate\Support\Carbon::parse($freeze->freeze_start_date)->format('Y-m-d') : null,
+                        'freeze_end_date' => $freeze->freeze_end_date ? \Illuminate\Support\Carbon::parse($freeze->freeze_end_date)->format('Y-m-d') : null,
+                        'actual_end_date' => $freeze->actual_end_date ? \Illuminate\Support\Carbon::parse($freeze->actual_end_date)->format('Y-m-d') : null,
+                        'reason' => $freeze->reason,
+                        'freeze_days' => $freeze->freeze_days,
+                    ];
+                });
+            }),
             'revenue_split' => $this->relationLoaded('revenueSplit') && $this->revenueSplit ? [
                 'id' => $this->revenueSplit->id,
                 'coach_id' => $this->revenueSplit->coach_id,

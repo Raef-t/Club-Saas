@@ -194,8 +194,12 @@ export function useSubscriptions({ initialData } = {}) {
     try {
       await freezeSubscription({ id, body }).unwrap();
       toast.success("تم تجميد الاشتراك بنجاح!");
-    } catch {
-      toast.error("تعذر تجميد الاشتراك. حاول مرة أخرى.");
+    } catch (err) {
+      const errMsg =
+        err?.data?.message ||
+        (err?.data?.errors && Object.values(err.data.errors).flat()[0]) ||
+        "تعذر تجميد الاشتراك. حاول مرة أخرى.";
+      toast.error(errMsg);
     }
   }
 
@@ -203,8 +207,11 @@ export function useSubscriptions({ initialData } = {}) {
     try {
       await unfreezeSubscription(id).unwrap();
       toast.success("تم إلغاء تجميد الاشتراك وتفعيله بنجاح!");
-    } catch {
-      toast.error("تعذر إلغاء تجميد الاشتراك. حاول مرة أخرى.");
+    } catch (err) {
+      const errMsg =
+        err?.data?.message ||
+        "تعذر إلغاء تجميد الاشتراك. حاول مرة أخرى.";
+      toast.error(errMsg);
     }
   }
 
