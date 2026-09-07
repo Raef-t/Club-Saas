@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
+import { formatDateDisplay } from "@/components/forms/datePickerUtils";
 import Button from "@/components/ui/Button";
 import SkeletonPage from "@/components/ui/Skeleton";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
@@ -63,8 +64,18 @@ export default function SubscriptionDetails({
   showActions = true,
 }) {
   const [showFreezeForm, setShowFreezeForm] = useState(false);
-  const [daysCount, setDaysCount] = useState("7");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [freezeStartDate, setFreezeStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [freezeDaysCount, setFreezeDaysCount] = useState("");
+  const [freezeReason, setFreezeReason] = useState("");
+  const [reasonError, setReasonError] = useState(false);
+  const [startDateError, setStartDateError] = useState("");
+
+  const calculatedFreezeEndDate = useMemo(() => {
+    if (!freezeStartDate || !freezeDaysCount || Number(freezeDaysCount) <= 0) return "";
+    const d = new Date(freezeStartDate);
+    d.setDate(d.getDate() + Number(freezeDaysCount));
+    return d.toISOString().split("T")[0];
+  }, [freezeStartDate, freezeDaysCount]);
 
   if (isLoading) {
     return <SkeletonPage blocks={[{ type: "details", sections: 4, itemsPerSection: 4 }]} />;
@@ -228,20 +239,54 @@ export default function SubscriptionDetails({
 
       {/* يعرض سجل الفترات التي جُمّد فيها الاشتراك. */}
       {subscription.freezes && subscription.freezes.length > 0 && (
-        <div className="rounded-xl border border-app-line bg-app-card-soft/40 p-4 text-right space-y-2">
-          <h4 className="text-xs font-semibold text-white">سجل تجميد الاشتراك</h4>
+        <div className="rounded-xl border border-app-line bg-app-card-soft/40 p-4 text-right space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold text-white">سجل تجميد الاشتراك</h4>
+            <span className="text-[11px] text-app-muted-light">
+              {subscription.freezes.length} {subscription.freezes.length === 1 ? "عملية تجميد" : "عمليات تجميد"}
+            </span>
+          </div>
           <div className="space-y-2">
-            {subscription.freezes.map((f, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-2 rounded bg-black/25 text-xs text-app-text border border-app-line"
-              >
-                <span className="text-app-muted-light">
-                  {formatDate(f.start_date)} ← {formatDate(f.end_date)}
-                </span>
-                <span className="font-semibold text-app-yellow">{f.days_count} يوم تجميد</span>
-              </div>
-            ))}
+            {subscription.freezes.map((f, i) => {
+              const isOngoing = !f.actual_end_date;
+              const displayDays = f.freeze_days || 1;
+              return (
+                <div
+                  key={f.id || i}
+                  className="flex items-center justify-between p-2.5 rounded-lg bg-black/30 text-xs text-app-text border border-app-line hover:border-app-line/80 transition-colors"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 font-medium text-white">
+                      <span>{formatDate(f.freeze_start_date)}</span>
+                      <span className="text-app-muted-light">←</span>
+                      <span>
+                        {f.actual_end_date
+                          ? formatDate(f.actual_end_date)
+                          : f.freeze_end_date
+                            ? `${formatDate(f.freeze_end_date)} (متوقع)`
+                            : "مستمر حتى الآن"}
+                      </span>
+                    </div>
+                    {f.reason && (
+                      <p className="text-[11px] text-app-muted-light">
+                        السبب: <span className="text-app-text">{f.reason}</span>
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                      isOngoing
+                        ? "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"
+                        : "bg-app-yellow/10 text-app-yellow border-app-yellow/25"
+                    }`}
+                  >
+                    {isOngoing
+                      ? `مجمّد (${displayDays} يوم) ❄️`
+                      : `${displayDays} يوم`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -276,49 +321,155 @@ export default function SubscriptionDetails({
                   )}
                 </div>
               ) : (
-                <div className="rounded-xl border border-app-line bg-app-card-soft p-4 space-y-3 text-right">
-                  <h4 className="text-xs font-bold text-white">تجميد الاشتراك الحالي</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <DatePickerSmart
-                      label="تاريخ البدء"
-                      value={startDate}
-                      onChange={setStartDate}
-                      compact={true}
-                    />
-                    <label className="block text-xs text-app-muted-light">
-                      عدد الأيام
-                      <input
-                        type="number"
-                        min="1"
-                        value={daysCount}
-                        onChange={(e) => setDaysCount(e.target.value)}
-                        className="app-input mt-1.5 h-9 w-full px-2 text-right bg-black/35 text-white"
-                      />
-                    </label>
+                <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-b from-cyan-950/20 to-app-card-soft p-4 space-y-3.5 text-right shadow-lg">
+                  <div className="flex items-center justify-between border-b border-app-line/60 pb-2">
+                    <span className="text-[11px] text-cyan-400 font-medium">إيقاف مؤقت للاشتراك</span>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>❄️</span>
+                      <span>تجميد الاشتراك الحالي</span>
+                    </h4>
                   </div>
+
+                  <div className="space-y-3">
+                    {/* السطر الأول: تاريخ بدء التجميد وعدد الأيام */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <DatePickerSmart
+                          label="تاريخ بدء التجميد"
+                          value={freezeStartDate}
+                          onChange={(val) => {
+                            setFreezeStartDate(val);
+                            if (startDateError) setStartDateError("");
+                          }}
+                          compact={true}
+                          error={Boolean(startDateError)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-app-muted-light">
+                          عدد الأيام <span className="text-[10px] text-app-muted font-normal">(اختياري)</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={freezeDaysCount}
+                            onChange={(e) => setFreezeDaysCount(e.target.value)}
+                            placeholder="مثال: 7"
+                            className="app-input mt-1.5 h-9 w-full px-2.5 text-center bg-black/40 text-white font-semibold text-xs rounded-lg border border-app-line focus:border-cyan-500 placeholder:text-app-muted/60"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* رسالة الخطأ على كامل العرض */}
+                    {startDateError && (
+                      <div className="rounded-lg bg-red-500/10 border border-red-500/25 p-2.5 text-right animate-in fade-in duration-200">
+                        <p className="text-[11px] text-red-400 font-medium leading-relaxed flex items-center gap-1.5 justify-start">
+                          <span>⚠️</span>
+                          <span>{startDateError}</span>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* السطر الثاني: تاريخ نهاية التجميد (على كامل العرض) */}
+                    <div>
+                      <label className="block text-xs font-medium text-app-muted-light">
+                        تاريخ نهاية التجميد
+                        <input
+                          type="text"
+                          value={calculatedFreezeEndDate ? formatDateDisplay(calculatedFreezeEndDate, "DD/MM/YYYY") : ""}
+                          placeholder="DD/MM/YYYY"
+                          readOnly
+                          disabled
+                          dir="ltr"
+                          className="app-input mt-1.5 h-9 w-full px-3 text-center bg-black/20 text-cyan-300 font-semibold text-sm rounded-lg border border-cyan-500/20 cursor-not-allowed tracking-wider placeholder:text-app-muted/60"
+                        />
+                      </label>
+                    </div>
+
+                    {/* السطر الثالث: سبب التجميد (على كامل العرض وإجباري) */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-app-muted-light">
+                        سبب التجميد <span className="text-red-400 font-bold text-sm">*</span>
+                        <textarea
+                          rows={2}
+                          value={freezeReason}
+                          onChange={(e) => {
+                            setFreezeReason(e.target.value);
+                            if (reasonError && e.target.value.trim()) setReasonError(false);
+                          }}
+                          placeholder="أدخل سبب التجميد بالتفصيل..."
+                          maxLength={500}
+                          className={`app-input mt-1.5 w-full p-2.5 text-right bg-black/40 text-white placeholder:text-app-muted text-xs rounded-lg border transition-colors ${
+                            reasonError ? "border-red-500 focus:border-red-500" : "border-app-line focus:border-cyan-500"
+                          }`}
+                        />
+                      </label>
+                      {reasonError && (
+                        <p className="text-[11px] text-red-400 font-medium text-right">
+                          يرجى إدخال سبب التجميد قبل التأكيد.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-cyan-950/30 border border-cyan-500/20 p-2.5 text-[11px] text-cyan-200/90 leading-relaxed">
+                    💡 <strong>ملاحظة:</strong> سيبقى الاشتراك مجمداً وموقوفاً عن تسجيل الحضور حتى تضغط على زر <strong>&quot;إلغاء التجميد&quot;</strong>، وعندها سيقوم النظام تلقائياً بتمديد تاريخ نهاية الاشتراك بعدد أيام التجميد الفعلية.
+                  </div>
+
                   <div className="flex gap-2 pt-1">
                     <Button
                       type="button"
                       tone="outline"
                       className="h-9 px-3 text-xs flex-1"
-                      onClick={() => setShowFreezeForm(false)}
+                      onClick={() => {
+                        setShowFreezeForm(false);
+                        setFreezeDaysCount("");
+                        setFreezeReason("");
+                        setReasonError(false);
+                        setStartDateError("");
+                      }}
                     >
                       تراجع
                     </Button>
                     <Button
                       type="button"
                       tone="warning"
-                      className="h-9 px-3 text-xs flex-1"
+                      className="h-9 px-3 text-xs flex-1 bg-cyan-600 hover:bg-cyan-500 text-white border-transparent"
                       loading={isFreezing}
                       onClick={() => {
-                        onFreeze(subscription.id, {
-                          start_date: startDate,
-                          days_count: Number(daysCount) || 7,
-                        });
+                        if (!freezeStartDate) {
+                          setStartDateError("يرجى تحديد تاريخ بدء التجميد.");
+                          return;
+                        }
+                        if (subscription?.start_date && freezeStartDate < subscription.start_date) {
+                          setStartDateError(`لا يمكن أن يكون تاريخ بدء التجميد قبل بداية الاشتراك (${subscription.start_date}).`);
+                          return;
+                        }
+                        if (subscription?.end_date && freezeStartDate > subscription.end_date) {
+                          setStartDateError(`لا يمكن تجميد اشتراك بعد تاريخ انتهائه (${subscription.end_date}).`);
+                          return;
+                        }
+                        if (!freezeReason.trim()) {
+                          setReasonError(true);
+                          return;
+                        }
+                        const payload = {
+                          freeze_start_date: freezeStartDate,
+                          reason: freezeReason.trim(),
+                        };
+                        if (calculatedFreezeEndDate) {
+                          payload.freeze_end_date = calculatedFreezeEndDate;
+                        }
+                        onFreeze(subscription.id, payload);
                         setShowFreezeForm(false);
+                        setFreezeDaysCount("");
+                        setFreezeReason("");
+                        setReasonError(false);
+                        setStartDateError("");
                       }}
                     >
-                      تأكيد التجميد
+                      تأكيد التجميد ❄️
                     </Button>
                   </div>
                 </div>

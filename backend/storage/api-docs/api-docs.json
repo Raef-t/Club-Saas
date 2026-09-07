@@ -28304,7 +28304,17 @@
                                         "total_amount": 150,
                                         "paid_amount": 150,
                                         "remaining_amount": 0,
-                                        "freezes": [],
+                                        "freezes": [
+                                            {
+                                                "id": 1,
+                                                "player_subscription_id": 1,
+                                                "freeze_start_date": "2026-09-02",
+                                                "freeze_end_date": "2026-09-09",
+                                                "actual_end_date": "2026-09-07",
+                                                "reason": "إجازة وسفر",
+                                                "freeze_days": 5
+                                            }
+                                        ],
                                         "payments": []
                                     }
                                 }
@@ -28677,17 +28687,34 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "freeze_start_date"
+                                    "freeze_start_date",
+                                    "reason"
                                 ],
                                 "properties": {
                                     "freeze_start_date": {
+                                        "description": "تاريخ بدء التجميد (YYYY-MM-DD)",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2023-11-01"
+                                        "example": "2026-09-07"
+                                    },
+                                    "freeze_end_date": {
+                                        "description": "تاريخ نهاية التجميد المتوقع (اختياري - YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-09-14",
+                                        "nullable": true
+                                    },
+                                    "days_count": {
+                                        "description": "عدد أيام التجميد (اختياري، لحساب تاريخ النهاية تلقائياً)",
+                                        "type": "integer",
+                                        "example": 7,
+                                        "nullable": true
                                     },
                                     "reason": {
+                                        "description": "سبب التجميد (إجباري)",
                                         "type": "string",
-                                        "example": "السفر"
+                                        "example": "إجازة وسفر لمدة أسبوع",
+                                        "maxLength": 500
                                     }
                                 },
                                 "type": "object"
@@ -28722,7 +28749,13 @@
                                     "data": {
                                         "id": 1,
                                         "status": "frozen",
-                                        "freeze_start_date": "2026-11-01"
+                                        "status_label": "مجمّد",
+                                        "start_date": "2026-09-01",
+                                        "end_date": "2026-10-08",
+                                        "plan": {
+                                            "id": 1,
+                                            "name": "اشتراك فتنس شهري"
+                                        }
                                     }
                                 }
                             }

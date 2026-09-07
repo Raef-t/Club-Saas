@@ -23,6 +23,27 @@ class SubscriptionFreeze extends Model
         'actual_end_date' => 'date',
     ];
 
+    protected $appends = [
+        'freeze_days',
+    ];
+
+    public function getFreezeDaysAttribute(): int
+    {
+        if (!$this->freeze_start_date) {
+            return 1;
+        }
+
+        $startDate = \Carbon\Carbon::parse($this->freeze_start_date)->startOfDay();
+        $endDate = $this->actual_end_date
+            ? \Carbon\Carbon::parse($this->actual_end_date)->startOfDay()
+            : ($this->freeze_end_date
+                ? \Carbon\Carbon::parse($this->freeze_end_date)->startOfDay()
+                : \Carbon\Carbon::today());
+
+        $days = (int) $startDate->diffInDays($endDate);
+        return max(1, $days);
+    }
+
     public function subscription()
     {
         return $this->belongsTo(PlayerSubscription::class, 'player_subscription_id');
