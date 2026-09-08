@@ -40,13 +40,34 @@ class UpdateSubscriptionPlanRequest extends FormRequest
             'gender_restriction' => 'nullable|in:male,female,mixed',
             'status' => ['nullable', 'string', Rule::in(['active', 'inactive', 'completed'])],
             'activities' => 'nullable|array',
-            'activities.*.activity_id' => 'required_with:activities|exists:activities,id',
-            'activities.*.coach_id' => 'nullable|exists:staff,id',
+            'activities.*.activity_id' => [
+                'required_with:activities',
+                Rule::exists('activities', 'id')->where(function ($query) {
+                    $query->where('is_active', true);
+                }),
+            ],
+            'activities.*.coach_id' => [
+                'nullable',
+                Rule::exists('staff', 'id')->where(function ($query) {
+                    $query->where('role', 'coach')
+                          ->where('is_active', true)
+                          ->where('work_status', 'active')
+                          ->whereNull('deleted_at');
+                }),
+            ],
             'session_templates' => 'nullable|array',
             'session_templates.*.facility_id' => 'nullable|exists:facilities,id',
             'session_templates.*.day_of_week' => 'required_with:session_templates|integer|between:0,6',
             'session_templates.*.start_time' => 'required_with:session_templates|date_format:H:i',
             'session_templates.*.end_time' => 'required_with:session_templates|date_format:H:i|after:session_templates.*.start_time',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'activities.*.activity_id.exists' => __('النشاط الرياضي المحدد غير موجود أو غير نشط.'),
+            'activities.*.coach_id.exists' => __('المدرب المحدد غير موجود أو غير نشط.'),
         ];
     }
 }

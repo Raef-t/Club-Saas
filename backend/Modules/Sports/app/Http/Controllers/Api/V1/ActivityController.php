@@ -53,6 +53,14 @@ class ActivityController extends BaseController
             // Gender restrictions for facility are applied at the facility/session level.
         }
 
+        if ($request->has('is_active')) {
+            $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        } elseif ($request->input('status') === 'active' || $request->boolean('available') || ($request->input('per_page') === 'all' && !$request->boolean('all_statuses'))) {
+            $query->where('is_active', true);
+        } elseif ($request->input('status') === 'inactive') {
+            $query->where('is_active', false);
+        }
+
         if ($request->has('per_page') && $request->input('per_page') !== 'all') {
             $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $activities = $query->orderBy('id', 'desc')->paginate($perPage);

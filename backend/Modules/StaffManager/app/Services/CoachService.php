@@ -65,13 +65,14 @@ class CoachService
 
             // 2. Generate unique username
             $username = \Modules\Authentication\Services\UsernameGeneratorService::generateForRole('coach');
+            $password = '12345678';
 
 
             // 4. Create User
             $user = User::create([
                 'person_id' => $person->id,
                 'username'  => $username,
-                'password'  => Hash::make('12345678'), // Default password
+                'password'  => Hash::make($password), // Default password
                 'is_active' => true,
                 'role'      => 'coach',
             ]);
@@ -128,7 +129,11 @@ class CoachService
                 }
             }
 
-            return $this->getSingleCoach($staff->id);
+            $coach = $this->getSingleCoach($staff->id);
+            $coach->generated_username = $username;
+            $coach->generated_password = $password;
+
+            return $coach;
         });
     }
 
@@ -165,6 +170,16 @@ class CoachService
             $query->where('work_status', $filters['work_status']);
         } elseif (isset($filters['is_active'])) {
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
+        } elseif (
+            (!empty($filters['per_page']) && $filters['per_page'] === 'all' && empty($filters['all_statuses'])) ||
+            (!empty($filters['status']) && $filters['status'] === 'active') ||
+            (!empty($filters['available']) && filter_var($filters['available'], FILTER_VALIDATE_BOOLEAN))
+        ) {
+            $query->where('is_active', true)->where('work_status', 'active');
+        } elseif (!empty($filters['status']) && $filters['status'] === 'inactive') {
+            $query->where(function ($q) {
+                $q->where('is_active', false)->orWhere('work_status', '!=', 'active');
+            });
         }
 
         if (!empty($filters['activity_id'])) {

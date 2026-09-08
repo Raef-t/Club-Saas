@@ -87,10 +87,34 @@ class SubscriptionPlanController extends BaseController
             'playerSubscriptions as active_subscribers_count' => function ($q) {
                 $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
             }
-        ])->with(['planActivities', 'sessionTemplates', 'activeSuspension.coach.person']);
+        ])->with(['planActivities.staffActivity.activity', 'sessionTemplates', 'activeSuspension.coach.person']);
         
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'active') {
+                $query->where('status', 'active')
+                      ->activeActivities()
+                      ->activeCoaches()
+                      ->notSuspended();
+            } elseif ($request->status === 'inactive') {
+                $query->where(function ($q) {
+                    $q->where('status', 'inactive')
+                      ->orWhereHas('planActivities.staffActivity.activity', function ($sub) {
+                          $sub->where('is_active', false);
+                      })
+                      ->orWhereHas('planActivities.staffActivity.staff', function ($sub) {
+                          $sub->where('is_active', false)
+                              ->orWhere('work_status', '!=', 'active');
+                      });
+                });
+            } else {
+                $query->where('status', $request->status);
+            }
+        } elseif ($request->boolean('available') || $request->boolean('only_active') || ($request->input('per_page') === 'all' && !$request->boolean('all_statuses'))) {
+            // When fetching plans for dropdowns/subscriptions (per_page=all without status, or available=true)
+            $query->where('status', 'active')
+                  ->activeActivities()
+                  ->activeCoaches()
+                  ->notSuspended();
         }
 
         if ($request->has('branch_id')) {
@@ -169,12 +193,14 @@ class SubscriptionPlanController extends BaseController
         // Get active plans that have available capacity, and eager load their activities
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
             ->available()
+            ->activeActivities()
+            ->notSuspended()
             ->withCount([
                 'playerSubscriptions as active_subscribers_count' => function ($q) {
                     $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
                 }
             ])
-            ->with(['planActivities', 'sessionTemplates']);
+            ->with(['planActivities.staffActivity.activity', 'sessionTemplates']);
             
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
