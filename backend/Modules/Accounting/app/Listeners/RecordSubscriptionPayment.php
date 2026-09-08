@@ -20,6 +20,11 @@ class RecordSubscriptionPayment
     {
         $payment = $event->payment;
 
+        // Coach fee payments do NOT enter club safes or create accounting journals
+        if ($payment->reason === 'دفعة اشتراك المدرب') {
+            return;
+        }
+
         if (!$payment->safe_id || $payment->amount <= 0) {
             return;
         }

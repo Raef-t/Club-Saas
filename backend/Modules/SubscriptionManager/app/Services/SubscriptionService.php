@@ -617,7 +617,7 @@ class SubscriptionService
                         \Modules\SubscriptionManager\Models\Payment::create([
                             'receipt_number' => $coachReceiptNumber,
                             'invoice_id' => $invoice->id,
-                            'safe_id' => $safeId,
+                            'safe_id' => null, // Coach payment does not enter the club safe
                             'amount' => $coachPaid,
                             'payment_method' => $options['payment_method'] ?? 'cash',
                             'status' => 'completed',
@@ -1413,11 +1413,20 @@ class SubscriptionService
                 $addedAmount = $paidAmount - $oldPaidAmount;
 
                 if ($branchId) {
-                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
-                        ->where('branch_id', $branchId)
-                        ->value('default_safe_id');
+                    $plan = $subscription->plan;
+                    $isCoachPayment = false;
+                    if ($plan && !empty($plan->coach_price)) {
+                        $coachPrice = (float) $plan->coach_price;
+                        if (abs($addedAmount - $coachPrice) < 0.01 || $oldPaidAmount >= (float) $plan->branch_price) {
+                            $isCoachPayment = true;
+                        }
+                    }
 
-                    if (!$safeId) {
+                    $safeId = $isCoachPayment ? null : (\Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                        ->where('branch_id', $branchId)
+                        ->value('default_safe_id'));
+
+                    if (!$isCoachPayment && !$safeId) {
                         $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
                             ->where('branch_id', $branchId)
                             ->where('currency', 'SYP')
@@ -1428,12 +1437,13 @@ class SubscriptionService
                     }
 
                     $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'receipt_number' => $data['receipt_number'] ?? null,
+                        'receipt_number' => $data['coach_receipt_number'] ?? ($data['receipt_number'] ?? null),
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
                         'amount' => $addedAmount,
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'status' => 'completed',
+                        'reason' => $isCoachPayment ? 'دفعة اشتراك المدرب' : ($data['reason'] ?? null),
                     ]);
 
                     event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
