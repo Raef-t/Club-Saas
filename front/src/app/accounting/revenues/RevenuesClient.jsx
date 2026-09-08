@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import StatsGrid from "@/components/ui/StatsGrid";
 import { Field } from "@/components/forms/FormControls";
 import {
   FileUpIcon,
@@ -55,6 +56,48 @@ export default function RevenuesClient({
 
   // Filter only RV vouchers for this page
   const revenueJournals = journals.filter((j) => j.type === "RV");
+
+  // Calculate totals for active (non-cancelled) filtered revenue vouchers
+  const stats = useMemo(() => {
+    const activeJournals = revenueJournals.filter((j) => j.status !== "cancelled");
+
+    let totalSyp = 0;
+    let totalUsd = 0;
+
+    for (const j of activeJournals) {
+      for (const e of j.entries || []) {
+        totalSyp += Number(e.credit_syp || 0);
+        totalUsd += Number(e.credit_usd || 0);
+      }
+    }
+
+    return {
+      totalSyp,
+      totalUsd,
+      count: activeJournals.length,
+    };
+  }, [revenueJournals]);
+
+  const revenueStats = useMemo(() => [
+    {
+      title: "إجمالي الإيرادات (ليرة سورية)",
+      value: `${stats.totalSyp.toLocaleString()} ل.س`,
+      helper: fromDate || toDate ? `للفترة (${fromDate || "البداية"} إلى ${toDate || "اليوم"})` : "إجمالي المقبوضات المعروضة",
+      tone: "green",
+    },
+    {
+      title: "إجمالي الإيرادات (USD)",
+      value: `$${stats.totalUsd.toLocaleString()}`,
+      helper: fromDate || toDate ? `للفترة (${fromDate || "البداية"} إلى ${toDate || "اليوم"})` : "إجمالي المقبوضات المعروضة",
+      tone: "yellow",
+    },
+    {
+      title: "عدد سندات القبض",
+      value: `${stats.count} سند`,
+      helper: "سندات قبض نشطة ومرحلة",
+      tone: "blue",
+    },
+  ], [stats, fromDate, toDate]);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -115,6 +158,9 @@ export default function RevenuesClient({
           <span>تسجيل إيراد جديد</span>
         </Button>
       </div>
+
+      {/* Stats Summary Cards */}
+      <StatsGrid items={revenueStats} />
 
       {/* Table */}
       <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">

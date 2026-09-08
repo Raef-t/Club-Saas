@@ -94,8 +94,11 @@ class JournalController extends Controller
                 });
             }
 
-            // Calculate totals for matching query
+            // Calculate totals for matching query (exclude cancelled vouchers from totals)
             $totalsQuery = clone $query;
+            if (!$request->filled('status') || $request->status === 'all') {
+                $totalsQuery->where('status', '!=', 'cancelled');
+            }
             $journalIds = $totalsQuery->pluck('id');
 
             $entriesQuery = \Illuminate\Support\Facades\DB::table('acc_journal_entries')

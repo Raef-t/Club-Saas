@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import SearchInput from "@/components/ui/SearchInput";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import StatsGrid from "@/components/ui/StatsGrid";
 import { Field } from "@/components/forms/FormControls";
 import {
   FileDownIcon,
@@ -57,6 +58,48 @@ export default function ExpensesClient({
 
   // Filter only PV vouchers for this page
   const expenseJournals = journals.filter((j) => j.type === "PV");
+
+  // Calculate totals for active (non-cancelled) filtered expense vouchers
+  const stats = useMemo(() => {
+    const activeJournals = expenseJournals.filter((j) => j.status !== "cancelled");
+
+    let totalSyp = 0;
+    let totalUsd = 0;
+
+    for (const j of activeJournals) {
+      for (const e of j.entries || []) {
+        totalSyp += Number(e.debit_syp || 0);
+        totalUsd += Number(e.debit_usd || 0);
+      }
+    }
+
+    return {
+      totalSyp,
+      totalUsd,
+      count: activeJournals.length,
+    };
+  }, [expenseJournals]);
+
+  const expenseStats = useMemo(() => [
+    {
+      title: "إجمالي المصاريف (ليرة سورية)",
+      value: `${stats.totalSyp.toLocaleString()} ل.س`,
+      helper: fromDate || toDate ? `للفترة (${fromDate || "البداية"} إلى ${toDate || "اليوم"})` : "إجمالي المصروفات المعروضة",
+      tone: "orange",
+    },
+    {
+      title: "إجمالي المصاريف (USD)",
+      value: `$${stats.totalUsd.toLocaleString()}`,
+      helper: fromDate || toDate ? `للفترة (${fromDate || "البداية"} إلى ${toDate || "اليوم"})` : "إجمالي المصروفات المعروضة",
+      tone: "yellow",
+    },
+    {
+      title: "عدد سندات الصرف",
+      value: `${stats.count} سند`,
+      helper: "سندات صرف نشطة ومرحلة",
+      tone: "purple",
+    },
+  ], [stats, fromDate, toDate]);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -118,6 +161,9 @@ export default function ExpensesClient({
           <span>تسجيل مصروف جديد</span>
         </Button>
       </div>
+
+      {/* Stats Summary Cards */}
+      <StatsGrid items={expenseStats} />
 
       {/* Table */}
       <div className="rounded-2xl border border-app-line/40 bg-app-panel p-5">

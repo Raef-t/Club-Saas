@@ -73,9 +73,11 @@ class RecordSubscriptionPayment
 
         $currency = $safe->currency ?? 'USD';
         $isLocker = !empty($invoice->locker_reservation_id);
-        $memoSafe = $isLocker ? ('دفعة تأجير خزانة - فاتورة رقم ' . $invoice->id) : ('دفعة اشتراك - فاتورة رقم ' . $invoice->id);
-        $memoRevenue = $isLocker ? ('إيراد تأجير خزائن - فاتورة رقم ' . $invoice->id) : ('إيراد مبيعات اشتراكات - فاتورة رقم ' . $invoice->id);
-        $journalDesc = $isLocker ? ('قيد تلقائي: إيراد تأجير خزانة - دفعة رقم ' . $payment->id) : ('قيد تلقائي: إيراد اشتراك لاعب - دفعة رقم ' . $payment->id);
+        $receiptPart = !empty($payment->receipt_number) ? ('إيصال رقم ' . $payment->receipt_number) : ('دفعة رقم ' . $payment->id);
+        $memberPart = !empty($invoice->member_name) ? (' - المشترك: ' . $invoice->member_name) : '';
+        $journalDesc = $isLocker ? ('قيد تلقائي: إيراد تأجير خزانة - ' . $receiptPart . $memberPart) : ('قيد تلقائي: إيراد اشتراك لاعب - ' . $receiptPart . $memberPart);
+        $memoSafe = $isLocker ? ('دفعة تأجير خزانة - ' . $receiptPart . $memberPart) : ('دفعة اشتراك - ' . $receiptPart . $memberPart);
+        $memoRevenue = $isLocker ? ('إيراد تأجير خزائن - ' . $receiptPart . $memberPart) : ('إيراد مبيعات اشتراكات - ' . $receiptPart . $memberPart);
 
         // 4. Construct debit and credit lines
         $lines = [];
@@ -95,18 +97,20 @@ class RecordSubscriptionPayment
                 ]
             ];
         } else {
+            $usdReceiptPart = !empty($payment->receipt_number) ? ('Receipt #' . $payment->receipt_number) : ('Payment #' . $payment->id);
+            $usdMemberPart = !empty($invoice->member_name) ? (' - Member: ' . $invoice->member_name) : '';
             $lines = [
                 [
                     'account_id' => $safe->account_id,
                     'debit_usd'  => $payment->amount,
                     'credit_usd' => 0,
-                    'memo'       => $isLocker ? ('Locker Payment - Invoice #' . $invoice->id) : ('Subscription Payment - Invoice #' . $invoice->id),
+                    'memo'       => $isLocker ? ('Locker Payment - ' . $usdReceiptPart . $usdMemberPart) : ('Subscription Payment - ' . $usdReceiptPart . $usdMemberPart),
                 ],
                 [
                     'account_id' => $revenueAccountId,
                     'debit_usd'  => 0,
                     'credit_usd' => $payment->amount,
-                    'memo'       => $isLocker ? ('Locker Rental Revenue - Invoice #' . $invoice->id) : ('Subscription Sales Revenue - Invoice #' . $invoice->id),
+                    'memo'       => $isLocker ? ('Locker Rental Revenue - ' . $usdReceiptPart . $usdMemberPart) : ('Subscription Sales Revenue - ' . $usdReceiptPart . $usdMemberPart),
                 ]
             ];
         }
