@@ -397,12 +397,15 @@ class StaffService
     }
 
     /**
-     * Update staff profile photo.
+     * Update staff profile photo (or remove it if photo is null).
      */
-    public function updateStaffPhoto($id, \Illuminate\Http\UploadedFile $photo)
+    public function updateStaffPhoto($id, ?\Illuminate\Http\UploadedFile $photo = null)
     {
         return DB::transaction(function () use ($id, $photo) {
             $staff = $this->staffRepository->find($id);
+            if (!$staff) {
+                throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Staff record not found.');
+            }
             $person = \Modules\Authentication\Models\Person::find($staff->person_id);
 
             if (!$person) {
@@ -414,8 +417,10 @@ class StaffService
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
             }
 
+            $photoUrl = $photo ? $photo->store('people/photos', 'public') : null;
+
             $person->update([
-                'photo_url' => $photo->store('people/photos', 'public'),
+                'photo_url' => $photoUrl,
             ]);
 
             $staff->load('coachDetail.certifications');

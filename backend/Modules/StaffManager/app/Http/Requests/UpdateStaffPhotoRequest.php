@@ -11,10 +11,17 @@ class UpdateStaffPhotoRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('photo') === 'null' || $this->input('photo') === '') {
+            $this->merge(['photo' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
     }
 }
