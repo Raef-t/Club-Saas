@@ -206,6 +206,22 @@ class SubscriptionService
                 ->firstOrFail();
             $plan->load('planActivities.staffActivity');
 
+            if ($plan->status !== \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE && $plan->status !== 'active') {
+                throw new Exception(__('This subscription plan is not active.'));
+            }
+
+            if ($plan->isCurrentlySuspended()) {
+                throw new Exception(__('This subscription plan is currently suspended.'));
+            }
+
+            if ($plan->hasInactiveActivities()) {
+                throw new Exception(__('Cannot subscribe to this plan because one or more of its activities are currently inactive or stopped.'));
+            }
+
+            if ($plan->hasInactiveCoaches()) {
+                throw new Exception(__('Cannot subscribe to this plan because its assigned coach is currently inactive or suspended.'));
+            }
+
             if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
                 throw new Exception(__('This subscription plan has reached its maximum capacity.'));
             }

@@ -111,6 +111,8 @@ class CoachController extends BaseController
                                 'country_code' => '+966'
                             ],
                             'username' => 'coach_ahmed',
+                            'generated_username' => 'tec-coach-88800',
+                            'generated_password' => '12345678',
                             'details' => [
                                 'id' => 5,
                                 'staff_id' => 5,

@@ -102,6 +102,28 @@ class SubscriptionPlan extends Model
         });
     }
 
+    public function scopeActiveActivities($query)
+    {
+        return $query->whereDoesntHave('planActivities.staffActivity.activity', function ($q) {
+            $q->where('is_active', false);
+        });
+    }
+
+    public function scopeActiveCoaches($query)
+    {
+        return $query->whereDoesntHave('planActivities.staffActivity.staff', function ($q) {
+            $q->where('is_active', false)
+              ->orWhere('work_status', '!=', 'active');
+        });
+    }
+
+    public function scopeNotSuspended($query)
+    {
+        return $query->whereDoesntHave('suspensions', function ($q) {
+            $q->whereIn('status', ['active', 'scheduled']);
+        });
+    }
+
     /**
      * Determine if this subscription plan includes an equipment or unlimited activity (e.g. أجهزة عام / أجهزة خاص).
      */
@@ -226,5 +248,46 @@ class SubscriptionPlan extends Model
         }
 
         return (int) ($this->attributes['current_subscribers'] ?? 0);
+    }
+
+    public function isCurrentlySuspended(): bool
+    {
+        if ($this->relationLoaded('activeSuspension')) {
+            return $this->activeSuspension !== null;
+        }
+
+        return $this->suspensions()->whereIn('status', ['active', 'scheduled'])->exists();
+    }
+
+    public function hasInactiveActivities(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.activity')->get();
+
+        foreach ($activities as $planActivity) {
+            $activity = $planActivity->activity ?? ($planActivity->staffActivity ? $planActivity->staffActivity->activity : null);
+            if ($activity && !$activity->is_active) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasInactiveCoaches(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.staff')->get();
+
+        foreach ($activities as $planActivity) {
+            $coach = $planActivity->staffActivity ? $planActivity->staffActivity->staff : null;
+            if ($coach && (!$coach->is_active || $coach->work_status !== 'active')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

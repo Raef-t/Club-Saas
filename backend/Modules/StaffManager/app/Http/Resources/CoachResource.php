@@ -37,6 +37,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "updated_at", type: "string", format: "date-time"),
         new OA\Property(property: "person", type: "object", description: "Person details"),
         new OA\Property(property: "username", type: "string", nullable: true, example: "coach_123"),
+        new OA\Property(property: "generated_username", type: "string", nullable: true, example: "tec-coach-88800"),
+        new OA\Property(property: "generated_password", type: "string", nullable: true, example: "12345678"),
         new OA\Property(property: "details", type: "object", description: "Coach specific details", properties: [
             new OA\Property(property: "default_commission_rate", type: "number", format: "float", example: 15.5, description: "نسبة العمولة الثابتة (مئوية)"),
             new OA\Property(property: "private_commission_rate", type: "number", format: "float", example: 70.0, description: "نسبة الكوتش من اشتراكات أجهزة خاص (مئوية)")
@@ -250,7 +252,9 @@ class CoachResource extends JsonResource
                 'phone_number' => $this->person->contacts->where('name', 'Personal')->first()?->phone_number,
                 'country_code' => $this->person->contacts->where('name', 'Personal')->first()?->country_code,
             ] : null,
-            'username'       => $this->user ? $this->user->username : null,
+            'username'           => $this->user ? $this->user->username : null,
+            'generated_username' => $this->generated_username ?? ($this->user ? $this->user->username : null),
+            'generated_password' => $this->generated_password ?? null,
             'details'        => $detail ? [
                 'id' => $detail->id,
                 'staff_id' => $detail->staff_id,
