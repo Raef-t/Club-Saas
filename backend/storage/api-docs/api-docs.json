@@ -21042,6 +21042,8 @@
                                             "country_code": "+966"
                                         },
                                         "username": "coach_ahmed",
+                                        "generated_username": "tec-coach-88800",
+                                        "generated_password": "12345678",
                                         "details": {
                                             "id": 5,
                                             "staff_id": 5,
@@ -30506,6 +30508,26 @@
                         }
                     },
                     {
+                        "name": "activity_type_id",
+                        "in": "query",
+                        "description": "تصفية حسب نوع النشاط الرياضي (معرف نوع النشاط أو اسمه أو قائمة معرفات)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "activity_id",
+                        "in": "query",
+                        "description": "تصفية حسب النشاط الرياضي المحدد (معرف النشاط أو قائمة معرفات)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    },
+                    {
                         "name": "gender",
                         "in": "query",
                         "description": "تصفية حسب الجنس المسموح",
@@ -30922,6 +30944,26 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "activity_type_id",
+                        "in": "query",
+                        "description": "تصفية حسب نوع النشاط الرياضي",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "activity_id",
+                        "in": "query",
+                        "description": "تصفية حسب النشاط الرياضي المحدد",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
                         }
                     },
                     {
@@ -35399,6 +35441,16 @@
                     "username": {
                         "type": "string",
                         "example": "coach_123",
+                        "nullable": true
+                    },
+                    "generated_username": {
+                        "type": "string",
+                        "example": "tec-coach-88800",
+                        "nullable": true
+                    },
+                    "generated_password": {
+                        "type": "string",
+                        "example": "12345678",
                         "nullable": true
                     },
                     "details": {
