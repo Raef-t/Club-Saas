@@ -31,6 +31,13 @@ export default function SubscriptionsCreateClient({ initialData }) {
   const {
     members,
     plans,
+    activityTypes,
+    selectedActivityTypeId,
+    setSelectedActivityTypeId,
+    isPlansLoading,
+    plansErrorMessage,
+    isActivityTypesLoading,
+    activityTypesErrorMessage,
     activities,
     coaches,
     selectedSubscription,
@@ -121,11 +128,18 @@ export default function SubscriptionsCreateClient({ initialData }) {
           ) : null
         ) : (
           <SubscriptionCreateForm
-            key={`${selectedBranchId}-${members[0]?.id || "member"}-${plans[0]?.id || "plan"}-${resetKey}`}
+            key={`${selectedBranchId}-${members[0]?.id || "member"}-${resetKey}`}
             formId={FORM_ID}
             initialMemberId={currentMemberId}
             members={members}
             plans={plans}
+            activityTypes={activityTypes}
+            selectedActivityTypeId={selectedActivityTypeId}
+            onActivityTypeChange={setSelectedActivityTypeId}
+            isPlansLoading={isPlansLoading}
+            plansErrorMessage={plansErrorMessage}
+            isActivityTypesLoading={isActivityTypesLoading}
+            activityTypesErrorMessage={activityTypesErrorMessage}
             activities={activities}
             coaches={coaches}
             onSubmit={submit}

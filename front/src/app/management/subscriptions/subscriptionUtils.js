@@ -129,6 +129,64 @@ export function getSubscriptionRows(response) {
 }
 
 /**
+ * Keeps the newest subscriptions first without mutating the API response.
+ * Creation time is authoritative, with the start date and numeric id retained
+ * as fallbacks for older response shapes.
+ */
+export function sortSubscriptionsNewestFirst(rows = []) {
+  function getSortValue(subscription) {
+    const dateValue = subscription?.created_at || subscription?.start_date;
+    const timestamp = dateValue ? Date.parse(dateValue) : Number.NaN;
+    if (Number.isFinite(timestamp)) return timestamp;
+    return Number(subscription?.id) || 0;
+  }
+
+  return [...rows].sort((first, second) => getSortValue(second) - getSortValue(first));
+}
+
+/** Builds the supported query for plans available to a new subscription. */
+export function getAvailableSubscriptionPlanParams(branchId, activityTypeId) {
+  return {
+    ...(branchId && branchId !== "all" ? { branch_id: branchId } : {}),
+    available: true,
+    ...(activityTypeId && activityTypeId !== "all" ? { activity_type_id: activityTypeId } : {}),
+    per_page: 15,
+    page: 1,
+  };
+}
+
+function getFiniteAmount(value, fallback = 0) {
+  if (value === null || value === undefined || value === "") return fallback;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : fallback;
+}
+
+/**
+ * Extracts the aggregate subscription statistics returned by the list endpoint.
+ * Local fallbacks keep older API responses usable, but the paginated endpoint
+ * statistics remain the source of truth whenever they are available.
+ */
+export function getSubscriptionStats(response, rows = getSubscriptionRows(response)) {
+  const responseStats = response?.stats || response?.data?.stats || {};
+  const paginationTotal = response?.meta?.total ?? response?.data?.meta?.total;
+  const activeFallback = rows.filter((subscription) => subscription.status === "active").length;
+  const paidFallback = rows.reduce(
+    (total, subscription) => total + parseSubscriptionAmount(subscription.paid_amount),
+    0,
+  );
+
+  return {
+    activeSubscriptions: getFiniteAmount(responseStats.active_subscriptions, activeFallback),
+    totalSubscriptions: getFiniteAmount(
+      responseStats.total_subscriptions,
+      getFiniteAmount(paginationTotal, rows.length),
+    ),
+    totalPaidAmount: getFiniteAmount(responseStats.total_paid_amount, paidFallback),
+    todayRevenue: getFiniteAmount(responseStats.today_revenue),
+  };
+}
+
+/**
  * Extracts a single subscription from its backend response.
  */
 export function getSubscriptionDetail(response) {

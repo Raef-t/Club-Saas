@@ -12,7 +12,10 @@ export const activitiesApi = createBackendApi({
       providesTags: ["Activities"],
     }),
     getActivityTypes: builder.query({
-      query: () => "activity-types",
+      query: (params = {}) => ({
+        url: "activity-types",
+        params,
+      }),
     }),
     getActivity: builder.query({
       query: (id) => `activities/${id}`,

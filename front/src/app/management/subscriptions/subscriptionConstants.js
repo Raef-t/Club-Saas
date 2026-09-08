@@ -22,3 +22,9 @@ export const SUBSCRIPTION_STATUS_OPTIONS = [
   { value: "frozen", label: "مجمد" },
   { value: "terminated", label: "تم إنهاؤه من الإدارة" },
 ];
+
+export const SUBSCRIPTION_PERIOD_OPTIONS = [
+  { value: "all", label: "كل الاشتراكات" },
+  { value: "today", label: "اشتراكات اليوم" },
+  { value: "monthly", label: "الشهر الحالي" },
+];

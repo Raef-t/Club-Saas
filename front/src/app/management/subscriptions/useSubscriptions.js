@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   useGetPlayerSubscriptionQuery,
@@ -12,25 +12,24 @@ import { useGetBranchesQuery } from "@/lib/api/branchesApi";
 import { useToast } from "@/components/ui/Toast";
 import { getBranchesArray } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import {
   formatSubscriptionMoney,
   getSubscriptionDetail,
   getSubscriptionRows,
-  parseSubscriptionAmount,
+  getSubscriptionStats,
+  sortSubscriptionsNewestFirst,
 } from "./subscriptionUtils";
 import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
-function isExpiringSoon(subscription) {
-  if (subscription.status !== "active") return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endDate = new Date(subscription.end_date);
-  if (Number.isNaN(endDate.getTime())) return false;
-  endDate.setHours(23, 59, 59, 999);
-  const diffDays = (endDate - today) / (1000 * 60 * 60 * 24);
-  return diffDays >= 0 && diffDays <= 7;
-}
+const VALID_STATUSES = new Set([
+  "all",
+  "active",
+  "expiring_soon",
+  "finished",
+  "frozen",
+  "terminated",
+]);
+const VALID_PERIODS = new Set(["all", "today", "monthly"]);
 
 /**
  * Coordinates subscription data, filters, selection, and lifecycle mutations.
@@ -39,34 +38,49 @@ export function useSubscriptions({ initialData } = {}) {
   const toast = useToast();
   const searchParams = useSearchParams();
   const urlStatus = searchParams?.get("status");
-  const initialStatus =
-    urlStatus === "expiring_soon" || urlStatus === "expiring"
-      ? "expiring_soon"
-      : urlStatus || "all";
+  const initialStatus = urlStatus === "expiring" ? "expiring_soon" : urlStatus;
+  const urlPeriod = searchParams?.get("period");
 
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState(initialStatus);
+  const [search, setSearch] = useState(() => searchParams?.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(search.trim());
+  const [status, setStatus] = useState(() =>
+    VALID_STATUSES.has(initialStatus) ? initialStatus : "all",
+  );
+  const [period, setPeriod] = useState(() => (VALID_PERIODS.has(urlPeriod) ? urlPeriod : "all"));
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isRefunded, setIsRefunded] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const paginationFilterKey = [branchFilter, status, search].join("|");
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [search]);
+
+  const paginationFilterKey = [branchFilter, status, period, debouncedSearch].join("|");
   const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
-  const needsAllSubscriptions = status !== "all" || Boolean(search.trim());
 
   const queryParams = useMemo(() => {
     return {
       ...(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
-      ...(needsAllSubscriptions ? { per_page: "all" } : { page, per_page: perPage }),
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      status,
+      period,
+      page,
+      per_page: perPage,
     };
-  }, [branchFilter, needsAllSubscriptions, page, perPage]);
+  }, [branchFilter, debouncedSearch, page, perPage, period, status]);
 
-  const { currentData: data, error, isFetching, isLoading, refetch } =
-    useGetPlayerSubscriptionsQuery(queryParams);
+  const {
+    currentData: data,
+    error,
+    isFetching,
+    isLoading,
+    refetch,
+  } = useGetPlayerSubscriptionsQuery(queryParams);
 
   const {
     data: subscriptionDetailData,
@@ -86,17 +100,20 @@ export function useSubscriptions({ initialData } = {}) {
     useDeletePlayerSubscriptionMutation();
 
   const canUseInitialSubscriptions =
-    !needsAllSubscriptions && page === 1 && perPage === 15 && branchFilter === "all";
-  const listResponse =
-    data || (canUseInitialSubscriptions ? initialData?.subscriptions : null);
-  const subscriptions = useMemo(() => getSubscriptionRows(listResponse), [listResponse]);
+    !debouncedSearch &&
+    status === "all" &&
+    period === "all" &&
+    page === 1 &&
+    perPage === 15 &&
+    branchFilter === "all";
+  const listResponse = data || (canUseInitialSubscriptions ? initialData?.subscriptions : null);
+  const subscriptions = useMemo(
+    () => sortSubscriptionsNewestFirst(getSubscriptionRows(listResponse)),
+    [listResponse],
+  );
   const pagination = useMemo(
     () => getPaginationMeta(listResponse, { page, perPage }),
     [listResponse, page, perPage],
-  );
-  const branchSubscriptions = useMemo(
-    () => filterEntitiesByBranch(subscriptions, branchFilter),
-    [branchFilter, subscriptions],
   );
   const branches = useMemo(
     () => getBranchesArray(branchesData || initialData?.branches),
@@ -107,48 +124,16 @@ export function useSubscriptions({ initialData } = {}) {
     [subscriptionDetailData],
   );
 
-  const filteredSubscriptions = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return branchSubscriptions.filter((subscription) => {
-      const member = subscription.member || {};
-      const person = member.person || {};
-      const plan = subscription.plan || {};
-      const planName =
-        typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "";
-      const matchesStatus =
-        status === "all" ||
-        (status === "expiring_soon" || status === "expiring"
-          ? isExpiringSoon(subscription)
-          : subscription.status === status);
-      const matchesSearch =
-        !normalizedSearch ||
-        [person.full_name, person.phone, member.member_number, planName]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(normalizedSearch));
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [branchSubscriptions, search, status]);
-  const totalResults = needsAllSubscriptions ? filteredSubscriptions.length : pagination.total;
+  const totalResults = pagination.total;
 
   const stats = useMemo(() => {
-    const activeCount = branchSubscriptions.filter((item) => item.status === "active").length;
-    const totalPaid = branchSubscriptions.reduce(
-      (sum, item) => sum + parseSubscriptionAmount(item.paid_amount),
-      0,
-    );
-    const totalRemaining = branchSubscriptions.reduce(
-      (sum, item) => sum + parseSubscriptionAmount(item.remaining_amount),
-      0,
-    );
-    const soon = branchSubscriptions.filter(isExpiringSoon).length;
+    const subscriptionStats = getSubscriptionStats(listResponse, subscriptions);
 
     return [
       {
         title: "إجمالي الاشتراكات",
-        value: branchSubscriptions.length.toLocaleString("ar"),
-        helper: "كل الاشتراكات المسترجعة",
+        value: subscriptionStats.totalSubscriptions.toLocaleString("ar"),
+        helper: "إجمالي الاشتراكات المسجلة",
         tone: "yellow",
         compact: true,
         onClick: () => setStatus("all"),
@@ -156,8 +141,8 @@ export function useSubscriptions({ initialData } = {}) {
       },
       {
         title: "الاشتراكات النشطة",
-        value: activeCount.toLocaleString("ar"),
-        helper: "حالة العضوية active",
+        value: subscriptionStats.activeSubscriptions.toLocaleString("ar"),
+        helper: "الاشتراكات الفعالة حالياً",
         tone: "green",
         compact: true,
         onClick: () => setStatus(status === "active" ? "all" : "active"),
@@ -165,22 +150,22 @@ export function useSubscriptions({ initialData } = {}) {
       },
       {
         title: "المبالغ المدفوعة",
-        value: formatSubscriptionMoney(totalPaid),
+        value: formatSubscriptionMoney(subscriptionStats.totalPaidAmount),
+        helper: "إجمالي المبالغ المحصلة",
         tone: "blue",
         compact: true,
       },
       {
-        title: "المتبقي للتحصيل",
-        value: formatSubscriptionMoney(totalRemaining),
-        helper: `${soon.toLocaleString("ar")} اشتراك ينتهي خلال ٧ أيام`,
+        title: "إيرادات اليوم",
+        value: formatSubscriptionMoney(subscriptionStats.todayRevenue),
+        helper: "المبالغ المحصلة اليوم",
         tone: "purple",
         compact: true,
-        onClick: () =>
-          setStatus(status === "expiring_soon" || status === "expiring" ? "all" : "expiring_soon"),
-        active: status === "expiring_soon" || status === "expiring",
+        onClick: () => setPeriod(period === "today" ? "all" : "today"),
+        active: period === "today",
       },
     ];
-  }, [branchSubscriptions, status]);
+  }, [listResponse, period, status, subscriptions]);
 
   const errorMessage =
     error?.data?.message ||
@@ -208,9 +193,7 @@ export function useSubscriptions({ initialData } = {}) {
       await unfreezeSubscription(id).unwrap();
       toast.success("تم إلغاء تجميد الاشتراك وتفعيله بنجاح!");
     } catch (err) {
-      const errMsg =
-        err?.data?.message ||
-        "تعذر إلغاء تجميد الاشتراك. حاول مرة أخرى.";
+      const errMsg = err?.data?.message || "تعذر إلغاء تجميد الاشتراك. حاول مرة أخرى.";
       toast.error(errMsg);
     }
   }
@@ -257,9 +240,7 @@ export function useSubscriptions({ initialData } = {}) {
         reason: deleteReason ? deleteReason.trim() : undefined,
       }).unwrap();
       toast.success(
-        isRefunded
-          ? "تم حذف الاشتراك واسترداد المبلغ بنجاح!"
-          : "تم حذف الاشتراك بنجاح!"
+        isRefunded ? "تم حذف الاشتراك واسترداد المبلغ بنجاح!" : "تم حذف الاشتراك بنجاح!",
       );
     } catch {
       toast.error("تعذر حذف الاشتراك. حاول مرة أخرى.");
@@ -273,6 +254,8 @@ export function useSubscriptions({ initialData } = {}) {
     setSearch,
     status,
     setStatus,
+    period,
+    setPeriod,
     branchFilter,
     setBranchFilter,
     selectedSubscriptionId,
@@ -287,7 +270,7 @@ export function useSubscriptions({ initialData } = {}) {
     refetchSubscriptionDetail,
     subscriptions,
     selectedSubscription,
-    filteredSubscriptions,
+    filteredSubscriptions: subscriptions,
     pagination: { ...pagination, setPage, setPerPage },
     totalResults,
     stats,

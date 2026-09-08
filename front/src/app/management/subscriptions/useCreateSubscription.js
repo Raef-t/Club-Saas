@@ -6,19 +6,20 @@ import {
 } from "@/lib/api/playerSubscriptionsApi";
 import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
-import { useGetActivitiesQuery } from "@/lib/api/activitiesApi";
+import { useGetActivitiesQuery, useGetActivityTypesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { withAllItems } from "@/lib/pagination";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { getApiErrorMessage } from "@/lib/apiError";
-import { getSubscriptionDetail } from "./subscriptionUtils";
+import { getAvailableSubscriptionPlanParams, getSubscriptionDetail } from "./subscriptionUtils";
 
 /**
  * Returns an array from the standard collection response used by the backend.
  */
 function getCollection(response) {
+  if (Array.isArray(response?.data?.data)) return response.data.data;
   return Array.isArray(response?.data) ? response.data : [];
 }
 
@@ -29,9 +30,25 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
   const toast = useToast();
   const { selectedBranchId } = useManagementBranch();
   const [formError, setFormError] = useState("");
+  const [selectedActivityTypeId, setSelectedActivityTypeId] = useState("all");
   const branchQueryParams = selectedBranchId === "all" ? {} : { branch_id: selectedBranchId };
+  const planQueryParams = useMemo(
+    () => getAvailableSubscriptionPlanParams(selectedBranchId, selectedActivityTypeId),
+    [selectedActivityTypeId, selectedBranchId],
+  );
   const { data: membersData } = useGetMembersQuery(withAllItems(branchQueryParams));
-  const { data: plansData } = useGetSubscriptionPlansQuery(withAllItems(branchQueryParams));
+  const {
+    currentData: plansData,
+    error: plansError,
+    isLoading: isPlansLoading,
+    isFetching: isPlansFetching,
+  } = useGetSubscriptionPlansQuery(planQueryParams);
+  const {
+    currentData: activityTypesData,
+    error: activityTypesError,
+    isLoading: isActivityTypesLoading,
+    isFetching: isActivityTypesFetching,
+  } = useGetActivityTypesQuery(withAllItems());
   const { data: activitiesData } = useGetActivitiesQuery(withAllItems(branchQueryParams));
   const { data: coachesData } = useGetCoachesQuery(withAllItems(branchQueryParams));
   const {
@@ -56,13 +73,15 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     () => filterEntitiesByBranch(allMembers, selectedBranchId),
     [allMembers, selectedBranchId],
   );
-  const allPlans = useMemo(
-    () => getCollection(plansData || initialData?.plans),
-    [initialData?.plans, plansData],
-  );
+  const plansResponse = plansData || (selectedActivityTypeId === "all" ? initialData?.plans : null);
+  const allPlans = useMemo(() => getCollection(plansResponse), [plansResponse]);
   const plans = useMemo(
     () => filterEntitiesByBranch(allPlans, selectedBranchId),
     [allPlans, selectedBranchId],
+  );
+  const activityTypes = useMemo(
+    () => getCollection(activityTypesData || initialData?.activityTypes),
+    [activityTypesData, initialData?.activityTypes],
   );
   const allActivities = useMemo(
     () => getCollection(activitiesData || initialData?.activities),
@@ -97,10 +116,7 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
       return true;
     } catch (submitError) {
       setFormError(
-        getApiErrorMessage(
-          submitError,
-          "تعذر إنشاء الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
-        ),
+        getApiErrorMessage(submitError, "تعذر إنشاء الاشتراك. تحقق من البيانات وحاول مرة أخرى."),
       );
       return false;
     }
@@ -116,10 +132,7 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
       return true;
     } catch (submitError) {
       setFormError(
-        getApiErrorMessage(
-          submitError,
-          "تعذر تعديل الاشتراك. تحقق من البيانات وحاول مرة أخرى.",
-        ),
+        getApiErrorMessage(submitError, "تعذر تعديل الاشتراك. تحقق من البيانات وحاول مرة أخرى."),
       );
       return false;
     }
@@ -128,6 +141,17 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
   return {
     members,
     plans,
+    activityTypes,
+    selectedActivityTypeId,
+    setSelectedActivityTypeId,
+    isPlansLoading: isPlansLoading || isPlansFetching,
+    plansErrorMessage: plansError
+      ? getApiErrorMessage(plansError, "تعذر تحميل باقات الاشتراك المتاحة.")
+      : "",
+    isActivityTypesLoading: isActivityTypesLoading || isActivityTypesFetching,
+    activityTypesErrorMessage: activityTypesError
+      ? getApiErrorMessage(activityTypesError, "تعذر تحميل أنواع الأنشطة.")
+      : "",
     activities,
     coaches,
     selectedSubscription,

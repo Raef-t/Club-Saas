@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatSubscriptionMoney,
+  getAvailableSubscriptionPlanParams,
   getCurrentMemberSubscription,
   getLocalDateValue,
   getSubscriptionEndDate,
@@ -9,9 +10,11 @@ import {
   getSubscriptionReceiptNumber,
   getSubscriptionReceiptNumbers,
   getSubscriptionRows,
+  getSubscriptionStats,
   isDailyEntrySubscriptionPlan,
   isPrivateSubscriptionPlan,
   parseSubscriptionAmount,
+  sortSubscriptionsNewestFirst,
 } from "./subscriptionUtils";
 
 describe("subscription utilities", () => {
@@ -30,6 +33,70 @@ describe("subscription utilities", () => {
     expect(getSubscriptionRows({ data: { data: rows } })).toEqual(rows);
     expect(getSubscriptionRows({ data: rows })).toEqual(rows);
     expect(getSubscriptionRows(null)).toEqual([]);
+  });
+
+  it("orders subscriptions from newest to oldest without mutating the response rows", () => {
+    const rows = [
+      { id: 1, created_at: "2026-09-01T10:00:00Z" },
+      { id: 3, created_at: "2026-09-03T10:00:00Z" },
+      { id: 2, created_at: "2026-09-02T10:00:00Z" },
+    ];
+
+    expect(sortSubscriptionsNewestFirst(rows).map((subscription) => subscription.id)).toEqual([
+      3, 2, 1,
+    ]);
+    expect(rows.map((subscription) => subscription.id)).toEqual([1, 3, 2]);
+  });
+
+  it("builds available plan filters and omits the activity type when all is selected", () => {
+    expect(getAvailableSubscriptionPlanParams("1", "3")).toEqual({
+      branch_id: "1",
+      available: true,
+      activity_type_id: "3",
+      per_page: 15,
+      page: 1,
+    });
+    expect(getAvailableSubscriptionPlanParams("all", "all")).toEqual({
+      available: true,
+      per_page: 15,
+      page: 1,
+    });
+  });
+
+  it("reads aggregate statistics from the player subscriptions response", () => {
+    expect(
+      getSubscriptionStats({
+        data: [{ id: 1, status: "active", paid_amount: "50" }],
+        stats: {
+          active_subscriptions: 45,
+          total_subscriptions: 120,
+          total_paid_amount: 15400,
+          today_revenue: 1200,
+        },
+      }),
+    ).toEqual({
+      activeSubscriptions: 45,
+      totalSubscriptions: 120,
+      totalPaidAmount: 15400,
+      todayRevenue: 1200,
+    });
+  });
+
+  it("keeps legacy subscription responses usable when aggregate statistics are absent", () => {
+    expect(
+      getSubscriptionStats({
+        data: [
+          { id: 1, status: "active", paid_amount: "50" },
+          { id: 2, status: "finished", paid_amount: "75" },
+        ],
+        meta: { total: 8 },
+      }),
+    ).toEqual({
+      activeSubscriptions: 1,
+      totalSubscriptions: 8,
+      totalPaidAmount: 125,
+      todayRevenue: 0,
+    });
   });
 
   it("extracts a subscription detail safely", () => {
