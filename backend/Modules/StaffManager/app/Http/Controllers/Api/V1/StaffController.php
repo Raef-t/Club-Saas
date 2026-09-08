@@ -431,27 +431,26 @@ class StaffController extends BaseController
 
     #[OA\Post(
         path: '/v1/staff/{id}/photo',
-        summary: '🖼️ تحديث صورة الموظف',
-        description: 'رفع أو تحديث صورة الموظف. يجب استخدام هذا الـ endpoint المخصص بدلاً من إرسال الصورة ضمن طلب التحديث العام.',
+        summary: '🖼️ تحديث أو حذف صورة الموظف',
+        description: 'رفع أو تحديث صورة الموظف. في حال تم إرسال الطلب فارغاً من الصورة، سيتم حذف الصورة الحالية للموظف.',
         tags: ['Staff Management'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف الموظف', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\RequestBody(
-        required: true,
+        required: false,
         content: new OA\MediaType(
             mediaType: 'multipart/form-data',
             schema: new OA\Schema(
-                required: ['photo'],
                 properties: [
-                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف')
+                    new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة الموظف (اتركه فارغاً لحذف الصورة)', nullable: true)
                 ]
             )
         )
     )]
     #[OA\Response(
         response: 200,
-        description: '✅ تم تحديث الصورة بنجاح',
+        description: '✅ تم تحديث أو حذف الصورة بنجاح',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'status', type: 'string', example: 'success'),
@@ -473,8 +472,12 @@ class StaffController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function updatePhoto(\Modules\StaffManager\Http\Requests\UpdateStaffPhotoRequest $request, $id)
     {
-        $staff = $this->staffService->updateStaffPhoto($id, $request->file('photo'));
-        return $this->successResponse(new StaffResource($staff), __('Staff photo updated successfully'));
+        $photo = $request->file('photo');
+        $staff = $this->staffService->updateStaffPhoto($id, $photo);
+        $message = $photo
+            ? __('Staff photo updated successfully')
+            : __('Staff photo deleted successfully');
+        return $this->successResponse(new StaffResource($staff), $message);
     }
 
     #[OA\Patch(

@@ -898,21 +898,20 @@ class CoachController extends BaseController
 
     #[OA\Post(
         path: '/v1/coaches/{id}/photo',
-        summary: 'Update Coach Photo',
-        description: 'Upload or update the profile photo of a coach. Use this dedicated endpoint instead of sending the photo in the general update request.',
+        summary: 'Update or Delete Coach Photo',
+        description: 'Upload or update the profile photo of a coach. If no photo is provided, the existing photo will be removed.',
         tags: ['Coach Management'],
         security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))
         ],
         requestBody: new OA\RequestBody(
-            required: true,
+            required: false,
             content: new OA\MediaType(
                 mediaType: 'multipart/form-data',
                 schema: new OA\Schema(
-                    required: ['photo'],
                     properties: [
-                        new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب'),
+                        new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'صورة المدرب (اتركه فارغاً لحذف الصورة)', nullable: true),
                     ]
                 )
             )
@@ -920,7 +919,7 @@ class CoachController extends BaseController
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Photo updated successfully',
+                description: 'Photo updated or removed successfully',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'data', ref: '#/components/schemas/CoachResource'),
@@ -948,11 +947,16 @@ class CoachController extends BaseController
     public function updatePhoto(\Modules\StaffManager\Http\Requests\UpdateCoachPhotoRequest $request, $id)
     {
         try {
-            $coach = $this->coachService->updateCoachPhoto($id, $request->file('photo'));
+            $photo = $request->file('photo');
+            $coach = $this->coachService->updateCoachPhoto($id, $photo);
+
+            $message = $photo
+                ? 'Coach photo updated successfully'
+                : 'Coach photo removed successfully';
 
             return response()->json([
                 'data'    => new CoachResource($coach),
-                'message' => 'Coach photo updated successfully'
+                'message' => $message
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([

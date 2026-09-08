@@ -418,9 +418,9 @@ class CoachService
     }
 
     /**
-     * Update coach profile photo.
+     * Update coach profile photo (or remove it if photo is null).
      */
-    public function updateCoachPhoto($id, \Illuminate\Http\UploadedFile $photo)
+    public function updateCoachPhoto($id, ?\Illuminate\Http\UploadedFile $photo = null)
     {
         return DB::transaction(function () use ($id, $photo) {
             $staff = Staff::where('role', 'coach')->findOrFail($id);
@@ -435,8 +435,10 @@ class CoachService
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
             }
 
+            $photoUrl = $photo ? $photo->store('people/photos', 'public') : null;
+
             $person->update([
-                'photo_url' => $photo->store('people/photos', 'public'),
+                'photo_url' => $photoUrl,
             ]);
 
             return $this->getSingleCoach($staff->id);
