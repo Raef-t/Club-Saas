@@ -73,6 +73,31 @@ trait ApiResponse
             if (isset($data['totals'])) {
                 $responseData['totals'] = $data['totals'];
             }
+            if (isset($data['stats'])) {
+                $responseData['stats'] = $data['stats'];
+            }
+            if (isset($data['statistics'])) {
+                $responseData['statistics'] = $data['statistics'];
+            }
+            return response()->json($responseData, $code);
+        }
+
+        // 4. If $data is an array containing 'data' and additional keys like 'stats' or 'totals' (non-paginated)
+        if (is_array($data) && array_key_exists('data', $data) && (isset($data['stats']) || isset($data['totals']) || isset($data['statistics']))) {
+            $responseData = [
+                'status'  => 'success',
+                'message' => $message,
+                'data'    => $data['data'],
+            ];
+            if (isset($data['totals'])) {
+                $responseData['totals'] = $data['totals'];
+            }
+            if (isset($data['stats'])) {
+                $responseData['stats'] = $data['stats'];
+            }
+            if (isset($data['statistics'])) {
+                $responseData['statistics'] = $data['statistics'];
+            }
             return response()->json($responseData, $code);
         }
 

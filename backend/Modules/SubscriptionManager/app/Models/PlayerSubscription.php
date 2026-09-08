@@ -85,6 +85,41 @@ class PlayerSubscription extends Model
     {
         return (float) $this->paid_amount >= (float) $this->total_amount;
     }
+
+    /**
+     * Check whether active subscription is expiring soon (<= $days or <= 3 sessions remaining).
+     */
+    public function isExpiringSoon(int $days = 7): bool
+    {
+        $statusVal = $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus 
+            ? $this->status->value 
+            : (string) $this->status;
+
+        if ($statusVal !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value) {
+            return false;
+        }
+
+        if ($this->end_date) {
+            $endDate = \Carbon\Carbon::parse($this->end_date)->startOfDay();
+            $today = \Carbon\Carbon::today();
+            if ($endDate->gte($today) && $endDate->lte($today->copy()->addDays($days))) {
+                return true;
+            }
+        }
+
+        if ($this->relationLoaded('items') && $this->items) {
+            foreach ($this->items as $item) {
+                if (!$item->is_unlimited && $item->sessions_allocated !== null) {
+                    $remaining = $item->sessions_allocated - ($item->sessions_consumed ?? 0);
+                    if ($remaining >= 0 && $remaining <= 3) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
     
     protected $appends = ['is_fully_paid'];
 

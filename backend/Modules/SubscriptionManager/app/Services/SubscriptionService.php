@@ -132,13 +132,131 @@ class SubscriptionService
         }
 
         if (!empty($filters['branch_id'])) {
-            $query->whereHas('plan', function ($q) use ($filters) {
-                $q->where('branch_id', $filters['branch_id']);
+            $branchId = (int) $filters['branch_id'];
+            $query->where(function ($q) use ($branchId) {
+                $q->whereHas('plan', fn($pq) => $pq->where('branch_id', $branchId))
+                  ->orWhereHas('member', fn($mq) => $mq->where('branch_id', $branchId));
             });
         }
 
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+        // 1. Search by member number, full name, phone number, national ID, or email
+        if (!empty($filters['search'])) {
+            $searchTerm = trim($filters['search']);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereHas('member', function ($mq) use ($searchTerm) {
+                    $mq->where('member_number', 'like', "%{$searchTerm}%")
+                       ->orWhereHas('person', function ($pq) use ($searchTerm) {
+                           $pq->where('full_name', 'like', "%{$searchTerm}%")
+                              ->orWhere('national_id', 'like', "%{$searchTerm}%")
+                              ->orWhere('email', 'like', "%{$searchTerm}%")
+                              ->orWhereHas('contacts', function ($cq) use ($searchTerm) {
+                                  $cq->where('phone_number', 'like', "%{$searchTerm}%");
+                              });
+                       });
+                });
+            });
+        }
+
+        // Direct filter by member number
+        if (!empty($filters['member_number'])) {
+            $num = trim($filters['member_number']);
+            $query->whereHas('member', fn($q) => $q->where('member_number', 'like', "%{$num}%"));
+        }
+
+        // Direct filter by member name
+        if (!empty($filters['member_name']) || !empty($filters['name'])) {
+            $name = trim($filters['member_name'] ?? $filters['name']);
+            $query->whereHas('member.person', fn($q) => $q->where('full_name', 'like', "%{$name}%"));
+        }
+
+        // 2. Filter by Status: active, expiring_soon, finished, frozen, terminated
+        if (!empty($filters['status']) && $filters['status'] !== 'all' && $filters['status'] !== 'الكل') {
+            $status = strtolower(trim($filters['status']));
+
+            if (in_array($status, ['active', 'فعال'])) {
+                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value);
+            } elseif (in_array($status, ['expiring_soon', 'expiring', 'تنتهي_قريبا', 'تنتهي قريبا', 'قريب الانتهاء', 'تنتهي'])) {
+                $expiringDays = isset($filters['expiring_days']) ? (int) $filters['expiring_days'] : 7;
+                $todayStr = Carbon::today()->toDateString();
+                $targetDateStr = Carbon::today()->addDays($expiringDays)->toDateString();
+
+                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                      ->where(function ($eq) use ($todayStr, $targetDateStr) {
+                          $eq->where(function ($dateQ) use ($todayStr, $targetDateStr) {
+                              $dateQ->whereNotNull('end_date')
+                                    ->whereBetween('end_date', [$todayStr, $targetDateStr]);
+                          })
+                          ->orWhereHas('items', function ($itemQ) {
+                              $itemQ->where('is_unlimited', false)
+                                    ->whereRaw('(sessions_allocated - sessions_consumed) <= 3')
+                                    ->whereRaw('(sessions_allocated - sessions_consumed) >= 0');
+                          });
+                      });
+            } elseif (in_array($status, ['finished', 'expired', 'منتهي'])) {
+                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value);
+            } elseif (in_array($status, ['frozen', 'مجمد'])) {
+                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value);
+            } elseif (in_array($status, ['terminated', 'cancelled', 'canceled', 'تم إنهاؤه من الإدارة', 'تم انهاؤه من الادارة', 'ملغى'])) {
+                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        // Separate expiring_soon boolean filter if requested
+        if (!empty($filters['expiring_soon']) && filter_var($filters['expiring_soon'], FILTER_VALIDATE_BOOLEAN)) {
+            $expiringDays = isset($filters['expiring_days']) ? (int) $filters['expiring_days'] : 7;
+            $todayStr = Carbon::today()->toDateString();
+            $targetDateStr = Carbon::today()->addDays($expiringDays)->toDateString();
+
+            $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                  ->where(function ($eq) use ($todayStr, $targetDateStr) {
+                      $eq->where(function ($dateQ) use ($todayStr, $targetDateStr) {
+                          $dateQ->whereNotNull('end_date')
+                                ->whereBetween('end_date', [$todayStr, $targetDateStr]);
+                      })
+                      ->orWhereHas('items', function ($itemQ) {
+                          $itemQ->where('is_unlimited', false)
+                                ->whereRaw('(sessions_allocated - sessions_consumed) <= 3')
+                                ->whereRaw('(sessions_allocated - sessions_consumed) >= 0');
+                      });
+                  });
+        }
+
+        // 3. Filter by Registration Period: today, monthly, all
+        if (!empty($filters['period'])) {
+            $period = strtolower(trim($filters['period']));
+            if (in_array($period, ['today', 'daily', 'اليوم'])) {
+                $query->whereDate('created_at', Carbon::today());
+            } elseif (in_array($period, ['monthly', 'month', 'الشهر', 'هذا_الشهر'])) {
+                $query->whereBetween('created_at', [
+                    Carbon::now()->startOfMonth(),
+                    Carbon::now()->endOfMonth(),
+                ]);
+            }
+        }
+
+        if (!empty($filters['registered_today']) && filter_var($filters['registered_today'], FILTER_VALIDATE_BOOLEAN)) {
+            $query->whereDate('created_at', Carbon::today());
+        }
+
+        if (!empty($filters['registration_date'])) {
+            $query->whereDate('created_at', $filters['registration_date']);
+        }
+
+        // Filter by month & year
+        if (!empty($filters['month'])) {
+            $monthVal = (string) $filters['month'];
+            if (str_contains($monthVal, '-')) {
+                [$yr, $mo] = explode('-', $monthVal);
+                $query->whereYear('created_at', (int)$yr)->whereMonth('created_at', (int)$mo);
+            } else {
+                $mo = (int) $monthVal;
+                $yr = !empty($filters['year']) ? (int) $filters['year'] : (int) Carbon::now()->year;
+                $query->whereYear('created_at', $yr)->whereMonth('created_at', $mo);
+            }
+        } elseif (!empty($filters['year'])) {
+            $query->whereYear('created_at', (int) $filters['year']);
         }
 
         // Note: coach_id filter removed — coach info is now derived from subscription_plan → plan_activities
@@ -192,6 +310,67 @@ class SubscriptionService
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
         }
         return $subscription;
+    }
+
+    /**
+     * Get 4 key statistics for player subscriptions:
+     * 1. Active subscriptions (الاشتراكات النشطة)
+     * 2. Total subscriptions (اجمالي الاشتراكات)
+     * 3. Total paid amount (المبالغ المدفوعة)
+     * 4. Today's revenue (ايرادات اليوم)
+     */
+    public function getSubscriptionStatistics(array $filters = []): array
+    {
+        $this->syncExpiredSubscriptions();
+
+        $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
+
+        // Base query with branch scoping
+        $baseQuery = PlayerSubscription::query();
+        if ($branchId) {
+            $baseQuery->where(function ($q) use ($branchId) {
+                $q->whereHas('plan', fn($pq) => $pq->where('branch_id', $branchId))
+                  ->orWhereHas('member', fn($mq) => $mq->where('branch_id', $branchId));
+            });
+        }
+
+        // 1. Active subscriptions
+        $activeCount = (clone $baseQuery)
+            ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+            ->count();
+
+        // 2. Total subscriptions
+        $totalCount = (clone $baseQuery)->count();
+
+        // 3. Total paid amount for subscriptions
+        $totalPaidAmount = round((float) (clone $baseQuery)->sum('paid_amount'), 2);
+
+        // 4. Today's revenue (collected today for subscriptions)
+        $today = Carbon::today();
+        $todayPaymentsQuery = \Modules\SubscriptionManager\Models\Payment::query()
+            ->whereDate('created_at', $today)
+            ->whereHas('invoice', function ($inv) use ($branchId) {
+                $inv->whereNotNull('player_subscription_id');
+                if ($branchId) {
+                    $inv->where('branch_id', $branchId);
+                }
+            });
+        $todayPayments = (float) $todayPaymentsQuery->sum('amount');
+
+        // Capture subscriptions registered today with paid_amount that may not have separate payment rows
+        $directSubsTodayPaid = (float) (clone $baseQuery)
+            ->whereDate('created_at', $today)
+            ->whereDoesntHave('payments')
+            ->sum('paid_amount');
+
+        $todayRevenue = round($todayPayments + $directSubsTodayPaid, 2);
+
+        return [
+            'active_subscriptions' => $activeCount,
+            'total_subscriptions'  => $totalCount,
+            'total_paid_amount'    => $totalPaidAmount,
+            'today_revenue'        => $todayRevenue,
+        ];
     }
 
     /**

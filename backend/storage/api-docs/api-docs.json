@@ -27964,7 +27964,7 @@
                     "Player Subscriptions"
                 ],
                 "summary": "👥 عرض اشتراكات الأعضاء",
-                "description": "استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.",
+                "description": "استرجاع قائمة بجميع اشتراكات الأعضاء في النادي مع الإحصائيات. يدعم التصفية حسب الفرع، والبحث بالاسم أو رقم العضو، والفلترة حسب الحالة (فعال، تنتهي قريباً، منتهي، مجمد، تم إنهاؤه من الإدارة) وفترة التسجيل (اليوم، بالشهر، الكل).",
                 "operationId": "078e2cb73b70d3a434d3424d990aec51",
                 "parameters": [
                     {
@@ -27975,6 +27975,69 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث بالاسم، رقم العضو، أو رقم الهاتف",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "محمد"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "تصفية حسب الحالة: active (فعال), expiring_soon (تنتهي قريباً), finished (منتهي), frozen (مجمد), terminated (تم إنهاؤه من الإدارة), all (الكل)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "active",
+                            "enum": [
+                                "active",
+                                "expiring_soon",
+                                "finished",
+                                "frozen",
+                                "terminated",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "description": "تصفية حسب فترة التسجيل: today (تسجلت اليوم), monthly (الشهر الحالي), all (الكل)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "today",
+                            "enum": [
+                                "today",
+                                "monthly",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "description": "تصفية حسب شهر التسجيل (1-12 أو YYYY-MM)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "2026-09"
+                        }
+                    },
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "description": "تصفية حسب سنة التسجيل",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
                         }
                     },
                     {
@@ -28018,27 +28081,32 @@
                                             "items": {
                                                 "type": "object"
                                             }
+                                        },
+                                        "stats": {
+                                            "properties": {
+                                                "active_subscriptions": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "total_subscriptions": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                },
+                                                "total_paid_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 15400
+                                                },
+                                                "today_revenue": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1200
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
-                                },
-                                "example": {
-                                    "status": "success",
-                                    "message": "Subscriptions retrieved successfully",
-                                    "data": [
-                                        {
-                                            "id": 1,
-                                            "subscription_number": "SUB-2026-001",
-                                            "member_id": 12,
-                                            "plan_id": 1,
-                                            "status": "active",
-                                            "start_date": "2026-07-01",
-                                            "end_date": "2026-08-01",
-                                            "total_amount": 150,
-                                            "paid_amount": 150,
-                                            "remaining_amount": 0
-                                        }
-                                    ]
                                 }
                             }
                         }
