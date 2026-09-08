@@ -124,6 +124,47 @@ class SubscriptionPlan extends Model
         });
     }
 
+    public function scopeForActivityType($query, $activityType)
+    {
+        if ($activityType === null || $activityType === '') {
+            return $query;
+        }
+
+        return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) use ($activityType) {
+            if (is_array($activityType)) {
+                $subQuery->whereIn('activity_type_id', $activityType);
+            } elseif (is_numeric($activityType)) {
+                $subQuery->where('activity_type_id', (int) $activityType);
+            } elseif (is_string($activityType) && str_contains($activityType, ',')) {
+                $ids = array_filter(array_map('trim', explode(',', $activityType)), 'is_numeric');
+                $subQuery->whereIn('activity_type_id', $ids);
+            } else {
+                $subQuery->whereHas('activityType', function ($typeQuery) use ($activityType) {
+                    $typeQuery->where('name', 'like', "%{$activityType}%")
+                              ->orWhere('id', $activityType);
+                });
+            }
+        });
+    }
+
+    public function scopeForActivity($query, $activity)
+    {
+        if ($activity === null || $activity === '') {
+            return $query;
+        }
+
+        return $query->whereHas('planActivities.staffActivity', function ($subQuery) use ($activity) {
+            if (is_array($activity)) {
+                $subQuery->whereIn('activity_id', $activity);
+            } elseif (is_numeric($activity)) {
+                $subQuery->where('activity_id', (int) $activity);
+            } elseif (is_string($activity) && str_contains($activity, ',')) {
+                $ids = array_filter(array_map('trim', explode(',', $activity)), 'is_numeric');
+                $subQuery->whereIn('activity_id', $ids);
+            }
+        });
+    }
+
     /**
      * Determine if this subscription plan includes an equipment or unlimited activity (e.g. أجهزة عام / أجهزة خاص).
      */

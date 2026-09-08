@@ -22,6 +22,23 @@ class SubscriptionPlanRegistrationResource extends JsonResource
             'gender_restriction' => $this->gender_restriction,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,
             'activities' => SubscriptionPlanActivityResource::collection($this->whenLoaded('planActivities')),
+            'activity_types' => $this->whenLoaded('planActivities', function () {
+                return $this->planActivities
+                    ->map(function ($planAct) {
+                        $activity = $planAct->staffActivity?->activity;
+                        $type = $activity?->activityType;
+                        if (!$type) {
+                            return null;
+                        }
+                        return [
+                            'id' => $type->id,
+                            'name' => $type->name,
+                        ];
+                    })
+                    ->filter()
+                    ->unique('id')
+                    ->values();
+            }),
             'session_templates' => $this->whenLoaded('sessionTemplates'),
         ];
     }

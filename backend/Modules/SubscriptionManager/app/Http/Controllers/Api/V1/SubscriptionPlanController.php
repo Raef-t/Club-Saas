@@ -29,6 +29,8 @@ class SubscriptionPlanController extends BaseController
     )]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity_type_id', in: 'query', required: false, description: 'تصفية حسب نوع النشاط الرياضي (معرف نوع النشاط أو اسمه أو قائمة معرفات)', schema: new OA\Schema(type: 'string', example: '1'))]
+    #[OA\Parameter(name: 'activity_id', in: 'query', required: false, description: 'تصفية حسب النشاط الرياضي المحدد (معرف النشاط أو قائمة معرفات)', schema: new OA\Schema(type: 'string', example: '1'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Parameter(name: 'available', in: 'query', required: false, description: 'تصفية الخطط المتاحة للتسجيل فقط (true/false)', schema: new OA\Schema(type: 'boolean', example: true))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
@@ -87,7 +89,12 @@ class SubscriptionPlanController extends BaseController
             'playerSubscriptions as active_subscribers_count' => function ($q) {
                 $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
             }
-        ])->with(['planActivities.staffActivity.activity', 'sessionTemplates', 'activeSuspension.coach.person']);
+        ])->with([
+            'planActivities.staffActivity.activity.activityType',
+            'planActivities.staffActivity.staff.person',
+            'sessionTemplates',
+            'activeSuspension.coach.person'
+        ]);
         
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -130,6 +137,18 @@ class SubscriptionPlanController extends BaseController
                 $query->available();
             }
         }
+
+        // Filter by activity type (id, comma-separated ids, name, or array)
+        $activityType = $request->input('activity_type_id') ?? $request->input('activity_type') ?? $request->input('activity_type_ids');
+        if ($activityType !== null && $activityType !== '') {
+            $query->forActivityType($activityType);
+        }
+
+        // Filter by specific activity (id, comma-separated ids, or array)
+        $activity = $request->input('activity_id') ?? $request->input('activity_ids');
+        if ($activity !== null && $activity !== '') {
+            $query->forActivity($activity);
+        }
         
         if ($request->has('per_page') && $request->input('per_page') !== 'all') {
             $perPage = min(max((int) $request->input('per_page'), 1), 100);
@@ -152,6 +171,8 @@ class SubscriptionPlanController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'activity_type_id', in: 'query', required: false, description: 'تصفية حسب نوع النشاط الرياضي', schema: new OA\Schema(type: 'string', example: '1'))]
+    #[OA\Parameter(name: 'activity_id', in: 'query', required: false, description: 'تصفية حسب النشاط الرياضي المحدد', schema: new OA\Schema(type: 'string', example: '1'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Response(
         response: 200,
@@ -200,7 +221,11 @@ class SubscriptionPlanController extends BaseController
                     $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
                 }
             ])
-            ->with(['planActivities.staffActivity.activity', 'sessionTemplates']);
+            ->with([
+                'planActivities.staffActivity.activity.activityType',
+                'planActivities.staffActivity.staff.person',
+                'sessionTemplates'
+            ]);
             
         if ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
@@ -208,6 +233,18 @@ class SubscriptionPlanController extends BaseController
 
         if ($request->has('gender')) {
             $query->whereIn('gender_restriction', [$request->gender, 'mixed']);
+        }
+
+        // Filter by activity type (id, comma-separated ids, name, or array)
+        $activityType = $request->input('activity_type_id') ?? $request->input('activity_type') ?? $request->input('activity_type_ids');
+        if ($activityType !== null && $activityType !== '') {
+            $query->forActivityType($activityType);
+        }
+
+        // Filter by specific activity (id, comma-separated ids, or array)
+        $activity = $request->input('activity_id') ?? $request->input('activity_ids');
+        if ($activity !== null && $activity !== '') {
+            $query->forActivity($activity);
         }
 
         $plans = $query->get();
