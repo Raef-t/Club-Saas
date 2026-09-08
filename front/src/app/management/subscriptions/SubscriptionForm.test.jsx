@@ -5,6 +5,43 @@ import { SubscriptionCreateForm, SubscriptionEditForm } from "./SubscriptionForm
 afterEach(cleanup);
 
 describe("subscription create validation", () => {
+  it("filters plans by activity type and clears the selected plan", () => {
+    const onActivityTypeChange = vi.fn();
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
+        activityTypes={[{ id: 7, name: "أنشطة لياقة" }]}
+        selectedActivityTypeId="all"
+        onActivityTypeChange={onActivityTypeChange}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اشتراك شهري");
+    fireEvent.click(screen.getByRole("button", { name: "نوع النشاط" }));
+    fireEvent.click(screen.getByRole("option", { name: "أنشطة لياقة" }));
+
+    expect(onActivityTypeChange).toHaveBeenCalledWith("7");
+    expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اختر الخطة");
+  });
+
+  it("shows a dedicated empty state when an activity type has no available plans", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[]}
+        activityTypes={[{ id: 7, name: "أنشطة لياقة" }]}
+        selectedActivityTypeId="7"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("لا توجد باقات اشتراك متاحة لنوع النشاط المحدد")).toBeInTheDocument();
+  });
+
   it("searches for a player by name without displaying membership numbers", () => {
     render(
       <SubscriptionCreateForm

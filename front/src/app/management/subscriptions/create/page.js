@@ -8,9 +8,14 @@ export const metadata = {
 
 export default async function CreateSubscriptionPage() {
   const { token } = await verifyPageAccess("/management/subscriptions/create");
-  const [members, plans, activities, coaches] = await Promise.all([
+  const [members, plans, activityTypes, activities, coaches] = await Promise.all([
     safeRequestBackend("members", { token, params: { per_page: "all" } }, []),
-    safeRequestBackend("subscription-plans", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend(
+      "subscription-plans",
+      { token, params: { available: true, per_page: 15, page: 1 } },
+      [],
+    ),
+    safeRequestBackend("activity-types", { token, params: { per_page: "all" } }, []),
     safeRequestBackend("activities", { token, params: { per_page: "all" } }, []),
     safeRequestBackend("coaches", { token, params: { per_page: "all" } }, []),
   ]);
@@ -20,6 +25,7 @@ export default async function CreateSubscriptionPage() {
       initialData={{
         members,
         plans,
+        activityTypes,
         activities,
         coaches,
       }}

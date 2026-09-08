@@ -15,13 +15,13 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import { FilterIcon, SearchIcon, PlusIcon } from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
-import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
+import { SUBSCRIPTION_PERIOD_OPTIONS, SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { formatSubscriptionMoney, getSubscriptionCreatorName } from "./subscriptionUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 const TABLE_GRID_COLUMNS =
-  "minmax(150px,1.35fr) minmax(130px,1.15fr) minmax(120px,1fr) minmax(80px,.65fr) minmax(150px,1.2fr) minmax(105px,.9fr) 76px 80px";
+  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.7fr) 72px";
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -40,6 +40,8 @@ export default function SubscriptionsClient({ initialData }) {
     setSearch,
     status,
     setStatus,
+    period,
+    setPeriod,
     branchFilter,
     setBranchFilter,
     selectedSubscriptionId,
@@ -82,6 +84,13 @@ export default function SubscriptionsClient({ initialData }) {
 
   const subscriptionColumns = useMemo(
     () => [
+      {
+        key: "row_number",
+        label: "#",
+        align: "center",
+        type: "rowNumber",
+        sortable: false,
+      },
       {
         key: "member",
         label: "العضو",
@@ -142,12 +151,12 @@ export default function SubscriptionsClient({ initialData }) {
         ),
       },
       {
-        key: "remaining_amount",
-        label: "المتبقي",
+        key: "paid_amount",
+        label: "المبلغ المدفوع",
         align: "center",
-        sortValue: (subscription) => Number(subscription.remaining_amount || 0),
+        sortValue: (subscription) => Number(subscription.paid_amount || 0),
         render: (value) => (
-          <span className="font-medium text-app-red">{formatSubscriptionMoney(value)}</span>
+          <span className="font-medium text-app-green">{formatSubscriptionMoney(value)}</span>
         ),
       },
       {
@@ -161,11 +170,17 @@ export default function SubscriptionsClient({ initialData }) {
         key: "dates",
         label: "تاريخ الصلاحية",
         align: "center",
-        sortValue: (subscription) => subscription.start_date || subscription.end_date || "",
+        sortValue: (subscription) =>
+          subscription.created_at || subscription.start_date || subscription.end_date || "",
         render: (_, subscription) => (
-          <div className="text-center text-[11px]">
+          <div className="flex flex-col items-center gap-1 text-center text-[11px]">
             <p className="text-app-muted-light">{formatDate(subscription.start_date)}</p>
-            <p className="mt-0.5 text-app-yellow">{formatDate(subscription.end_date)}</p>
+            <p className="text-app-yellow">{formatDate(subscription.end_date)}</p>
+            {subscription.is_expiring_soon && (
+              <span className="status-warning inline-flex rounded-md px-2 py-0.5 text-[10px] font-medium">
+                تنتهي قريباً
+              </span>
+            )}
           </div>
         ),
       },
@@ -236,14 +251,13 @@ export default function SubscriptionsClient({ initialData }) {
         title="قائمة اشتراكات الأعضاء"
         columns={subscriptionColumns}
         rows={filteredSubscriptions}
-        minWidth="1080px"
+        minWidth="0"
         tableColumns={TABLE_GRID_COLUMNS}
-        desktopScrollable
+        desktopScrollable={false}
         showAdd={false}
         showSearch={false}
         showFilter={false}
         showExport={false}
-        defaultSortColumn="member"
         isLoading={isLoading}
         loadingRows={5}
         emptyMessage={
@@ -279,7 +293,7 @@ export default function SubscriptionsClient({ initialData }) {
                 className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="بحث باسم العضو أو رقم العضوية"
+                placeholder="بحث بالاسم، رقم العضو، الهاتف أو البريد"
                 type="search"
               />
             </label>
@@ -290,6 +304,14 @@ export default function SubscriptionsClient({ initialData }) {
               value={status}
               options={SUBSCRIPTION_STATUS_OPTIONS}
               onChange={setStatus}
+            />
+
+            <Dropdown
+              className="min-w-44 bg-app-card-soft text-white"
+              icon={FilterIcon}
+              value={period}
+              options={SUBSCRIPTION_PERIOD_OPTIONS}
+              onChange={setPeriod}
             />
           </div>
         }

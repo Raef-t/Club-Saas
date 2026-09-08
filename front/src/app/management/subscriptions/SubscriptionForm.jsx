@@ -22,6 +22,13 @@ import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 export function SubscriptionCreateForm({
   members = [],
   plans = [],
+  activityTypes = [],
+  selectedActivityTypeId = "all",
+  onActivityTypeChange,
+  isPlansLoading = false,
+  plansErrorMessage = "",
+  isActivityTypesLoading = false,
+  activityTypesErrorMessage = "",
   activities = [],
   coaches = [],
   onSubmit,
@@ -108,6 +115,21 @@ export function SubscriptionCreateForm({
     }));
   }
 
+  function handleActivityTypeChange(activityTypeId) {
+    setForm((current) => ({
+      ...current,
+      plan_id: "",
+      paid_amount: "0",
+      receipt_number: "",
+      coach_receipt_number: "",
+      branch_receipt_number: "",
+      start_date: isDailyEntryPlan ? "" : current.start_date,
+      end_date: isDailyEntryPlan ? "" : current.end_date,
+    }));
+    setErrors((current) => ({ ...current, plan_id: null, paid_amount: null }));
+    onActivityTypeChange?.(activityTypeId);
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
 
@@ -185,19 +207,68 @@ export function SubscriptionCreateForm({
       )}
 
       <label className="block text-right text-sm text-app-muted-light">
-        خطة الاشتراك
+        نوع النشاط
         <Dropdown
           className="mt-2 text-white"
           buttonClassName="bg-app-card-soft h-11"
-          value={form.plan_id}
-          onChange={handlePlanChange}
-          options={plans.map((p) => ({
-            value: String(p.id),
-            label: formatLocalizedName(p.name) || p.name || "",
-          }))}
-          placeholder="اختر الخطة"
-          error={errors && errors.plan_id}
+          value={selectedActivityTypeId}
+          onChange={handleActivityTypeChange}
+          options={[
+            { value: "all", label: "الكل" },
+            ...activityTypes.map((activityType) => ({
+              value: String(activityType.id),
+              label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+            })),
+          ]}
+          placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
+          disabled={isActivityTypesLoading}
         />
+        {activityTypesErrorMessage && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {activityTypesErrorMessage}
+          </span>
+        )}
+      </label>
+
+      <label className="block text-right text-sm text-app-muted-light">
+        خطة الاشتراك
+        {isPlansLoading ? (
+          <div
+            className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-app-line bg-app-card-soft text-xs text-app-muted-light"
+            role="status"
+          >
+            <span className="size-4 animate-spin rounded-full border-2 border-app-muted border-t-app-yellow" />
+            جاري تحميل باقات الاشتراك...
+          </div>
+        ) : (
+          <Dropdown
+            className="mt-2 text-white"
+            buttonClassName="bg-app-card-soft h-11"
+            value={form.plan_id}
+            onChange={handlePlanChange}
+            options={plans.map((p) => ({
+              value: String(p.id),
+              label: formatLocalizedName(p.name) || p.name || "",
+            }))}
+            placeholder="اختر الخطة"
+            disabled={plans.length === 0 || Boolean(plansErrorMessage)}
+            error={errors && errors.plan_id}
+          />
+        )}
+        {plansErrorMessage ? (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {plansErrorMessage}
+          </span>
+        ) : (
+          !isPlansLoading &&
+          plans.length === 0 && (
+            <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
+              {selectedActivityTypeId === "all"
+                ? "لا توجد باقات اشتراك متاحة حالياً"
+                : "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"}
+            </span>
+          )
+        )}
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">

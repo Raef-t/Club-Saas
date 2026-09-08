@@ -7,6 +7,59 @@ describe("playerSubscriptions API", () => {
     vi.unstubAllGlobals();
   });
 
+  it("sends search, status, period, branch, and pagination filters", async () => {
+    let capturedRequest;
+    const NativeRequest = globalThis.Request;
+    vi.stubGlobal(
+      "Request",
+      class extends NativeRequest {
+        constructor(input, init) {
+          super(typeof input === "string" ? new URL(input, "http://localhost") : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input, init) => {
+        capturedRequest = input instanceof Request ? input : new Request(input, init);
+        return new Response(JSON.stringify({ data: [], stats: {} }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const store = configureStore({
+      reducer: { [playerSubscriptionsApi.reducerPath]: playerSubscriptionsApi.reducer },
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(playerSubscriptionsApi.middleware),
+    });
+
+    await store
+      .dispatch(
+        playerSubscriptionsApi.endpoints.getPlayerSubscriptions.initiate({
+          search: "أحمد",
+          status: "active",
+          period: "today",
+          branch_id: 1,
+          page: 2,
+          per_page: 15,
+        }),
+      )
+      .unwrap();
+
+    const url = new URL(capturedRequest.url);
+    expect(url.pathname).toBe("/api/backend/player-subscriptions");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      search: "أحمد",
+      status: "active",
+      period: "today",
+      branch_id: "1",
+      page: "2",
+      per_page: "15",
+    });
+  });
+
   it("sends delete request with is_refunded query param and body when provided", async () => {
     let capturedRequest;
     let capturedBody;
@@ -29,10 +82,13 @@ describe("playerSubscriptions API", () => {
         } else if (init?.body) {
           capturedBody = typeof init.body === "string" ? JSON.parse(init.body) : init.body;
         }
-        return new Response(JSON.stringify({ status: "success", message: "Deleted successfully" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ status: "success", message: "Deleted successfully" }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
       }),
     );
 
