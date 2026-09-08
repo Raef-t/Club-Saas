@@ -38,7 +38,15 @@ class ActivityType extends Model
     protected static function booted()
     {
         static::deleted(function ($activityType) {
-            $activityType->activities()->delete();
+            $activityType->activities->each(function ($activity) {
+                $activity->delete();
+            });
+        });
+
+        static::restored(function ($activityType) {
+            $activityType->activities()->onlyTrashed()->get()->each(function ($activity) {
+                $activity->restore();
+            });
         });
     }
 

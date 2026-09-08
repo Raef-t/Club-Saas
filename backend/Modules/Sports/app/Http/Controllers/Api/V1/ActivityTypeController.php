@@ -266,12 +266,11 @@ class ActivityTypeController extends BaseController
     {
         // 1. Check for active subscriptions referencing any activity of this type
         $activeSubsCount = 0;
-        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
-            $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::whereHas('activity', function ($query) use ($activity_type) {
-                $query->where('activity_type_id', $activity_type->id);
-            })->whereHas('subscription', function ($query) {
-                $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value);
-            })->count();
+        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscription::class)) {
+            $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                ->whereHas('plan', function ($query) use ($activity_type) {
+                    $query->forActivityType($activity_type->id);
+                })->count();
         }
 
         // 2. Validate confirmation string
@@ -291,8 +290,10 @@ class ActivityTypeController extends BaseController
             );
         }
 
-        $activity_type->delete();
-        return $this->successResponse(null, __('Activity type deleted successfully'));
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($activity_type) {
+            $activity_type->delete();
+            return $this->successResponse(null, __('Activity type deleted successfully'));
+        });
     }
 
     #[OA\Patch(

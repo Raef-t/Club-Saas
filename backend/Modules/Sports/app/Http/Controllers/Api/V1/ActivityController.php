@@ -291,10 +291,10 @@ class ActivityController extends BaseController
 
         // 1. Check for active subscriptions referencing this activity
         $activeSubsCount = 0;
-        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
-            $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)
-                ->whereHas('subscription', function ($query) {
-                    $query->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value);
+        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscription::class)) {
+            $activeSubsCount = \Modules\SubscriptionManager\Models\PlayerSubscription::where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                ->whereHas('plan', function ($query) use ($id) {
+                    $query->forActivity($id);
                 })->count();
         }
 
@@ -322,8 +322,8 @@ class ActivityController extends BaseController
             // 4. Remove staff commission rules for this activity
             \Illuminate\Support\Facades\DB::table('staff_commission_rules')->where('activity_id', $id)->delete();
 
-            // 5. Soft delete associated expired subscription items
-            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+            // 5. Soft delete associated expired subscription items if column exists
+            if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class) && \Illuminate\Support\Facades\Schema::hasColumn('player_subscription_items', 'activity_id')) {
                 \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::where('activity_id', $id)->delete();
             }
 
@@ -407,7 +407,7 @@ class ActivityController extends BaseController
             \Modules\Sports\Models\StaffCommissionRule::onlyTrashed()->where('activity_id', $id)->restore();
         }
 
-        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class)) {
+        if (class_exists(\Modules\SubscriptionManager\Models\PlayerSubscriptionItem::class) && \Illuminate\Support\Facades\Schema::hasColumn('player_subscription_items', 'activity_id')) {
             \Modules\SubscriptionManager\Models\PlayerSubscriptionItem::onlyTrashed()->where('activity_id', $id)->restore();
         }
 
