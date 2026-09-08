@@ -27,6 +27,7 @@ class PlayerSubscriptionResource extends JsonResource
             'end_date' => $this->end_date ? (\Illuminate\Support\Carbon::parse($this->end_date)->format('Y-m-d')) : null,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus ? $this->status->value : $this->status,
             'status_label' => $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus ? $this->status->label() : $this->status,
+            'is_expiring_soon' => method_exists($this->resource, 'isExpiringSoon') ? $this->isExpiringSoon() : false,
             'total_amount' => $this->total_amount,
             'paid_amount' => $this->paid_amount,
             'remaining_amount' => $this->remaining_amount,

@@ -28,14 +28,20 @@ class PlayerSubscriptionController extends BaseController
         $this->subscriptionService = $subscriptionService;
     }
 
+
     #[OA\Get(
         path: '/v1/player-subscriptions',
         summary: '👥 عرض اشتراكات الأعضاء',
-        description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي. يمكن التصفية حسب الفرع.',
+        description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي مع الإحصائيات. يدعم التصفية حسب الفرع، والبحث بالاسم أو رقم العضو، والفلترة حسب الحالة (فعال، تنتهي قريباً، منتهي، مجمد، تم إنهاؤه من الإدارة) وفترة التسجيل (اليوم، بالشهر، الكل).',
         tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم، رقم العضو، أو رقم الهاتف', schema: new OA\Schema(type: 'string', example: 'محمد'))]
+    #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب الحالة: active (فعال), expiring_soon (تنتهي قريباً), finished (منتهي), frozen (مجمد), terminated (تم إنهاؤه من الإدارة), all (الكل)', schema: new OA\Schema(type: 'string', enum: ['active', 'expiring_soon', 'finished', 'frozen', 'terminated', 'all'], example: 'active'))]
+    #[OA\Parameter(name: 'period', in: 'query', required: false, description: 'تصفية حسب فترة التسجيل: today (تسجلت اليوم), monthly (الشهر الحالي), all (الكل)', schema: new OA\Schema(type: 'string', enum: ['today', 'monthly', 'all'], example: 'today'))]
+    #[OA\Parameter(name: 'month', in: 'query', required: false, description: 'تصفية حسب شهر التسجيل (1-12 أو YYYY-MM)', schema: new OA\Schema(type: 'string', example: '2026-09'))]
+    #[OA\Parameter(name: 'year', in: 'query', required: false, description: 'تصفية حسب سنة التسجيل', schema: new OA\Schema(type: 'integer', example: 2026))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
@@ -49,34 +55,44 @@ class PlayerSubscriptionController extends BaseController
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(type: 'object')
-                )
-            ],
-            example: [
-                'status' => 'success',
-                'message' => 'Subscriptions retrieved successfully',
-                'data' => [
-                    [
-                        'id' => 1,
-                        'subscription_number' => 'SUB-2026-001',
-                        'member_id' => 12,
-                        'plan_id' => 1,
-                        'status' => 'active',
-                        'start_date' => '2026-07-01',
-                        'end_date' => '2026-08-01',
-                        'total_amount' => 150.00,
-                        'paid_amount' => 150.00,
-                        'remaining_amount' => 0.00
+                ),
+                new OA\Property(
+                    property: 'stats',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'active_subscriptions', type: 'integer', example: 45),
+                        new OA\Property(property: 'total_subscriptions', type: 'integer', example: 120),
+                        new OA\Property(property: 'total_paid_amount', type: 'number', format: 'float', example: 15400.00),
+                        new OA\Property(property: 'today_revenue', type: 'number', format: 'float', example: 1200.00),
                     ]
-                ]
+                )
             ]
         )
     )]
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(Request $request)
     {
-        $subscriptions = $this->subscriptionService->getAllSubscriptions($request->all());
+        $filters = $request->all();
+        $subscriptions = $this->subscriptionService->getAllSubscriptions($filters);
+        $stats = $this->subscriptionService->getSubscriptionStatistics($filters);
+
+        if ($subscriptions instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+            $resourceCollection = PlayerSubscriptionResource::collection($subscriptions);
+            $responseData = $resourceCollection->response()->getData(true);
+            $responseData['stats'] = $stats;
+            return $this->successResponse(
+                $responseData,
+                __('Subscriptions retrieved successfully')
+            );
+        }
+
+        $resourceCollection = PlayerSubscriptionResource::collection($subscriptions);
+        $responseData = [
+            'data'  => $resourceCollection->resolve(),
+            'stats' => $stats,
+        ];
         return $this->successResponse(
-            PlayerSubscriptionResource::collection($subscriptions),
+            $responseData,
             __('Subscriptions retrieved successfully')
         );
     }
