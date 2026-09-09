@@ -5,6 +5,7 @@ namespace Modules\SubscriptionManager\Services;
 use Modules\SubscriptionManager\Repositories\SubscriptionPlanRepositoryInterface;
 use Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface;
 use Modules\SubscriptionManager\Models\PlayerSubscription;
+use Modules\SubscriptionManager\Models\Payment;
 use Modules\Core\Contracts\MemberSharedServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -121,6 +122,7 @@ class SubscriptionService
             'items',
             'payments',
             'invoices.payments',
+            'revenueSplit',
         ]);
 
         if (!empty($filters['member_id'])) {
@@ -375,16 +377,31 @@ class SubscriptionService
                 if ($branchId) {
                     $inv->where('branch_id', $branchId);
                 }
-            });
-        $todayPayments = (float) $todayPaymentsQuery->sum('amount');
+            })
+            ->with([
+                'invoice.subscription.revenueSplit',
+                'invoice.subscription.plan.planActivities.staffActivity.activity',
+            ]);
+
+        $todayRevenue = 0.0;
+        foreach ($todayPaymentsQuery->get() as $payment) {
+            $todayRevenue += $this->calculatePaymentClubAmount($payment);
+        }
 
         // Capture subscriptions registered today with paid_amount that may not have separate payment rows
-        $directSubsTodayPaid = (float) (clone $baseQuery)
+        $directSubsTodayQuery = (clone $baseQuery)
             ->whereDate('created_at', $today)
             ->whereDoesntHave('payments')
-            ->sum('paid_amount');
+            ->with([
+                'revenueSplit',
+                'plan.planActivities.staffActivity.activity',
+            ]);
 
-        $todayRevenue = round($todayPayments + $directSubsTodayPaid, 2);
+        foreach ($directSubsTodayQuery->get() as $directSub) {
+            $todayRevenue += $this->calculateSubscriptionDirectClubPaid($directSub);
+        }
+
+        $todayRevenue = round($todayRevenue, 2);
 
         return [
             'active_subscriptions' => $activeCount,
@@ -392,6 +409,217 @@ class SubscriptionService
             'total_paid_amount'    => $totalPaidAmount,
             'today_revenue'        => $todayRevenue,
         ];
+    }
+
+    /**
+     * Get revenue split configuration and snapshot amounts for a subscription.
+     *
+     * @param PlayerSubscription $subscription
+     * @return array
+     */
+    public function getSubscriptionRevenueSplitData(PlayerSubscription $subscription): array
+    {
+        // 1. If immutable frozen snapshot exists, use it as the source of truth
+        $split = $subscription->relationLoaded('revenueSplit')
+            ? $subscription->revenueSplit
+            : $subscription->revenueSplit()->first();
+
+        if ($split) {
+            return [
+                'has_split'             => true,
+                'club_percentage'       => (float) $split->club_percentage,
+                'coach_percentage'      => (float) $split->coach_percentage,
+                'club_amount'           => (float) $split->club_amount,
+                'coach_amount'          => (float) $split->coach_amount,
+                'total_amount'          => (float) $split->total_amount,
+                'coach_receipt_number'  => $split->coach_receipt_number ?? $subscription->coach_receipt_number,
+                'branch_receipt_number' => $split->branch_receipt_number ?? $subscription->branch_receipt_number,
+            ];
+        }
+
+        // 2. Otherwise, check if the plan has private equipment / explicit coach_price & branch_price
+        $plan = $subscription->relationLoaded('plan')
+            ? $subscription->plan
+            : $subscription->plan()->with(['planActivities.staffActivity.activity', 'planActivities.staffActivity.staff'])->first();
+
+        if (!$plan) {
+            return [
+                'has_split'             => false,
+                'club_percentage'       => 100.0,
+                'coach_percentage'      => 0.0,
+                'club_amount'           => (float) $subscription->total_amount,
+                'coach_amount'          => 0.0,
+                'total_amount'          => (float) $subscription->total_amount,
+                'coach_receipt_number'  => $subscription->coach_receipt_number,
+                'branch_receipt_number' => $subscription->branch_receipt_number,
+            ];
+        }
+
+        $isPrivateEquipment = $plan->isPrivateEquipmentPlan();
+        $hasExplicitSplit = $plan->coach_price !== null && $plan->branch_price !== null;
+        $hasCoachPrice = $plan->coach_price !== null && (float) $plan->coach_price > 0;
+
+        if (!$isPrivateEquipment && !$hasExplicitSplit && !$hasCoachPrice) {
+            return [
+                'has_split'             => false,
+                'club_percentage'       => 100.0,
+                'coach_percentage'      => 0.0,
+                'club_amount'           => (float) $subscription->total_amount,
+                'coach_amount'          => 0.0,
+                'total_amount'          => (float) $subscription->total_amount,
+                'coach_receipt_number'  => $subscription->coach_receipt_number,
+                'branch_receipt_number' => $subscription->branch_receipt_number,
+            ];
+        }
+
+        // Calculate split dynamically if revenueSplit record was not created
+        $firstActivity = $plan->relationLoaded('planActivities')
+            ? $plan->planActivities->first()
+            : $plan->planActivities()->with('staffActivity')->first();
+
+        $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
+        $branchId = $plan->branch_id ?? $subscription->member?->branch_id;
+        $monthsCount = max(1, (int) ($subscription->months_count ?? 1));
+
+        $coachCommissionRate = 100.00;
+        $clubCommissionRate  = 0.00;
+
+        if ($coachId) {
+            $coachContract = \Modules\StaffManager\Models\StaffContract::where('staff_id', $coachId)
+                ->where('is_active', true)
+                ->first();
+
+            if ($coachContract && $coachContract->private_commission_rate !== null && (float) $coachContract->private_commission_rate > 0) {
+                $coachCommissionRate = (float) $coachContract->private_commission_rate;
+                $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
+            } elseif ($coachContract && $coachContract->commission_rate !== null && (float) $coachContract->commission_rate > 0) {
+                $coachCommissionRate = (float) $coachContract->commission_rate;
+                $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
+            } else {
+                $branchSetting = $branchId ? \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first() : null;
+                if ($branchSetting && $branchSetting->private_subscription_commission !== null && (float) $branchSetting->private_subscription_commission > 0) {
+                    $clubCommissionRate  = (float) $branchSetting->private_subscription_commission;
+                    $coachCommissionRate = max(0.00, 100.00 - $clubCommissionRate);
+                } elseif ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
+                    $coachCommissionRate = (float) ($branchSetting->default_coach_commission_percentage ?? 0);
+                    $clubCommissionRate  = (float) ($branchSetting->default_club_commission_percentage ?? max(0.00, 100.00 - $coachCommissionRate));
+                } else {
+                    $coachCommissionRate = 100.00;
+                    $clubCommissionRate  = 0.00;
+                }
+            }
+        }
+
+        if ($hasExplicitSplit) {
+            $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
+            $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+            $coachAmount = round($totalCoachPrice * ($coachCommissionRate / 100), 2);
+            $clubCutFromCoach = round($totalCoachPrice - $coachAmount, 2);
+            $clubAmount  = round($totalBranchPrice + $clubCutFromCoach, 2);
+            $totalAmount = round($totalCoachPrice + $totalBranchPrice, 2);
+        } else {
+            $totalAmount = (float) ($subscription->total_amount ?: round((float) $plan->base_price * $monthsCount, 2));
+            $coachAmount = round($totalAmount * ($coachCommissionRate / 100), 2);
+            $clubAmount  = round($totalAmount - $coachAmount, 2);
+        }
+
+        return [
+            'has_split'             => true,
+            'club_percentage'       => $clubCommissionRate,
+            'coach_percentage'      => $coachCommissionRate,
+            'club_amount'           => $clubAmount,
+            'coach_amount'          => $coachAmount,
+            'total_amount'          => $totalAmount,
+            'coach_receipt_number'  => $subscription->coach_receipt_number,
+            'branch_receipt_number' => $subscription->branch_receipt_number,
+        ];
+    }
+
+    /**
+     * Calculate the net club revenue share from a given payment row.
+     *
+     * @param Payment $payment
+     * @return float
+     */
+    public function calculatePaymentClubAmount(Payment $payment): float
+    {
+        $amount = (float) $payment->amount;
+        if ($amount <= 0) {
+            return 0.0;
+        }
+
+        $subscription = $payment->invoice?->subscription;
+        if (!$subscription) {
+            return $amount;
+        }
+
+        $splitData = $this->getSubscriptionRevenueSplitData($subscription);
+        if (!$splitData['has_split']) {
+            return $amount;
+        }
+
+        // Check if this payment is specifically for coach
+        $isCoachPayment = ($payment->reason === 'دفعة اشتراك المدرب')
+            || (!empty($splitData['coach_receipt_number']) && $payment->receipt_number === $splitData['coach_receipt_number']);
+
+        // Check if this payment is specifically for branch
+        $isBranchPayment = ($payment->reason === 'دفعة اشتراك النادي')
+            || (!empty($splitData['branch_receipt_number']) && $payment->receipt_number === $splitData['branch_receipt_number']);
+
+        if ($isCoachPayment) {
+            // Coach payment: only the club's percentage from coach price enters today's revenue.
+            // When club percentage is 0%, club gets 0 (coach_price does not enter today's revenue).
+            $clubPct = max(0.0, min(100.0, (float) $splitData['club_percentage']));
+            if ($clubPct <= 0) {
+                return 0.0;
+            }
+            return round($amount * ($clubPct / 100), 2);
+        }
+
+        if ($isBranchPayment) {
+            // Branch payment belongs 100% to the club
+            return $amount;
+        }
+
+        // Single combined / untagged payment covering the subscription:
+        // Pro-rate according to (club_amount / total_amount)
+        $totalAmount = (float) $splitData['total_amount'];
+        $clubAmount  = (float) $splitData['club_amount'];
+        if ($totalAmount <= 0) {
+            return 0.0;
+        }
+
+        $clubRatio = max(0.0, min(1.0, $clubAmount / $totalAmount));
+        return round($amount * $clubRatio, 2);
+    }
+
+    /**
+     * Calculate the net club revenue share from a direct subscription registered today
+     * that does not have separate payment rows.
+     *
+     * @param PlayerSubscription $subscription
+     * @return float
+     */
+    public function calculateSubscriptionDirectClubPaid(PlayerSubscription $subscription): float
+    {
+        $paidAmount = (float) $subscription->paid_amount;
+        if ($paidAmount <= 0) {
+            return 0.0;
+        }
+
+        $splitData = $this->getSubscriptionRevenueSplitData($subscription);
+        if (!$splitData['has_split']) {
+            return $paidAmount;
+        }
+
+        $totalAmount = (float) $splitData['total_amount'];
+        $clubAmount  = (float) $splitData['club_amount'];
+        if ($totalAmount <= 0) {
+            return 0.0;
+        }
+
+        $clubRatio = max(0.0, min(1.0, $clubAmount / $totalAmount));
+        return round($paidAmount * $clubRatio, 2);
     }
 
     /**
