@@ -57,6 +57,49 @@ class MemberService
             });
         }
 
+        // 4. Search by member number, full name, username, phone number, national ID, email
+        if (!empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $query->where(function ($q) use ($search) {
+                $q->where('member_number', 'like', "%{$search}%")
+                  ->orWhereHas('person', function ($pq) use ($search) {
+                      $pq->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('national_id', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($uq) use ($search) {
+                            $uq->where('username', 'like', "%{$search}%")
+                              ->orWhere('custom_username', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('contacts', function ($cq) use ($search) {
+                            $cq->where('phone_number', 'like', "%{$search}%");
+                        });
+                  });
+            });
+        }
+
+        // 5. Direct filter by member number (member_number or number)
+        $numberFilter = $filters['member_number'] ?? $filters['number'] ?? null;
+        if (!empty($numberFilter)) {
+            $num = trim($numberFilter);
+            $query->where('member_number', 'like', "%{$num}%");
+        }
+
+        // 6. Direct filter by member name (name, full_name, or member_name)
+        $nameFilter = $filters['name'] ?? $filters['full_name'] ?? $filters['member_name'] ?? null;
+        if (!empty($nameFilter)) {
+            $name = trim($nameFilter);
+            $query->whereHas('person', fn($pq) => $pq->where('full_name', 'like', "%{$name}%"));
+        }
+
+        // 7. Direct filter by username
+        if (!empty($filters['username'])) {
+            $username = trim($filters['username']);
+            $query->whereHas('person.user', function ($uq) use ($username) {
+                $uq->where('username', 'like', "%{$username}%")
+                  ->orWhere('custom_username', 'like', "%{$username}%");
+            });
+        }
+
         $query->with([
             'person.contacts',
             'person.user',

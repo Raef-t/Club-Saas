@@ -54,7 +54,14 @@ class RenewalReportService
                 $mq->where('member_number', 'like', "%{$search}%")
                    ->orWhereHas('person', function ($pq) use ($search) {
                        $pq->where('full_name', 'like', "%{$search}%")
-                          ->orWhere('mobile1', 'like', "%{$search}%");
+                          ->orWhere('mobile1', 'like', "%{$search}%")
+                          ->orWhereHas('user', function ($uq) use ($search) {
+                              $uq->where('username', 'like', "%{$search}%")
+                                ->orWhere('custom_username', 'like', "%{$search}%");
+                          })
+                          ->orWhereHas('contacts', function ($cq) use ($search) {
+                              $cq->where('phone_number', 'like', "%{$search}%");
+                          });
                    });
             });
         }

@@ -6404,6 +6404,36 @@
                         }
                     },
                     {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث شامل بالاسم أو اسم المستخدم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث بالاسم الشخصي",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "بحث باسم المستخدم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ahmed123"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
@@ -15498,6 +15528,46 @@
                         }
                     },
                     {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث بالاسم، رقم العضو، اسم المستخدم، أو رقم الهاتف",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث بالاسم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "member_number",
+                        "in": "query",
+                        "description": "بحث برقم العضو",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "MEM-10023"
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "بحث باسم المستخدم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ahmed_player"
+                        }
+                    },
+                    {
                         "name": "gender",
                         "in": "query",
                         "description": "تصفية حسب الجنس",
@@ -17582,6 +17652,46 @@
                         }
                     },
                     {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث باسم الفعالية أو سعر الجلسة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "حديد"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم الفعالية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "سباحة"
+                        }
+                    },
+                    {
+                        "name": "price",
+                        "in": "query",
+                        "description": "بحث بسعر الجلسة",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "example": 50
+                        }
+                    },
+                    {
+                        "name": "session_price",
+                        "in": "query",
+                        "description": "تصفية حسب سعر الجلسة",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "example": 50
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
@@ -18398,6 +18508,26 @@
                 "description": "استرجاع قائمة بجميع أنواع الأنشطة (تُستخدم لتحديد النشاط عند إضافة وردية أو نشاط جديد).",
                 "operationId": "d1bf4f6b012823495143265eabbc5aaf",
                 "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث باسم نوع النشاط",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "لياقة"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم نوع النشاط",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "لياقة"
+                        }
+                    },
                     {
                         "name": "per_page",
                         "in": "query",
@@ -20733,6 +20863,43 @@
                                 "active",
                                 "suspended",
                                 "on_leave"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث باسم الكوتش",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم الكوتش",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "employment_type",
+                        "in": "query",
+                        "description": "تصفية حسب نوع التوظيف (fixed_salary: راتب، commission_based: نسبة، hybrid: نسبة وراتب)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "fixed_salary",
+                                "commission_based",
+                                "hybrid",
+                                "راتب",
+                                "نسبة",
+                                "نسبة وراتب"
                             ]
                         }
                     },
@@ -24168,6 +24335,46 @@
                                 "suspended",
                                 "on_leave"
                             ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث شامل باسم الموظف، رقم الهاتف، أو اسم المستخدم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم الموظف",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "أحمد"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "بحث برقم الهاتف",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "0501234567"
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "بحث باسم المستخدم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "staff_john"
                         }
                     },
                     {
@@ -28152,11 +28359,41 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "بحث بالاسم، رقم العضو، أو رقم الهاتف",
+                        "description": "بحث بالاسم، رقم العضو، اسم المستخدم، أو رقم الهاتف",
                         "required": false,
                         "schema": {
                             "type": "string",
                             "example": "محمد"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم المشترك",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "محمد"
+                        }
+                    },
+                    {
+                        "name": "member_number",
+                        "in": "query",
+                        "description": "بحث برقم العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "MEM-10023"
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "بحث باسم المستخدم",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "mohammed99"
                         }
                     },
                     {
@@ -28647,70 +28884,149 @@
                                 ],
                                 "properties": {
                                     "reason": {
-                                        "description": "سبب التعديل (حقل إجباري قبل الحفظ)",
+                                        "description": "سبب التعديل (حقل إجباري لتتبع التعديلات والرقابة)",
                                         "type": "string",
-                                        "example": "تعديل تاريخ بداية ونهاية الاشتراك"
+                                        "example": "تعديل تاريخ بداية ونهاية الاشتراك ومبالغ وإيصالات الكوتش والفرع"
                                     },
                                     "member_id": {
                                         "description": "معرف العضو (اختياري)",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 47,
+                                        "nullable": true
                                     },
                                     "plan_id": {
                                         "description": "معرف الخطة (اختياري)",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 83,
+                                        "nullable": true
                                     },
                                     "offer_id": {
                                         "description": "معرف العرض (اختياري)",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 1,
+                                        "nullable": true
                                     },
                                     "months_count": {
-                                        "description": "عدد الأشهر (اختياري)",
+                                        "description": "عدد الأشهر للاشتراك (اختياري)",
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 1,
+                                        "nullable": true
                                     },
                                     "start_date": {
-                                        "description": "تاريخ بداية الاشتراك (اختياري)",
+                                        "description": "تاريخ بداية الاشتراك YYYY-MM-DD (اختياري)",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-08-01"
+                                        "example": "2026-10-01",
+                                        "nullable": true
                                     },
                                     "end_date": {
-                                        "description": "تاريخ نهاية الاشتراك (اختياري)",
+                                        "description": "تاريخ نهاية الاشتراك YYYY-MM-DD (اختياري)",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2026-09-01"
+                                        "example": "2026-11-01",
+                                        "nullable": true
                                     },
                                     "status": {
                                         "description": "حالة الاشتراك (اختياري)",
                                         "type": "string",
-                                        "example": "active"
+                                        "example": "active",
+                                        "nullable": true,
+                                        "enum": [
+                                            "active",
+                                            "finished",
+                                            "frozen",
+                                            "terminated",
+                                            "expired",
+                                            "cancelled"
+                                        ]
                                     },
                                     "paid_amount": {
-                                        "description": "المبلغ المدفوع (اختياري)",
+                                        "description": "إجمالي المبلغ المدفوع (اختياري)",
                                         "type": "number",
                                         "format": "float",
-                                        "example": 100
+                                        "example": 350,
+                                        "nullable": true
+                                    },
+                                    "coach_paid_amount": {
+                                        "description": "مبلغ دفعة الكوتش للاشتراك الخاص (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200,
+                                        "nullable": true
+                                    },
+                                    "branch_paid_amount": {
+                                        "description": "مبلغ دفعة النادي/الفرع للاشتراك الخاص (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150,
+                                        "nullable": true
+                                    },
+                                    "coach_price": {
+                                        "description": "سعر الكوتش (اسم بديل لـ coach_paid_amount)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200,
+                                        "nullable": true
+                                    },
+                                    "branch_price": {
+                                        "description": "سعر الفرع (اسم بديل لـ branch_paid_amount)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150,
+                                        "nullable": true
                                     },
                                     "payment_method": {
                                         "description": "طريقة الدفع (اختياري)",
                                         "type": "string",
-                                        "example": "cash"
+                                        "example": "cash",
+                                        "nullable": true,
+                                        "enum": [
+                                            "cash",
+                                            "card",
+                                            "wallet",
+                                            "bank_transfer"
+                                        ]
                                     },
                                     "receipt_number": {
-                                        "description": "رقم إيصال الدفع (اختياري)",
+                                        "description": "رقم إيصال الدفع العام (اختياري)",
                                         "type": "string",
-                                        "example": "REC-2026-001"
+                                        "example": "REC-CLUB-004",
+                                        "nullable": true
+                                    },
+                                    "coach_receipt_number": {
+                                        "description": "رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-COACH-005",
+                                        "nullable": true
+                                    },
+                                    "branch_receipt_number": {
+                                        "description": "رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)",
+                                        "type": "string",
+                                        "example": "REC-CLUB-006",
+                                        "nullable": true
                                     },
                                     "notes": {
                                         "description": "ملاحظات (اختياري)",
                                         "type": "string",
-                                        "example": "ملاحظات معدلة"
+                                        "example": "ملاحظات إضافية معدلة",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
+                            },
+                            "example": {
+                                "reason": "تعديل تاريخ بداية ونهاية الاشتراك ومبالغ وإيصالات الكوتش والفرع",
+                                "start_date": "2026-10-01",
+                                "end_date": "2026-11-01",
+                                "months_count": 1,
+                                "status": "active",
+                                "paid_amount": 350,
+                                "coach_paid_amount": 200,
+                                "branch_paid_amount": 150,
+                                "payment_method": "cash",
+                                "coach_receipt_number": "REC-COACH-005",
+                                "branch_receipt_number": "REC-CLUB-006",
+                                "notes": "ملاحظات إضافية معدلة"
                             }
                         }
                     }
@@ -30654,6 +30970,46 @@
                 "operationId": "d777883f9934526c98bba1e8b8912722",
                 "parameters": [
                     {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث شامل باسم خطة الاشتراك، رقم الخطة، أو السعر",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "الذهبي"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم خطة الاشتراك",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "الذهبي"
+                        }
+                    },
+                    {
+                        "name": "subscription_number",
+                        "in": "query",
+                        "description": "بحث برقم خطة الاشتراك",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "25487965"
+                        }
+                    },
+                    {
+                        "name": "price",
+                        "in": "query",
+                        "description": "بحث بسعر الخطة",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "example": 350
+                        }
+                    },
+                    {
                         "name": "status",
                         "in": "query",
                         "description": "تصفية حسب حالة الخطة (active, inactive, completed)",
@@ -30724,7 +31080,7 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "description": "عدد العناصر في الصفحة (افتراضياً: 15، أو \"all\" لجلب الكل بدون ترقيم)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -30734,11 +31090,35 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "رقم الصفحة",
+                        "description": "رقم الصفحة (افتراضياً: 1)",
                         "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "الترتيب حسب الحقل (افتراضياً: name)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "name"
+                        }
+                    },
+                    {
+                        "name": "order_direction",
+                        "in": "query",
+                        "description": "اتجاه الترتيب (asc أو desc، افتراضياً: asc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
                         }
                     }
                 ],
@@ -30812,6 +31192,35 @@
                                                 },
                                                 "type": "object"
                                             }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 35
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -31107,6 +31516,26 @@
                 "description": "استرجاع قائمة بخطط الاشتراك المتاحة للتسجيل فقط (التي لم تتجاوز الحد الأقصى للمشتركين) مع جلب الأنشطة المرتبطة بكل خطة.",
                 "operationId": "0fc0d09079618666903ab9e08650d14a",
                 "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "بحث شامل باسم الخطة أو السعر",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "الذهبي"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم خطة الاشتراك",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "الذهبي"
+                        }
+                    },
                     {
                         "name": "branch_id",
                         "in": "query",
@@ -31843,6 +32272,33 @@
                         "name": "search",
                         "in": "query",
                         "description": "بحث اختياري بالاسم أو اسم المستخدم أو رقم العضوية",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "بحث باسم العضو",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "member_number",
+                        "in": "query",
+                        "description": "بحث برقم العضو",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "بحث باسم المستخدم",
                         "required": false,
                         "schema": {
                             "type": "string"

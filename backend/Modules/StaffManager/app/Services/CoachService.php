@@ -188,6 +188,44 @@ class CoachService
             });
         }
 
+        if (!empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('person', function ($pq) use ($search) {
+                    $pq->where('full_name', 'like', "%{$search}%")
+                       ->orWhereHas('contacts', function ($cq) use ($search) {
+                           $cq->where('phone_number', 'like', "%{$search}%");
+                       });
+                })->orWhereHas('user', function ($uq) use ($search) {
+                    $uq->where('username', 'like', "%{$search}%")
+                       ->orWhere('custom_username', 'like', "%{$search}%");
+                });
+            });
+        } elseif (!empty($filters['name'])) {
+            $name = trim((string) $filters['name']);
+            $query->whereHas('person', function ($pq) use ($name) {
+                $pq->where('full_name', 'like', "%{$name}%");
+            });
+        }
+
+        $employmentType = $filters['employment_type'] ?? $filters['payment_type'] ?? null;
+        if (!empty($employmentType)) {
+            $normalizedType = match (trim((string) $employmentType)) {
+                'fixed_salary', 'salary', 'راتب', 'راتب_ثابت', 'ثابت' => 'fixed_salary',
+                'commission_based', 'commission', 'نسبة', 'عمولة' => 'commission_based',
+                'hybrid', 'نسبة وراتب', 'نسبة_وراتب', 'راتب ونسبة', 'راتب_ونسبة', 'مختلط' => 'hybrid',
+                default => trim((string) $employmentType),
+            };
+
+            $query->where(function ($q) use ($normalizedType) {
+                $q->whereHas('activeContract', function ($cq) use ($normalizedType) {
+                    $cq->where('employment_type', $normalizedType);
+                })->orWhereHas('contracts', function ($cq) use ($normalizedType) {
+                    $cq->where('employment_type', $normalizedType);
+                });
+            });
+        }
+
         $query->orderBy('id', 'desc');
 
         if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
