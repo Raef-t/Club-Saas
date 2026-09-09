@@ -116,7 +116,7 @@ class SubscriptionService
 
         $query = PlayerSubscription::query()->with([
             'creator.person',
-            'plan.planActivities.staffActivity.activity',
+            'plan.planActivities.staffActivity.activity.activityType',
             'plan.planActivities.staffActivity.staff.person',
             'items',
             'payments',
@@ -282,6 +282,12 @@ class SubscriptionService
 
         if (!empty($filters['end_date'])) {
             $query->where('end_date', '<=', $filters['end_date']);
+        }
+
+        // Filter by Activity Type (id, name, or categories: الخاص, العام, الحصة الجماعية)
+        $activityType = $filters['activity_type'] ?? $filters['activity_type_id'] ?? $filters['activity_type_ids'] ?? $filters['type'] ?? null;
+        if (!empty($activityType) && $activityType !== 'all' && $activityType !== 'الكل') {
+            $query->forActivityType($activityType);
         }
 
         $query->latest();

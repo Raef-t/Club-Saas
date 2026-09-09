@@ -124,6 +124,24 @@ class PlayerSubscription extends Model
     protected $appends = ['is_fully_paid'];
 
     /**
+     * Scope to filter player subscriptions by activity type:
+     * - 'الخاص' / 'private'
+     * - 'العام' / 'general'
+     * - 'الحصة الجماعية' / 'group_session'
+     * - ID, comma-separated IDs, array of IDs, or custom activity type name.
+     */
+    public function scopeForActivityType($query, $activityType)
+    {
+        if ($activityType === null || $activityType === '' || $activityType === 'all' || $activityType === 'الكل') {
+            return $query;
+        }
+
+        return $query->whereHas('plan', function ($pq) use ($activityType) {
+            $pq->withTrashed()->forActivityType($activityType);
+        });
+    }
+
+    /**
      * Scope to filter subscriptions active on a specific date.
      */
     public function scopeActiveOnDate($query, ?string $date = null)
