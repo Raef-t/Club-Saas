@@ -8,8 +8,10 @@ import {
   getSubscriptionEndDate,
   getSubscriptionDetail,
   getSubscriptionCreatorName,
+  getSubscriptionActivityTypeId,
   getSubscriptionReceiptNumber,
   getSubscriptionReceiptNumbers,
+  getSubscriptionSplitPaymentAmounts,
   getSubscriptionRows,
   getSubscriptionStats,
   isDailyEntrySubscriptionPlan,
@@ -157,6 +159,40 @@ describe("subscription utilities", () => {
   it("detects private plans from their two component prices", () => {
     expect(isPrivateSubscriptionPlan({ coach_price: "200.00", branch_price: "150.00" })).toBe(true);
     expect(isPrivateSubscriptionPlan({ coach_price: null, branch_price: "150.00" })).toBe(false);
+  });
+
+  it("reads split payment amounts and falls back to private-plan prices", () => {
+    expect(
+      getSubscriptionSplitPaymentAmounts({
+        payments: [
+          { reason: "دفعة اشتراك المدرب", amount: 175 },
+          { reason: "دفعة اشتراك النادي", amount: 175 },
+        ],
+        plan: { coach_price: "250.00", branch_price: "250.00" },
+      }),
+    ).toEqual({ coachPaidAmount: 175, branchPaidAmount: 175 });
+
+    expect(
+      getSubscriptionSplitPaymentAmounts({
+        payments: [{ reason: null, amount: 350 }],
+        paid_amount: "350.00",
+        plan: { coach_price: "250.00", branch_price: "250.00" },
+      }),
+    ).toEqual({ coachPaidAmount: 175, branchPaidAmount: 175 });
+  });
+
+  it("reads the existing subscription activity type from its plan", () => {
+    expect(
+      getSubscriptionActivityTypeId({
+        plan: {
+          activity_types: [{ id: 5, name: "تدريب خاص" }],
+          activities: [{ activity_type_id: 6 }],
+        },
+      }),
+    ).toBe("5");
+    expect(
+      getSubscriptionActivityTypeId({ plan: { activities: [{ activity_type_id: 6 }] } }),
+    ).toBe("6");
   });
 
   it("formats a local date for subscription fields", () => {

@@ -120,6 +120,71 @@ export function isPrivateSubscriptionPlan(plan) {
 }
 
 /**
+ * Resolves the private-plan amounts required when updating its two receipts.
+ * Existing split payments are authoritative; plan prices cover older records
+ * that were stored as one unsplit payment.
+ */
+export function getSubscriptionSplitPaymentAmounts(
+  subscription,
+  plan = subscription?.plan,
+  paidAmount = subscription?.paid_amount,
+) {
+  const invoicePayments = Array.isArray(subscription?.invoices)
+    ? subscription.invoices.flatMap((invoice) =>
+        Array.isArray(invoice?.payments) ? invoice.payments : [],
+      )
+    : [];
+  const payments = Array.isArray(subscription?.payments)
+    ? subscription.payments
+    : invoicePayments;
+  const normalizedReason = (payment) => String(payment?.reason || "").trim().toLowerCase();
+  const coachPayment = payments.find((payment) => {
+    const reason = normalizedReason(payment);
+    return reason.includes("المدرب") || reason.includes("الكوتش") || reason.includes("coach");
+  });
+  const branchPayment = payments.find((payment) => {
+    const reason = normalizedReason(payment);
+    return reason.includes("النادي") || reason.includes("الفرع") || reason.includes("branch");
+  });
+  const revenueSplit = subscription?.revenue_split;
+  const coachAmountSource =
+    subscription?.coach_paid_amount ?? revenueSplit?.coach_paid_amount ?? coachPayment?.amount;
+  const branchAmountSource =
+    subscription?.branch_paid_amount ?? revenueSplit?.branch_paid_amount ?? branchPayment?.amount;
+  const hasCoachAmount = coachAmountSource !== null && coachAmountSource !== undefined;
+  const hasBranchAmount = branchAmountSource !== null && branchAmountSource !== undefined;
+  const totalPaid = parseSubscriptionAmount(paidAmount);
+
+  if (hasCoachAmount || hasBranchAmount) {
+    const coachPaidAmount = hasCoachAmount
+      ? parseSubscriptionAmount(coachAmountSource)
+      : Math.max(0, totalPaid - parseSubscriptionAmount(branchAmountSource));
+    const branchPaidAmount = hasBranchAmount
+      ? parseSubscriptionAmount(branchAmountSource)
+      : Math.max(0, totalPaid - coachPaidAmount);
+
+    return { coachPaidAmount, branchPaidAmount };
+  }
+
+  const coachPrice = parseSubscriptionAmount(plan?.coach_price);
+  const branchPrice = parseSubscriptionAmount(plan?.branch_price);
+  const splitPriceTotal = coachPrice + branchPrice;
+
+  if (totalPaid > 0 && splitPriceTotal > 0) {
+    const coachPaidAmount = Number(((totalPaid * coachPrice) / splitPriceTotal).toFixed(2));
+    return {
+      coachPaidAmount,
+      branchPaidAmount: Number((totalPaid - coachPaidAmount).toFixed(2)),
+    };
+  }
+
+  return {
+    coachPaidAmount: coachPrice,
+    branchPaidAmount: branchPrice,
+  };
+}
+
+/**
  * Extracts the subscription list from the supported backend response shapes.
  */
 export function getSubscriptionRows(response) {
@@ -174,6 +239,16 @@ export function getDefaultSubscriptionActivityTypeId(activityTypes = []) {
 
   const selectedType = generalTraining || activityTypes[0];
   return selectedType?.id === undefined || selectedType?.id === null ? "" : String(selectedType.id);
+}
+
+/** Reads the activity type already assigned to a subscription's plan. */
+export function getSubscriptionActivityTypeId(subscription) {
+  const plan = subscription?.plan;
+  const activityTypeId =
+    plan?.activity_types?.find((activityType) => activityType?.id != null)?.id ??
+    plan?.activities?.find((activity) => activity?.activity_type_id != null)?.activity_type_id;
+
+  return activityTypeId === undefined || activityTypeId === null ? "" : String(activityTypeId);
 }
 
 function getFiniteAmount(value, fallback = 0) {
