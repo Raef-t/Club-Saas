@@ -293,6 +293,138 @@ class UpdateSubscriptionPricingAndReceiptsTest extends TestCase
         ]);
     }
 
+    public function test_updating_subscription_with_legacy_null_reason_payment_does_not_duplicate_payments()
+    {
+        // 1. Create a subscription initially
+        $createPayload = [
+            'member_id' => $this->member->id,
+            'plan_id' => $this->plan->id,
+            'months_count' => 1,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 350.00,
+            'payment_method' => 'cash',
+            'coach_receipt_number' => 'REC-COACH-001',
+            'branch_receipt_number' => 'REC-CLUB-001',
+        ];
+
+        $createRes = $this->postJson('/api/v1/player-subscriptions', $createPayload);
+        $createRes->assertStatus(201);
+        $subscriptionId = $createRes->json('data.id');
+
+        // Simulate legacy data where branch payment had null/empty reason
+        $invoice = \Modules\SubscriptionManager\Models\Invoice::where('player_subscription_id', $subscriptionId)->first();
+        $branchPayment = $invoice->payments()->where('reason', 'دفعة اشتراك النادي')->first();
+        if ($branchPayment) {
+            $branchPayment->update(['reason' => null]);
+        }
+
+        $initialPaymentCount = $invoice->payments()->count();
+
+        // 2. Update subscription
+        $updatePayload = [
+            'reason' => 'تعديل الإيصالات واختبار عدم التكرار',
+            'coach_paid_amount' => 200.00,
+            'branch_paid_amount' => 150.00,
+            'coach_receipt_number' => 'REC-COACH-MOD',
+            'branch_receipt_number' => 'REC-CLUB-MOD',
+        ];
+
+        $updateRes = $this->putJson("/api/v1/player-subscriptions/{$subscriptionId}", $updatePayload);
+        $updateRes->assertStatus(200);
+
+        // Verify no duplicate payments created
+        $finalPaymentCount = $invoice->payments()->count();
+        $this->assertEquals($initialPaymentCount, $finalPaymentCount);
+        $this->assertEquals(350.00, (float) $updateRes->json('data.paid_amount'));
+    }
+
+    public function test_updating_subscription_with_only_paid_amount_auto_splits_across_coach_and_branch()
+    {
+        // 1. Create a subscription initially
+        $createPayload = [
+            'member_id' => $this->member->id,
+            'plan_id' => $this->plan->id,
+            'months_count' => 1,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 350.00,
+            'payment_method' => 'cash',
+            'coach_receipt_number' => 'REC-COACH-001',
+            'branch_receipt_number' => 'REC-CLUB-001',
+        ];
+
+        $createRes = $this->postJson('/api/v1/player-subscriptions', $createPayload);
+        $createRes->assertStatus(201);
+        $subscriptionId = $createRes->json('data.id');
+
+        // 2. Update using only paid_amount = 350 (or 500)
+        $updatePayload = [
+            'reason' => 'تعديل المبلغ فقط',
+            'paid_amount' => 350.00,
+        ];
+
+        $updateRes = $this->putJson("/api/v1/player-subscriptions/{$subscriptionId}", $updatePayload);
+        $updateRes->assertStatus(200);
+
+        // Plan ratio: coach 200, branch 150 -> total 350
+        $this->assertEquals(200.00, (float) $updateRes->json('data.revenue_split.coach_amount'));
+        $this->assertEquals(150.00, (float) $updateRes->json('data.revenue_split.club_amount'));
+        $this->assertEquals(350.00, (float) $updateRes->json('data.paid_amount'));
+    }
+
+    public function test_updating_subscription_cleans_up_orphaned_duplicate_payments_and_handles_frontend_split_mismatch()
+    {
+        // 1. Create a subscription initially (coach 200, branch 150 = 350)
+        $createPayload = [
+            'member_id' => $this->member->id,
+            'plan_id' => $this->plan->id,
+            'months_count' => 1,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 350.00,
+            'payment_method' => 'cash',
+            'coach_receipt_number' => 'REC-COACH-001',
+            'branch_receipt_number' => 'REC-CLUB-001',
+        ];
+
+        $createRes = $this->postJson('/api/v1/player-subscriptions', $createPayload);
+        $createRes->assertStatus(201);
+        $subscriptionId = $createRes->json('data.id');
+
+        $invoice = \Modules\SubscriptionManager\Models\Invoice::where('player_subscription_id', $subscriptionId)->first();
+
+        // Inject duplicate/orphaned payments as occurred in bug
+        \Modules\SubscriptionManager\Models\Payment::create([
+            'invoice_id' => $invoice->id,
+            'amount' => 100.00,
+            'reason' => null,
+            'status' => 'completed',
+            'payment_method' => 'cash',
+        ]);
+        \Modules\SubscriptionManager\Models\Payment::create([
+            'invoice_id' => $invoice->id,
+            'amount' => 50.00,
+            'reason' => 'دفعة اشتراك المدرب',
+            'status' => 'completed',
+            'payment_method' => 'cash',
+        ]);
+
+        $this->assertEquals(4, $invoice->payments()->count());
+
+        // 2. Frontend sends paid_amount = 350, but stale split numbers (e.g. 200 and 150 or whatever)
+        $updatePayload = [
+            'reason' => 'تعديل المبلغ مع تنظيف الدفعات الزائدة',
+            'paid_amount' => 350.00,
+            'coach_paid_amount' => 200.00,
+            'branch_paid_amount' => 150.00,
+        ];
+
+        $updateRes = $this->putJson("/api/v1/player-subscriptions/{$subscriptionId}", $updatePayload);
+        $updateRes->assertStatus(200);
+
+        // Extra payments must be purged, leaving exactly 2 payments (coach and branch)
+        $this->assertEquals(2, $invoice->payments()->count());
+        $this->assertEquals(350.00, (float) $updateRes->json('data.paid_amount'));
+    }
+
     public function test_returns_404_when_subscription_not_found()
     {
         $response = $this->getJson('/api/v1/player-subscriptions/999999');
@@ -303,3 +435,5 @@ class UpdateSubscriptionPricingAndReceiptsTest extends TestCase
             ]);
     }
 }
+
+

@@ -1613,8 +1613,42 @@ class SubscriptionService
             // 2. Financials Calculation
             $existingInvoice = $subscription->invoices->first();
             $existingPayments = $existingInvoice ? $existingInvoice->payments : collect();
-            $coachPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك المدرب');
-            $branchPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك النادي');
+            
+            // Robust payment matching with fallback for legacy records where reason may be empty
+            $coachPayment = $existingPayments->first(function ($p) {
+                return $p->reason === 'دفعة اشتراك المدرب';
+            });
+            $branchPayment = $existingPayments->first(function ($p) use ($coachPayment) {
+                if ($coachPayment && $p->id === $coachPayment->id) {
+                    return false;
+                }
+                return $p->reason === 'دفعة اشتراك النادي';
+            }) ?? $existingPayments->first(function ($p) use ($coachPayment) {
+                if ($coachPayment && $p->id === $coachPayment->id) {
+                    return false;
+                }
+                return $p->safe_id !== null || empty($p->reason);
+            });
+
+            // If paid_amount was provided and doesn't match stale split amounts from frontend (or if split amounts weren't provided),
+            // auto-calculate coach and branch shares dynamically based on the plan ratio
+            $hasExplicitSplit = isset($data['coach_paid_amount']) || isset($data['branch_paid_amount']);
+            $splitSum = (float) ($data['coach_paid_amount'] ?? ($coachPayment?->amount ?? 0)) + (float) ($data['branch_paid_amount'] ?? ($branchPayment?->amount ?? 0));
+            $hasPaidAmount = array_key_exists('paid_amount', $data);
+
+            if ($hasPaidAmount && (!$hasExplicitSplit || abs((float) $data['paid_amount'] - $splitSum) > 0.01)) {
+                $plan = $subscription->plan;
+                if ($plan && ((float) $plan->coach_price > 0 || (float) $plan->branch_price > 0)) {
+                    $cPrice = (float) $plan->coach_price;
+                    $bPrice = (float) $plan->branch_price;
+                    $ratioTotal = $cPrice + $bPrice;
+                    $inputPaid = (float) $data['paid_amount'];
+                    if ($ratioTotal > 0) {
+                        $data['coach_paid_amount'] = round(($inputPaid * $cPrice) / $ratioTotal, 2);
+                        $data['branch_paid_amount'] = round($inputPaid - $data['coach_paid_amount'], 2);
+                    }
+                }
+            }
 
             if (isset($data['coach_paid_amount']) || isset($data['branch_paid_amount'])) {
                 $newCoachAmount = isset($data['coach_paid_amount'])
@@ -1719,22 +1753,42 @@ class SubscriptionService
 
             // 7. Synchronize Payments and Receipt Numbers
             $existingPayments = $invoice->payments()->get();
-            $coachPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك المدرب');
-            $branchPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك النادي');
+            $coachPayment = $existingPayments->first(function ($p) {
+                return $p->reason === 'دفعة اشتراك المدرب';
+            });
+            $branchPayment = $existingPayments->first(function ($p) use ($coachPayment) {
+                if ($coachPayment && $p->id === $coachPayment->id) {
+                    return false;
+                }
+                return $p->reason === 'دفعة اشتراك النادي';
+            }) ?? $existingPayments->first(function ($p) use ($coachPayment) {
+                if ($coachPayment && $p->id === $coachPayment->id) {
+                    return false;
+                }
+                return $p->safe_id !== null || empty($p->reason);
+            });
+
+            // Clean up any extra duplicate/orphaned payments on this invoice
+            if ($coachPayment || $branchPayment) {
+                $extraPayments = $existingPayments->filter(function ($p) use ($coachPayment, $branchPayment) {
+                    return $p->id !== $coachPayment?->id && $p->id !== $branchPayment?->id;
+                });
+                foreach ($extraPayments as $extra) {
+                    $extra->delete();
+                }
+            }
 
             // 7a. Coach payment synchronization
             if ($hasCoachReceipt || isset($data['coach_paid_amount'])) {
                 if ($coachPayment) {
-                    $paymentUpdates = [];
+                    $paymentUpdates = ['reason' => 'دفعة اشتراك المدرب'];
                     if ($hasCoachReceipt) {
                         $paymentUpdates['receipt_number'] = $coachReceiptNumber;
                     }
                     if (isset($data['coach_paid_amount'])) {
                         $paymentUpdates['amount'] = (float) $data['coach_paid_amount'];
                     }
-                    if (!empty($paymentUpdates)) {
-                        $coachPayment->update($paymentUpdates);
-                    }
+                    $coachPayment->update($paymentUpdates);
                 } elseif (isset($data['coach_paid_amount']) && (float) $data['coach_paid_amount'] > 0) {
                     \Modules\SubscriptionManager\Models\Payment::create([
                         'receipt_number' => $coachReceiptNumber,
@@ -1751,16 +1805,17 @@ class SubscriptionService
             // 7b. Branch payment synchronization
             if ($hasBranchReceipt || $hasGeneralReceipt || isset($data['branch_paid_amount'])) {
                 if ($branchPayment) {
-                    $paymentUpdates = [];
+                    $paymentUpdates = ['reason' => 'دفعة اشتراك النادي'];
                     if ($branchReceiptNumber !== null) {
                         $paymentUpdates['receipt_number'] = $branchReceiptNumber;
                     }
                     if (isset($data['branch_paid_amount'])) {
                         $paymentUpdates['amount'] = (float) $data['branch_paid_amount'];
                     }
-                    if (!empty($paymentUpdates)) {
-                        $branchPayment->update($paymentUpdates);
+                    if (!$branchPayment->safe_id && $safeId) {
+                        $paymentUpdates['safe_id'] = $safeId;
                     }
+                    $branchPayment->update($paymentUpdates);
                 } elseif (isset($data['branch_paid_amount']) && (float) $data['branch_paid_amount'] > 0) {
                     \Modules\SubscriptionManager\Models\Payment::create([
                         'receipt_number' => $branchReceiptNumber,
@@ -1850,6 +1905,9 @@ class SubscriptionService
                     ]);
                 }
             }
+
+            \Modules\SubscriptionManager\Models\Payment::syncInvoiceAndSubscription($invoice->id);
+            $subscription->refresh();
 
             $subscription->member = $memberDTO;
 
