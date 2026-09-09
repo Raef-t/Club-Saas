@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useCreatePlayerSubscriptionMutation,
   useGetPlayerSubscriptionQuery,
@@ -13,7 +13,11 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { withAllItems } from "@/lib/pagination";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { getApiErrorMessage } from "@/lib/apiError";
-import { getAvailableSubscriptionPlanParams, getSubscriptionDetail } from "./subscriptionUtils";
+import {
+  getAvailableSubscriptionPlanParams,
+  getDefaultSubscriptionActivityTypeId,
+  getSubscriptionDetail,
+} from "./subscriptionUtils";
 
 /**
  * Returns an array from the standard collection response used by the backend.
@@ -30,7 +34,9 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
   const toast = useToast();
   const { selectedBranchId } = useManagementBranch();
   const [formError, setFormError] = useState("");
-  const [selectedActivityTypeId, setSelectedActivityTypeId] = useState("all");
+  const [selectedActivityTypeId, setSelectedActivityTypeId] = useState(() =>
+    getDefaultSubscriptionActivityTypeId(getCollection(initialData?.activityTypes)),
+  );
   const branchQueryParams = selectedBranchId === "all" ? {} : { branch_id: selectedBranchId };
   const planQueryParams = useMemo(
     () => getAvailableSubscriptionPlanParams(selectedBranchId, selectedActivityTypeId),
@@ -42,7 +48,7 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     error: plansError,
     isLoading: isPlansLoading,
     isFetching: isPlansFetching,
-  } = useGetSubscriptionPlansQuery(planQueryParams);
+  } = useGetSubscriptionPlansQuery(planQueryParams, { skip: !selectedActivityTypeId });
   const {
     currentData: activityTypesData,
     error: activityTypesError,
@@ -73,7 +79,7 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     () => filterEntitiesByBranch(allMembers, selectedBranchId),
     [allMembers, selectedBranchId],
   );
-  const plansResponse = plansData || (selectedActivityTypeId === "all" ? initialData?.plans : null);
+  const plansResponse = plansData;
   const allPlans = useMemo(() => getCollection(plansResponse), [plansResponse]);
   const plans = useMemo(
     () => filterEntitiesByBranch(allPlans, selectedBranchId),
@@ -83,6 +89,14 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     () => getCollection(activityTypesData || initialData?.activityTypes),
     [activityTypesData, initialData?.activityTypes],
   );
+  useEffect(() => {
+    setSelectedActivityTypeId((currentId) => {
+      const currentTypeExists = activityTypes.some(
+        (activityType) => String(activityType.id) === String(currentId),
+      );
+      return currentTypeExists ? currentId : getDefaultSubscriptionActivityTypeId(activityTypes);
+    });
+  }, [activityTypes]);
   const allActivities = useMemo(
     () => getCollection(activitiesData || initialData?.activities),
     [activitiesData, initialData?.activities],
@@ -144,7 +158,8 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     activityTypes,
     selectedActivityTypeId,
     setSelectedActivityTypeId,
-    isPlansLoading: isPlansLoading || isPlansFetching,
+    isPlansLoading:
+      isPlansLoading || isPlansFetching || (!selectedActivityTypeId && !activityTypesError),
     plansErrorMessage: plansError
       ? getApiErrorMessage(plansError, "تعذر تحميل باقات الاشتراك المتاحة.")
       : "",

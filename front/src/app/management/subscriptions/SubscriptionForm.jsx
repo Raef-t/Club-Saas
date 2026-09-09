@@ -23,7 +23,7 @@ export function SubscriptionCreateForm({
   members = [],
   plans = [],
   activityTypes = [],
-  selectedActivityTypeId = "all",
+  selectedActivityTypeId = "",
   onActivityTypeChange,
   isPlansLoading = false,
   plansErrorMessage = "",
@@ -213,13 +213,10 @@ export function SubscriptionCreateForm({
           buttonClassName="bg-app-card-soft h-11"
           value={selectedActivityTypeId}
           onChange={handleActivityTypeChange}
-          options={[
-            { value: "all", label: "الكل" },
-            ...activityTypes.map((activityType) => ({
-              value: String(activityType.id),
-              label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
-            })),
-          ]}
+          options={activityTypes.map((activityType) => ({
+            value: String(activityType.id),
+            label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+          }))}
           placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
           disabled={isActivityTypesLoading}
         />
@@ -263,9 +260,9 @@ export function SubscriptionCreateForm({
           !isPlansLoading &&
           plans.length === 0 && (
             <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
-              {selectedActivityTypeId === "all"
-                ? "لا توجد باقات اشتراك متاحة حالياً"
-                : "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"}
+              {selectedActivityTypeId
+                ? "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"
+                : "لا توجد باقات اشتراك متاحة حالياً"}
             </span>
           )
         )}
@@ -491,6 +488,13 @@ export function SubscriptionEditForm({
   subscription,
   members = [],
   plans = [],
+  activityTypes = [],
+  selectedActivityTypeId = "",
+  onActivityTypeChange,
+  isPlansLoading = false,
+  plansErrorMessage = "",
+  isActivityTypesLoading = false,
+  activityTypesErrorMessage = "",
   onSubmit,
   onCancel,
   isLoading = false,
@@ -557,6 +561,20 @@ export function SubscriptionEditForm({
     }));
   }
 
+  function handleActivityTypeChange(activityTypeId) {
+    setForm((current) => ({
+      ...current,
+      plan_id: "",
+      receipt_number: "",
+      coach_receipt_number: "",
+      branch_receipt_number: "",
+      start_date: isDailyEntryPlan ? "" : current.start_date,
+      end_date: isDailyEntryPlan ? "" : current.end_date,
+    }));
+    setErrors((current) => ({ ...current, plan_id: null }));
+    onActivityTypeChange?.(activityTypeId);
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
     const validationData = {
@@ -599,31 +617,83 @@ export function SubscriptionEditForm({
       <label className="block text-right text-sm text-app-muted-light">
         اللاعب العضو *
         <Dropdown
+          searchable
+          searchPlaceholder="ابحث عن اللاعب بالاسم..."
           className="mt-2 text-white"
           buttonClassName="h-11 bg-app-card-soft"
           value={form.member_id}
           onChange={(value) => updateField("member_id", value)}
           options={members.map((member) => ({
             value: String(member.id),
-            label: `${member.person?.full_name || `${member.first_name || ""} ${member.last_name || ""}`.trim() || `العضو #${member.id}`} (${member.member_number || `#${member.id}`})`,
+            label:
+              member.person?.full_name ||
+              `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
+              "عضو بدون اسم",
           }))}
           error={errors.member_id}
         />
       </label>
 
       <label className="block text-right text-sm text-app-muted-light">
-        خطة الاشتراك *
+        نوع النشاط
         <Dropdown
           className="mt-2 text-white"
           buttonClassName="h-11 bg-app-card-soft"
-          value={form.plan_id}
-          onChange={handlePlanChange}
-          options={plans.map((plan) => ({
-            value: String(plan.id),
-            label: formatLocalizedName(plan.name),
+          value={selectedActivityTypeId}
+          onChange={handleActivityTypeChange}
+          options={activityTypes.map((activityType) => ({
+            value: String(activityType.id),
+            label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
           }))}
-          error={errors.plan_id}
+          placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
+          disabled={isActivityTypesLoading}
         />
+        {activityTypesErrorMessage && (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {activityTypesErrorMessage}
+          </span>
+        )}
+      </label>
+
+      <label className="block text-right text-sm text-app-muted-light">
+        خطة الاشتراك *
+        {isPlansLoading ? (
+          <div
+            className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-app-line bg-app-card-soft text-xs text-app-muted-light"
+            role="status"
+          >
+            <span className="size-4 animate-spin rounded-full border-2 border-app-muted border-t-app-yellow" />
+            جاري تحميل باقات الاشتراك...
+          </div>
+        ) : (
+          <Dropdown
+            className="mt-2 text-white"
+            buttonClassName="h-11 bg-app-card-soft"
+            value={form.plan_id}
+            onChange={handlePlanChange}
+            options={plans.map((plan) => ({
+              value: String(plan.id),
+              label: formatLocalizedName(plan.name),
+            }))}
+            placeholder="اختر الخطة"
+            disabled={plans.length === 0 || Boolean(plansErrorMessage)}
+            error={errors.plan_id}
+          />
+        )}
+        {plansErrorMessage ? (
+          <span className="mt-1.5 block text-xs text-app-red" role="alert">
+            {plansErrorMessage}
+          </span>
+        ) : (
+          !isPlansLoading &&
+          plans.length === 0 && (
+            <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
+              {selectedActivityTypeId
+                ? "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"
+                : "لا توجد باقات اشتراك متاحة حالياً"}
+            </span>
+          )
+        )}
       </label>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

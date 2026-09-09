@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatSubscriptionMoney,
   getAvailableSubscriptionPlanParams,
+  getDefaultSubscriptionActivityTypeId,
   getCurrentMemberSubscription,
   getLocalDateValue,
   getSubscriptionEndDate,
@@ -56,11 +57,23 @@ describe("subscription utilities", () => {
       per_page: 15,
       page: 1,
     });
-    expect(getAvailableSubscriptionPlanParams("all", "all")).toEqual({
+    expect(getAvailableSubscriptionPlanParams("all", "")).toEqual({
       available: true,
       per_page: 15,
       page: 1,
     });
+  });
+
+  it("uses general training as the default subscription activity type", () => {
+    const activityTypes = [
+      { id: 2, code: "private_training", name: "تدريب خاص" },
+      { id: 1, code: "general_training", name: "تدريب عام" },
+      { id: 3, code: "group_class", name: "حصة جماعية" },
+    ];
+
+    expect(getDefaultSubscriptionActivityTypeId(activityTypes)).toBe("1");
+    expect(getDefaultSubscriptionActivityTypeId([{ id: 9, name: "نوع أول" }])).toBe("9");
+    expect(getDefaultSubscriptionActivityTypeId([])).toBe("");
   });
 
   it("reads aggregate statistics from the player subscriptions response", () => {

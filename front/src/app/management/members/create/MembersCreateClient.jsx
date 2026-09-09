@@ -47,6 +47,13 @@ export default function MembersCreateClient({ initialSubscriptionData }) {
   const {
     members: subMembers,
     plans: subPlans,
+    activityTypes: subActivityTypes,
+    selectedActivityTypeId: subActivityTypeId,
+    setSelectedActivityTypeId: setSubActivityTypeId,
+    isPlansLoading: isSubPlansLoading,
+    plansErrorMessage: subPlansErrorMessage,
+    isActivityTypesLoading: isSubActivityTypesLoading,
+    activityTypesErrorMessage: subActivityTypesErrorMessage,
     activities: subActivities,
     coaches: subCoaches,
     formError: subFormError,
@@ -163,6 +170,13 @@ export default function MembersCreateClient({ initialSubscriptionData }) {
                 lockMemberId
                 members={subMembers}
                 plans={subPlans}
+                activityTypes={subActivityTypes}
+                selectedActivityTypeId={subActivityTypeId}
+                onActivityTypeChange={setSubActivityTypeId}
+                isPlansLoading={isSubPlansLoading}
+                plansErrorMessage={subPlansErrorMessage}
+                isActivityTypesLoading={isSubActivityTypesLoading}
+                activityTypesErrorMessage={subActivityTypesErrorMessage}
                 activities={subActivities}
                 coaches={subCoaches}
                 onSubmit={submitSubscription}
