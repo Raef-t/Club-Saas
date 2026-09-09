@@ -155,6 +155,27 @@ export function getAvailableSubscriptionPlanParams(branchId, activityTypeId) {
   };
 }
 
+/** Selects general training as the initial activity type for subscription forms. */
+export function getDefaultSubscriptionActivityTypeId(activityTypes = []) {
+  const generalTraining = activityTypes.find((activityType) => {
+    const names =
+      activityType?.name && typeof activityType.name === "object"
+        ? Object.values(activityType.name)
+        : [activityType?.name];
+    const searchableText = [activityType?.code, activityType?.slug, activityType?.type, ...names]
+      .filter(Boolean)
+      .join(" ")
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, " ");
+
+    return searchableText.includes("general training") || searchableText.includes("تدريب عام");
+  });
+
+  const selectedType = generalTraining || activityTypes[0];
+  return selectedType?.id === undefined || selectedType?.id === null ? "" : String(selectedType.id);
+}
+
 function getFiniteAmount(value, fallback = 0) {
   if (value === null || value === undefined || value === "") return fallback;
   const amount = Number(value);

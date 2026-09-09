@@ -27,6 +27,7 @@ export default function SubscriptionsCreateClient({ initialData }) {
 
   const [resetKey, setResetKey] = useState(0);
   const [currentMemberId, setCurrentMemberId] = useState(initialMemberId);
+  const [hasChangedEditActivityType, setHasChangedEditActivityType] = useState(false);
 
   const {
     members,
@@ -62,9 +63,16 @@ export default function SubscriptionsCreateClient({ initialData }) {
       : members;
   const currentPlan = selectedSubscription?.plan;
   const editPlans =
-    currentPlan?.id && !plans.some((plan) => String(plan.id) === String(currentPlan.id))
+    !hasChangedEditActivityType &&
+    currentPlan?.id &&
+    !plans.some((plan) => String(plan.id) === String(currentPlan.id))
       ? [...plans, currentPlan]
       : plans;
+
+  function changeEditActivityType(activityTypeId) {
+    setHasChangedEditActivityType(true);
+    setSelectedActivityTypeId(activityTypeId);
+  }
 
   async function submit(values, action) {
     const ok = await handleCreateSubscription(values);
@@ -119,6 +127,13 @@ export default function SubscriptionsCreateClient({ initialData }) {
               subscription={selectedSubscription}
               members={editMembers}
               plans={editPlans}
+              activityTypes={activityTypes}
+              selectedActivityTypeId={selectedActivityTypeId}
+              onActivityTypeChange={changeEditActivityType}
+              isPlansLoading={isPlansLoading}
+              plansErrorMessage={plansErrorMessage}
+              isActivityTypesLoading={isActivityTypesLoading}
+              activityTypesErrorMessage={activityTypesErrorMessage}
               onSubmit={submitEdit}
               onCancel={() => router.push("/management/subscriptions")}
               isLoading={isUpdating}
