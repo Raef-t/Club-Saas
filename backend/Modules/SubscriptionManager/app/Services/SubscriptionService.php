@@ -139,7 +139,7 @@ class SubscriptionService
             });
         }
 
-        // 1. Search by member number, full name, phone number, national ID, or email
+        // 1. Search by member number, full name, username, phone number, national ID, or email
         if (!empty($filters['search'])) {
             $searchTerm = trim($filters['search']);
             $query->where(function ($q) use ($searchTerm) {
@@ -149,6 +149,10 @@ class SubscriptionService
                            $pq->where('full_name', 'like', "%{$searchTerm}%")
                               ->orWhere('national_id', 'like', "%{$searchTerm}%")
                               ->orWhere('email', 'like', "%{$searchTerm}%")
+                              ->orWhereHas('user', function ($uq) use ($searchTerm) {
+                                  $uq->where('username', 'like', "%{$searchTerm}%")
+                                    ->orWhere('custom_username', 'like', "%{$searchTerm}%");
+                              })
                               ->orWhereHas('contacts', function ($cq) use ($searchTerm) {
                                   $cq->where('phone_number', 'like', "%{$searchTerm}%");
                               });
@@ -157,16 +161,27 @@ class SubscriptionService
             });
         }
 
-        // Direct filter by member number
-        if (!empty($filters['member_number'])) {
-            $num = trim($filters['member_number']);
+        // Direct filter by member number (member_number or number)
+        $numberFilter = $filters['member_number'] ?? $filters['number'] ?? null;
+        if (!empty($numberFilter)) {
+            $num = trim($numberFilter);
             $query->whereHas('member', fn($q) => $q->where('member_number', 'like', "%{$num}%"));
         }
 
-        // Direct filter by member name
-        if (!empty($filters['member_name']) || !empty($filters['name'])) {
-            $name = trim($filters['member_name'] ?? $filters['name']);
+        // Direct filter by member name (member_name, name, or full_name)
+        $nameFilter = $filters['member_name'] ?? $filters['name'] ?? $filters['full_name'] ?? null;
+        if (!empty($nameFilter)) {
+            $name = trim($nameFilter);
             $query->whereHas('member.person', fn($q) => $q->where('full_name', 'like', "%{$name}%"));
+        }
+
+        // Direct filter by username
+        if (!empty($filters['username'])) {
+            $username = trim($filters['username']);
+            $query->whereHas('member.person.user', function ($uq) use ($username) {
+                $uq->where('username', 'like', "%{$username}%")
+                  ->orWhere('custom_username', 'like', "%{$username}%");
+            });
         }
 
         // 2. Filter by Status: active, expiring_soon, finished, frozen, terminated
@@ -560,7 +575,7 @@ class SubscriptionService
 
             // 7. Create Payment if paid_amount > 0
             if ($paidAmount > 0) {
-                $isDualPayment = !empty($coachReceiptNumber) || (isset($options['coach_paid_amount']) && isset($options['branch_paid_amount']));
+                $isDualPayment = !empty($coachReceiptNumber) || (isset($options['coach_paid_amount']) && isset($options['branch_paid_amount'])) || (isset($options['coach_price']) && isset($options['branch_price']));
 
                 if (($options['payment_method'] ?? 'cash') === 'wallet') {
                     // Pay via wallet
@@ -590,9 +605,9 @@ class SubscriptionService
                 }
 
                 if ($isDualPayment) {
-                    if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount'])) {
-                        $coachPaid = (float) ($options['coach_paid_amount'] ?? 0);
-                        $branchPaid = (float) ($options['branch_paid_amount'] ?? 0);
+                    if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount']) || isset($options['coach_price']) || isset($options['branch_price'])) {
+                        $coachPaid = (float) ($options['coach_paid_amount'] ?? $options['coach_price'] ?? 0);
+                        $branchPaid = (float) ($options['branch_paid_amount'] ?? $options['branch_price'] ?? 0);
                     } elseif ($hasExplicitSplit) {
                         $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
                         $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
@@ -1320,12 +1335,33 @@ class SubscriptionService
     {
         return DB::transaction(function () use ($id, $data) {
             $subscription = $this->subscriptionRepository->find($id);
+            $subscription->loadMissing(['revenueSplit', 'invoices.payments', 'items', 'plan.planActivities.staffActivity']);
 
             $oldPaidAmount = (float) $subscription->paid_amount;
             $oldTotalAmount = (float) $subscription->total_amount;
             $oldStatus = $subscription->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
                 ? $subscription->status->value
                 : (string) $subscription->status;
+
+            // Map coach_price / branch_price aliases to coach_paid_amount / branch_paid_amount if provided
+            if (isset($data['coach_price']) && !isset($data['coach_paid_amount'])) {
+                $data['coach_paid_amount'] = $data['coach_price'];
+            }
+            if (isset($data['branch_price']) && !isset($data['branch_paid_amount'])) {
+                $data['branch_paid_amount'] = $data['branch_price'];
+            }
+
+            // Receipts normalization
+            $hasCoachReceipt = array_key_exists('coach_receipt_number', $data);
+            $hasBranchReceipt = array_key_exists('branch_receipt_number', $data);
+            $hasGeneralReceipt = array_key_exists('receipt_number', $data);
+
+            $coachReceiptNumber = $hasCoachReceipt ? $data['coach_receipt_number'] : null;
+            $branchReceiptNumber = $hasBranchReceipt ? $data['branch_receipt_number'] : ($hasGeneralReceipt ? $data['receipt_number'] : null);
+
+            if ($hasGeneralReceipt && !$hasBranchReceipt) {
+                $data['branch_receipt_number'] = $data['receipt_number'];
+            }
 
             // 1. Calculate new total amount if plan_id or offer_id changes
             if (!empty($data['plan_id']) && $data['plan_id'] != $subscription->plan_id) {
@@ -1341,7 +1377,28 @@ class SubscriptionService
             }
 
             // 2. Financials Calculation
-            $paidAmount = array_key_exists('paid_amount', $data) ? (float) $data['paid_amount'] : $oldPaidAmount;
+            $existingInvoice = $subscription->invoices->first();
+            $existingPayments = $existingInvoice ? $existingInvoice->payments : collect();
+            $coachPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك المدرب');
+            $branchPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك النادي');
+
+            if (isset($data['coach_paid_amount']) || isset($data['branch_paid_amount'])) {
+                $newCoachAmount = isset($data['coach_paid_amount']) 
+                    ? (float) $data['coach_paid_amount'] 
+                    : ($coachPayment ? (float) $coachPayment->amount : 0);
+
+                $newBranchAmount = isset($data['branch_paid_amount']) 
+                    ? (float) $data['branch_paid_amount'] 
+                    : ($branchPayment ? (float) $branchPayment->amount : 0);
+
+                $paidAmount = $newCoachAmount + $newBranchAmount;
+                $data['paid_amount'] = $paidAmount;
+            } elseif (array_key_exists('paid_amount', $data)) {
+                $paidAmount = (float) $data['paid_amount'];
+            } else {
+                $paidAmount = $oldPaidAmount;
+            }
+
             $remainingAmount = max(0, $totalAmount - $paidAmount);
             $data['remaining_amount'] = $remainingAmount;
 
@@ -1353,7 +1410,6 @@ class SubscriptionService
 
             $isDateExpired = !empty($effectiveEndDate) && $effectiveEndDate < $today;
 
-            $subscription->loadMissing(['items', 'plan']);
             $isSessionsExhausted = false;
             if ($subscription->items->isNotEmpty()) {
                 $hasUnlimited = $subscription->items->contains('is_unlimited', true);
@@ -1370,7 +1426,8 @@ class SubscriptionService
             }
 
             // 4. Update subscription model
-            $subscription = $this->subscriptionRepository->update($id, $data);
+            $subscriptionUpdateData = collect($data)->except(['coach_paid_amount', 'branch_paid_amount', 'coach_price', 'branch_price'])->all();
+            $subscription = $this->subscriptionRepository->update($id, $subscriptionUpdateData);
             $subscription->refresh();
 
             $newStatus = $subscription->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
@@ -1408,35 +1465,155 @@ class SubscriptionService
                 'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
             ]);
 
-            // 5. If paid_amount increased, record new Payment for the difference
-            if ($paidAmount > $oldPaidAmount) {
-                $addedAmount = $paidAmount - $oldPaidAmount;
+            // 6. Safe resolution
+            $safeId = null;
+            if ($branchId) {
+                $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                    ->where('branch_id', $branchId)
+                    ->value('default_safe_id');
 
-                if ($branchId) {
-                    $safeId = \Illuminate\Support\Facades\DB::table('acc_branch_settings')
+                if (!$safeId) {
+                    $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
                         ->where('branch_id', $branchId)
-                        ->value('default_safe_id');
-
-                    if (!$safeId) {
-                        $safeId = \Illuminate\Support\Facades\DB::table('acc_safes')
+                        ->where('currency', 'SYP')
+                        ->value('id')
+                        ?? \Illuminate\Support\Facades\DB::table('acc_safes')
                             ->where('branch_id', $branchId)
-                            ->where('currency', 'SYP')
-                            ->value('id')
-                            ?? \Illuminate\Support\Facades\DB::table('acc_safes')
-                                ->where('branch_id', $branchId)
-                                ->value('id');
+                            ->value('id');
+                }
+            }
+
+            // 7. Synchronize Payments and Receipt Numbers
+            $existingPayments = $invoice->payments()->get();
+            $coachPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك المدرب');
+            $branchPayment = $existingPayments->firstWhere('reason', 'دفعة اشتراك النادي');
+
+            // 7a. Coach payment synchronization
+            if ($hasCoachReceipt || isset($data['coach_paid_amount'])) {
+                if ($coachPayment) {
+                    $paymentUpdates = [];
+                    if ($hasCoachReceipt) {
+                        $paymentUpdates['receipt_number'] = $coachReceiptNumber;
                     }
-
-                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
-                        'receipt_number' => $data['receipt_number'] ?? null,
-                        'invoice_id' => $invoice->id,
-                        'safe_id' => $safeId,
-                        'amount' => $addedAmount,
+                    if (isset($data['coach_paid_amount'])) {
+                        $paymentUpdates['amount'] = (float) $data['coach_paid_amount'];
+                    }
+                    if (!empty($paymentUpdates)) {
+                        $coachPayment->update($paymentUpdates);
+                    }
+                } elseif (isset($data['coach_paid_amount']) && (float) $data['coach_paid_amount'] > 0) {
+                    \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $coachReceiptNumber,
+                        'invoice_id'     => $invoice->id,
+                        'safe_id'        => $safeId,
+                        'amount'         => (float) $data['coach_paid_amount'],
                         'payment_method' => $data['payment_method'] ?? 'cash',
-                        'status' => 'completed',
+                        'status'         => 'completed',
+                        'reason'         => 'دفعة اشتراك المدرب',
                     ]);
+                }
+            }
 
+            // 7b. Branch payment synchronization
+            if ($hasBranchReceipt || $hasGeneralReceipt || isset($data['branch_paid_amount'])) {
+                if ($branchPayment) {
+                    $paymentUpdates = [];
+                    if ($branchReceiptNumber !== null) {
+                        $paymentUpdates['receipt_number'] = $branchReceiptNumber;
+                    }
+                    if (isset($data['branch_paid_amount'])) {
+                        $paymentUpdates['amount'] = (float) $data['branch_paid_amount'];
+                    }
+                    if (!empty($paymentUpdates)) {
+                        $branchPayment->update($paymentUpdates);
+                    }
+                } elseif (isset($data['branch_paid_amount']) && (float) $data['branch_paid_amount'] > 0) {
+                    \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $branchReceiptNumber,
+                        'invoice_id'     => $invoice->id,
+                        'safe_id'        => $safeId,
+                        'amount'         => (float) $data['branch_paid_amount'],
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'status'         => 'completed',
+                        'reason'         => 'دفعة اشتراك النادي',
+                    ]);
+                }
+            }
+
+            // 7c. General single-payment synchronization (for non-split subscriptions)
+            if (!$coachPayment && !$branchPayment) {
+                $firstPayment = $existingPayments->first();
+                if ($firstPayment) {
+                    $paymentUpdates = [];
+                    if ($hasGeneralReceipt || $hasBranchReceipt) {
+                        $paymentUpdates['receipt_number'] = $data['receipt_number'] ?? $branchReceiptNumber;
+                    }
+                    if (array_key_exists('paid_amount', $data)) {
+                        $paymentUpdates['amount'] = (float) $data['paid_amount'];
+                    }
+                    if (!empty($data['payment_method'])) {
+                        $paymentUpdates['payment_method'] = $data['payment_method'];
+                    }
+                    if (!empty($paymentUpdates)) {
+                        $firstPayment->update($paymentUpdates);
+                    }
+                } elseif ($paidAmount > 0) {
+                    $payment = \Modules\SubscriptionManager\Models\Payment::create([
+                        'receipt_number' => $data['receipt_number'] ?? $branchReceiptNumber,
+                        'invoice_id'     => $invoice->id,
+                        'safe_id'        => $safeId,
+                        'amount'         => $paidAmount,
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'status'         => 'completed',
+                        'reason'         => 'دفعة اشتراك',
+                    ]);
                     event(new \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded($payment));
+                }
+            }
+
+            // 8. Synchronize SubscriptionRevenueSplit
+            $revenueSplit = $subscription->revenueSplit;
+            $revenueSplitUpdates = [];
+            if ($hasCoachReceipt) {
+                $revenueSplitUpdates['coach_receipt_number'] = $coachReceiptNumber;
+            }
+            if ($hasBranchReceipt || $hasGeneralReceipt) {
+                $revenueSplitUpdates['branch_receipt_number'] = $branchReceiptNumber;
+            }
+            if (isset($data['coach_paid_amount'])) {
+                $revenueSplitUpdates['coach_amount'] = (float) $data['coach_paid_amount'];
+            }
+            if (isset($data['branch_paid_amount'])) {
+                $revenueSplitUpdates['club_amount'] = (float) $data['branch_paid_amount'];
+            }
+
+            if ($revenueSplit) {
+                if (!empty($revenueSplitUpdates)) {
+                    if (isset($revenueSplitUpdates['coach_amount']) || isset($revenueSplitUpdates['club_amount'])) {
+                        $coachAmt = $revenueSplitUpdates['coach_amount'] ?? (float) $revenueSplit->coach_amount;
+                        $clubAmt = $revenueSplitUpdates['club_amount'] ?? (float) $revenueSplit->club_amount;
+                        $revenueSplitUpdates['total_amount'] = $coachAmt + $clubAmt;
+                    }
+                    $revenueSplit->update($revenueSplitUpdates);
+                }
+            } elseif (!empty($revenueSplitUpdates) && ($coachReceiptNumber || isset($data['coach_paid_amount']))) {
+                $plan = $subscription->plan;
+                $firstActivity = $plan?->planActivities?->first();
+                $coachId = $firstActivity?->staffActivity?->staff_id ?? $firstActivity?->coach_id ?? null;
+
+                if ($coachId) {
+                    \Modules\SubscriptionManager\Models\SubscriptionRevenueSplit::create([
+                        'player_subscription_id' => $subscription->id,
+                        'coach_id'               => $coachId,
+                        'branch_id'              => $branchId,
+                        'total_amount'           => $totalAmount,
+                        'club_percentage'        => 0,
+                        'coach_percentage'       => 100,
+                        'club_amount'            => (float) ($data['branch_paid_amount'] ?? 0),
+                        'coach_amount'           => (float) ($data['coach_paid_amount'] ?? 0),
+                        'coach_receipt_number'   => $coachReceiptNumber,
+                        'branch_receipt_number'  => $branchReceiptNumber,
+                    ]);
                 }
             }
 

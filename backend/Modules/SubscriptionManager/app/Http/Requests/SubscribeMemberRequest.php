@@ -31,6 +31,8 @@ class SubscribeMemberRequest extends FormRequest
             'paid_amount' => 'required|numeric|min:0',
             'coach_paid_amount' => 'nullable|numeric|min:0',
             'branch_paid_amount' => 'nullable|numeric|min:0',
+            'coach_price' => 'nullable|numeric|min:0',
+            'branch_price' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string',
             'receipt_number' => 'nullable|string|max:100',
             'coach_receipt_number' => 'nullable|string|max:100',

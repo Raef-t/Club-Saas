@@ -22,6 +22,10 @@ class ActivityController extends BaseController
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'facility_id', in: 'query', required: false, description: 'تصفية حسب معرف المرفق', schema: new OA\Schema(type: 'integer', example: 5))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث باسم الفعالية أو سعر الجلسة', schema: new OA\Schema(type: 'string', example: 'حديد'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم الفعالية', schema: new OA\Schema(type: 'string', example: 'سباحة'))]
+    #[OA\Parameter(name: 'price', in: 'query', required: false, description: 'بحث بسعر الجلسة', schema: new OA\Schema(type: 'number', example: 50.0))]
+    #[OA\Parameter(name: 'session_price', in: 'query', required: false, description: 'تصفية حسب سعر الجلسة', schema: new OA\Schema(type: 'number', example: 50.0))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
@@ -59,6 +63,25 @@ class ActivityController extends BaseController
             $query->where('is_active', true);
         } elseif ($request->input('status') === 'inactive') {
             $query->where('is_active', false);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+                if (is_numeric($search)) {
+                    $q->orWhere('session_price', $search);
+                }
+            });
+        }
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . trim((string) $request->input('name')) . '%');
+        }
+
+        $priceFilter = $request->input('price', $request->input('session_price'));
+        if (!is_null($priceFilter) && $priceFilter !== '') {
+            $query->where('session_price', $priceFilter);
         }
 
         if ($request->has('per_page') && $request->input('per_page') !== 'all') {

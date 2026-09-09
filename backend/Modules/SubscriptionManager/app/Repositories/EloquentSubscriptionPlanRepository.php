@@ -223,6 +223,23 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
     {
         $query = SubscriptionPlan::onlyTrashed();
 
+        if (!empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('subscription_number', 'like', "%{$search}%");
+                if (is_numeric($search)) {
+                    $q->orWhere('base_price', $search);
+                }
+            });
+        }
+
+        if (!empty($filters['name'])) {
+            $query->where('name', 'like', '%' . trim((string) $filters['name']) . '%');
+        }
+
+        $query->orderBy('name', 'asc')->orderBy('id', 'asc');
+
         if (!isset($filters['per_page']) || $filters['per_page'] === 'all' || (isset($filters['paginate']) && filter_var($filters['paginate'], FILTER_VALIDATE_BOOLEAN) === false) || (isset($filters['all']) && filter_var($filters['all'], FILTER_VALIDATE_BOOLEAN) === true)) {
             return $query->get();
         }

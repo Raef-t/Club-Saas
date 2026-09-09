@@ -40,6 +40,27 @@ class UserController extends BaseController
         description: 'معرف الفرع للفلترة',
         schema: new OA\Schema(type: 'integer')
     )]
+    #[OA\Parameter(
+        name: 'search',
+        in: 'query',
+        required: false,
+        description: 'بحث شامل بالاسم أو اسم المستخدم',
+        schema: new OA\Schema(type: 'string', example: 'أحمد')
+    )]
+    #[OA\Parameter(
+        name: 'name',
+        in: 'query',
+        required: false,
+        description: 'بحث بالاسم الشخصي',
+        schema: new OA\Schema(type: 'string', example: 'أحمد')
+    )]
+    #[OA\Parameter(
+        name: 'username',
+        in: 'query',
+        required: false,
+        description: 'بحث باسم المستخدم',
+        schema: new OA\Schema(type: 'string', example: 'ahmed123')
+    )]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(response: 200, description: '✅ تم جلب قائمة المستخدمين بنجاح')]
@@ -67,6 +88,32 @@ class UserController extends BaseController
                         $b->where('branches.id', $branchId);
                     });
                 });
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('custom_username', 'like', "%{$search}%")
+                  ->orWhereHas('person', function ($pq) use ($search) {
+                      $pq->where('full_name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('name')) {
+            $name = trim((string) $request->input('name'));
+            $query->whereHas('person', function ($pq) use ($name) {
+                $pq->where('full_name', 'like', "%{$name}%");
+            });
+        }
+
+        if ($request->filled('username')) {
+            $username = trim((string) $request->input('username'));
+            $query->where(function ($uq) use ($username) {
+                $uq->where('username', 'like', "%{$username}%")
+                   ->orWhere('custom_username', 'like', "%{$username}%");
             });
         }
 

@@ -36,6 +36,10 @@ class StaffController extends BaseController
     #[OA\Parameter(name: 'role', in: 'query', required: false, description: 'تصفية حسب الدور (اسم أي دور مسجل في النظام مثل reception, accountant, member_manager, admin...)', schema: new OA\Schema(type: 'string', example: 'reception'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave']))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث شامل باسم الموظف، رقم الهاتف، أو اسم المستخدم', schema: new OA\Schema(type: 'string', example: 'أحمد'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم الموظف', schema: new OA\Schema(type: 'string', example: 'أحمد'))]
+    #[OA\Parameter(name: 'phone', in: 'query', required: false, description: 'بحث برقم الهاتف', schema: new OA\Schema(type: 'string', example: '0501234567'))]
+    #[OA\Parameter(name: 'username', in: 'query', required: false, description: 'بحث باسم المستخدم', schema: new OA\Schema(type: 'string', example: 'staff_john'))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(

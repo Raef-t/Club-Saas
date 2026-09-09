@@ -13,6 +13,7 @@ use Modules\SubscriptionManager\Http\Requests\CancelSubscriptionRequest;
 use Modules\SubscriptionManager\Http\Requests\RecordPaymentRequest;
 use Modules\Core\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use OpenApi\Attributes as OA;
 
 class PlayerSubscriptionController extends BaseController
@@ -37,7 +38,10 @@ class PlayerSubscriptionController extends BaseController
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
-    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم، رقم العضو، أو رقم الهاتف', schema: new OA\Schema(type: 'string', example: 'محمد'))]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم، رقم العضو، اسم المستخدم، أو رقم الهاتف', schema: new OA\Schema(type: 'string', example: 'محمد'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم المشترك', schema: new OA\Schema(type: 'string', example: 'محمد'))]
+    #[OA\Parameter(name: 'member_number', in: 'query', required: false, description: 'بحث برقم العضوية', schema: new OA\Schema(type: 'string', example: 'MEM-10023'))]
+    #[OA\Parameter(name: 'username', in: 'query', required: false, description: 'بحث باسم المستخدم', schema: new OA\Schema(type: 'string', example: 'mohammed99'))]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب الحالة: active (فعال), expiring_soon (تنتهي قريباً), finished (منتهي), frozen (مجمد), terminated (تم إنهاؤه من الإدارة), all (الكل)', schema: new OA\Schema(type: 'string', enum: ['active', 'expiring_soon', 'finished', 'frozen', 'terminated', 'all'], example: 'active'))]
     #[OA\Parameter(name: 'period', in: 'query', required: false, description: 'تصفية حسب فترة التسجيل: today (تسجلت اليوم), monthly (الشهر الحالي), all (الكل)', schema: new OA\Schema(type: 'string', enum: ['today', 'monthly', 'all'], example: 'today'))]
     #[OA\Parameter(name: 'month', in: 'query', required: false, description: 'تصفية حسب شهر التسجيل (1-12 أو YYYY-MM)', schema: new OA\Schema(type: 'string', example: '2026-09'))]
@@ -234,6 +238,8 @@ class PlayerSubscriptionController extends BaseController
                 new PlayerSubscriptionResource($subscription),
                 __('Subscription retrieved successfully')
             );
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse(__('Record not found.'), 404);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
@@ -252,18 +258,38 @@ class PlayerSubscriptionController extends BaseController
         content: new OA\JsonContent(
             required: ['reason'],
             properties: [
-                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري قبل الحفظ)', example: 'تعديل تاريخ بداية ونهاية الاشتراك'),
-                new OA\Property(property: 'member_id', type: 'integer', example: 1, description: 'معرف العضو (اختياري)'),
-                new OA\Property(property: 'plan_id', type: 'integer', example: 1, description: 'معرف الخطة (اختياري)'),
-                new OA\Property(property: 'offer_id', type: 'integer', example: 1, description: 'معرف العرض (اختياري)'),
-                new OA\Property(property: 'months_count', type: 'integer', example: 1, description: 'عدد الأشهر (اختياري)'),
-                new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-08-01', description: 'تاريخ بداية الاشتراك (اختياري)'),
-                new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-09-01', description: 'تاريخ نهاية الاشتراك (اختياري)'),
-                new OA\Property(property: 'status', type: 'string', example: 'active', description: 'حالة الاشتراك (اختياري)'),
-                new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 100.00, description: 'المبلغ المدفوع (اختياري)'),
-                new OA\Property(property: 'payment_method', type: 'string', example: 'cash', description: 'طريقة الدفع (اختياري)'),
-                new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-001', description: 'رقم إيصال الدفع (اختياري)'),
-                new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات معدلة', description: 'ملاحظات (اختياري)')
+                new OA\Property(property: 'reason', type: 'string', description: 'سبب التعديل (حقل إجباري لتتبع التعديلات والرقابة)', example: 'تعديل تاريخ بداية ونهاية الاشتراك ومبالغ وإيصالات الكوتش والفرع'),
+                new OA\Property(property: 'member_id', type: 'integer', nullable: true, example: 47, description: 'معرف العضو (اختياري)'),
+                new OA\Property(property: 'plan_id', type: 'integer', nullable: true, example: 83, description: 'معرف الخطة (اختياري)'),
+                new OA\Property(property: 'offer_id', type: 'integer', nullable: true, example: 1, description: 'معرف العرض (اختياري)'),
+                new OA\Property(property: 'months_count', type: 'integer', nullable: true, example: 1, description: 'عدد الأشهر للاشتراك (اختياري)'),
+                new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-10-01', description: 'تاريخ بداية الاشتراك YYYY-MM-DD (اختياري)'),
+                new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-11-01', description: 'تاريخ نهاية الاشتراك YYYY-MM-DD (اختياري)'),
+                new OA\Property(property: 'status', type: 'string', enum: ['active', 'finished', 'frozen', 'terminated', 'expired', 'cancelled'], nullable: true, example: 'active', description: 'حالة الاشتراك (اختياري)'),
+                new OA\Property(property: 'paid_amount', type: 'number', format: 'float', nullable: true, example: 350.00, description: 'إجمالي المبلغ المدفوع (اختياري)'),
+                new OA\Property(property: 'coach_paid_amount', type: 'number', format: 'float', nullable: true, example: 200.00, description: 'مبلغ دفعة الكوتش للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'branch_paid_amount', type: 'number', format: 'float', nullable: true, example: 150.00, description: 'مبلغ دفعة النادي/الفرع للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'coach_price', type: 'number', format: 'float', nullable: true, example: 200.00, description: 'سعر الكوتش (اسم بديل لـ coach_paid_amount)'),
+                new OA\Property(property: 'branch_price', type: 'number', format: 'float', nullable: true, example: 150.00, description: 'سعر الفرع (اسم بديل لـ branch_paid_amount)'),
+                new OA\Property(property: 'payment_method', type: 'string', enum: ['cash', 'card', 'wallet', 'bank_transfer'], nullable: true, example: 'cash', description: 'طريقة الدفع (اختياري)'),
+                new OA\Property(property: 'receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-004', description: 'رقم إيصال الدفع العام (اختياري)'),
+                new OA\Property(property: 'coach_receipt_number', type: 'string', nullable: true, example: 'REC-COACH-005', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'branch_receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-006', description: 'رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'ملاحظات إضافية معدلة', description: 'ملاحظات (اختياري)')
+            ],
+            example: [
+                'reason' => 'تعديل تاريخ بداية ونهاية الاشتراك ومبالغ وإيصالات الكوتش والفرع',
+                'start_date' => '2026-10-01',
+                'end_date' => '2026-11-01',
+                'months_count' => 1,
+                'status' => 'active',
+                'paid_amount' => 350.00,
+                'coach_paid_amount' => 200.00,
+                'branch_paid_amount' => 150.00,
+                'payment_method' => 'cash',
+                'coach_receipt_number' => 'REC-COACH-005',
+                'branch_receipt_number' => 'REC-CLUB-006',
+                'notes' => 'ملاحظات إضافية معدلة'
             ]
         )
     )]
@@ -300,9 +326,11 @@ class PlayerSubscriptionController extends BaseController
             $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments'])),
+                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit'])),
                 __('Subscription updated successfully')
             );
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse(__('Record not found.'), 404);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
@@ -640,16 +668,22 @@ class PlayerSubscriptionController extends BaseController
     )]
     public function destroy(Request $request, int $id)
     {
-        $isRefunded = filter_var($request->input('is_refunded', $request->input('refunded', false)), FILTER_VALIDATE_BOOLEAN);
-        $reason = $request->input('reason');
+        try {
+            $isRefunded = filter_var($request->input('is_refunded', $request->input('refunded', false)), FILTER_VALIDATE_BOOLEAN);
+            $reason = $request->input('reason');
 
-        $this->subscriptionService->deleteSubscription($id, $isRefunded, $reason);
+            $this->subscriptionService->deleteSubscription($id, $isRefunded, $reason);
 
-        $message = $isRefunded 
-            ? __('Player subscription deleted and revenue split record removed due to refund.') 
-            : __('Player subscription deleted successfully and revenue split record preserved.');
+            $message = $isRefunded 
+                ? __('Player subscription deleted and revenue split record removed due to refund.') 
+                : __('Player subscription deleted successfully and revenue split record preserved.');
 
-        return $this->successResponse(null, $message);
+            return $this->successResponse(null, $message);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse(__('Record not found.'), 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     #[OA\Post(
@@ -685,7 +719,13 @@ class PlayerSubscriptionController extends BaseController
     )]
     public function restore(int $id)
     {
-        $this->subscriptionService->restoreSubscription($id);
-        return $this->successResponse(null, __('Player subscription restored successfully'));
+        try {
+            $this->subscriptionService->restoreSubscription($id);
+            return $this->successResponse(null, __('Player subscription restored successfully'));
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse(__('Record not found.'), 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
     }
 }

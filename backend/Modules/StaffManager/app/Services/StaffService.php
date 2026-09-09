@@ -64,6 +64,46 @@ class StaffService
             });
         }
 
+        if (!empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('person', function ($pq) use ($search) {
+                    $pq->where('full_name', 'like', "%{$search}%")
+                       ->orWhereHas('contacts', function ($cq) use ($search) {
+                           $cq->where('phone_number', 'like', "%{$search}%");
+                       });
+                })
+                ->orWhereHas('user', function ($uq) use ($search) {
+                    $uq->where('username', 'like', "%{$search}%")
+                       ->orWhere('custom_username', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $name = $filters['name'] ?? $filters['full_name'] ?? null;
+        if (!empty($name)) {
+            $name = trim((string) $name);
+            $query->whereHas('person', function ($pq) use ($name) {
+                $pq->where('full_name', 'like', "%{$name}%");
+            });
+        }
+
+        $phone = $filters['phone'] ?? $filters['phone_number'] ?? null;
+        if (!empty($phone)) {
+            $phone = trim((string) $phone);
+            $query->whereHas('person.contacts', function ($cq) use ($phone) {
+                $cq->where('phone_number', 'like', "%{$phone}%");
+            });
+        }
+
+        if (!empty($filters['username'])) {
+            $username = trim((string) $filters['username']);
+            $query->whereHas('user', function ($uq) use ($username) {
+                $uq->where('username', 'like', "%{$username}%")
+                   ->orWhere('custom_username', 'like', "%{$username}%");
+            });
+        }
+
         // Eager-load person contacts, coach details, active contract, branches, user and shifts
         $query->with([
             'person.contacts',

@@ -78,12 +78,16 @@ class AllSubscriptionsReportService
             $query->whereDate('start_date', '<=', $endDate);
         }
 
-        // 7. Search Filter (member number, full name, phone number from contacts)
+        // 7. Search Filter (member number, full name, username, phone number from contacts)
         if (!empty($search)) {
             $query->whereHas('member', function ($mq) use ($search) {
                 $mq->where('member_number', 'like', "%{$search}%")
                    ->orWhereHas('person', function ($pq) use ($search) {
                        $pq->where('full_name', 'like', "%{$search}%")
+                          ->orWhereHas('user', function ($uq) use ($search) {
+                              $uq->where('username', 'like', "%{$search}%")
+                                ->orWhere('custom_username', 'like', "%{$search}%");
+                          })
                           ->orWhereHas('contacts', function ($cq) use ($search) {
                               $cq->where('phone_number', 'like', "%{$search}%");
                           });

@@ -27,14 +27,20 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث شامل باسم خطة الاشتراك، رقم الخطة، أو السعر', schema: new OA\Schema(type: 'string', example: 'الذهبي'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم خطة الاشتراك', schema: new OA\Schema(type: 'string', example: 'الذهبي'))]
+    #[OA\Parameter(name: 'subscription_number', in: 'query', required: false, description: 'بحث برقم خطة الاشتراك', schema: new OA\Schema(type: 'string', example: '25487965'))]
+    #[OA\Parameter(name: 'price', in: 'query', required: false, description: 'بحث بسعر الخطة', schema: new OA\Schema(type: 'number', example: 350.00))]
     #[OA\Parameter(name: 'status', in: 'query', required: false, description: 'تصفية حسب حالة الخطة (active, inactive, completed)', schema: new OA\Schema(type: 'string', enum: ['active', 'inactive', 'completed']))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'activity_type_id', in: 'query', required: false, description: 'تصفية حسب نوع النشاط الرياضي (معرف نوع النشاط أو اسمه أو قائمة معرفات)', schema: new OA\Schema(type: 'string', example: '1'))]
     #[OA\Parameter(name: 'activity_id', in: 'query', required: false, description: 'تصفية حسب النشاط الرياضي المحدد (معرف النشاط أو قائمة معرفات)', schema: new OA\Schema(type: 'string', example: '1'))]
     #[OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس المسموح', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed']))]
     #[OA\Parameter(name: 'available', in: 'query', required: false, description: 'تصفية الخطط المتاحة للتسجيل فقط (true/false)', schema: new OA\Schema(type: 'boolean', example: true))]
-    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
-    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (افتراضياً: 15، أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
+    #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة (افتراضياً: 1)', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'sort_by', in: 'query', required: false, description: 'الترتيب حسب الحقل (افتراضياً: name)', schema: new OA\Schema(type: 'string', example: 'name'))]
+    #[OA\Parameter(name: 'order_direction', in: 'query', required: false, description: 'اتجاه الترتيب (asc أو desc، افتراضياً: asc)', schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'], example: 'asc'))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة خطط الاشتراك',
@@ -60,6 +66,18 @@ class SubscriptionPlanController extends BaseController
                             new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'))
                         ]
                     )
+                ),
+                new OA\Property(
+                    property: 'meta',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'current_page', type: 'integer', example: 1),
+                        new OA\Property(property: 'last_page', type: 'integer', example: 3),
+                        new OA\Property(property: 'per_page', type: 'integer', example: 15),
+                        new OA\Property(property: 'total', type: 'integer', example: 35),
+                        new OA\Property(property: 'from', type: 'integer', example: 1),
+                        new OA\Property(property: 'to', type: 'integer', example: 15),
+                    ]
                 )
             ],
             example: [
@@ -149,12 +167,54 @@ class SubscriptionPlanController extends BaseController
         if ($activity !== null && $activity !== '') {
             $query->forActivity($activity);
         }
+
+        // Search: by plan name, subscription number, or price
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('subscription_number', 'like', "%{$search}%");
+                if (is_numeric($search)) {
+                    $q->orWhere('base_price', $search);
+                }
+            });
+        }
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . trim((string) $request->input('name')) . '%');
+        }
+
+        if ($request->filled('subscription_number')) {
+            $query->where('subscription_number', 'like', '%' . trim((string) $request->input('subscription_number')) . '%');
+        }
+
+        if ($request->filled('price')) {
+            $query->where('base_price', $request->input('price'));
+        }
         
-        if ($request->has('per_page') && $request->input('per_page') !== 'all') {
-            $perPage = min(max((int) $request->input('per_page'), 1), 100);
-            $plans = $query->orderBy('id', 'desc')->paginate($perPage);
+        // Sorting: default to subscription plan name ascending, secondary by id asc
+        $sortBy = $request->input('sort_by', $request->input('order_by', 'name'));
+        $sortDirection = strtolower($request->input('order_direction', $request->input('direction', $request->input('order', 'asc'))));
+        if (!in_array($sortDirection, ['asc', 'desc'])) {
+            $sortDirection = 'asc';
+        }
+
+        $allowedSortColumns = ['name', 'id', 'base_price', 'created_at', 'status'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'name';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+        if ($sortBy !== 'id') {
+            $query->orderBy('id', 'asc');
+        }
+
+        // Pagination: default is paginated (per_page default 15), unless per_page=all
+        if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
+            $plans = $query->get();
         } else {
-            $plans = $query->orderBy('id', 'desc')->get();
+            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+            $plans = $query->paginate($perPage);
         }
 
         return $this->successResponse(
@@ -170,6 +230,8 @@ class SubscriptionPlanController extends BaseController
         tags: ['Subscription Plans'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث شامل باسم الخطة أو السعر', schema: new OA\Schema(type: 'string', example: 'الذهبي'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم خطة الاشتراك', schema: new OA\Schema(type: 'string', example: 'الذهبي'))]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية حسب معرف الفرع', schema: new OA\Schema(type: 'integer'))]
     #[OA\Parameter(name: 'activity_type_id', in: 'query', required: false, description: 'تصفية حسب نوع النشاط الرياضي', schema: new OA\Schema(type: 'string', example: '1'))]
     #[OA\Parameter(name: 'activity_id', in: 'query', required: false, description: 'تصفية حسب النشاط الرياضي المحدد', schema: new OA\Schema(type: 'string', example: '1'))]
@@ -247,7 +309,23 @@ class SubscriptionPlanController extends BaseController
             $query->forActivity($activity);
         }
 
-        $plans = $query->get();
+        // Search: by plan name, subscription number, or price
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('subscription_number', 'like', "%{$search}%");
+                if (is_numeric($search)) {
+                    $q->orWhere('base_price', $search);
+                }
+            });
+        }
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . trim((string) $request->input('name')) . '%');
+        }
+
+        $plans = $query->orderBy('name', 'asc')->orderBy('id', 'asc')->get();
             
         return $this->successResponse(
             \Modules\SubscriptionManager\Http\Resources\SubscriptionPlanRegistrationResource::collection($plans),
@@ -587,6 +665,9 @@ class SubscriptionPlanController extends BaseController
     )]
     #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'معرف خطة الاشتراك', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث اختياري بالاسم أو اسم المستخدم أو رقم العضوية', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم العضو', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'member_number', in: 'query', required: false, description: 'بحث برقم العضو', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'username', in: 'query', required: false, description: 'بحث باسم المستخدم', schema: new OA\Schema(type: 'string'))]
     #[OA\Response(
         response: 200,
         description: '✅ قائمة اللاعبين النشطين في الخطة',
@@ -646,15 +727,34 @@ class SubscriptionPlanController extends BaseController
             ]);
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->whereHas('member', function ($q) use ($search) {
                 $q->where('member_number', 'like', "%{$search}%")
                   ->orWhereHas('person', function ($pq) use ($search) {
                       $pq->where('full_name', 'like', "%{$search}%")
                         ->orWhereHas('user', function ($uq) use ($search) {
-                            $uq->where('username', 'like', "%{$search}%");
+                            $uq->where('username', 'like', "%{$search}%")
+                              ->orWhere('custom_username', 'like', "%{$search}%");
                         });
                   });
+            });
+        }
+
+        if ($request->filled('name') || $request->filled('full_name') || $request->filled('member_name')) {
+            $name = trim($request->name ?? $request->full_name ?? $request->member_name);
+            $query->whereHas('member.person', fn($pq) => $pq->where('full_name', 'like', "%{$name}%"));
+        }
+
+        if ($request->filled('member_number') || $request->filled('number')) {
+            $num = trim($request->member_number ?? $request->number);
+            $query->whereHas('member', fn($mq) => $mq->where('member_number', 'like', "%{$num}%"));
+        }
+
+        if ($request->filled('username')) {
+            $username = trim($request->username);
+            $query->whereHas('member.person.user', function ($uq) use ($username) {
+                $uq->where('username', 'like', "%{$username}%")
+                  ->orWhere('custom_username', 'like', "%{$username}%");
             });
         }
 

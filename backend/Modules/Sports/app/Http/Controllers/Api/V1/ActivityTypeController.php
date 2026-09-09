@@ -17,6 +17,8 @@ class ActivityTypeController extends BaseController
         tags: ['Sports & Activities'],
         security: [['bearerAuth' => []]]
     )]
+    #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث باسم نوع النشاط', schema: new OA\Schema(type: 'string', example: 'لياقة'))]
+    #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم نوع النشاط', schema: new OA\Schema(type: 'string', example: 'لياقة'))]
     #[OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'عدد العناصر في الصفحة (أو "all" لجلب الكل بدون ترقيم)', schema: new OA\Schema(type: 'string', example: '15'))]
     #[OA\Parameter(name: 'page', in: 'query', required: false, description: 'رقم الصفحة', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Response(
@@ -52,6 +54,11 @@ class ActivityTypeController extends BaseController
     public function index(\Illuminate\Http\Request $request)
     {
         $query = ActivityType::query();
+
+        $search = $request->input('search', $request->input('name'));
+        if (!empty($search)) {
+            $query->where('name', 'like', '%' . trim((string) $search) . '%');
+        }
 
         if ($request->has('per_page') && $request->input('per_page') !== 'all') {
             $perPage = min(max((int) $request->input('per_page'), 1), 100);
