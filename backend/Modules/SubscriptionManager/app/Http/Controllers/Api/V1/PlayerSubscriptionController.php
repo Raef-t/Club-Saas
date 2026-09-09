@@ -177,12 +177,6 @@ class PlayerSubscriptionController extends BaseController
                 __('Member subscribed successfully'),
                 201
             );
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'errors' => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
@@ -339,12 +333,6 @@ class PlayerSubscriptionController extends BaseController
             );
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse(__('Record not found.'), 404);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'errors' => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
