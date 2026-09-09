@@ -3442,6 +3442,11 @@
                                     "qr_code": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
+                                    },
+                                    "branch_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -21042,6 +21047,8 @@
                                             "country_code": "+966"
                                         },
                                         "username": "coach_ahmed",
+                                        "generated_username": "tec-coach-88800",
+                                        "generated_password": "12345678",
                                         "details": {
                                             "id": 5,
                                             "staff_id": 5,
@@ -21978,8 +21985,8 @@
                 "tags": [
                     "Coach Management"
                 ],
-                "summary": "Update Coach Photo",
-                "description": "Upload or update the profile photo of a coach. Use this dedicated endpoint instead of sending the photo in the general update request.",
+                "summary": "Update or Delete Coach Photo",
+                "description": "Upload or update the profile photo of a coach. If no photo is provided, the existing photo will be removed.",
                 "operationId": "65e3cf46d3e71408c3a3ac816dec376a",
                 "parameters": [
                     {
@@ -21992,18 +21999,16 @@
                     }
                 ],
                 "requestBody": {
-                    "required": true,
+                    "required": false,
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "required": [
-                                    "photo"
-                                ],
                                 "properties": {
                                     "photo": {
-                                        "description": "صورة المدرب",
+                                        "description": "صورة المدرب (اتركه فارغاً لحذف الصورة)",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "binary",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -22013,7 +22018,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Photo updated successfully",
+                        "description": "Photo updated or removed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -25206,8 +25211,8 @@
                 "tags": [
                     "Staff Management"
                 ],
-                "summary": "🖼️ تحديث صورة الموظف",
-                "description": "رفع أو تحديث صورة الموظف. يجب استخدام هذا الـ endpoint المخصص بدلاً من إرسال الصورة ضمن طلب التحديث العام.",
+                "summary": "🖼️ تحديث أو حذف صورة الموظف",
+                "description": "رفع أو تحديث صورة الموظف. في حال تم إرسال الطلب فارغاً من الصورة، سيتم حذف الصورة الحالية للموظف.",
                 "operationId": "46d484c4b551fd38755f12a49f5856d8",
                 "parameters": [
                     {
@@ -25222,18 +25227,16 @@
                     }
                 ],
                 "requestBody": {
-                    "required": true,
+                    "required": false,
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "required": [
-                                    "photo"
-                                ],
                                 "properties": {
                                     "photo": {
-                                        "description": "صورة الموظف",
+                                        "description": "صورة الموظف (اتركه فارغاً لحذف الصورة)",
                                         "type": "string",
-                                        "format": "binary"
+                                        "format": "binary",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -25243,7 +25246,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "✅ تم تحديث الصورة بنجاح",
+                        "description": "✅ تم تحديث أو حذف الصورة بنجاح",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -35331,6 +35334,16 @@
                     "username": {
                         "type": "string",
                         "example": "coach_123",
+                        "nullable": true
+                    },
+                    "generated_username": {
+                        "type": "string",
+                        "example": "tec-coach-88800",
+                        "nullable": true
+                    },
+                    "generated_password": {
+                        "type": "string",
+                        "example": "12345678",
                         "nullable": true
                     },
                     "details": {
