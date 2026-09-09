@@ -9,6 +9,7 @@ import { CURRENCY_SYMBOL, formatLocalizedName, formatMoney } from "@/lib/utils";
 import { subscriptionEditSchema, subscriptionSchema } from "@/lib/validations/subscriptionsSchema";
 import {
   getLocalDateValue,
+  getSubscriptionSplitPaymentAmounts,
   getSubscriptionReceiptNumbers,
   getSubscriptionEndDate,
   isDailyEntrySubscriptionPlan,
@@ -521,7 +522,17 @@ export function SubscriptionEditForm({
   const selectedPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
   const resolvedPlan = selectedPlan || subscription?.plan;
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(resolvedPlan);
-  const isPrivatePlan = isPrivateSubscriptionPlan(resolvedPlan);
+  const originalPlanId = subscription?.plan_id || subscription?.plan?.id;
+  const isOriginalPlanSelected = String(form.plan_id) === String(originalPlanId);
+  const hasExistingPrivateReceipts = Boolean(initialReceiptNumbers.coachReceiptNumber);
+  const isPrivatePlan =
+    isPrivateSubscriptionPlan(resolvedPlan) ||
+    (isOriginalPlanSelected && hasExistingPrivateReceipts);
+  const splitPaymentAmounts = getSubscriptionSplitPaymentAmounts(
+    subscription,
+    resolvedPlan,
+    canEditPaidAmount ? form.paid_amount : subscription?.paid_amount,
+  );
 
   function updateField(field, value) {
     setForm((current) => {
@@ -591,6 +602,8 @@ export function SubscriptionEditForm({
         ? {
             coach_receipt_number: form.coach_receipt_number,
             branch_receipt_number: form.branch_receipt_number,
+            coach_paid_amount: splitPaymentAmounts.coachPaidAmount,
+            branch_paid_amount: splitPaymentAmounts.branchPaidAmount,
           }
         : { receipt_number: form.receipt_number }),
       notes: form.notes.trim(),

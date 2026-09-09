@@ -16,6 +16,7 @@ import { getApiErrorMessage } from "@/lib/apiError";
 import {
   getAvailableSubscriptionPlanParams,
   getDefaultSubscriptionActivityTypeId,
+  getSubscriptionActivityTypeId,
   getSubscriptionDetail,
 } from "./subscriptionUtils";
 
@@ -117,6 +118,15 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     () => getSubscriptionDetail(subscriptionDetailResponse),
     [subscriptionDetailResponse],
   );
+
+  useEffect(() => {
+    if (!selectedSubscriptionId || !selectedSubscription) return;
+
+    const subscriptionActivityTypeId = getSubscriptionActivityTypeId(selectedSubscription);
+    if (subscriptionActivityTypeId) {
+      setSelectedActivityTypeId(subscriptionActivityTypeId);
+    }
+  }, [selectedSubscription, selectedSubscriptionId]);
 
   /**
    * Creates the subscription and reports validation or backend errors to the form.

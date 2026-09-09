@@ -58,7 +58,9 @@ export const subscriptionSchema = z
     const normalizedData = { ...data };
 
     if (is_private_plan) {
-      delete normalizedData.receipt_number;
+      // The API keeps the general receipt as an alias of the branch receipt,
+      // while the UI only asks the user for the two real private-plan receipts.
+      normalizedData.receipt_number = normalizedData.branch_receipt_number;
     } else {
       delete normalizedData.coach_receipt_number;
       delete normalizedData.branch_receipt_number;
@@ -83,6 +85,14 @@ export const subscriptionEditSchema = z
     receipt_number: optionalReceiptSchema,
     coach_receipt_number: optionalReceiptSchema,
     branch_receipt_number: optionalReceiptSchema,
+    coach_paid_amount: z.coerce
+      .number()
+      .nonnegative("مبلغ الكوتش يجب أن يكون صفراً أو أكثر")
+      .optional(),
+    branch_paid_amount: z.coerce
+      .number()
+      .nonnegative("مبلغ النادي يجب أن يكون صفراً أو أكثر")
+      .optional(),
     notes: z.string().max(1000, "الملاحظات يجب ألا تتجاوز 1000 حرف").optional(),
     reason: modificationReasonSchema,
   })

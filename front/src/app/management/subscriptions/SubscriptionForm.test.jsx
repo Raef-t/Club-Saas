@@ -114,6 +114,65 @@ describe("subscription create validation", () => {
 });
 
 describe("subscription edit receipts", () => {
+  it("keeps two receipt fields for an existing split subscription without plan prices", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
+      <SubscriptionEditForm
+        subscription={{
+          id: 145,
+          member_id: 1,
+          plan_id: 83,
+          plan: {
+            id: 83,
+            name: "الاشتراك الذهبي",
+            coach_price: null,
+            branch_price: null,
+          },
+          months_count: 1,
+          start_date: "2026-10-01",
+          end_date: "2026-11-01",
+          status: "active",
+          paid_amount: "350.00",
+          receipt_number: "REC-CLUB-001",
+          coach_receipt_number: "REC-COACH-001",
+          branch_receipt_number: "REC-CLUB-001",
+          payments: [
+            { reason: "دفعة اشتراك المدرب", amount: 175 },
+            { reason: "دفعة اشتراك النادي", amount: 175 },
+          ],
+        }}
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[]}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toHaveValue("REC-COACH-001");
+    expect(screen.getByLabelText(/رقم إيصال النادي/)).toHaveValue("REC-CLUB-001");
+    expect(screen.queryByLabelText(/^رقم الإيصال/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/رقم إيصال الكوتش/), {
+      target: { value: "310" },
+    });
+    fireEvent.change(screen.getByLabelText(/رقم إيصال النادي/), {
+      target: { value: "310" },
+    });
+    fireEvent.change(screen.getByLabelText(/سبب التعديل/), {
+      target: { value: "تصحيح أرقام الإيصالات" },
+    });
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coach_receipt_number: "310",
+        branch_receipt_number: "310",
+        coach_paid_amount: 175,
+        branch_paid_amount: 175,
+      }),
+    );
+  });
+
   it("searches for a player by name while editing a subscription", () => {
     render(
       <SubscriptionEditForm
@@ -225,6 +284,8 @@ describe("subscription edit receipts", () => {
         payment_method: "cash",
         coach_receipt_number: "REC-COACH-001",
         branch_receipt_number: "REC-CLUB-001",
+        coach_paid_amount: 200,
+        branch_paid_amount: 150,
       }),
     );
   });

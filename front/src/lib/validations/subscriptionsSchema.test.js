@@ -24,7 +24,7 @@ describe("subscription create validation", () => {
     expect(result.error.issues.some((issue) => issue.path[0] === "receipt_number")).toBe(true);
   });
 
-  it("uses two receipt numbers for a private plan and omits the general receipt", () => {
+  it("uses two receipt inputs for a private plan and aliases the branch receipt", () => {
     const result = subscriptionSchema.parse({
       ...validSubscription,
       is_private_plan: true,
@@ -34,10 +34,10 @@ describe("subscription create validation", () => {
     });
 
     expect(result).toMatchObject({
+      receipt_number: "REC-CLUB-001",
       coach_receipt_number: "REC-COACH-001",
       branch_receipt_number: "REC-CLUB-001",
     });
-    expect(result).not.toHaveProperty("receipt_number");
     expect(result).not.toHaveProperty("is_private_plan");
   });
 
@@ -67,6 +67,8 @@ describe("subscription edit validation", () => {
       paid_amount: "100",
       payment_method: "cash",
       receipt_number: "  REC-2026-001  ",
+      coach_paid_amount: "200",
+      branch_paid_amount: "150",
       notes: "ملاحظات معدلة",
       reason: "  تصحيح مدة الاشتراك  ",
     });
@@ -82,6 +84,8 @@ describe("subscription edit validation", () => {
       paid_amount: 100,
       payment_method: "cash",
       receipt_number: "REC-2026-001",
+      coach_paid_amount: 200,
+      branch_paid_amount: 150,
       notes: "ملاحظات معدلة",
       reason: "تصحيح مدة الاشتراك",
     });
