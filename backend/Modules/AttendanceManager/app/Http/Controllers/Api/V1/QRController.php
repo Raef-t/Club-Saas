@@ -33,7 +33,8 @@ class QRController extends BaseController
         content: new OA\JsonContent(
             required: ['qr_code'],
             properties: [
-                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...')
+                new OA\Property(property: 'qr_code', type: 'string', example: 'eyJ0eXAi...'),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1, nullable: true)
             ]
         )
     )]
@@ -88,33 +89,37 @@ class QRController extends BaseController
                 throw new Exception('No active profile found for this QR code.');
             }
 
-            $authUser = request()->user();
-            $scannerStaff = \Illuminate\Support\Facades\DB::table('staff')->where('person_id', $authUser->person_id)->first();
+            $branchId = $validated['branch_id'] ?? null;
 
-            if (!$scannerStaff) {
-                return $this->errorResponse('Authenticated user is not a staff member.', 403);
-            }
+            if (!$branchId) {
+                $authUser = request()->user();
+                $scannerStaff = ($authUser && $authUser->person_id)
+                    ? \Illuminate\Support\Facades\DB::table('staff')->where('person_id', $authUser->person_id)->first()
+                    : null;
 
-            $now = now();
-            $time = $now->format('H:i:s');
+                if ($scannerStaff) {
+                    $now = now();
+                    $time = $now->format('H:i:s');
 
-            $activeShift = \Illuminate\Support\Facades\DB::table('staff_shifts')
-                ->join('branch_shifts', 'staff_shifts.branch_shift_id', '=', 'branch_shifts.id')
-                ->where('staff_shifts.staff_id', $scannerStaff->id)
-                ->where('branch_shifts.start_time', '<=', $time)
-                ->where('branch_shifts.end_time', '>=', $time)
-                ->select('branch_shifts.branch_id')
-                ->first();
+                    $activeShift = \Illuminate\Support\Facades\DB::table('staff_shifts')
+                        ->join('branch_shifts', 'staff_shifts.branch_shift_id', '=', 'branch_shifts.id')
+                        ->where('staff_shifts.staff_id', $scannerStaff->id)
+                        ->where('branch_shifts.start_time', '<=', $time)
+                        ->where('branch_shifts.end_time', '>=', $time)
+                        ->select('branch_shifts.branch_id')
+                        ->first();
 
-            if ($activeShift) {
-                $branchId = $activeShift->branch_id;
-            } else {
-                $staffBranch = \Illuminate\Support\Facades\DB::table('staff_branches')->where('staff_id', $scannerStaff->id)->first();
-                $branchId = $staffBranch ? $staffBranch->branch_id : null;
+                    if ($activeShift) {
+                        $branchId = $activeShift->branch_id;
+                    } else {
+                        $staffBranch = \Illuminate\Support\Facades\DB::table('staff_branches')->where('staff_id', $scannerStaff->id)->first();
+                        $branchId = $staffBranch ? $staffBranch->branch_id : null;
+                    }
+                }
             }
 
             if (!$branchId) {
-                return $this->errorResponse('Scanner staff is not assigned to any branch.', 403);
+                return $this->errorResponse('Branch ID is required or scanner staff is not assigned to any branch.', 422);
             }
 
             $attendance = $this->attendanceService->checkIn(

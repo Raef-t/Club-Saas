@@ -3442,6 +3442,11 @@
                                     "qr_code": {
                                         "type": "string",
                                         "example": "eyJ0eXAi..."
+                                    },
+                                    "branch_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"

@@ -377,4 +377,51 @@ class MemberCheckInDeductionTest extends TestCase
             'status'        => 'checked_in',
         ]);
     }
+
+    public function test_admin_user_without_staff_record_can_qr_checkin_with_branch_id(): void
+    {
+        // Create an admin user with no staff record
+        $adminPerson = Person::create([
+            'full_name' => 'Pure Admin',
+            'gender' => 'male',
+            'type' => 'admin',
+        ]);
+
+        $adminUser = User::create([
+            'person_id' => $adminPerson->id,
+            'username' => 'pure_admin_' . uniqid(),
+            'password' => bcrypt('password'),
+            'is_active' => true,
+        ]);
+        $role = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'super_admin',
+            'guard_name' => 'sanctum',
+        ]);
+        $adminUser->assignRole($role);
+        Sanctum::actingAs($adminUser, ['*']);
+
+        // Setup subscription
+        $openPlan = $this->createPlan('QR Open Gym 2', null);
+        $this->createSubscription($openPlan, 10, 0);
+
+        $qrService = app(\Modules\Authentication\Services\PersonQrCodeService::class);
+        $qrCode = $qrService->getTodayCodeForPerson($this->member->person_id);
+
+        $response = $this->postJson('/api/v1/qr/check-in', [
+            'qr_code' => $qrCode,
+            'branch_id' => $this->branch->id,
+        ]);
+
+        $response->assertStatus(200);
+        $attendanceId = $response->json('data.attendance_id');
+        $this->assertNotNull($attendanceId);
+
+        $this->assertDatabaseHas('attendances', [
+            'id'            => $attendanceId,
+            'attendable_id' => $this->member->id,
+            'branch_id'     => $this->branch->id,
+            'status'        => 'checked_in',
+        ]);
+    }
 }
+

@@ -15,6 +15,7 @@ class QRCheckInRequest extends FormRequest
     {
         return [
             'qr_code' => 'required|string',
+            'branch_id' => 'nullable|integer|exists:branches,id',
         ];
     }
 }
