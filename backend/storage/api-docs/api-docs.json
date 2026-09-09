@@ -3366,9 +3366,11 @@
                     {
                         "name": "branch_id",
                         "in": "query",
+                        "description": "معرف الفرع (اختياري، في حال تركه فارغاً يتم جلب إحصائيات جميع الفروع)",
                         "required": false,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -3377,7 +3379,78 @@
                         "description": "✅ تم استرجاع الإحصائيات بنجاح",
                         "content": {
                             "application/json": {
-                                "schema": {}
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Dashboard stats retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_active_subscribed_members": {
+                                                    "description": "إجمالي الأعضاء ذوي الاشتراكات السارية",
+                                                    "type": "integer",
+                                                    "example": 142
+                                                },
+                                                "realtime_training_players_count": {
+                                                    "description": "عدد اللاعبين المتواجدين حالياً في الصالة (تدريب حر/عام)",
+                                                    "type": "integer",
+                                                    "example": 18
+                                                },
+                                                "expiring_subscriptions_count": {
+                                                    "description": "الاشتراكات التي اقتربت من الانتهاء (<= 3 حصص أو <= 7 أيام)",
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "free_assigned_player_lockers_count": {
+                                                    "description": "عدد الخزائن المجانية المسندة والنشطة للاعبين",
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "current_active_session_plans": {
+                                                    "description": "الحصص التدريبية الجارية حالياً في هذه اللحظة",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "plan_id": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "plan_name": {
+                                                                "type": "string",
+                                                                "example": "كيك بوكسينغ - متقدم"
+                                                            },
+                                                            "session_template_id": {
+                                                                "type": "integer",
+                                                                "example": 14
+                                                            },
+                                                            "start_time": {
+                                                                "type": "string",
+                                                                "example": "12:00:00"
+                                                            },
+                                                            "end_time": {
+                                                                "type": "string",
+                                                                "example": "13:30:00"
+                                                            },
+                                                            "present_players_count": {
+                                                                "description": "عدد اللاعبين الحاضرين في هذه الحصة حالياً",
+                                                                "type": "integer",
+                                                                "example": 6
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
                             }
                         }
                     },
@@ -3398,21 +3471,117 @@
                     "Reports"
                 ],
                 "summary": "⚡ بث لحظي لإحصائيات لوحة التحكم بطريقة SSE (Server-Sent Events)",
-                "description": "يفتح اتصال HTTP مستمر لإرسال تحديثات إحصائيات لوحة التحكم فور حدوث أي تعديل في الحضور، الاشتراكات، أو الخزائن.",
+                "description": "يفتح اتصال HTTP مستمر لإرسال تحديثات إحصائيات لوحة التحكم فور حدوث أي تعديل في الحضور، الاشتراكات، أو الخزائن.\n\n• الرسائل الأولية: إشعار الاتصال `: connected`.\n• نبضات إبقاء الاتصال (Heartbeat): ترسل كل ثانية `: heartbeat` للحفاظ على الاتصال حياً.\n• رسائل التحديث: ترسل في أسطر تبدأ بـ `data: ` تحتوي على كائن JSON بالهيكل الموضح أدناه.",
                 "operationId": "6364f75f01616b0c4c9ec437c162a93d",
                 "parameters": [
                     {
                         "name": "branch_id",
                         "in": "query",
+                        "description": "معرف الفرع (اختياري، في حال تركه فارغاً يتم جلب إحصائيات جميع الفروع)",
                         "required": false,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ stream مفتوح لتقنية SSE (text/event-stream)"
+                        "description": "✅ بث SSE مباشر ومستمر (text/event-stream)",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "description": "نمط البث اللحظي SSE مع بيانات JSON منسقة داخل حقل data",
+                                    "type": "string",
+                                    "example": "data: {\n  \"status\": \"success\",\n  \"event\": \"dashboard_updated\",\n  \"version\": 1741512345678,\n  \"timestamp\": \"2026-09-09T12:35:00+03:00\",\n  \"data\": {\n    \"total_active_subscribed_members\": 142,\n    \"realtime_training_players_count\": 18,\n    \"expiring_subscriptions_count\": 7,\n    \"free_assigned_player_lockers_count\": 12,\n    \"current_active_session_plans\": [\n      {\n        \"plan_id\": 5,\n        \"plan_name\": \"كيك بوكسينغ - متقدم\",\n        \"session_template_id\": 14,\n        \"start_time\": \"12:00:00\",\n        \"end_time\": \"13:30:00\",\n        \"present_players_count\": 6\n      }\n    ]\n  }\n}\n\n"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "description": "هيكل كائن الـ JSON المستلم عبر الـ Event (للمعاينة التفاعلية الملونة)",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "event": {
+                                            "type": "string",
+                                            "example": "dashboard_updated"
+                                        },
+                                        "version": {
+                                            "description": "رقم إصدار التحديث (Timestamp بالملي ثانية)",
+                                            "type": "integer",
+                                            "example": 1741512345678
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2026-09-09T12:35:00+03:00"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_active_subscribed_members": {
+                                                    "description": "إجمالي الأعضاء ذوي الاشتراكات السارية",
+                                                    "type": "integer",
+                                                    "example": 142
+                                                },
+                                                "realtime_training_players_count": {
+                                                    "description": "عدد اللاعبين المتواجدين حالياً في الصالة (تدريب حر/عام)",
+                                                    "type": "integer",
+                                                    "example": 18
+                                                },
+                                                "expiring_subscriptions_count": {
+                                                    "description": "الاشتراكات التي اقتربت من الانتهاء (<= 3 حصص أو <= 7 أيام)",
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "free_assigned_player_lockers_count": {
+                                                    "description": "عدد الخزائن المجانية المسندة والنشطة للاعبين",
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "current_active_session_plans": {
+                                                    "description": "الحصص التدريبية الجارية حالياً في هذه اللحظة",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "plan_id": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "plan_name": {
+                                                                "type": "string",
+                                                                "example": "كيك بوكسينغ - متقدم"
+                                                            },
+                                                            "session_template_id": {
+                                                                "type": "integer",
+                                                                "example": 14
+                                                            },
+                                                            "start_time": {
+                                                                "type": "string",
+                                                                "example": "12:00:00"
+                                                            },
+                                                            "end_time": {
+                                                                "type": "string",
+                                                                "example": "13:30:00"
+                                                            },
+                                                            "present_players_count": {
+                                                                "description": "عدد اللاعبين الحاضرين في هذه الحصة حالياً",
+                                                                "type": "integer",
+                                                                "example": 6
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
