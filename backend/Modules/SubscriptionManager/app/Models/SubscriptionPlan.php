@@ -126,24 +126,121 @@ class SubscriptionPlan extends Model
 
     public function scopeForActivityType($query, $activityType)
     {
-        if ($activityType === null || $activityType === '') {
+        if ($activityType === null || $activityType === '' || $activityType === 'all' || $activityType === 'الكل') {
             return $query;
         }
 
-        return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) use ($activityType) {
-            if (is_array($activityType)) {
+        if (is_array($activityType)) {
+            return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) use ($activityType) {
                 $subQuery->whereIn('activity_type_id', $activityType);
-            } elseif (is_numeric($activityType)) {
+            });
+        }
+
+        if (is_numeric($activityType)) {
+            return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) use ($activityType) {
                 $subQuery->where('activity_type_id', (int) $activityType);
-            } elseif (is_string($activityType) && str_contains($activityType, ',')) {
-                $ids = array_filter(array_map('trim', explode(',', $activityType)), 'is_numeric');
-                $subQuery->whereIn('activity_type_id', $ids);
-            } else {
-                $subQuery->whereHas('activityType', function ($typeQuery) use ($activityType) {
-                    $typeQuery->where('name', 'like', "%{$activityType}%")
-                              ->orWhere('id', $activityType);
+            });
+        }
+
+        if (is_string($activityType) && str_contains($activityType, ',')) {
+            $ids = array_filter(array_map('trim', explode(',', $activityType)), 'is_numeric');
+            if (!empty($ids)) {
+                return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) use ($ids) {
+                    $subQuery->whereIn('activity_type_id', $ids);
                 });
             }
+        }
+
+        $typeStr = mb_strtolower(trim((string) $activityType));
+
+        // 1. Private / الخاص
+        $privateKeywords = ['الخاص', 'خاص', 'تدريب خاص', 'تدريب_خاص', 'private', 'private_training', 'private_equipment'];
+        if (in_array($typeStr, $privateKeywords, true)) {
+            return $query->where(function ($planQ) {
+                $planQ->whereHas('planActivities.staffActivity.activity', function ($subQuery) {
+                    $subQuery->where(function ($aq) {
+                        $aq->where(function ($privQ) {
+                            $privQ->where('is_private_equipment', true)
+                                  ->orWhere('name', 'like', '%خاص%')
+                                  ->orWhere('name', 'like', '%private%')
+                                  ->orWhereHas('activityType', function ($tq) {
+                                      $tq->where('name', 'like', '%خاص%')
+                                         ->orWhere('name', 'like', '%private%')
+                                         ->orWhere(function ($eq) {
+                                             $eq->where('is_private_equipment', true)
+                                                ->where('name', 'not like', '%عام%')
+                                                ->where('name', 'not like', '%general%')
+                                                ->where('is_session_based', false);
+                                         });
+                                  });
+                        })
+                        ->where('name', 'not like', '%عام%')
+                        ->whereDoesntHave('activityType', function ($gtq) {
+                            $gtq->where('name', 'like', '%عام%');
+                        });
+                    });
+                })
+                ->orWhere(function ($pq) {
+                    $pq->where(function ($npq) {
+                        $npq->where('subscription_plans.name', 'like', '%خاص%')
+                            ->orWhere('subscription_plans.name', 'like', '%private%');
+                    })
+                    ->where('subscription_plans.name', 'not like', '%عام%');
+                });
+            });
+        }
+
+        // 2. Group Session / الحصة الجماعية
+        $groupKeywords = ['الحصة الجماعية', 'الحصة_الجماعية', 'حصة جماعية', 'حصة_جماعية', 'حصة جماعيه', 'جماعي', 'جماعية', 'group', 'group_session', 'group_sessions', 'session', 'sessions'];
+        if (in_array($typeStr, $groupKeywords, true)) {
+            return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) {
+                $subQuery->where(function ($aq) {
+                    $aq->whereHas('activityType', function ($tq) {
+                        $tq->where('is_session_based', true)
+                           ->orWhere('name', 'like', '%جماع%')
+                           ->orWhere('name', 'like', '%حصة%')
+                           ->orWhere('name', 'like', '%session%')
+                           ->orWhere('name', 'like', '%group%');
+                    })
+                    ->orWhere('name', 'like', '%جماع%')
+                    ->orWhere('name', 'like', '%حصة%')
+                    ->orWhere('name', 'like', '%session%');
+                });
+            });
+        }
+
+        // 3. Public / General / العام
+        $generalKeywords = ['العام', 'عام', 'تدريب عام', 'تدريب_عام', 'general', 'public', 'general_training'];
+        if (in_array($typeStr, $generalKeywords, true)) {
+            return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) {
+                $subQuery->where(function ($aq) {
+                    $aq->whereHas('activityType', function ($tq) {
+                        $tq->where('name', 'like', '%عام%')
+                           ->orWhere('name', 'like', '%general%')
+                           ->orWhere('name', 'like', '%public%')
+                           ->orWhere(function ($gq) {
+                               $gq->where('is_session_based', false)
+                                  ->where(function ($pq) {
+                                      $pq->where('is_private_equipment', false)->orWhereNull('is_private_equipment');
+                                  });
+                           });
+                    })
+                    ->where(function ($pq) {
+                        $pq->where('is_private_equipment', false)->orWhereNull('is_private_equipment');
+                    })
+                    ->where('name', 'not like', '%خاص%');
+                });
+            });
+        }
+
+        // 4. Custom Activity Type Name or ID
+        $stripped = preg_replace('/^ال/u', '', $typeStr);
+        return $query->whereHas('planActivities.staffActivity.activity', function ($subQuery) use ($typeStr, $stripped) {
+            $subQuery->whereHas('activityType', function ($typeQuery) use ($typeStr, $stripped) {
+                $typeQuery->where('name', 'like', "%{$typeStr}%")
+                          ->orWhere('name', 'like', "%{$stripped}%")
+                          ->orWhere('id', $typeStr);
+            });
         });
     }
 

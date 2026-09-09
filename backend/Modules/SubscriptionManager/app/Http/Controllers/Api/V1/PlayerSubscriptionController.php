@@ -33,11 +33,13 @@ class PlayerSubscriptionController extends BaseController
     #[OA\Get(
         path: '/v1/player-subscriptions',
         summary: '👥 عرض اشتراكات الأعضاء',
-        description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي مع الإحصائيات. يدعم التصفية حسب الفرع، والبحث بالاسم أو رقم العضو، والفلترة حسب الحالة (فعال، تنتهي قريباً، منتهي، مجمد، تم إنهاؤه من الإدارة) وفترة التسجيل (اليوم، بالشهر، الكل).',
+        description: 'استرجاع قائمة بجميع اشتراكات الأعضاء في النادي مع الإحصائيات. يدعم التصفية حسب الفرع، نوع النشاط (الخاص، العام، الحصة الجماعية أو بالمعرف أو الاسم)، والبحث بالاسم أو رقم العضو، والفلترة حسب الحالة (فعال، تنتهي قريباً، منتهي، مجمد، تم إنهاؤه من الإدارة) وفترة التسجيل (اليوم، بالشهر، الكل).',
         tags: ['Player Subscriptions'],
         security: [['bearerAuth' => []]]
     )]
     #[OA\Parameter(name: 'branch_id', in: 'query', required: false, description: 'تصفية الاشتراكات حسب الفرع', schema: new OA\Schema(type: 'integer', example: 1))]
+    #[OA\Parameter(name: 'activity_type', in: 'query', required: false, description: 'تصفية حسب نوع النشاط: الخاص (الاشتراكات الخاصة)، العام (الاشتراكات العامة)، الحصة الجماعية (الحصص الجماعية)، أو اسم نوع النشاط الرياضي أو معرفه', schema: new OA\Schema(type: 'string', example: 'الخاص'))]
+    #[OA\Parameter(name: 'activity_type_id', in: 'query', required: false, description: 'تصفية حسب معرف نوع النشاط الرياضي', schema: new OA\Schema(type: 'integer', example: 1))]
     #[OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث بالاسم، رقم العضو، اسم المستخدم، أو رقم الهاتف', schema: new OA\Schema(type: 'string', example: 'محمد'))]
     #[OA\Parameter(name: 'name', in: 'query', required: false, description: 'بحث باسم المشترك', schema: new OA\Schema(type: 'string', example: 'محمد'))]
     #[OA\Parameter(name: 'member_number', in: 'query', required: false, description: 'بحث برقم العضوية', schema: new OA\Schema(type: 'string', example: 'MEM-10023'))]
