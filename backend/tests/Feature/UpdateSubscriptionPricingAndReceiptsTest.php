@@ -434,6 +434,87 @@ class UpdateSubscriptionPricingAndReceiptsTest extends TestCase
                 'message' => 'Record not found.',
             ]);
     }
+
+    public function test_cannot_create_subscription_with_paid_amount_exceeding_total_price()
+    {
+        $payload = [
+            'member_id' => $this->member->id,
+            'plan_id' => $this->plan->id, // plan base_price = 350.00
+            'months_count' => 1,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 1000.00, // exceeds 350.00
+            'payment_method' => 'cash',
+            'coach_receipt_number' => 'REC-COACH-001',
+            'branch_receipt_number' => 'REC-CLUB-001',
+        ];
+
+        $response = $this->postJson('/api/v1/player-subscriptions', $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['paid_amount']);
+    }
+
+    public function test_cannot_update_subscription_with_paid_amount_exceeding_total_price()
+    {
+        // 1. Create subscription
+        $createPayload = [
+            'member_id' => $this->member->id,
+            'plan_id' => $this->plan->id,
+            'months_count' => 1,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 350.00,
+            'payment_method' => 'cash',
+            'coach_receipt_number' => 'REC-COACH-001',
+            'branch_receipt_number' => 'REC-CLUB-001',
+        ];
+
+        $createRes = $this->postJson('/api/v1/player-subscriptions', $createPayload);
+        $createRes->assertStatus(201);
+        $subscriptionId = $createRes->json('data.id');
+
+        // 2. Try to update with 1000.00
+        $updatePayload = [
+            'reason' => 'محاولة دفع 1000 لاشتراك قيمته 350',
+            'paid_amount' => 1000.00,
+        ];
+
+        $response = $this->putJson("/api/v1/player-subscriptions/{$subscriptionId}", $updatePayload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['paid_amount']);
+    }
+
+    public function test_cannot_update_subscription_with_split_amounts_exceeding_total_price()
+    {
+        // 1. Create subscription
+        $createPayload = [
+            'member_id' => $this->member->id,
+            'plan_id' => $this->plan->id,
+            'months_count' => 1,
+            'start_date' => now()->toDateString(),
+            'paid_amount' => 350.00,
+            'payment_method' => 'cash',
+            'coach_receipt_number' => 'REC-COACH-001',
+            'branch_receipt_number' => 'REC-CLUB-001',
+        ];
+
+        $createRes = $this->postJson('/api/v1/player-subscriptions', $createPayload);
+        $createRes->assertStatus(201);
+        $subscriptionId = $createRes->json('data.id');
+
+        // 2. Try to update with coach 300 + branch 300 = 600 > 350
+        $updatePayload = [
+            'reason' => 'محاولة دفع مبالغ مقسومة تتجاوز الإجمالي',
+            'coach_paid_amount' => 300.00,
+            'branch_paid_amount' => 300.00,
+        ];
+
+        $response = $this->putJson("/api/v1/player-subscriptions/{$subscriptionId}", $updatePayload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['paid_amount']);
+    }
 }
+
 
 

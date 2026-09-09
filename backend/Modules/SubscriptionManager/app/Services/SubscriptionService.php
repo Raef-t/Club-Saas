@@ -9,6 +9,7 @@ use Modules\SubscriptionManager\Models\Payment;
 use Modules\Core\Contracts\MemberSharedServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Exception;
 
 class SubscriptionService
@@ -681,6 +682,15 @@ class SubscriptionService
             }
             $totalAmount = $plan->base_price;
             $paidAmount = $options['paid_amount'] ?? $totalAmount;
+
+            if ((float) $paidAmount > (float) $totalAmount + 0.01) {
+                throw ValidationException::withMessages([
+                    'paid_amount' => [__('المبلغ المدفوع (:paid) لا يمكن أن يتجاوز إجمالي سعر الاشتراك (:total).', [
+                        'paid' => number_format((float) $paidAmount, 2),
+                        'total' => number_format((float) $totalAmount, 2),
+                    ])],
+                ]);
+            }
 
             if ($paidAmount < $totalAmount) {
                 $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
@@ -1380,6 +1390,16 @@ class SubscriptionService
 
             $totalAmount = (float) $offer->price;
             $paidAmount = isset($options['paid_amount']) ? (float) $options['paid_amount'] : $totalAmount;
+
+            if ($paidAmount > $totalAmount + 0.01) {
+                throw ValidationException::withMessages([
+                    'paid_amount' => [__('المبلغ المدفوع (:paid) لا يمكن أن يتجاوز إجمالي سعر العرض (:total).', [
+                        'paid' => number_format($paidAmount, 2),
+                        'total' => number_format($totalAmount, 2),
+                    ])],
+                ]);
+            }
+
             $remainingAmount = max(0, $totalAmount - $paidAmount);
 
             // Fetch member details for financials
@@ -1665,6 +1685,15 @@ class SubscriptionService
                 $paidAmount = (float) $data['paid_amount'];
             } else {
                 $paidAmount = $oldPaidAmount;
+            }
+
+            if ($paidAmount > $totalAmount + 0.01) {
+                throw ValidationException::withMessages([
+                    'paid_amount' => [__('المبلغ المدفوع (:paid) لا يمكن أن يتجاوز إجمالي سعر الاشتراك (:total).', [
+                        'paid' => number_format($paidAmount, 2),
+                        'total' => number_format($totalAmount, 2),
+                    ])],
+                ]);
             }
 
             $remainingAmount = max(0, $totalAmount - $paidAmount);

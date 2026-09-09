@@ -499,6 +499,12 @@ class OfferController extends BaseController
                 __('Member subscribed to offer successfully'),
                 201
             );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
