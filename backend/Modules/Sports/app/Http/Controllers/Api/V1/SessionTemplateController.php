@@ -274,19 +274,25 @@ class SessionTemplateController extends BaseController
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
-        // Check facility overlap
-        if (!empty($data['facility_id'])) {
-            $facilityConflict = SportSessionTemplate::where('facility_id', $data['facility_id'])
-                ->where('day_of_week', $data['day_of_week'])
-                ->where('start_time', '<', $data['end_time'])
-                ->where('end_time', '>', $data['start_time'])
-                ->exists();
+        $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities.staffActivity.activity.activityType'])->find($data['plan_id']);
+        $branchId = $plan ? $plan->branch_id : null;
+        $isGroup = $plan ? $plan->isGroupSessionPlan() : false;
+        $coachIds = $plan ? $plan->planActivities->pluck('staffActivity.staff_id')->filter()->unique()->toArray() : [];
 
-            if ($facilityConflict) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'start_time' => __('يوجد تعارض في الوقت مع جلسة أخرى في نفس المرفق (القاعة).')
-                ]);
-            }
+        $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
+        $conflictError = $conflictService->checkSingleTemplateConflict(
+            $data,
+            $branchId,
+            null,
+            null,
+            $coachIds,
+            $isGroup
+        );
+
+        if ($conflictError) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'start_time' => [$conflictError]
+            ]);
         }
 
         $template = SportSessionTemplate::create($data);
@@ -363,20 +369,39 @@ class SessionTemplateController extends BaseController
         $checkStart = $data['start_time'] ?? $template->start_time;
         $checkEnd = $data['end_time'] ?? $template->end_time;
 
-        // Check facility overlap
-        if (!empty($checkFacility)) {
-            $facilityConflict = SportSessionTemplate::where('id', '!=', $id)
-                ->where('facility_id', $checkFacility)
-                ->where('day_of_week', $checkDay)
-                ->where('start_time', '<', $checkEnd)
-                ->where('end_time', '>', $checkStart)
-                ->exists();
+        $planId = $data['plan_id'] ?? $template->plan_id;
+        $plan = $planId ? \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities.staffActivity.activity.activityType'])->find($planId) : null;
+        $branchId = $plan ? $plan->branch_id : null;
+        $isGroup = $plan ? $plan->isGroupSessionPlan() : false;
+        
+        $coachIds = [];
+        if (!empty($data['coach_id'])) {
+            $coachIds = [(int) $data['coach_id']];
+        } elseif ($plan) {
+            $coachIds = $plan->planActivities->pluck('staffActivity.staff_id')->filter()->unique()->toArray();
+        }
 
-            if ($facilityConflict) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'start_time' => __('يوجد تعارض في الوقت مع جلسة أخرى في نفس المرفق (القاعة).')
-                ]);
-            }
+        $checkTemplate = [
+            'facility_id' => $checkFacility,
+            'day_of_week' => $checkDay,
+            'start_time' => $checkStart,
+            'end_time' => $checkEnd,
+        ];
+
+        $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
+        $conflictError = $conflictService->checkSingleTemplateConflict(
+            $checkTemplate,
+            $branchId,
+            null,
+            $id,
+            $coachIds,
+            $isGroup
+        );
+
+        if ($conflictError) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'start_time' => [$conflictError]
+            ]);
         }
 
         $template->update($data);
