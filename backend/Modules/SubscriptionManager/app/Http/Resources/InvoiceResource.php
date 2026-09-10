@@ -12,10 +12,15 @@ class InvoiceResource extends JsonResource
             ? $this->payments->sortByDesc('created_at')->first()
             : null;
 
+        $currency = $this->currency ?? ($this->subscription?->currency ?? 'SYP');
+        $currencySymbol = ($currency === 'USD') ? '$' : 'ل.س';
+
         return [
             'invoice_id' => $this->id,
             'amount' => (float) $this->total,
-            'formatted_amount' => '$' . number_format($this->total, 0),
+            'currency' => $currency,
+            'currency_type' => $currency,
+            'formatted_amount' => number_format($this->total, 0) . ' ' . $currencySymbol,
             'status' => $this->status,
             'receipt_number' => $latestPayment?->receipt_number ?? null,
             'payment_method' => $latestPayment?->payment_method ?? null,

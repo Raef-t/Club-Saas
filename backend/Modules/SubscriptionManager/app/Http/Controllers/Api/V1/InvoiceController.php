@@ -85,6 +85,8 @@ class InvoiceController extends BaseController
             $total_paid += $paid;
             $total_amount += $invoice->total;
 
+            $invoiceCurrency = $invoice->currency ?? ($invoice->subscription?->currency ?? 'SYP');
+
             return [
                 'code' => $invoice->code,
                 'created_at' => $invoice->created_at?->toDateString(),
@@ -92,6 +94,8 @@ class InvoiceController extends BaseController
                 'subscription_name' => $invoice->subscription?->plan?->name ?? 'N/A',
                 'total' => (float) $invoice->total,
                 'remaining_amount' => (float) max(0, $invoice->total - $paid),
+                'currency' => $invoiceCurrency,
+                'currency_type' => $invoiceCurrency,
             ];
         });
 
@@ -101,6 +105,8 @@ class InvoiceController extends BaseController
             'total_paid' => (float) $total_paid,
             'total_remaining' => (float) $total_remaining,
             'total_amount' => (float) $total_amount,
+            'currency' => 'SYP',
+            'currency_type' => 'SYP',
             'invoices' => $invoicesData
         ], __('Invoices retrieved successfully'));
     }

@@ -347,6 +347,7 @@ class SubscriptionService
         $this->syncExpiredSubscriptions();
 
         $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
+        $currency = !empty($filters['currency']) ? $filters['currency'] : 'SYP';
 
         // Base query with branch scoping
         $baseQuery = PlayerSubscription::query();
@@ -355,6 +356,9 @@ class SubscriptionService
                 $q->whereHas('plan', fn($pq) => $pq->where('branch_id', $branchId))
                   ->orWhereHas('member', fn($mq) => $mq->where('branch_id', $branchId));
             });
+        }
+        if (!empty($filters['currency'])) {
+            $baseQuery->where('currency', $filters['currency']);
         }
 
         // 1. Active subscriptions
@@ -383,6 +387,10 @@ class SubscriptionService
                 'invoice.subscription.plan.planActivities.staffActivity.activity',
             ]);
 
+        if (!empty($filters['currency'])) {
+            $todayPaymentsQuery->where('currency', $filters['currency']);
+        }
+
         $todayRevenue = 0.0;
         foreach ($todayPaymentsQuery->get() as $payment) {
             $todayRevenue += $this->calculatePaymentClubAmount($payment);
@@ -408,6 +416,8 @@ class SubscriptionService
             'total_subscriptions'  => $totalCount,
             'total_paid_amount'    => $totalPaidAmount,
             'today_revenue'        => $todayRevenue,
+            'currency'             => $currency,
+            'currency_type'        => $currency,
         ];
     }
 
@@ -432,6 +442,8 @@ class SubscriptionService
                 'club_amount'           => (float) $split->club_amount,
                 'coach_amount'          => (float) $split->coach_amount,
                 'total_amount'          => (float) $split->total_amount,
+                'currency'              => $split->currency ?? ($subscription->currency ?? 'SYP'),
+                'currency_type'         => $split->currency ?? ($subscription->currency ?? 'SYP'),
                 'coach_receipt_number'  => $split->coach_receipt_number ?? $subscription->coach_receipt_number,
                 'branch_receipt_number' => $split->branch_receipt_number ?? $subscription->branch_receipt_number,
             ];
@@ -442,6 +454,8 @@ class SubscriptionService
             ? $subscription->plan
             : $subscription->plan()->with(['planActivities.staffActivity.activity', 'planActivities.staffActivity.staff'])->first();
 
+        $currency = $subscription->currency ?? ($plan?->currency ?? 'SYP');
+
         if (!$plan) {
             return [
                 'has_split'             => false,
@@ -450,6 +464,8 @@ class SubscriptionService
                 'club_amount'           => (float) $subscription->total_amount,
                 'coach_amount'          => 0.0,
                 'total_amount'          => (float) $subscription->total_amount,
+                'currency'              => $currency,
+                'currency_type'         => $currency,
                 'coach_receipt_number'  => $subscription->coach_receipt_number,
                 'branch_receipt_number' => $subscription->branch_receipt_number,
             ];
@@ -467,6 +483,8 @@ class SubscriptionService
                 'club_amount'           => (float) $subscription->total_amount,
                 'coach_amount'          => 0.0,
                 'total_amount'          => (float) $subscription->total_amount,
+                'currency'              => $currency,
+                'currency_type'         => $currency,
                 'coach_receipt_number'  => $subscription->coach_receipt_number,
                 'branch_receipt_number' => $subscription->branch_receipt_number,
             ];
@@ -530,6 +548,8 @@ class SubscriptionService
             'club_amount'           => $clubAmount,
             'coach_amount'          => $coachAmount,
             'total_amount'          => $totalAmount,
+            'currency'              => $currency,
+            'currency_type'         => $currency,
             'coach_receipt_number'  => $subscription->coach_receipt_number,
             'branch_receipt_number' => $subscription->branch_receipt_number,
         ];
@@ -690,6 +710,7 @@ class SubscriptionService
             }
 
             $remainingAmount = max(0, $totalAmount - $paidAmount);
+            $currency = $options['currency'] ?? $plan->currency ?? 'SYP';
 
             // 4. Create Subscription
             $coachReceiptNumber = $options['coach_receipt_number'] ?? null;
@@ -702,6 +723,7 @@ class SubscriptionService
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,
                 'remaining_amount' => $remainingAmount,
+                'currency' => $currency,
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate ? $endDate->toDateString() : null,
                 'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
@@ -788,6 +810,7 @@ class SubscriptionService
                     'player_subscription_id' => $subscription->id,
                     'coach_id'               => $coachId,
                     'branch_id'              => $branchId,
+                    'currency'               => $currency,
                     'total_amount'           => $totalAmount,
                     'club_percentage'        => $clubPct,
                     'coach_percentage'       => $coachPct,
@@ -803,6 +826,7 @@ class SubscriptionService
                 'member_id'              => $memberId,
                 'branch_id'              => $branchId,
                 'player_subscription_id' => $subscription->id,
+                'currency'               => $currency,
                 'total'                  => $totalAmount,
                 'status'                 => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
             ]);
@@ -867,6 +891,7 @@ class SubscriptionService
                             'receipt_number' => $coachReceiptNumber,
                             'invoice_id' => $invoice->id,
                             'safe_id' => null, // Coach payment does not enter the club safe
+                            'currency' => $currency,
                             'amount' => $coachPaid,
                             'payment_method' => $options['payment_method'] ?? 'cash',
                             'status' => 'completed',
@@ -879,6 +904,7 @@ class SubscriptionService
                             'receipt_number' => $branchReceiptNumber,
                             'invoice_id' => $invoice->id,
                             'safe_id' => $safeId,
+                            'currency' => $currency,
                             'amount' => $branchPaid,
                             'payment_method' => $options['payment_method'] ?? 'cash',
                             'status' => 'completed',
@@ -890,6 +916,7 @@ class SubscriptionService
                         'receipt_number' => $branchReceiptNumber,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
+                        'currency' => $currency,
                         'amount' => $paidAmount,
                         'payment_method' => $options['payment_method'] ?? 'cash',
                         'status' => 'completed',
@@ -1066,11 +1093,14 @@ class SubscriptionService
                 throw new Exception(__('Member does not belong to any branch.'));
             }
 
+            $currency = $options['currency'] ?? $subscription->currency ?? 'SYP';
+
             $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
                 ['player_subscription_id' => $subscription->id],
                 [
                     'member_id' => $subscription->member_id,
                     'branch_id' => $branchId,
+                    'currency' => $currency,
                     'total' => $subscription->total_amount,
                     'status' => 'unpaid',
                 ]
@@ -1093,6 +1123,7 @@ class SubscriptionService
                         'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => null,
+                        'currency' => $currency,
                         'amount' => $amount,
                         'payment_method' => 'wallet',
                         'status' => 'completed',
@@ -1116,6 +1147,7 @@ class SubscriptionService
                         'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
+                        'currency' => $currency,
                         'amount' => $amount,
                         'payment_method' => $options['payment_method'] ?? 'cash',
                         'status' => 'completed',
@@ -1389,12 +1421,15 @@ class SubscriptionService
                 throw new Exception(__('Member does not belong to any branch.'));
             }
 
+            $currency = $options['currency'] ?? 'SYP';
+
             // Create Invoice linked to Offer
             $invoice = \Modules\SubscriptionManager\Models\Invoice::create([
                 'member_id' => $memberId,
                 'branch_id' => $branchId,
                 'offer_id' => $offer->id,
                 'player_subscription_id' => null,
+                'currency' => $currency,
                 'total' => $totalAmount,
                 'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
             ]);
@@ -1415,6 +1450,7 @@ class SubscriptionService
                     'plan_id' => $plan->id,
                     'months_count' => $monthsCount,
                     'offer_id' => $offer->id,
+                    'currency' => $currency,
                     'total_amount' => 0, // Zero because it's part of the offer
                     'paid_amount' => 0,
                     'remaining_amount' => 0,
@@ -1462,6 +1498,7 @@ class SubscriptionService
                         'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => null,
+                        'currency' => $currency,
                         'amount' => $paidAmount,
                         'payment_method' => 'wallet',
                         'status' => 'completed',
@@ -1485,6 +1522,7 @@ class SubscriptionService
                         'receipt_number' => $options['receipt_number'] ?? null,
                         'invoice_id' => $invoice->id,
                         'safe_id' => $safeId,
+                        'currency' => $currency,
                         'amount' => $paidAmount,
                         'payment_method' => $options['payment_method'] ?? 'cash',
                         'status' => 'completed',
@@ -1716,22 +1754,28 @@ class SubscriptionService
             // 5. Synchronize linked Invoice
             $memberDTO = $this->memberSharedService->getMemberById($subscription->member_id);
             $branchId = $memberDTO->branchId;
+            $currency = $data['currency'] ?? $subscription->currency ?? 'SYP';
 
             $invoice = \Modules\SubscriptionManager\Models\Invoice::firstOrCreate(
                 ['player_subscription_id' => $subscription->id],
                 [
                     'member_id' => $subscription->member_id,
                     'branch_id' => $branchId,
+                    'currency' => $currency,
                     'total' => $totalAmount,
                     'status' => 'unpaid',
                 ]
             );
 
-            $invoice->update([
+            $invoiceUpdateData = [
                 'member_id' => $subscription->member_id,
                 'total' => $totalAmount,
                 'status' => $remainingAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partially_paid' : 'unpaid'),
-            ]);
+            ];
+            if (isset($data['currency'])) {
+                $invoiceUpdateData['currency'] = $data['currency'];
+            }
+            $invoice->update($invoiceUpdateData);
 
             // 6. Safe resolution
             $safeId = null;
@@ -1778,10 +1822,17 @@ class SubscriptionService
                 }
             }
 
+            if (isset($data['currency'])) {
+                $invoice->payments()->update(['currency' => $data['currency']]);
+            }
+
             // 7a. Coach payment synchronization
             if ($hasCoachReceipt || isset($data['coach_paid_amount'])) {
                 if ($coachPayment) {
                     $paymentUpdates = ['reason' => 'دفعة اشتراك المدرب'];
+                    if (isset($data['currency'])) {
+                        $paymentUpdates['currency'] = $data['currency'];
+                    }
                     if ($hasCoachReceipt) {
                         $paymentUpdates['receipt_number'] = $coachReceiptNumber;
                     }
@@ -1794,6 +1845,7 @@ class SubscriptionService
                         'receipt_number' => $coachReceiptNumber,
                         'invoice_id'     => $invoice->id,
                         'safe_id'        => null, // Coach payment does not enter the club safe
+                        'currency'       => $currency,
                         'amount'         => (float) $data['coach_paid_amount'],
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'status'         => 'completed',
@@ -1803,14 +1855,19 @@ class SubscriptionService
             }
 
             // 7b. Branch payment synchronization
-            if ($hasBranchReceipt || $hasGeneralReceipt || isset($data['branch_paid_amount'])) {
+            if ($hasBranchReceipt || $hasGeneralReceipt || isset($data['branch_paid_amount']) || (!$coachPayment && array_key_exists('paid_amount', $data))) {
                 if ($branchPayment) {
                     $paymentUpdates = ['reason' => 'دفعة اشتراك النادي'];
+                    if (isset($data['currency'])) {
+                        $paymentUpdates['currency'] = $data['currency'];
+                    }
                     if ($branchReceiptNumber !== null) {
                         $paymentUpdates['receipt_number'] = $branchReceiptNumber;
                     }
                     if (isset($data['branch_paid_amount'])) {
                         $paymentUpdates['amount'] = (float) $data['branch_paid_amount'];
+                    } elseif (array_key_exists('paid_amount', $data)) {
+                        $paymentUpdates['amount'] = (float) $data['paid_amount'];
                     }
                     if (!$branchPayment->safe_id && $safeId) {
                         $paymentUpdates['safe_id'] = $safeId;
@@ -1821,6 +1878,7 @@ class SubscriptionService
                         'receipt_number' => $branchReceiptNumber,
                         'invoice_id'     => $invoice->id,
                         'safe_id'        => $safeId,
+                        'currency'       => $currency,
                         'amount'         => (float) $data['branch_paid_amount'],
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'status'         => 'completed',
@@ -1834,6 +1892,9 @@ class SubscriptionService
                 $firstPayment = $existingPayments->first();
                 if ($firstPayment) {
                     $paymentUpdates = [];
+                    if (isset($data['currency'])) {
+                        $paymentUpdates['currency'] = $data['currency'];
+                    }
                     if ($hasGeneralReceipt || $hasBranchReceipt) {
                         $paymentUpdates['receipt_number'] = $data['receipt_number'] ?? $branchReceiptNumber;
                     }
@@ -1851,6 +1912,7 @@ class SubscriptionService
                         'receipt_number' => $data['receipt_number'] ?? $branchReceiptNumber,
                         'invoice_id'     => $invoice->id,
                         'safe_id'        => $safeId,
+                        'currency'       => $currency,
                         'amount'         => $paidAmount,
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'status'         => 'completed',
@@ -1863,6 +1925,9 @@ class SubscriptionService
             // 8. Synchronize SubscriptionRevenueSplit
             $revenueSplit = $subscription->revenueSplit;
             $revenueSplitUpdates = [];
+            if (isset($data['currency'])) {
+                $revenueSplitUpdates['currency'] = $data['currency'];
+            }
             if ($hasCoachReceipt) {
                 $revenueSplitUpdates['coach_receipt_number'] = $coachReceiptNumber;
             }
@@ -1895,6 +1960,7 @@ class SubscriptionService
                         'player_subscription_id' => $subscription->id,
                         'coach_id'               => $coachId,
                         'branch_id'              => $branchId,
+                        'currency'               => $currency,
                         'total_amount'           => $totalAmount,
                         'club_percentage'        => 0,
                         'coach_percentage'       => 100,

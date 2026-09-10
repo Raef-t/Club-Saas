@@ -28612,6 +28612,12 @@
                                         "format": "date",
                                         "example": "2026-08-01"
                                     },
+                                    "currency": {
+                                        "description": "العملة (اختياري، افتراضياً نفس عملة الخطة أو SYP)",
+                                        "type": "string",
+                                        "example": "SYP",
+                                        "nullable": true
+                                    },
                                     "notes": {
                                         "description": "ملاحظات (اختياري)",
                                         "type": "string",
@@ -31331,6 +31337,12 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 350
+                                    },
+                                    "currency": {
+                                        "description": "عملة الخطة المالية (افتراضياً SYP)",
+                                        "type": "string",
+                                        "example": "SYP",
+                                        "nullable": true
                                     },
                                     "coach_price": {
                                         "description": "سعر الكوتش للاشتراك الخاص",

@@ -16,6 +16,7 @@ class PlayerSubscription extends Model
         'total_amount',
         'paid_amount',
         'remaining_amount',
+        'currency',
         'start_date',
         'end_date',
         'status',
@@ -333,5 +334,10 @@ class PlayerSubscription extends Model
                 \Modules\AttendanceManager\Services\DashboardNotificationService::notifyBranchStatsChanged($branchId);
             }
         });
+    }
+
+    public function getCurrencyTypeAttribute(): string
+    {
+        return $this->currency ?? ($this->plan?->currency ?? 'SYP');
     }
 }

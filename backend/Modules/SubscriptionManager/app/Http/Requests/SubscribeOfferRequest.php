@@ -21,6 +21,7 @@ class SubscribeOfferRequest extends FormRequest
             'notes' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
+            'currency' => 'nullable|string|max:10',
             'duration_days' => 'nullable|integer|min:1',
             'months_count' => 'nullable|integer|min:1',
         ];

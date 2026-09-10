@@ -238,6 +238,7 @@ class PaymentController extends BaseController
             'amount' => 'sometimes|numeric|min:0.01',
             'payment_method' => 'sometimes|string',
             'receipt_number' => 'sometimes|nullable|string|max:100',
+            'currency' => 'sometimes|nullable|string|max:10',
         ]);
 
         $payment->update($data);

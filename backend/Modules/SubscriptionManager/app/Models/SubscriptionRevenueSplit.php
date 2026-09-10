@@ -16,6 +16,7 @@ class SubscriptionRevenueSplit extends Model
         'coach_id',
         'branch_id',
         'total_amount',
+        'currency',
         'club_percentage',
         'coach_percentage',
         'club_amount',
@@ -47,5 +48,10 @@ class SubscriptionRevenueSplit extends Model
     public function branch()
     {
         return $this->belongsTo(\Modules\ClubManager\Models\Branch::class, 'branch_id');
+    }
+
+    public function getCurrencyTypeAttribute(): string
+    {
+        return $this->currency ?? ($this->subscription?->currency ?? 'SYP');
     }
 }

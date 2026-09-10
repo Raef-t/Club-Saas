@@ -351,6 +351,7 @@ class SubscriptionPlanController extends BaseController
                 new OA\Property(property: 'session_count', type: 'integer', nullable: true, example: null),
                 new OA\Property(property: 'sessions_per_week', type: 'integer', nullable: true, example: 3),
                 new OA\Property(property: 'base_price', type: 'number', format: 'float', example: 350.00),
+                new OA\Property(property: 'currency', type: 'string', nullable: true, description: 'عملة الخطة المالية (افتراضياً SYP)', example: 'SYP'),
                 new OA\Property(property: 'coach_price', type: 'number', format: 'float', nullable: true, description: 'سعر الكوتش للاشتراك الخاص', example: 200.00),
                 new OA\Property(property: 'branch_price', type: 'number', format: 'float', nullable: true, description: 'سعر الفرع للاشتراك الخاص', example: 150.00),
                 new OA\Property(property: 'max_subscribers', type: 'integer', nullable: true, example: 50),

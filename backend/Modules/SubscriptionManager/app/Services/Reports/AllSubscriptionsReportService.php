@@ -24,6 +24,7 @@ class AllSubscriptionsReportService
         $startDate     = $filters['start_date'] ?? null;
         $endDate       = $filters['end_date'] ?? null;
         $search        = $filters['search'] ?? null;
+        $currency      = $filters['currency'] ?? null;
 
         $query = PlayerSubscription::query()
             ->with([
@@ -35,6 +36,11 @@ class AllSubscriptionsReportService
                 'offer',
                 'items',
             ]);
+
+        // 0. Filter by Currency
+        if (!empty($currency)) {
+            $query->where('currency', $currency);
+        }
 
         // 1. Filter by Subscription Status
         if ($status !== 'all' && !empty($status)) {
@@ -111,6 +117,8 @@ class AllSubscriptionsReportService
             'fully_paid_count'     => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount >= (float)$s->total_amount)->count(),
             'partially_paid_count' => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount > 0 && (float)$s->paid_amount < (float)$s->total_amount)->count(),
             'unpaid_count'         => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount == 0)->count(),
+            'currency'             => $currency ?? 'SYP',
+            'currency_type'        => $currency ?? 'SYP',
         ];
 
         // Format records
@@ -232,6 +240,8 @@ class AllSubscriptionsReportService
                 'total_amount'         => round($totalAmount, 2),
                 'paid_amount'          => round($paidAmount, 2),
                 'remaining_amount'     => round($remainingAmount, 2),
+                'currency'             => $sub->currency ?? ($sub->plan?->currency ?? 'SYP'),
+                'currency_type'        => $sub->currency ?? ($sub->plan?->currency ?? 'SYP'),
                 'is_fully_paid'        => $isFullyPaid,
                 'payment_status'       => $paymentStatus,
                 'payment_status_label' => $paymentStatusLabel,

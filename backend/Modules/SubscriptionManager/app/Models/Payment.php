@@ -18,6 +18,7 @@ class Payment extends Model
         'invoice_id',
         'safe_id',
         'amount',
+        'currency',
         'payment_method',
         'status',
         'reason',
@@ -30,6 +31,11 @@ class Payment extends Model
     public function invoice()
     {
         return $this->belongsTo(Invoice::class, 'invoice_id')->withTrashed();
+    }
+
+    public function getCurrencyTypeAttribute(): string
+    {
+        return $this->currency ?? 'SYP';
     }
 
     protected static function booted(): void

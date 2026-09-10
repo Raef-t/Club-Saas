@@ -18,6 +18,8 @@ class SubscriptionPlanResource extends JsonResource
             'base_price' => $this->base_price,
             'coach_price' => $this->coach_price,
             'branch_price' => $this->branch_price,
+            'currency' => $this->currency ?? 'SYP',
+            'currency_type' => $this->currency ?? 'SYP',
             'max_subscribers' => $this->max_subscribers,
             'current_subscribers' => method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers,
             'is_unlimited_subscribers' => (bool) ($this->is_unlimited_subscribers ?? ($this->max_subscribers == 0)),

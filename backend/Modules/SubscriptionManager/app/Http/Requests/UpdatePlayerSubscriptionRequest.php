@@ -31,6 +31,7 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
             'receipt_number' => 'nullable|string|max:100',
             'coach_receipt_number' => 'nullable|string|max:100',
             'branch_receipt_number' => 'nullable|string|max:100',
+            'currency' => 'nullable|string|max:10',
             'notes' => 'nullable|string',
         ];
     }

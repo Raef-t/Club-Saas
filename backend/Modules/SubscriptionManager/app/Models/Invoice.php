@@ -21,6 +21,7 @@ class Invoice extends Model
         'locker_reservation_id',
         'offer_id',
         'total',
+        'currency',
         'status',
     ];
 
@@ -74,5 +75,10 @@ class Invoice extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'invoice_id');
+    }
+
+    public function getCurrencyTypeAttribute(): string
+    {
+        return $this->currency ?? ($this->subscription?->currency ?? 'SYP');
     }
 }

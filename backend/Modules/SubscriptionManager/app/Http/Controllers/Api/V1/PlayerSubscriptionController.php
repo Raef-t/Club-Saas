@@ -121,6 +121,7 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'paid_amount', type: 'number', format: 'float', example: 50.00, description: 'المبلغ المدفوع فوراً (أدخل 0 إذا لم يتم الدفع)'),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-07-01', description: 'تاريخ بداية الاشتراك (مطلوب)'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2026-08-01', description: 'تاريخ نهاية الاشتراك (اختياري، في حال عدم تمريره يتم حسابه تلقائياً من عدد الأشهر)'),
+                new OA\Property(property: 'currency', type: 'string', nullable: true, example: 'SYP', description: 'العملة (اختياري، افتراضياً نفس عملة الخطة أو SYP)'),
                 new OA\Property(property: 'notes', type: 'string', example: 'ملاحظات إضافية', description: 'ملاحظات (اختياري)'),
                 new OA\Property(property: 'receipt_number', type: 'string', example: 'REC-2026-001', description: 'رقم إيصال الدفع العام / النادي (اختياري)'),
                 new OA\Property(property: 'coach_receipt_number', type: 'string', example: 'REC-COACH-001', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),

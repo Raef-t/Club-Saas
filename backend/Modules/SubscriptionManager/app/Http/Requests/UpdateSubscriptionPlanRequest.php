@@ -35,6 +35,7 @@ class UpdateSubscriptionPlanRequest extends FormRequest
             'base_price' => 'nullable|numeric|min:0',
             'coach_price' => 'nullable|numeric|min:0',
             'branch_price' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|max:10',
             'max_subscribers' => 'nullable|integer|min:0',
             'is_unlimited_subscribers' => 'nullable|boolean',
             'gender_restriction' => 'nullable|in:male,female,mixed',

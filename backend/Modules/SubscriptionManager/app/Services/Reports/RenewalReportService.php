@@ -247,6 +247,8 @@ class RenewalReportService
                 'total_amount'          => (float) $sub->total_amount,
                 'paid_amount'           => (float) $sub->paid_amount,
                 'remaining_amount'      => (float) $sub->remaining_amount,
+                'currency'              => $sub->currency ?? ($sub->plan?->currency ?? 'SYP'),
+                'currency_type'         => $sub->currency ?? ($sub->plan?->currency ?? 'SYP'),
                 'is_fully_paid'         => $sub->is_fully_paid,
                 'renewal_info'          => $isRenewed ? [
                     'renewed_subscription_id' => $nextSubscription->id,
@@ -254,6 +256,8 @@ class RenewalReportService
                     'renewal_date'            => $nextSubscription->start_date ? $nextSubscription->start_date->format('Y-m-d') : null,
                     'new_end_date'            => $nextSubscription->end_date ? $nextSubscription->end_date->format('Y-m-d') : null,
                     'new_total_amount'        => (float) $nextSubscription->total_amount,
+                    'new_currency'            => $nextSubscription->currency ?? 'SYP',
+                    'new_currency_type'       => $nextSubscription->currency ?? 'SYP',
                 ] : null,
             ];
 
@@ -273,6 +277,8 @@ class RenewalReportService
                 'renewal_rate_percentage'      => $renewalRate,
                 'total_lost_potential_revenue'  => $totalLostRevenue,
                 'total_renewed_revenue'        => $totalRenewedRevenue,
+                'currency'                     => 'SYP',
+                'currency_type'                => 'SYP',
             ],
             'records' => $reportRecords,
         ];

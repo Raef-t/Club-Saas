@@ -20,6 +20,7 @@ class SubscriptionPlan extends Model
         'base_price',
         'coach_price',
         'branch_price',
+        'currency',
         'status',
         'max_subscribers',
         'current_subscribers',
@@ -376,6 +377,11 @@ class SubscriptionPlan extends Model
     public function getIsUnlimitedSubscribersAttribute(): bool
     {
         return $this->max_subscribers === 0 || $this->max_subscribers === null || $this->hasEquipmentActivity();
+    }
+
+    public function getCurrencyTypeAttribute(): string
+    {
+        return $this->currency ?? 'SYP';
     }
 
     public function planActivities()

@@ -31,6 +31,8 @@ class PlayerSubscriptionResource extends JsonResource
             'total_amount' => $this->total_amount,
             'paid_amount' => $this->paid_amount,
             'remaining_amount' => $this->remaining_amount,
+            'currency' => $this->currency ?? ($this->plan?->currency ?? 'SYP'),
+            'currency_type' => $this->currency ?? ($this->plan?->currency ?? 'SYP'),
             'notes' => $this->notes,
             'reason' => $this->reason,
             'created_by' => $this->created_by ? [
@@ -91,6 +93,8 @@ class PlayerSubscriptionResource extends JsonResource
                 'id' => $this->revenueSplit->id,
                 'coach_id' => $this->revenueSplit->coach_id,
                 'total_amount' => $this->revenueSplit->total_amount,
+                'currency' => $this->revenueSplit->currency ?? ($this->currency ?? 'SYP'),
+                'currency_type' => $this->revenueSplit->currency ?? ($this->currency ?? 'SYP'),
                 'club_percentage' => $this->revenueSplit->club_percentage,
                 'coach_percentage' => $this->revenueSplit->coach_percentage,
                 'club_amount' => $this->revenueSplit->club_amount,
