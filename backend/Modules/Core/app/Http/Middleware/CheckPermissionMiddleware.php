@@ -362,6 +362,15 @@ class CheckPermissionMiddleware
         'GET:v1/accounting/salary-payments'                             => 'accounting.salary.view-any',
         'POST:v1/accounting/salary-payments'                            => 'accounting.salary.create',
         'DELETE:v1/accounting/salary-payments/{id}'                      => 'accounting.salary.delete',
+
+        // ─── App Versions (Trainee App) ───────────────────────────────────────
+        'GET:v1/app-versions'                                           => 'app-version.view-any',
+        'POST:v1/app-versions'                                          => 'app-version.create',
+        'GET:v1/app-versions/{id}'                                      => 'app-version.view',
+        'PUT:v1/app-versions/{id}'                                      => 'app-version.update',
+        'PATCH:v1/app-versions/{id}'                                    => 'app-version.update',
+        'PATCH:v1/app-versions/{id}/toggle-status'                      => 'app-version.update',
+        'DELETE:v1/app-versions/{id}'                                   => 'app-version.delete',
     ];
 
     /**

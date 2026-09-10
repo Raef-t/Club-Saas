@@ -1,0 +1,16 @@
+{
+    "name": "nwidart/appversions",
+    "description": "App Versions and Release Management",
+    "authors": [
+        {
+            "name": "TechnoGYM Team"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Modules\\AppVersions\\": "app/",
+            "Modules\\AppVersions\\Database\\Factories\\": "database/factories/",
+            "Modules\\AppVersions\\Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}

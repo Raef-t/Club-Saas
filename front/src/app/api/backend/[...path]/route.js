@@ -10,8 +10,12 @@ import { getBackendBaseUrl } from "@/lib/server/backendUrl";
 
 export const dynamic = "force-dynamic";
 
-const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const PUBLIC_API_PATHS = new Set(["auth/login", "auth/forgot-password"]);
+const PUBLIC_API_PATHS = new Set([
+  "auth/login",
+  "auth/forgot-password",
+  "app/check-version",
+  "v1/app/check-version",
+]);
 
 function jsonError(message, status) {
   return NextResponse.json(

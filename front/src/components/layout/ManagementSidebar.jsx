@@ -73,6 +73,7 @@ const navGroups = [
     items: [
       { title: "حسابات المستخدمين", href: "/management/users" },
       { title: "الأدوار والصلاحيات", href: "/management/roles" },
+      { title: "إصدارات التطبيق", href: "/management/app-versions" },
       { title: "الرواتب", href: "/management/payroll" },
       { title: "الإعدادات", href: "/management/settings" },
       { title: "إدارة النادي", href: "/management/clubs" },

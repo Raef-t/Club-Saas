@@ -10,5 +10,6 @@
     "ClubManager": true,
     "AttendanceManager": true,
     "FormulaEngine": true,
-    "WalletManager": true
+    "WalletManager": true,
+    "AppVersions": true
 }

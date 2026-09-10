@@ -18,6 +18,7 @@ import { accountingApi } from "@/lib/api/accountingApi";
 import { payslipsApi } from "@/lib/api/payslipsApi";
 import { rolesApi } from "@/lib/api/rolesApi";
 import { notificationsApi } from "@/lib/api/notificationsApi";
+import { appVersionsApi } from "@/lib/api/appVersionsApi";
 import { clearAuthStorage } from "@/lib/authStorage";
 
 const authErrorMiddleware = () => (next) => (action) => {
@@ -62,6 +63,7 @@ export const store = configureStore({
     [payslipsApi.reducerPath]: payslipsApi.reducer,
     [rolesApi.reducerPath]: rolesApi.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
+    [appVersionsApi.reducerPath]: appVersionsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -85,5 +87,6 @@ export const store = configureStore({
       payslipsApi.middleware,
       rolesApi.middleware,
       notificationsApi.middleware,
+      appVersionsApi.middleware,
     ),
 });

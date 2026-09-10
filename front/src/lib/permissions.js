@@ -17,6 +17,7 @@ const ACCESSIBLE_LANDING_PATHS = [
   "/management/settings",
   "/management/clubs",
   "/management/branches",
+  "/management/app-versions",
   "/reports",
   "/accounting",
   "/accounting/safes",
@@ -84,6 +85,7 @@ const ROUTE_ACCESS_RULES = [
     any: ["locker.create", "locker.update"],
   },
   { path: "/management/roles", any: ["role.view-any", "role.view"] },
+  { path: "/management/app-versions", any: ["app-version.view-any"] },
   { path: "/management/users", any: ["user.view-any"] },
   {
     path: "/management/settings",

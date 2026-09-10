@@ -1,5 +1,2 @@
----
-trigger: always_on
----
-
-do not edit anything in front Folder
+# Frontend Modifications
+Frontend modifications are permitted. Always follow the project conventions and existing design system.

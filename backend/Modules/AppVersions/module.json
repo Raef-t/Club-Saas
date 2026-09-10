@@ -1,0 +1,11 @@
+{
+    "name": "AppVersions",
+    "alias": "appversions",
+    "description": "App Versions and Release Management for Trainee App",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppVersions\\Providers\\AppVersionsServiceProvider"
+    ],
+    "files": []
+}
