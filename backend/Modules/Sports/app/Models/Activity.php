@@ -156,5 +156,59 @@ class Activity extends Model
         return static::hasAnyEquipmentActivity($activityIds);
     }
 
+    /**
+     * Check if this activity represents a group session (حصة جماعية).
+     */
+    public function isGroupSession(): bool
+    {
+        $type = $this->relationLoaded('activityType') ? $this->activityType : $this->activityType()->first();
+        if ($type) {
+            if ($type->is_session_based) {
+                return true;
+            }
+            $typeName = (string) $type->name;
+            if (str_contains($typeName, 'حصة') || str_contains($typeName, 'جماع') || str_contains(strtolower($typeName), 'group') || str_contains(strtolower($typeName), 'session')) {
+                return true;
+            }
+        }
+
+        $name = (string) $this->name;
+        if (str_contains($name, 'حصة') || str_contains($name, 'جماع') || str_contains(strtolower($name), 'group')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if any given activity ID represents a group session activity (حصة جماعية).
+     *
+     * @param int|array $activityIds
+     * @return bool
+     */
+    public static function hasAnyGroupActivity(int|array $activityIds): bool
+    {
+        $ids = is_array($activityIds) ? array_filter($activityIds) : [$activityIds];
+        if (empty($ids)) {
+            return false;
+        }
+
+        $activities = static::with('activityType')->whereIn('id', $ids)->get();
+        foreach ($activities as $activity) {
+            if ($activity->isGroupSession()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Alias for hasAnyGroupActivity to explicitly check for session-based activities.
+     */
+    public static function hasAnySessionBasedActivity(int|array $activityIds): bool
+    {
+        return static::hasAnyGroupActivity($activityIds);
+    }
 }
 

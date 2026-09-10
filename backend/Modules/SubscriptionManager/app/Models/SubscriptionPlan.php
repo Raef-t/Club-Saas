@@ -317,6 +317,60 @@ class SubscriptionPlan extends Model
     }
 
     /**
+     * Determine if this subscription plan represents a group session / session-based plan (حصة جماعية / is_session_based).
+     */
+    public function isGroupSessionPlan(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.activity.activityType')->get();
+
+        foreach ($activities as $planActivity) {
+            $staffActivity = $planActivity->staffActivity;
+            $activity = $staffActivity ? $staffActivity->activity : ($planActivity->activity ?? null);
+            if ($activity) {
+                if (method_exists($activity, 'isGroupSession') && $activity->isGroupSession()) {
+                    return true;
+                }
+                $type = $activity->relationLoaded('activityType') ? $activity->activityType : $activity->activityType()->first();
+                if ($type && $type->is_session_based) {
+                    return true;
+                }
+            }
+        }
+
+        if ($this->exists) {
+            $hasSessionBased = $this->planActivities()
+                ->whereHas('staffActivity.activity.activityType', function ($q) {
+                    $q->where('is_session_based', true);
+                })
+                ->exists();
+
+            if ($hasSessionBased) {
+                return true;
+            }
+        }
+
+        $planName = trim((string) $this->name);
+        $groupKeywords = ['حصة جماعية', 'حصة_جماعية', 'حصة جماعيه', 'جماعي', 'جماعية', 'group', 'session'];
+        foreach ($groupKeywords as $kw) {
+            if (str_contains($planName, $kw)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Alias for isGroupSessionPlan.
+     */
+    public function isSessionBasedPlan(): bool
+    {
+        return $this->isGroupSessionPlan();
+    }
+
+    /**
      * Determine if plan allows unlimited subscribers.
      */
     public function getIsUnlimitedSubscribersAttribute(): bool

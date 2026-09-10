@@ -114,6 +114,48 @@ class SubscriptionPlanActivityService
         $plan = $planId ? \Modules\SubscriptionManager\Models\SubscriptionPlan::find($planId) : null;
         $activity = $activityId ? \Modules\Sports\Models\Activity::find($activityId) : null;
 
+        if ($plan && $activity) {
+            $activity->loadMissing('activityType');
+            $incomingIsGroup = method_exists($activity, 'isGroupSession') ? $activity->isGroupSession() : false;
+
+            $existingActivities = $plan->planActivities()->whereNull('deleted_at')->get();
+            $otherActivities = isset($data['id'])
+                ? $existingActivities->where('id', '!=', $data['id'])
+                : $existingActivities;
+
+            if ($otherActivities->isNotEmpty()) {
+                $hasExistingGroup = $otherActivities->contains(function ($pa) {
+                    $act = $pa->activity ?? ($pa->staffActivity ? $pa->staffActivity->activity : null);
+                    return $act && method_exists($act, 'isGroupSession') && $act->isGroupSession();
+                });
+
+                if ($incomingIsGroup || $hasExistingGroup) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'activity_id' => [__('لا يمكن إضافة أكثر من نشاط واحد لخطة الاشتراك عندما يكون نوع النشاط حصة جماعية.')],
+                    ]);
+                }
+            }
+
+            if ($incomingIsGroup && $plan->sessionTemplates()->exists()) {
+                $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
+                $templates = $plan->sessionTemplates()->where('is_active', true)->get()->toArray();
+                $conflictError = $conflictService->validateTemplates(
+                    $templates,
+                    $plan->branch_id,
+                    $plan->id,
+                    null,
+                    $coachId ? [(int) $coachId] : [],
+                    true
+                );
+
+                if ($conflictError) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'activity_id' => [$conflictError],
+                    ]);
+                }
+            }
+        }
+
         if ($plan && $activity && $plan->branch_id !== $activity->branch_id) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'activity_id' => __('النشاط المحدد لا ينتمي لنفس الفرع الخاص بالخطة.'),
