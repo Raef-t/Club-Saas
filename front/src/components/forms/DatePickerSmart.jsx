@@ -55,6 +55,18 @@ export default function DatePickerSmart({
   const dropdownRef = useRef(null);
   const yearListRef = useRef(null);
 
+  const yearBounds = useMemo(() => {
+    const parsedMin = Number(minYear);
+    const parsedMax = Number(maxYear);
+    const safeMin = Number.isFinite(parsedMin) ? Math.trunc(parsedMin) : 1940;
+    const safeMax = Number.isFinite(parsedMax) ? Math.trunc(parsedMax) : 2050;
+
+    return {
+      min: Math.min(safeMin, safeMax),
+      max: Math.max(safeMin, safeMax),
+    };
+  }, [minYear, maxYear]);
+
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -64,7 +76,7 @@ export default function DatePickerSmart({
   const [pos, setPos] = useState({
     top: 0,
     left: 0,
-    width: 295,
+    width: 340,
     placement: "bottom",
   });
 
@@ -114,7 +126,7 @@ export default function DatePickerSmart({
     const rect = inputWrapRef.current.getBoundingClientRect();
     const margin = 10;
 
-    const desiredW = 295;
+    const desiredW = 340;
     const width = Math.min(desiredW, window.innerWidth - margin * 2);
 
     const estimatedH = dropdownRef.current?.offsetHeight || 330;
@@ -195,9 +207,12 @@ export default function DatePickerSmart({
   const commitTyped = () => {
     const iso = parseTyped(inputText, format);
     if (iso) {
+      const parsedDate = fromISO(iso);
+      const parsedYear = parsedDate?.getFullYear();
+      if (!parsedYear || parsedYear < yearBounds.min || parsedYear > yearBounds.max) return;
+
       onChange?.(iso);
-      const dt = fromISO(iso);
-      if (dt) setView(dt);
+      setView(parsedDate);
       return;
     }
     if (!inputText) {
@@ -214,8 +229,16 @@ export default function DatePickerSmart({
     setOpen(false);
   };
 
-  const goPrevMonth = () => setView((v) => new Date(v.getFullYear(), v.getMonth() - 1, 1));
-  const goNextMonth = () => setView((v) => new Date(v.getFullYear(), v.getMonth() + 1, 1));
+  const goPrevMonth = () =>
+    setView((v) => {
+      if (v.getFullYear() === yearBounds.min && v.getMonth() === 0) return v;
+      return new Date(v.getFullYear(), v.getMonth() - 1, 1);
+    });
+  const goNextMonth = () =>
+    setView((v) => {
+      if (v.getFullYear() === yearBounds.max && v.getMonth() === 11) return v;
+      return new Date(v.getFullYear(), v.getMonth() + 1, 1);
+    });
 
   const handleInputChange = (e) => {
     let d = cleanTyped(e.target.value);
@@ -270,19 +293,18 @@ export default function DatePickerSmart({
 
   // ===== Years list bounded by minYear and maxYear =====
   const years = useMemo(() => {
-    const start = Math.min(Number(minYear) || 1940, Number(maxYear) || 2050);
-    const end = Math.max(Number(minYear) || 1940, Number(maxYear) || 2050);
     const arr = [];
-    for (let y = start; y <= end; y++) arr.push(y);
+    for (let y = yearBounds.min; y <= yearBounds.max; y++) arr.push(y);
     return arr;
-  }, [minYear, maxYear]);
+  }, [yearBounds]);
 
   useEffect(() => {
     if (!open) return;
     if (mode !== "year") return;
 
-    const current = view.getFullYear();
-    const idx = years.indexOf(current);
+    const currentYear = new Date().getFullYear();
+    const visibleYear = Math.min(yearBounds.max, Math.max(yearBounds.min, currentYear));
+    const idx = years.indexOf(visibleYear);
     if (idx < 0) return;
 
     requestAnimationFrame(() => {
@@ -293,7 +315,7 @@ export default function DatePickerSmart({
       const targetScroll = Math.max(0, row * 44 - 88);
       el.scrollTop = targetScroll;
     });
-  }, [mode, open, view, years]);
+  }, [mode, open, yearBounds, years]);
 
   const selectYear = (y) => {
     setView((v) => new Date(y, v.getMonth(), 1));
@@ -451,7 +473,9 @@ export default function DatePickerSmart({
                         if (mode === "year") {
                           setView((v) => new Date(Math.max(years[0] || 1940, v.getFullYear() - 10), v.getMonth(), 1));
                         } else if (mode === "month") {
-                          setView((v) => new Date(v.getFullYear() - 1, v.getMonth(), 1));
+                          setView(
+                            (v) => new Date(Math.max(yearBounds.min, v.getFullYear() - 1), v.getMonth(), 1),
+                          );
                         } else {
                           goPrevMonth();
                         }
@@ -467,7 +491,9 @@ export default function DatePickerSmart({
                         if (mode === "year") {
                           setView((v) => new Date(Math.min(years[years.length - 1] || 2050, v.getFullYear() + 10), v.getMonth(), 1));
                         } else if (mode === "month") {
-                          setView((v) => new Date(v.getFullYear() + 1, v.getMonth(), 1));
+                          setView(
+                            (v) => new Date(Math.min(yearBounds.max, v.getFullYear() + 1), v.getMonth(), 1),
+                          );
                         } else {
                           goNextMonth();
                         }
@@ -485,20 +511,25 @@ export default function DatePickerSmart({
                   <div
                     ref={yearListRef}
                     className="max-h-[220px] overflow-y-auto py-2 pr-1 scrollbar-hidden"
+                    aria-label="قائمة السنوات"
                   >
                     <div className="grid grid-cols-4 gap-2" dir="ltr">
                       {years.map((y) => {
-                        const isCurrent = y === view.getFullYear();
+                        const isSelected = y === view.getFullYear();
+                        const isCurrentYear = y === new Date().getFullYear();
                         return (
                           <button
                             key={y}
                             type="button"
                             onClick={() => selectYear(y)}
+                            aria-current={isCurrentYear ? "date" : undefined}
                             className={[
-                              "h-9 rounded-lg text-xs font-semibold transition-all flex items-center justify-center text-center",
-                              isCurrent
-                                ? "bg-app-yellow text-app-bg font-bold shadow-md ring-2 ring-app-yellow/30"
-                                : "text-app-text hover:text-app-yellow hover:bg-app-card-soft border border-app-line hover:border-app-yellow/40",
+                              "h-9 rounded-lg border text-xs font-semibold transition-all flex items-center justify-center text-center",
+                              isSelected
+                                ? "border-app-yellow bg-app-yellow text-app-bg font-bold shadow-md ring-2 ring-app-yellow/30"
+                                : isCurrentYear
+                                  ? "border-app-yellow/70 text-app-yellow bg-app-card-soft"
+                                  : "border-app-line text-app-text hover:text-app-yellow hover:bg-app-card-soft hover:border-app-yellow/40",
                             ].join(" ")}
                           >
                             {y}
@@ -508,7 +539,7 @@ export default function DatePickerSmart({
                     </div>
                   </div>
                 ) : mode === "month" ? (
-                  <div className="grid grid-cols-3 gap-2 py-2" dir="rtl">
+                  <div className="grid grid-cols-3 items-stretch gap-2 py-2" dir="rtl" aria-label="قائمة الأشهر">
                     {MONTHS.map((m, idx) => {
                       const isCurrent = idx === view.getMonth();
                       return (
@@ -520,13 +551,13 @@ export default function DatePickerSmart({
                             setMode("day");
                           }}
                           className={[
-                            "h-11 rounded-xl text-xs font-semibold transition-all flex items-center justify-center text-center px-1.5 leading-snug",
+                            "min-h-12 min-w-0 rounded-xl px-2 text-center text-xs font-semibold leading-[1.4] transition-all flex items-center justify-center",
                             isCurrent
                               ? "bg-app-yellow text-app-bg font-bold shadow-md ring-2 ring-app-yellow/30"
                               : "text-app-text hover:text-app-yellow hover:bg-app-card-soft border border-app-line hover:border-app-yellow/40",
                           ].join(" ")}
                         >
-                          {m}
+                          <span className="block w-full text-center">{m}</span>
                         </button>
                       );
                     })}

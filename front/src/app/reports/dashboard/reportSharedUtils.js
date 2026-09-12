@@ -27,7 +27,7 @@ export function getPersonName(entity) {
   const member = entity?.member || entity?.attendable || entity?.player || entity;
   const person = member?.person || entity?.person || {};
   const combinedName = `${member?.first_name || ""} ${member?.last_name || ""}`.trim();
-  return person.full_name || entity?.member_name || combinedName || "-";
+  return person.full_name || entity?.user_name || combinedName || "-";
 }
 
 /**

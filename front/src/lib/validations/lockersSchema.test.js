@@ -58,6 +58,28 @@ describe("locker reservation validation", () => {
     ).toBe(false);
   });
 
+  it("requires the configured price and calculated end date for rentals", () => {
+    expect(
+      reserveLockerSchema.safeParse({
+        reservation_type: "rental",
+        holder_type: "member",
+        holder_id: 41,
+        start_date: "2026-09-12",
+      }).success,
+    ).toBe(false);
+
+    expect(
+      reserveLockerSchema.safeParse({
+        reservation_type: "rental",
+        holder_type: "member",
+        holder_id: 41,
+        price: 200,
+        start_date: "2026-09-12",
+        end_date: "2026-10-12",
+      }).success,
+    ).toBe(true);
+  });
+
   it("defaults initial reservation form to free assignment with today as start and end date for members", () => {
     expect(initialReserveLockerForm.reservation_type).toBe("assign");
     const testDate = new Date(2026, 7, 15);

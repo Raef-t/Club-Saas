@@ -73,6 +73,17 @@ export const playerSubscriptionsApi = createBackendApi({
         "PlayerSubscriptions",
       ],
     }),
+    renewSubscription: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `player-subscriptions/${id}/renew`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "PlayerSubscriptions", id },
+        "PlayerSubscriptions",
+      ],
+    }),
     deletePlayerSubscription: builder.mutation({
       query: (arg) => {
         if (typeof arg === "object" && arg !== null) {
@@ -120,10 +131,7 @@ export const playerSubscriptionsApi = createBackendApi({
       },
       invalidatesTags: (result, error, arg) => {
         const id = typeof arg === "object" && arg !== null ? arg.id : arg;
-        return [
-          { type: "PlayerSubscriptions", id },
-          "PlayerSubscriptions",
-        ];
+        return [{ type: "PlayerSubscriptions", id }, "PlayerSubscriptions"];
       },
     }),
   }),
@@ -137,5 +145,6 @@ export const {
   useFreezeSubscriptionMutation,
   useUnfreezeSubscriptionMutation,
   useCancelSubscriptionMutation,
+  useRenewSubscriptionMutation,
   useDeletePlayerSubscriptionMutation,
 } = playerSubscriptionsApi;

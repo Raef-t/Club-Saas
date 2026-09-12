@@ -112,10 +112,11 @@ export function useStaff({
         gender: genderFilter,
         workStatus: workStatusFilter,
       }),
+      ...(search.trim() ? { search: search.trim() } : {}),
       page,
       per_page: perPage,
     }),
-    [branchFilter, genderFilter, page, perPage, roleFilter, workStatusFilter],
+    [branchFilter, genderFilter, page, perPage, roleFilter, search, workStatusFilter],
   );
 
   const {
@@ -144,7 +145,8 @@ export function useStaff({
     branchFilter === "all" &&
     roleFilter === "all" &&
     genderFilter === "all" &&
-    workStatusFilter === "all";
+    workStatusFilter === "all" &&
+    !search.trim();
   const listResponse = staffResponse || (canUseInitialStaff ? initialData?.staff : null);
   const staff = useMemo(() => getStaffCollection(listResponse), [listResponse]);
   const pagination = useMemo(
@@ -161,22 +163,8 @@ export function useStaff({
     [detailsStaff, selectedStaffId, staff],
   );
 
-  const filteredStaff = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return staff;
-
-    return staff.filter((item) => {
-      const values = [
-        item.person?.full_name,
-        item.person?.phone_number,
-        item.person?.address,
-        item.username,
-        item.role,
-      ];
-      return values.filter(Boolean).some((value) => String(value).toLowerCase().includes(term));
-    });
-  }, [search, staff]);
-  const totalResults = search.trim() ? filteredStaff.length : pagination.total;
+  const filteredStaff = staff;
+  const totalResults = pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = staff.filter((item) => resolveWorkStatus(item) === "active").length;

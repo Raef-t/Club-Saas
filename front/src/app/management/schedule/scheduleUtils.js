@@ -114,6 +114,78 @@ function getTimeInMinutes(value) {
 }
 
 /**
+ * Adds a duration to a clock value while keeping the result in HH:mm format.
+ */
+function addMinutesToScheduleTime(value, duration) {
+  const time = getTimeInMinutes(value);
+  const minutesToAdd = Number(duration);
+  if (time === null || !Number.isFinite(minutesToAdd) || minutesToAdd <= 0) return "";
+
+  const result = (time + minutesToAdd) % (24 * 60);
+  return `${padTimePart(Math.floor(result / 60))}:${padTimePart(result % 60)}`;
+}
+
+/**
+ * Returns a stable slot for the exact session interval supplied by the backend.
+ */
+function getSessionSlot(session, fallbackDuration = SCHEDULE_DEFAULT_SETTINGS.slotDuration) {
+  const from = normalizeScheduleTime(session?.start_time, "");
+  if (!from) return null;
+
+  const to =
+    normalizeScheduleTime(session?.end_time, "") ||
+    addMinutesToScheduleTime(from, fallbackDuration);
+  if (!to || to === from) return null;
+
+  return {
+    key: `${from.replace(":", "")}_${to.replace(":", "")}`,
+    from,
+    to,
+    label: from,
+  };
+}
+
+/**
+ * Converts a clock into the comparable minute value used by a possibly overnight period.
+ */
+function getTimeWithinPeriod(value, periodStart, periodEnd) {
+  const time = getTimeInMinutes(value);
+  const start = getTimeInMinutes(periodStart);
+  const end = getTimeInMinutes(periodEnd);
+  if (time === null || start === null || end === null || start === end) return null;
+
+  const adjustedEnd = end < start ? end + 24 * 60 : end;
+  const adjustedTime = time < start && adjustedEnd > 24 * 60 ? time + 24 * 60 : time;
+  return adjustedTime >= start && adjustedTime < adjustedEnd ? adjustedTime : null;
+}
+
+/**
+ * Returns the backend sessions that belong to the selected branch and a known weekday.
+ */
+function getScopedScheduleSessions(response, selectedBranchId = "all") {
+  const payload = getSchedulePayload(response);
+  const scopedSessions = [];
+
+  for (const [apiDay, sessions] of Object.entries(payload)) {
+    const localDay = DAY_BY_API_KEY[apiDay];
+    if (!localDay || !Array.isArray(sessions)) continue;
+
+    for (const session of sessions) {
+      const branchIds = getEntityBranchIds(session);
+      const belongsToSelectedBranch =
+        !selectedBranchId ||
+        selectedBranchId === "all" ||
+        branchIds.length === 0 ||
+        branchIds.includes(String(selectedBranchId));
+
+      if (belongsToSelectedBranch) scopedSessions.push({ localDay, session });
+    }
+  }
+
+  return scopedSessions;
+}
+
+/**
  * Finds the fixed schedule slot containing a session start time.
  * Slot bounds are treated as [from, to), including periods that cross midnight.
  */
@@ -135,6 +207,37 @@ function findContainingSlotKey(value, slots) {
   }
 
   return null;
+}
+
+/**
+ * Builds columns from the actual session intervals instead of rounding them into hourly boxes.
+ */
+export function createScheduleSlotsFromApi(
+  response,
+  periodStart,
+  periodEnd,
+  selectedBranchId = "all",
+  fallbackDuration = SCHEDULE_DEFAULT_SETTINGS.slotDuration,
+) {
+  const slotsByKey = new Map();
+
+  for (const { session } of getScopedScheduleSessions(response, selectedBranchId)) {
+    const slot = getSessionSlot(session, fallbackDuration);
+    if (!slot) continue;
+
+    const sortValue = getTimeWithinPeriod(slot.from, periodStart, periodEnd);
+    if (sortValue === null) continue;
+
+    if (!slotsByKey.has(slot.key)) {
+      slotsByKey.set(slot.key, { ...slot, sortValue });
+    }
+  }
+
+  return [...slotsByKey.values()]
+    .sort(
+      (first, second) => first.sortValue - second.sortValue || first.to.localeCompare(second.to),
+    )
+    .map(({ sortValue: _sortValue, ...slot }) => slot);
 }
 
 /**
@@ -211,39 +314,33 @@ export function createScheduleDataFromApi(
   eveningSlots,
   selectedBranchId = "all",
 ) {
-  const payload = getSchedulePayload(response);
   const scheduleData = {};
 
-  for (const [apiDay, sessions] of Object.entries(payload)) {
-    const localDay = DAY_BY_API_KEY[apiDay];
-    if (!localDay || !Array.isArray(sessions)) continue;
+  for (const { localDay, session } of getScopedScheduleSessions(response, selectedBranchId)) {
+    const sessionSlot = getSessionSlot(session);
+    const exactMorningSlot = sessionSlot
+      ? morningSlots.find((slot) => slot.key === sessionSlot.key)?.key
+      : null;
+    const exactEveningSlot = sessionSlot
+      ? eveningSlots.find((slot) => slot.key === sessionSlot.key)?.key
+      : null;
+    const morningSlotKey =
+      exactMorningSlot || findContainingSlotKey(session.start_time, morningSlots);
+    const eveningSlotKey =
+      exactEveningSlot || findContainingSlotKey(session.start_time, eveningSlots);
+    if (!morningSlotKey && !eveningSlotKey) continue;
 
-    for (const session of sessions) {
-      const branchIds = getEntityBranchIds(session);
-      const belongsToSelectedBranch =
-        !selectedBranchId ||
-        selectedBranchId === "all" ||
-        branchIds.length === 0 ||
-        branchIds.includes(String(selectedBranchId));
+    const planName = getDisplayName(session.plan_name || session.plan?.name);
+    const coachName = getDisplayName(
+      session.coach?.name || session.coach?.person?.full_name || session.coach_name,
+    );
+    const cellValue = [planName, coachName].filter(Boolean).join(" - ");
 
-      if (!belongsToSelectedBranch) continue;
-
-      const morningSlotKey = findContainingSlotKey(session.start_time, morningSlots);
-      const eveningSlotKey = findContainingSlotKey(session.start_time, eveningSlots);
-      if (!morningSlotKey && !eveningSlotKey) continue;
-
-      const planName = getDisplayName(session.plan_name || session.plan?.name);
-      const coachName = getDisplayName(
-        session.coach?.name || session.coach?.person?.full_name || session.coach_name,
-      );
-      const cellValue = [planName, coachName].filter(Boolean).join(" - ");
-
-      if (morningSlotKey) {
-        addScheduleCellValue(scheduleData, localDay, `morning_${morningSlotKey}`, cellValue);
-      }
-      if (eveningSlotKey) {
-        addScheduleCellValue(scheduleData, localDay, `evening_${eveningSlotKey}`, cellValue);
-      }
+    if (morningSlotKey) {
+      addScheduleCellValue(scheduleData, localDay, `morning_${morningSlotKey}`, cellValue);
+    }
+    if (eveningSlotKey) {
+      addScheduleCellValue(scheduleData, localDay, `evening_${eveningSlotKey}`, cellValue);
     }
   }
 

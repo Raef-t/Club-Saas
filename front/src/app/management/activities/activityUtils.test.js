@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  activityTypeHasShifts,
   createActivityFormValues,
   createActivityPayload,
   createActivityStats,
@@ -43,24 +42,15 @@ describe("activity utilities", () => {
       name: "السباحة",
       branch_id: "3",
       activity_type_id: "4",
-      shifts: [7],
     });
-    expect(createActivityPayload({ ...form, description: " " }, true)).toMatchObject({
+    expect(createActivityPayload({ ...form, description: " ", shifts: [7] })).toEqual({
+      name: "السباحة",
       branch_id: 3,
       activity_type_id: 4,
       description: null,
-      shifts: [7],
+      gender_allowed: "mixed",
+      is_active: true,
     });
-  });
-
-  it("uses the backend activity-type flag to decide whether shifts are available", () => {
-    const activityTypes = [
-      { id: 4, name: "نوع بدون ورديات", has_shifts: false },
-      { id: 99, name: "نوع مخصص مع ورديات", has_shifts: true },
-    ];
-
-    expect(activityTypeHasShifts(activityTypes, "99")).toBe(true);
-    expect(activityTypeHasShifts(activityTypes, "4")).toBe(false);
   });
 
   it("includes a trimmed modification reason only in update payloads", () => {
@@ -72,8 +62,8 @@ describe("activity utilities", () => {
       reason: "  تصحيح وصف النشاط  ",
     };
 
-    expect(createActivityPayload(form, false)).not.toHaveProperty("reason");
-    expect(createActivityPayload(form, false, true)).toHaveProperty("reason", "تصحيح وصف النشاط");
+    expect(createActivityPayload(form)).not.toHaveProperty("reason");
+    expect(createActivityPayload(form, true)).toHaveProperty("reason", "تصحيح وصف النشاط");
   });
 
   it("requires a modification reason when validating an activity update", () => {
@@ -84,7 +74,6 @@ describe("activity utilities", () => {
       branch_id: 3,
       activity_type_id: 4,
       is_active: true,
-      shifts: [],
       reason: "   ",
     });
 

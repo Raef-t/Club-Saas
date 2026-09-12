@@ -54,7 +54,6 @@ export default function ActivitiesCreateClient({ mode, activityId, initialData }
           formId={FORM_ID}
           mode={mode}
           initialValues={activity}
-          initialShifts={initialData?.shifts}
           branches={branches}
           activityTypes={activityTypes}
           onSubmit={handleSubmit}

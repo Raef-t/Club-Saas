@@ -7,7 +7,7 @@ const FUTURE_END_DATE = "2099-08-20T12:00:00.000Z";
 afterEach(cleanup);
 
 describe("LockerReleaseDialog", () => {
-  it("does not show or submit a reason for a free assignment", () => {
+  it("always requires and submits a release reason", () => {
     const onConfirm = vi.fn();
     render(
       <LockerReleaseDialog
@@ -24,12 +24,22 @@ describe("LockerReleaseDialog", () => {
       />,
     );
 
-    expect(screen.queryByLabelText(/سبب فك الحجز المبكر/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "فك الحجز" }));
-    expect(onConfirm).toHaveBeenCalledWith(undefined);
+    const submitButton = screen.getByRole("button", { name: "فك الحجز" });
+    fireEvent.click(submitButton);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("سبب فك الحجز مطلوب");
+
+    fireEvent.change(screen.getByLabelText(/سبب فك الحجز/), {
+      target: { value: "طلب المشترك فك الحجز" },
+    });
+    fireEvent.click(submitButton);
+    expect(onConfirm).toHaveBeenCalledWith({
+      reason: "طلب المشترك فك الحجز",
+      is_refund: false,
+    });
   });
 
-  it("requires and submits a reason for ending a rental early", () => {
+  it("requires a reason for a rental and submits refund details", () => {
     const onConfirm = vi.fn();
     render(
       <LockerReleaseDialog
@@ -38,7 +48,8 @@ describe("LockerReleaseDialog", () => {
           locker_number: "L-2",
           current_reservation: {
             reservation_type: "rental",
-            end_date: FUTURE_END_DATE,
+            end_date: "2020-08-20T12:00:00.000Z",
+            price: 35,
           },
         }}
         onClose={vi.fn()}
@@ -49,13 +60,19 @@ describe("LockerReleaseDialog", () => {
     const submitButton = screen.getByRole("button", { name: "فك الحجز" });
     fireEvent.click(submitButton);
     expect(onConfirm).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("سبب فك الحجز المبكر مطلوب");
+    expect(screen.getByRole("alert")).toHaveTextContent("سبب فك الحجز مطلوب");
 
-    fireEvent.change(screen.getByLabelText(/سبب فك الحجز المبكر/), {
+    fireEvent.change(screen.getByLabelText(/سبب فك الحجز/), {
       target: { value: "طلب المستأجر إنهاء الحجز" },
     });
+    fireEvent.click(screen.getByRole("checkbox", { name: "إعادة مبلغ الإيجار للمشترك" }));
+    expect(screen.getByRole("spinbutton", { name: /قيمة المبلغ المعاد/ })).toHaveValue(35);
     fireEvent.click(submitButton);
 
-    expect(onConfirm).toHaveBeenCalledWith("طلب المستأجر إنهاء الحجز");
+    expect(onConfirm).toHaveBeenCalledWith({
+      reason: "طلب المستأجر إنهاء الحجز",
+      is_refund: true,
+      refund_amount: 35,
+    });
   });
 });

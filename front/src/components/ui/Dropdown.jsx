@@ -18,6 +18,7 @@ export default function Dropdown({
   error,
   searchable = false,
   searchPlaceholder = "ابحث...",
+  ariaLabel,
 }) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -130,6 +131,7 @@ export default function Dropdown({
         } ${!hasHeight ? "h-10" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => {
           if (disabled) return;

@@ -214,10 +214,13 @@ export function SubscriptionCreateForm({
           buttonClassName="bg-app-card-soft h-11"
           value={selectedActivityTypeId}
           onChange={handleActivityTypeChange}
-          options={activityTypes.map((activityType) => ({
-            value: String(activityType.id),
-            label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
-          }))}
+          options={[
+            { value: "", label: "الكل" },
+            ...activityTypes.map((activityType) => ({
+              value: String(activityType.id),
+              label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+            })),
+          ]}
           placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
           disabled={isActivityTypesLoading}
         />
@@ -654,10 +657,13 @@ export function SubscriptionEditForm({
           buttonClassName="h-11 bg-app-card-soft"
           value={selectedActivityTypeId}
           onChange={handleActivityTypeChange}
-          options={activityTypes.map((activityType) => ({
-            value: String(activityType.id),
-            label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
-          }))}
+          options={[
+            { value: "", label: "الكل" },
+            ...activityTypes.map((activityType) => ({
+              value: String(activityType.id),
+              label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+            })),
+          ]}
           placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
           disabled={isActivityTypesLoading}
         />

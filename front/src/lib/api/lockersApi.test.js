@@ -35,9 +35,7 @@ describe("lockers API", () => {
     });
 
     await store
-      .dispatch(
-        lockersApi.endpoints.deleteLocker.initiate({ id: 55, confirmation: "delete" }),
-      )
+      .dispatch(lockersApi.endpoints.deleteLocker.initiate({ id: 55, confirmation: "delete" }))
       .unwrap();
 
     const url = new URL(request.url);
@@ -46,7 +44,7 @@ describe("lockers API", () => {
     expect(url.searchParams.get("confirmation")).toBe("delete");
   });
 
-  it("sends the early-release reason in the DELETE request body", async () => {
+  it("sends the rental release and refund details in the DELETE request body", async () => {
     let request;
     const NativeRequest = globalThis.Request;
     vi.stubGlobal(
@@ -77,13 +75,21 @@ describe("lockers API", () => {
       .dispatch(
         lockersApi.endpoints.releaseLockerReservation.initiate({
           id: 42,
-          body: { reason: "طلب اللاعب فك الحجز مبكرًا" },
+          body: {
+            reason: "طلب المشترك إنهاء الحجز واستعادة الأمانة",
+            is_refund: true,
+            refund_amount: 35,
+          },
         }),
       )
       .unwrap();
 
     expect(request.method).toBe("DELETE");
     expect(new URL(request.url).pathname).toBe("/api/backend/lockers/42/reservations/current");
-    expect(await request.json()).toEqual({ reason: "طلب اللاعب فك الحجز مبكرًا" });
+    expect(await request.json()).toEqual({
+      reason: "طلب المشترك إنهاء الحجز واستعادة الأمانة",
+      is_refund: true,
+      refund_amount: 35,
+    });
   });
 });

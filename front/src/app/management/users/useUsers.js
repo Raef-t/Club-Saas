@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation";
 import { useGetUsersQuery } from "@/lib/api/usersApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
-import { buildUserRoleTabs, createUserStats, filterUsers, getUsersCollection } from "./usersUtils";
+import { buildUserRoleTabs, createUserStats, getUsersCollection } from "./usersUtils";
 import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
 export function useUsers({ initialUsers } = {}) {
@@ -14,7 +14,6 @@ export function useUsers({ initialUsers } = {}) {
   const [roleFilter, setRoleFilter] = useState(urlRole || "all");
   const paginationFilterKey = [branchFilter, roleFilter, search].join("|");
   const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
-  const needsAllUsers = Boolean(search.trim());
   const branchParams = branchFilter !== "all" ? { branch_id: branchFilter } : {};
   const {
     currentData: allUsersResponse,
@@ -32,25 +31,23 @@ export function useUsers({ initialUsers } = {}) {
   } = useGetUsersQuery({
     ...branchParams,
     ...(roleFilter !== "all" ? { role: roleFilter } : {}),
-    ...(needsAllUsers ? { per_page: "all" } : { page, per_page: perPage }),
+    ...(search.trim() ? { search: search.trim() } : {}),
+    page,
+    per_page: perPage,
   });
 
   const allUsers = useMemo(
-    () =>
-      getUsersCollection(
-        allUsersResponse || (branchFilter === "all" ? initialUsers : null),
-      ),
+    () => getUsersCollection(allUsersResponse || (branchFilter === "all" ? initialUsers : null)),
     [allUsersResponse, branchFilter, initialUsers],
   );
   const canUseInitialUsers =
     branchFilter === "all" &&
-    !needsAllUsers &&
+    !search.trim() &&
     page === 1 &&
     perPage === 15 &&
     roleFilter === "all";
   const listResponse = listUsersResponse || (canUseInitialUsers ? initialUsers : null);
-  const pageUsers = useMemo(() => getUsersCollection(listResponse), [listResponse]);
-  const users = useMemo(() => filterUsers(pageUsers, search), [pageUsers, search]);
+  const users = useMemo(() => getUsersCollection(listResponse), [listResponse]);
   const pagination = useMemo(
     () => getPaginationMeta(listResponse, { page, perPage }),
     [listResponse, page, perPage],
@@ -77,7 +74,7 @@ export function useUsers({ initialUsers } = {}) {
     stats,
     roleOptions,
     pagination: { ...pagination, setPage, setPerPage },
-    totalResults: needsAllUsers ? users.length : pagination.total,
+    totalResults: pagination.total,
     isLoading:
       !hasVisibleSource && (isLoadingListUsers || isFetchingListUsers || isLoadingAllUsers),
     isRefreshing: isFetchingListUsers || isFetchingAllUsers,

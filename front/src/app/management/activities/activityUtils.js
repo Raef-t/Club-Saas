@@ -7,7 +7,6 @@ export const EMPTY_ACTIVITY_FORM = {
   branch_id: "",
   activity_type_id: "",
   is_active: true,
-  shifts: [],
   reason: "",
 };
 
@@ -118,9 +117,6 @@ export function createActivityFormValues(activity) {
         ? String(activity.activity_type.id)
         : "",
     is_active: activity.is_active !== false,
-    shifts: Array.isArray(activity.shifts)
-      ? activity.shifts.map((shift) => Number(typeof shift === "object" ? shift.id : shift))
-      : [],
     reason: "",
   };
 }
@@ -128,7 +124,7 @@ export function createActivityFormValues(activity) {
 /**
  * Converts validated editor values to the backend activity contract.
  */
-export function createActivityPayload(form, includeShifts, includeReason = false) {
+export function createActivityPayload(form, includeReason = false) {
   return {
     name: form.name.trim(),
     description: form.description.trim() || null,
@@ -136,7 +132,6 @@ export function createActivityPayload(form, includeShifts, includeReason = false
     branch_id: Number(form.branch_id),
     activity_type_id: Number(form.activity_type_id),
     is_active: Boolean(form.is_active),
-    shifts: includeShifts ? form.shifts.map(Number) : [],
     ...(includeReason ? { reason: form.reason.trim() } : {}),
   };
 }
@@ -149,13 +144,4 @@ export function createActivityOptions(items) {
     value: String(item.id),
     label: formatLocalizedName(item.name),
   }));
-}
-
-/** Reads shift support from the selected activity type returned by the backend. */
-export function activityTypeHasShifts(activityTypes, activityTypeId) {
-  const selectedType = activityTypes.find(
-    (activityType) => String(activityType.id) === String(activityTypeId),
-  );
-
-  return selectedType?.has_shifts === true;
 }

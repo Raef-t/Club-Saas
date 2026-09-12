@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { createOperationalReports, getReportCollection } from "./reportUtils";
+import { getPersonName } from "./reportSharedUtils";
 
 describe("operational report utilities", () => {
   it("extracts supported backend collection shapes", () => {
     expect(getReportCollection({ data: { data: [{ id: 1 }] } })).toEqual([{ id: 1 }]);
     expect(getReportCollection({ data: [{ id: 2 }] })).toEqual([{ id: 2 }]);
+  });
+
+  it("uses user_name as the flat member-name field", () => {
+    expect(getPersonName({ user_name: "أحمد علي" })).toBe("أحمد علي");
   });
 
   it("counts only the latest active attendance per member", () => {

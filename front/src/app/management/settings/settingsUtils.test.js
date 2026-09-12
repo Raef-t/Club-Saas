@@ -67,6 +67,21 @@ describe("settings utilities", () => {
     });
   });
 
+  it.each(["00:00", "01:00"])(
+    "preserves next-day branch closing time %s in the update payload",
+    (workingHoursEnd) => {
+      expect(
+        createBranchSettingsPayload({
+          workingHoursStart: "08:00",
+          workingHoursEnd,
+        }),
+      ).toMatchObject({
+        working_hours_start: "08:00",
+        working_hours_end: workingHoursEnd,
+      });
+    },
+  );
+
   it("creates shift and holiday backend payloads", () => {
     expect(
       createShiftPayload({

@@ -67,14 +67,15 @@ export function useSubscriptionPlans({
   );
   const paginationFilterKey = [selectedBranchId, statusFilter, search].join("|");
   const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
-  const needsAllPlans = Boolean(search.trim()) || !["all", "active"].includes(statusFilter);
+  const needsAllPlans = !["all", "active"].includes(statusFilter);
   const listQueryParams = useMemo(
     () => ({
       ...branchQueryParams,
       ...(statusFilter === "active" ? { status: "active" } : {}),
+      ...(search.trim() ? { search: search.trim() } : {}),
       ...(needsAllPlans ? { per_page: "all" } : { page, per_page: perPage }),
     }),
-    [branchQueryParams, needsAllPlans, page, perPage, statusFilter],
+    [branchQueryParams, needsAllPlans, page, perPage, search, statusFilter],
   );
   const {
     currentData: data,
@@ -156,7 +157,8 @@ export function useSubscriptionPlans({
     page === 1 &&
     perPage === 15 &&
     selectedBranchId === "all" &&
-    statusFilter === "all";
+    statusFilter === "all" &&
+    !search.trim();
   const listResponse = data || (canUseInitialPlans ? initialData?.plans : null);
   const allPlans = useMemo(() => getPlans(listResponse), [listResponse]);
   const pagination = useMemo(
@@ -174,23 +176,16 @@ export function useSubscriptionPlans({
   const detailsPlan = useMemo(() => getPlanDetails(detailsData), [detailsData]);
 
   const filteredPlans = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
     return plans.filter((plan) => {
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active"
           ? isSubscriptionPlanActive(plan)
           : !isSubscriptionPlanActive(plan));
-      const matchesSearch =
-        !normalizedSearch ||
-        [plan.name?.ar, plan.name?.en, plan.type, plan.base_price]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(normalizedSearch));
 
-      return matchesStatus && matchesSearch;
+      return matchesStatus;
     });
-  }, [plans, search, statusFilter]);
+  }, [plans, statusFilter]);
   const totalResults = needsAllPlans ? filteredPlans.length : pagination.total;
 
   const stats = useMemo(() => {

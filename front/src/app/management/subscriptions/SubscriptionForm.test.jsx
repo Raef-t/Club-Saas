@@ -25,10 +25,34 @@ describe("subscription create validation", () => {
     expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اشتراك شهري");
     expect(screen.getByRole("button", { name: "نوع النشاط" })).toHaveTextContent("تدريب عام");
     fireEvent.click(screen.getByRole("button", { name: "نوع النشاط" }));
-    expect(screen.queryByRole("option", { name: "الكل" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "الكل" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("option", { name: "أنشطة لياقة" }));
 
     expect(onActivityTypeChange).toHaveBeenCalledWith("7");
+    expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اختر الخطة");
+  });
+
+  it("allows selecting 'الكل' to clear the activity type filter and resets the selected plan", () => {
+    const onActivityTypeChange = vi.fn();
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
+        activityTypes={[
+          { id: 1, name: "تدريب عام" },
+          { id: 7, name: "أنشطة لياقة" },
+        ]}
+        selectedActivityTypeId="7"
+        onActivityTypeChange={onActivityTypeChange}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "نوع النشاط" }));
+    fireEvent.click(screen.getByRole("option", { name: "الكل" }));
+
+    expect(onActivityTypeChange).toHaveBeenCalledWith("");
     expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اختر الخطة");
   });
 

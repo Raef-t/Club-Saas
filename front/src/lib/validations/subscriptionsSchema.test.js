@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { subscriptionEditSchema, subscriptionSchema } from "./subscriptionsSchema";
+import {
+  subscriptionEditSchema,
+  subscriptionRenewalSchema,
+  subscriptionSchema,
+} from "./subscriptionsSchema";
 
 describe("subscription create validation", () => {
   const validSubscription = {
@@ -125,5 +129,34 @@ describe("subscription edit validation", () => {
 
     expect(result.success).toBe(false);
     expect(result.error.issues.some((issue) => issue.path[0] === "reason")).toBe(true);
+  });
+});
+
+describe("subscription renewal validation", () => {
+  it("normalizes the plan, paid amount, and receipt fields", () => {
+    expect(
+      subscriptionRenewalSchema.parse({
+        plan_id: "12",
+        paid_amount: "450.5",
+        receipt_number: "  REC-RENEW-01  ",
+      }),
+    ).toEqual({
+      plan_id: 12,
+      paid_amount: 450.5,
+      receipt_number: "REC-RENEW-01",
+    });
+  });
+
+  it("requires a receipt and a non-negative paid amount", () => {
+    const result = subscriptionRenewalSchema.safeParse({
+      plan_id: "12",
+      paid_amount: "-1",
+      receipt_number: "  ",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.issues.map((issue) => issue.path[0])).toEqual(
+      expect.arrayContaining(["paid_amount", "receipt_number"]),
+    );
   });
 });

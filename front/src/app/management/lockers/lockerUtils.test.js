@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   createLockerBranchOptions,
   createLockerQueryParams,
+  createLockerReleasePayload,
+  createLockerReservationSnapshot,
   createLockerReservationPayload,
   createLockerUpdatePayload,
   doesLockerReleaseRequireReason,
   filterLockers,
   getLockerHolderLabel,
   getLockerPageState,
+  getLockerPageSummary,
   getLockerRecord,
+  getLockerRentalPrice,
+  getLockerRentalEndDate,
   getLockerReservationEndDate,
   isLockerEarlyRelease,
   isLockerOccupied,
@@ -49,7 +54,15 @@ describe("locker utilities", () => {
     expect(isLockerEarlyRelease(locker, new Date("2026-08-21T12:00:00.000Z"))).toBe(false);
   });
 
-  it("requires a release reason only for a rental that ends in the future", () => {
+  it("calculates a rental end date one calendar month after its start", () => {
+    expect(getLockerRentalEndDate("2026-09-12")).toBe("2026-10-12");
+    expect(getLockerRentalEndDate("2026-01-31")).toBe("2026-02-28");
+    expect(getLockerRentalEndDate("2028-01-31")).toBe("2028-02-29");
+    expect(getLockerRentalEndDate("2026-12-15")).toBe("2027-01-15");
+    expect(getLockerRentalEndDate("invalid")).toBe("");
+  });
+
+  it("requires a release reason whenever a locker reservation is released", () => {
     const now = new Date("2026-08-18T12:00:00.000Z");
     const rental = {
       current_reservation: {
@@ -72,8 +85,90 @@ describe("locker utilities", () => {
 
     expect(isLockerRentalReservation(rental)).toBe(true);
     expect(doesLockerReleaseRequireReason(rental, now)).toBe(true);
-    expect(doesLockerReleaseRequireReason(freeAssignment, now)).toBe(false);
-    expect(doesLockerReleaseRequireReason(expiredRental, now)).toBe(false);
+    expect(doesLockerReleaseRequireReason(freeAssignment, now)).toBe(true);
+    expect(doesLockerReleaseRequireReason(expiredRental, now)).toBe(true);
+    expect(doesLockerReleaseRequireReason(null, now)).toBe(false);
+  });
+
+  it("builds a rental release payload with optional refund details", () => {
+    const locker = {
+      current_reservation: { reservation_type: "rental", price: "35" },
+    };
+
+    expect(getLockerRentalPrice(locker)).toBe(35);
+    expect(
+      createLockerReleasePayload(locker, {
+        reason: "  طلب المشترك إنهاء الحجز واستعادة الأمانة  ",
+        is_refund: true,
+        refund_amount: "35",
+      }),
+    ).toEqual({
+      reason: "طلب المشترك إنهاء الحجز واستعادة الأمانة",
+      is_refund: true,
+      refund_amount: 35,
+    });
+    expect(
+      createLockerReleasePayload(locker, {
+        reason: "طلب المشترك إنهاء الحجز",
+        is_refund: false,
+      }),
+    ).toEqual({
+      reason: "طلب المشترك إنهاء الحجز",
+      is_refund: false,
+    });
+    expect(
+      createLockerReleasePayload(
+        { current_reservation: { reservation_type: "assign" } },
+        { reason: "طلب المشترك فك الحجز" },
+      ),
+    ).toEqual({
+      reason: "طلب المشترك فك الحجز",
+      is_refund: false,
+    });
+  });
+
+  it("preserves request-only rental fields when the backend omits them", () => {
+    const response = {
+      status: "success",
+      data: {
+        id: 80,
+        locker_id: 64,
+        member_id: 92,
+        staff_id: null,
+        invoice_id: 222,
+        start_date: "2026-09-12",
+        end_date: "2026-09-12",
+        price: "200.00",
+        status: "active",
+      },
+    };
+    const snapshot = createLockerReservationSnapshot(response, {
+      reservation_type: "rental",
+      holder_type: "member",
+      holder_id: 92,
+      price: 200,
+      start_date: "2026-09-12",
+      end_date: "2026-09-12",
+    });
+
+    expect(snapshot).toMatchObject({
+      reservation_type: "rental",
+      holder_type: "member",
+      holder_id: 92,
+      invoice_id: 222,
+      price: 200,
+    });
+    expect(isLockerRentalReservation({ current_reservation: snapshot })).toBe(true);
+  });
+
+  it("recognizes the actual paid reservation response as a rental", () => {
+    expect(
+      isLockerRentalReservation({
+        invoice_id: 222,
+        price: "200.00",
+        status: "active",
+      }),
+    ).toBe(true);
   });
 
   it("extracts nested locker detail responses", () => {
@@ -120,6 +215,36 @@ describe("locker utilities", () => {
     expect(getLockerPageState(stateLockers[2])).toBe("with_staff_or_coach");
   });
 
+  it("infers holder types from nested reservation relations and ids", () => {
+    const nestedLockers = [
+      { id: 10, status: "assigned", current_reservation: { member_id: 91 } },
+      { id: 11, status: "occupied", active_reservation: { coach_id: 41 } },
+      { id: 12, status: "assigned", reservation: { staff: { id: 58 } } },
+    ];
+
+    expect(filterLockers(nestedLockers, { status: "with_member" })).toEqual([nestedLockers[0]]);
+    expect(filterLockers(nestedLockers, { status: "with_staff_or_coach" })).toEqual([
+      nestedLockers[1],
+      nestedLockers[2],
+    ]);
+  });
+
+  it("builds all four counters from the same mutually-exclusive page states", () => {
+    expect(
+      getLockerPageSummary([
+        { id: 1, status: "available" },
+        { id: 2, status: "assigned", holder_type: "member", holder_id: 9 },
+        { id: 3, status: "assigned", current_reservation: { coach_id: 41 } },
+        { id: 4, status: "disabled" },
+      ]),
+    ).toEqual({
+      available_lockers_count: 1,
+      unavailable_lockers_count: 1,
+      assigned_to_member_count: 1,
+      assigned_to_staff_or_coach_count: 1,
+    });
+  });
+
   it("groups disabled and maintenance lockers into one page state", () => {
     const unavailableLockers = [
       { id: 5, status: "maintenance" },
@@ -140,18 +265,18 @@ describe("locker utilities", () => {
     });
   });
 
-  it("sends each supported page state to the backend", () => {
+  it("keeps all four aggregate page states on the client", () => {
     expect(createLockerQueryParams("all", "with_member")).toEqual({
       branch_id: undefined,
-      status: "with_member",
+      status: undefined,
     });
     expect(createLockerQueryParams("all", "with_staff_or_coach")).toEqual({
       branch_id: undefined,
-      status: "with_staff_or_coach",
+      status: undefined,
     });
     expect(createLockerQueryParams("all", "maintenance")).toEqual({
       branch_id: undefined,
-      status: "maintenance",
+      status: undefined,
     });
   });
 

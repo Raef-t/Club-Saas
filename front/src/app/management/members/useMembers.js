@@ -59,10 +59,11 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       ...(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
       ...(genderFilter !== "all" ? { gender: genderFilter } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(search.trim() ? { search: search.trim() } : {}),
       page,
       per_page: perPage,
     };
-  }, [branchFilter, genderFilter, page, perPage, statusFilter]);
+  }, [branchFilter, genderFilter, page, perPage, search, statusFilter]);
 
   const {
     currentData: data,
@@ -90,7 +91,8 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     perPage === 15 &&
     branchFilter === "all" &&
     genderFilter === "all" &&
-    statusFilter === "all";
+    statusFilter === "all" &&
+    !search.trim();
   const membersResponse = data || (canUseInitialMembers ? initialData?.members : null);
   const members = useMemo(() => getMembersArray(membersResponse), [membersResponse]);
   const pagination = useMemo(
@@ -128,38 +130,18 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     [branchFilter, members],
   );
   const filteredMembers = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
     return branchMembers.filter((m) => {
       const person = m.person || {};
-      const fullName = (person.full_name || `${m.first_name || ""} ${m.last_name || ""}`)
-        .trim()
-        .toLowerCase();
-      const mobileVal = person.phone || person.mobile || m.mobile || "";
 
       const matchesGender = genderFilter === "all" || (person.gender || m.gender) === genderFilter;
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" ? m.is_active !== false : m.is_active === false);
 
-      const matchesSearch =
-        !normalizedSearch ||
-        fullName.includes(normalizedSearch) ||
-        String(mobileVal).includes(normalizedSearch) ||
-        String(m.qr_code || "")
-          .toLowerCase()
-          .includes(normalizedSearch) ||
-        String(m.generated_username || m.username || "")
-          .toLowerCase()
-          .includes(normalizedSearch) ||
-        String(m.custom_username || "")
-          .toLowerCase()
-          .includes(normalizedSearch);
-
-      return matchesGender && matchesStatus && matchesSearch;
+      return matchesGender && matchesStatus;
     });
-  }, [branchMembers, genderFilter, search, statusFilter]);
-  const totalResults = search.trim() ? filteredMembers.length : pagination.total;
+  }, [branchMembers, genderFilter, statusFilter]);
+  const totalResults = pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = branchMembers.filter((m) => m.is_active !== false).length;

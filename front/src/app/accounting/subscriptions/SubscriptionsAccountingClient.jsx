@@ -15,33 +15,18 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
   const queryParams = useMemo(() => {
     const params = {};
     if (selectedBranchId && selectedBranchId !== "all") params.branch_id = selectedBranchId;
+    if (search.trim()) params.search = search.trim();
+    if (statusFilter !== "all") params.status = statusFilter;
     params.per_page = "all";
     return params;
-  }, [selectedBranchId]);
+  }, [search, selectedBranchId, statusFilter]);
 
   const { data, isLoading } = useGetPlayerSubscriptionsQuery(queryParams);
 
   const rawList = data?.data?.data || data?.data || initialSubscriptions;
   const subscriptions = Array.isArray(rawList) ? rawList : [];
 
-  const filteredSubscriptions = useMemo(() => {
-    return subscriptions.filter((sub) => {
-      const playerName =
-        sub.player?.person?.full_name ||
-        `${sub.player?.person?.first_name || ""} ${sub.player?.person?.last_name || ""}`.trim() ||
-        sub.player_name ||
-        "";
-
-      const matchSearch =
-        !search.trim() ||
-        playerName.toLowerCase().includes(search.toLowerCase()) ||
-        sub.plan?.name?.toLowerCase().includes(search.toLowerCase());
-
-      const matchStatus = statusFilter === "all" || sub.status === statusFilter;
-
-      return matchSearch && matchStatus;
-    });
-  }, [subscriptions, search, statusFilter]);
+  const filteredSubscriptions = subscriptions;
 
   const totalPaid = subscriptions.reduce((sum, s) => sum + Number(s.paid_amount || 0), 0);
   const totalRemaining = subscriptions.reduce((sum, s) => sum + Number(s.remaining_amount || 0), 0);
@@ -50,7 +35,10 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
     { label: "إجمالي الاشتراكات", value: subscriptions.length },
     { label: "إجمالي المبالغ المحصلة", value: `$${totalPaid.toLocaleString()}` },
     { label: "الذمم المتبقية غير المحصلة", value: `$${totalRemaining.toLocaleString()}` },
-    { label: "الاشتراكات النشطة", value: subscriptions.filter((s) => s.status === "active").length },
+    {
+      label: "الاشتراكات النشطة",
+      value: subscriptions.filter((s) => s.status === "active").length,
+    },
   ];
 
   return (
@@ -77,7 +65,17 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
                   : "bg-app-card text-app-muted hover:text-app-text"
               }`}
             >
-              {st === "all" ? "الكل" : st === "active" ? "نشط" : st === "pending" ? "معلق" : st === "frozen" ? "مجمد" : st === "expired" ? "منتهي" : "ملغي"}
+              {st === "all"
+                ? "الكل"
+                : st === "active"
+                  ? "نشط"
+                  : st === "pending"
+                    ? "معلق"
+                    : st === "frozen"
+                      ? "مجمد"
+                      : st === "expired"
+                        ? "منتهي"
+                        : "ملغي"}
             </button>
           ))}
         </div>

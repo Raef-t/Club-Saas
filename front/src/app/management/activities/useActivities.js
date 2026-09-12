@@ -8,12 +8,7 @@ import {
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
-import {
-  createActivityStats,
-  filterActivities,
-  getActivityCollection,
-  getActivityRecord,
-} from "./activityUtils";
+import { createActivityStats, getActivityCollection, getActivityRecord } from "./activityUtils";
 import { getPaginationMeta, useServerPagination } from "@/lib/pagination";
 
 /**
@@ -31,10 +26,11 @@ export function useActivities({ initialActivities } = {}) {
   const queryParams = useMemo(
     () => ({
       ...(selectedBranchId === "all" ? {} : { branch_id: selectedBranchId }),
+      ...(search.trim() ? { search: search.trim() } : {}),
       page,
       per_page: perPage,
     }),
-    [page, perPage, selectedBranchId],
+    [page, perPage, search, selectedBranchId],
   );
   const {
     currentData: activitiesResponse,
@@ -52,9 +48,8 @@ export function useActivities({ initialActivities } = {}) {
   });
   const [deleteActivity, { isLoading: isDeleting }] = useDeleteActivityMutation();
   const canUseInitialActivities =
-    page === 1 && perPage === 15 && selectedBranchId === "all";
-  const listResponse =
-    activitiesResponse || (canUseInitialActivities ? initialActivities : null);
+    page === 1 && perPage === 15 && selectedBranchId === "all" && !search.trim();
+  const listResponse = activitiesResponse || (canUseInitialActivities ? initialActivities : null);
   const allActivities = useMemo(() => getActivityCollection(listResponse), [listResponse]);
   const pagination = useMemo(
     () => getPaginationMeta(listResponse, { page, perPage }),
@@ -64,11 +59,8 @@ export function useActivities({ initialActivities } = {}) {
     () => filterEntitiesByBranch(allActivities, selectedBranchId),
     [allActivities, selectedBranchId],
   );
-  const activities = useMemo(
-    () => filterActivities(branchActivities, search),
-    [branchActivities, search],
-  );
-  const totalResults = search.trim() ? activities.length : pagination.total;
+  const activities = branchActivities;
+  const totalResults = pagination.total;
   const stats = useMemo(() => createActivityStats(branchActivities), [branchActivities]);
   const detailsActivity = getActivityRecord(detailsResponse) || selectedActivity;
 

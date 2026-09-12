@@ -25,7 +25,6 @@ export const activitySchema = z.object({
     .or(z.string().min(1, "يرجى اختيار نوع الفئة").transform(Number)),
 
   is_active: z.boolean().optional(),
-  shifts: z.array(z.number()).optional(),
 });
 
 export const activityUpdateSchema = activitySchema.extend({
