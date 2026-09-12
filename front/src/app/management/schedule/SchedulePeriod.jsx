@@ -22,7 +22,7 @@ export default function SchedulePeriod({
   return (
     <SectionCard
       title={title}
-      subtitle={`من ${formattedStart} إلى ${formattedEnd} — ${slots.length} حصة`}
+      subtitle={`من ${formattedStart} إلى ${formattedEnd} — عدد المواعيد: ${slots.length}`}
       action={
         <div className="flex items-center gap-1 text-xs">
           <ClockIcon className="size-3.5" />

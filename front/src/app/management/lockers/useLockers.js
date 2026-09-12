@@ -10,11 +10,13 @@ import {
 import { getApiErrorMessage } from "@/lib/apiError";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import {
+  createLockerReleasePayload,
   createLockerQueryParams,
-  doesLockerReleaseRequireReason,
+  createLockerReservationSnapshot,
   filterLockers,
   getLockerCollection,
-  getLockerSummary,
+  getLockerCurrentReservation,
+  getLockerPageSummary,
 } from "./lockerUtils";
 
 /**
@@ -48,6 +50,7 @@ export function useLockers({ initialLockers } = {}) {
   const [reserveTarget, setReserveTarget] = useState(null);
   const [releaseTarget, setReleaseTarget] = useState(null);
   const [reserveError, setReserveError] = useState("");
+  const [reservationDetailsByLockerId, setReservationDetailsByLockerId] = useState({});
 
   const queryParams = useMemo(
     () => ({ ...createLockerQueryParams(branchFilter, statusFilter), per_page: "all" }),
@@ -64,14 +67,23 @@ export function useLockers({ initialLockers } = {}) {
   const [reserveLocker, { isLoading: isReserving }] = useReserveLockerMutation();
   const [releaseReservation, { isLoading: isReleasing }] = useReleaseLockerReservationMutation();
 
-  const allLockers = useMemo(
-    () => getLockerCollection(lockersResponse || initialLockers),
-    [initialLockers, lockersResponse],
-  );
-  const lockerSummary = useMemo(
-    () => getLockerSummary(lockersResponse || initialLockers),
-    [initialLockers, lockersResponse],
-  );
+  const allLockers = useMemo(() => {
+    const collection = getLockerCollection(lockersResponse || initialLockers);
+
+    return collection.map((locker) => {
+      const savedReservation = reservationDetailsByLockerId[String(locker.id)];
+      if (!savedReservation) return locker;
+
+      return {
+        ...locker,
+        current_reservation: {
+          ...(getLockerCurrentReservation(locker) || {}),
+          ...savedReservation,
+        },
+      };
+    });
+  }, [initialLockers, lockersResponse, reservationDetailsByLockerId]);
+  const lockerSummary = useMemo(() => getLockerPageSummary(allLockers), [allLockers]);
   const lockers = useMemo(
     () =>
       filterLockers(allLockers, {
@@ -106,7 +118,13 @@ export function useLockers({ initialLockers } = {}) {
     setReserveError("");
 
     try {
-      await reserveLocker({ id: reserveTarget.id, ...values }).unwrap();
+      const lockerId = reserveTarget.id;
+      const response = await reserveLocker({ id: lockerId, ...values }).unwrap();
+      const reservationSnapshot = createLockerReservationSnapshot(response, values);
+      setReservationDetailsByLockerId((current) => ({
+        ...current,
+        [String(lockerId)]: reservationSnapshot,
+      }));
       toast.success("تم حجز الخزانة بنجاح!");
       closeReserve();
       return true;
@@ -119,15 +137,20 @@ export function useLockers({ initialLockers } = {}) {
   /**
    * Releases the active reservation after confirmation.
    */
-  async function confirmRelease(reason) {
+  async function confirmRelease(values) {
     if (!releaseTarget) return;
 
     try {
-      const body = doesLockerReleaseRequireReason(releaseTarget)
-        ? { reason: String(reason || "").trim() }
-        : undefined;
+      const body = createLockerReleasePayload(releaseTarget, values);
       await releaseReservation({ id: releaseTarget.id, body }).unwrap();
-      toast.success("تم فك حجز الخزانة بنجاح!");
+      toast.success(
+        values?.is_refund ? "تم فك حجز الخزانة وإعادة المبلغ بنجاح!" : "تم فك حجز الخزانة بنجاح!",
+      );
+      setReservationDetailsByLockerId((current) => {
+        const updated = { ...current };
+        delete updated[String(releaseTarget.id)];
+        return updated;
+      });
       setReleaseTarget(null);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "تعذر فك حجز الخزانة."));

@@ -8,8 +8,8 @@ import { getApiErrorMessage } from "@/lib/apiError";
 import {
   createScheduleDataFromApi,
   createScheduleSettingsFromApi,
+  createScheduleSlotsFromApi,
   createWeeklyHolidayDayKeys,
-  generateTimeSlots,
 } from "./scheduleUtils";
 import { openSchedulePrintWindow } from "./schedulePrint";
 
@@ -47,12 +47,26 @@ export function useSchedule({ initialSchedule, selectedBranchId = "all" } = {}) 
   const resolvedSchedule = apiSchedule || initialScopedSchedule;
   const settings = useMemo(() => createScheduleSettingsFromApi(branchSettings), [branchSettings]);
   const morningSlots = useMemo(
-    () => generateTimeSlots(settings.morningStart, settings.morningEnd, settings.slotDuration),
-    [settings],
+    () =>
+      createScheduleSlotsFromApi(
+        resolvedSchedule,
+        settings.morningStart,
+        settings.morningEnd,
+        selectedBranchId,
+        settings.slotDuration,
+      ),
+    [resolvedSchedule, selectedBranchId, settings],
   );
   const eveningSlots = useMemo(
-    () => generateTimeSlots(settings.eveningStart, settings.eveningEnd, settings.slotDuration),
-    [settings],
+    () =>
+      createScheduleSlotsFromApi(
+        resolvedSchedule,
+        settings.eveningStart,
+        settings.eveningEnd,
+        selectedBranchId,
+        settings.slotDuration,
+      ),
+    [resolvedSchedule, selectedBranchId, settings],
   );
   const holidayDayKeys = useMemo(
     () => createWeeklyHolidayDayKeys(branchHolidays),

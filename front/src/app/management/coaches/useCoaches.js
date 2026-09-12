@@ -30,6 +30,21 @@ function getActivitiesArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
 }
 
+const COACH_EMPLOYMENT_FILTER_ALIASES = {
+  commission: "commission_based",
+  راتب: "fixed_salary",
+  "راتب ثابت": "fixed_salary",
+  نسبة: "commission_based",
+  "نسبة فقط": "commission_based",
+  "نسبة وراتب": "hybrid",
+  "راتب ونسبة": "hybrid",
+};
+
+export function normalizeCoachEmploymentFilter(value) {
+  const normalized = COACH_EMPLOYMENT_FILTER_ALIASES[String(value || "").trim()] || value;
+  return ["fixed_salary", "commission_based", "hybrid"].includes(normalized) ? normalized : "all";
+}
+
 /**
  * Coordinates coach data, filters, drawer state, and CRUD mutations.
  */
@@ -43,7 +58,9 @@ export function useCoaches(params = {}) {
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
   const [search, setSearch] = useState("");
-  const [employmentFilter, setEmploymentFilter] = useState(urlEmployment || "all");
+  const [employmentFilter, setEmploymentFilter] = useState(() =>
+    normalizeCoachEmploymentFilter(urlEmployment),
+  );
   const [activityFilter, setActivityFilter] = useState(urlActivity || "all");
   const [workStatusFilter, setWorkStatusFilter] = useState(urlWorkStatus || "all");
   const [drawerMode, setDrawerMode] = useState(null);
@@ -63,11 +80,14 @@ export function useCoaches(params = {}) {
 
   const queryParams = useMemo(() => {
     const params = { page, per_page: perPage };
+    const normalizedEmployment = normalizeCoachEmploymentFilter(employmentFilter);
     if (branchFilter !== "all") params.branch_id = Number(branchFilter);
     if (activityFilter !== "all") params.activity_id = Number(activityFilter);
     if (workStatusFilter !== "all") params.work_status = workStatusFilter;
+    if (normalizedEmployment !== "all") params.employment_type = normalizedEmployment;
+    if (search.trim()) params.search = search.trim();
     return params;
-  }, [activityFilter, branchFilter, page, perPage, workStatusFilter]);
+  }, [activityFilter, branchFilter, employmentFilter, page, perPage, search, workStatusFilter]);
 
   const {
     currentData: data,
@@ -99,7 +119,9 @@ export function useCoaches(params = {}) {
     perPage === 15 &&
     branchFilter === "all" &&
     activityFilter === "all" &&
-    workStatusFilter === "all";
+    workStatusFilter === "all" &&
+    employmentFilter === "all" &&
+    !search.trim();
   const coachesResponse = data || (canUseInitialCoaches ? initialData?.coaches : null);
   const coaches = useMemo(() => getCoachesArray(coachesResponse), [coachesResponse]);
   const pagination = useMemo(
@@ -139,41 +161,8 @@ export function useCoaches(params = {}) {
     [branchFilter, coaches],
   );
 
-  const filteredCoaches = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return branchCoaches.filter((coach) => {
-      const nameVal = coach.person?.full_name || "";
-      const activitiesVal = Array.isArray(coach.activities)
-        ? coach.activities.map((a) => a.name || "").join(" ")
-        : "";
-      const phoneVal =
-        coach.person?.phone_number ||
-        coach.person?.phone ||
-        coach.person?.contacts?.[0]?.phone_number ||
-        "";
-
-      const matchesActivity =
-        activityFilter === "all" ||
-        (Array.isArray(coach.activities) &&
-          coach.activities.some((act) => String(act.id) === String(activityFilter)));
-
-      const matchesEmployment =
-        employmentFilter === "all" || coach.employment_type === employmentFilter;
-      const matchesWorkStatus =
-        workStatusFilter === "all" || resolveWorkStatus(coach) === workStatusFilter;
-
-      const matchesSearch =
-        !normalizedSearch ||
-        [nameVal, activitiesVal, phoneVal, coach.qr_code, coach.username]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(normalizedSearch));
-
-      return matchesActivity && matchesEmployment && matchesWorkStatus && matchesSearch;
-    });
-  }, [activityFilter, branchCoaches, employmentFilter, search, workStatusFilter]);
-  const hasLocalFilters = Boolean(search.trim()) || employmentFilter !== "all";
-  const totalResults = hasLocalFilters ? filteredCoaches.length : pagination.total;
+  const filteredCoaches = branchCoaches;
+  const totalResults = pagination.total;
 
   const stats = useMemo(() => {
     const activeCount = branchCoaches.filter(
@@ -181,10 +170,7 @@ export function useCoaches(params = {}) {
     ).length;
     const fixedCount = branchCoaches.filter((c) => c.employment_type === "fixed_salary").length;
     const commCount = branchCoaches.filter(
-      (c) =>
-        c.employment_type === "commission" ||
-        c.employment_type === "commission_based" ||
-        c.employment_type === "hybrid",
+      (c) => c.employment_type === "commission_based" || c.employment_type === "commission",
     ).length;
 
     return [
@@ -222,23 +208,14 @@ export function useCoaches(params = {}) {
         active: employmentFilter === "fixed_salary",
       },
       {
-        title: "نسبة أو هجين",
+        title: "نسبة فقط",
         value: commCount.toLocaleString("ar"),
-        helper: "أجور نسبية أو هجينة",
+        helper: "مدربون يعملون بنظام النسبة",
         tone: "purple",
         compact: true,
         onClick: () =>
-          setEmploymentFilter(
-            employmentFilter === "commission" ||
-              employmentFilter === "commission_based" ||
-              employmentFilter === "hybrid"
-              ? "all"
-              : "commission",
-          ),
-        active:
-          employmentFilter === "commission" ||
-          employmentFilter === "commission_based" ||
-          employmentFilter === "hybrid",
+          setEmploymentFilter(employmentFilter === "commission_based" ? "all" : "commission_based"),
+        active: employmentFilter === "commission_based",
       },
     ];
   }, [activityFilter, branchCoaches, employmentFilter, workStatusFilter]);

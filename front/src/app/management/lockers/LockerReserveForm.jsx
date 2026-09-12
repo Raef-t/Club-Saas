@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field } from "@/components/forms/FormControls";
+import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
 import {
   createInitialReserveLockerForm,
   reserveLockerSchema,
 } from "@/lib/validations/lockersSchema";
 import { toIsoDate } from "@/components/forms/datePickerUtils";
+import { getSettingsRecord } from "../settings/settingsUtils";
 import {
   LOCKER_HOLDER_TYPE_OPTIONS,
   LOCKER_RESERVATION_HOLDER_TYPES,
@@ -20,6 +22,7 @@ import {
   createLockerMemberOptions,
   createLockerReservationPayload,
   createLockerStaffOptions,
+  getLockerRentalEndDate,
   getLockerValidationErrors,
 } from "./lockerUtils";
 
@@ -32,6 +35,7 @@ const RESERVATION_HOLDER_OPTIONS = LOCKER_HOLDER_TYPE_OPTIONS.filter((option) =>
  */
 export default function LockerReserveForm({
   formId,
+  branchId,
   members,
   coaches,
   staff,
@@ -42,9 +46,30 @@ export default function LockerReserveForm({
 }) {
   const [form, setForm] = useState(() => createInitialReserveLockerForm());
   const [errors, setErrors] = useState({});
+  const {
+    currentData: branchSettingsResponse,
+    error: branchSettingsError,
+    isFetching: isFetchingBranchSettings,
+  } = useGetBranchSettingsQuery(branchId, { skip: !branchId });
+  const branchSettings = getSettingsRecord(branchSettingsResponse);
+  const configuredLockerPrice =
+    branchSettings?.locker_price !== null && branchSettings?.locker_price !== undefined
+      ? String(branchSettings.locker_price)
+      : "";
   const memberOptions = useMemo(() => createLockerMemberOptions(members), [members]);
   const coachOptions = useMemo(() => createLockerCoachOptions(coaches), [coaches]);
   const staffOptions = useMemo(() => createLockerStaffOptions(staff), [staff]);
+
+  useEffect(() => {
+    if (!configuredLockerPrice) return;
+
+    setForm((current) => {
+      if (current.reservation_type !== "rental" || current.price === configuredLockerPrice) {
+        return current;
+      }
+      return { ...current, price: configuredLockerPrice };
+    });
+  }, [configuredLockerPrice]);
 
   /**
    * Updates one reservation field and clears dependent holder state.
@@ -90,10 +115,24 @@ export default function LockerReserveForm({
             end_date: today,
           };
         }
+        const startDate = current.start_date || toIsoDate(new Date());
         return {
           ...current,
           reservation_type: value,
-          price: value === "assign" ? "" : current.price,
+          price: value === "assign" ? "" : configuredLockerPrice,
+          start_date: startDate,
+          end_date: value === "rental" ? getLockerRentalEndDate(startDate) : current.end_date,
+        };
+      }
+
+      if (field === "start_date") {
+        return {
+          ...current,
+          start_date: value,
+          end_date:
+            current.reservation_type === "rental"
+              ? getLockerRentalEndDate(value)
+              : current.end_date,
         };
       }
 
@@ -172,15 +211,24 @@ export default function LockerReserveForm({
         />
 
         {form.reservation_type === "rental" && (
-          <Field
-            label="السعر"
-            type="number"
-            required={false}
-            value={form.price}
-            onChange={(event) => updateField("price", event.target.value)}
-            error={errors.price}
-            min="0"
-          />
+          <>
+            <Field
+              label="السعر من إعدادات الفرع"
+              type="number"
+              required
+              value={form.price}
+              onChange={() => {}}
+              error={
+                errors.price ||
+                (branchSettingsError ? "تعذر تحميل سعر الخزانة من إعدادات الفرع" : "")
+              }
+              min="0"
+              disabled
+            />
+            {isFetchingBranchSettings && (
+              <p className="text-xs text-app-muted-light">جارٍ تحميل سعر الخزانة...</p>
+            )}
+          </>
         )}
 
         {form.holder_type !== "coach" && (
@@ -195,12 +243,21 @@ export default function LockerReserveForm({
             />
 
             <Field
-              label="تاريخ النهاية (اختياري)"
+              label={
+                form.reservation_type === "rental"
+                  ? "تاريخ النهاية (بعد شهر تلقائيًا)"
+                  : "تاريخ النهاية (اختياري)"
+              }
               type="date"
-              required={false}
+              required={form.reservation_type === "rental"}
               value={form.end_date}
-              onChange={(value) => updateField("end_date", value)}
+              onChange={
+                form.reservation_type === "rental"
+                  ? undefined
+                  : (value) => updateField("end_date", value)
+              }
               error={errors.end_date}
+              disabled={form.reservation_type === "rental"}
             />
           </>
         )}
@@ -210,7 +267,10 @@ export default function LockerReserveForm({
         <Button type="button" tone="ghost" onClick={onCancel} disabled={isLoading}>
           إلغاء
         </Button>
-        <Button type="submit" loading={isLoading}>
+        <Button
+          type="submit"
+          loading={isLoading || (form.reservation_type === "rental" && isFetchingBranchSettings)}
+        >
           تأكيد الحجز
         </Button>
       </div>

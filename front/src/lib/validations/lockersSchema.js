@@ -59,6 +59,20 @@ export const reserveLockerSchema = z
         path: ["start_date"],
       });
     }
+    if (data.reservation_type === "rental" && data.price === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "سعر الخزانة غير محدد في إعدادات الفرع",
+        path: ["price"],
+      });
+    }
+    if (data.reservation_type === "rental" && (!data.end_date || !data.end_date.trim())) {
+      ctx.addIssue({
+        code: "custom",
+        message: "تاريخ نهاية الإيجار مطلوب",
+        path: ["end_date"],
+      });
+    }
   });
 
 export const initialLockerForm = {

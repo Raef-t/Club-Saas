@@ -1,25 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTimeFormat } from "@/lib/TimeFormatContext";
 import Button from "@/components/ui/Button";
-import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field, TextAreaField } from "@/components/forms/FormControls";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
-import { useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
-import { genderLabels } from "@/lib/constants";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { getPreferredBranchId, getGenderForBranchId } from "@/lib/managementBranchUtils";
 import { getFieldErrors } from "@/lib/validations/formErrors";
 import { activitySchema, activityUpdateSchema } from "@/lib/validations/activitiesSchema";
-import { DAYS_OF_WEEK, GENDER_OPTIONS } from "./activityConstants";
+import { GENDER_OPTIONS } from "./activityConstants";
 import {
-  activityTypeHasShifts,
   createActivityFormValues,
   createActivityOptions,
   createActivityPayload,
-  getActivityCollection,
 } from "./activityUtils";
 
 /**
@@ -28,7 +22,6 @@ import {
 export default function ActivityForm({
   mode,
   initialValues,
-  initialShifts,
   branches = [],
   activityTypes = [],
   onSubmit,
@@ -63,21 +56,6 @@ export default function ActivityForm({
       gender_allowed: getGenderForBranchId(branches, current.branch_id, current.gender_allowed),
     }));
   }, [branches, form.branch_id]);
-  const branchId = Number(form.branch_id);
-  const initialBranchId = Number(initialValues?.branch_id || initialValues?.branch?.id);
-  const {
-    currentData: shiftsResponse,
-    isLoading: isLoadingShifts,
-    isFetching: isFetchingShifts,
-  } = useGetBranchShiftsQuery(branchId, { skip: !branchId });
-  const branchShifts = useMemo(
-    () =>
-      getActivityCollection(
-        shiftsResponse || (branchId === initialBranchId ? initialShifts : undefined),
-      ),
-    [branchId, initialBranchId, initialShifts, shiftsResponse],
-  );
-  const showShifts = activityTypeHasShifts(activityTypes, form.activity_type_id);
   const branchOptions = useMemo(() => createActivityOptions(branches), [branches]);
   const typeOptions = useMemo(() => createActivityOptions(activityTypes), [activityTypes]);
 
@@ -88,7 +66,6 @@ export default function ActivityForm({
     setForm((current) => ({
       ...current,
       [field]: value,
-      ...(field === "branch_id" ? { shifts: [] } : {}),
     }));
     setErrors((current) => {
       if (!current[field]) return current;
@@ -96,19 +73,6 @@ export default function ActivityForm({
       delete updated[field];
       return updated;
     });
-  }
-
-  /**
-   * Adds or removes one shift from the selected activity shifts.
-   */
-  function toggleShift(shiftId) {
-    const normalizedId = Number(shiftId);
-    const isSelected = form.shifts.includes(normalizedId);
-    const shifts = isSelected
-      ? form.shifts.filter((id) => id !== normalizedId)
-      : [...form.shifts, normalizedId];
-
-    updateField("shifts", shifts);
   }
 
   /**
@@ -121,7 +85,6 @@ export default function ActivityForm({
       ...form,
       name: form.name.trim(),
       description: form.description.trim(),
-      shifts: form.shifts.map(Number),
     });
 
     if (!validation.success) {
@@ -130,7 +93,7 @@ export default function ActivityForm({
     }
 
     setErrors({});
-    onSubmit(createActivityPayload(form, showShifts, mode === "edit"));
+    onSubmit(createActivityPayload(form, mode === "edit"));
   }
 
   return (
@@ -162,15 +125,6 @@ export default function ActivityForm({
         placeholder="اختر نوع الفئة"
         error={errors.activity_type_id}
       />
-
-      {showShifts && (
-        <ActivityShifts
-          shifts={branchShifts}
-          selectedShiftIds={form.shifts}
-          isLoading={isLoadingShifts || isFetchingShifts}
-          onToggle={toggleShift}
-        />
-      )}
 
       <TextAreaField
         label="الوصف"
@@ -243,46 +197,5 @@ function ActivityDropdown({ label, value, onChange, options, placeholder, error 
         error={error}
       />
     </label>
-  );
-}
-
-/**
- * Renders the selectable shifts available for the chosen branch.
- */
-function ActivityShifts({ shifts, selectedShiftIds, isLoading, onToggle }) {
-  const { formatTime } = useTimeFormat();
-
-  return (
-    <div className="block text-right text-sm text-app-muted-light">
-      الورديات / الشفتات المتاحة
-      <div className="mt-2 grid max-h-48 grid-cols-2 gap-3 overflow-y-auto rounded-lg border border-app-line bg-app-card-soft p-3">
-        {isLoading && shifts.length === 0 ? (
-          <p className="col-span-2 py-2 text-center text-xs text-app-muted-light">
-            جاري تحميل الورديات...
-          </p>
-        ) : shifts.length === 0 ? (
-          <p className="col-span-2 py-2 text-center text-xs text-app-muted-light">
-            لا توجد ورديات مسجلة لهذا الفرع
-          </p>
-        ) : (
-          shifts.map((shift) => {
-            const shiftId = Number(shift.id);
-            const startTime = formatTime(shift.start_time) || "";
-            const endTime = formatTime(shift.end_time) || "";
-            const gender = genderLabels[shift.gender_allowed] || shift.gender_allowed || "مختلط";
-            const label = `${DAYS_OF_WEEK[shift.day_of_week] || "يوم غير معروف"} | من ${startTime} إلى ${endTime} (${gender})`;
-
-            return (
-              <Checkbox
-                key={shift.id}
-                label={label}
-                checked={selectedShiftIds.includes(shiftId)}
-                onChange={() => onToggle(shiftId)}
-              />
-            );
-          })
-        )}
-      </div>
-    </div>
   );
 }

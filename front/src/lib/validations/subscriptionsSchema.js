@@ -8,6 +8,22 @@ const optionalReceiptSchema = z
   .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف")
   .optional();
 
+export const subscriptionRenewalSchema = z.object({
+  plan_id: z.coerce.number().int().positive("يرجى اختيار خطة الاشتراك"),
+  paid_amount: z.preprocess(
+    (value) => (value === "" || value === null ? undefined : Number(value)),
+    z
+      .number({ error: "المبلغ المدفوع مطلوب" })
+      .finite("المبلغ المدفوع غير صالح")
+      .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
+  ),
+  receipt_number: z
+    .string()
+    .trim()
+    .min(1, "رقم الإيصال مطلوب")
+    .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف"),
+});
+
 export const subscriptionSchema = z
   .object({
     member_id: z

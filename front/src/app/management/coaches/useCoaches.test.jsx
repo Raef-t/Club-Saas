@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useCoaches } from "./useCoaches";
+import { normalizeCoachEmploymentFilter, useCoaches } from "./useCoaches";
 
 const { createCoach, updateCoach } = vi.hoisted(() => ({
   createCoach: vi.fn(),
@@ -109,5 +109,19 @@ describe("coach creation", () => {
     expect(submittedFormData.get("default_commission_rate")).toBe("15.5");
     expect(submittedFormData.get("private_commission_rate")).toBe("70");
     expect(submittedFormData.get("reason")).toBe("تحديث نسب المدرب");
+  });
+});
+
+describe("coach employment filters", () => {
+  it.each([
+    ["fixed_salary", "fixed_salary"],
+    ["راتب", "fixed_salary"],
+    ["commission_based", "commission_based"],
+    ["نسبة", "commission_based"],
+    ["hybrid", "hybrid"],
+    ["نسبة وراتب", "hybrid"],
+    ["unknown", "all"],
+  ])("normalizes %s to %s", (input, expected) => {
+    expect(normalizeCoachEmploymentFilter(input)).toBe(expected);
   });
 });

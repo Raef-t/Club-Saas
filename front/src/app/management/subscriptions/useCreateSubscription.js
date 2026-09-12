@@ -11,7 +11,7 @@ import { useGetCoachesQuery } from "@/lib/api/coachesApi";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { withAllItems } from "@/lib/pagination";
-import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
+import { filterEntitiesByBranch, getEntityBranchIds } from "@/lib/managementBranchUtils";
 import { getApiErrorMessage } from "@/lib/apiError";
 import {
   getAvailableSubscriptionPlanParams,
@@ -31,12 +31,16 @@ function getCollection(response) {
 /**
  * Coordinates the reference data and mutation used by the create-subscription page.
  */
-export function useCreateSubscription({ initialData, selectedSubscriptionId = null } = {}) {
+export function useCreateSubscription({
+  initialData,
+  selectedSubscriptionId = null,
+  initialActivityTypeId = "",
+} = {}) {
   const toast = useToast();
   const { selectedBranchId } = useManagementBranch();
   const [formError, setFormError] = useState("");
-  const [selectedActivityTypeId, setSelectedActivityTypeId] = useState(() =>
-    getDefaultSubscriptionActivityTypeId(getCollection(initialData?.activityTypes)),
+  const [selectedActivityTypeId, setSelectedActivityTypeId] = useState(
+    () => initialActivityTypeId || "",
   );
   const branchQueryParams = selectedBranchId === "all" ? {} : { branch_id: selectedBranchId };
   const planQueryParams = useMemo(
@@ -49,7 +53,7 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     error: plansError,
     isLoading: isPlansLoading,
     isFetching: isPlansFetching,
-  } = useGetSubscriptionPlansQuery(planQueryParams, { skip: !selectedActivityTypeId });
+  } = useGetSubscriptionPlansQuery(planQueryParams);
   const {
     currentData: activityTypesData,
     error: activityTypesError,
@@ -82,20 +86,21 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
   );
   const plansResponse = plansData;
   const allPlans = useMemo(() => getCollection(plansResponse), [plansResponse]);
-  const plans = useMemo(
-    () => filterEntitiesByBranch(allPlans, selectedBranchId),
-    [allPlans, selectedBranchId],
-  );
+  const plans = useMemo(() => {
+    const hasBranchInfo = allPlans.some((plan) => getEntityBranchIds(plan).length > 0);
+    return hasBranchInfo ? filterEntitiesByBranch(allPlans, selectedBranchId) : allPlans;
+  }, [allPlans, selectedBranchId]);
   const activityTypes = useMemo(
     () => getCollection(activityTypesData || initialData?.activityTypes),
     [activityTypesData, initialData?.activityTypes],
   );
   useEffect(() => {
     setSelectedActivityTypeId((currentId) => {
+      if (!currentId || currentId === "all") return currentId;
       const currentTypeExists = activityTypes.some(
         (activityType) => String(activityType.id) === String(currentId),
       );
-      return currentTypeExists ? currentId : getDefaultSubscriptionActivityTypeId(activityTypes);
+      return currentTypeExists ? currentId : "";
     });
   }, [activityTypes]);
   const allActivities = useMemo(
@@ -168,8 +173,7 @@ export function useCreateSubscription({ initialData, selectedSubscriptionId = nu
     activityTypes,
     selectedActivityTypeId,
     setSelectedActivityTypeId,
-    isPlansLoading:
-      isPlansLoading || isPlansFetching || (!selectedActivityTypeId && !activityTypesError),
+    isPlansLoading: isPlansLoading || isPlansFetching,
     plansErrorMessage: plansError
       ? getApiErrorMessage(plansError, "تعذر تحميل باقات الاشتراك المتاحة.")
       : "",

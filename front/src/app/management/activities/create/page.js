@@ -1,7 +1,6 @@
 import ActivitiesCreateClient from "./ActivitiesCreateClient";
 import { verifyPageAccess } from "@/lib/server/auth";
-import { requestBackend, safeRequestBackend } from "@/lib/server/backend";
-import { getActivityRecord } from "../activityUtils";
+import { safeRequestBackend } from "@/lib/server/backend";
 
 export const metadata = {
   title: "إضافة أو تعديل نشاط | TechnoGYM",
@@ -22,15 +21,11 @@ export default async function CreateActivityPage({ searchParams }) {
     safeRequestBackend("activity-types", { token }, []),
     mode === "edit" ? safeRequestBackend(`activities/${activityId}`, { token }, null) : null,
   ]);
-  const activityRecord = getActivityRecord(activity);
-  const branchId = activityRecord?.branch_id || activityRecord?.branch?.id || null;
-  const shifts = branchId ? await safeRequestBackend(`branches/${branchId}/shifts`, { token }, []) : [];
-
   return (
     <ActivitiesCreateClient
       mode={mode}
       activityId={activityId}
-      initialData={{ branches, activityTypes, activity, shifts }}
+      initialData={{ branches, activityTypes, activity }}
     />
   );
 }

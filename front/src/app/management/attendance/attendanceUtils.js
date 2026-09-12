@@ -213,7 +213,7 @@ export function createAttendanceRows(response, activeMember, people = {}) {
           : null) ||
         record.member?.person?.full_name ||
         record.staff?.person?.full_name ||
-        record.member_name ||
+        record.user_name ||
         record.staff_name ||
         (record.attendable_type === "staff"
           ? staffNames.get(String(record.attendable_id || record.staff_id))

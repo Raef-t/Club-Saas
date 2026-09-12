@@ -1,4 +1,5 @@
 import { formatLocalizedName, getBranchesArray } from "../../../lib/utils";
+import { fromIsoDate, toIsoDate } from "@/components/forms/datePickerUtils";
 import { LOCKER_OCCUPIED_STATUSES } from "./lockerConstants";
 
 /**
@@ -73,6 +74,22 @@ export function getLockerReservationEndDate(locker) {
   return reservation?.end_date || locker?.end_date || locker?.reservation_end_date || "";
 }
 
+/**
+ * Adds one calendar month while clamping dates at the end of shorter months.
+ * For example, January 31 becomes February 28 (or 29 in a leap year).
+ */
+export function getLockerRentalEndDate(startDate) {
+  const start = fromIsoDate(startDate);
+  if (!start) return "";
+
+  const targetYear = start.getMonth() === 11 ? start.getFullYear() + 1 : start.getFullYear();
+  const targetMonth = (start.getMonth() + 1) % 12;
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const end = new Date(targetYear, targetMonth, Math.min(start.getDate(), lastDayOfTargetMonth));
+
+  return toIsoDate(end);
+}
+
 export function isLockerEarlyRelease(locker, now = new Date()) {
   const endDate = new Date(getLockerReservationEndDate(locker));
   const comparisonDate = now instanceof Date ? now : new Date(now);
@@ -92,16 +109,88 @@ export function isLockerRentalReservation(locker) {
   const reservationType = String(
     reservation.reservation_type || locker?.reservation_type || reservation.type || "",
   ).toLowerCase();
+  const invoiceId = reservation.invoice_id ?? locker?.invoice_id;
+  const price = getLockerRentalPrice(locker);
 
-  return reservationType === "rental" || String(locker?.status || "").toLowerCase() === "rented";
+  return (
+    reservationType === "rental" ||
+    String(locker?.status || "").toLowerCase() === "rented" ||
+    (invoiceId !== null && invoiceId !== undefined) ||
+    (price !== null && price > 0)
+  );
 }
 
 /**
- * The backend requires a reason only when ending an active rental before its
- * scheduled end date. Free assignments can be released without a reason.
+ * Locker list records do not expose the reservation end date that determines
+ * whether the backend requires a reason. Collect it for every active release
+ * so an early release can never be submitted without one.
  */
-export function doesLockerReleaseRequireReason(locker, now = new Date()) {
-  return isLockerRentalReservation(locker) && isLockerEarlyRelease(locker, now);
+export function doesLockerReleaseRequireReason(locker) {
+  return Boolean(locker);
+}
+
+/**
+ * Reads the paid rental amount from the supported locker response shapes.
+ */
+export function getLockerRentalPrice(locker) {
+  const reservation = getLockerCurrentReservation(locker) || {};
+  const rawPrice =
+    reservation.price ??
+    reservation.rental_price ??
+    reservation.amount ??
+    reservation.paid_amount ??
+    locker?.rental_price ??
+    locker?.price;
+  const price = Number(rawPrice);
+
+  return rawPrice !== "" && rawPrice !== null && rawPrice !== undefined && Number.isFinite(price)
+    ? price
+    : null;
+}
+
+/**
+ * Preserves request-only reservation fields that are missing from some real
+ * reservation responses (notably reservation_type and holder_type).
+ */
+export function createLockerReservationSnapshot(response, values = {}) {
+  const reservation = getLockerRecord(response) || {};
+  const holderType = values.holder_type || reservation.holder_type || "";
+  const holderId =
+    values.holder_id ??
+    reservation.holder_id ??
+    reservation.member_id ??
+    reservation.staff_id ??
+    reservation.coach_id ??
+    null;
+
+  return {
+    ...reservation,
+    reservation_type: values.reservation_type || reservation.reservation_type || "",
+    holder_type: holderType,
+    holder_id: holderId,
+    price: values.price ?? reservation.price ?? null,
+    start_date: values.start_date || reservation.start_date || "",
+    end_date: values.end_date || reservation.end_date || "",
+  };
+}
+
+/**
+ * Builds the DELETE payload used when releasing an active reservation.
+ */
+export function createLockerReleasePayload(locker, values = {}) {
+  if (!locker) return undefined;
+
+  const isRefund = Boolean(values.is_refund);
+  const payload = {
+    reason: String(values.reason || "").trim(),
+    is_refund: isRefund,
+  };
+
+  if (isRefund && values.refund_amount !== "" && values.refund_amount != null) {
+    payload.refund_amount = Number(values.refund_amount);
+  }
+
+  return payload;
 }
 
 function getLockerHolder(locker) {
@@ -114,14 +203,29 @@ function getLockerHolder(locker) {
     rawType.includes(type),
   );
   const typeFromStatus = String(locker?.status || "").replace(/^with_/, "");
+  const typeFromRelation = ["member", "coach", "staff"].find(
+    (type) =>
+      locker?.[type] ||
+      reservation?.[type] ||
+      relatedHolder?.[type] ||
+      locker?.[`${type}_id`] != null ||
+      reservation?.[`${type}_id`] != null ||
+      relatedHolder?.[`${type}_id`] != null,
+  );
   const type =
-    typeFromValue || (["member", "coach", "staff"].includes(typeFromStatus) ? typeFromStatus : "");
+    typeFromValue ||
+    (["member", "coach", "staff"].includes(typeFromStatus) ? typeFromStatus : "") ||
+    typeFromRelation ||
+    "";
   const typedRelation =
     locker?.[type] || reservation?.[type] || relatedHolder?.[type] || relatedHolder;
   const id =
     locker?.holder_id ??
     reservation?.holder_id ??
     relatedHolder?.holder_id ??
+    locker?.[`${type}_id`] ??
+    reservation?.[`${type}_id`] ??
+    relatedHolder?.[`${type}_id`] ??
     typedRelation?.id ??
     null;
   const name =
@@ -138,7 +242,34 @@ function getLockerHolder(locker) {
  */
 export function isLockerOccupied(locker) {
   const holder = getLockerHolder(locker);
-  return LOCKER_OCCUPIED_STATUSES.includes(locker?.status) || Boolean(holder.id);
+  const status = String(locker?.status || "").toLowerCase();
+  return LOCKER_OCCUPIED_STATUSES.includes(status) || holder.id != null;
+}
+
+/**
+ * Collapses backend reservation details into the four mutually-exclusive states
+ * used by the locker page.
+ */
+export function getLockerPageState(locker) {
+  const status = String(locker?.status || "").toLowerCase();
+  const holder = getLockerHolder(locker);
+
+  if (["maintenance", "disabled", "unavailable"].includes(status)) return "maintenance";
+  if (holder.type === "member" || status === "with_member") return "with_member";
+  if (
+    holder.type === "coach" ||
+    holder.type === "staff" ||
+    ["with_coach", "with_staff", "with_staff_or_coach"].includes(status)
+  ) {
+    return "with_staff_or_coach";
+  }
+  if (status === "available" && holder.id == null) return "available";
+
+  // Older responses used a generic occupied/assigned status for member lockers.
+  if (isLockerOccupied(locker)) return "with_member";
+
+  // Unknown inactive states must remain visible in the operational bucket.
+  return "maintenance";
 }
 
 /**
@@ -147,9 +278,11 @@ export function isLockerOccupied(locker) {
 export function matchesLockerStatus(locker, status) {
   if (!status || status === "all") return true;
   if (status === "occupied") return isLockerOccupied(locker);
-  if (status === "available") return locker.status === "available" && !isLockerOccupied(locker);
-  if (status === "maintenance" || status === "unavailable") {
-    return locker.status === "maintenance" || locker.status === "disabled";
+  if (["available", "with_member", "with_staff_or_coach", "maintenance"].includes(status)) {
+    return getLockerPageState(locker) === status;
+  }
+  if (status === "unavailable") {
+    return getLockerPageState(locker) === "maintenance";
   }
 
   const reservation = getLockerCurrentReservation(locker) || {};
@@ -175,15 +308,6 @@ export function matchesLockerStatus(locker, status) {
     );
   }
 
-  if (status === "with_member") {
-    return (
-      holder.type === "member" ||
-      locker.status === "with_member" ||
-      reservation.holder_type === "member" ||
-      Boolean(locker.member || locker.member_id)
-    );
-  }
-
   if (status === "with_coach") {
     return (
       holder.type === "coach" ||
@@ -202,27 +326,7 @@ export function matchesLockerStatus(locker, status) {
     );
   }
 
-  if (status === "with_staff_or_coach") {
-    return (
-      locker.status === "with_staff_or_coach" ||
-      matchesLockerStatus(locker, "with_coach") ||
-      matchesLockerStatus(locker, "with_staff")
-    );
-  }
-
   return locker.status === status;
-}
-
-/**
- * Collapses backend reservation details into the four states shown on the list.
- */
-export function getLockerPageState(locker) {
-  if (matchesLockerStatus(locker, "maintenance")) return "maintenance";
-  if (matchesLockerStatus(locker, "with_member")) return "with_member";
-  if (matchesLockerStatus(locker, "with_staff_or_coach")) return "with_staff_or_coach";
-  if (matchesLockerStatus(locker, "available")) return "available";
-
-  return locker?.status || "maintenance";
 }
 
 /**
@@ -248,11 +352,35 @@ export function filterLockers(lockers, { search = "", branch = "all", status = "
  * Creates the exact query params supported by the locker list endpoint.
  */
 export function createLockerQueryParams(branchFilter, statusFilter) {
-  const supportedPageStatuses = ["available", "with_member", "with_staff_or_coach", "maintenance"];
   return {
     branch_id: branchFilter !== "all" ? String(branchFilter) : undefined,
-    status: supportedPageStatuses.includes(statusFilter) ? statusFilter : undefined,
+    // Page states are derived from holder details, so filtering must happen only
+    // after the complete branch collection has been received.
+    status: undefined,
   };
+}
+
+/**
+ * Builds the four page counters from the same classifier used by the filters.
+ */
+export function getLockerPageSummary(lockers) {
+  const summary = {
+    available_lockers_count: 0,
+    unavailable_lockers_count: 0,
+    assigned_to_member_count: 0,
+    assigned_to_staff_or_coach_count: 0,
+  };
+
+  lockers.forEach((locker) => {
+    const state = getLockerPageState(locker);
+
+    if (state === "available") summary.available_lockers_count += 1;
+    if (state === "maintenance") summary.unavailable_lockers_count += 1;
+    if (state === "with_member") summary.assigned_to_member_count += 1;
+    if (state === "with_staff_or_coach") summary.assigned_to_staff_or_coach_count += 1;
+  });
+
+  return summary;
 }
 
 /**

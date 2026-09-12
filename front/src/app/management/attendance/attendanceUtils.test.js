@@ -69,6 +69,22 @@ describe("attendance utilities", () => {
     expect(row.checkIn).not.toBe("-");
   });
 
+  it("reads user_name from attendance history", () => {
+    const [row] = createAttendanceRows({
+      data: [
+        {
+          id: 16,
+          attendable_type: "member",
+          attendable_id: 8,
+          user_name: "أحمد علي",
+          status: "checked_in",
+        },
+      ],
+    });
+
+    expect(row.member).toBe("أحمد علي");
+  });
+
   it("maps the formatted duration and full check-in timestamp from attendance history", () => {
     const [row] = createAttendanceRows({
       status: "success",

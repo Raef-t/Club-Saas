@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createScheduleDataFromApi,
   createScheduleSettingsFromApi,
+  createScheduleSlotsFromApi,
   createWeeklyHolidayDayKeys,
   escapeScheduleHtml,
   generateTimeSlots,
@@ -146,28 +147,45 @@ describe("schedule utilities", () => {
     expect(result.fri.morning_1500).toBeUndefined();
   });
 
-  it("maps sessions with minute-based times into the containing schedule slot", () => {
-    const morningSlots = generateTimeSlots("10:00", "12:00", 60);
-    const result = createScheduleDataFromApi(
-      {
-        data: {
-          Sunday: [
-            {
-              start_time: "10:30:00",
-              end_time: "11:15:00",
-              plan_name: "لياقة",
-              coach_name: "سارة",
-            },
-          ],
-        },
+  it("uses exact minute-based session intervals as schedule columns", () => {
+    const response = {
+      data: {
+        Sunday: [
+          {
+            start_time: "10:30:00",
+            end_time: "11:15:00",
+            plan_name: "لياقة",
+            coach_name: "سارة",
+          },
+        ],
       },
-      morningSlots,
-      [],
-    );
+    };
+    const morningSlots = createScheduleSlotsFromApi(response, "08:00", "16:00");
+    const result = createScheduleDataFromApi(response, morningSlots, []);
 
+    expect(morningSlots).toEqual([
+      { key: "1030_1115", from: "10:30", to: "11:15", label: "10:30" },
+    ]);
     expect(result.sun).toEqual({
-      morning_1000: "لياقة - سارة",
+      morning_1030_1115: "لياقة - سارة",
     });
+  });
+
+  it("sorts and deduplicates actual session intervals across the week", () => {
+    const response = {
+      data: {
+        Sunday: [
+          { start_time: "17:30:00", end_time: "18:30:00" },
+          { start_time: "16:30:00", end_time: "17:30:00" },
+        ],
+        Monday: [{ start_time: "16:30:00", end_time: "17:30:00" }],
+      },
+    };
+
+    expect(createScheduleSlotsFromApi(response, "16:00", "23:00")).toEqual([
+      { key: "1630_1730", from: "16:30", to: "17:30", label: "16:30" },
+      { key: "1730_1830", from: "17:30", to: "18:30", label: "17:30" },
+    ]);
   });
 
   it("keeps multiple sessions that start inside the same schedule slot", () => {

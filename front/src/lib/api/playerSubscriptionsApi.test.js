@@ -7,7 +7,7 @@ describe("playerSubscriptions API", () => {
     vi.unstubAllGlobals();
   });
 
-  it("sends search, status, period, branch, and pagination filters", async () => {
+  it("sends search, status, period, activity type, branch, and pagination filters", async () => {
     let capturedRequest;
     const NativeRequest = globalThis.Request;
     vi.stubGlobal(
@@ -41,6 +41,7 @@ describe("playerSubscriptions API", () => {
           search: "أحمد",
           status: "active",
           period: "today",
+          activity_type_id: 3,
           branch_id: 1,
           page: 2,
           per_page: 15,
@@ -54,6 +55,7 @@ describe("playerSubscriptions API", () => {
       search: "أحمد",
       status: "active",
       period: "today",
+      activity_type_id: "3",
       branch_id: "1",
       page: "2",
       per_page: "15",
@@ -115,6 +117,62 @@ describe("playerSubscriptions API", () => {
     expect(capturedBody).toEqual({
       is_refunded: true,
       reason: "طلب اللاعب إلغاء واسترداد المبلغ",
+    });
+  });
+
+  it("posts the renewal payment to the documented renew endpoint", async () => {
+    let capturedRequest;
+    let capturedBody;
+    const NativeRequest = globalThis.Request;
+    vi.stubGlobal(
+      "Request",
+      class extends NativeRequest {
+        constructor(input, init) {
+          super(typeof input === "string" ? new URL(input, "http://localhost") : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input, init) => {
+        capturedRequest = input instanceof Request ? input : new Request(input, init);
+        capturedBody = await capturedRequest.clone().json();
+        return new Response(JSON.stringify({ status: "success", data: { id: 72 } }), {
+          status: 201,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const store = configureStore({
+      reducer: { [playerSubscriptionsApi.reducerPath]: playerSubscriptionsApi.reducer },
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(playerSubscriptionsApi.middleware),
+    });
+
+    await store
+      .dispatch(
+        playerSubscriptionsApi.endpoints.renewSubscription.initiate({
+          id: 41,
+          body: {
+            plan_id: 9,
+            paid_amount: 350,
+            payment_method: "cash",
+            receipt_number: "REC-2026-002",
+          },
+        }),
+      )
+      .unwrap();
+
+    expect(capturedRequest.method).toBe("POST");
+    expect(new URL(capturedRequest.url).pathname).toBe(
+      "/api/backend/player-subscriptions/41/renew",
+    );
+    expect(capturedBody).toEqual({
+      plan_id: 9,
+      paid_amount: 350,
+      payment_method: "cash",
+      receipt_number: "REC-2026-002",
     });
   });
 

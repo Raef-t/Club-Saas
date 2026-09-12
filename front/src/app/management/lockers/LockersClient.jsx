@@ -230,6 +230,7 @@ export default function LockersClient({ initialData }) {
           <LockerReserveForm
             key={lockerState.reserveTarget.id}
             formId="reserve-locker-form"
+            branchId={lockerState.reserveTarget.branch_id}
             members={branchMembers}
             coaches={coaches}
             staff={staff}

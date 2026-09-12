@@ -3,6 +3,7 @@
 import SubscriptionDetails from "./SubscriptionDetails";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
+import RenewSubscriptionModal from "./RenewSubscriptionModal";
 import { useMemo } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
@@ -21,7 +22,7 @@ import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 
 const TABLE_GRID_COLUMNS =
-  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.7fr) 72px";
+  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.7fr) 132px";
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -35,6 +36,7 @@ export default function SubscriptionsClient({ initialData }) {
   const canFreeze = can("player-subscription.freeze");
   const canUnfreeze = can("player-subscription.unfreeze");
   const canCancel = can("player-subscription.cancel");
+  const canRenew = can("player-subscription.renew");
   const {
     search,
     setSearch,
@@ -42,6 +44,8 @@ export default function SubscriptionsClient({ initialData }) {
     setStatus,
     period,
     setPeriod,
+    activityTypeId,
+    setActivityTypeId,
     branchFilter,
     setBranchFilter,
     selectedSubscriptionId,
@@ -61,12 +65,20 @@ export default function SubscriptionsClient({ initialData }) {
     stats,
     errorMessage,
     branches,
+    activityTypes,
+    isActivityTypesLoading,
     deleteConfirmation,
     setDeleteConfirmation,
     isFreezing,
     isUnfreezing,
     isCancelling,
+    isRenewing,
     isDeleting,
+    renewalSubscription,
+    renewalPlans,
+    isRenewalPlansLoading,
+    renewalPlansErrorMessage,
+    renewalErrorMessage,
     deleteConfirmOpen,
     itemToDelete,
     isRefunded,
@@ -76,6 +88,9 @@ export default function SubscriptionsClient({ initialData }) {
     handleFreeze,
     handleUnfreeze,
     handleCancel,
+    openRenewal,
+    closeRenewal,
+    handleRenew,
     handleDelete,
     closeDeleteConfirm,
     confirmDelete,
@@ -197,20 +212,35 @@ export default function SubscriptionsClient({ initialData }) {
         align: "center",
         sortable: false,
         render: (_, subscription) => (
-          <RowActions
-            disabled={isDeleting}
-            editHref={
-              canUpdate
-                ? `/management/subscriptions/create?mode=edit&id=${subscription.id}`
-                : undefined
-            }
-            editTitle="تعديل الاشتراك"
-            onDelete={canDelete ? () => handleDelete(subscription) : undefined}
-          />
+          <div className="flex items-center justify-center gap-2">
+            {canRenew && subscription.status === "finished" && (
+              <button
+                type="button"
+                className="h-8 rounded-lg border border-app-yellow/45 bg-app-yellow-soft px-2.5 text-xs font-medium text-app-yellow transition hover:border-app-yellow hover:bg-app-yellow/15 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openRenewal(subscription);
+                }}
+                disabled={isRenewing}
+              >
+                تجديد
+              </button>
+            )}
+            <RowActions
+              disabled={isDeleting || isRenewing}
+              editHref={
+                canUpdate
+                  ? `/management/subscriptions/create?mode=edit&id=${subscription.id}`
+                  : undefined
+              }
+              editTitle="تعديل الاشتراك"
+              onDelete={canDelete ? () => handleDelete(subscription) : undefined}
+            />
+          </div>
         ),
       },
     ],
-    [canDelete, canUpdate, handleDelete, isDeleting],
+    [canDelete, canRenew, canUpdate, handleDelete, isDeleting, isRenewing, openRenewal],
   );
 
   const branchOptions = useMemo(
@@ -219,6 +249,17 @@ export default function SubscriptionsClient({ initialData }) {
       ...branches.map((b) => ({ value: String(b.id), label: formatLocalizedName(b.name) })),
     ],
     [branches],
+  );
+
+  const activityTypeOptions = useMemo(
+    () => [
+      { value: "all", label: "كل أنواع النشاط" },
+      ...activityTypes.map((activityType) => ({
+        value: String(activityType.id),
+        label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+      })),
+    ],
+    [activityTypes],
   );
 
   return (
@@ -313,6 +354,16 @@ export default function SubscriptionsClient({ initialData }) {
               options={SUBSCRIPTION_PERIOD_OPTIONS}
               onChange={setPeriod}
             />
+
+            <Dropdown
+              className="min-w-48 bg-app-card-soft text-white"
+              icon={FilterIcon}
+              value={activityTypeId}
+              options={activityTypeOptions}
+              onChange={setActivityTypeId}
+              disabled={isActivityTypesLoading}
+              ariaLabel="تصفية حسب نوع النشاط"
+            />
           </div>
         }
         toolbarMeta={
@@ -401,6 +452,18 @@ export default function SubscriptionsClient({ initialData }) {
           </div>
         </div>
       </ConfirmDialog>
+
+      <RenewSubscriptionModal
+        open={canRenew && Boolean(renewalSubscription)}
+        subscription={renewalSubscription}
+        plans={renewalPlans}
+        isPlansLoading={isRenewalPlansLoading}
+        plansErrorMessage={renewalPlansErrorMessage}
+        onClose={closeRenewal}
+        onSubmit={handleRenew}
+        isLoading={isRenewing}
+        errorMessage={renewalErrorMessage}
+      />
     </div>
   );
 }

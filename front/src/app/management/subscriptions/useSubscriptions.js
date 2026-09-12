@@ -6,9 +6,12 @@ import {
   useFreezeSubscriptionMutation,
   useUnfreezeSubscriptionMutation,
   useCancelSubscriptionMutation,
+  useRenewSubscriptionMutation,
   useDeletePlayerSubscriptionMutation,
 } from "@/lib/api/playerSubscriptionsApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
+import { useGetActivityTypesQuery } from "@/lib/api/activitiesApi";
+import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useToast } from "@/components/ui/Toast";
 import { getBranchesArray } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
@@ -20,6 +23,7 @@ import {
   sortSubscriptionsNewestFirst,
 } from "./subscriptionUtils";
 import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
+import { getApiErrorMessage } from "@/lib/apiError";
 
 const VALID_STATUSES = new Set([
   "all",
@@ -31,6 +35,12 @@ const VALID_STATUSES = new Set([
 ]);
 const VALID_PERIODS = new Set(["all", "today", "monthly"]);
 
+function getCollection(response) {
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.data)) return response.data;
+  return Array.isArray(response) ? response : [];
+}
+
 /**
  * Coordinates subscription data, filters, selection, and lifecycle mutations.
  */
@@ -40,6 +50,7 @@ export function useSubscriptions({ initialData } = {}) {
   const urlStatus = searchParams?.get("status");
   const initialStatus = urlStatus === "expiring" ? "expiring_soon" : urlStatus;
   const urlPeriod = searchParams?.get("period");
+  const urlActivityTypeId = searchParams?.get("activity_type_id");
 
   const { selectedBranchId: branchFilter, setSelectedBranchId: setBranchFilter } =
     useManagementBranch();
@@ -49,30 +60,36 @@ export function useSubscriptions({ initialData } = {}) {
     VALID_STATUSES.has(initialStatus) ? initialStatus : "all",
   );
   const [period, setPeriod] = useState(() => (VALID_PERIODS.has(urlPeriod) ? urlPeriod : "all"));
+  const [activityTypeId, setActivityTypeId] = useState(() => urlActivityTypeId || "all");
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isRefunded, setIsRefunded] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [renewalSubscription, setRenewalSubscription] = useState(null);
+  const [renewalErrorMessage, setRenewalErrorMessage] = useState("");
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => window.clearTimeout(timeoutId);
   }, [search]);
 
-  const paginationFilterKey = [branchFilter, status, period, debouncedSearch].join("|");
+  const paginationFilterKey = [branchFilter, status, period, activityTypeId, debouncedSearch].join(
+    "|",
+  );
   const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
 
   const queryParams = useMemo(() => {
     return {
       ...(branchFilter !== "all" ? { branch_id: branchFilter } : {}),
+      ...(activityTypeId !== "all" ? { activity_type_id: activityTypeId } : {}),
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
       status,
       period,
       page,
       per_page: perPage,
     };
-  }, [branchFilter, debouncedSearch, page, perPage, period, status]);
+  }, [activityTypeId, branchFilter, debouncedSearch, page, perPage, period, status]);
 
   const {
     currentData: data,
@@ -93,9 +110,33 @@ export function useSubscriptions({ initialData } = {}) {
   });
 
   const { data: branchesData } = useGetBranchesQuery(withAllItems());
+  const {
+    data: activityTypesData,
+    isLoading: isActivityTypesLoading,
+    isFetching: isActivityTypesFetching,
+  } = useGetActivityTypesQuery(withAllItems());
+  const renewalBranchId =
+    renewalSubscription?.branch_id ??
+    renewalSubscription?.branch?.id ??
+    renewalSubscription?.plan?.branch_id ??
+    renewalSubscription?.plan?.branch?.id;
+  const {
+    data: renewalPlansData,
+    error: renewalPlansError,
+    isLoading: isRenewalPlansLoading,
+    isFetching: isRenewalPlansFetching,
+  } = useGetSubscriptionPlansQuery(
+    {
+      available: true,
+      per_page: "all",
+      ...(renewalBranchId ? { branch_id: renewalBranchId } : {}),
+    },
+    { skip: !renewalSubscription },
+  );
   const [freezeSubscription, { isLoading: isFreezing }] = useFreezeSubscriptionMutation();
   const [unfreezeSubscription, { isLoading: isUnfreezing }] = useUnfreezeSubscriptionMutation();
   const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
+  const [renewSubscription, { isLoading: isRenewing }] = useRenewSubscriptionMutation();
   const [deletePlayerSubscription, { isLoading: isDeleting }] =
     useDeletePlayerSubscriptionMutation();
 
@@ -103,6 +144,7 @@ export function useSubscriptions({ initialData } = {}) {
     !debouncedSearch &&
     status === "all" &&
     period === "all" &&
+    activityTypeId === "all" &&
     page === 1 &&
     perPage === 15 &&
     branchFilter === "all";
@@ -119,6 +161,11 @@ export function useSubscriptions({ initialData } = {}) {
     () => getBranchesArray(branchesData || initialData?.branches),
     [branchesData, initialData?.branches],
   );
+  const activityTypes = useMemo(
+    () => getCollection(activityTypesData || initialData?.activityTypes),
+    [activityTypesData, initialData?.activityTypes],
+  );
+  const renewalPlans = useMemo(() => getCollection(renewalPlansData), [renewalPlansData]);
   const selectedSubscription = useMemo(
     () => getSubscriptionDetail(subscriptionDetailData),
     [subscriptionDetailData],
@@ -214,6 +261,37 @@ export function useSubscriptions({ initialData } = {}) {
     }
   }
 
+  function openRenewal(subscription) {
+    setRenewalErrorMessage("");
+    setRenewalSubscription(subscription);
+  }
+
+  function closeRenewal() {
+    if (isRenewing) return;
+    setRenewalSubscription(null);
+    setRenewalErrorMessage("");
+  }
+
+  async function handleRenew(values) {
+    if (!renewalSubscription?.id) return false;
+    setRenewalErrorMessage("");
+
+    try {
+      await renewSubscription({ id: renewalSubscription.id, body: values }).unwrap();
+      toast.success("تم تجديد الاشتراك بنجاح!");
+      setRenewalSubscription(null);
+      return true;
+    } catch (submitError) {
+      setRenewalErrorMessage(
+        getApiErrorMessage(
+          submitError,
+          "تعذر تجديد الاشتراك. تحقق من بيانات الدفع وحاول مرة أخرى.",
+        ),
+      );
+      return false;
+    }
+  }
+
   function handleDelete(subscription) {
     setItemToDelete(subscription);
     setIsRefunded(false);
@@ -256,6 +334,8 @@ export function useSubscriptions({ initialData } = {}) {
     setStatus,
     period,
     setPeriod,
+    activityTypeId,
+    setActivityTypeId,
     branchFilter,
     setBranchFilter,
     selectedSubscriptionId,
@@ -276,10 +356,20 @@ export function useSubscriptions({ initialData } = {}) {
     stats,
     errorMessage,
     branches,
+    activityTypes,
+    isActivityTypesLoading: isActivityTypesLoading || isActivityTypesFetching,
     isFreezing,
     isUnfreezing,
     isCancelling,
+    isRenewing,
     isDeleting,
+    renewalSubscription,
+    renewalPlans,
+    isRenewalPlansLoading: isRenewalPlansLoading || isRenewalPlansFetching,
+    renewalPlansErrorMessage: renewalPlansError
+      ? getApiErrorMessage(renewalPlansError, "تعذر تحميل خطط الاشتراك المتاحة.")
+      : "",
+    renewalErrorMessage,
     deleteConfirmOpen,
     itemToDelete,
     isRefunded,
@@ -291,6 +381,9 @@ export function useSubscriptions({ initialData } = {}) {
     handleFreeze,
     handleUnfreeze,
     handleCancel,
+    openRenewal,
+    closeRenewal,
+    handleRenew,
     handleDelete,
     closeDeleteConfirm,
     confirmDelete,

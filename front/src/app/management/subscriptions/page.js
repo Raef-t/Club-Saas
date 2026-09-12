@@ -9,14 +9,15 @@ export const metadata = {
 
 export default async function ManagementSubscriptionsPage() {
   const { token } = await verifyPageAccess("/management/subscriptions");
-  const [subscriptions, branches] = await Promise.all([
+  const [subscriptions, branches, activityTypes] = await Promise.all([
     requestBackend("player-subscriptions", { token }),
     safeRequestBackend("branches", { token, params: { per_page: "all" } }, []),
+    safeRequestBackend("activity-types", { token, params: { per_page: "all" } }, []),
   ]);
 
   return (
     <Suspense fallback={null}>
-      <SubscriptionsClient initialData={{ subscriptions, branches }} />
+      <SubscriptionsClient initialData={{ subscriptions, branches, activityTypes }} />
     </Suspense>
   );
 }

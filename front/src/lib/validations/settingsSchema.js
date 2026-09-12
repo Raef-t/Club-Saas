@@ -54,6 +54,8 @@ export const branchSettingsSchema = z
       });
     }
 
+    // An earlier end time means the branch closes on the following day
+    // (for example, 08:00 to 01:00). Only a zero-length interval is invalid.
     if (
       data.workingHoursStart &&
       data.workingHoursEnd &&
