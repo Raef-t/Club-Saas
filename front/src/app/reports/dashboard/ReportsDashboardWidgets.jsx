@@ -131,8 +131,8 @@ export function ReportPanel({ report, branchName, onPrint }) {
         ))}
       </div>
 
-      <div className="overflow-x-auto px-5 pb-5">
-        <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-right text-sm">
+      <div className="px-5 pb-5">
+        <table className="w-full border-separate border-spacing-y-2 text-right text-sm">
           <thead className="text-xs text-app-muted-light">
             <tr>
               {report.columns.map((column) => (

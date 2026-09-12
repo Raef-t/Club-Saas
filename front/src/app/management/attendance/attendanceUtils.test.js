@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attachAttendanceLockers,
   createAttendanceDeductionBody,
+  createCheckInAndDeductBody,
   createAttendanceLockerReservation,
   createAttendanceBranchOptions,
   createAttendanceMember,
@@ -238,24 +239,32 @@ describe("attendance utilities", () => {
     expect(subscriptions[0].activities).toEqual([{ id: "2", label: "الخطة الشهرية", coach: "-" }]);
   });
 
-  it("selects subscriptions that still have sessions without preselecting an occupied locker", () => {
-    const selection = getInitialAttendanceSelection([
-      {
-        id: "1",
-        remaining: 0,
-        activities: [{ id: "10" }],
-        activeLockers: [],
-      },
-      {
-        id: "2",
-        remaining: 4,
-        activities: [{ id: "20" }],
-        activeLockers: [{ locker_number: 8 }],
-      },
-    ]);
+  it("maps today's sessions and the override requirement from reception subscriptions", () => {
+    const [subscription] = createAttendanceSubscriptions({
+      data: [
+        {
+          player_subscription_id: 108,
+          plan_name: "الخطة الشهرية",
+          total_sessions_remaining: 6,
+          today_sessions: [{ id: 1 }, { id: 2 }],
+          requires_override_reason: true,
+        },
+      ],
+    });
+
+    expect(subscription).toMatchObject({
+      id: "108",
+      remaining: 6,
+      todaySessionsCount: 2,
+      requiresOverrideReason: true,
+    });
+  });
+
+  it("waits for reception to choose a subscription and does not preselect a locker", () => {
+    const selection = getInitialAttendanceSelection();
 
     expect(selection).toEqual({
-      subscriptionIds: ["2"],
+      subscriptionIds: [],
       lockerNumber: "",
     });
   });
@@ -285,6 +294,17 @@ describe("attendance utilities", () => {
     });
     expect(createAttendanceDeductionBody(["4"], "   ")).toEqual({
       player_subscription_ids: [4],
+    });
+    expect(createCheckInAndDeductBody(12, 3, [108], " خارج الموعد ")).toEqual({
+      member_id: 12,
+      branch_id: 3,
+      player_subscription_ids: [108],
+      notes: "خارج الموعد",
+    });
+    expect(createCheckInAndDeductBody(12, 3, [108])).toEqual({
+      member_id: 12,
+      branch_id: 3,
+      player_subscription_ids: [108],
     });
     expect(createAttendanceLockerReservation(12, new Date(2026, 7, 8, 12))).toEqual({
       reservation_type: "assign",

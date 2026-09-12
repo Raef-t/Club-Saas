@@ -192,15 +192,49 @@ export default function AttendancePlayerCard({
             </div>
           ) : hasSubscriptions ? (
             <div className="mt-2 space-y-2">
-              {playerSubscriptions.map((subscription) => (
-                <Checkbox
-                  key={subscription.id}
-                  label={`${subscription.label} - ${subscription.remaining} حصة`}
-                  checked={selectedSubscriptionIds.includes(String(subscription.id))}
-                  onChange={() => onSubscriptionToggle(subscription.id)}
-                  disabled={isRegistering}
-                />
-              ))}
+              {playerSubscriptions.map((subscription) => {
+                const isSelected = selectedSubscriptionIds.includes(String(subscription.id));
+
+                return (
+                  <div
+                    key={subscription.id}
+                    className={`rounded-xl border p-3 transition ${
+                      isSelected
+                        ? "border-app-yellow/70 bg-app-yellow/10"
+                        : "border-app-line bg-app-card-soft"
+                    }`}
+                  >
+                    <Checkbox
+                      label={subscription.label}
+                      checked={isSelected}
+                      onChange={() => onSubscriptionToggle(subscription.id)}
+                      disabled={isRegistering}
+                      labelClassName="font-medium text-app-text"
+                    />
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-lg bg-app-panel/70 p-2">
+                        <span className="block text-app-muted-light">جلسات اليوم</span>
+                        <strong className="mt-1 block text-app-text">
+                          {subscription.todaySessionsCount.toLocaleString("ar")}
+                        </strong>
+                      </div>
+                      <div className="rounded-lg bg-app-panel/70 p-2">
+                        <span className="block text-app-muted-light">إجمالي المتبقي</span>
+                        <strong className="mt-1 block text-app-yellow">
+                          {typeof subscription.remaining === "number"
+                            ? subscription.remaining.toLocaleString("ar")
+                            : subscription.remaining}
+                        </strong>
+                      </div>
+                    </div>
+                    {subscription.requiresOverrideReason && (
+                      <p className="mt-2 text-xs text-app-yellow">
+                        يتطلب هذا الاشتراك سببًا للحضور خارج الموعد.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="mt-2 text-xs text-app-red">لا توجد اشتراكات متاحة لهذا العضو.</p>
@@ -240,22 +274,24 @@ export default function AttendancePlayerCard({
           )}
         </div>
 
-        <div>
-          <TextAreaField
-            label={`سبب تسجيل الحضور خارج الموعد ${requiresCheckInNote ? "*" : "(عند الحاجة)"}`}
-            name="note"
-            value={attendanceNote}
-            onChange={(event) => onAttendanceNoteChange(event.target.value)}
-            placeholder="اكتب سبب تسجيل الحضور في هذا الوقت"
-            rows={3}
-            maxLength={1000}
-            disabled={isRegistering || isRegistered}
-            required={requiresCheckInNote}
-          />
-          <p className="mt-1.5 text-right text-[11px] text-app-muted-light">
-            يُرسل هذا السبب تلقائيًا مع عملية تسجيل الحضور.
-          </p>
-        </div>
+        {requiresCheckInNote && (
+          <div>
+            <TextAreaField
+              label="سبب الحضور خارج الموعد *"
+              name="note"
+              value={attendanceNote}
+              onChange={(event) => onAttendanceNoteChange(event.target.value)}
+              placeholder="اكتب سبب الحضور خارج الموعد"
+              rows={3}
+              maxLength={1000}
+              disabled={isRegistering || isRegistered}
+              required
+            />
+            <p className="mt-1.5 text-right text-[11px] text-app-muted-light">
+              هذا الحقل إلزامي للاشتراك المحدد.
+            </p>
+          </div>
+        )}
 
         <Button
           type="button"
@@ -266,11 +302,9 @@ export default function AttendancePlayerCard({
         >
           {isRegistered
             ? "تم تأكيد الحضور"
-            : requiresCheckInNote
-              ? "إعادة تسجيل الدخول بالسبب"
-              : isPendingDeduction
-                ? "خصم الجلسة وتأكيد الحضور"
-                : "لا توجد حركة دخول معلّقة"}
+            : isPendingDeduction
+              ? "تسجيل الدخول والخصم"
+              : "لا توجد حركة دخول معلّقة"}
         </Button>
       </div>
     </section>

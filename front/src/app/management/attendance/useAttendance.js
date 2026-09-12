@@ -3,6 +3,7 @@ import { useSearchParams } from "next/navigation";
 import {
   useDeductAttendanceMutation,
   useBulkCheckOutMutation,
+  useCheckInAndDeductMutation,
   useGetAttendancesQuery,
   useGetMemberQuery,
   useGetMemberSubscriptionsQuery,
@@ -27,6 +28,7 @@ import { ATTENDANCE_SCAN_MODES } from "./attendanceConstants";
 import {
   attachAttendanceLockers,
   createAttendanceDeductionBody,
+  createCheckInAndDeductBody,
   createAttendanceLockerReservation,
   createAttendanceBranchOptions,
   createAttendanceMember,
@@ -36,7 +38,6 @@ import {
   createManualCheckInTimestamp,
   findAttendanceLockerId,
   getInitialAttendanceSelection,
-  isAttendanceNoteRequiredMessage,
   toggleRequiredSubscription,
 } from "./attendanceUtils";
 import { getPaginationMeta, useServerPagination } from "@/lib/pagination";
@@ -70,6 +71,7 @@ export function useAttendance({ initialBranches } = {}) {
   );
   const branchId = isAllBranches ? "" : selectedBranchId;
   const [lastAttendanceId, setLastAttendanceId] = useState(null);
+  const [isCombinedCheckInPending, setIsCombinedCheckInPending] = useState(false);
   const [pendingAttendanceIds, setPendingAttendanceIds] = useState([]);
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const [scanMode, setScanMode] = useState(ATTENDANCE_SCAN_MODES.CHECK_IN);
@@ -80,7 +82,6 @@ export function useAttendance({ initialBranches } = {}) {
   const [lockerNumber, setLockerNumber] = useState("");
   const [attendanceNote, setAttendanceNote] = useState("");
   const [attendanceModalErrorMessage, setAttendanceModalErrorMessage] = useState("");
-  const [pendingManualCheckIn, setPendingManualCheckIn] = useState(null);
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
   const [attendanceTypeFilter, setAttendanceTypeFilter] = useState("all");
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState(initialStatus);
@@ -103,6 +104,7 @@ export function useAttendance({ initialBranches } = {}) {
   const [qrCheckIn, { isLoading: isCheckingIn }] = useQrCheckInMutation();
   const [qrCheckOut, { isLoading: isCheckingOut }] = useQrCheckOutMutation();
   const [deductAttendance, { isLoading: isDeductingAttendance }] = useDeductAttendanceMutation();
+  const [checkInAndDeduct, { isLoading: isCheckingInAndDeducting }] = useCheckInAndDeductMutation();
   const [manualCheckIn, { isLoading: isManualCheckingIn }] = useManualCheckInMutation();
   const [manualCheckOut, { isLoading: isManualCheckingOut }] = useManualCheckOutMutation();
   const [bulkCheckOut, { isLoading: isBulkCheckingOut }] = useBulkCheckOutMutation();
@@ -130,9 +132,10 @@ export function useAttendance({ initialBranches } = {}) {
   } = useGetLockersQuery(availableLockersParams, {
     skip: !branchId || !scannedMemberId,
   });
-  const { currentData: branchLockersResponse, refetch: refetchBranchLockers } = useGetLockersQuery(
-    { ...(branchId ? { branch_id: branchId } : {}), per_page: "all" },
-  );
+  const { currentData: branchLockersResponse, refetch: refetchBranchLockers } = useGetLockersQuery({
+    ...(branchId ? { branch_id: branchId } : {}),
+    per_page: "all",
+  });
   const attendanceHistoryParams = useMemo(
     () => ({
       attendable_type: attendanceTypeFilter,
@@ -257,10 +260,19 @@ export function useAttendance({ initialBranches } = {}) {
     () =>
       playerSubscriptions.find((subscription) =>
         selectedSubscriptionIds.includes(String(subscription.id)),
-      ) || playerSubscriptions[0],
+      ) || null,
     [playerSubscriptions, selectedSubscriptionIds],
   );
   const selectedActivity = selectedSubscription?.activities?.[0];
+  const requiresCheckInNote = playerSubscriptions.some(
+    (subscription) =>
+      selectedSubscriptionIds.includes(String(subscription.id)) &&
+      subscription.requiresOverrideReason,
+  );
+
+  useEffect(() => {
+    if (!requiresCheckInNote) setAttendanceNote("");
+  }, [requiresCheckInNote]);
 
   const memberErrorMessage = memberError
     ? getApiErrorMessage(memberError, "تعذر تحميل بيانات العضو.")
@@ -298,7 +310,7 @@ export function useAttendance({ initialBranches } = {}) {
     setLockerNumber("");
     setAttendanceNote("");
     setAttendanceModalErrorMessage("");
-    setPendingManualCheckIn(null);
+    setIsCombinedCheckInPending(false);
     setRegisteredMemberId(null);
   }
 
@@ -317,6 +329,14 @@ export function useAttendance({ initialBranches } = {}) {
           : [...current, attendanceId],
       );
     }
+  }
+
+  /**
+   * Opens the subscription confirmation modal without creating an attendance yet.
+   */
+  function openMemberCheckIn(memberId) {
+    selectScannedMember(Number(memberId));
+    setIsCombinedCheckInPending(true);
   }
 
   /**
@@ -483,71 +503,34 @@ export function useAttendance({ initialBranches } = {}) {
    * Registers a manual check-in for a member or staff record.
    * When successful, activates the scanned-member card (same as QR flow).
    */
-  async function handleManualCheckIn({
-    attendableType,
-    attendableId,
-    checkInTime = "",
-    note = "",
-  }) {
+  async function handleManualCheckIn({ attendableType, attendableId, checkInTime = "" }) {
     if (!branchId) {
       toast.warning("اختر الفرع قبل تسجيل الدخول اليدوي.");
       return false;
     }
 
+    if (attendableType === "member") {
+      openMemberCheckIn(attendableId);
+      return true;
+    }
+
     const checkInAt = createManualCheckInTimestamp(checkInTime);
-    const normalizedNote = String(note).trim();
     const requestBody = {
       attendable_type: attendableType,
       attendable_id: Number(attendableId),
       branch_id: Number(branchId),
       ...(checkInAt ? { check_in_at: checkInAt } : {}),
-      ...(normalizedNote ? { note: normalizedNote } : {}),
     };
 
     try {
       const response = await manualCheckIn(requestBody).unwrap();
 
-      const memberId =
-        response?.data?.member_id || (attendableType === "member" ? Number(attendableId) : null);
-      const attendanceId = response?.data?.attendance_id || response?.data?.id || null;
-
-      if (memberId) {
-        selectScannedMember(memberId, attendanceId);
-      }
-
       toast.success(response?.message || "تم تسجيل الدخول بنجاح.");
       return true;
     } catch (error) {
-      const errorMessage = getApiErrorMessage(error, "فشل تسجيل الدخول اليدوي.");
-
-      if (attendableType === "member" && isAttendanceNoteRequiredMessage(errorMessage)) {
-        if (!normalizedNote) {
-          selectScannedMember(Number(attendableId));
-        }
-        setPendingManualCheckIn({ attendableType, attendableId, checkInTime });
-        setAttendanceModalErrorMessage(errorMessage);
-        return false;
-      }
-
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, "فشل تسجيل الدخول اليدوي."));
       return false;
     }
-  }
-
-  /**
-   * Retries the rejected manual check-in with the reason entered in the player modal.
-   */
-  async function handleRetryManualCheckIn() {
-    if (!pendingManualCheckIn) return false;
-    if (!attendanceNote.trim()) {
-      toast.warning("أدخل سبب تسجيل الحضور في هذا الوقت.");
-      return false;
-    }
-
-    return handleManualCheckIn({
-      ...pendingManualCheckIn,
-      note: attendanceNote,
-    });
   }
 
   /**
@@ -661,17 +644,22 @@ export function useAttendance({ initialBranches } = {}) {
   }
 
   /**
-   * Deducts the selected subscription sessions for the pending check-in.
+   * Confirms the selected sessions, using the combined endpoint for manual member check-ins.
    */
   async function handleRegister() {
-    if (!activeMember || !lastAttendanceId) {
-      toast.warning("امسح بطاقة الدخول قبل تأكيد الحضور.");
+    if (!activeMember || (!isCombinedCheckInPending && !lastAttendanceId)) {
+      toast.warning("اختر عضوًا قبل تأكيد الحضور.");
       return;
     }
 
     const deductionBody = createAttendanceDeductionBody(selectedSubscriptionIds, attendanceNote);
     if (!deductionBody.player_subscription_ids.length) {
       toast.warning("اختر اشتراكًا واحدًا على الأقل.");
+      return;
+    }
+
+    if (requiresCheckInNote && !attendanceNote.trim()) {
+      toast.warning("أدخل سبب الحضور خارج الموعد.");
       return;
     }
 
@@ -701,18 +689,29 @@ export function useAttendance({ initialBranches } = {}) {
     }
 
     try {
-      const response = await deductAttendance({
-        attendanceId: lastAttendanceId,
-        body: deductionBody,
-      }).unwrap();
+      const response = isCombinedCheckInPending
+        ? await checkInAndDeduct(
+            createCheckInAndDeductBody(
+              activeMember.id,
+              branchId,
+              selectedSubscriptionIds,
+              attendanceNote,
+            ),
+          ).unwrap()
+        : await deductAttendance({
+            attendanceId: lastAttendanceId,
+            body: deductionBody,
+          }).unwrap();
 
       setRegisteredMemberId(activeMember.id);
       setPendingAttendanceIds((current) =>
         current.filter((attendanceId) => String(attendanceId) !== String(lastAttendanceId)),
       );
       setLastAttendanceId(null);
+      setIsCombinedCheckInPending(false);
       setAttendanceNote("");
-      toast.success(response?.message || "تم خصم الجلسة وتأكيد الحضور بنجاح.");
+      setIsPlayerModalOpen(false);
+      toast.success(response?.message || "تم تسجيل الحضور وخصم الجلسة بنجاح.");
       await refetchAttendanceHistory();
       await refetchAvailableLockers();
       await refetchBranchLockers();
@@ -724,7 +723,7 @@ export function useAttendance({ initialBranches } = {}) {
           toast.warning(`تعذر خصم الجلسة وتعذر إلغاء إسناد الخزانة ${selectedLockerNumber}.`);
         }
       }
-      toast.error(getApiErrorMessage(error, "فشل خصم الجلسة."));
+      toast.error(getApiErrorMessage(error, "فشل تسجيل الحضور وخصم الجلسة."));
     }
   }
 
@@ -743,7 +742,7 @@ export function useAttendance({ initialBranches } = {}) {
     selectedSubscriptionIds,
     attendanceNote,
     attendanceModalErrorMessage,
-    requiresCheckInNote: Boolean(pendingManualCheckIn),
+    requiresCheckInNote,
     lockerNumber: selectedLockerNumber,
     availableLockerOptions,
     branchId,
@@ -764,13 +763,13 @@ export function useAttendance({ initialBranches } = {}) {
       isAvailableLockersLoading ||
       (isAvailableLockersFetching && availableLockerOptions.length === 0),
     isProcessingScan,
-    isRegistering: isDeductingAttendance || isAssigningLocker,
+    isRegistering: isCheckingInAndDeducting || isDeductingAttendance || isAssigningLocker,
     isManualCheckingIn,
     isManualCheckingOut: isManualCheckingOut || isReleasingLocker,
     isBulkCheckingOut,
     isRollingBack: isRollingBack || isReleasingLocker,
     isRegistered: Boolean(activeMember) && registeredMemberId === activeMember?.id,
-    isPendingDeduction: Boolean(lastAttendanceId),
+    isPendingDeduction: isCombinedCheckInPending || Boolean(lastAttendanceId),
     attendanceTypeFilter,
     attendanceStatusFilter,
     attendanceFromDate,
@@ -796,7 +795,6 @@ export function useAttendance({ initialBranches } = {}) {
     handleSubscriptionToggle,
     handleLockerChange,
     handleAttendanceNoteChange,
-    handleRetryManualCheckIn,
     handleRegister,
     handleManualCheckIn,
     handleManualCheckOut,

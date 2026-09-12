@@ -32,7 +32,9 @@ function InfoChip({ icon: Icon, children, dir = "rtl" }) {
 export default function Navbar({ onMenuClick, initialUser }) {
   const pathname = usePathname();
   const meta =
-    pageMeta[pathname] || (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
+    pathname === "/accounting"
+      ? null
+      : pageMeta[pathname] || (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
   const isReports = pathname.startsWith("/reports");
 
   const [currentTime, setCurrentTime] = useState("");

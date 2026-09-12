@@ -180,7 +180,7 @@ export default function DataTable({
   onSortChange,
   defaultSortColumn = null,
   defaultSortDirection = "asc",
-  desktopScrollable = true,
+  desktopScrollable = false,
 }) {
   const [internalPage, setInternalPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(pageSize);
@@ -389,8 +389,9 @@ export default function DataTable({
     setInternalPage(nextPage);
   };
 
+  const desktopColumns = columns.filter((col) => !col.hideOnDesktop);
   const resolvedTableColumns =
-    tableColumns || columns.map((column) => column.width || "1fr").join(" ");
+    tableColumns || desktopColumns.map((column) => column.width || "1fr").join(" ");
   const visiblePages =
     resolvedTotalPages > 0 ? getVisiblePages(resolvedCurrentPage, resolvedTotalPages) : [];
 
@@ -415,12 +416,12 @@ export default function DataTable({
 
       <div className="hidden px-4 pb-4 xl:block">
         <div className={desktopScrollable ? "overflow-x-auto scrollbar-thin" : "overflow-x-hidden"}>
-          <div className="w-full max-w-full" style={{ minWidth }}>
+          <div className="w-full max-w-full" style={desktopScrollable ? { minWidth } : undefined}>
             <div
               className={`grid border-b border-app-line px-3 py-3 text-xs text-app-muted-light ${headerClassName}`}
               style={{ gridTemplateColumns: resolvedTableColumns }}
             >
-              {columns.map((column) => {
+              {desktopColumns.map((column) => {
                 const colKey = typeof column.sortKey === "string" ? column.sortKey : column.key;
                 const isColumnSortable =
                   sortable && column.sortable !== false && column.key !== "actions";
@@ -482,7 +483,7 @@ export default function DataTable({
                           : undefined
                       }
                     >
-                      {columns.map((column) => (
+                      {desktopColumns.map((column) => (
                         <div
                           key={column.key}
                           className={`flex min-w-0 items-center ${getAlignClass(column.align)} ${cellClassName} ${column.className || ""}`}
