@@ -35,6 +35,7 @@ class TimeSlotCapacityReportService
         $query = DB::table('plan_activities as pa')
             ->join('staff_activities as sa', 'sa.id', '=', 'pa.staff_activity_id')
             ->join('activities as a', 'a.id', '=', 'sa.activity_id')
+            ->leftJoin('activity_types as at', 'at.id', '=', 'a.activity_type_id')
             ->join('staff as st', 'st.id', '=', 'sa.staff_id')
             ->join('people as p', 'p.id', '=', 'st.person_id')
             ->join('subscription_plans as sp', 'sp.id', '=', 'pa.plan_id')
@@ -72,11 +73,14 @@ class TimeSlotCapacityReportService
         $rows = $query->select(
             'a.id as activity_id',
             'a.name as activity_name',
+            'a.is_private_equipment',
+            'at.name as activity_type_name',
             'st.id as staff_id',
             'p.full_name as coach_name',
             'sa.id as staff_activity_id',
             'sp.id as plan_id',
-            'sp.name as plan_name'
+            'sp.name as plan_name',
+            'sp.session_count'
         )->distinct()->get();
 
         $activitiesGrouped = [];
@@ -105,6 +109,20 @@ class TimeSlotCapacityReportService
             $planName = json_decode($row->plan_name, true) ?? $row->plan_name;
             if (is_array($planName)) {
                 $planName = $planName['ar'] ?? reset($planName);
+            }
+
+            $typeName = json_decode($row->activity_type_name, true) ?? $row->activity_type_name;
+            if (is_array($typeName)) {
+                $typeName = $typeName['ar'] ?? reset($typeName);
+            }
+            if (empty($typeName)) {
+                if (!empty($row->is_private_equipment)) {
+                    $typeName = 'تدريب خاص';
+                } elseif (!empty($row->session_count)) {
+                    $typeName = 'حصة جماعية';
+                } else {
+                    $typeName = 'تدريب عام';
+                }
             }
 
             if (!isset($activitiesGrouped[$actId])) {
@@ -176,7 +194,7 @@ class TimeSlotCapacityReportService
                 $activitiesGrouped[$actId]['coaches'][$staffActId]['plans'][$pId] = [
                     'plan_id'                  => $pId,
                     'plan_name'                => $planName,
-                    'plan_type'                => $row->plan_type,
+                    'plan_type'                => $typeName,
                     'active_subscribers_count' => $planSubscriberCounts[$pId],
                     'schedules'                => $planSchedules[$pId],
                 ];
