@@ -14,6 +14,10 @@ class CheckPermissionMiddleware
     protected array $routePermissionMap = [
         // ─── Auth & Users ─────────────────────────────────────────────────────
         'GET:v1/users'                                                  => 'user.view-any',
+        'GET:v1/users/trashed'                                          => 'user.view-trashed',
+        'PATCH:v1/users/{id}/toggle-status'                             => 'user.toggle-status',
+        'DELETE:v1/users/{id}'                                          => 'user.delete',
+        'POST:v1/users/{id}/restore'                                    => 'user.restore',
         'PUT:v1/auth/profile'                                           => 'profile.update',
         'GET:v1/permissions'                                            => 'permission.view-any',
 

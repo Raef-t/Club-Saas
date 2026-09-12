@@ -48,8 +48,16 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'check.permission'])->group(fun
     Route::delete('roles/{id}', [RoleController::class, 'destroy']);
 
     // ─── Users ──────────────────────────────────────────────────────────────────
-    // GET    /v1/users                → list users (with optional ?role= filter)
+    // GET    /v1/users/trashed        → list trashed users
+    // GET    /v1/users                → list users (with optional ?role= & ?is_active= filter)
+    // PATCH  /v1/users/{id}/toggle-status → toggle is_active status & force logout on deactivate
+    // DELETE /v1/users/{id}           → soft delete user
+    // POST   /v1/users/{id}/restore   → restore soft deleted user
+    Route::get('users/trashed', [UserController::class, 'trashed']);
     Route::get('users', [UserController::class, 'index']);
+    Route::patch('users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
+    Route::delete('users/{id}', [UserController::class, 'destroy']);
+    Route::post('users/{id}/restore', [UserController::class, 'restore']);
 
 
 

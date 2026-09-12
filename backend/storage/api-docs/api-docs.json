@@ -6434,6 +6434,16 @@
                         }
                     },
                     {
+                        "name": "is_active",
+                        "in": "query",
+                        "description": "تصفية حسب حالة تفعيل الحساب:\n- `true` أو `1`: إظهار المستخدمين النشطين فقط\n- `false` أو `0`: إظهار المستخدمين الموقوفين فقط\n- ترك الحقل فارغاً: إظهار جميع المستخدمين",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
@@ -6456,7 +6466,321 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "✅ تم جلب قائمة المستخدمين بنجاح"
+                        "description": "✅ تم جلب قائمة المستخدمين بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "success",
+                                    "message": "تم جلب قائمة المستخدمين بنجاح.",
+                                    "data": [
+                                        {
+                                            "id": 5,
+                                            "name": "أحمد محمد العلي",
+                                            "username": "tec-ply-10023",
+                                            "custom_username": null,
+                                            "roles": [
+                                                "player"
+                                            ],
+                                            "branch_id": 1,
+                                            "is_active": true,
+                                            "must_change_password": false,
+                                            "is_password_changed": true
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}/toggle-status": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "🔄 تبديل حالة تفعيل حساب المستخدم (تفعيل / إيقاف)",
+                "description": "يقوم هذا المسار بتبديل حالة الحساب بين نشط وموقوف لأي مستخدم بغض النظر عن دوره:\n- **في حال الإيقاف (`is_active = false`)**: يتم فوراً إبطال وحذف جميع التوكنات والجلسات الفعالة للمستخدم في جدول personal_access_tokens، وطرده من التطبيق والموقع فوراً. محاولات تسجيل الدخول القادمة تُرفض بكود 403 Forbidden ورسالة 'User account is inactive'.\n- **في حال التفعيل (`is_active = true`)**: يتم إعادة تنشيط الحساب ليتمكن من تسجيل الدخول مجدداً بصورة طبيعية.\n- **الحماية**: يمنع المشرف من تعطيل حسابه الشخصي بنفسه، ويمنع تعطيل حساب المدير العام (super_admin).",
+                "operationId": "toggleUserStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم المراد تبديل حالته (User ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تغيير حالة تفعيل المستخدم بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "examples": {
+                                    "deactivated": {
+                                        "summary": "حالة الإيقاف (Deactivated)",
+                                        "value": {
+                                            "status": "success",
+                                            "message": "تم إيقاف الحساب وإلغاء جميع جلسات الدخول الفعالة بنجاح.",
+                                            "data": {
+                                                "id": 5,
+                                                "username": "tec-ply-10023",
+                                                "is_active": false
+                                            }
+                                        }
+                                    },
+                                    "activated": {
+                                        "summary": "حالة التفعيل (Activated)",
+                                        "value": {
+                                            "status": "success",
+                                            "message": "تم تفعيل الحساب بنجاح.",
+                                            "data": {
+                                                "id": 5,
+                                                "username": "tec-ply-10023",
+                                                "is_active": true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ خطأ تحقق: محاولة إيقاف الحساب الشخصي أو حساب السوبر أدمن",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "error",
+                                    "message": "لا يمكنك تغيير حالة تفعيل حسابك الشخصي."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "❌ المستخدم غير موجود",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "error",
+                                    "message": "المستخدم غير موجود."
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}": {
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "🗑️ إخفاء المستخدم من النظام (حذف مرن Soft Delete)",
+                "description": "يقوم هذا المسار بإخفاء المستخدم من النظام بالكامل دون حذف بياناته التاريخية:\n- **الحذف المرن (Soft Delete)**: يتم تسجيل وقت الحذف في deleted_at ويختفي المستخدم تلقائياً من كافة قوائم النظام والبحث ومنسدلات الاختيار.\n- **إلغاء الجلسات**: يتم سحب كافة التوكنات فوراً وضبط is_active = false لمنع تسجيل الدخول.\n- **شروط الأمان**: يتطلب إرسال تأكيد صريح confirmation: 'delete' في الـ Request Body لحماية البيانات من الحذف العرضي، ويمنع حذف الحساب الشخصي أو حساب السوبر أدمن.",
+                "operationId": "softDeleteUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم المراد حذفه وإخفاؤه",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "تأكيد الحذف بإرسال كلمة delete",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "confirmation"
+                                ],
+                                "properties": {
+                                    "confirmation": {
+                                        "description": "يجب كتابة كلمة delete حصراً لتأكيد العملية",
+                                        "type": "string",
+                                        "example": "delete"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "example": {
+                                "confirmation": "delete"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم إخفاء وحذف المستخدم بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "success",
+                                    "message": "تم إخفاء وحذف المستخدم بنجاح.",
+                                    "data": null
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "⚠️ لم يتم إرسال تأكيد الحذف أو محاولة حذف الحساب الشخصي",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "error",
+                                    "message": "يجب إرسال كلمة \"delete\" لتأكيد عملية حذف المستخدم."
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "♻️ استرجاع مستخدم محذوف من سلة المهملات",
+                "description": "استرجاع المستخدم الذي تم حذفه مرناً (Soft Deleted) من سلة المهملات:\n- يتم تصفير حقل deleted_at = null (إلغاء الحذف).\n- يتم إعادة تفعيل حسابه تلقائياً (is_active = true).\n- يعود المستخدم للظهور فوراً في قوائم النظام وشاشات الاستقبال والتقارير اليومية ويستطيع تسجيل الدخول من جديد.",
+                "operationId": "restoreUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "معرف المستخدم المحذوف المراد استرجاعه",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم استرجاع المستخدم وتفعيل حسابه بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "success",
+                                    "message": "تم استرجاع المستخدم وتفعيل حسابه بنجاح.",
+                                    "data": {
+                                        "id": 5,
+                                        "username": "tec-ply-10023",
+                                        "is_active": true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "❌ المستخدم غير موجود في سلة المهملات",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "error",
+                                    "message": "المستخدم المحذوف غير موجود."
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/users/trashed": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "🗑️ استعراض قائمة المستخدمين المحذوفين (سلة المهملات)",
+                "description": "استعراض قائمة بجميع المستخدمين المحذوفين مرناً في النظام مع إظهار تاريخ الحذف deleted_at والبيانات الشخصية والدور لتسهيل معاينتهم أو تحديد من ترغب باسترجاعه.",
+                "operationId": "getTrashedUsers",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "عدد العناصر في الصفحة (أو \"all\" لجلب الكل بدون ترقيم)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "15"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "رقم الصفحة",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "✅ تم جلب قائمة المستخدمين المحذوفين بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "success",
+                                    "message": "تم جلب قائمة المستخدمين المحذوفين بنجاح.",
+                                    "data": [
+                                        {
+                                            "id": 5,
+                                            "name": "أحمد محمد العلي",
+                                            "username": "tec-ply-10023",
+                                            "custom_username": null,
+                                            "roles": [
+                                                "player"
+                                            ],
+                                            "branch_id": 1,
+                                            "is_active": false,
+                                            "deleted_at": "2026-09-12 12:15:30",
+                                            "must_change_password": false,
+                                            "is_password_changed": true
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

@@ -18,6 +18,10 @@ class AllSystemPermissionsSeeder extends Seeder
         $permissions = [
             // ─── Auth & Users ──────────────────────────────────────────────
             'user.view-any',
+            'user.view-trashed',
+            'user.toggle-status',
+            'user.delete',
+            'user.restore',
             'user.update-profile',
             'profile.update',
             'permission.view-any',
