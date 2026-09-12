@@ -4123,6 +4123,114 @@
                 ]
             }
         },
+        "/v1/reception/check-in-and-deduct": {
+            "post": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "⚡ تسجيل دخول العضو وخصم الجلسة في خطوة واحدة موحدة (للاستقبال)",
+                "description": "يقوم بتسجيل حضور المشترك (Member Check-in) وخصم جلسة من اشتراكه/اشتراكاته المحددة في طلب واحد وبشكل ذري (Atomic Transaction). إذا لم يتم إرسال معرف الاشتراك، يكتشف النظام تلقائياً الاشتراك المتاح والمجدول لليوم ويخصم منه. في حال وجود أي خطأ أو مانع مالي أو نفاد جلسات، يتم التراجع عن تسجيل الحضور بالكامل.",
+                "operationId": "5e1bde3d837d141b7109a06e5dee4be1",
+                "requestBody": {
+                    "description": "بيانات المشترك، الفرع، والاشتراكات المراد خصم الجلسات منها",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_id"
+                                ],
+                                "properties": {
+                                    "member_id": {
+                                        "description": "المعرف الرقمي للاعب / المشترك (أو attendable_id)",
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "attendable_id": {
+                                        "description": "المعرف الرقمي للاعب / المشترك (بديل لـ member_id)",
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "branch_id": {
+                                        "description": "معرف الفرع (إلزامي)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "player_subscription_ids": {
+                                        "description": "مصفوفة معرفات الاشتراكات المراد الخصم منها (اختياري، في حال عدم الإرسال سيتم الخصم تلقائياً من اشتراك اليوم المتاح)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            5
+                                        ]
+                                    },
+                                    "locker_id": {
+                                        "description": "معرف الخزانة المخصصة (اختياري)",
+                                        "type": "integer",
+                                        "example": 7,
+                                        "nullable": true
+                                    },
+                                    "check_in_at": {
+                                        "description": "تاريخ ووقت تسجيل الحضور المخصص (اختياري)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-08-19 16:10:00"
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات أو سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي خارج وقت الجلسة)",
+                                        "type": "string",
+                                        "example": "تسجيل دخول وخصم فوري من الاستقبال",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تسجيل الدخول وخصم الجلسات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "success",
+                                    "message": "Checked in and sessions deducted successfully.",
+                                    "data": {
+                                        "id": 105,
+                                        "attendable_type": "Modules\\MemberManager\\Models\\Member",
+                                        "attendable_id": 10,
+                                        "member_id": 10,
+                                        "branch_id": 1,
+                                        "check_in": "2026-08-19T16:10:00.000000Z",
+                                        "status": "checked_in",
+                                        "consumptions": [
+                                            {
+                                                "id": 1,
+                                                "player_subscription_id": 5,
+                                                "subscription_plan_id": 2,
+                                                "subscription_plan_name": "اشتراك سباحة وجيم ثلاثي الأشهر"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في تسجيل الحضور أو خصم الجلسة (وجود ديون، نفاد الرصيد، الحضور مسجل مسبقاً، أو خارج الموعد دون سبب)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/reception/attendances/{attendanceId}/rollback": {
             "delete": {
                 "tags": [
@@ -12059,7 +12167,7 @@
                     "Locker Management"
                 ],
                 "summary": "✏️ تعديل بيانات خزانة",
-                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها أو حامل مفتاحها.",
+                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها.",
                 "operationId": "f35adb439a6ed9d1ed54c46deba80adf",
                 "parameters": [
                     {
@@ -35779,36 +35887,13 @@
                         "nullable": true
                     },
                     "status": {
-                        "description": "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
+                        "description": "حالة الخزانة: available (متاحة), maintenance (صيانة / معطلة)",
                         "type": "string",
                         "example": "available",
                         "enum": [
                             "available",
-                            "with_member",
-                            "with_staff",
-                            "with_coach",
                             "maintenance"
                         ]
-                    },
-                    "holder_id": {
-                        "type": "integer",
-                        "example": 5,
-                        "nullable": true
-                    },
-                    "holder_type": {
-                        "type": "string",
-                        "example": "member",
-                        "nullable": true,
-                        "enum": [
-                            "member",
-                            "staff",
-                            "coach"
-                        ]
-                    },
-                    "holder_name": {
-                        "type": "string",
-                        "example": "أحمد محمد",
-                        "nullable": true
                     }
                 },
                 "type": "object"
