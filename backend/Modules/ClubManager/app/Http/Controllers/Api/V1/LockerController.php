@@ -288,7 +288,7 @@ class LockerController extends BaseController
     #[OA\Put(
         path: '/v1/lockers/{id}',
         summary: '✏️ تعديل بيانات خزانة',
-        description: 'تحديث بيانات خزانة موجودة مثل رقمها أو حالتها أو حامل مفتاحها.',
+        description: 'تحديث بيانات خزانة موجودة مثل رقمها أو حالتها.',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]

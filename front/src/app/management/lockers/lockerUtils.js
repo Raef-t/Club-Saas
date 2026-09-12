@@ -513,13 +513,11 @@ export function getLockerValidationErrors(validationError) {
  * Creates the form state used when editing an existing locker.
  */
 export function createLockerUpdateInitialValues(locker) {
+  const status = locker?.status === "maintenance" ? "maintenance" : "available";
   return {
     locker_number: String(locker?.locker_number || ""),
     key_number: locker?.key_number ? String(locker.key_number) : "",
-    status: locker?.status || "available",
-    holder_type: locker?.holder_type || "",
-    holder_id: locker?.holder_id ? String(locker.holder_id) : "",
-    holder_name: locker?.holder_name || "",
+    status,
     reason: "",
   };
 }
@@ -528,22 +526,12 @@ export function createLockerUpdateInitialValues(locker) {
  * Creates a normalized locker update payload from editable form values.
  */
 export function createLockerUpdatePayload(form) {
-  const payload = {
+  return {
     locker_number: form.locker_number.trim(),
     key_number: form.key_number?.trim() || null,
     status: form.status,
     reason: form.reason.trim(),
   };
-
-  if (LOCKER_OCCUPIED_STATUSES.includes(form.status) && form.holder_type) {
-    payload.holder_type = form.holder_type;
-    if (form.holder_id) payload.holder_id = Number(form.holder_id);
-    if (form.holder_name?.trim()) {
-      payload.holder_name = form.holder_name.trim();
-    }
-  }
-
-  return payload;
 }
 
 /**

@@ -16,13 +16,10 @@ use OpenApi\Attributes as OA;
         new OA\Property(
             property: "status",
             type: "string",
-            enum: ["available", "with_member", "with_staff", "with_coach", "maintenance"],
-            description: "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
+            enum: ["available", "maintenance"],
+            description: "حالة الخزانة: available (متاحة), maintenance (صيانة / معطلة)",
             example: "available"
         ),
-        new OA\Property(property: "holder_id", type: "integer", nullable: true, example: 5),
-        new OA\Property(property: "holder_type", type: "string", nullable: true, enum: ["member", "staff", "coach"], example: "member"),
-        new OA\Property(property: "holder_name", type: "string", nullable: true, example: "أحمد محمد"),
     ]
 )]
 class UpdateLockerRequest extends FormRequest
@@ -60,10 +57,7 @@ class UpdateLockerRequest extends FormRequest
                     ->where(fn ($query) => $query->where('branch_id', $branchId)->whereNull('deleted_at'))
                     ->ignore($lockerId),
             ],
-            'status'        => 'sometimes|in:available,with_member,with_staff,with_coach,maintenance',
-            'holder_id'     => 'nullable|integer',
-            'holder_type'   => 'nullable|in:member,staff,coach',
-            'holder_name'   => 'nullable|string|max:255',
+            'status'        => 'sometimes|in:available,maintenance',
         ];
     }
 
