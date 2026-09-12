@@ -2,6 +2,7 @@ export default function ToggleSwitch({
   checked = false,
   onChange,
   label,
+  ariaLabel,
   size = "md",
   disabled = false,
 }) {
@@ -20,6 +21,7 @@ export default function ToggleSwitch({
           onChange={onChange}
           className="peer sr-only"
           disabled={disabled}
+          aria-label={ariaLabel || label}
         />
         <div
           className={`peer ${trackSize} rounded-full bg-app-line after:absolute after:rounded-full after:bg-white after:transition-all peer-checked:bg-app-yellow ${thumbSize}`}

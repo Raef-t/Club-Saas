@@ -53,6 +53,14 @@ export const attendanceApi = createBackendApi({
       }),
       invalidatesTags: ["Attendance"],
     }),
+    checkInAndDeduct: builder.mutation({
+      query: (body) => ({
+        url: "reception/check-in-and-deduct",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Attendance"],
+    }),
     manualCheckOut: builder.mutation({
       query: (attendanceId) => ({
         url: `attendances/check-out/${attendanceId}`,
@@ -97,6 +105,7 @@ export const {
   useGetMemberAttendancesQuery,
   useGetAttendancesQuery,
   useManualCheckInMutation,
+  useCheckInAndDeductMutation,
   useManualCheckOutMutation,
   useBulkCheckOutMutation,
   useRollbackAttendanceMutation,

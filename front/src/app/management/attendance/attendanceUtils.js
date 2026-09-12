@@ -271,7 +271,13 @@ function createPersonNameMap(records, type) {
  * Converts member subscriptions into selectable attendance subscriptions.
  */
 export function createAttendanceSubscriptions(response) {
-  return getAttendanceCollection(response).map((subscription) => {
+  const subscriptions = Array.isArray(response?.data?.subscriptions)
+    ? response.data.subscriptions
+    : Array.isArray(response?.data?.data?.subscriptions)
+      ? response.data.data.subscriptions
+      : getAttendanceCollection(response);
+
+  return subscriptions.map((subscription) => {
     const subscriptionId = subscription.player_subscription_id || subscription.id;
     const activities = (subscription.items || []).map((item) => ({
       id: String(item.activity_id || item.activity?.id || ""),
@@ -296,6 +302,15 @@ export function createAttendanceSubscriptions(response) {
       activity: formatLocalizedName(subscription.plan_name),
       coach: activities[0]?.coach || "-",
       remaining: subscription.total_sessions_remaining ?? "-",
+      todaySessions: Array.isArray(subscription.today_sessions) ? subscription.today_sessions : [],
+      todaySessionsCount: Array.isArray(subscription.today_sessions)
+        ? subscription.today_sessions.length
+        : Number(subscription.today_sessions) || 0,
+      requiresOverrideReason:
+        subscription.requires_override_reason === true ||
+        subscription.requires_override_reason === 1 ||
+        subscription.requires_override_reason === "true" ||
+        subscription.requires_override_reason === "1",
       endsAt: formatDate(subscription.end_date),
       activities,
       activeLockers: Array.isArray(subscription.active_lockers) ? subscription.active_lockers : [],
@@ -304,24 +319,11 @@ export function createAttendanceSubscriptions(response) {
 }
 
 /**
- * Chooses safe defaults after scanning a member with one or more subscriptions.
+ * Clears member-specific choices so reception explicitly selects today's subscription.
  */
-export function getInitialAttendanceSelection(subscriptions) {
-  if (!subscriptions.length) {
-    return {
-      subscriptionIds: [],
-      lockerNumber: "",
-    };
-  }
-
-  const usableSubscriptions = subscriptions.filter(
-    (subscription) => Number(subscription.remaining) > 0,
-  );
-  const selectedSubscriptions = usableSubscriptions.length
-    ? usableSubscriptions
-    : [subscriptions[0]];
+export function getInitialAttendanceSelection() {
   return {
-    subscriptionIds: selectedSubscriptions.map((subscription) => String(subscription.id)),
+    subscriptionIds: [],
     lockerNumber: "",
   };
 }
@@ -335,6 +337,17 @@ export function createAttendanceDeductionBody(subscriptionIds, note = "") {
   return {
     player_subscription_ids: subscriptionIds.map(Number).filter(Number.isFinite),
     ...(normalizedNote ? { notes: normalizedNote } : {}),
+  };
+}
+
+/**
+ * Builds the single-request payload that creates attendance and deducts its sessions.
+ */
+export function createCheckInAndDeductBody(memberId, branchId, subscriptionIds, note = "") {
+  return {
+    member_id: Number(memberId),
+    branch_id: Number(branchId),
+    ...createAttendanceDeductionBody(subscriptionIds, note),
   };
 }
 

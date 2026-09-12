@@ -13,8 +13,7 @@ import { useAttendance } from "./useAttendance";
  */
 export default function AttendanceClient({ initialBranches }) {
   const attendance = useAttendance({ initialBranches });
-  const isPlayerModalBusy =
-    attendance.isRegistering || (attendance.requiresCheckInNote && attendance.isManualCheckingIn);
+  const isPlayerModalBusy = attendance.isRegistering;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -49,8 +48,8 @@ export default function AttendanceClient({ initialBranches }) {
         title="تأكيد حضور اللاعب"
         subtitle={
           attendance.requiresCheckInNote
-            ? "أدخل سبب الحضور خارج الموعد ثم أعد تسجيل الدخول."
-            : "راجع الاشتراك وأدخل سبب الحضور عند الحاجة قبل خصم الجلسة."
+            ? "اختر الاشتراك وأدخل سبب الحضور خارج الموعد."
+            : "اختر الاشتراك ثم أكّد تسجيل الحضور وخصم الجلسة."
         }
         contentClassName="p-0"
       >
@@ -81,11 +80,7 @@ export default function AttendanceClient({ initialBranches }) {
             onSubscriptionToggle={attendance.handleSubscriptionToggle}
             onLockerChange={attendance.handleLockerChange}
             onAttendanceNoteChange={attendance.handleAttendanceNoteChange}
-            onRegister={
-              attendance.requiresCheckInNote
-                ? attendance.handleRetryManualCheckIn
-                : attendance.handleRegister
-            }
+            onRegister={attendance.handleRegister}
           />
         </div>
       </Modal>

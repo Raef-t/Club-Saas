@@ -7,6 +7,22 @@ export function SearchIcon({ className = "size-5" }) {
   );
 }
 
+export function AndroidIcon({ className = "size-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M17.52 15.34a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm-11.04 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm11.4-6.02 2-3.46a.42.42 0 0 0-.16-.57.42.42 0 0 0-.56.16l-2.02 3.5A9.2 9.2 0 0 0 12 7.4a9.2 9.2 0 0 0-5.14 1.55l-2.02-3.5a.42.42 0 0 0-.57-.16.42.42 0 0 0-.15.57l2 3.46A11.98 11.98 0 0 0 0 18.74h24a11.98 11.98 0 0 0-6.12-9.42Z" />
+    </svg>
+  );
+}
+
+export function AppleIcon({ className = "size-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39a4.83 4.83 0 0 1 4.12-2.51c1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83ZM15.97 6.37c.61-.75 1.04-1.8.92-2.85-.9.04-2 .6-2.64 1.35-.56.65-1.05 1.71-.92 2.74 1.01.08 2.03-.49 2.64-1.24Z" />
+    </svg>
+  );
+}
+
 export function GridIcon({ className = "size-5" }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -712,3 +728,47 @@ export function CheckCircleIcon({ className = "size-5" }) {
     </svg>
   );
 }
+
+export function RefreshIcon({ className = "size-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21.5 2v6h-6M2.5 22v-6h6" />
+      <path d="M20 11.5a8.5 8.5 0 0 0-14.8-4.2L2.5 10M21.5 14l-2.7 2.7A8.5 8.5 0 0 1 4 12.5" />
+    </svg>
+  );
+}
+
+export function SnowflakeIcon({ className = "size-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="12" y1="2" x2="12" y2="22" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+      <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
+      <polyline points="10 4 12 2 14 4" />
+      <polyline points="10 20 12 22 14 20" />
+      <polyline points="4 10 2 12 4 14" />
+      <polyline points="20 10 22 12 20 14" />
+    </svg>
+  );
+}
+
+

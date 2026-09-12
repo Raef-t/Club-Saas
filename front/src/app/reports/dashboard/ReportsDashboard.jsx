@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import PageHeader from "@/components/common/PageHeader";
-import Button from "@/components/ui/Button";
+import ReportPageShell from "@/components/reports/ReportPageShell";
 import SkeletonPage from "@/components/ui/Skeleton";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { PrintIcon } from "@/components/icons/Icons";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { printReports } from "./reportPrint";
@@ -56,28 +54,15 @@ export default function ReportsDashboard({ initialData }) {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <PageHeader
-        eyebrow="نظام التقارير"
-        title="التقارير التشغيلية"
-        subtitle={`بيانات مباشرة للفرع: ${reportData.branchName}. اختر التقرير المطلوب ثم اطبعه منفرداً أو اطبع جميع التقارير.`}
-        action={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              tone="outline"
-              loading={reportData.isRefreshing}
-              onClick={reportData.refresh}
-            >
-              تحديث البيانات
-            </Button>
-            <Button type="button" icon={<PrintIcon className="size-4" />} onClick={handlePrintAll}>
-              طباعة جميع التقارير
-            </Button>
-          </div>
-        }
-      />
-
+    <ReportPageShell
+      title="التقارير التشغيلية"
+      description="لوحة موحّدة لمراقبة المؤشرات التشغيلية واختيار التقرير المطلوب وعرضه أو طباعته."
+      branchName={reportData.branchName}
+      isRefreshing={reportData.isRefreshing}
+      onRefresh={reportData.refresh}
+      onPrint={handlePrintAll}
+      printLabel="طباعة جميع التقارير"
+    >
       {reportData.hasError && (
         <div
           className="rounded-xl border border-app-yellow/30 bg-app-yellow/10 px-4 py-3 text-sm text-app-muted-light"
@@ -106,6 +91,6 @@ export default function ReportsDashboard({ initialData }) {
         branchName={reportData.branchName}
         onPrint={() => handlePrintReport(selectedReport)}
       />
-    </div>
+    </ReportPageShell>
   );
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import {
+  AndroidIcon,
+  AppleIcon,
   CalendarIcon,
   ClockIcon,
   DumbbellIcon,
@@ -12,6 +14,8 @@ import {
 } from "@/components/icons/Icons";
 
 const statIcons = {
+  android: AndroidIcon,
+  apple: AppleIcon,
   activities: GiftIcon,
   coaches: DumbbellIcon,
   expiring: ClockIcon,
