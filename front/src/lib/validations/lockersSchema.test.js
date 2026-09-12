@@ -3,6 +3,7 @@ import {
   createInitialReserveLockerForm,
   initialReserveLockerForm,
   reserveLockerSchema,
+  updateLockerSchema,
 } from "./lockersSchema";
 
 describe("locker reservation validation", () => {
@@ -70,5 +71,45 @@ describe("locker reservation validation", () => {
       start_date: "2026-08-15",
       end_date: "2026-08-15",
     });
+  });
+});
+
+describe("updateLockerSchema validation", () => {
+  it("accepts valid locker update with available or maintenance status", () => {
+    expect(
+      updateLockerSchema.safeParse({
+        locker_number: "L-101",
+        key_number: "K-101",
+        status: "available",
+        reason: "تغيير المفتاح التالف وتحديث الحالة",
+      }).success,
+    ).toBe(true);
+
+    expect(
+      updateLockerSchema.safeParse({
+        locker_number: "L-101",
+        key_number: null,
+        status: "maintenance",
+        reason: "صيانة الخزانة",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects statuses other than available or maintenance", () => {
+    expect(
+      updateLockerSchema.safeParse({
+        locker_number: "L-101",
+        status: "with_member",
+        reason: "تحديث",
+      }).success,
+    ).toBe(false);
+
+    expect(
+      updateLockerSchema.safeParse({
+        locker_number: "L-101",
+        status: "assigned",
+        reason: "تحديث",
+      }).success,
+    ).toBe(false);
   });
 });

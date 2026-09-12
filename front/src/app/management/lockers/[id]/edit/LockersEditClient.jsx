@@ -48,9 +48,6 @@ export default function LockersEditClient({
           <LockerUpdateForm
             formId={FORM_ID}
             initialData={locker}
-            members={members}
-            coaches={coaches}
-            staff={staff}
             onSubmit={submit}
             onCancel={() => router.push("/management/lockers")}
             isLoading={isLoading}

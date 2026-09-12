@@ -317,4 +317,28 @@ class LockerSoftDeleteAndRestoreTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_update_locker_status_only_accepts_available_and_maintenance(): void
+    {
+        $locker = Locker::create([
+            'branch_id' => $this->branch->id,
+            'locker_number' => '40',
+            'key_number' => '40',
+            'status' => 'available',
+        ]);
+
+        // Status 'maintenance' should succeed
+        $response = $this->putJson("/api/v1/lockers/{$locker->id}", [
+            'status' => 'maintenance',
+        ]);
+        $response->assertStatus(200);
+        $this->assertEquals('maintenance', $locker->fresh()->status);
+
+        // Status 'with_member' should fail with 422
+        $failResponse = $this->putJson("/api/v1/lockers/{$locker->id}", [
+            'status' => 'with_member',
+        ]);
+        $failResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['status']);
+    }
 }

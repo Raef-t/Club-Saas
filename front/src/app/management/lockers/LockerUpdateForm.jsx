@@ -1,35 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Dropdown from "@/components/ui/Dropdown";
 import { Field } from "@/components/forms/FormControls";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import { updateLockerSchema } from "@/lib/validations/lockersSchema";
+import { LOCKER_EDIT_STATUS_OPTIONS } from "./lockerConstants";
 import {
-  LOCKER_HOLDER_TYPE_OPTIONS,
-  LOCKER_OCCUPIED_STATUSES,
-  LOCKER_STATUS_OPTIONS,
-} from "./lockerConstants";
-import LockerHolderField from "./LockerHolderField";
-import {
-  createLockerCoachOptions,
-  createLockerMemberOptions,
-  createLockerStaffOptions,
   createLockerUpdateInitialValues,
   createLockerUpdatePayload,
   getLockerValidationErrors,
 } from "./lockerUtils";
 
 /**
- * Collects and validates locker status and holder updates.
+ * Collects and validates locker number, key and status updates.
  */
 export default function LockerUpdateForm({
   formId,
   initialData,
-  members,
-  coaches,
-  staff,
   onSubmit,
   onCancel,
   isLoading,
@@ -37,37 +26,12 @@ export default function LockerUpdateForm({
 }) {
   const [form, setForm] = useState(() => createLockerUpdateInitialValues(initialData));
   const [errors, setErrors] = useState({});
-  const memberOptions = useMemo(() => createLockerMemberOptions(members), [members]);
-  const coachOptions = useMemo(() => createLockerCoachOptions(coaches), [coaches]);
-  const staffOptions = useMemo(() => createLockerStaffOptions(staff), [staff]);
-  const canHaveHolder = LOCKER_OCCUPIED_STATUSES.includes(form.status);
 
   /**
-   * Updates one field and keeps holder values consistent with status changes.
+   * Updates one field and clears its validation error.
    */
   function updateField(field, value) {
-    setForm((current) => {
-      if (field === "status" && !LOCKER_OCCUPIED_STATUSES.includes(value)) {
-        return {
-          ...current,
-          status: value,
-          holder_type: "",
-          holder_id: "",
-          holder_name: "",
-        };
-      }
-
-      if (field === "holder_type") {
-        return {
-          ...current,
-          holder_type: value,
-          holder_id: "",
-          holder_name: "",
-        };
-      }
-
-      return { ...current, [field]: value };
-    });
+    setForm((current) => ({ ...current, [field]: value }));
 
     if (errors[field]) {
       setErrors((current) => ({ ...current, [field]: null }));
@@ -128,46 +92,12 @@ export default function LockerUpdateForm({
             الحالة <span className="text-app-red">*</span>
           </label>
           <Dropdown
-            options={LOCKER_STATUS_OPTIONS}
+            options={LOCKER_EDIT_STATUS_OPTIONS}
             value={form.status}
             onChange={(value) => updateField("status", value)}
             error={errors.status}
           />
         </div>
-
-        {canHaveHolder && (
-          <>
-            <div className="flex flex-col gap-1.5 text-start">
-              <label className="text-sm font-medium text-white">نوع المستفيد (اختياري)</label>
-              <Dropdown
-                options={LOCKER_HOLDER_TYPE_OPTIONS}
-                value={form.holder_type}
-                onChange={(value) => updateField("holder_type", value)}
-              />
-            </div>
-
-            <LockerHolderField
-              holderType={form.holder_type}
-              holderId={form.holder_id}
-              memberOptions={memberOptions}
-              coachOptions={coachOptions}
-              staffOptions={staffOptions}
-              onChange={(value) => updateField("holder_id", value)}
-              error={errors.holder_id}
-            />
-
-            {form.holder_type && (
-              <Field
-                label="اسم المستفيد (اختياري)"
-                type="text"
-                required={false}
-                value={form.holder_name}
-                onChange={(event) => updateField("holder_name", event.target.value)}
-                error={errors.holder_name}
-              />
-            )}
-          </>
-        )}
 
         <ModificationReasonField
           value={form.reason}
