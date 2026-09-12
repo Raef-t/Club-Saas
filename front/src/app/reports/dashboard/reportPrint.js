@@ -99,7 +99,7 @@ export function buildReportsPrintHtml({ reports, branchName, logoUrl, generatedA
             </div>
           </div>
 
-          <div class="metrics">${buildMetricsHtml(report.metrics)}</div>
+          ${report.metrics?.length ? `<div class="metrics">${buildMetricsHtml(report.metrics)}</div>` : ""}
           ${buildTableHtml(report)}
 
           <footer>

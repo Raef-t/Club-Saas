@@ -34,7 +34,10 @@ export default function Navbar({ onMenuClick, initialUser }) {
   const meta =
     pathname === "/accounting"
       ? null
-      : pageMeta[pathname] || (pathname.startsWith("/management") ? null : pageMeta["/accounting"]);
+      : pageMeta[pathname] ||
+        (pathname.startsWith("/management") || pathname.startsWith("/reports")
+          ? null
+          : pageMeta["/accounting"]);
   const isReports = pathname.startsWith("/reports");
 
   const [currentTime, setCurrentTime] = useState("");
