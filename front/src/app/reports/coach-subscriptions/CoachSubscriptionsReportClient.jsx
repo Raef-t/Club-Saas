@@ -45,6 +45,12 @@ function createPrintableReports(report) {
       id: "general-equipment-subscriptions",
       title: "اشتراكات الأجهزة العامة",
       description: "ملخص اللاعبين الفعالين في التدريب العام.",
+      metrics: [
+        {
+          label: "لاعبي الأجهزة العامة",
+          value: report.summary.general_equipment_active_players.toLocaleString("ar"),
+        },
+      ],
       columns: [
         { key: "title", label: "التصنيف" },
         { key: "activityTypeName", label: "نوع النشاط" },

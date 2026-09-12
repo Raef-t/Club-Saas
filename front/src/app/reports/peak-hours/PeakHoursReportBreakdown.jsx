@@ -107,8 +107,6 @@ export default function PeakHoursReportBreakdown({ report, isLoading }) {
           pagination={false}
           sortable={false}
           isLoading={isLoading}
-          minWidth="520px"
-          desktopScrollable
           emptyMessage="لا توجد بيانات يومية ضمن الفترة المختارة."
         />
       </div>
