@@ -12059,7 +12059,7 @@
                     "Locker Management"
                 ],
                 "summary": "✏️ تعديل بيانات خزانة",
-                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها أو حامل مفتاحها.",
+                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها.",
                 "operationId": "f35adb439a6ed9d1ed54c46deba80adf",
                 "parameters": [
                     {
@@ -26913,32 +26913,243 @@
                 "tags": [
                     "Invoices & Payments"
                 ],
-                "summary": "💳 عرض فواتير العضو المصادق عليه",
-                "description": "استرجاع جميع فواتير العضو المصادق عليه متضمنة التفاصيل الإجمالية (إجمالي المدفوع، المتبقي، وإجمالي الفواتير).",
+                "summary": "💳 عرض فواتير العضو المصادق عليه مع أرقام الوصولات",
+                "description": "استرجاع جميع فواتير العضو المصادق عليه متضمنة التفاصيل الإجمالية، أرقام الوصولات (العام، الكوتش، والنادي)، وحالة التدريب الخاص مع قائمة الدفعات.",
                 "operationId": "a412a002aeeaa84bc19fc2f4ca32a0d4",
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع قائمة فواتير العضو بنجاح",
                         "content": {
                             "application/json": {
-                                "schema": {},
-                                "example": {
-                                    "status": "success",
-                                    "message": "Invoices retrieved successfully",
-                                    "data": {
-                                        "total_paid": 1000,
-                                        "total_remaining": 500,
-                                        "total_amount": 1500,
-                                        "invoices": [
-                                            {
-                                                "code": "INV_123456789",
-                                                "created_at": "2026-06-30",
-                                                "paid_amount": 500,
-                                                "subscription_name": "الاشتراك الذهبي - Gold Plan",
-                                                "total": 1000,
-                                                "remaining_amount": 500
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invoices retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_paid": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1500
+                                                },
+                                                "total_remaining": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 200
+                                                },
+                                                "total_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1700
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "SYP"
+                                                },
+                                                "currency_type": {
+                                                    "type": "string",
+                                                    "example": "SYP"
+                                                },
+                                                "invoices": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "code": {
+                                                                "type": "string",
+                                                                "example": "INV_123456789",
+                                                                "nullable": true
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-09-12"
+                                                            },
+                                                            "subscription_name": {
+                                                                "type": "string",
+                                                                "example": "تدريب خاص - كوتش أحمد"
+                                                            },
+                                                            "total": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "paid_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "remaining_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0
+                                                            },
+                                                            "currency": {
+                                                                "type": "string",
+                                                                "example": "USD"
+                                                            },
+                                                            "currency_type": {
+                                                                "type": "string",
+                                                                "example": "USD"
+                                                            },
+                                                            "is_private": {
+                                                                "description": "هل الفاتورة لاشتراك تدريب خاص",
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "receipt_number": {
+                                                                "description": "رقم الوصل العام / أحدث وصل",
+                                                                "type": "string",
+                                                                "example": "REC-CLUB-999",
+                                                                "nullable": true
+                                                            },
+                                                            "coach_receipt_number": {
+                                                                "description": "رقم وصل الكوتش (في حال التدريب الخاص)",
+                                                                "type": "string",
+                                                                "example": "REC-COACH-888",
+                                                                "nullable": true
+                                                            },
+                                                            "branch_receipt_number": {
+                                                                "description": "رقم وصل النادي",
+                                                                "type": "string",
+                                                                "example": "REC-CLUB-999",
+                                                                "nullable": true
+                                                            },
+                                                            "payments": {
+                                                                "description": "سجل الدفعات التابعة للفاتورة",
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "receipt_number": {
+                                                                            "type": "string",
+                                                                            "example": "REC-COACH-888",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "number",
+                                                                            "format": "float",
+                                                                            "example": 300
+                                                                        },
+                                                                        "is_coach_payment": {
+                                                                            "description": "true لدفعة الكوتش، false لدفعة النادي",
+                                                                            "type": "boolean",
+                                                                            "example": true
+                                                                        },
+                                                                        "payment_method": {
+                                                                            "type": "string",
+                                                                            "example": "cash",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "paid_at": {
+                                                                            "type": "string",
+                                                                            "format": "date",
+                                                                            "example": "2026-09-12",
+                                                                            "nullable": true
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "examples": {
+                                    "Private Training Invoice": {
+                                        "summary": "مثال: فاتورة تدريب خاص (وصل كوتش + وصل نادي)",
+                                        "value": {
+                                            "status": "success",
+                                            "message": "Invoices retrieved successfully",
+                                            "data": {
+                                                "total_paid": 500,
+                                                "total_remaining": 0,
+                                                "total_amount": 500,
+                                                "currency": "USD",
+                                                "currency_type": "USD",
+                                                "invoices": [
+                                                    {
+                                                        "code": "INV_202609001",
+                                                        "created_at": "2026-09-12",
+                                                        "subscription_name": "تدريب خاص - كوتش أحمد",
+                                                        "total": 500,
+                                                        "paid_amount": 500,
+                                                        "remaining_amount": 0,
+                                                        "currency": "USD",
+                                                        "currency_type": "USD",
+                                                        "is_private": true,
+                                                        "receipt_number": "REC-CLUB-999",
+                                                        "coach_receipt_number": "REC-COACH-888",
+                                                        "branch_receipt_number": "REC-CLUB-999",
+                                                        "payments": [
+                                                            {
+                                                                "receipt_number": "REC-COACH-888",
+                                                                "amount": 300,
+                                                                "is_coach_payment": true,
+                                                                "payment_method": "cash",
+                                                                "paid_at": "2026-09-12"
+                                                            },
+                                                            {
+                                                                "receipt_number": "REC-CLUB-999",
+                                                                "amount": 200,
+                                                                "is_coach_payment": false,
+                                                                "payment_method": "cash",
+                                                                "paid_at": "2026-09-12"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
                                             }
-                                        ]
+                                        }
+                                    },
+                                    "Regular Subscription Invoice": {
+                                        "summary": "مثال: فاتورة اشتراك عام عادي",
+                                        "value": {
+                                            "status": "success",
+                                            "message": "Invoices retrieved successfully",
+                                            "data": {
+                                                "total_paid": 1000,
+                                                "total_remaining": 200,
+                                                "total_amount": 1200,
+                                                "currency": "SYP",
+                                                "currency_type": "SYP",
+                                                "invoices": [
+                                                    {
+                                                        "code": "INV_202609002",
+                                                        "created_at": "2026-09-10",
+                                                        "subscription_name": "اشتراك فتنس عام",
+                                                        "total": 1200,
+                                                        "paid_amount": 1000,
+                                                        "remaining_amount": 200,
+                                                        "currency": "SYP",
+                                                        "currency_type": "SYP",
+                                                        "is_private": false,
+                                                        "receipt_number": "REC-SUB-1045",
+                                                        "coach_receipt_number": null,
+                                                        "branch_receipt_number": "REC-SUB-1045",
+                                                        "payments": [
+                                                            {
+                                                                "receipt_number": "REC-SUB-1045",
+                                                                "amount": 1000,
+                                                                "is_coach_payment": false,
+                                                                "payment_method": "cash",
+                                                                "paid_at": "2026-09-10"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -35779,36 +35990,13 @@
                         "nullable": true
                     },
                     "status": {
-                        "description": "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
+                        "description": "حالة الخزانة: available (متاحة), maintenance (صيانة / معطلة)",
                         "type": "string",
                         "example": "available",
                         "enum": [
                             "available",
-                            "with_member",
-                            "with_staff",
-                            "with_coach",
                             "maintenance"
                         ]
-                    },
-                    "holder_id": {
-                        "type": "integer",
-                        "example": 5,
-                        "nullable": true
-                    },
-                    "holder_type": {
-                        "type": "string",
-                        "example": "member",
-                        "nullable": true,
-                        "enum": [
-                            "member",
-                            "staff",
-                            "coach"
-                        ]
-                    },
-                    "holder_name": {
-                        "type": "string",
-                        "example": "أحمد محمد",
-                        "nullable": true
                     }
                 },
                 "type": "object"
