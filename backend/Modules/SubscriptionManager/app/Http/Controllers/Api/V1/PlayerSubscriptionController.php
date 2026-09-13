@@ -325,7 +325,7 @@ class PlayerSubscriptionController extends BaseController
     public function update(UpdatePlayerSubscriptionRequest $request, $id)
     {
         try {
-            $data = array_filter($request->validated(), fn ($val) => !is_null($val));
+            $data = $request->validated();
             $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
 
             return $this->successResponse(
