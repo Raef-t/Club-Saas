@@ -164,6 +164,9 @@ class PlayerRegistrationController extends BaseController
                 new OA\Property(property: 'dob', type: 'string', format: 'date', example: '1995-10-25'),
                 new OA\Property(property: 'address', type: 'string', nullable: true, example: 'شارع الملك فهد، الرياض'),
                 new OA\Property(property: 'branch_id', type: 'integer', example: 1),
+                new OA\Property(property: 'membership_status', type: 'string', enum: ['active', 'inactive', 'frozen', 'expired'], example: 'inactive', description: 'حالة العضوية (نشط / غير نشط)'),
+                new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive', 'frozen', 'expired'], example: 'inactive', description: 'الاسم البديل لحالة العضوية'),
+                new OA\Property(property: 'is_active', type: 'boolean', example: false, description: 'تحديد الحالة كقيمة منطقية (true: نشط, false: غير نشط)'),
                 new OA\Property(
                     property: 'additional_contacts',
                     type: 'array',
@@ -308,6 +311,21 @@ class PlayerRegistrationController extends BaseController
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(ref: '#/components/schemas/MemberResource')
+                ),
+                new OA\Property(
+                    property: 'stats',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'total_members', type: 'integer', example: 120),
+                        new OA\Property(property: 'active_members', type: 'integer', example: 95),
+                        new OA\Property(property: 'inactive_members', type: 'integer', example: 25),
+                        new OA\Property(property: 'total_subscribed_members', type: 'integer', example: 88),
+                        new OA\Property(property: 'new_members_this_month', type: 'integer', example: 14),
+                        new OA\Property(property: 'renewed_members_this_month', type: 'integer', example: 22),
+                        new OA\Property(property: 'expired_not_renewed_members', type: 'integer', example: 12),
+                        new OA\Property(property: 'male_members', type: 'integer', example: 70),
+                        new OA\Property(property: 'female_members', type: 'integer', example: 50),
+                    ]
                 )
             ],
             example: [
@@ -320,6 +338,8 @@ class PlayerRegistrationController extends BaseController
                         'member_number' => 'MEM-10023',
                         'branch_id' => 1,
                         'status' => 'active',
+                        'membership_status' => 'active',
+                        'is_active' => true,
                         'person' => [
                             'id' => 25,
                             'full_name' => 'أحمد محمد',
@@ -327,6 +347,17 @@ class PlayerRegistrationController extends BaseController
                             'phone_number' => '0501234567'
                         ]
                     ]
+                ],
+                'stats' => [
+                    'total_members' => 120,
+                    'active_members' => 95,
+                    'inactive_members' => 25,
+                    'total_subscribed_members' => 88,
+                    'new_members_this_month' => 14,
+                    'renewed_members_this_month' => 22,
+                    'expired_not_renewed_members' => 12,
+                    'male_members' => 70,
+                    'female_members' => 50
                 ]
             ]
         )
@@ -335,7 +366,27 @@ class PlayerRegistrationController extends BaseController
     {
         $filters = $request->all();
         $members = $this->memberService->getAllMembers($filters);
-        return $this->successResponse(\Modules\MemberManager\Http\Resources\MemberResource::collection($members), __('Members retrieved successfully'));
+        $stats = $this->memberService->getStats($filters);
+
+        if ($members instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+            $resourceCollection = \Modules\MemberManager\Http\Resources\MemberResource::collection($members);
+            $responseData = $resourceCollection->response()->getData(true);
+            $responseData['stats'] = $stats;
+            return $this->successResponse(
+                $responseData,
+                __('Members retrieved successfully')
+            );
+        }
+
+        $resourceCollection = \Modules\MemberManager\Http\Resources\MemberResource::collection($members);
+        $responseData = [
+            'data'  => $resourceCollection->resolve(),
+            'stats' => $stats,
+        ];
+        return $this->successResponse(
+            $responseData,
+            __('Members retrieved successfully')
+        );
     }
 
     #[OA\Get(
