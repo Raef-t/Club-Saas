@@ -188,6 +188,20 @@ class CoachService
             });
         }
 
+        if (!empty($filters['activity_type_id'])) {
+            $this->applyActivityTypeFilter($query, $filters['activity_type_id']);
+        } elseif (!empty($filters['activity_type'])) {
+            $this->applyActivityTypeFilter($query, $filters['activity_type']);
+        } elseif (!empty($filters['activity_type_name'])) {
+            $this->applyActivityTypeFilter($query, $filters['activity_type_name']);
+        }
+
+        $dayParam = $filters['day_of_week'] ?? $filters['day'] ?? $filters['duty_day'] ?? $filters['day_name'] ?? null;
+        $dayOfWeek = $this->normalizeDayOfWeek($dayParam);
+        if ($dayOfWeek !== null) {
+            $this->applyDayOfWeekFilter($query, $dayOfWeek, $filters);
+        }
+
         if (!empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             $query->where(function ($q) use ($search) {
@@ -554,5 +568,196 @@ class CoachService
             ->findOrFail($id);
         $staff->restore();
         return $this->getSingleCoach($staff->id);
+    }
+
+    /**
+     * Normalize day of week input (0-6 or string like 'friday', 'الجمعة', 'يوم الجمعة') to integer 0..6.
+     */
+    public function normalizeDayOfWeek(mixed $day): ?int
+    {
+        if ($day === null || $day === '') {
+            return null;
+        }
+
+        if (is_numeric($day)) {
+            $intVal = (int) $day;
+            if ($intVal >= 0 && $intVal <= 6) {
+                return $intVal;
+            }
+            if ($intVal === 7) {
+                return 0; // ISO Sunday
+            }
+            return null;
+        }
+
+        $clean = mb_strtolower(trim((string) $day));
+        $clean = preg_replace('/^يوم\s+/u', '', $clean);
+
+        return match ($clean) {
+            '0', 'sunday', 'sun', 'الأحد', 'الاحد', 'أحد', 'احد' => 0,
+            '1', 'monday', 'mon', 'الإثنين', 'الاثنين', 'إثنين', 'اثنين', 'تنين' => 1,
+            '2', 'tuesday', 'tue', 'الثلاثاء', 'تلاتاء', 'ثلاثاء' => 2,
+            '3', 'wednesday', 'wed', 'الأربعاء', 'الاربعاء', 'أربعاء', 'اربعاء' => 3,
+            '4', 'thursday', 'thu', 'الخميس', 'خميس' => 4,
+            '5', 'friday', 'fri', 'الجمعة', 'الجمعه', 'جمعة', 'جمعه' => 5,
+            '6', 'saturday', 'sat', 'السبت', 'سبت' => 6,
+            default => null,
+        };
+    }
+
+    /**
+     * Apply activity type filter to coach query.
+     */
+    protected function applyActivityTypeFilter($query, mixed $activityType): void
+    {
+        if (empty($activityType)) {
+            return;
+        }
+
+        if (is_array($activityType)) {
+            $query->whereHas('activities', function ($q) use ($activityType) {
+                $q->whereIn('activities.activity_type_id', $activityType);
+            });
+            return;
+        }
+
+        if (is_numeric($activityType)) {
+            $query->whereHas('activities', function ($q) use ($activityType) {
+                $q->where('activities.activity_type_id', (int) $activityType);
+            });
+            return;
+        }
+
+        if (is_string($activityType) && str_contains($activityType, ',')) {
+            $ids = array_filter(array_map('trim', explode(',', $activityType)), 'is_numeric');
+            if (!empty($ids)) {
+                $query->whereHas('activities', function ($q) use ($ids) {
+                    $q->whereIn('activities.activity_type_id', $ids);
+                });
+                return;
+            }
+        }
+
+        $typeStr = mb_strtolower(trim((string) $activityType));
+
+        $privateKeywords = ['الخاص', 'خاص', 'تدريب خاص', 'تدريب_خاص', 'private', 'private_training', 'private_equipment'];
+        if (in_array($typeStr, $privateKeywords, true)) {
+            $query->whereHas('activities', function ($q) {
+                $q->where(function ($aq) {
+                    $aq->where('activities.is_private_equipment', true)
+                       ->orWhereHas('activityType', function ($tq) {
+                           $tq->where('is_private_equipment', true)
+                              ->orWhere('name', 'like', '%خاص%')
+                              ->orWhere('name', 'like', '%private%');
+                       });
+                });
+            });
+            return;
+        }
+
+        $groupKeywords = ['الحصة الجماعية', 'الحصة_الجماعية', 'حصة جماعية', 'حصة_جماعية', 'حصة جماعيه', 'جماعي', 'جماعية', 'group', 'group_session', 'group_sessions', 'session', 'sessions'];
+        if (in_array($typeStr, $groupKeywords, true)) {
+            $query->whereHas('activities', function ($q) {
+                $q->whereHas('activityType', function ($tq) {
+                    $tq->where('is_session_based', true)
+                       ->orWhere('name', 'like', '%جماع%')
+                       ->orWhere('name', 'like', '%حصة%')
+                       ->orWhere('name', 'like', '%session%')
+                       ->orWhere('name', 'like', '%group%');
+                });
+            });
+            return;
+        }
+
+        $generalKeywords = ['العام', 'عام', 'تدريب عام', 'تدريب_عام', 'general', 'public', 'general_training'];
+        if (in_array($typeStr, $generalKeywords, true)) {
+            $query->whereHas('activities', function ($q) {
+                $q->whereHas('activityType', function ($tq) {
+                    $tq->where('has_shifts', true)
+                       ->orWhere('name', 'like', '%عام%')
+                       ->orWhere('name', 'like', '%general%')
+                       ->orWhere('name', 'like', '%public%');
+                });
+            });
+            return;
+        }
+
+        $stripped = preg_replace('/^ال/u', '', $typeStr);
+        $query->whereHas('activities.activityType', function ($tq) use ($typeStr, $stripped) {
+            $tq->where('name', 'like', "%{$typeStr}%")
+               ->orWhere('name', 'like', "%{$stripped}%")
+               ->orWhere('id', $typeStr);
+        });
+    }
+
+    /**
+     * Apply day of week filter to coach query.
+     */
+    protected function applyDayOfWeekFilter($query, int $dayOfWeek, array $filters = []): void
+    {
+        $activityId = $filters['activity_id'] ?? null;
+        $activityType = $filters['activity_type_id'] ?? $filters['activity_type'] ?? $filters['activity_type_name'] ?? null;
+
+        $query->where(function ($dayQuery) use ($dayOfWeek, $activityId, $activityType) {
+            // 1. Session templates on this day_of_week
+            $dayQuery->whereHas('staffActivities', function ($saq) use ($dayOfWeek, $activityId, $activityType) {
+                if (!empty($activityId)) {
+                    $saq->where('activity_id', $activityId);
+                }
+                if (!empty($activityType)) {
+                    $saq->whereHas('activity', function ($aq) use ($activityType) {
+                        if (is_numeric($activityType)) {
+                            $aq->where('activity_type_id', (int) $activityType);
+                        } else {
+                            $typeStr = mb_strtolower(trim((string) $activityType));
+                            $stripped = preg_replace('/^ال/u', '', $typeStr);
+                            $aq->whereHas('activityType', function ($atq) use ($typeStr, $stripped) {
+                                $atq->where('name', 'like', "%{$typeStr}%")
+                                    ->orWhere('name', 'like', "%{$stripped}%");
+                            });
+                        }
+                    });
+                }
+
+                $saq->whereHas('planActivities', function ($paq) use ($dayOfWeek) {
+                    $paq->where(function ($sub) use ($dayOfWeek) {
+                        $sub->whereHas('plan.sessionTemplates', function ($stq) use ($dayOfWeek) {
+                            $stq->where('day_of_week', $dayOfWeek)->where('is_active', true);
+                        });
+
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('plan_activities', 'session_template_id')) {
+                            $sub->orWhereHas('sessionTemplate', function ($stq) use ($dayOfWeek) {
+                                $stq->where('day_of_week', $dayOfWeek)->where('is_active', true);
+                            });
+                        }
+                    });
+                });
+            });
+
+            // 2. OR coach has duty through shifts in a branch that does not have a weekly holiday on that day
+            $isRestrictedToSessionType = false;
+            if (!empty($activityType) && is_string($activityType)) {
+                $typeStr = mb_strtolower(trim($activityType));
+                if (in_array($typeStr, ['حصة جماعية', 'حصة_جماعية', 'حصة جماعيه', 'جماعي', 'جماعية', 'group', 'group_session', 'session'], true)) {
+                    $isRestrictedToSessionType = true;
+                }
+            }
+
+            if (!$isRestrictedToSessionType) {
+                $dayQuery->orWhere(function ($shiftQ) use ($dayOfWeek, $activityId) {
+                    $shiftQ->whereHas('shifts.branchShift.branch', function ($bq) use ($dayOfWeek) {
+                        $bq->whereDoesntHave('holidays', function ($hq) use ($dayOfWeek) {
+                            $hq->where('type', 'weekly')->where('day_of_week', $dayOfWeek);
+                        });
+                    });
+
+                    if (!empty($activityId)) {
+                        $shiftQ->whereHas('activities', function ($aq) use ($activityId) {
+                            $aq->where('activities.id', $activityId);
+                        });
+                    }
+                });
+            }
+        });
     }
 }

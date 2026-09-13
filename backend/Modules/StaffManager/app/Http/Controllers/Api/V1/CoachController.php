@@ -219,6 +219,11 @@ class CoachController extends BaseController
         parameters: [
             new OA\Parameter(name: 'branch_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'activity_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'activity_type_id', in: 'query', required: false, description: 'تصفية حسب معرف نوع النشاط', schema: new OA\Schema(type: 'integer', example: 1)),
+            new OA\Parameter(name: 'activity_type', in: 'query', required: false, description: 'تصفية حسب نوع النشاط بالاسم أو المعرف (تدريب عام، حصة جماعية، تدريب خاص)', schema: new OA\Schema(type: 'string', example: 'حصة جماعية')),
+            new OA\Parameter(name: 'day_of_week', in: 'query', required: false, description: 'تصفية حسب يوم الدوام (0=الأحد، 1=الإثنين، ...، 5=الجمعة، 6=السبت) أو بالاسم مثل Friday أو الجمعة', schema: new OA\Schema(type: 'string', example: '5')),
+            new OA\Parameter(name: 'day', in: 'query', required: false, description: 'اسم يوم الدوام أو رقمه (الجمعة، الأحد، Friday، ...)', schema: new OA\Schema(type: 'string', example: 'الجمعة')),
+            new OA\Parameter(name: 'duty_day', in: 'query', required: false, description: 'يوم الدوام للكوتش (الجمعة، الأحد، ...)', schema: new OA\Schema(type: 'string', example: 'الجمعة')),
             new OA\Parameter(name: 'gender', in: 'query', required: false, description: 'تصفية حسب الجنس', schema: new OA\Schema(type: 'string', enum: ['male', 'female', 'mixed'])),
             new OA\Parameter(name: 'work_status', in: 'query', required: false, description: 'تصفية حسب حالة العمل (active: نشط، suspended: موقوف، on_leave: إجازة)', schema: new OA\Schema(type: 'string', enum: ['active', 'suspended', 'on_leave'])),
             new OA\Parameter(name: 'search', in: 'query', required: false, description: 'بحث باسم الكوتش', schema: new OA\Schema(type: 'string', example: 'أحمد')),
