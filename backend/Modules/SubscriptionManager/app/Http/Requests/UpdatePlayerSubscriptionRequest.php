@@ -21,7 +21,7 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
             'months_count' => 'nullable|integer|min:1',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'nullable|string|in:active,finished,frozen,terminated,expired,cancelled',
+            'status' => 'nullable|string|in:active,finished,frozen,terminated',
             'paid_amount' => 'nullable|numeric|min:0',
             'coach_paid_amount' => 'nullable|numeric|min:0',
             'branch_paid_amount' => 'nullable|numeric|min:0',
