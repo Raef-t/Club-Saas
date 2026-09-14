@@ -26,6 +26,7 @@ class InvoiceResource extends JsonResource
             'payment_method' => $latestPayment?->payment_method ?? null,
             'paid_at' => $latestPayment?->created_at?->toDateString() ?? $this->created_at?->toDateString(),
             'created_at' => $this->created_at?->toDateString(),
+            'employee_name' => $latestPayment?->creator?->person?->full_name ?? $latestPayment?->creator?->username ?? $this->creator?->person?->full_name ?? $this->creator?->username ?? null,
             'payments' => PaymentResource::collection($this->whenLoaded('payments')),
         ];
     }

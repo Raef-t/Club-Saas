@@ -27259,6 +27259,12 @@
                                                                 "example": "REC-CLUB-999",
                                                                 "nullable": true
                                                             },
+                                                            "employee_name": {
+                                                                "description": "اسم الموظف الذي استلم الدفعة (أو منشئ الفاتورة)",
+                                                                "type": "string",
+                                                                "example": "أحمد المحمد",
+                                                                "nullable": true
+                                                            },
                                                             "payments": {
                                                                 "description": "سجل الدفعات التابعة للفاتورة",
                                                                 "type": "array",
@@ -27288,6 +27294,12 @@
                                                                             "type": "string",
                                                                             "format": "date",
                                                                             "example": "2026-09-12",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "employee_name": {
+                                                                            "description": "اسم الموظف الذي استلم الدفعة",
+                                                                            "type": "string",
+                                                                            "example": "أحمد المحمد",
                                                                             "nullable": true
                                                                         }
                                                                     },
@@ -27330,20 +27342,23 @@
                                                         "receipt_number": "REC-CLUB-999",
                                                         "coach_receipt_number": "REC-COACH-888",
                                                         "branch_receipt_number": "REC-CLUB-999",
+                                                        "employee_name": "أحمد المحمد",
                                                         "payments": [
                                                             {
                                                                 "receipt_number": "REC-COACH-888",
                                                                 "amount": 300,
                                                                 "is_coach_payment": true,
                                                                 "payment_method": "cash",
-                                                                "paid_at": "2026-09-12"
+                                                                "paid_at": "2026-09-12",
+                                                                "employee_name": "أحمد المحمد"
                                                             },
                                                             {
                                                                 "receipt_number": "REC-CLUB-999",
                                                                 "amount": 200,
                                                                 "is_coach_payment": false,
                                                                 "payment_method": "cash",
-                                                                "paid_at": "2026-09-12"
+                                                                "paid_at": "2026-09-12",
+                                                                "employee_name": "أحمد المحمد"
                                                             }
                                                         ]
                                                     }
@@ -27376,13 +27391,15 @@
                                                         "receipt_number": "REC-SUB-1045",
                                                         "coach_receipt_number": null,
                                                         "branch_receipt_number": "REC-SUB-1045",
+                                                        "employee_name": "أحمد المحمد",
                                                         "payments": [
                                                             {
                                                                 "receipt_number": "REC-SUB-1045",
                                                                 "amount": 1000,
                                                                 "is_coach_payment": false,
                                                                 "payment_method": "cash",
-                                                                "paid_at": "2026-09-10"
+                                                                "paid_at": "2026-09-10",
+                                                                "employee_name": "أحمد المحمد"
                                                             }
                                                         ]
                                                     }
