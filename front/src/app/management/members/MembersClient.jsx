@@ -19,6 +19,7 @@ import { memberSchema } from "@/lib/validations/membersSchema";
 import PhoneField from "@/components/forms/PhoneField";
 import { formatLocalizedName } from "@/lib/utils";
 import { getMemberDisplayName } from "./memberDisplayName";
+import { getMemberMembershipStatus } from "./memberFormUtils";
 import { useMembers } from "./useMembers";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
@@ -231,19 +232,23 @@ export default function MembersClient({ initialData }) {
         },
       },
       {
-        key: "is_active",
+        key: "membership_status",
         label: "الحالة",
         align: "center",
-        sortValue: (member) => (member.is_active !== false ? "نشط" : "غير نشط"),
-        render: (value) => (
-          <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-              value !== false ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
-            }`}
-          >
-            {value !== false ? "نشط" : "غير نشط"}
-          </span>
-        ),
+        sortValue: (member) => (getMemberMembershipStatus(member) === "active" ? "نشط" : "غير نشط"),
+        render: (_, member) => {
+          const isActive = getMemberMembershipStatus(member) === "active";
+
+          return (
+            <span
+              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                isActive ? "bg-app-green/10 text-app-green" : "bg-app-red/10 text-app-red"
+              }`}
+            >
+              {isActive ? "نشط" : "غير نشط"}
+            </span>
+          );
+        },
       },
       {
         key: "actions",

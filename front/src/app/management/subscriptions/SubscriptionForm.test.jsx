@@ -124,6 +124,10 @@ describe("subscription create validation", () => {
             branch_price: "150.00",
           },
         ]}
+        activityTypes={[
+          { id: 2, code: "private_training", name: "تدريب خاص", is_private_equipment: true },
+        ]}
+        selectedActivityTypeId="2"
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />,
@@ -134,6 +138,61 @@ describe("subscription create validation", () => {
     expect(screen.queryByLabelText(/^رقم الإيصال/)).not.toBeInTheDocument();
     expect(screen.getByText("(200 ل.س)")).toBeInTheDocument();
     expect(screen.getByText("(150 ل.س)")).toBeInTheDocument();
+  });
+
+  it("shows only the general receipt for a non-private type even when its plan has split prices", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[
+          {
+            id: 78,
+            name: "حصة جماعية",
+            base_price: "350.00",
+            coach_price: "200.00",
+            branch_price: "150.00",
+          },
+        ]}
+        activityTypes={[
+          { id: 3, code: "group_class", name: "حصة جماعية", is_private_equipment: false },
+        ]}
+        selectedActivityTypeId="3"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/^رقم الإيصال/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/رقم إيصال الكوتش/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/رقم إيصال النادي/)).not.toBeInTheDocument();
+  });
+
+  it("shows private receipt fields when the API marks a base-price-only equipment plan", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[
+          {
+            id: 77,
+            name: "اشتراك أجهزة خاصة",
+            base_price: "350.00",
+            coach_price: null,
+            branch_price: null,
+            is_private_equipment: true,
+          },
+        ]}
+        activityTypes={[
+          { id: 2, code: "private_training", name: "أجهزة خاص", is_private_equipment: true },
+        ]}
+        selectedActivityTypeId="2"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال النادي/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^رقم الإيصال/)).not.toBeInTheDocument();
   });
 });
 
@@ -151,6 +210,14 @@ describe("subscription edit receipts", () => {
             name: "الاشتراك الذهبي",
             coach_price: null,
             branch_price: null,
+            activity_types: [
+              {
+                id: 2,
+                code: "private_training",
+                name: "تدريب خاص",
+                is_private_equipment: true,
+              },
+            ],
           },
           months_count: 1,
           start_date: "2026-10-01",
@@ -167,6 +234,10 @@ describe("subscription edit receipts", () => {
         }}
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
         plans={[]}
+        activityTypes={[
+          { id: 2, code: "private_training", name: "تدريب خاص", is_private_equipment: true },
+        ]}
+        selectedActivityTypeId="2"
         onSubmit={onSubmit}
         onCancel={vi.fn()}
       />,
@@ -272,6 +343,14 @@ describe("subscription edit receipts", () => {
       name: "اشتراك خاص",
       coach_price: "200.00",
       branch_price: "150.00",
+      activity_types: [
+        {
+          id: 2,
+          code: "private_training",
+          name: "تدريب خاص",
+          is_private_equipment: true,
+        },
+      ],
     };
     const { container } = render(
       <SubscriptionEditForm
@@ -290,6 +369,10 @@ describe("subscription edit receipts", () => {
         }}
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
         plans={[plan]}
+        activityTypes={[
+          { id: 2, code: "private_training", name: "تدريب خاص", is_private_equipment: true },
+        ]}
+        selectedActivityTypeId="2"
         onSubmit={onSubmit}
         onCancel={vi.fn()}
       />,
@@ -344,6 +427,78 @@ describe("subscription edit receipts", () => {
 
     expect(onSubmit).toHaveBeenCalled();
     expect(onSubmit.mock.calls[0][0]).toHaveProperty("paid_amount", 300);
+  });
+
+  it("submits the new plan price, split amounts, and recalculated end date for an employee", () => {
+    const onSubmit = vi.fn();
+    const oldPlan = {
+      id: 76,
+      name: "اشتراك خاص قديم",
+      base_price: "300.00",
+      coach_price: "175.00",
+      branch_price: "125.00",
+    };
+    const newPlan = {
+      id: 77,
+      name: "اشتراك خاص جديد",
+      base_price: "650.00",
+      coach_price: "400.00",
+      branch_price: "250.00",
+      is_private_equipment: true,
+    };
+    const { container } = render(
+      <SubscriptionEditForm
+        subscription={{
+          member_id: 1,
+          plan_id: oldPlan.id,
+          plan: oldPlan,
+          months_count: 2,
+          start_date: "2026-08-10",
+          end_date: "2026-09-09",
+          status: "active",
+          paid_amount: oldPlan.base_price,
+          coach_receipt_number: "OLD-COACH",
+          branch_receipt_number: "OLD-BRANCH",
+          payments: [
+            { reason: "دفعة اشتراك المدرب", amount: 175 },
+            { reason: "دفعة اشتراك النادي", amount: 125 },
+          ],
+        }}
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[oldPlan, newPlan]}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "خطة الاشتراك *" }));
+    fireEvent.click(screen.getByRole("option", { name: newPlan.name }));
+
+    expect(screen.getByLabelText(/المبلغ المدفوع/)).toHaveValue(650);
+    expect(screen.getByDisplayValue("09/10/2026")).toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toHaveValue("");
+    expect(screen.getByLabelText(/رقم إيصال النادي/)).toHaveValue("");
+
+    fireEvent.change(screen.getByLabelText(/رقم إيصال الكوتش/), {
+      target: { value: "NEW-COACH" },
+    });
+    fireEvent.change(screen.getByLabelText(/رقم إيصال النادي/), {
+      target: { value: "NEW-BRANCH" },
+    });
+    fireEvent.change(screen.getByLabelText(/سبب التعديل/), {
+      target: { value: "تغيير خطة الاشتراك" },
+    });
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan_id: newPlan.id,
+        paid_amount: 650,
+        end_date: "2026-10-09",
+        coach_paid_amount: 400,
+        branch_paid_amount: 250,
+      }),
+    );
   });
 
   it("allows an admin to edit and submit the paid amount", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMemberEditInitialValues } from "./memberFormUtils";
+import { getMemberEditInitialValues, getMemberMembershipStatus } from "./memberFormUtils";
 
 describe("member form utilities", () => {
   it("maps the member details API response to edit form values", () => {
@@ -36,6 +36,7 @@ describe("member form utilities", () => {
       emergency_relation: "Father",
       emergency_country_code: "+963",
       emergency_phone: "",
+      membership_status: "active",
       reason: "",
     });
   });
@@ -65,5 +66,23 @@ describe("member form utilities", () => {
       emergency_relation: "Father",
       emergency_phone: "922222222",
     });
+  });
+
+  it("maps inactive membership status to the edit form", () => {
+    expect(
+      getMemberEditInitialValues({
+        branch_id: 2,
+        membership_status: "inactive",
+        person: { full_name: "أحمد سمان" },
+      }),
+    ).toMatchObject({ membership_status: "inactive" });
+  });
+
+  it("prefers membership_status and supports legacy is_active records", () => {
+    expect(getMemberMembershipStatus({ membership_status: "inactive", is_active: true })).toBe(
+      "inactive",
+    );
+    expect(getMemberMembershipStatus({ is_active: false })).toBe("inactive");
+    expect(getMemberMembershipStatus({ is_active: true })).toBe("active");
   });
 });

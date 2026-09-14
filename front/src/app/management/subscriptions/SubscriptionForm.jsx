@@ -68,8 +68,11 @@ export function SubscriptionCreateForm({
   const [errors, setErrors] = useState({});
   const [submitAction, setSubmitAction] = useState("normal");
   const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
+  const selectedActivityType = activityTypes.find(
+    (activityType) => String(activityType.id) === String(selectedActivityTypeId),
+  );
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(selectedPlanObj);
-  const isPrivatePlan = isPrivateSubscriptionPlan(selectedPlanObj);
+  const isPrivatePlan = isPrivateSubscriptionPlan(selectedPlanObj, selectedActivityType);
 
   function updateField(field, value) {
     setForm((current) => {
@@ -524,17 +527,18 @@ export function SubscriptionEditForm({
   const [errors, setErrors] = useState({});
   const selectedPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
   const resolvedPlan = selectedPlan || subscription?.plan;
+  const selectedActivityType = activityTypes.find(
+    (activityType) => String(activityType.id) === String(selectedActivityTypeId),
+  );
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(resolvedPlan);
   const originalPlanId = subscription?.plan_id || subscription?.plan?.id;
   const isOriginalPlanSelected = String(form.plan_id) === String(originalPlanId);
-  const hasExistingPrivateReceipts = Boolean(initialReceiptNumbers.coachReceiptNumber);
-  const isPrivatePlan =
-    isPrivateSubscriptionPlan(resolvedPlan) ||
-    (isOriginalPlanSelected && hasExistingPrivateReceipts);
+  const isPrivatePlan = isPrivateSubscriptionPlan(resolvedPlan, selectedActivityType);
   const splitPaymentAmounts = getSubscriptionSplitPaymentAmounts(
     subscription,
     resolvedPlan,
-    canEditPaidAmount ? form.paid_amount : subscription?.paid_amount,
+    form.paid_amount,
+    isOriginalPlanSelected,
   );
 
   function updateField(field, value) {
@@ -555,18 +559,26 @@ export function SubscriptionEditForm({
     const nextIsDailyEntry = isDailyEntrySubscriptionPlan(nextPlan);
     const today = nextIsDailyEntry ? getLocalDateValue() : "";
 
-    setForm((current) => ({
-      ...current,
-      plan_id: planId,
-      receipt_number: "",
-      coach_receipt_number: "",
-      branch_receipt_number: "",
-      start_date: nextIsDailyEntry ? today : current.start_date,
-      end_date: nextIsDailyEntry ? today : current.end_date,
-    }));
+    setForm((current) => {
+      const startDate = nextIsDailyEntry ? today : current.start_date;
+
+      return {
+        ...current,
+        plan_id: planId,
+        paid_amount: nextPlan ? String(nextPlan.base_price || "0") : current.paid_amount,
+        receipt_number: "",
+        coach_receipt_number: "",
+        branch_receipt_number: "",
+        start_date: startDate,
+        end_date: nextIsDailyEntry
+          ? today
+          : getSubscriptionEndDate(startDate, current.months_count),
+      };
+    });
     setErrors((current) => ({
       ...current,
       plan_id: null,
+      paid_amount: null,
       receipt_number: null,
       coach_receipt_number: null,
       branch_receipt_number: null,
@@ -599,7 +611,7 @@ export function SubscriptionEditForm({
       start_date: form.start_date,
       end_date: form.end_date,
       status: form.status,
-      paid_amount: canEditPaidAmount ? form.paid_amount : (subscription?.paid_amount ?? 0),
+      paid_amount: form.paid_amount,
       payment_method: "cash",
       ...(isPrivatePlan
         ? {

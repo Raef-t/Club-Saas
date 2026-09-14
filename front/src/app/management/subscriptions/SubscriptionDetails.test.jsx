@@ -50,4 +50,31 @@ describe("subscription details", () => {
     expect(screen.getAllByText("tec-ply-11000")).toHaveLength(2);
     expect(screen.getAllByText("لاعب تجريبي")).toHaveLength(2);
   });
+
+  it("does not show coach or club receipt labels for a non-private subscription type", () => {
+    render(
+      <SubscriptionDetails
+        subscription={{
+          id: 12,
+          status: "active",
+          receipt_number: "REC-GENERAL-01",
+          coach_receipt_number: "STALE-COACH",
+          branch_receipt_number: "STALE-CLUB",
+          member: { person: { full_name: "لاعب تجريبي" } },
+          plan: {
+            name: "حصة جماعية",
+            activity_types: [
+              { code: "group_class", name: "حصة جماعية", is_private_equipment: false },
+            ],
+          },
+          items: [],
+        }}
+        showActions={false}
+      />,
+    );
+
+    expect(screen.getByText("REC-GENERAL-01")).toBeInTheDocument();
+    expect(screen.queryByText("إيصال الكوتش:")).not.toBeInTheDocument();
+    expect(screen.queryByText("إيصال النادي:")).not.toBeInTheDocument();
+  });
 });

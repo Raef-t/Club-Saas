@@ -76,4 +76,48 @@ describe("members API", () => {
     expect(url.pathname).toBe("/api/backend/members/42");
     expect(url.searchParams.get("confirmation")).toBe("delete");
   });
+
+  it("sends membership status when updating a member", async () => {
+    let request;
+    const NativeRequest = globalThis.Request;
+    vi.stubGlobal(
+      "Request",
+      class extends NativeRequest {
+        constructor(input, init) {
+          super(typeof input === "string" ? new URL(input, "http://localhost") : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input) => {
+        request = input;
+        return new Response(JSON.stringify({ status: "success" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const store = configureStore({
+      reducer: { [membersApi.reducerPath]: membersApi.reducer },
+      middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(membersApi.middleware),
+    });
+
+    await store
+      .dispatch(
+        membersApi.endpoints.updatePlayer.initiate({
+          id: 42,
+          body: { reason: "تحديث حالة العضو", membership_status: "inactive" },
+        }),
+      )
+      .unwrap();
+
+    expect(request.method).toBe("PUT");
+    expect(new URL(request.url).pathname).toBe("/api/backend/members/42");
+    await expect(request.json()).resolves.toMatchObject({
+      reason: "تحديث حالة العضو",
+      membership_status: "inactive",
+    });
+  });
 });

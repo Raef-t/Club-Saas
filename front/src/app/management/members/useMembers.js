@@ -14,7 +14,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { filterEntitiesByBranch } from "@/lib/managementBranchUtils";
 import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
-import { getMemberEditInitialValues } from "./memberFormUtils";
+import { getMemberEditInitialValues, getMemberMembershipStatus } from "./memberFormUtils";
+import { getMemberStats } from "./memberStats";
 
 function getMembersArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
@@ -134,9 +135,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       const person = m.person || {};
 
       const matchesGender = genderFilter === "all" || (person.gender || m.gender) === genderFilter;
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" ? m.is_active !== false : m.is_active === false);
+      const matchesStatus = statusFilter === "all" || getMemberMembershipStatus(m) === statusFilter;
 
       return matchesGender && matchesStatus;
     });
@@ -144,16 +143,12 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
   const totalResults = pagination.total;
 
   const stats = useMemo(() => {
-    const activeCount = branchMembers.filter((m) => m.is_active !== false).length;
-    const maleCount = branchMembers.filter((m) => (m.person?.gender || m.gender) === "male").length;
-    const femaleCount = branchMembers.filter(
-      (m) => (m.person?.gender || m.gender) === "female",
-    ).length;
+    const serverStats = getMemberStats(membersResponse);
 
     return [
       {
         title: "إجمالي الأعضاء",
-        value: branchMembers.length.toLocaleString("ar"),
+        value: serverStats.totalMembers.toLocaleString("ar"),
         helper: "كل اللاعبين المسجلين",
         tone: "yellow",
         compact: true,
@@ -165,7 +160,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       },
       {
         title: "الأعضاء النشطين",
-        value: activeCount.toLocaleString("ar"),
+        value: serverStats.activeMembers.toLocaleString("ar"),
         helper: "اللاعبين ذوي الاشتراكات الفعالة",
         tone: "green",
         compact: true,
@@ -174,7 +169,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       },
       {
         title: "الذكور",
-        value: maleCount.toLocaleString("ar"),
+        value: serverStats.maleMembers.toLocaleString("ar"),
         helper: "اللاعبين الرجال",
         tone: "blue",
         compact: true,
@@ -183,7 +178,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
       },
       {
         title: "الإناث",
-        value: femaleCount.toLocaleString("ar"),
+        value: serverStats.femaleMembers.toLocaleString("ar"),
         helper: "اللاعبات السيدات",
         tone: "purple",
         compact: true,
@@ -191,7 +186,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
         active: genderFilter === "female",
       },
     ];
-  }, [branchMembers, genderFilter, statusFilter]);
+  }, [genderFilter, membersResponse, statusFilter]);
 
   function closeDrawer() {
     setDrawerMode(null);

@@ -156,9 +156,27 @@ describe("subscription utilities", () => {
     });
   });
 
-  it("detects private plans from their two component prices", () => {
-    expect(isPrivateSubscriptionPlan({ coach_price: "200.00", branch_price: "150.00" })).toBe(true);
-    expect(isPrivateSubscriptionPlan({ coach_price: null, branch_price: "150.00" })).toBe(false);
+  it("detects only private-training plans and does not infer their type from split prices", () => {
+    expect(isPrivateSubscriptionPlan({ coach_price: "200.00", branch_price: "150.00" })).toBe(
+      false,
+    );
+    expect(
+      isPrivateSubscriptionPlan({
+        is_private_equipment: true,
+        coach_price: null,
+        branch_price: null,
+      }),
+    ).toBe(true);
+    expect(isPrivateSubscriptionPlan({ activity_types: [{ code: "private_training" }] })).toBe(
+      true,
+    );
+    expect(
+      isPrivateSubscriptionPlan(
+        { is_private_equipment: true },
+        { code: "general_training", name: "تدريب عام", is_private_equipment: false },
+      ),
+    ).toBe(false);
+    expect(isPrivateSubscriptionPlan(null)).toBe(false);
   });
 
   it("reads split payment amounts and falls back to private-plan prices", () => {
@@ -181,6 +199,23 @@ describe("subscription utilities", () => {
     ).toEqual({ coachPaidAmount: 175, branchPaidAmount: 175 });
   });
 
+  it("uses only the new plan prices when existing payment amounts are disabled", () => {
+    expect(
+      getSubscriptionSplitPaymentAmounts(
+        {
+          paid_amount: "300.00",
+          payments: [
+            { reason: "دفعة اشتراك المدرب", amount: 175 },
+            { reason: "دفعة اشتراك النادي", amount: 125 },
+          ],
+        },
+        { coach_price: "400.00", branch_price: "250.00" },
+        "650.00",
+        false,
+      ),
+    ).toEqual({ coachPaidAmount: 400, branchPaidAmount: 250 });
+  });
+
   it("reads the existing subscription activity type from its plan", () => {
     expect(
       getSubscriptionActivityTypeId({
@@ -190,9 +225,9 @@ describe("subscription utilities", () => {
         },
       }),
     ).toBe("5");
-    expect(
-      getSubscriptionActivityTypeId({ plan: { activities: [{ activity_type_id: 6 }] } }),
-    ).toBe("6");
+    expect(getSubscriptionActivityTypeId({ plan: { activities: [{ activity_type_id: 6 }] } })).toBe(
+      "6",
+    );
   });
 
   it("formats a local date for subscription fields", () => {
