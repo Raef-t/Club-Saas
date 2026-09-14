@@ -1,4 +1,4 @@
-import { getSubscriptionReceiptNumbers } from "./subscriptionUtils";
+import { getSubscriptionReceiptNumbers, isPrivateSubscriptionPlan } from "./subscriptionUtils";
 
 function ReceiptBadge({ label, value, tone }) {
   const toneClass =
@@ -25,7 +25,9 @@ function ReceiptBadge({ label, value, tone }) {
 export default function SubscriptionReceiptBadges({ subscription, className = "" }) {
   const { receiptNumber, coachReceiptNumber, branchReceiptNumber } =
     getSubscriptionReceiptNumbers(subscription);
-  const hasPrivateReceipts = Boolean(coachReceiptNumber || branchReceiptNumber);
+  const hasPrivateReceipts =
+    isPrivateSubscriptionPlan(subscription?.plan || subscription) &&
+    Boolean(coachReceiptNumber || branchReceiptNumber);
 
   if (!hasPrivateReceipts && !receiptNumber) {
     return <span className="text-app-muted-light">-</span>;

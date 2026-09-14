@@ -6,6 +6,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import PhoneField from "@/components/forms/PhoneField";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
+import ToggleSwitch from "@/components/ui/ToggleSwitch";
 import { memberSchema, memberUpdateSchema } from "@/lib/validations/membersSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
@@ -101,7 +102,9 @@ export function MemberForm({
       emergency_relation: form.emergency_relation,
       emergency_phone: form.emergency_phone.trim(),
       emergency_country_code: form.emergency_country_code.trim(),
-      ...(mode === "edit" ? { reason: form.reason } : {}),
+      ...(mode === "edit"
+        ? { reason: form.reason, membership_status: form.membership_status }
+        : {}),
     };
 
     const schema = mode === "edit" ? memberUpdateSchema : memberSchema;
@@ -140,6 +143,7 @@ export function MemberForm({
         age: computedAge,
         branch_id: Number(form.branch_id),
         additional_contacts,
+        membership_status: result.data.membership_status,
         reason: result.data.reason,
       });
     }
@@ -281,6 +285,25 @@ export function MemberForm({
           />
         </div>
       </div>
+
+      {mode === "edit" && (
+        <div className="rounded-xl border border-app-line bg-app-card-soft p-3">
+          <p className="mb-2 text-right text-sm text-app-muted-light">حالة المشترك</p>
+          <ToggleSwitch
+            checked={form.membership_status === "active"}
+            onChange={(event) =>
+              updateField("membership_status", event.target.checked ? "active" : "inactive")
+            }
+            label={form.membership_status === "active" ? "نشط" : "غير نشط"}
+            ariaLabel="تغيير حالة المشترك"
+          />
+          {errors.membership_status && (
+            <span className="mt-1 block text-right text-xs text-app-red">
+              {errors.membership_status}
+            </span>
+          )}
+        </div>
+      )}
 
       {mode === "edit" && (
         <ModificationReasonField

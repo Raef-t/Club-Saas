@@ -48,5 +48,8 @@ export const memberSchema = z.object({
 });
 
 export const memberUpdateSchema = memberSchema.extend({
+  membership_status: z.enum(["active", "inactive"], {
+    message: "يرجى تحديد حالة العضو",
+  }),
   reason: modificationReasonSchema,
 });

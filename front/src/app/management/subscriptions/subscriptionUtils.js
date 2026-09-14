@@ -8,6 +8,13 @@ const DAILY_ENTRY_TYPE_VALUES = new Set([
   "walk in",
 ]);
 
+const PRIVATE_TRAINING_TYPE_VALUES = [
+  "private training",
+  "private equipment",
+  "تدريب خاص",
+  "أجهزة خاص",
+];
+
 function normalizePlanValue(value) {
   return String(value || "")
     .trim()
@@ -111,33 +118,92 @@ export function formatSubscriptionMoney(value) {
   return formatMoney(parseSubscriptionAmount(value));
 }
 
+function hasPrivateEquipmentFlag(record) {
+  if (!record || typeof record !== "object" || !("is_private_equipment" in record)) {
+    return null;
+  }
+
+  return record.is_private_equipment === true || Number(record.is_private_equipment) === 1;
+}
+
+function matchesPrivateTrainingType(record) {
+  if (!record || typeof record !== "object") return false;
+
+  const explicitFlag = hasPrivateEquipmentFlag(record);
+  if (explicitFlag !== null) return explicitFlag;
+
+  const values = [record.code, record.slug, record.type, record.name, record.title]
+    .flatMap(getLocalizedValues)
+    .map(normalizePlanValue);
+
+  return values.some((value) =>
+    PRIVATE_TRAINING_TYPE_VALUES.some((privateType) => value.includes(privateType)),
+  );
+}
+
 /**
- * Identifies plans whose price is split between the coach service and the branch.
- * API amounts are commonly returned as non-empty decimal strings.
+ * Identifies private-training (private-equipment) plans from their activity type.
+ * Coach/branch prices alone are not sufficient because other subscription types
+ * may also expose split prices.
  */
-export function isPrivateSubscriptionPlan(plan) {
-  return Boolean(plan?.coach_price && plan?.branch_price);
+export function isPrivateSubscriptionPlan(plan, selectedActivityType = null) {
+  if (selectedActivityType && typeof selectedActivityType === "object") {
+    return matchesPrivateTrainingType(selectedActivityType);
+  }
+
+  if (!plan || typeof plan !== "object") return false;
+
+  const planFlag = hasPrivateEquipmentFlag(plan);
+  if (planFlag !== null) return planFlag;
+
+  const relatedActivityTypes = [
+    plan.activity_type,
+    ...(Array.isArray(plan.activity_types) ? plan.activity_types : []),
+    ...(Array.isArray(plan.activities)
+      ? plan.activities.flatMap((activity) => [activity?.activity_type, activity])
+      : []),
+  ].filter(Boolean);
+
+  if (relatedActivityTypes.length > 0) {
+    return relatedActivityTypes.some(matchesPrivateTrainingType);
+  }
+
+  return [plan.code, plan.slug, plan.type, plan.plan_type, plan.subscription_type]
+    .flatMap(getLocalizedValues)
+    .map(normalizePlanValue)
+    .some((value) =>
+      PRIVATE_TRAINING_TYPE_VALUES.some((privateType) => value.includes(privateType)),
+    );
 }
 
 /**
  * Resolves the private-plan amounts required when updating its two receipts.
- * Existing split payments are authoritative; plan prices cover older records
- * that were stored as one unsplit payment.
+ * Existing split payments are authoritative while the original plan is kept.
+ * A changed plan always uses its own coach and branch prices.
  */
 export function getSubscriptionSplitPaymentAmounts(
   subscription,
   plan = subscription?.plan,
   paidAmount = subscription?.paid_amount,
+  useExistingPaymentAmounts = true,
 ) {
+  const coachPrice = parseSubscriptionAmount(plan?.coach_price);
+  const branchPrice = parseSubscriptionAmount(plan?.branch_price);
+
+  if (!useExistingPaymentAmounts) {
+    return { coachPaidAmount: coachPrice, branchPaidAmount: branchPrice };
+  }
+
   const invoicePayments = Array.isArray(subscription?.invoices)
     ? subscription.invoices.flatMap((invoice) =>
         Array.isArray(invoice?.payments) ? invoice.payments : [],
       )
     : [];
-  const payments = Array.isArray(subscription?.payments)
-    ? subscription.payments
-    : invoicePayments;
-  const normalizedReason = (payment) => String(payment?.reason || "").trim().toLowerCase();
+  const payments = Array.isArray(subscription?.payments) ? subscription.payments : invoicePayments;
+  const normalizedReason = (payment) =>
+    String(payment?.reason || "")
+      .trim()
+      .toLowerCase();
   const coachPayment = payments.find((payment) => {
     const reason = normalizedReason(payment);
     return reason.includes("المدرب") || reason.includes("الكوتش") || reason.includes("coach");
@@ -166,8 +232,6 @@ export function getSubscriptionSplitPaymentAmounts(
     return { coachPaidAmount, branchPaidAmount };
   }
 
-  const coachPrice = parseSubscriptionAmount(plan?.coach_price);
-  const branchPrice = parseSubscriptionAmount(plan?.branch_price);
   const splitPriceTotal = coachPrice + branchPrice;
 
   if (totalPaid > 0 && splitPriceTotal > 0) {

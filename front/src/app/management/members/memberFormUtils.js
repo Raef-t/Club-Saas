@@ -5,6 +5,15 @@ function isPersonalContact(contact) {
   );
 }
 
+/** Resolves the current API status while supporting legacy is_active responses. */
+export function getMemberMembershipStatus(member) {
+  if (member?.membership_status === "active" || member?.membership_status === "inactive") {
+    return member.membership_status;
+  }
+
+  return member?.is_active === false ? "inactive" : "active";
+}
+
 /** Converts a member-details response record into the controlled edit form values. */
 export function getMemberEditInitialValues(member) {
   if (!member) return null;
@@ -42,6 +51,7 @@ export function getMemberEditInitialValues(member) {
     emergency_relation: emergencyContact?.relation || "Father",
     emergency_country_code: emergencyContact?.country_code || "+963",
     emergency_phone: emergencyContact?.phone_number || "",
+    membership_status: getMemberMembershipStatus(member),
     reason: "",
   };
 }

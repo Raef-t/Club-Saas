@@ -31,6 +31,7 @@ export const MEMBER_INITIAL_FORM = {
   emergency_relation: "Father",
   emergency_country_code: "+963",
   emergency_phone: "",
+  membership_status: "active",
   plan_id: "",
   paid_amount: "",
   reason: "",
