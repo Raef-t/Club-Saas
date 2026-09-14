@@ -14,6 +14,7 @@ class Invoice extends Model
     protected $table = 'invoices';
 
     protected $fillable = [
+        'created_by',
         'member_id',
         'member_name',
         'branch_id',

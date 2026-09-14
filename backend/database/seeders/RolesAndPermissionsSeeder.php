@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -39,7 +40,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Assign basic self-service permissions to player role
         $playerRole = Role::where('name', 'player')->where('guard_name', 'sanctum')->first();
         if ($playerRole) {
-            $playerRole->syncPermissions([
+            $playerPermissions = [
                 'member.view',
                 'player-subscription.view-any',
                 'player-subscription.view',
@@ -53,7 +54,16 @@ class RolesAndPermissionsSeeder extends Seeder
                 'activity-type.view-any',
                 'subscription-plan.view-any',
                 'subscription-plan.view',
-            ]);
+            ];
+
+            foreach ($playerPermissions as $permissionName) {
+                Permission::firstOrCreate([
+                    'name'       => $permissionName,
+                    'guard_name' => 'sanctum',
+                ]);
+            }
+
+            $playerRole->syncPermissions($playerPermissions);
         }
     }
 }

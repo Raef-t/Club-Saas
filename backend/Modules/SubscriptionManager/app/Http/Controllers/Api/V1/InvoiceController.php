@@ -52,6 +52,7 @@ class InvoiceController extends BaseController
                                     new OA\Property(property: 'receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-999', description: 'رقم الوصل العام / أحدث وصل'),
                                     new OA\Property(property: 'coach_receipt_number', type: 'string', nullable: true, example: 'REC-COACH-888', description: 'رقم وصل الكوتش (في حال التدريب الخاص)'),
                                     new OA\Property(property: 'branch_receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-999', description: 'رقم وصل النادي'),
+                                    new OA\Property(property: 'employee_name', type: 'string', nullable: true, example: 'أحمد المحمد', description: 'اسم الموظف الذي استلم الدفعة (أو منشئ الفاتورة)'),
                                     new OA\Property(
                                         property: 'payments',
                                         type: 'array',
@@ -63,7 +64,8 @@ class InvoiceController extends BaseController
                                                 new OA\Property(property: 'amount', type: 'number', format: 'float', example: 300.00),
                                                 new OA\Property(property: 'is_coach_payment', type: 'boolean', example: true, description: 'true لدفعة الكوتش، false لدفعة النادي'),
                                                 new OA\Property(property: 'payment_method', type: 'string', nullable: true, example: 'cash'),
-                                                new OA\Property(property: 'paid_at', type: 'string', format: 'date', nullable: true, example: '2026-09-12')
+                                                new OA\Property(property: 'paid_at', type: 'string', format: 'date', nullable: true, example: '2026-09-12'),
+                                                new OA\Property(property: 'employee_name', type: 'string', nullable: true, example: 'أحمد المحمد', description: 'اسم الموظف الذي استلم الدفعة')
                                             ]
                                         )
                                     )
@@ -100,6 +102,7 @@ class InvoiceController extends BaseController
                                     'receipt_number' => 'REC-CLUB-999',
                                     'coach_receipt_number' => 'REC-COACH-888',
                                     'branch_receipt_number' => 'REC-CLUB-999',
+                                    'employee_name' => 'أحمد المحمد',
                                     'payments' => [
                                         [
                                             'receipt_number' => 'REC-COACH-888',
@@ -107,6 +110,7 @@ class InvoiceController extends BaseController
                                             'is_coach_payment' => true,
                                             'payment_method' => 'cash',
                                             'paid_at' => '2026-09-12',
+                                            'employee_name' => 'أحمد المحمد',
                                         ],
                                         [
                                             'receipt_number' => 'REC-CLUB-999',
@@ -114,6 +118,7 @@ class InvoiceController extends BaseController
                                             'is_coach_payment' => false,
                                             'payment_method' => 'cash',
                                             'paid_at' => '2026-09-12',
+                                            'employee_name' => 'أحمد المحمد',
                                         ],
                                     ],
                                 ],
@@ -147,6 +152,7 @@ class InvoiceController extends BaseController
                                     'receipt_number' => 'REC-SUB-1045',
                                     'coach_receipt_number' => null,
                                     'branch_receipt_number' => 'REC-SUB-1045',
+                                    'employee_name' => 'أحمد المحمد',
                                     'payments' => [
                                         [
                                             'receipt_number' => 'REC-SUB-1045',
@@ -154,6 +160,7 @@ class InvoiceController extends BaseController
                                             'is_coach_payment' => false,
                                             'payment_method' => 'cash',
                                             'paid_at' => '2026-09-10',
+                                            'employee_name' => 'أحمد المحمد',
                                         ],
                                     ],
                                 ],
@@ -193,7 +200,12 @@ class InvoiceController extends BaseController
             return $this->errorResponse(__('Member profile not found.'), 403);
         }
 
-        $invoices = Invoice::with(['payments', 'subscription.plan', 'subscription.revenueSplit'])
+        $invoices = Invoice::with([
+            'payments.creator.person',
+            'creator.person',
+            'subscription.plan',
+            'subscription.revenueSplit'
+        ])
             ->where('member_id', $member->id)
             ->orderByDesc('created_at')
             ->get();
@@ -231,7 +243,8 @@ class InvoiceController extends BaseController
                 || ($subscription && $subscription->plan && (float) $subscription->plan->coach_price > 0)
                 || $invoice->payments->contains(fn($p) => $p->reason === 'دفعة اشتراك المدرب');
 
-            $latestPaymentReceipt = $invoice->payments->sortByDesc('id')->first()?->receipt_number;
+            $latestPayment = $invoice->payments->sortByDesc('id')->first();
+            $latestPaymentReceipt = $latestPayment?->receipt_number;
             $generalReceiptNumber = $latestPaymentReceipt ?? $branchReceiptNumber;
 
             if (!$isPrivate && empty($branchReceiptNumber)) {
@@ -242,14 +255,23 @@ class InvoiceController extends BaseController
                 $isCoachPayment = ($payment->reason === 'دفعة اشتراك المدرب')
                     || (!empty($coachReceiptNumber) && $payment->receipt_number === $coachReceiptNumber);
 
+                $employeeName = $payment->creator?->person?->full_name
+                    ?? $payment->creator?->username
+                    ?? null;
+
                 return [
                     'receipt_number' => $payment->receipt_number,
                     'amount' => (float) $payment->amount,
                     'is_coach_payment' => (bool) $isCoachPayment,
                     'payment_method' => $payment->payment_method,
                     'paid_at' => $payment->created_at?->toDateString(),
+                    'employee_name' => $employeeName,
                 ];
             })->values();
+
+            $invoiceEmployeeName = $latestPayment?->creator?->person?->full_name
+                ?? $latestPayment?->creator?->username
+                ?? null;
 
             return [
                 'code' => $invoice->code,
@@ -264,6 +286,7 @@ class InvoiceController extends BaseController
                 'receipt_number' => $generalReceiptNumber,
                 'coach_receipt_number' => $coachReceiptNumber,
                 'branch_receipt_number' => $branchReceiptNumber,
+                'employee_name' => $invoiceEmployeeName,
                 'payments' => $paymentsData,
             ];
         });
