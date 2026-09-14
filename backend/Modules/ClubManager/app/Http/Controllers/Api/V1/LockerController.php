@@ -147,6 +147,12 @@ class LockerController extends BaseController
     public function index(Request $request)
     {
         $filters = $request->all();
+        $user = auth()->user();
+        if ($user && $user->hasRole('player')) {
+            $memberId = $user->person?->member?->id;
+            $filters['holder_id'] = $memberId ?: 0;
+            $filters['holder_type'] = 'member';
+        }
         $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
 
         $lockers = $this->lockerService->getAllLockers($filters);

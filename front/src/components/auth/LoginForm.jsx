@@ -67,7 +67,17 @@ export default function LoginForm() {
         throw new Error(payload?.message || "تعذر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.");
       }
 
-      const destination = payload?.data?.requires_account_setup ? "/account-setup" : "/";
+      const userData = payload?.data?.user || {};
+      const userRoles = Array.isArray(userData?.roles) ? userData.roles : [];
+      const isPlayer =
+        userRoles.some((r) => (typeof r === "string" ? r : r?.name) === "player") ||
+        userData?.role === "player";
+
+      const destination = payload?.data?.requires_account_setup
+        ? "/account-setup"
+        : isPlayer
+          ? "/my-profile"
+          : "/";
       router.replace(destination);
       router.refresh();
     } catch (error) {

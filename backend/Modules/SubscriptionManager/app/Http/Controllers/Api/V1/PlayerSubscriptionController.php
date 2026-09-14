@@ -79,6 +79,14 @@ class PlayerSubscriptionController extends BaseController
     public function index(Request $request)
     {
         $filters = $request->all();
+        $user = auth()->user();
+        if ($user && $user->hasRole('player')) {
+            $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
+            $filters['member_id'] = $member?->id ?: 0;
+            if ($member && $member->branch_id) {
+                $filters['branch_id'] = $member->branch_id;
+            }
+        }
         $subscriptions = $this->subscriptionService->getAllSubscriptions($filters);
         $stats = $this->subscriptionService->getSubscriptionStatistics($filters);
 
@@ -236,6 +244,13 @@ class PlayerSubscriptionController extends BaseController
     {
         try {
             $subscription = $this->subscriptionService->getSubscriptionById($id);
+            $user = auth()->user();
+            if ($user && $user->hasRole('player')) {
+                $memberId = $user->person?->member?->id;
+                if (!$memberId || (int)$subscription->member_id !== (int)$memberId) {
+                    return response()->json(['message' => __('Unauthorized access')], 403);
+                }
+            }
             $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),

@@ -444,6 +444,13 @@ class CoachController extends BaseController
     {
         try {
             $filters = $request->all();
+            $user = $request->user();
+            if ($user && $user->hasRole('player')) {
+                $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
+                if ($member && $member->branch_id) {
+                    $filters['branch_id'] = $member->branch_id;
+                }
+            }
             $coaches = $this->coachService->getAllCoaches($filters);
 
             return $this->successResponse(CoachResource::collection($coaches), __('Coaches retrieved successfully'));
