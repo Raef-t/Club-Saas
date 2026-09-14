@@ -30,15 +30,31 @@ export async function GET(request, context) {
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   try {
-    const response = await fetch(upstreamUrl, {
+    let response = await fetch(upstreamUrl, {
       headers,
       cache: "no-store",
       signal: request.signal,
     });
+
+    if (!response.ok) {
+      try {
+        const remoteFallbackUrl = new URL(`/${assetPath}`, "https://technogym.iss-group.me");
+        const fallbackRes = await fetch(remoteFallbackUrl, {
+          cache: "no-store",
+          signal: request.signal,
+        });
+        if (fallbackRes.ok) {
+          response = fallbackRes;
+        }
+      } catch {
+        // Ignore fallback error
+      }
+    }
+
     const contentType = response.headers.get("content-type") || "";
 
     if (!response.ok) {
-      return Response.json({ message: "Could not load club logo." }, { status: response.status });
+      return Response.json({ message: "Could not load asset." }, { status: response.status });
     }
     if (!contentType.toLowerCase().startsWith("image/")) {
       return Response.json({ message: "The requested asset is not an image." }, { status: 415 });

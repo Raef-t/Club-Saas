@@ -465,6 +465,24 @@ class AllSystemPermissionsSeeder extends Seeder
             'notification.mark-read',
         ]);
 
+        // 4. Player permissions subset (المشترك / اللاعب)
+        $playerRole = Role::firstOrCreate(['name' => 'player', 'guard_name' => 'sanctum']);
+        $playerRole->syncPermissions([
+            'member.view',
+            'player-subscription.view-any',
+            'player-subscription.view',
+            'attendance.history',
+            'locker.view-any',
+            'branch.view-any',
+            'profile.update',
+            'coach.view-any',
+            'coach.view',
+            'activity.view-any',
+            'activity-type.view-any',
+            'subscription-plan.view-any',
+            'subscription-plan.view',
+        ]);
+
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $totalCount = count($permissions);

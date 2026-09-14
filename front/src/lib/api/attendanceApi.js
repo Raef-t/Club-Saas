@@ -29,13 +29,31 @@ export const attendanceApi = createBackendApi({
       providesTags: ["Attendance"],
     }),
     getMemberAttendances: builder.query({
-      query: (memberId) => ({
-        url: `attendances/history`,
-        params: {
-          attendable_type: "member",
-          attendable_id: memberId,
-        },
-      }),
+      query: (arg) => {
+        if (typeof arg === "object" && arg !== null) {
+          const params = {
+            attendable_type: "member",
+            attendable_id: arg.memberId || arg.attendable_id,
+            per_page: "all",
+          };
+          if (arg.period && arg.period !== "all") params.period = arg.period;
+          if (arg.branch_id) params.branch_id = arg.branch_id;
+          if (arg.from) params.from = arg.from;
+          if (arg.to) params.to = arg.to;
+          return {
+            url: `attendances/history`,
+            params,
+          };
+        }
+        return {
+          url: `attendances/history`,
+          params: {
+            attendable_type: "member",
+            attendable_id: arg,
+            per_page: "all",
+          },
+        };
+      },
       providesTags: ["Attendance"],
     }),
     getAttendances: builder.query({

@@ -8,6 +8,11 @@ import { GlobalScripts } from "@/components/GlobalScripts";
 export const metadata = {
   title: "TechnoGYM | إدارة النادي",
   description: "لوحة إدارة النادي والاشتراكات والتقارير",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "TechnoGYM",
+  },
 };
 
 

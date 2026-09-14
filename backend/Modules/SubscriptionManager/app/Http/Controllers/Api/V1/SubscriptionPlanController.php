@@ -142,7 +142,13 @@ class SubscriptionPlanController extends BaseController
                   ->notSuspended();
         }
 
-        if ($request->has('branch_id')) {
+        $user = $request->user();
+        if ($user && $user->hasRole('player')) {
+            $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
+            if ($member && $member->branch_id) {
+                $query->where('branch_id', $member->branch_id);
+            }
+        } elseif ($request->has('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
 

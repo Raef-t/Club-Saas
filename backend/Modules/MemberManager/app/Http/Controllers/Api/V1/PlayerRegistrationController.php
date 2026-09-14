@@ -480,6 +480,14 @@ class PlayerRegistrationController extends BaseController
     #[OA\Response(response: 404, description: '🚫 العضو غير موجود', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Member not found')]))]
     public function show($id)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('player')) {
+            $memberId = $user->person?->member?->id;
+            if (!$memberId || (int)$memberId !== (int)$id) {
+                return response()->json(['message' => __('Unauthorized access')], 403);
+            }
+        }
+
         $member = $this->memberService->getMemberById($id);
         if (!$member) {
             return response()->json(['message' => __('Member not found')], 404);

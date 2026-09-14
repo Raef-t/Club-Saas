@@ -35,5 +35,25 @@ class RolesAndPermissionsSeeder extends Seeder
                 ['name_ar' => $roleData['name_ar'], 'is_visible' => $roleData['is_visible']]
             );
         }
+
+        // Assign basic self-service permissions to player role
+        $playerRole = Role::where('name', 'player')->where('guard_name', 'sanctum')->first();
+        if ($playerRole) {
+            $playerRole->syncPermissions([
+                'member.view',
+                'player-subscription.view-any',
+                'player-subscription.view',
+                'attendance.history',
+                'locker.view-any',
+                'branch.view-any',
+                'profile.update',
+                'coach.view-any',
+                'coach.view',
+                'activity.view-any',
+                'activity-type.view-any',
+                'subscription-plan.view-any',
+                'subscription-plan.view',
+            ]);
+        }
     }
 }
