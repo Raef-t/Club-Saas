@@ -43,6 +43,45 @@
 
 ---
 
+### ب. الحالة الخاصة: الاشتراك الخاص (Private Subscription / Split Pricing)
+في النوادي الرياضية، تحتوي الاشتراكات الخاصة (Private Equipment / تدريب خاص) على تسعير منفصل بين **أتعاب الكوتش** و **رسوم النادي/الفرع**:
+- `coach_price`: حصة الكوتش الأصلية (مثلاً: 200,000 ل.س).
+- `branch_price`: حصة النادي/الفرع الأصلية (مثلاً: 100,000 ل.س).
+- `base_price`: الإجمالي الأصلي = 300,000 ل.س.
+
+#### 💡 كيف يتعرف الفرونت على أن الاشتراك خاص؟
+الخطة تكون خاصة إذا تحقق أحد الشروط التالية من كائن الخطة (`plan`):
+- `plan.is_private_equipment === true`
+- أو كلاهما معرفان: `plan.coach_price !== null && plan.branch_price !== null`
+
+#### 🎯 سيناريو الحسم في الاشتراك الخاص (حالتان تدعمهما الواجهة):
+1. **الحالة الأولى: حسم إجمالي موحد (Unified Discount)**:
+   - موظفة الاستقبال تضع حسم عام (مثلاً 50%) أو تدخل السعر الإجمالي الجديد (150,000 ل.س).
+   - يتم توزيع نسبة الحسم تلقائياً بالتساوي على الطرفين:
+     - حصة الكوتش بعد الحسم = 200,000 - 50% = **100,000 ل.س**.
+     - حصة النادي بعد الحسم = 100,000 - 50% = **50,000 ل.س**.
+     - إجمالي السعر الجديد = **150,000 ل.س**.
+   - تتحدث تلقائياً حقول المبالغ المدفوعة المقترحة:
+     - `coach_paid_amount = 100,000`
+     - `branch_paid_amount = 50,000`
+     - `paid_amount = 150,000`
+
+2. **الحالة الثانية: حسم مخصص/منفصل (Selective / Split Discount)**:
+   - (سيناريو شائع جداً): الكوتش يوافق على تقديم حسم خاص للمشتركة من أتعابه الشخصية (مثلاً 50%)، بينما اشتراك صالة النادي يبقى بسعره الكامل بدون حسم!
+   - توفر الواجهة خيار تبديل أو حقول منفصلة لكل طرف:
+     - **حسم الكوتش**: تدخل الموظفة السعر الجديد للكوتش (100,000) -> فتُحسب نسبة حسم الكوتش تلقائياً `50%`.
+     - **حسم النادي**: يبقى سعر النادي (100,000) -> نسبة حسم النادي `0%`.
+     - الإجمالي الصافي المطلوب = 100,000 + 100,000 = **200,000 ل.س**.
+   - الحقول المرسلة للباك إند:
+     - `coach_discount_percentage`: 50
+     - `branch_discount_percentage`: 0
+     - `coach_paid_amount`: 100000
+     - `branch_paid_amount`: 100000
+     - `coach_receipt_number`: "REC-COACH-001" (إيصال الكوتش المستقل)
+     - `branch_receipt_number`: "REC-CLUB-001" (إيصال النادي المستقل)
+
+---
+
 ## 🧮 3. معادلات الحساب التلقائي بالـ JavaScript (Frontend Formulas)
 
 ```javascript
@@ -98,6 +137,39 @@ function handleToggleDiscount(checked) {
     final_price: originalTotal,
     paid_amount: originalTotal,
   }));
+// 5. معادلات الحساب للاشتراك الخاص (Private Subscription Formulas)
+// أ. حساب حسم الكوتش عند إدخال سعره الصافي الجديد (مثلاً 100,000 من أصل 200,000)
+function handlePrivateCoachPriceChange(enteredPrice, originalCoachPrice) {
+  const coachNet = Math.max(0, Math.min(originalCoachPrice, Number(enteredPrice) || 0));
+  const coachDiscountAmt = originalCoachPrice - coachNet;
+  const coachDiscountPct = originalCoachPrice > 0 
+    ? Number(((coachDiscountAmt / originalCoachPrice) * 100).toFixed(2)) 
+    : 0;
+
+  setFormValues((prev) => ({
+    ...prev,
+    coach_price: coachNet,
+    coach_paid_amount: coachNet,
+    coach_discount_percentage: coachDiscountPct,
+    paid_amount: coachNet + (Number(prev.branch_paid_amount) || 0),
+  }));
+}
+
+// ب. حساب حسم النادي/الفرع عند إدخال سعره الصافي الجديد (مثلاً 50,000 من أصل 100,000)
+function handlePrivateBranchPriceChange(enteredPrice, originalBranchPrice) {
+  const branchNet = Math.max(0, Math.min(originalBranchPrice, Number(enteredPrice) || 0));
+  const branchDiscountAmt = originalBranchPrice - branchNet;
+  const branchDiscountPct = originalBranchPrice > 0 
+    ? Number(((branchDiscountAmt / originalBranchPrice) * 100).toFixed(2)) 
+    : 0;
+
+  setFormValues((prev) => ({
+    ...prev,
+    branch_price: branchNet,
+    branch_paid_amount: branchNet,
+    branch_discount_percentage: branchDiscountPct,
+    paid_amount: (Number(prev.coach_paid_amount) || 0) + branchNet,
+  }));
 }
 ```
 
@@ -105,7 +177,7 @@ function handleToggleDiscount(checked) {
 
 ## 🌐 4. مواصفات الـ API والتكامل (API Specifications)
 
-### 1) إنشاء اشتراك جديد (Create Subscription)
+### 1) إنشاء اشتراك عام عادي (Create General Subscription)
 - **Method**: `POST`
 - **URL**: `/v1/player-subscriptions`
 - **Request Body (JSON Example)**:
@@ -129,8 +201,40 @@ function handleToggleDiscount(checked) {
 }
 ```
 
-> [!TIP]
-> الباك إند مرن جداً: حتى لو تم إرسال `discount_percentage: 50` فقط، أو تم إرسال `discount_amount: 150000` فقط، سيقوم الباك إند بالتحقق والحساب بدقة متناهية. ومع ذلك، يُفضل إرسال `is_discount: true` و `discount_percentage` و `discount_amount`.
+---
+
+### 2) إنشاء اشتراك خاص مع حسم منفصل/موحد (Create Private Subscription with Discount)
+- **Method**: `POST`
+- **URL**: `/v1/player-subscriptions`
+- **Request Body (JSON Example)**:
+
+```json
+{
+  "member_id": 47,
+  "plan_id": 105,
+  "months_count": 1,
+  "start_date": "2026-09-15",
+  "end_date": "2026-10-15",
+  "is_discount": true,
+  "coach_discount_percentage": 50,
+  "branch_discount_percentage": 0,
+  "coach_paid_amount": 100000,
+  "branch_paid_amount": 100000,
+  "paid_amount": 200000,
+  "coach_receipt_number": "REC-COACH-2026-001",
+  "branch_receipt_number": "REC-CLUB-2026-001",
+  "discount_reason": "حسم 50% من حصة أتعاب الكوتش فقط",
+  "payment_method": "cash",
+  "currency": "SYP",
+  "notes": "اشتراك أجهزة خاص مع حسم الكوتش"
+}
+```
+
+> [!IMPORTANT]
+> في الاشتراكات الخاصة:
+> - يتم إرسال `coach_receipt_number` و `branch_receipt_number` لإصدار إيصالين منفصلين.
+> - يتم إرسال `coach_paid_amount` و `branch_paid_amount` لتسجيل الدفعات بشكل مستقل.
+> - يمكن تطبيق الحسم على حصة الكوتش فقط (`coach_discount_percentage`) أو حصة النادي فقط (`branch_discount_percentage`) أو على الاثنين معاً!
 
 ---
 
