@@ -29440,6 +29440,46 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
+                                    },
+                                    "is_discount": {
+                                        "description": "هل الاشتراك مشمول بحسم (اختياري)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "discount_percentage": {
+                                        "description": "نسبة الحسم من 0 إلى 100% (اختياري، تحسب تلقائياً إذا تم إدخال السعر بعد الحسم)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "coach_discount_percentage": {
+                                        "description": "نسبة حسم حصة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "branch_discount_percentage": {
+                                        "description": "نسبة حسم حصة الفرع/النادي (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "discount_amount": {
+                                        "description": "قيمة مبلغ الحسم المقطوع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150000,
+                                        "nullable": true
+                                    },
+                                    "discount_reason": {
+                                        "description": "سبب الحسم (اختياري)",
+                                        "type": "string",
+                                        "example": "حسم خاص لمشتركة قديمة",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -29820,6 +29860,46 @@
                                         "description": "رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)",
                                         "type": "string",
                                         "example": "REC-CLUB-006",
+                                        "nullable": true
+                                    },
+                                    "is_discount": {
+                                        "description": "تفعيل أو إلغاء الحسم (اختياري)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "discount_percentage": {
+                                        "description": "نسبة الحسم من 0 إلى 100% (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "coach_discount_percentage": {
+                                        "description": "نسبة حسم حصة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "branch_discount_percentage": {
+                                        "description": "نسبة حسم حصة الفرع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "discount_amount": {
+                                        "description": "مبلغ الحسم (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 60000,
+                                        "nullable": true
+                                    },
+                                    "discount_reason": {
+                                        "description": "سبب الحسم (اختياري)",
+                                        "type": "string",
+                                        "example": "تعديل سبب الحسم",
                                         "nullable": true
                                     },
                                     "notes": {
