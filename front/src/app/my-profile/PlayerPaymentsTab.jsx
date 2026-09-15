@@ -233,14 +233,14 @@ function PrivatePaymentCard({ row }) {
       {/* divider */}
       <div className="mt-3 space-y-2 border-t border-app-line pt-3">
         <ReceiptLine
-          label="إيصال الكوتش"
+          label="رقم إيصال الكوتش"
           receiptNumber={row.coach.receiptNumber}
           amount={row.coach.amount}
           discountPct={row.coach.discountPct}
           tone="coach"
         />
         <ReceiptLine
-          label="إيصال النادي"
+          label="رقم إيصال النادي"
           receiptNumber={row.branch.receiptNumber}
           amount={row.branch.amount}
           discountPct={row.branch.discountPct}
@@ -285,12 +285,15 @@ function RegularPaymentCard({ row }) {
         </div>
       </div>
 
-      {/* right: receipt + amount */}
-      <div className="flex items-center gap-3 text-xs">
+      {/* right: receipt number badge + amount */}
+      <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
         {row.receiptNumber && (
-          <div className="flex items-center gap-1.5 rounded-lg bg-black/25 px-2 py-1">
-            <span className="text-[10px] text-app-muted-light">إيصال:</span>
-            <span className="font-mono text-[11px] text-app-muted-light" dir="ltr">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-app-muted-light">رقم الإيصال:</span>
+            <span
+              className="rounded-md border border-app-line bg-black/25 px-2 py-0.5 font-mono text-[11px] text-app-muted-light"
+              dir="ltr"
+            >
               {row.receiptNumber}
             </span>
           </div>
