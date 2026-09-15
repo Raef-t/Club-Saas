@@ -4,13 +4,62 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import CopyableUsername from "@/components/ui/CopyableUsername";
-import { useToast } from "@/components/ui/Toast";
+
+function QrZoomModal({ imageUrl, name, onClose }) {
+  // Close on backdrop click or Escape key
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  if (!imageUrl) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`رمز QR الخاص بـ ${name}`}
+    >
+      <div
+        className="relative flex flex-col items-center gap-4 rounded-2xl border border-app-line bg-white p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute -top-3 -left-3 grid size-8 place-items-center rounded-full border border-app-line bg-app-bg text-app-muted-light shadow-md hover:bg-app-card-soft hover:text-white transition"
+          aria-label="إغلاق"
+        >
+          ✕
+        </button>
+
+        {/* Large QR */}
+        <Image
+          src={imageUrl}
+          alt={`رمز QR الخاص بـ ${name}`}
+          width={280}
+          height={280}
+          unoptimized
+          className="rounded-xl"
+          priority
+        />
+
+        <p className="text-center text-xs text-slate-500">{name}</p>
+      </div>
+    </div>
+  );
+}
 
 function InlineQrCode({ value, name, username }) {
   const [imageUrl, setImageUrl] = useState("");
   const [failed, setFailed] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const toast = useToast();
+  const [zoomed, setZoomed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -45,105 +94,62 @@ function InlineQrCode({ value, name, username }) {
     };
   }, [value]);
 
-  const handleClick = async (e) => {
+  function handleClick(e) {
     e?.stopPropagation();
     e?.preventDefault();
     if (!imageUrl) return;
-
-    // 1. Download image file
-    try {
-      const fileName = `QR-${(name || value || "code").replace(/\s+/g, "_")}.png`;
-      const link = document.createElement("a");
-      link.href = imageUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error("فشل تنزيل صورة الـ QR:", err);
-    }
-
-    // 2. Copy QR value / username to clipboard
-    const textToCopy = value || username || name || "";
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(textToCopy);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = textToCopy;
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      }
-    } catch (err) {
-      console.error("فشل نسخ رمز QR:", err);
-    }
-
-    // 3. User feedback
-    setCopied(true);
-    if (toast?.success) {
-      toast.success("تم تنزيل صورة الـ QR ونسخ الرمز للحافظة");
-    }
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 2200);
-  };
+    setZoomed(true);
+  }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={!imageUrl}
-      title={imageUrl ? "اضغط لتنزيل صورة الـ QR ونسخ الرمز للحافظة" : ""}
-      aria-label={imageUrl ? `تنزيل ونسخ رمز QR الخاص بـ ${name}` : undefined}
-      className={`group relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl border border-app-line bg-white p-1.5 shadow-inner transition-all duration-300 ease-out ${
-        imageUrl
-          ? "cursor-pointer hover:scale-110 hover:z-30 hover:border-app-yellow/80 hover:shadow-[0_0_25px_rgba(242,220,46,0.4)] hover:ring-2 hover:ring-app-yellow/50 active:scale-105"
-          : ""
-      }`}
-    >
-      {imageUrl ? (
-        <>
-          <Image
-            src={imageUrl}
-            alt={`رمز QR الخاص بـ ${name}`}
-            width={116}
-            height={116}
-            unoptimized
-            className="size-full object-contain transition-transform duration-300 group-hover:scale-105"
-          />
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!imageUrl}
+        title={imageUrl ? "اضغط لتكبير رمز QR" : ""}
+        aria-label={imageUrl ? `تكبير رمز QR الخاص بـ ${name}` : undefined}
+        className={`group relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl border border-app-line bg-white p-1.5 shadow-inner transition-all duration-300 ease-out ${
+          imageUrl
+            ? "cursor-pointer hover:scale-110 hover:z-30 hover:border-app-yellow/80 hover:shadow-[0_0_25px_rgba(242,220,46,0.4)] hover:ring-2 hover:ring-app-yellow/50 active:scale-105"
+            : ""
+        }`}
+      >
+        {imageUrl ? (
+          <>
+            <Image
+              src={imageUrl}
+              alt={`رمز QR الخاص بـ ${name}`}
+              width={116}
+              height={116}
+              unoptimized
+              className="size-full object-contain transition-transform duration-300 group-hover:scale-105"
+            />
 
-          {/* Hover overlay hint */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/65 opacity-0 transition-opacity duration-200 group-hover:opacity-100 p-1 text-center pointer-events-none">
-            <span className="text-[10px] font-bold text-app-yellow leading-tight">
-              اضغط لتنزيل
-              <br />
-              ونسخ الـ QR
-            </span>
-          </div>
-
-          {/* Copied feedback badge */}
-          {copied && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-app-green/95 p-1 text-center animate-in fade-in zoom-in-95 duration-150">
-              <span className="text-[11px] font-bold text-white leading-tight">
-                ✓ تم التنزيل
+            {/* Hover overlay hint */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/65 opacity-0 transition-opacity duration-200 group-hover:opacity-100 p-1 text-center pointer-events-none">
+              <span className="text-[10px] font-bold text-app-yellow leading-tight">
+                اضغط لتكبير
                 <br />
-                والنسخ!
+                رمز QR
               </span>
             </div>
-          )}
-        </>
-      ) : (
-        <span className="px-2 text-center text-[10px] leading-4 text-slate-500">
-          {failed ? "تعذر عرض الرمز" : value ? "جارٍ التحميل..." : "QR غير متوفر"}
-        </span>
+          </>
+        ) : (
+          <span className="px-2 text-center text-[10px] leading-4 text-slate-500">
+            {failed ? "تعذر عرض الرمز" : value ? "جارٍ التحميل..." : "QR غير متوفر"}
+          </span>
+        )}
+      </button>
+
+      {zoomed && (
+        <QrZoomModal
+          imageUrl={imageUrl}
+          name={name}
+          onClose={() => setZoomed(false)}
+        />
       )}
-    </button>
+    </>
   );
 }
 
