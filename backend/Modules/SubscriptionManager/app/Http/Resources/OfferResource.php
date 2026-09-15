@@ -29,6 +29,13 @@ class OfferResource extends JsonResource
             'is_active'       => (bool) $this->is_active,
             'available_slots' => $availableSlots,
             'is_available'    => (bool) $this->is_active && ($availableSlots === null || $availableSlots > 0),
+            'active_subscribers_count' => $this->relationLoaded('subscriptions')
+                ? $this->subscriptions->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)->count()
+                : $this->subscriptions()->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)->count(),
+            'branch'          => $this->relationLoaded('branch') && $this->branch ? [
+                'id'   => $this->branch->id,
+                'name' => $this->branch->name,
+            ] : null,
             'plans'           => SubscriptionPlanResource::collection($this->whenLoaded('plans')),
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,

@@ -201,6 +201,15 @@ const WEB_PERMISSION_RULES = {
     "locker.release-reservation",
   ],
   member: ["member.view-any", "member.view", "member.create", "member.update", "member.delete"],
+  offer: [
+    "offer.view-any",
+    "offer.view",
+    "offer.create",
+    "offer.update",
+    "offer.delete",
+    "offer.restore",
+    "offer.subscribe",
+  ],
   payslip: true,
   permission: ["permission.view-any"],
   "player-subscription": [

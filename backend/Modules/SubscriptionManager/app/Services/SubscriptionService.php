@@ -1744,7 +1744,7 @@ class SubscriptionService
 
             // Fetch member details for financials
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branchId;
+            $branchId = $offer->branch_id ?: ($memberDTO->branchId ?? null);
             if (!$branchId) {
                 throw new Exception(__('Member does not belong to any branch.'));
             }

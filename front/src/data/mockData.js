@@ -50,7 +50,6 @@ export const accountingMenu = [
     children: [
       { title: "إيرادات الاشتراكات", href: "/accounting/revenues" },
       { title: "إيرادات إضافية", href: "/accounting/revenues/additional" },
-      { title: "العروض الترويجية", href: "/accounting/revenues/offers" },
     ],
   },
   { title: "إدارة المصاريف", href: "/accounting/expenses" },
@@ -73,6 +72,10 @@ export const pageMeta = {
     title: "الإحصائيات",
     subtitle: "بيانات مباشرة وملخص شامل لأداء نظام إدارة النادي",
   },
+  "/management/offers": {
+    title: "العروض الترويجية والباقات",
+    subtitle: "إنشاء وإدارة باقات الأنشطة المتعددة بأسعار مخفضة وتسجيل اشتراكات اللاعبين فيها",
+  },
   "/accounting": {
     title: "النظرة العامة للأمور المالية",
     subtitle: "ملخص شامل للأداء المالي يومياً وشهرياً",
@@ -84,10 +87,6 @@ export const pageMeta = {
   "/accounting/revenues/additional": {
     title: "الإيرادات الإضافية",
     subtitle: "جميع الإيرادات المرتبطة بالخدمات الخارجية",
-  },
-  "/accounting/revenues/offers": {
-    title: "العروض الترويجية",
-    subtitle: "عروض الخصومات والباقات الموسمية",
   },
   "/accounting/expenses": {
     title: "إدارة المصاريف",

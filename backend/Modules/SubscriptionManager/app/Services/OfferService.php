@@ -14,9 +14,12 @@ class OfferService
      */
     public function getAllOffers(array $filters = [])
     {
-        $query = Offer::with(['plans' => function($q) {
-            $q->active();
-        }]);
+        $query = Offer::with([
+            'branch:id,name',
+            'plans' => function($q) {
+                $q->active();
+            }
+        ]);
 
         if (isset($filters['branch_id'])) {
             $query->where('branch_id', $filters['branch_id']);
@@ -77,7 +80,7 @@ class OfferService
      */
     public function getOfferById(int $id)
     {
-        return Offer::with('plans')->findOrFail($id);
+        return Offer::with(['branch:id,name', 'plans'])->findOrFail($id);
     }
 
     /**
