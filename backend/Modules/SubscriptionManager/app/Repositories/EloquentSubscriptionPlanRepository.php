@@ -94,6 +94,20 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
                 $plan->update(['max_subscribers' => 0]);
             }
 
+            // Post-update check for capacity and status
+            $currentSubscribers = $plan->getCurrentSubscribersCount();
+            if ($plan->max_subscribers > 0) {
+                $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus 
+                    ? $plan->status->value 
+                    : $plan->status;
+
+                if ($currentSubscribers >= $plan->max_subscribers && $statusValue !== \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value) {
+                    $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
+                } elseif ($currentSubscribers < $plan->max_subscribers && $statusValue === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value) {
+                    $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
+                }
+            }
+
             return $plan;
         });
     }
