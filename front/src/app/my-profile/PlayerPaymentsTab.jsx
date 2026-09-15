@@ -121,7 +121,7 @@ function buildPaymentRows(subscriptions) {
       return;
     }
 
-    // Regular subscription — keep original behaviour
+    // Regular subscription — always show, even if paid_amount is 0 or null
     if (Array.isArray(sub.payments) && sub.payments.length > 0) {
       sub.payments.forEach((p, idx) => {
         list.push({
@@ -136,14 +136,15 @@ function buildPaymentRows(subscriptions) {
           discountPct,
         });
       });
-    } else if (Number(sub.paid_amount) > 0) {
+    } else {
+      // No payment records yet — still show the subscription row
       list.push({
         id: `sub-${sub.id}`,
         type: "regular",
         planName,
         date,
         method,
-        amount: Number(sub.paid_amount),
+        amount: Number(sub.paid_amount || 0),
         receiptNumber: sub.receipt_number || null,
         isDiscount,
         discountPct,
