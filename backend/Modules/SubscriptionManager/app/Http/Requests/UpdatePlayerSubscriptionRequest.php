@@ -11,6 +11,42 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('is_discount')) {
+            $this->merge(['is_discount' => filter_var($this->input('is_discount'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+
+        if ($this->filled('discount_percentage')) {
+            $discountPercentage = (float) $this->input('discount_percentage');
+            if ($discountPercentage < 0) {
+                $discountPercentage = 0;
+            }
+            if ($discountPercentage > 100) {
+                $discountPercentage = 100;
+            }
+            $this->merge(['discount_percentage' => $discountPercentage]);
+        }
+
+        if ($this->filled('coach_discount_percentage')) {
+            $coachDiscount = max(0, min(100, (float) $this->input('coach_discount_percentage')));
+            $this->merge(['coach_discount_percentage' => $coachDiscount]);
+        }
+
+        if ($this->filled('branch_discount_percentage')) {
+            $branchDiscount = max(0, min(100, (float) $this->input('branch_discount_percentage')));
+            $this->merge(['branch_discount_percentage' => $branchDiscount]);
+        }
+
+        if ($this->filled('discount_amount')) {
+            $this->merge(['discount_amount' => max(0, (float) $this->input('discount_amount'))]);
+        }
+
+        if ($this->filled('discount_reason') && !is_string($this->input('discount_reason'))) {
+            $this->merge(['discount_reason' => (string) $this->input('discount_reason')]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -27,6 +63,12 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
             'branch_paid_amount' => 'nullable|numeric|min:0',
             'coach_price' => 'nullable|numeric|min:0',
             'branch_price' => 'nullable|numeric|min:0',
+            'is_discount' => 'nullable|boolean',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'coach_discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'branch_discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_reason' => 'nullable|string|max:255',
             'payment_method' => 'nullable|string',
             'receipt_number' => 'nullable|string|max:100',
             'coach_receipt_number' => 'nullable|string|max:100',
