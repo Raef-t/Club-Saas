@@ -357,6 +357,13 @@ class AllSystemPermissionsSeeder extends Seeder
             'accounting.salary.view-any',
             'accounting.salary.create',
             'accounting.salary.delete',
+
+            // ─── App Versions ───────────────────────────────────────────────
+            'app-version.view-any',
+            'app-version.create',
+            'app-version.view',
+            'app-version.update',
+            'app-version.delete',
         ];
 
         // Ensure absolute uniqueness
