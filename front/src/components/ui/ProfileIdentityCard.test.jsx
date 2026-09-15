@@ -41,14 +41,7 @@ describe("ProfileIdentityCard", () => {
     expect(screen.queryByText("غير محدد")).not.toBeInTheDocument();
   });
 
-  it("downloads the QR image and copies the value on click", async () => {
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: writeTextMock,
-      },
-    });
-
+  it("opens a zoom modal when the QR button is clicked", async () => {
     render(
       <ProfileIdentityCard
         name="عبيدة أيوبي"
@@ -58,10 +51,12 @@ describe("ProfileIdentityCard", () => {
       />,
     );
 
-    const button = await screen.findByRole("button", { name: /تنزيل ونسخ رمز QR/ });
+    const button = await screen.findByRole("button", { name: /تكبير رمز QR/ });
     button.click();
 
-    expect(writeTextMock).toHaveBeenCalledWith("QR-123456");
-    expect(await screen.findByText(/تم التنزيل/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
   });
 });
+
